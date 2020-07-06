@@ -1,0 +1,6 @@
+{{raw_data|safe}}
+<table>
+    {% for art in artifacts %}
+    <tr><td><a href="/api/artifact/{{art._id}}">{{art.filename}}</a></td></tr>
+    {% endfor %}
+</table>

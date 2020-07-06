@@ -1,0 +1,8 @@
+FROM python:3.7
+
+COPY . /app
+WORKDIR /app
+RUN pip install --no-cache-dir -U pip && pip install --no-cache-dir -r requirements.txt
+USER 1001
+ENTRYPOINT ["celery"]
+CMD ["worker", "-E", "-A", "ibutsu_server.tasks.queues:app", "--loglevel=info", "--concurrency", "1", "--hostname", "ibutsu-worker@%n"]

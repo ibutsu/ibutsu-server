@@ -1,0 +1,54 @@
+version: '3'
+services:
+  frontend:
+    environment:
+      NODE_ENV: production
+      REACT_APP_SERVER_URL: http://localhost:8081/api
+    build:
+      context: ./frontend
+      dockerfile: docker/Dockerfile.frontend
+    image: ibutsu/frontend
+    ports:
+      - "8080:8080"
+    links:
+      - backend
+  backend:
+    environment:
+      ENV_FOR_DYNACONF: production
+      DYNACONF_CELERY_BROKER_URL: redis://redis:6379
+      DYNACONF_CELERY_RESULT_BACKEND: redis://redis:6379
+      DYNACONF_HOST: mongo
+      DYNACONF_DATABASE: test_artifacts
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile.backend
+    image: ibutsu/backend
+    ports:
+      - "8081:80"
+    links:
+      - mongo
+      - redis
+  worker:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile.worker
+    image: ibutsu/worker
+    links:
+      - mongo
+      - redis
+  monitor:
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile.monitor
+    image: ibutsu/monitor
+    links:
+      - mongo
+      - redis
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"

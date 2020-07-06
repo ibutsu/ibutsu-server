@@ -1,0 +1,9 @@
+FROM python:3.7
+
+ENV BROKER_URL=redis://localhost
+
+COPY . /app
+WORKDIR /app
+RUN pip install --no-cache-dir -U pip && pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir flower
+USER 1001
+CMD celery flower -A ibutsu_server.tasks.queues:app --loglevel=info --broker=$BROKER_URL

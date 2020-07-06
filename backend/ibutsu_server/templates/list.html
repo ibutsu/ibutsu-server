@@ -1,0 +1,6 @@
+<table>
+    <tr><th>Name</th><th>Start time</th><th>Result</th></tr>
+    {% for test in tests %}
+    <tr><td><a href="result/{{test._id}}">{{test.test_id}}</a></td><td>{{test.starttime}}</td><td><td>{{test.result}}</td></tr>
+    {% endfor %}
+</table>
