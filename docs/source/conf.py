@@ -36,6 +36,8 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# In older versions of Sphinx, this was "contents"
+master_doc = "index"
 
 # -- Options for HTML output -------------------------------------------------
 
