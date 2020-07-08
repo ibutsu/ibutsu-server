@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
-  Badge,
   Card,
   CardBody,
   PageSection,
@@ -95,7 +94,7 @@ function runToRow(run, filterFunc) {
   }
   badges.push(badge);
   badges.push(' ');
-  
+
   if (run.metadata && run.metadata.env) {
     let badge;
     if (filterFunc) {
@@ -290,7 +289,7 @@ export class RunList extends React.Component {
       });
     });
   }
-  
+
 
   removeFilter = id => {
     this.updateFilters(id, null, null, () => {

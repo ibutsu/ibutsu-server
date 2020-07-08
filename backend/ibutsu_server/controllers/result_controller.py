@@ -2,6 +2,10 @@ import time
 
 import connexion
 from bson import ObjectId
+from func_timeout import func_timeout
+from func_timeout import FunctionTimedOut
+from ibutsu_server.constants import COUNT_TIMEOUT
+from ibutsu_server.constants import MAX_DOCUMENTS
 from ibutsu_server.filters import generate_filter_object
 from ibutsu_server.mongo import mongo
 from ibutsu_server.util import merge_dicts
@@ -32,7 +36,7 @@ def add_result(result=None):
     return serialize(result), 201
 
 
-def get_result_list(filter_=None, page=1, page_size=25):
+def get_result_list(filter_=None, page=1, page_size=25, apply_max=False):
     """Gets all results
 
     The `filter` parameter takes a list of filters to apply in the form of:
@@ -73,6 +77,9 @@ def get_result_list(filter_=None, page=1, page_size=25):
     :param filter: A list of filters to apply
     :param pageSize: Limit the number of results returned, defaults to 25
     :param page: Offset the results list, defaults to 0
+    :param apply_max: Avoid counting the total number of documents, which speeds up the query,
+                            but has the drawback of only returning the MAX_DOCUMENTS
+                            most recent results.
 
     :rtype: List[Result]
     """
@@ -83,11 +90,35 @@ def get_result_list(filter_=None, page=1, page_size=25):
             if filter_obj:
                 filters.update(filter_obj)
     offset = (page * page_size) - page_size
-    total_items = mongo.results.count(filters)
-    total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
+    try:
+        # if the count is fast, just use it! Even if apply_max is set to true
+        total_items = func_timeout(COUNT_TIMEOUT, mongo.results.count, args=(filters,))
+    except FunctionTimedOut:
+        if apply_max:
+            print(
+                f"FunctionTimedOut: 'mongo.results.count' with args: {filters} timed out, "
+                f"using default items of {MAX_DOCUMENTS}"
+            )
+            if offset > MAX_DOCUMENTS:
+                raise ValueError(
+                    f"Offset: {offset} exceeds the "
+                    f"MAX_DOCUMENTS: {MAX_DOCUMENTS} able to be displayed in the UI. "
+                    f"Please use the API for this request."
+                )
+            total_items = MAX_DOCUMENTS
+        else:
+            print(
+                f"FunctionTimedOut: 'mongo.results.count' with args: {filters} timed out, "
+                f"but limit_documents is set to False, proceeding"
+            )
+            # if we don't want to limit documents, just do the standard count
+            total_items = mongo.results.count(filters)
+
     results = mongo.results.find(
         filters, skip=offset, limit=page_size, sort=[("start_time", DESCENDING)]
     )
+
+    total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     return {
         "results": [serialize(result) for result in results],
         "pagination": {
