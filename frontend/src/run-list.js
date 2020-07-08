@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom';
 
 import { Settings } from './settings';
 import {
+  buildBadge,
   buildParams,
   buildUrl,
   getActiveProject,
@@ -69,9 +70,10 @@ export class RunSummary extends React.Component {
   }
 }
 
-function runToRow(run) {
+function runToRow(run, filterFunc) {
   let badges = [];
   let created = 0;
+  let badge;
   if (run.start_time) {
     created = new Date(run.start_time * 1000);
   }
@@ -81,11 +83,30 @@ function runToRow(run) {
   else {
       created = new Date(run.created);
   }
-  if (run.metadata && run.metadata.component) {
-    badges.push(<Badge key="component">{run.metadata.component}</Badge>);
+
+  if (filterFunc) {
+    if (run.metadata && run.metadata.component) {
+      badge = buildBadge('component', run.metadata.component, false,
+        () => filterFunc('metadata.component', run.metadata.component));
+    }
   }
+  else {
+    badge = buildBadge('component', run.metadata.component, false);
+  }
+  badges.push(badge);
+  badges.push(' ');
+  
   if (run.metadata && run.metadata.env) {
-    badges.push(<Badge key="env" isRead>{run.metadata.env}</Badge>);
+    let badge;
+    if (filterFunc) {
+      badge = buildBadge(run.metadata.env, run.metadata.env, false,
+        () => filterFunc('metadata.env', run.metadata.env));
+    }
+    else {
+      badge = buildBadge(run.metadata.env, run.metadata.env, false);
+    }
+    badges.push(badge)
+    badges.push(' ')
   }
   return {
     "cells": [
@@ -255,6 +276,22 @@ export class RunList extends React.Component {
     this.setState({filters: filters, page: 1}, callback);
   }
 
+
+  setFilter = (field, value) => {
+    this.updateFilters(field, 'eq', value, () => {
+      this.updateUrl();
+      this.getRuns();
+      this.setState({
+        fieldSelection: null,
+        operationSelection: 'eq',
+        textFilter: '',
+        boolSelection: null,
+        inValues: []
+      });
+    });
+  }
+  
+
   removeFilter = id => {
     this.updateFilters(id, null, null, () => {
       this.updateUrl();
@@ -308,7 +345,7 @@ export class RunList extends React.Component {
     fetch(buildUrl(Settings.serverUrl + '/run', params))
       .then(response => response.json())
       .then(data => this.setState({
-        rows: data.runs.map((run) => runToRow(run)),
+        rows: data.runs.map((run) => runToRow(run, this.setFilter)),
         page: data.pagination.page,
         pageSize: data.pagination.pageSize,
         totalItems: data.pagination.totalItems,
