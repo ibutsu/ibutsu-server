@@ -338,6 +338,8 @@ class App extends React.Component {
                 <TextListItem component="dd">{this.version}</TextListItem>
                 <TextListItem component="dt">Source code</TextListItem>
                 <TextListItem component="dd"><a href="https://github.com/ibutsu/ibutsu-server">github.com/ibutsu/ibutsu-server</a></TextListItem>
+                <TextListItem component="dt">Documentation</TextListItem>
+                <TextListItem component="dd"><a href="https://docs.ibutsu-project.org/">docs.ibutsu-project.org</a></TextListItem>
               </TextList>
             </TextContent>
           </AboutModal>
