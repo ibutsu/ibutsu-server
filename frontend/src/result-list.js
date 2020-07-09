@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import {
   Card,
   CardBody,
+  CardFooter,
   PageSection,
   PageSectionVariants,
   Select,
@@ -336,6 +337,9 @@ export class ResultList extends React.Component {
     else if (Object.prototype.hasOwnProperty.call(filters, 'metadata.project')) {
       delete filters['metadata.project']
     }
+    if (filters) {
+      params['apply_max'] = true;  // if filters are applied limit the documents returned
+    }
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
     // Convert UI filters to API filters
@@ -524,6 +528,12 @@ export class ResultList extends React.Component {
                 onSetPageSize={this.setPageSize}
               />
             </CardBody>
+            <CardFooter>
+              <Text className="disclaimer" component="h4">
+                * Note: due to the number of results, when filters are applied, the results returned are limited to a max value.
+                Use the API if you need an accurate count.
+              </Text>
+            </CardFooter>
           </Card>
         </PageSection>
       </React.Fragment>

@@ -72,6 +72,13 @@ paths:
             type: string
           type: array
         style: form
+      - description: Use a max to limit documents returned
+        in: query
+        name: apply_max
+        required: false
+        schema:
+          type: boolean
+        style: form
       - $ref: '#/components/parameters/Page'
       - $ref: '#/components/parameters/PageSize'
       responses:

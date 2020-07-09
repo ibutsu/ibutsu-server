@@ -12,6 +12,7 @@ REQUIRES = [
     "connexion",
     "dynaconf",
     "flask_cors",
+    "func-timeout",
     "gunicorn",
     "lxml",
     "pymongo",
