@@ -24,6 +24,7 @@ import ReactJson from 'react-json-view';
 import Editor from '@monaco-editor/react';
 
 import { ClassificationDropdown } from './classification-dropdown';
+import { linkifyDecorator } from './decorators'
 import { Settings } from '../settings';
 import { buildUrl, getIconForResult, round } from '../utilities';
 import { TabTitle } from './tabs';
@@ -227,7 +228,7 @@ export class ResultView extends React.Component {
                       <DataListItemCells
                         dataListCells={[
                           <DataListCell key="skip-reason-label" width={2}><strong>Reason skipped:</strong></DataListCell>,
-                          <DataListCell key="skip-reason-data" width={4}><Linkify>{testResult.metadata.skip_reason}</Linkify></DataListCell>
+                          <DataListCell key="skip-reason-data" width={4}><Linkify componentDecorator={linkifyDecorator}>{testResult.metadata.skip_reason}</Linkify></DataListCell>
                         ]}
                       />
                     </DataListItemRow>
