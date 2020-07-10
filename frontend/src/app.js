@@ -331,6 +331,7 @@ class App extends React.Component {
             brandImageAlt="Ibutsu"
             productName="Ibutsu"
             backgroundImageSrc="/images/about-bg.jpg"
+            trademark="Copyright (c) 2020 Red Hat, Inc."
           >
             <TextContent>
               <TextList component="dl">
@@ -342,6 +343,7 @@ class App extends React.Component {
                 <TextListItem component="dd"><a href="https://docs.ibutsu-project.org/">docs.ibutsu-project.org</a></TextListItem>
               </TextList>
             </TextContent>
+            <p style={{marginTop: 260}}>* Note: artifact files (screenshots, logs) are retained for 3 months</p>
           </AboutModal>
           <AlertGroup isToast>
             {this.state.notifications.map((notification) => (
