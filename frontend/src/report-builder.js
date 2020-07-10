@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   CardBody,
+  CardFooter,
   ExpandableSection,
   Form,
   FormGroup,
@@ -262,6 +263,11 @@ export class ReportBuilder extends React.Component {
                 </ActionGroup>
               </Form>
             </CardBody>
+            <CardFooter>
+              <Text className="disclaimer" component="h4">
+                * Note: Reports can only show a maximum of 1,000,000 results.
+              </Text>
+            </CardFooter>
           </Card>
         </PageSection>
         <PageSection>
