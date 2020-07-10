@@ -7,12 +7,15 @@ from io import StringIO
 
 from bson import ObjectId
 from dynaconf import settings
+from func_timeout import func_timeout
+from func_timeout import FunctionTimedOut
 from ibutsu_server.filters import generate_filter_object
 from ibutsu_server.mongo import mongo
 from ibutsu_server.tasks.queues import task
 from ibutsu_server.templating import render_template
 from ibutsu_server.util import serialize
 from ibutsu_server.util.projects import get_project_id
+from pymongo import DESCENDING
 
 TREE_ROOT = {
     "items": {},
@@ -26,6 +29,9 @@ BSTRAP_DANGER = "bg-danger"
 
 FAILURE_PERC_WARN = 0.2  # % of tests failing to be warning level
 FAILURE_PERC_DANGER = 0.4
+
+REPORT_COUNT_TIMEOUT = 2.0  # timeout for counting documents in report
+REPORT_MAX_DOCUMENTS = 1000000  # max documents for reports
 
 
 def _generate_report_name(report_parameters):
@@ -104,11 +110,17 @@ def _build_filters(report):
 
 
 def _get_results(report):
+    """ Limit the number of documents to REPORT_MAX_DOCUMENTS so as not to crash the server."""
     filters = _build_filters(report)
-    if mongo.results.count_documents(filters) == 0:
-        return None
-    else:
-        return mongo.results.find(filters)
+    try:
+        if func_timeout(REPORT_COUNT_TIMEOUT, mongo.results.count, args=(filters,)) == 0:
+            return None
+    except FunctionTimedOut:
+        pass
+
+    return mongo.results.find(
+        filters, limit=REPORT_MAX_DOCUMENTS, sort=[("start_time", DESCENDING)]
+    )
 
 
 def _make_result_path(result):
