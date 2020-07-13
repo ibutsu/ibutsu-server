@@ -32,7 +32,7 @@ function jobToRow(job, analysisViewId) {
   return {
     cells: [
       analysisViewId ? {title: <Link to={`/view/${analysisViewId}?job_name=${job.job_name}`}>{job.job_name}</Link>} : job.job_name,
-      {title: <a href={job.build_url} target="_blank" rel="noreferrer">{job.build_number}</a>},
+      {title: <a href={job.build_url} target="_blank" rel="noopener noreferrer">{job.build_number}</a>},
       {title: <RunSummary summary={job.summary} />},
       job.source,
       job.env,

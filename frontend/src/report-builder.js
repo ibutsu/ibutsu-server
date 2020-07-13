@@ -265,7 +265,7 @@ export class ReportBuilder extends React.Component {
             </CardBody>
             <CardFooter>
               <Text className="disclaimer" component="h4">
-                * Note: Reports can only show a maximum of 1,000,000 results.
+                * Note: reports can only show a maximum of 100,000 results.
               </Text>
             </CardFooter>
           </Card>
