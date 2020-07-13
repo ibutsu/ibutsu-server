@@ -31,7 +31,7 @@ FAILURE_PERC_WARN = 0.2  # % of tests failing to be warning level
 FAILURE_PERC_DANGER = 0.4
 
 REPORT_COUNT_TIMEOUT = 2.0  # timeout for counting documents in report
-REPORT_MAX_DOCUMENTS = 1000000  # max documents for reports
+REPORT_MAX_DOCUMENTS = 100000  # max documents for reports
 
 
 def _generate_report_name(report_parameters):
