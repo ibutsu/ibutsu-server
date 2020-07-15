@@ -8,6 +8,8 @@ import {
   ChartLegend,
   ChartStack,
   ChartThemeColor,
+  ChartTooltip,
+  createContainer,
 } from '@patternfly/react-charts';
 import {
   Card,
@@ -49,6 +51,15 @@ export class GenericAreaWidget extends React.Component {
       areaCharts: [],
       isLoading: true,
     };
+  }
+
+  getLabels() {
+    if (this.props.percentData) {
+      return ({datum}) => `${toTitleCase(datum.name, true)}: ${datum.y} %`;
+    }
+    else {
+      return ({datum}) => `${toTitleCase(datum.name, true)}: ${datum.y}`;
+    }
   }
 
   getData() {
@@ -111,6 +122,7 @@ export class GenericAreaWidget extends React.Component {
   }
 
   render() {
+    const CursorVoronoiContainer = createContainer("cursor", "voronoi");
     const legendData = this.getLegendData();
     return (
       <Card>
@@ -132,7 +144,20 @@ export class GenericAreaWidget extends React.Component {
             }}
             height={this.props.height || 200}
             themeColor={ChartThemeColor.multiUnordered}
+            containerComponent={
+              <CursorVoronoiContainer
+                cursorDimension="x"
+                labels={this.getLabels()}
+                labelComponent={<ChartTooltip style={{ fill: "white", fontSize: this.props.fontSize-2 || 14}}/>}
+                mouseFollowTooltips
+                voronoiDimension="x"
+                voronoiPadding={50}
+              />
+            }
           >
+            <ChartStack>
+              {this.state.areaCharts}
+            </ChartStack>
             <ChartAxis
               label={this.props.xLabel || "x"}
               fixLabelOverlap
@@ -149,9 +174,6 @@ export class GenericAreaWidget extends React.Component {
                 axisLabel: {fontSize: this.props.fontSize || 14}
               }}
             />
-            <ChartStack>
-              {this.state.areaCharts}
-            </ChartStack>
           </Chart>
           }
         </CardBody>
