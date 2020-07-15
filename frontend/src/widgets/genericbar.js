@@ -135,7 +135,7 @@ export class GenericBarWidget extends React.Component {
                 <ChartTooltip
                   dx={this.props.horizontal ? -10 : 0}
                   dy={this.props.horizontal ? 0 : -10}
-                  style={{ fill: "white", fontSize: this.props.fontSize || 14}}
+                  style={{ fill: "white", fontSize: this.props.fontSize-2 || 14}}
                 />
               }
             />
