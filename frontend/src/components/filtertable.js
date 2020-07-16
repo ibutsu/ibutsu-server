@@ -31,25 +31,29 @@ export class FilterTable extends React.Component {
     isError: PropTypes.bool,
     canSelectAll: PropTypes.bool,
     onApplyFilter: PropTypes.func,
+    onCollapse: PropTypes.func,
     onRemoveFilter: PropTypes.func,
     onClearFilters: PropTypes.func,
     onApplyReport: PropTypes.func,
     onSetPage: PropTypes.func,
     onSetPageSize: PropTypes.func,
     onRowSelect: PropTypes.func,
+    variant: PropTypes.node
   };
 
   render() {
     const {
       isEmpty,
       isError,
+      onCollapse,
       onRowSelect,
       onApplyFilter,
       onRemoveFilter,
       onClearFilters,
       onApplyReport,
       onSetPage,
-      onSetPageSize
+      onSetPageSize,
+      variant
     } = this.props;
     let columns = this.props.columns || [];
     let rows = this.props.rows || [];
@@ -122,7 +126,16 @@ export class FilterTable extends React.Component {
           }
         </Flex>
         }
-        <Table cells={columns} rows={rows} actions={actions} aria-label="List" canSelectAll={canSelectAll} onSelect={onRowSelect}>
+        <Table
+          cells={columns}
+          rows={rows}
+          actions={actions}
+          aria-label="List"
+          canSelectAll={canSelectAll}
+          onCollapse={onCollapse}
+          onSelect={onRowSelect}
+          variant={variant}
+        >
           <TableHeader />
           <TableBody />
         </Table>

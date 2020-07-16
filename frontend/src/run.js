@@ -28,6 +28,10 @@ import {
   Text,
   TextInput
 } from '@patternfly/react-core';
+import {
+  TableVariant,
+  expandable
+} from '@patternfly/react-table';
 import { CatalogIcon, ChevronRightIcon, CodeIcon, InfoCircleIcon, MessagesIcon, RepositoryIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import ReactJson from 'react-json-view';
@@ -108,7 +112,7 @@ export class Run extends React.Component {
       id: props.match.params.id,
       testResult: null,
       columns: ['Test', 'Run', 'Result', 'Duration', 'Started'],
-      classification_columns: ['Test', 'Result', 'Exception Name', 'Classification', 'Duration'],
+      classification_columns: [{title: 'Test', cellFormatters: [expandable]}, 'Result', 'Exception Name', 'Classification', 'Duration'],
       rows: [getSpinnerRow(5)],
       classification_rows: [getSpinnerRow(5)],
       results: [],
@@ -129,6 +133,7 @@ export class Run extends React.Component {
       includeSkipped: false
     };
     this.refreshClassificationResults = this.refreshClassificationResults.bind(this);
+    this.onClassificationCollapse = this.onClassificationCollapse.bind(this);
   }
 
   buildTree(results) {
@@ -350,8 +355,8 @@ export class Run extends React.Component {
     const { classification_results, classification_rows } = this.state;
     let selectedResults = [];
     for (const [index, row] of classification_rows.entries()) {
-      if (row.selected) {
-        selectedResults.push(classification_results[index]);
+      if (row.selected && row.parent == null) {  // rows with a parent attr are the child rows
+        selectedResults.push(classification_results[index / 2]);  // divide by 2 to convert row index to result index
       }
     }
     this.setState({selectedResults});
@@ -400,7 +405,7 @@ export class Run extends React.Component {
       .then(response => response.json())
       .then(data => this.setState({
           classification_results: data.results,
-          classification_rows: data.results.map((result) => resultToClassificationRow(result)),
+          classification_rows: data.results.map((result, index) => resultToClassificationRow(result, index)).flat(),
           page: data.pagination.page,
           pageSize: data.pagination.pageSize,
           totalItems: data.pagination.totalItems,
@@ -451,6 +456,15 @@ export class Run extends React.Component {
       });
     }
   }
+
+  onClassificationCollapse(event, rowIndex, isOpen) {
+    const { classification_rows } = this.state;
+    classification_rows[rowIndex].isOpen = isOpen;
+    this.setState({
+      classification_rows
+    });
+  }
+
 
   render() {
     let passed = 0, failed = 0, errors = 0, skipped = 0;
@@ -767,10 +781,12 @@ export class Run extends React.Component {
                     pagination={pagination}
                     isEmpty={this.state.isEmpty}
                     isError={this.state.isError}
+                    onCollapse={this.onClassificationCollapse}
                     onSetPage={this.setClassificationPage}
                     onSetPageSize={this.classificationPageSizeSelect}
                     canSelectAll={true}
                     onRowSelect={this.onClassificationTableRowSelect}
+                    variant={TableVariant.compact}
                   />
                 </CardBody>
               </Card>
