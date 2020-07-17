@@ -1,9 +1,10 @@
+from ibutsu_server.constants import JJV_RUN_LIMIT
 from ibutsu_server.filters import generate_filter_object
 from ibutsu_server.mongo import mongo
 from pymongo import DESCENDING
 
 
-def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25):
+def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, run_limit=None):
     """ Get a list of Jenkins jobs """
     offset = (page * page_size) - page_size
     aggregation = [
@@ -13,6 +14,8 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25):
                 "metadata.jenkins.job_name": {"$exists": True},
             }
         },
+        {"$sort": {"start_time": DESCENDING}},
+        {"$limit": run_limit or JJV_RUN_LIMIT},
         {
             "$group": {
                 "_id": {
@@ -82,14 +85,14 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25):
     return mongo.runs.aggregate(aggregation)
 
 
-def get_jenkins_job_view(filter_=None, project=None, page=1, page_size=25):
+def get_jenkins_job_view(filter_=None, project=None, page=1, page_size=25, run_limit=None):
     filters = {}
     if filter_:
         for filter_string in filter_.split(","):
             filter_obj = generate_filter_object(filter_string)
             if filter_obj:
                 filters.update(filter_obj)
-    aggr = _get_jenkins_aggregation(filters, project, page, page_size)
+    aggr = _get_jenkins_aggregation(filters, project, page, page_size, run_limit)
 
     try:
         jenkins_jobs = list(aggr)[0]
