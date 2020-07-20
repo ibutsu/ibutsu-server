@@ -174,11 +174,21 @@ export function resultToRow(result, filterFunc) {
   };
 }
 
-export function resultToClassificationRow(result, index) {
+export function resultToClassificationRow(result, index, filterFunc) {
   let resultIcon = getIconForResult(result.result);
   let hideSummary = true;
   let hideTestObject = true;
   let markers = [];
+  let exceptionBadge;
+
+  if (filterFunc) {
+    exceptionBadge = buildBadge('exception_name', result.metadata.exception_name, false,
+      () => filterFunc('metadata.exception_name', result.metadata.exception_name));
+  }
+  else {
+    exceptionBadge = buildBadge('exception_name', result.metadata.exception_name, false);
+  }
+
   if (result.metadata && result.metadata.component) {
     markers.push(<Badge key="component">{result.metadata.component}</Badge>);
   }
@@ -203,7 +213,7 @@ export function resultToClassificationRow(result, index) {
       "cells": [
         {title: <React.Fragment><Link to={`/results/${result.id}`}>{result.test_id}</Link> {markers}</React.Fragment>},
         {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
-        {title: <span className={result.metadata.exception_name}> {result.metadata.exception_name} </span>},
+        {title: <React.Fragment>{exceptionBadge}</React.Fragment>},
         {title: <ClassificationDropdown testResult={result} />},
         {title: round(result.duration) + 's'},
       ],
