@@ -180,7 +180,7 @@ export class JenkinsJobAnalysisView extends React.Component {
           {this.getDropdown()}
         </div>
         {activeTab === 'overall-health' &&
-        <div style={{backgroundColor: 'white', float: 'right', clear: 'right', marginBottom: '-4em', padding: '0.1em 1em', width: '15em', marginRight: '20em'}}>
+        <div style={{backgroundColor: 'white', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em', width: '15em'}}>
           {this.getSwitch()}
         </div>
         }
