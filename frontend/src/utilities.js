@@ -26,7 +26,7 @@ import {
   NUMERIC_RESULT_FIELDS,
   NUMERIC_RUN_FIELDS,
 } from './constants';
-import { ClassificationDropdown } from './components';
+import { ClassificationDropdown, ResultView } from './components';
 
 export function getIconForResult(result) {
   let resultIcon = '';
@@ -174,8 +174,10 @@ export function resultToRow(result, filterFunc) {
   };
 }
 
-export function resultToClassificationRow(result) {
+export function resultToClassificationRow(result, index) {
   let resultIcon = getIconForResult(result.result);
+  let hideSummary = true;
+  let hideTestObject = true;
   let markers = [];
   if (result.metadata && result.metadata.component) {
     markers.push(<Badge key="component">{result.metadata.component}</Badge>);
@@ -189,15 +191,29 @@ export function resultToClassificationRow(result) {
     }
   }
 
-  return {
-    "cells": [
-      {title: <React.Fragment><Link to={`/results/${result.id}`}>{result.test_id}</Link> {markers}</React.Fragment>},
-      {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
-      {title: <span className={result.metadata.exception_name}> {result.metadata.exception_name} </span>},
-      {title: <ClassificationDropdown testResult={result} />},
-      {title: round(result.duration) + 's'},
-    ]
-  };
+  if (result.result === "skipped") {
+    hideSummary=false;
+    hideTestObject=false;
+  }
+
+  return [
+    // parent row
+    {
+      "isOpen": false,
+      "cells": [
+        {title: <React.Fragment><Link to={`/results/${result.id}`}>{result.test_id}</Link> {markers}</React.Fragment>},
+        {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
+        {title: <span className={result.metadata.exception_name}> {result.metadata.exception_name} </span>},
+        {title: <ClassificationDropdown testResult={result} />},
+        {title: round(result.duration) + 's'},
+      ],
+    },
+    // child row
+    {
+      "parent": 2*index,
+      "cells": [{title: <ResultView hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={result}/>}]
+    }
+  ];
 }
 
 export function parseFilter(paramKey) {

@@ -56,7 +56,9 @@ const MockTest = {
 export class ResultView extends React.Component {
   static propTypes = {
     testResult: PropTypes.object,
-    resultId: PropTypes.string
+    resultId: PropTypes.string,
+    hideSummary: PropTypes.bool,
+    hideTestObject: PropTypes.bool,
   }
 
   constructor(props) {
@@ -87,7 +89,7 @@ export class ResultView extends React.Component {
       .then(response => response.json())
       .then(data => {
         this.setState({artifacts: data.artifacts});
-        let tabKey = 1;
+        let tabKey = this.props.hideSummary ? 0 : 1;
         let artifactTabs = [];
         data.artifacts.forEach((artifact) => {
           artifact.tabKey = tabKey;
@@ -170,6 +172,7 @@ export class ResultView extends React.Component {
     return (
       <React.Fragment>
         <Tabs activeKey={this.state.artifactsTabKey} onSelect={this.handleArtifactsTabClick}>
+          {!this.props.hideSummary &&
           <Tab eventKey={0} title={<TabTitle icon={InfoCircleIcon} text="Summary" />} style={{backgroundColor: "white"}}>
             <Card>
               <CardBody style={{padding: 0}}>
@@ -412,7 +415,9 @@ export class ResultView extends React.Component {
               </CardBody>
             </Card>
           </Tab>
+          }
           {artifactTabs}
+          {!this.props.hideTestObject &&
           <Tab eventKey={99} title={<TabTitle icon={CodeIcon} text="Test Object" />} style={{backgroundColor: "white"}}>
             <Card>
               <CardBody>
@@ -420,6 +425,7 @@ export class ResultView extends React.Component {
               </CardBody>
             </Card>
           </Tab>
+          }
         </Tabs>
       </React.Fragment>
     );
