@@ -5,6 +5,7 @@ import {
   Chart,
   ChartAxis,
   ChartArea,
+  ChartContainer,
   ChartLegend,
   ChartStack,
   ChartThemeColor,
@@ -25,14 +26,17 @@ import { WidgetHeader } from '../components/widget-components';
 
 export class GenericAreaWidget extends React.Component {
   static propTypes = {
+    colorScale: PropTypes.array,
     dropdownItems: PropTypes.array,
     fontSize: PropTypes.number,
+    getColors: PropTypes.func,
     height: PropTypes.number,
     hideDropdown: PropTypes.bool,
     interpolation: PropTypes.string,
     padding: PropTypes.object,
     params: PropTypes.object,
     percentData: PropTypes.bool,
+    showTooltip: PropTypes.bool,
     sortOrder: PropTypes.string,
     title: PropTypes.string,
     varExplanation: PropTypes.string,
@@ -91,20 +95,23 @@ export class GenericAreaWidget extends React.Component {
 
   getAreaCharts() {
     let areaCharts = [];
-    for (const timeField of Object.keys(this.state.data)) {
-      let timeData = [];
-      for (const groupField of Object.keys(this.state.data[timeField])) {
-        timeData.push({name: toTitleCase(timeField), x: groupField, y: this.state.data[timeField][groupField]})
-      }
-      if (timeData.length !== 0) {
-        areaCharts.push(
-          <ChartArea
-            data={timeData}
-            sortKey={(datum) => `${datum.x}`}
-            sortOrder={this.props.sortOrder || "ascending"}
-            interpolation={this.props.interpolation || "monotoneX"}
-          />
-        );
+    for (const key of Object.keys(this.state.data)) {
+      let chartData = [];
+      if (key !== "filter") {
+        for (const groupField of Object.keys(this.state.data[key])) {
+          chartData.push({name: toTitleCase(key), x: groupField, y: this.state.data[key][groupField]})
+        }
+        if (chartData.length !== 0) {
+          areaCharts.push(
+            <ChartArea
+              data={chartData}
+              sortKey={(datum) => `${datum.x}`}
+              sortOrder={this.props.sortOrder || "ascending"}
+              interpolation={this.props.interpolation || "monotoneX"}
+              style={this.props.getColors ? {data: { fill: this.props.getColors(key)}}: {}}
+            />
+          );
+        }
       }
     }
     this.setState({areaCharts});
@@ -121,8 +128,27 @@ export class GenericAreaWidget extends React.Component {
     }
   }
 
-  render() {
+  getTooltip() {
+    const { showTooltip } = this.props;
     const CursorVoronoiContainer = createContainer("cursor", "voronoi");
+    if (showTooltip) {
+      return (
+        <CursorVoronoiContainer
+          cursorDimension="x"
+          labels={this.getLabels()}
+          labelComponent={<ChartTooltip style={{ fill: "white", fontSize: this.props.fontSize-2 || 14}}/>}
+          mouseFollowTooltips
+          voronoiDimension="x"
+          voronoiPadding={50}
+        />
+      )
+    }
+    else {
+      return <ChartContainer/>;
+    }
+  }
+
+  render() {
     const legendData = this.getLegendData();
     return (
       <Card>
@@ -142,18 +168,10 @@ export class GenericAreaWidget extends React.Component {
               right: 15,
               top: 20
             }}
+            domainPadding={{y: 10}}
             height={this.props.height || 200}
             themeColor={ChartThemeColor.multiUnordered}
-            containerComponent={
-              <CursorVoronoiContainer
-                cursorDimension="x"
-                labels={this.getLabels()}
-                labelComponent={<ChartTooltip style={{ fill: "white", fontSize: this.props.fontSize-2 || 14}}/>}
-                mouseFollowTooltips
-                voronoiDimension="x"
-                voronoiPadding={50}
-              />
-            }
+            containerComponent={this.getTooltip()}
           >
             <ChartStack>
               {this.state.areaCharts}
@@ -185,6 +203,7 @@ export class GenericAreaWidget extends React.Component {
               labels: {fontFamily: 'RedHatText', fontSize: this.props.fontSize-2 || 14},
               title: {fontFamily: 'RedHatText'}
             }}
+            colorScale={this.props.colorScale}
             themeColor={ChartThemeColor.multiUnordered}
           />
           {this.props.varExplanation &&

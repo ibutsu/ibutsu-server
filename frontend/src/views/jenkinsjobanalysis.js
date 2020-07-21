@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {
   DropdownDirection,
+  Switch,
   Tab,
   Tabs,
 } from '@patternfly/react-core';
@@ -39,8 +40,10 @@ export class JenkinsJobAnalysisView extends React.Component {
     this.getWidgetParams = this.getWidgetParams.bind(this);
     this.onBuildSelect = this.onBuildSelect.bind(this);
     this.state = {
+      isAreaChart: false,
       isEmpty: true,
       isError: false,
+      isLoading: true,
       filters: filters,
       activeTab: 'heatmap',
       barWidth: 8,
@@ -131,22 +134,64 @@ export class JenkinsJobAnalysisView extends React.Component {
       />);
   }
 
+  handleSwitch = isChecked => {
+    this.setState({isAreaChart: isChecked});
+  }
+
+  getSwitch() {
+    const { isAreaChart } = this.state;
+    return (<Switch
+      id="bar-chart-switch"
+      labelOff="Change to Area Chart"
+      label="Change to Bar Chart"
+      isChecked={isAreaChart}
+      onChange={this.handleSwitch}
+    />);
+  }
+
+  getColors = (key) => {
+    let color = 'var(--pf-global--success-color--100)';
+    if (key === 'failed') {
+      color = 'var(--pf-global--danger-color--100)';
+    }
+    else if (key === 'skipped') {
+      color = 'var(--pf-global--info-color--100)';
+    }
+    else if (key === 'error') {
+      color = 'var(--pf-global--warning-color--100)';
+    }
+    return color;
+  }
+
   render() {
-    const { isLoading, barchartParams, barWidth, heatmapParams, linechartParams } = this.state;
+    const {
+      activeTab,
+      isAreaChart,
+      isLoading,
+      barchartParams,
+      barWidth,
+      heatmapParams,
+      linechartParams
+    } = this.state;
 
     return (
       <React.Fragment>
         <div style={{backgroundColor: 'white', float: 'right', clear: 'right', marginBottom: '-2em', padding: '0.2em 1em', width: '20em'}}>
           {this.getDropdown()}
         </div>
+        {activeTab === 'overall-health' &&
+        <div style={{backgroundColor: 'white', float: 'right', clear: 'right', marginBottom: '-4em', padding: '0.1em 1em', width: '15em', marginRight: '20em'}}>
+          {this.getSwitch()}
+        </div>
+        }
       <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect}>
         <Tab eventKey='heatmap' title={'Heatmap'} style={{backgroundColor: 'white'}}>
-          {!isLoading &&
+          {!isLoading && activeTab === "heatmap" &&
           <JenkinsHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true}/>
           }
         </Tab>
         <Tab eventKey='overall-health' title={'Overall Health'} style={{backgroundColor: 'white'}}>
-          {!isLoading &&
+          {!isLoading && !isAreaChart && activeTab === "overall-health" &&
           <GenericBarWidget
             title={"Test counts for " + barchartParams.job_name}
             params={barchartParams}
@@ -168,11 +213,38 @@ export class JenkinsJobAnalysisView extends React.Component {
             sortOrder="ascending"
           />
           }
+          {!isLoading && isAreaChart && activeTab === "overall-health" &&
+          <GenericAreaWidget
+            title={"Test counts for " + barchartParams.job_name}
+            params={barchartParams}
+            hideDropdown={true}
+            getColors={this.getColors}
+            widgetEndpoint={'jenkins-bar-chart'}
+            height={180}
+            yLabel="Test counts"
+            xLabel="Build number"
+            sortOrder="ascending"
+            showTooltip={false}
+            colorScale={[
+              'var(--pf-global--warning-color--100)',
+              'var(--pf-global--danger-color--100)',
+              'var(--pf-global--success-color--100)',
+              'var(--pf-global--info-color--100)',
+            ]}
+            padding={{
+              bottom: 50,
+              left: 50,
+              right: 20,
+              top: 20
+            }}
+            fontSize={9}
+          />
+          }
         </Tab>
         <Tab eventKey='build-durations' title={'Build Duration'} style={{backgroundColor: 'white'}}>
-          {!isLoading &&
+          {!isLoading && activeTab === 'build-durations' &&
           <GenericAreaWidget
-            title={"Durations for " + barchartParams.job_name}
+            title={"Durations for " + linechartParams.job_name}
             params={linechartParams}
             hideDropdown={true}
             height={180}
@@ -183,6 +255,7 @@ export class JenkinsJobAnalysisView extends React.Component {
               top: 20
             }}
             fontSize={9}
+            showTooltip={true}
             sortOrder="ascending"
             xLabel="Build number"
             yLabel="Time [hrs]"
