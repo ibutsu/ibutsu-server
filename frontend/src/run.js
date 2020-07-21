@@ -38,6 +38,7 @@ import ReactJson from 'react-json-view';
 
 import { Settings } from './settings';
 import {
+  buildParams,
   buildUrl,
   cleanPath,
   convertDate,
@@ -47,6 +48,7 @@ import {
   resultToClassificationRow,
   round
 } from './utilities';
+import { OPERATIONS } from './constants';
 import {
   FilterTable,
   MultiClassificationDropdown,
@@ -130,7 +132,9 @@ export class Run extends React.Component {
       isError: false,
       resultsTree: {core: {data: []}},
       treeData: [],
-      includeSkipped: false
+      includeSkipped: false,
+      classificationFilters: {'metadata.run': {op: 'eq', val: props.match.params.id},
+                              'result': {op: 'in', val: 'failed;error'}},
     };
     this.refreshClassificationResults = this.refreshClassificationResults.bind(this);
     this.onClassificationCollapse = this.onClassificationCollapse.bind(this);
@@ -347,8 +351,45 @@ export class Run extends React.Component {
     });
   }
 
+  updateClassificationFilters(name, operator, value, callback) {
+    let filters = this.state.classificationFilters;
+    if (!value) {
+      delete filters[name];
+    }
+    else {
+      filters[name] = {'op': operator, 'val': value};
+    }
+    this.setState({classificationFilters: filters, page: 1}, callback);
+  }
+
+  setClassificationFilter = (field, value) => {
+    this.updateClassificationFilters(field, 'eq', value, () => {
+      this.refreshClassificationResults();
+    })
+  };
+
+
+  removeClassificationFilter = id => {
+    console.log(id);
+    if (id === "metadata.exception_name") {   // only remove exception_name filter
+      this.updateClassificationFilters(id, null, null, () => {
+        this.setState({page: 1}, this.refreshClassificationResults);
+      });
+    }
+  }
+
   onSkipCheck = (checked) => {
-    this.setState({includeSkipped: checked}, this.refreshClassificationResults);
+    let { classificationFilters } = this.state;
+    if (checked) {
+      classificationFilters["result"]["val"] += ";skipped"
+    }
+    else {
+      classificationFilters["result"]["val"] = "failed;error"
+    }
+    this.setState(
+      {includeSkipped: checked, classificationFilters},
+      this.refreshClassificationResults
+    );
   }
 
   getSelectedResults = () => {
@@ -392,20 +433,28 @@ export class Run extends React.Component {
   }
 
   getResultsForClassificationTable() {
+    const filters = this.state.classificationFilters;
     this.setState({classification_rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
     // get only failed results
-    let params = {filter: 'metadata.run=' + this.state.id + ',result*failed;error'};
-    if (this.state.includeSkipped) {
-      params['filter'] += ';skipped';
-    }
+    let params = buildParams(filters);
+    params['filter'] = [];
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
+    // Convert UI filters to API filters
+    for (let key in filters) {
+      if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key]) {
+        let val = filters[key]['val'];
+        const op = OPERATIONS[filters[key]['op']];
+        params.filter.push(key + op + val);
+      }
+    }
+
     this.setState({classification_rows: [['Loading...', '', '', '', '']]});
     fetch(buildUrl(Settings.serverUrl + '/result', params))
       .then(response => response.json())
       .then(data => this.setState({
           classification_results: data.results,
-          classification_rows: data.results.map((result, index) => resultToClassificationRow(result, index)).flat(),
+          classification_rows: data.results.map((result, index) => resultToClassificationRow(result, index, this.setClassificationFilter)).flat(),
           page: data.pagination.page,
           pageSize: data.pagination.pageSize,
           totalItems: data.pagination.totalItems,
@@ -787,6 +836,8 @@ export class Run extends React.Component {
                     canSelectAll={true}
                     onRowSelect={this.onClassificationTableRowSelect}
                     variant={TableVariant.compact}
+                    activeFilters={this.state.classificationFilters}
+                    onRemoveFilter={this.removeClassificationFilter}
                   />
                 </CardBody>
               </Card>
