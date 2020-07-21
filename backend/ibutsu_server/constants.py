@@ -2,6 +2,7 @@ ALLOWED_TRUE_BOOLEANS = ["y", "t", "1"]
 HEATMAP_MAX_BUILDS = 40  # max for number of builds that are possible to display in heatmap
 COUNT_TIMEOUT = 0.5  # timeout for counting the number of documents [s]
 MAX_DOCUMENTS = 100000  # max documents for pagination, when apply_max=True
+JJV_RUN_LIMIT = 8000  # max runs from which to aggregate Jenkins Jobs
 WIDGET_TYPES = {
     "jenkins-heatmap": {
         "id": "jenkins-heatmap",
@@ -98,6 +99,11 @@ WIDGET_TYPES = {
             {
                 "name": "page_size",
                 "description": "Number of builds on each page",
+                "type": "integer",
+            },
+            {
+                "name": "run_limit",
+                "description": "Limit on runs from which to aggregate jenkins jobs",
                 "type": "integer",
             },
         ],
