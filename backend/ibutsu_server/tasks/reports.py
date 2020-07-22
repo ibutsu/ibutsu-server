@@ -205,10 +205,9 @@ def _make_dict(results):
     report_dict = {}
     for result in results:
         result_path = _make_result_path(result)
-        if result.get("duration"):
+        if result.get("duration") and result.get("start_time"):
             finish_time = result["start_time"] + result["duration"]
         else:
-            # finish_time = result["start time"]
             finish_time = None
         result_id = result.get("id") or str(result["_id"])
         report_dict[result_id] = {
@@ -219,7 +218,7 @@ def _make_dict(results):
             "qa_contact": _get_value(result, "metadata", "qa_contact"),
             "stream": _get_value(result, "metadata", "stream"),
             "finish_time": finish_time,
-            "start_time": result["start_time"],
+            "start_time": _get_value(result, "start_time"),
             "source": result["source"],
             "duration": result.get("duration", 0),
             "params": _get_value(result, "parameters"),
