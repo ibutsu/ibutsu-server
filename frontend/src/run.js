@@ -8,7 +8,6 @@ import {
   Card,
   CardHeader,
   CardBody,
-  Checkbox,
   DataList,
   DataListCell,
   DataListItem,
@@ -28,30 +27,23 @@ import {
   Text,
   TextInput
 } from '@patternfly/react-core';
-import {
-  TableVariant,
-  expandable
-} from '@patternfly/react-table';
 import { CatalogIcon, ChevronRightIcon, CodeIcon, InfoCircleIcon, MessagesIcon, RepositoryIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import ReactJson from 'react-json-view';
 
 import { Settings } from './settings';
 import {
-  buildParams,
   buildUrl,
   cleanPath,
   convertDate,
   getSpinnerRow,
   processPyTestPath,
   resultToRow,
-  resultToClassificationRow,
   round
 } from './utilities';
-import { OPERATIONS } from './constants';
 import {
   FilterTable,
-  MultiClassificationDropdown,
+  ClassifyFailuresTable,
   ResultView,
   TabTitle
 } from './components';
@@ -114,11 +106,8 @@ export class Run extends React.Component {
       id: props.match.params.id,
       testResult: null,
       columns: ['Test', 'Run', 'Result', 'Duration', 'Started'],
-      classification_columns: [{title: 'Test', cellFormatters: [expandable]}, 'Result', 'Exception Name', 'Classification', 'Duration'],
       rows: [getSpinnerRow(5)],
-      classification_rows: [getSpinnerRow(5)],
       results: [],
-      classification_results: [],
       selectedResults: [],
       cursor: null,
       filteredTree: {},
@@ -132,12 +121,7 @@ export class Run extends React.Component {
       isError: false,
       resultsTree: {core: {data: []}},
       treeData: [],
-      includeSkipped: false,
-      classificationFilters: {'metadata.run': {op: 'eq', val: props.match.params.id},
-                              'result': {op: 'in', val: 'failed;error'}},
     };
-    this.refreshClassificationResults = this.refreshClassificationResults.bind(this);
-    this.onClassificationCollapse = this.onClassificationCollapse.bind(this);
   }
 
   buildTree(results) {
@@ -271,9 +255,15 @@ export class Run extends React.Component {
       this.getResultsForTree(1);
     }
     else if (tabIndex === 'classify-failures') {
-      this.getResultsForClassificationTable();
+      this.getClassificationTable();
     }
   }
+
+  getClassificationTable = () => {
+    this.setState({classificationTable: <ClassifyFailuresTable filters={ {'metadata.run': {op: 'eq', val: this.state.id}} }/>});
+  }
+
+
 
   onToggle = (node) => {
     if (node.result) {
@@ -316,93 +306,6 @@ export class Run extends React.Component {
     this.getResultsForTable();
   }
 
-  refreshClassificationResults = () => {
-    this.setState({selectedResults: []});
-    this.getResultsForClassificationTable();
-  }
-
-  onClassificationTableRowSelect = (event, isSelected, rowId) => {
-    let classification_rows;
-    if (rowId === -1) {
-      classification_rows = this.state.classification_rows.map(oneRow => {
-        oneRow.selected = isSelected;
-        return oneRow;
-      });
-    }
-    else {
-      classification_rows = [...this.state.classification_rows];
-      classification_rows[rowId].selected = isSelected;
-    }
-    this.setState({
-      classification_rows,
-    });
-    this.getSelectedResults();
-  }
-
-  setClassificationPage = (_event, pageNumber) => {
-    this.setState({page: pageNumber}, () => {
-      this.getResultsForClassificationTable();
-    });
-  }
-
-  classificationPageSizeSelect = (_event, perPage) => {
-    this.setState({pageSize: perPage}, () => {
-      this.getResultsForClassificationTable();
-    });
-  }
-
-  updateClassificationFilters(name, operator, value, callback) {
-    let filters = this.state.classificationFilters;
-    if (!value) {
-      delete filters[name];
-    }
-    else {
-      filters[name] = {'op': operator, 'val': value};
-    }
-    this.setState({classificationFilters: filters, page: 1}, callback);
-  }
-
-  setClassificationFilter = (field, value) => {
-    this.updateClassificationFilters(field, 'eq', value, () => {
-      this.refreshClassificationResults();
-    })
-  };
-
-
-  removeClassificationFilter = id => {
-    console.log(id);
-    if (id === "metadata.exception_name") {   // only remove exception_name filter
-      this.updateClassificationFilters(id, null, null, () => {
-        this.setState({page: 1}, this.refreshClassificationResults);
-      });
-    }
-  }
-
-  onSkipCheck = (checked) => {
-    let { classificationFilters } = this.state;
-    if (checked) {
-      classificationFilters["result"]["val"] += ";skipped"
-    }
-    else {
-      classificationFilters["result"]["val"] = "failed;error"
-    }
-    this.setState(
-      {includeSkipped: checked, classificationFilters},
-      this.refreshClassificationResults
-    );
-  }
-
-  getSelectedResults = () => {
-    const { classification_results, classification_rows } = this.state;
-    let selectedResults = [];
-    for (const [index, row] of classification_rows.entries()) {
-      if (row.selected && row.parent == null) {  // rows with a parent attr are the child rows
-        selectedResults.push(classification_results[index / 2]);  // divide by 2 to convert row index to result index
-      }
-    }
-    this.setState({selectedResults});
-  }
-
   getRun() {
     fetch(Settings.serverUrl + '/run/' + this.state.id)
       .then(response => response.json())
@@ -425,41 +328,6 @@ export class Run extends React.Component {
           totalItems: data.pagination.totalItems,
           totalPages: data.pagination.totalPages,
           isEmpty: data.pagination.totalItems === 0
-      }))
-      .catch((error) => {
-        console.error('Error fetching result data:', error);
-        this.setState({rows: [], isEmpty: false, isError: true});
-      });
-  }
-
-  getResultsForClassificationTable() {
-    const filters = this.state.classificationFilters;
-    this.setState({classification_rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
-    // get only failed results
-    let params = buildParams(filters);
-    params['filter'] = [];
-    params['pageSize'] = this.state.pageSize;
-    params['page'] = this.state.page;
-    // Convert UI filters to API filters
-    for (let key in filters) {
-      if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key]) {
-        let val = filters[key]['val'];
-        const op = OPERATIONS[filters[key]['op']];
-        params.filter.push(key + op + val);
-      }
-    }
-
-    this.setState({classification_rows: [['Loading...', '', '', '', '']]});
-    fetch(buildUrl(Settings.serverUrl + '/result', params))
-      .then(response => response.json())
-      .then(data => this.setState({
-          classification_results: data.results,
-          classification_rows: data.results.map((result, index) => resultToClassificationRow(result, index, this.setClassificationFilter)).flat(),
-          page: data.pagination.page,
-          pageSize: data.pagination.pageSize,
-          totalItems: data.pagination.totalItems,
-          totalPages: data.pagination.totalPages,
-          isEmpty: data.pagination.totalItems === 0,
       }))
       .catch((error) => {
         console.error('Error fetching result data:', error);
@@ -506,19 +374,11 @@ export class Run extends React.Component {
     }
   }
 
-  onClassificationCollapse(event, rowIndex, isOpen) {
-    const { classification_rows } = this.state;
-    classification_rows[rowIndex].isOpen = isOpen;
-    this.setState({
-      classification_rows
-    });
-  }
-
 
   render() {
     let passed = 0, failed = 0, errors = 0, skipped = 0;
     let created = 0;
-    const { run, columns, rows, classification_columns, classification_rows, selectedResults, includeSkipped } = this.state;
+    const { run, columns, rows, classificationTable } = this.state;
     if (run.start_time) {
       created = new Date(run.start_time * 1000);
     }
@@ -799,48 +659,7 @@ export class Run extends React.Component {
               </Card>
             </Tab>
             <Tab eventKey={'classify-failures'} title={<TabTitle icon={MessagesIcon} text="Classify Failures" />} style={{backgroundColor: "white"}}>
-              <Card className="pf-u-mt-lg">
-                <CardHeader>
-                  <Flex style={{ width: '100%' }}>
-                    <FlexItem grow={{ default: 'grow' }}>
-                      <TextContent>
-                        <Text component="h2" className="pf-c-title pf-m-xl">Test Failures</Text>
-                      </TextContent>
-                    </FlexItem>
-                    <FlexItem>
-                      <TextContent>
-                        <Checkbox id="include-skips" label="Include skips" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={this.onSkipCheck}/>
-                      </TextContent>
-                    </FlexItem>
-                    <FlexItem>
-                      <MultiClassificationDropdown selectedResults={selectedResults} refreshFunc={this.refreshClassificationResults}/>
-                    </FlexItem>
-                    <FlexItem>
-                      <Button variant="secondary" onClick={this.refreshClassificationResults}>Refresh results</Button>
-                    </FlexItem>
-                    <FlexItem>
-                      <Link to={`/results?metadata.run[eq]=${run.id}`} className="pf-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
-                    </FlexItem>
-                  </Flex>
-                </CardHeader>
-                <CardBody>
-                  <FilterTable
-                    columns={classification_columns}
-                    rows={classification_rows}
-                    pagination={pagination}
-                    isEmpty={this.state.isEmpty}
-                    isError={this.state.isError}
-                    onCollapse={this.onClassificationCollapse}
-                    onSetPage={this.setClassificationPage}
-                    onSetPageSize={this.classificationPageSizeSelect}
-                    canSelectAll={true}
-                    onRowSelect={this.onClassificationTableRowSelect}
-                    variant={TableVariant.compact}
-                    activeFilters={this.state.classificationFilters}
-                    onRemoveFilter={this.removeClassificationFilter}
-                  />
-                </CardBody>
-              </Card>
+              {classificationTable}
             </Tab>
             <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: "white"}}>
               <Card>
