@@ -41,6 +41,7 @@ export class JenkinsHeatmapWidget extends React.Component {
       data: {heatmap: {}},
       isLoading: true,
       analysisViewId: null,
+      countSkips: 'Yes',
     };
   }
 
@@ -156,6 +157,13 @@ export class JenkinsHeatmapWidget extends React.Component {
     this.getHeatmap();
   }
 
+  onSkipSelect = (value) => {
+    this.setState({countSkips: value}, () => {
+      this.props.params.count_skips = (value === 'Yes');
+      this.getHeatmap();
+    });
+  }
+
   render() {
     const xLabels = [<ChartLineIcon key={0} />];
     const yLabels = [];
@@ -208,6 +216,12 @@ export class JenkinsHeatmapWidget extends React.Component {
             handleSelect={this.onBuildSelect}
             defaultValue={this.params.builds}
             tooltip={"Set no. of builds to:"}
+          />
+          <ParamDropdown
+            dropdownItems={['Yes', 'No']}
+            handleSelect={this.onSkipSelect}
+            defaultValue={this.state.countSkips}
+            tooltip="Count skips as failure"
           />
         </CardFooter>
         }

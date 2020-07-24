@@ -37,8 +37,6 @@ export class JenkinsJobAnalysisView extends React.Component {
         };
       }
     }
-    this.getWidgetParams = this.getWidgetParams.bind(this);
-    this.onBuildSelect = this.onBuildSelect.bind(this);
     this.state = {
       isAreaChart: false,
       isEmpty: true,
@@ -51,6 +49,7 @@ export class JenkinsJobAnalysisView extends React.Component {
       heatmapParams: {},
       barchartParams: {},
       linechartParams: {},
+      countSkips: 'Yes'
     };
   }
 
@@ -60,7 +59,7 @@ export class JenkinsJobAnalysisView extends React.Component {
     });
   }
 
-  getWidgetParams() {
+  getWidgetParams = () => {
     // Show a spinner
     this.setState({isLoading: true, isEmpty: false, isError: false});
     if (!this.props.view) {
@@ -81,6 +80,7 @@ export class JenkinsJobAnalysisView extends React.Component {
     fetch(buildUrl(Settings.serverUrl + '/widget/' + this.props.view.widget, params))
       .then(response => response.json())
       .then(data => {
+        data.heatmap_params['count_skips'] = (this.state.countSkips === 'Yes');
         this.setState({
           heatmapParams: data.heatmap_params,
           barchartParams: data.barchart_params,
@@ -101,6 +101,12 @@ export class JenkinsJobAnalysisView extends React.Component {
     });
   }
 
+  onSkipSelect = (value) => {
+    this.setState({countSkips: value}, () => {
+      this.getWidgetParams();
+    });
+  }
+
   getBarWidth() {
     const numBars = this.state.builds;
     let barWidth = 8;
@@ -115,7 +121,7 @@ export class JenkinsJobAnalysisView extends React.Component {
     this.setState({barWidth})
   }
 
-  getDropdown() {
+  getBuildsDropdown() {
     const { activeTab } = this.state;
     let dropdownItems = [10, 20, 30, 40]
     let defaultValue = this.state.builds;
@@ -177,8 +183,19 @@ export class JenkinsJobAnalysisView extends React.Component {
     return (
       <React.Fragment>
         <div style={{backgroundColor: 'white', float: 'right', clear: 'right', marginBottom: '-2em', padding: '0.2em 1em', width: '20em'}}>
-          {this.getDropdown()}
+          {this.getBuildsDropdown()}
         </div>
+        {activeTab === 'heatmap' &&
+        <div style={{backgroundColor: 'white', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em', width: '29em'}}>
+          <ParamDropdown
+            dropdownItems={['Yes', 'No']}
+            defaultValue={this.state.countSkips}
+            direction={DropdownDirection.down}
+            handleSelect={this.onSkipSelect}
+            tooltip="Count skips as failure"
+          />
+        </div>
+        }
         {activeTab === 'overall-health' &&
         <div style={{backgroundColor: 'white', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em', width: '15em'}}>
           {this.getSwitch()}
