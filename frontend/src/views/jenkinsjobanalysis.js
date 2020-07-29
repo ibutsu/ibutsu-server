@@ -192,7 +192,7 @@ export class JenkinsJobAnalysisView extends React.Component {
             defaultValue={this.state.countSkips}
             direction={DropdownDirection.down}
             handleSelect={this.onSkipSelect}
-            tooltip="Count skips as failure"
+            tooltip="Count skips as failure:"
           />
         </div>
         }
