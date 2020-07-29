@@ -343,6 +343,7 @@ class App extends React.Component {
                 <TextListItem component="dd"><a href="https://docs.ibutsu-project.org/" target="_blank" rel="noopener noreferrer">docs.ibutsu-project.org</a></TextListItem>
                 <TextListItem component="dt">Report bugs</TextListItem>
                 <TextListItem component="dd"><a href="https://github.com/ibutsu/ibutsu-server/issues/new" target="_blank" rel="noopener noreferrer">Submit an upstream issue</a></TextListItem>
+                <TextListItem component="dd"><a href="https://issues.redhat.com/secure/CreateIssue.jspa?pid=12324624&issuetype=1" target="_blank" rel="noopener noreferrer">Submit a JIRA issue</a></TextListItem>
               </TextList>
             </TextContent>
             <p style={{marginTop: 260}}>* Note: artifact files (screenshots, logs) are retained for 3 months</p>
