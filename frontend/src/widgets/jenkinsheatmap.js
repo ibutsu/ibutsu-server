@@ -221,7 +221,7 @@ export class JenkinsHeatmapWidget extends React.Component {
             dropdownItems={['Yes', 'No']}
             handleSelect={this.onSkipSelect}
             defaultValue={this.state.countSkips}
-            tooltip="Count skips as failure"
+            tooltip="Count skips as failure:"
           />
         </CardFooter>
         }
