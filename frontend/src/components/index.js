@@ -1,4 +1,5 @@
 export { ClassificationDropdown, MultiClassificationDropdown } from './classification-dropdown';
+export { ClassifyFailuresTable } from './classify-failures';
 export { FileUpload } from './fileupload';
 export { FilterTable } from './filtertable';
 export { ParamDropdown } from './widget-components';
