@@ -6,19 +6,26 @@ from dynaconf import FlaskDynaconf
 from flask import redirect
 from flask import request
 from flask_cors import CORS
+
+from ibutsu_server.db.base import db
 from ibutsu_server.encoder import JSONEncoder
+from ibutsu_server.tasks.queues import create_celery_app
 
 FRONTEND_PATH = Path("/app/frontend")
 
 
 def get_app():
+    """Create the WSGI application"""
+
     app = App(__name__, specification_dir="./openapi/")
+    create_celery_app(app.app)
     app.app.json_encoder = JSONEncoder
     app.add_api(
         "openapi.yaml", arguments={"title": "Ibutsu"}, base_path="/api", pythonic_params=True
     )
     CORS(app.app)
     FlaskDynaconf(app.app)
+    db.init_app(app.app)
 
     @app.route("/")
     def index():

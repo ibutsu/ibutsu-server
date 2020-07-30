@@ -4,20 +4,15 @@ from datetime import timedelta
 
 from bson import ObjectId
 from bson.errors import InvalidId
-from dynaconf import settings
 from ibutsu_server.mongo import mongo
-from ibutsu_server.tasks.queues import task
+from ibutsu_server.tasks import task, lock
 from ibutsu_server.tasks.results import add_result_start_time
 from ibutsu_server.tasks.runs import update_run as update_run_task
 from ibutsu_server.util import serialize
 from kombu.exceptions import OperationalError
 from pymongo import DESCENDING
-from redis import Redis
-from redis.exceptions import LockError
 
 """ Tasks for DB related things"""
-
-LOCK_EXPIRE = 1
 
 
 @task
@@ -59,30 +54,23 @@ def add_start_time_to_results():
 @task
 def _add_project_metadata(run, project_id):
     """ Update all runs and results to add the 'metadata.project' field"""
+    with lock(f"update-run-lock-{run['id']}"):
+        # add project metadata to the run
+        if not run.get("metadata"):
+            run["metadata"] = {}
+        run["metadata"]["project"] = project_id
+        mongo.runs.replace_one({"_id": ObjectId(run["id"])}, run)
 
-    redis_client = Redis.from_url(settings["CELERY_BROKER_URL"])
-    try:
-        # Get a lock so that we don't run this task concurrently
-        with redis_client.lock(f"update-run-lock-{run['id']}", blocking_timeout=LOCK_EXPIRE):
-            # add project metadata to the run
-            if not run.get("metadata"):
-                run["metadata"] = {}
-            run["metadata"]["project"] = project_id
-            mongo.runs.replace_one({"_id": ObjectId(run["id"])}, run)
-
-            results = mongo.results.find(
-                {"metadata.run": run["id"], "metadata.project": {"$exists": False}}
-            )
-            for result in results:
-                result = serialize(result)
-                # add project metadata to the result
-                if not result.get("metadata"):
-                    result["metadata"] = {}
-                result["metadata"]["project"] = project_id
-                mongo.results.replace_one({"_id": ObjectId(result["id"])}, result)
-    except LockError:
-        # If this task is locked, discard it so that it doesn't clog up the system
-        pass
+        results = mongo.results.find(
+            {"metadata.run": run["id"], "metadata.project": {"$exists": False}}
+        )
+        for result in results:
+            result = serialize(result)
+            # add project metadata to the result
+            if not result.get("metadata"):
+                result["metadata"] = {}
+            result["metadata"]["project"] = project_id
+            mongo.results.replace_one({"_id": ObjectId(result["id"])}, result)
 
 
 @task
@@ -108,17 +96,11 @@ def add_project_metadata_to_objects(project_name="insights-qe"):
 def _delete_old_files(filename, max_date):
     """ Delete all files uploaded before the max_date """
     try:
-        redis_client = Redis.from_url(settings["CELERY_BROKER_URL"])
         if not isinstance(max_date, datetime):
             max_date = datetime.fromisoformat(max_date)
-        try:
-            # Get a lock so that we don't run this task concurrently
-            with redis_client.lock(f"delete-file-lock-{filename}", blocking_timeout=LOCK_EXPIRE):
-                for file in mongo.fs.find({"filename": filename, "uploadDate": {"$lt": max_date}}):
-                    mongo.fs.delete(file._id)
-        except LockError:
-            # If this task is locked, discard it so that it doesn't clog up the system
-            pass
+        with lock(f"delete-file-lock-{filename}"):
+            for file in mongo.fs.find({"filename": filename, "uploadDate": {"$lt": max_date}}):
+                mongo.fs.delete(file._id)
     except Exception:
         # we don't want to continually retry this task
         return
@@ -162,15 +144,9 @@ def delete_large_files(limit=256 * 1024):
             # we don't want to remove files smaller than 256 KiB
             return
 
-        redis_client = Redis.from_url(settings["CELERY_BROKER_URL"])
-        try:
-            # Get a lock so that we don't run this task concurrently
-            with redis_client.lock(f"delete-file-lock-{limit}", blocking_timeout=LOCK_EXPIRE):
-                for file in mongo.fs.find({"length": {"$gt": limit}, "filename": "iqe.log"}):
-                    mongo.fs.delete(file._id)
-        except LockError:
-            # If this task is locked, discard it so that it doesn't clog up the system
-            pass
+        with lock(f"delete-file-lock-{limit}"):
+            for file in mongo.fs.find({"length": {"$gt": limit}, "filename": "iqe.log"}):
+                mongo.fs.delete(file._id)
     except Exception:
         # we don't want to continually retry this task
         return

@@ -1,13 +1,10 @@
 import connexion
-from bson import ObjectId
 from ibutsu_server.constants import WIDGET_TYPES
-from ibutsu_server.filters import generate_filter_object
-from ibutsu_server.mongo import mongo
-from ibutsu_server.util import merge_dicts
-from ibutsu_server.util import serialize
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import WidgetConfig
+from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import get_project_id
-from pymongo import ASCENDING
-from pymongo.errors import OperationFailure
+from sqlalchemy import or_
 
 
 def add_widget_config(widget_config=None):
@@ -20,21 +17,22 @@ def add_widget_config(widget_config=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    widget_config = connexion.request.json
-    if widget_config["widget"] not in WIDGET_TYPES.keys():
+    data = connexion.request.json
+    if data["widget"] not in WIDGET_TYPES.keys():
         return "Bad request, widget type does not exist", 400
     # add default weight of 10
-    if not widget_config.get("weight"):
-        widget_config["weight"] = 10
+    if not data.get("weight"):
+        data["weight"] = 10
     # Look up the project id
-    if widget_config.get("project"):
-        widget_config["project"] = get_project_id(widget_config["project"])
+    if data.get("project"):
+        data["project"] = get_project_id(data["project"])
     # default to make views navigable
-    if widget_config.get("type") == "view" and not widget_config.get("navigable"):
-        widget_config["navigable"] = "true"
-    mongo.widget_config.insert_one(widget_config)
-    widget_config = serialize(widget_config)
-    return widget_config, 201
+    if data.get("type") == "view" and not data.get("navigable"):
+        data["navigable"] = "true"
+    widget_config = WidgetConfig.from_dict(data)
+    session.add(widget_config)
+    session.commit()
+    return widget_config.to_dict(), 201
 
 
 def get_widget_config(id_):
@@ -45,8 +43,8 @@ def get_widget_config(id_):
 
     :rtype: Report
     """
-    widget_config = mongo.widget_config.find_one({"_id": ObjectId(id_)})
-    return serialize(widget_config)
+    widget_config = WidgetConfig.query.get(id_)
+    return widget_config.to_dict()
 
 
 def get_widget_config_list(filter_=None, page=1, page_size=25):
@@ -61,28 +59,24 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
 
     :rtype: ReportList
     """
-    filters = {}
+    query = WidgetConfig.query
     if filter_:
         for filter_string in filter_:
-            filter_obj = generate_filter_object(filter_string)
-            if filter_obj:
-                filters.update(filter_obj)
-        # Update the project_id filter to account for unset project ids
-        if "project" in filters:
-            filters["$or"] = [
-                {"project": {"$exists": False}},
-                {"project": {"$eq": None}},
-                {"project": filters["project"]},
-            ]
-            del filters["project"]
+            if "project" in filter_string:
+                filter_clause = or_(
+                    WidgetConfig.data["project"].is_(None),
+                    convert_filter(filter_string, WidgetConfig),
+                )
+            else:
+                filter_clause = convert_filter(filter_string, WidgetConfig)
+            if filter_clause is not None:
+                query.filter(filter_clause)
     offset = (page * page_size) - page_size
-    total_items = mongo.widget_config.count({})
+    total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    widgets = mongo.widget_config.find(
-        filters, skip=offset, limit=page_size, sort=[("weight", ASCENDING)]
-    )
+    widgets = query.order_by(WidgetConfig.data["weight"].desc()).offset(offset).limit(page_size)
     return {
-        "widgets": [serialize(widget) for widget in widgets],
+        "widgets": [widget.to_dict() for widget in widgets],
         "pagination": {
             "page": page,
             "pageSize": page_size,
@@ -104,22 +98,23 @@ def update_widget_config(id_):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    widget_config = connexion.request.get_json()
-    if widget_config.get("widget") and widget_config["widget"] not in WIDGET_TYPES.keys():
+    data = connexion.request.get_json()
+    if data.get("widget") and data["widget"] not in WIDGET_TYPES.keys():
         return "Bad request, widget type does not exist", 400
     # Look up the project id
-    if widget_config.get("project"):
-        widget_config["project"] = get_project_id(widget_config["project"])
-    existing_widget_config = mongo.widget_config.find_one({"_id": ObjectId(id_)})
+    if data.get("project"):
+        data["project"] = get_project_id(data["project"])
+    widget_config = WidgetConfig.query.get(id_)
     # add default weight of 10
-    if not existing_widget_config.get("weight"):
-        existing_widget_config["weight"] = 10
+    if not widget_config.get("weight"):
+        widget_config["weight"] = 10
     # default to make views navigable
-    if widget_config.get("type") == "view" and not widget_config.get("navigable"):
-        widget_config["navigable"] = "true"
-    merge_dicts(existing_widget_config, widget_config)
-    mongo.widget_config.replace_one({"_id": ObjectId(id_)}, widget_config)
-    return serialize(widget_config)
+    if data.get("type") == "view" and not data.get("navigable"):
+        data["navigable"] = "true"
+    widget_config.update(data)
+    session.add(widget_config)
+    session.commit()
+    return widget_config.to_dict()
 
 
 def delete_widget_config(id_):
@@ -130,8 +125,10 @@ def delete_widget_config(id_):
 
     :rtype: tuple
     """
-    try:
-        mongo.widget_config.delete_one({"_id": ObjectId(id_)})
-        return "OK", 200
-    except OperationFailure:
+    widget_config = WidgetConfig.query.get(id_)
+    if not widget_config:
         return "Not Found", 404
+    else:
+        session.delete(widget_config)
+        session.commit()
+        return "OK", 200
