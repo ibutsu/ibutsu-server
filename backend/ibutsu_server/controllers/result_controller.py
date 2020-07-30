@@ -1,17 +1,14 @@
 import time
 
 import connexion
-from bson import ObjectId
 from func_timeout import func_timeout
 from func_timeout import FunctionTimedOut
 from ibutsu_server.constants import COUNT_TIMEOUT
 from ibutsu_server.constants import MAX_DOCUMENTS
-from ibutsu_server.filters import generate_filter_object
-from ibutsu_server.mongo import mongo
-from ibutsu_server.util import merge_dicts
-from ibutsu_server.util import serialize
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Result
+from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import get_project_id
-from pymongo import DESCENDING
 
 
 def add_result(result=None):
@@ -24,16 +21,17 @@ def add_result(result=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    result = connexion.request.get_json()
-    if result.get("metadata", {}).get("project"):
-        result["metadata"]["project"] = get_project_id(result["metadata"]["project"])
-    if "start_time" not in result:
-        if "starttime" in result:
-            result["start_time"] = result["starttime"]
+    result = Result(data=connexion.request.get_json())
+    if result.data.get("metadata", {}).get("project"):
+        result.data["metadata"]["project"] = get_project_id(result["metadata"]["project"])
+    if "start_time" not in result.data:
+        if "starttime" in result.data:
+            result.data["start_time"] = result.data["starttime"]
         else:
-            result["start_time"] = time.time()
-    mongo.results.insert_one(result)
-    return serialize(result), 201
+            result.data["start_time"] = time.time()
+    session.add(result)
+    session.commit()
+    return result.to_dict(), 201
 
 
 def get_result_list(filter_=None, page=1, page_size=25, apply_max=False):
@@ -83,20 +81,20 @@ def get_result_list(filter_=None, page=1, page_size=25, apply_max=False):
 
     :rtype: List[Result]
     """
-    filters = {}
+    query = Result.query
     if filter_:
         for filter_string in filter_:
-            filter_obj = generate_filter_object(filter_string)
-            if filter_obj:
-                filters.update(filter_obj)
+            filter_clause = convert_filter(filter_string, Result)
+            if filter_clause is not None:
+                query = query.filter(filter_clause)
     offset = (page * page_size) - page_size
     try:
         # if the count is fast, just use it! Even if apply_max is set to true
-        total_items = func_timeout(COUNT_TIMEOUT, mongo.results.count, args=(filters,))
+        total_items = func_timeout(COUNT_TIMEOUT, query.count)
     except FunctionTimedOut:
         if apply_max:
             print(
-                f"FunctionTimedOut: 'mongo.results.count' with args: {filters} timed out, "
+                f"FunctionTimedOut: 'query.count' with filters: {filter_} timed out, "
                 f"using default items of {MAX_DOCUMENTS}"
             )
             if offset > MAX_DOCUMENTS:
@@ -108,19 +106,16 @@ def get_result_list(filter_=None, page=1, page_size=25, apply_max=False):
             total_items = MAX_DOCUMENTS
         else:
             print(
-                f"FunctionTimedOut: 'mongo.results.count' with args: {filters} timed out, "
+                f"FunctionTimedOut: 'query.count' with args: {filter_} timed out, "
                 f"but limit_documents is set to False, proceeding"
             )
             # if we don't want to limit documents, just do the standard count
-            total_items = mongo.results.count(filters)
-
-    results = mongo.results.find(
-        filters, skip=offset, limit=page_size, sort=[("start_time", DESCENDING)]
-    )
+            total_items = query.count()
 
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
+    results = query.order_by(Result.data["start_time"].desc()).offset(offset).limit(page_size).all()
     return {
-        "results": [serialize(result) for result in results],
+        "results": [result.to_dict() for result in results],
         "pagination": {
             "page": page,
             "pageSize": page_size,
@@ -138,8 +133,8 @@ def get_result(id_):
 
     :rtype: Result
     """
-    result = mongo.results.find_one({"_id": ObjectId(id_)})
-    return serialize(result)
+    result = Result.query.get(id_)
+    return (result.to_dict(), 200) if result else ("Result not found", 404)
 
 
 def update_result(id_, result=None):
@@ -154,10 +149,13 @@ def update_result(id_, result=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    result = connexion.request.get_json()
-    if result.get("metadata", {}).get("project"):
-        result["metadata"]["project"] = get_project_id(result["metadata"]["project"])
-    existing_result = mongo.results.find_one({"_id": ObjectId(id_)})
-    merge_dicts(existing_result, result)
-    mongo.results.replace_one({"_id": ObjectId(id_)}, result)
-    return serialize(result)
+    result_dict = connexion.request.get_json()
+    if result_dict.get("metadata", {}).get("project"):
+        result_dict["metadata"]["project"] = get_project_id(result_dict["metadata"]["project"])
+    result = Result.query.get(id_)
+    if not result:
+        return "Result not found", 404
+    result.update(result_dict)
+    session.add(result)
+    session.commit()
+    return result.to_dict()

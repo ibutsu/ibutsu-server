@@ -1,14 +1,13 @@
-from dynaconf import settings
-from pymongo.errors import ConfigurationError
-from pymongo.errors import ConnectionFailure
-from pymongo.errors import InvalidURI
+from ibutsu_server.config import settings
+from sqlalchemy.exc import InterfaceError
+from sqlalchemy.exc import OperationalError
 
 try:
-    from ibutsu_server.mongo import mongo
+    from ibutsu_server.db.model import Result
 
-    HAS_MONGO = True
+    IS_CONNECTED = True
 except ImportError:
-    HAS_MONGO = False
+    IS_CONNECTED = False
 
 
 def get_health():
@@ -27,17 +26,15 @@ def get_database_health():
     response = ({"status": "Pending", "message": "Fetching service status"}, 200)
     # Try to connect to the database, and handle various responses
     try:
-        if not HAS_MONGO:
-            response = ({"status": "Error", "message": "Incomplete MongoDB configuration"}, 500)
+        if not IS_CONNECTED:
+            response = ({"status": "Error", "message": "Incomplete database configuration"}, 500)
         else:
-            mongo.results.find({}, limit=1)
+            Result.query.first()
             response = ({"status": "OK", "message": "Service is running"}, 200)
-    except ConnectionFailure:
-        response = ({"status": "Error", "message": "Unable to connect to MongoDB"}, 500)
-    except InvalidURI:
-        response = ({"status": "Error", "message": "Incorrect MongoDB connection URI"}, 500)
-    except ConfigurationError:
-        response = ({"status": "Error", "message": "Incorrect MongoDB configuration"}, 500)
+    except OperationalError:
+        response = ({"status": "Error", "message": "Unable to connect to the database"}, 500)
+    except InterfaceError:
+        response = ({"status": "Error", "message": "Incorrect connection configuration"}, 500)
     except Exception as e:
         response = ({"status": "Error", "message": str(e)}, 500)
     return response
