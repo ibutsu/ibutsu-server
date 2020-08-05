@@ -1,9 +1,10 @@
 from bson import ObjectId
 from ibutsu_server.mongo import mongo
-from pymongo.errors import OperationFailure
+from pymongo import DESCENDING
 
 NO_RUN_TEXT = "None"
 NO_PASS_RATE_TEXT = "Build failed"
+HEATMAP_RUN_LIMIT = 2000  # approximately no. plugins * 40 + wiggle room
 
 
 def _calculate_slope(x_data):
@@ -28,17 +29,36 @@ def _calculate_slope(x_data):
     return slope
 
 
-def _get_heatmap(job_name, build_number, builds, group_field, count_skips, project=None):
-    """Run the aggregation to get the Jenkins heatmap report"""
-    # Get the run IDs for the last 5 Jenkins builds
-    build_min = build_number - (builds - 1)
-    build_max = build_number + 1
-    build_range = [str(bnum) for bnum in range(build_min, build_max)]
+def _get_builds(job_name, builds, project=None):
+    """ Gets the number of unique builds in the DB """
     aggregation = [
         {
             "$match": {
                 "metadata.jenkins.job_name": job_name,
-                "metadata.jenkins.build_number": {"$in": build_range},
+                "metadata.jenkins.build_number": {"$exists": True},
+            }
+        },
+        {"$sort": {"start_time": DESCENDING}},
+        {"$limit": HEATMAP_RUN_LIMIT},
+        {"$group": {"_id": "$metadata.jenkins.build_number"}},
+        {"$sort": {"_id": DESCENDING}},
+        {"$limit": builds},
+    ]
+    if project:
+        aggregation[0]["$match"].update({"metadata.project": project})
+    builds = list(mongo.runs.aggregate(aggregation))
+    return [str(build["_id"]) for build in builds]
+
+
+def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
+    """Run the aggregation to get the Jenkins heatmap report"""
+    # Get the run IDs for the last 5 Jenkins builds
+    builds_in_db = _get_builds(job_name, builds, project)
+    aggregation = [
+        {
+            "$match": {
+                "metadata.jenkins.job_name": job_name,
+                "metadata.jenkins.build_number": {"$in": builds_in_db},
             }
         },
         {
@@ -55,7 +75,6 @@ def _get_heatmap(job_name, build_number, builds, group_field, count_skips, proje
 
     runs = [run for run in cursor]
     run_to_build = {str(run["_id"]): run["build_number"] for run in runs}
-    builds_in_db = list({val for val in run_to_build.values()})
     # Figure out the pass rates for each run
     fail_fields = ["$summary.errors", "$summary.failures"]
     if count_skips:
@@ -136,23 +155,7 @@ def get_jenkins_heatmap(
     job_name, builds, group_field, sort_field="starttime", count_skips=False, project=None
 ):
     """Generate JSON data for a heatmap of Jenkins runs"""
-    # Get latest build number
-    filters = {"metadata.jenkins.job_name": job_name}
-    if project:
-        filters.update({"metadata.project": project})
-    results = mongo.results.find(filters, sort=[(sort_field, -1)], limit=1)
-    build_number = int(results[0]["metadata"]["jenkins"]["build_number"])
-    try:
-        heatmap, builds_in_db = _get_heatmap(
-            job_name, build_number, builds, group_field, count_skips, project
-        )
-    except OperationFailure:
-        # Probably a divide by zero exception, roll back one on the build number and try again
-        build_number -= 1
-        heatmap, builds_in_db = _get_heatmap(
-            job_name, build_number, builds, group_field, count_skips, project
-        )
-
-    # do some postprocessing -- fill empty runs with null
+    heatmap, builds_in_db = _get_heatmap(job_name, builds, group_field, count_skips, project)
+    # do some postprocessing -- fill runs in which plugins failed to start with null
     heatmap = _pad_heatmap(heatmap, builds_in_db)
     return {"heatmap": heatmap}
