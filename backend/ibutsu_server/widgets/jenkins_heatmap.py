@@ -55,6 +55,7 @@ def _get_heatmap(job_name, build_number, builds, group_field, count_skips, proje
 
     runs = [run for run in cursor]
     run_to_build = {str(run["_id"]): run["build_number"] for run in runs}
+    builds_in_db = list({val for val in run_to_build.values()})
     # Figure out the pass rates for each run
     fail_fields = ["$summary.errors", "$summary.failures"]
     if count_skips:
@@ -103,10 +104,11 @@ def _get_heatmap(job_name, build_number, builds, group_field, count_skips, proje
         for run in aggr
         if run["_id"] is not None
     }
-    return heatmap, build_range
+    # get the build numbers that actually exist in the DB
+    return heatmap, builds_in_db
 
 
-def _pad_heatmap(heatmap, build_range):
+def _pad_heatmap(heatmap, builds_in_db):
     """Pad Jenkins runs that are not present with Null"""
     padded_dict = {}
     if not heatmap:
@@ -117,14 +119,15 @@ def _pad_heatmap(heatmap, build_range):
         run_list = heatmap[group][1:]
         padded_run_list = []
         completed_runs = {run[2]: run for run in run_list}
-        for build in build_range:
+        for build in builds_in_db:
             if build not in completed_runs.keys():
                 padded_run_list.append((NO_PASS_RATE_TEXT, NO_RUN_TEXT, build))
             else:
                 padded_run_list.append(completed_runs[build])
         # add the slope info back in
         padded_run_list.insert(0, heatmap[group][0])
-        # write to the padded_dict
+        # sort the list and then write to the padded_dict
+        padded_run_list.sort(key=lambda e: int(e[-1]))
         padded_dict[group] = padded_run_list
     return padded_dict
 
@@ -140,16 +143,16 @@ def get_jenkins_heatmap(
     results = mongo.results.find(filters, sort=[(sort_field, -1)], limit=1)
     build_number = int(results[0]["metadata"]["jenkins"]["build_number"])
     try:
-        heatmap, build_range = _get_heatmap(
+        heatmap, builds_in_db = _get_heatmap(
             job_name, build_number, builds, group_field, count_skips, project
         )
     except OperationFailure:
         # Probably a divide by zero exception, roll back one on the build number and try again
         build_number -= 1
-        heatmap, build_range = _get_heatmap(
+        heatmap, builds_in_db = _get_heatmap(
             job_name, build_number, builds, group_field, count_skips, project
         )
 
     # do some postprocessing -- fill empty runs with null
-    heatmap = _pad_heatmap(heatmap, build_range)
+    heatmap = _pad_heatmap(heatmap, builds_in_db)
     return {"heatmap": heatmap}
