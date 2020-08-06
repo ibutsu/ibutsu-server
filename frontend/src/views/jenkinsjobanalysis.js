@@ -186,7 +186,7 @@ export class JenkinsJobAnalysisView extends React.Component {
           {this.getBuildsDropdown()}
         </div>
         {activeTab === 'heatmap' &&
-        <div style={{backgroundColor: 'white', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em', width: '29em'}}>
+        <div style={{backgroundColor: 'white', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em', width: '30em'}}>
           <ParamDropdown
             dropdownItems={['Yes', 'No']}
             defaultValue={this.state.countSkips}
