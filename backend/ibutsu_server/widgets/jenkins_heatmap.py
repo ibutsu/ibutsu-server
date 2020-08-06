@@ -40,14 +40,19 @@ def _get_builds(job_name, builds, project=None):
         },
         {"$sort": {"start_time": DESCENDING}},
         {"$limit": HEATMAP_RUN_LIMIT},
-        {"$group": {"_id": "$metadata.jenkins.build_number"}},
-        {"$sort": {"_id": DESCENDING}},
+        {
+            "$group": {
+                "_id": "$metadata.jenkins.build_number",
+                "start_time": {"$min": "$start_time"},
+            }
+        },
+        {"$sort": {"start_time": DESCENDING}},
         {"$limit": builds},
     ]
     if project:
         aggregation[0]["$match"].update({"metadata.project": project})
     builds = list(mongo.runs.aggregate(aggregation))
-    return [str(build["_id"]) for build in builds]
+    return [build["_id"] for build in builds]
 
 
 def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
