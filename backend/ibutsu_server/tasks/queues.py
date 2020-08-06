@@ -24,7 +24,7 @@ app = Celery(
         "ibutsu_server.tasks.runs",
     ],
 )
-app.config_from_object(settings)
+app.conf.result_backend = settings.get("CELERY_RESULT_BACKEND")
 app.Task = IbutsuTask
 # Shortcut for the decorator
 task = app.task
