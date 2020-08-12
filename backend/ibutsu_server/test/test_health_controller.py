@@ -15,7 +15,7 @@ class TestHealthController(BaseTestCase):
 
         Get a health report for the database
         """
-        with patch("ibutsu_server.controllers.health_controller.mongo"):
+        with patch("ibutsu_server.controllers.health_controller.Result"):
             headers = {"Accept": "application/json"}
             response = self.client.open("/api/health/database", method="GET", headers=headers)
             self.assert200(response, "Response body is : " + response.data.decode("utf-8"))

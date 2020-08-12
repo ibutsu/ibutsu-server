@@ -95,13 +95,13 @@ def _set_report_status(report_id, status):
 
 
 def _set_report_done(report):
-    """Set a report's status to "done" and write it to Mongo"""
+    """Set a report's status to "done" and write it to the database"""
     _set_report_status(report["id"], "done")
 
 
 def _set_report_empty(report):
     """
-    Set a report's status to "empty" and write it to Mongo. This could happen if e.g. filters
+    Set a report's status to "empty" and write it to the database. This could happen if e.g. filters
     are incorrect.
     """
     _set_report_status(report["id"], "empty")
@@ -345,7 +345,7 @@ def generate_csv_report(report):
     results.rewind()
     for result in results:
         csv_writer.writerow(_make_row(serialize(result)))
-    # Write the report to MongoDB GridFS
+    # Write the report to the database
     csv_file.seek(0)
     report_file = ReportFile(
         data={
@@ -394,7 +394,7 @@ def generate_text_report(report):
     for result in results:
         result_path = _make_result_path(result)
         text_file.write("{}: {}\n".format(result_path, result["result"]))
-    # Write the report to MongoDB GridFS
+    # Write the report to the database
     text_file.seek(0)
     report_file = ReportFile(
         data={
@@ -417,7 +417,7 @@ def generate_json_report(report):
         _set_report_empty(report)
         return
     report_dict = _make_dict(results)
-    # Write the report to MongoDB GridFS
+    # Write the report to the database
     report_file = ReportFile(
         data={
             "filename": report["filename"],
@@ -481,7 +481,7 @@ def generate_html_report(report):
 def generate_exception_report(report):
     """Generate a text report"""
     _update_report(report)
-    # TODO speed up with mongo filtering
+    # TODO speed up with filtering
     # join with original filter in deepcopied report
     results = _get_results(report)
     if not results:
@@ -537,7 +537,7 @@ def generate_exception_report(report):
         counts=counts,
         current_counts=counts,
     )
-    # Write the report to MongoDB GridFS
+    # Write the report to the database
     report_file = ReportFile(
         data={
             "filename": report["filename"],

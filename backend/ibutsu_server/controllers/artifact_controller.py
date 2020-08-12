@@ -104,13 +104,12 @@ def upload_artifact(body):
 
     :rtype: tuple
     """
+    print(body)
     result_id = body.get("result_id")
     filename = body.get("filename")
     additional_metadata = body.get("additional_metadata", {})
     file_ = connexion.request.files["file"]
     content_type = magic.from_buffer(file_.read())
-    # Reset the file pointer
-    file_.seek(0)
     data = {"contentType": content_type, "resultId": result_id, "filename": filename}
     if additional_metadata:
         if isinstance(additional_metadata, str):
@@ -121,9 +120,13 @@ def upload_artifact(body):
         if not isinstance(additional_metadata, dict):
             return "Bad request, additionalMetadata is not a JSON object", 400
         data["additionalMetadata"] = additional_metadata
+    # Reset the file pointer
+    file_.seek(0)
     artifact = Artifact(data=data, content=file_.read())
     session.add(artifact)
     session.commit()
+    print(artifact.to_dict())
+    print(artifact.content)
     return artifact.to_dict(), 201
 
 

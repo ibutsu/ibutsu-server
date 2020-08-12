@@ -9,7 +9,7 @@ from flask_cors import CORS
 
 from ibutsu_server.db.base import db
 from ibutsu_server.encoder import JSONEncoder
-from ibutsu_server.tasks.queues import create_celery_app
+from ibutsu_server.tasks import create_celery_app
 
 FRONTEND_PATH = Path("/app/frontend")
 
@@ -26,6 +26,9 @@ def get_app():
     CORS(app.app)
     FlaskDynaconf(app.app)
     db.init_app(app.app)
+
+    with app.app.app_context():
+        db.create_all()
 
     @app.route("/")
     def index():

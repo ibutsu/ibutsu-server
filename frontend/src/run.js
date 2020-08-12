@@ -27,7 +27,14 @@ import {
   Text,
   TextInput
 } from '@patternfly/react-core';
-import { CatalogIcon, ChevronRightIcon, CodeIcon, InfoCircleIcon, MessagesIcon, RepositoryIcon } from '@patternfly/react-icons';
+import { 
+  CatalogIcon,
+  ChevronRightIcon,
+  CodeIcon, 
+  InfoCircleIcon, 
+  MessagesIcon, 
+  RepositoryIcon 
+} from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import ReactJson from 'react-json-view';
 
@@ -227,7 +234,7 @@ export class Run extends React.Component {
       }
       else if (Object.prototype.hasOwnProperty.call(testResult, 'test_id')) {
         let color = colors[testResult['result']];
-        let durationString = '<span style="color:#aaa"><em>' + convertDate(testResult['duration']) + '</em></span>';
+        let durationString = '<span style="color:#aaa"><em>' + convertDate(testResult['duration'] || 0) + '</em></span>';
         let icon = '<span style="color:' + color + '";"><i class="pf-icon ' + icons[testResult['result']] + '"></i></span>&nbsp;';
         dest.push({
           text: icon + testResult['test_id'] + durationString,

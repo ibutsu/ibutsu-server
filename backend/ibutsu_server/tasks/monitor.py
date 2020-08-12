@@ -1,7 +1,7 @@
 import logging
 
-from bson import ObjectId
-from ibutsu_server.mongo import mongo
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Report
 from ibutsu_server.tasks.queues import app
 
 
@@ -9,8 +9,9 @@ STATE = app.events.State()
 
 
 def _set_report_error(report):
-    report["status"] = "error"
-    mongo.reports.replace_one({"_id": ObjectId(report["id"])}, report)
+    report.data["status"] = "error"
+    session.add(report)
+    session.commit()
 
 
 # --- Event Status Functions
@@ -26,7 +27,7 @@ def on_failed(event):
 
     # if the task is related to a report, set that report to failed
     report_id = eval(task.args)[0].get("id")  # get the report ID from the task
-    report = mongo.reports.find_one({"_id": ObjectId(report_id)})
+    report = Report.query.get(report_id)
     if report:
         _set_report_error(report)
 
