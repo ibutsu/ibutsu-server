@@ -117,5 +117,5 @@ class TestRunController(BaseTestCase):
             data=json.dumps(run),
             content_type="application/json",
         )
-        self.mock_update_run_task.delay.assert_called_once_with(MOCK_ID)
+        self.mock_update_run_task.apply_async.assert_called_once_with((MOCK_ID,), countdown=5)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
