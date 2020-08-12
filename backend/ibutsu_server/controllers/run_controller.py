@@ -132,7 +132,7 @@ def update_run(id_, run=None):
     existing_run = mongo.runs.find_one({"_id": ObjectId(id_)})
     merge_dicts(existing_run, run)
     mongo.runs.replace_one({"_id": ObjectId(id_)}, run)
-    update_run_task.delay(id_)
+    update_run_task.apply_async((id_,), countdown=5)
     return serialize(run)
 
 
