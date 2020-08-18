@@ -8,9 +8,19 @@ from dynaconf import settings
 
 
 class IbutsuTask(Task):
-    # Globally override the maximum retries.
-    # This means the task will run for about 41 days and 22 hours
-    max_retries = 1000
+    """
+    Leave this class empty for now, may add global overrides in the future.
+
+    By default tasks will retry 3 times, if a task should retry more than 3 times
+    specify it at the task level.
+
+
+    @task(max_retries=<integer>)
+    def my_task():
+        pass
+    """
+
+    pass
 
 
 app = Celery(

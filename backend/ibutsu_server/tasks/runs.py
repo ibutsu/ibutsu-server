@@ -19,9 +19,9 @@ def _copy_result_metadata(result, metadata, key):
         metadata[key] = result["metadata"][key]
 
 
-@task
+@task(max_retries=1000)
 def update_run(run_id):
-    """Update the run summary from the results"""
+    """Update the run summary from the results, this task will retry 1000 times"""
     redis_client = Redis.from_url(settings["CELERY_BROKER_URL"])
     try:
         # Get a lock so that we don't run this task concurrently
