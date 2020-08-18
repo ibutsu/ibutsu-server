@@ -33,7 +33,7 @@ def _create_result(tar, run_id, result, artifacts):
     return old_id
 
 
-@task()
+@task
 def run_junit_import(import_):
     """Import a test run from a JUnit file"""
     # Update the status of the import
@@ -127,7 +127,7 @@ def run_junit_import(import_):
     mongo.imports.replace_one({"_id": ObjectId(import_["id"])}, import_)
 
 
-@task()
+@task
 def run_archive_import(import_):
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import

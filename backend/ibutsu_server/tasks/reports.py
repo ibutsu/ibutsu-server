@@ -101,7 +101,8 @@ def _build_filters(report):
     filters = {}
     if report["parameters"].get("filter"):
         for f in report["parameters"]["filter"].split(","):
-            filters.update(generate_filter_object(f.strip()))
+            if f:
+                filters.update(generate_filter_object(f.strip()))
     if report["parameters"]["source"]:
         filters["source"] = {"$eq": report["parameters"]["source"]}
     if report["parameters"].get("project"):
@@ -206,7 +207,10 @@ def _make_dict(results):
     for result in results:
         result_path = _make_result_path(result)
         if result.get("duration") and result.get("start_time"):
-            finish_time = result["start_time"] + result["duration"]
+            try:
+                finish_time = float(result["start_time"]) + float(result["duration"])
+            except ValueError:
+                finish_time = None
         else:
             finish_time = None
         result_id = result.get("id") or str(result["_id"])
