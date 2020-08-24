@@ -5,18 +5,20 @@ from unittest import skip
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-from bson import ObjectId
 from flask import json
 from ibutsu_server.test import BaseTestCase
+from ibutsu_server.test import MockModel
 from six import BytesIO
 
-MOCK_ID = "cd7994f77bcf8639011507f1"
-MOCK_RUN = {
-    "_id": ObjectId(MOCK_ID),
-    "id": MOCK_ID,
-    "duration": 540.05433,
-    "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
-}
+MOCK_ID = "6b26876f-bcd9-49f3-b5bd-35f895a345d1"
+MOCK_RUN = MockModel(
+    MOCK_ID,
+    data={
+        "duration": 540.05433,
+        "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
+    },
+)
+MOCK_RUN_DICT = MOCK_RUN.to_dict()
 
 
 class TestRunController(BaseTestCase):
@@ -24,27 +26,31 @@ class TestRunController(BaseTestCase):
 
     def setUp(self):
         """Set up a fake MongoDB object"""
-        self.mongo_patcher = patch("ibutsu_server.controllers.run_controller.mongo")
-        self.mock_mongo = self.mongo_patcher.start()
-        self.mock_mongo.runs = MagicMock()
-        self.mock_mongo.runs.count.return_value = 1
-        self.mock_mongo.runs.find_one.return_value = MOCK_RUN
-        self.mock_mongo.runs.find.return_value = [MOCK_RUN]
+        self.mock_limit = MagicMock()
+        self.mock_limit.return_value.offset.return_value.all.return_value = [MOCK_RUN]
+        self.session_patcher = patch("ibutsu_server.controllers.run_controller.session")
+        self.mock_session = self.session_patcher.start()
+        self.run_patcher = patch("ibutsu_server.controllers.run_controller.Run")
+        self.mock_run = self.run_patcher.start()
+        self.mock_run.from_dict.return_value = MOCK_RUN
+        self.mock_run.query.count.return_value = 1
+        self.mock_run.query.get.return_value = MOCK_RUN
+        self.mock_run.query.limit = self.mock_limit
         self.task_patcher = patch("ibutsu_server.controllers.run_controller.update_run_task")
         self.mock_update_run_task = self.task_patcher.start()
 
     def tearDown(self):
         """Teardown the mocks"""
-        self.mongo_patcher.stop()
         self.task_patcher.stop()
+        self.run_patcher.stop()
+        self.session_patcher.stop()
 
     def test_add_run(self):
         """Test case for add_run
 
         Create a run
         """
-        run = {
-            "id": "cd7994f77bcf8639011507f1",
+        run_dict = {
             "duration": 540.05433,
             "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
         }
@@ -53,11 +59,12 @@ class TestRunController(BaseTestCase):
             "/api/run",
             method="POST",
             headers=headers,
-            data=json.dumps(run),
+            data=json.dumps(run_dict),
             content_type="application/json",
         )
         self.mock_update_run_task.apply_async.assert_called_once_with((MOCK_ID,), countdown=5)
         self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_equal(response.json, MOCK_RUN_DICT)
 
     def test_get_run(self):
         """Test case for get_run
@@ -66,9 +73,10 @@ class TestRunController(BaseTestCase):
         """
         headers = {"Accept": "application/json"}
         response = self.client.open(
-            "/api/run/{id}".format(id="5d92316a10b3f82ce8076107"), method="GET", headers=headers
+            "/api/run/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_equal(response.json, MOCK_RUN_DICT)
 
     def test_get_run_list(self):
         """Test case for get_run_list
@@ -104,18 +112,18 @@ class TestRunController(BaseTestCase):
 
         Update a single run
         """
-        run = {
-            "id": "cd7994f77bcf8639011507f1",
+        run_dict = {
             "duration": 540.05433,
             "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
         }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
-            "/api/run/{id}".format(id="cd7994f77bcf8639011507f1"),
+            "/api/run/{id}".format(id=MOCK_ID),
             method="PUT",
             headers=headers,
-            data=json.dumps(run),
+            data=json.dumps(run_dict),
             content_type="application/json",
         )
-        self.mock_update_run_task.delay.assert_called_once_with(MOCK_ID)
+        self.mock_update_run_task.apply_async.assert_called_once_with((MOCK_ID,), countdown=5)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_equal(response.json, MOCK_RUN_DICT)

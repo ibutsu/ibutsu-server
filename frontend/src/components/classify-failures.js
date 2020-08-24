@@ -118,7 +118,6 @@ export class ClassifyFailuresTable extends React.Component {
   };
 
   removeFilter = id => {
-    console.log(id);
     if (id === "metadata.exception_name") {   // only remove exception_name filter
       this.updateFilters(id, null, null, () => {
         this.setState({page: 1}, this.refreshResults);

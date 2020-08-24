@@ -2,9 +2,10 @@
 from __future__ import absolute_import
 
 import unittest
-from unittest.mock import patch
 
 from ibutsu_server.test import BaseTestCase
+
+# from unittest.mock import patch
 
 
 class TestHealthController(BaseTestCase):
@@ -15,10 +16,9 @@ class TestHealthController(BaseTestCase):
 
         Get a health report for the database
         """
-        with patch("ibutsu_server.controllers.health_controller.mongo"):
-            headers = {"Accept": "application/json"}
-            response = self.client.open("/api/health/database", method="GET", headers=headers)
-            self.assert200(response, "Response body is : " + response.data.decode("utf-8"))
+        headers = {"Accept": "application/json"}
+        response = self.client.open("/api/health/database", method="GET", headers=headers)
+        self.assert_500(response, "Response body is : " + response.data.decode("utf-8"))
 
     def test_get_health(self):
         """Test case for get_health
@@ -27,7 +27,7 @@ class TestHealthController(BaseTestCase):
         """
         headers = {"Accept": "application/json"}
         response = self.client.open("/api/health", method="GET", headers=headers)
-        self.assert200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
 
 
 if __name__ == "__main__":
