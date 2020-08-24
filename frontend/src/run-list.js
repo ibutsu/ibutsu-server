@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import {
   Card,
   CardBody,
+  CardFooter,
   PageSection,
   PageSectionVariants,
   Select,
@@ -84,34 +85,31 @@ function runToRow(run, filterFunc) {
   let created = 0;
   let badge;
   if (run.start_time) {
-    created = new Date(run.start_time * 1000);
-  }
-  else if (typeof run.created === "number") {
-      created = new Date(run.created * 1000);  // convert the Unix timestamp
+    created = new Date(run.start_time);
   }
   else {
       created = new Date(run.created);
   }
 
   if (filterFunc) {
-    if (run.metadata && run.metadata.component) {
-      badge = buildBadge('component', run.metadata.component, false,
-        () => filterFunc('metadata.component', run.metadata.component));
+    if (run.component) {
+      badge = buildBadge('component', run.component, false,
+        () => filterFunc('component', run.component));
     }
   }
   else {
-    badge = buildBadge('component', run.metadata.component, false);
+    badge = buildBadge('component', run.component, false);
   }
   badges.push(badge);
 
-  if (run.metadata && run.metadata.env) {
+  if (run.env) {
     let badge;
     if (filterFunc) {
-      badge = buildBadge(run.metadata.env, run.metadata.env, false,
-        () => filterFunc('metadata.env', run.metadata.env));
+      badge = buildBadge(run.env, run.env, false,
+        () => filterFunc('env', run.env));
     }
     else {
-      badge = buildBadge(run.metadata.env, run.metadata.env, false);
+      badge = buildBadge(run.env, run.env, false);
     }
     badges.push(badge)
   }
@@ -121,7 +119,7 @@ function runToRow(run, filterFunc) {
       {title: round(run.duration) + 's'},
       {title: <RunSummary summary={run.summary} />},
       {title: created.toLocaleString()},
-      {title: <Link to={`/results?metadata.run=${run.id}`}>See results <ChevronRightIcon /></Link>}
+      {title: <Link to={`/results?run_id=${run.id}`}>See results <ChevronRightIcon /></Link>}
     ]
   };
 }
@@ -334,11 +332,12 @@ export class RunList extends React.Component {
     let filters = this.state.filters;
     const project = getActiveProject();
     if (project) {
-      filters['metadata.project'] = {'val': project.id, 'op': 'eq'};
+      filters['project_id'] = {'val': project.id, 'op': 'eq'};
     }
-    else if (Object.prototype.hasOwnProperty.call(filters, 'metadata.project')) {
-      delete filters['metadata.project']
+    else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
+      delete filters['project_id']
     }
+    params['estimate'] = true;
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
     // Convert UI filters to API filters
@@ -486,6 +485,12 @@ export class RunList extends React.Component {
                 onSetPageSize={this.setPageSize}
               />
             </CardBody>
+            <CardFooter>
+              <Text className="disclaimer" component="h4">
+                * Note: for performance reasons, the total number of items is an approximation.
+                Use the API with &lsquo;estimate=false&rsquo; if you need an accurate count.
+              </Text>
+            </CardFooter>
           </Card>
         </PageSection>
       </React.Fragment>

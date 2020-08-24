@@ -1,29 +1,22 @@
 import json
+from datetime import datetime
 
 import connexion
 import magic
-from bson import ObjectId
 from flask import make_response
-from gridfs.errors import NoFile
-from ibutsu_server.mongo import mongo
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Artifact
 
 
 def _build_artifact_response(id_):
     """Build a response for the artifact"""
-    artifacts = [a for a in mongo.fs.find({"_id": ObjectId(id_)})]
-    if not artifacts or not artifacts[0]:
+    artifact = Artifact.query.get(id_)
+    if not artifact:
         return "Not Found", 404
-    artifact = artifacts[0]
     # Create a response with the contents of this file
-    file_contents = artifact.read()
-    response = make_response(file_contents, 200)
+    response = make_response(artifact.content, 200)
     # Set the content type and the file name
-    if artifact.content_type:
-        file_type = artifact.content_type
-    elif artifact.metadata.get("contentType"):
-        file_type = artifact.metadata["contentType"]
-    else:
-        file_type = magic.from_buffer(file_contents, mime=True)
+    file_type = magic.from_buffer(artifact.content, mime=True)
     response.headers["Content-Type"] = file_type
     return artifact, response
 
@@ -60,16 +53,10 @@ def get_artifact(id_):
 
     :rtype: Artifact
     """
-    artifacts = [a for a in mongo.fs.find({"_id": ObjectId(id_)})]
-    if not artifacts or not artifacts[0]:
+    artifact = Artifact.query.get(id_)
+    if not artifact:
         return "Not Found", 404
-    artifact = artifacts[0]
-    return {
-        "id": str(artifact._id),
-        "resultId": artifact.metadata["resultId"],
-        "filename": artifact.filename,
-        "additionalMetadata": artifact.metadata["additionalMetadata"],
-    }
+    return artifact.to_dict()
 
 
 def get_artifact_list(result_id=None, page_size=25, page=1):
@@ -80,24 +67,15 @@ def get_artifact_list(result_id=None, page_size=25, page=1):
 
     :rtype: List[Artifact]
     """
-    filters = {}
+    query = Artifact.query
     if result_id:
-        filters["metadata.resultId"] = result_id
+        query = query.filter(Artifact.result_id == result_id)
+    total_items = query.count()
     offset = (page * page_size) - page_size
-    # There's no "count" method in the GridFS API, so we have to do a full query here
-    total_items = len(list(mongo.fs.find(filters)))
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    artifacts = mongo.fs.find(filters, limit=page_size, skip=offset, no_cursor_timeout=True)
+    artifacts = query.limit(page_size).offset(offset).all()
     return {
-        "artifacts": [
-            {
-                "id": str(artifact._id),
-                "filename": artifact.filename,
-                "resultId": artifact.metadata["resultId"],
-                "additionalMetadata": artifact.metadata.get("additionalMetadata", None),
-            }
-            for artifact in artifacts
-        ],
+        "artifacts": [artifact.to_dict() for artifact in artifacts],
         "pagination": {
             "page": page,
             "pageSize": page_size,
@@ -126,9 +104,7 @@ def upload_artifact(body):
     additional_metadata = body.get("additional_metadata", {})
     file_ = connexion.request.files["file"]
     content_type = magic.from_buffer(file_.read())
-    # Reset the file pointer
-    file_.seek(0)
-    metadata = {"contentType": content_type, "resultId": result_id}
+    data = {"contentType": content_type, "resultId": result_id, "filename": filename}
     if additional_metadata:
         if isinstance(additional_metadata, str):
             try:
@@ -137,17 +113,19 @@ def upload_artifact(body):
                 return "Bad request, additionalMetadata is not valid JSON", 400
         if not isinstance(additional_metadata, dict):
             return "Bad request, additionalMetadata is not a JSON object", 400
-        metadata["additionalMetadata"] = additional_metadata
-    file_id = mongo.fs.upload_from_stream(filename, file_, metadata=metadata)
-    return (
-        {
-            "id": str(file_id),
-            "resultId": result_id,
-            "filename": filename,
-            "additionalMetadata": additional_metadata,
-        },
-        201,
+        data["additionalMetadata"] = additional_metadata
+    # Reset the file pointer
+    file_.seek(0)
+    artifact = Artifact(
+        filename=filename,
+        result_id=data["resultId"],
+        content=file_.read(),
+        upload_date=datetime.utcnow(),
+        data=additional_metadata,
     )
+    session.add(artifact)
+    session.commit()
+    return artifact.to_dict(), 201
 
 
 def delete_artifact(id_):
@@ -158,8 +136,10 @@ def delete_artifact(id_):
 
     :rtype: tuple
     """
-    try:
-        mongo.fs.delete(ObjectId(id_))
-        return "OK", 200
-    except NoFile:
+    artifact = Artifact.query.get(id_)
+    if not artifact:
         return "Not Found", 404
+    else:
+        session.delete(artifact)
+        session.commit()
+        return "OK", 200

@@ -61,7 +61,8 @@ export class ResultList extends React.Component {
     this.state = {
       columns: ['Test', 'Run', 'Result', 'Duration', 'Started'],
       rows: [getSpinnerRow(5)],
-      runs: DEFAULT_RUNS,
+      runs: [],
+      filteredRuns: DEFAULT_RUNS,
       page: page,
       pageSize: pageSize,
       totalItems: 0,
@@ -167,18 +168,8 @@ export class ResultList extends React.Component {
   };
 
   onRunFilter = (event) => {
-    if (event.target.value === '') {
-      this.setState({runs: DEFAULT_RUNS});
-    }
-    else {
-      const params = {filter: "id~" + event.target.value};
-      fetch(buildUrl(Settings.serverUrl + '/run', params))
-        .then(response => response.json())
-        .then(data => {
-          const runs = data.runs.map((run) => run.id);
-          this.setState({runs});
-        });
-    }
+    const filteredRuns = this.state.runs.filter((run) => run.startsWith(event.target.value));
+    this.setState({filteredRuns});
   };
 
   onBoolSelect = (event, selection) => {
@@ -243,7 +234,7 @@ export class ResultList extends React.Component {
       value = (operationMode === 'multi') ? this.state.resultSelection.join(';') : this.state.resultSelection;
     }
     else if (filterMode === 'run' && operationMode !== 'bool') {
-      value = (operationMode === 'multi') ? this.state.runSelection.join(';') : this.runSelection;
+      value = (operationMode === 'multi') ? this.state.runSelection.join(';') : this.state.runSelection;
     }
     else if (operationMode === 'multi') {
       value = this.state.inValues.join(";");  // translate list to ;-separated string for BE
@@ -304,6 +295,24 @@ export class ResultList extends React.Component {
     });
   }
 
+  clearFilters = () => {
+    this.setState({
+      filters: [],
+      page: 1,
+      pageSize: 20,
+      fieldSelection: null,
+      operationSelection: 'eq',
+      textFilter: '',
+      resultSelection: null,
+      runSelection: null,
+      boolSelection: null,
+      inValues: []
+    }, function () {
+      this.updateUrl();
+      this.getResults();
+    });
+  };
+
   updateUrl() {
     let params = buildParams(this.state.filters);
     params.push('page=' + this.state.page);
@@ -332,14 +341,12 @@ export class ResultList extends React.Component {
     let filters = this.state.filters;
     const project = getActiveProject();
     if (project) {
-      filters['metadata.project'] = {'val': project.id, 'op': 'eq'};
+      filters['project_id'] = {'val': project.id, 'op': 'eq'};
     }
-    else if (Object.prototype.hasOwnProperty.call(filters, 'metadata.project')) {
-      delete filters['metadata.project']
+    else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
+      delete filters['project_id']
     }
-    if (filters) {
-      params['apply_max'] = true;  // if filters are applied limit the documents returned
-    }
+    params['estimate'] = true;  // use a count estimate for this page
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
     // Convert UI filters to API filters
@@ -366,26 +373,18 @@ export class ResultList extends React.Component {
       });
   }
 
-  clearFilters = () => {
-    this.setState({
-      filters: [],
-      page: 1,
-      pageSize: 20,
-      fieldSelection: null,
-      operationSelection: 'eq',
-      textFilter: '',
-      resultSelection: null,
-      runSelection: null,
-      boolSelection: null,
-      inValues: []
-    }, function () {
-      this.updateUrl();
-      this.getResults();
-    });
-  };
+  getRuns() {
+    fetch(buildUrl(Settings.serverUrl + '/run', {pageSize: 1000, estimate: true}))
+      .then(response => response.json())
+      .then(data => {
+        const runs = data.runs.map((run) => run.id);
+        this.setState({runs: runs, filteredRuns: runs});
+      });
+  }
 
   componentDidMount() {
     this.getResults();
+    this.getRuns();
   }
 
   render() {
@@ -393,7 +392,7 @@ export class ResultList extends React.Component {
     const {
       columns,
       rows,
-      runs,
+      filteredRuns,
       fieldSelection,
       isFieldOpen,
       fieldOptions,
@@ -475,7 +474,7 @@ export class ResultList extends React.Component {
             onClear={this.onRunClear}
             onFilter={this.onRunFilter}
           >
-            {runs.map((option, index) => (
+            {filteredRuns.map((option, index) => (
               <SelectOption key={index} value={option} isDisabled={option === DEFAULT_RUNS[0]} />
             ))}
           </Select>
@@ -530,8 +529,8 @@ export class ResultList extends React.Component {
             </CardBody>
             <CardFooter>
               <Text className="disclaimer" component="h4">
-                * Note: due to the number of results, when filters are applied, the results returned are limited to a max value.
-                Use the API if you need an accurate count.
+                * Note: for performance reasons, the total number of items is an approximation.
+                Use the API with &lsquo;estimate=false&rsquo; if you need an accurate count.
               </Text>
             </CardFooter>
           </Card>

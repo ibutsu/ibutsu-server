@@ -27,7 +27,14 @@ import {
   Text,
   TextInput
 } from '@patternfly/react-core';
-import { CatalogIcon, ChevronRightIcon, CodeIcon, InfoCircleIcon, MessagesIcon, RepositoryIcon } from '@patternfly/react-icons';
+import {
+  CatalogIcon,
+  ChevronRightIcon,
+  CodeIcon,
+  InfoCircleIcon,
+  MessagesIcon,
+  RepositoryIcon
+} from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import ReactJson from 'react-json-view';
 
@@ -233,7 +240,7 @@ export class Run extends React.Component {
       }
       else if (Object.prototype.hasOwnProperty.call(testResult, 'test_id')) {
         let color = colors[testResult['result']];
-        let durationString = '<span style="color:#aaa"><em>' + convertDate(testResult['duration']) + '</em></span>';
+        let durationString = '<span style="color:#aaa"><em>' + convertDate(testResult['duration'] || 0) + '</em></span>';
         let icon = '<span style="color:' + color + '";"><i class="pf-icon ' + icons[testResult['result']] + '"></i></span>&nbsp;';
         dest.push({
           text: icon + testResult['test_id'] + durationString,
@@ -266,7 +273,7 @@ export class Run extends React.Component {
   }
 
   getClassificationTable = () => {
-    this.setState({classificationTable: <ClassifyFailuresTable filters={ {'metadata.run': {op: 'eq', val: this.state.id}} }/>});
+    this.setState({classificationTable: <ClassifyFailuresTable filters={ {'run_id': {op: 'eq', val: this.state.id}} }/>});
   }
 
 
@@ -320,7 +327,7 @@ export class Run extends React.Component {
 
   getResultsForTable() {
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
-    let params = {filter: 'metadata.run=' + this.state.id};
+    let params = {filter: 'run_id=' + this.state.id};
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
     this.setState({rows: [['Loading...', '', '', '']]});
@@ -342,7 +349,7 @@ export class Run extends React.Component {
   }
 
   getResultsForTree(page) {
-    let params = {filter: 'metadata.run=' + this.state.id};
+    let params = {filter: 'run_id=' + this.state.id};
     params['pageSize'] = 500;
     params['page'] = page;
     fetch(buildUrl(Settings.serverUrl + '/result', params))
@@ -386,10 +393,7 @@ export class Run extends React.Component {
     let created = 0;
     const { run, columns, rows, classificationTable } = this.state;
     if (run.start_time) {
-      created = new Date(run.start_time * 1000);
-    }
-    else if (typeof run.created === 'number') {
-      created = new Date(run.created * 1000);  // convert the Unix timestamp
+      created = new Date(run.start_time);
     }
     else {
       created = new Date(run.created);
@@ -630,7 +634,7 @@ export class Run extends React.Component {
                       <Button variant="secondary" onClick={this.refreshResults}>Refresh results</Button>
                     </FlexItem>
                     <FlexItem>
-                      <Link to={`/results?metadata.run[eq]=${run.id}`} className="pf-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
+                      <Link to={`/results?run_id[eq]=${run.id}`} className="pf-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
                     </FlexItem>
                   </Flex>
                 </CardHeader>

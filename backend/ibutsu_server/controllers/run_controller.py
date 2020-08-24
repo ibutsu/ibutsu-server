@@ -1,18 +1,15 @@
 from datetime import datetime
 
 import connexion
-from bson import ObjectId
-from ibutsu_server.filters import generate_filter_object
-from ibutsu_server.mongo import mongo
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Run
+from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks.runs import update_run as update_run_task
-from ibutsu_server.util import merge_dicts
-from ibutsu_server.util import serialize
+from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import get_project_id
-from lxml import objectify
-from pymongo import DESCENDING
 
 
-def get_run_list(filter_=None, page=1, page_size=25):
+def get_run_list(filter_=None, page=1, page_size=25, estimate=False):
     """Get a list of runs
 
     The `filter` parameter takes a list of filters to apply in the form of:
@@ -55,18 +52,25 @@ def get_run_list(filter_=None, page=1, page_size=25):
 
     :rtype: List[Run]
     """
-    filters = {}
+    query = Run.query
     if filter_:
         for filter_string in filter_:
-            filter_obj = generate_filter_object(filter_string)
-            if filter_obj:
-                filters.update(filter_obj)
+            filter_clause = convert_filter(filter_string, Run)
+            if filter_clause is not None:
+                query = query.filter(filter_clause)
+
+    if estimate and not filter_:
+        total_items = get_count_estimate(query, no_filter=True, tablename="runs")
+    elif estimate:
+        total_items = get_count_estimate(query)
+    else:
+        total_items = query.count()
+
     offset = (page * page_size) - page_size
-    total_items = mongo.runs.count(filters)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    runs = mongo.runs.find(filters, skip=offset, limit=page_size, sort=[("created", DESCENDING)])
+    runs = query.order_by(Run.start_time.desc()).offset(offset).limit(page_size).all()
     return {
-        "runs": [serialize(run) for run in runs],
+        "runs": [run.to_dict() for run in runs],
         "pagination": {
             "page": page,
             "pageSize": page_size,
@@ -84,8 +88,8 @@ def get_run(id_):
 
     :rtype: Run
     """
-    run = mongo.runs.find_one({"_id": ObjectId(id_)})
-    return serialize(run)
+    run = Run.query.get(id_)
+    return run.to_dict() if run else ("Run not found", 404)
 
 
 def add_run(run=None):
@@ -98,20 +102,21 @@ def add_run(run=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON is required", 400
-    run_dict = connexion.request.get_json()
-    current_time = datetime.utcnow()
-    if "created" not in run_dict:
-        run_dict["created"] = current_time.isoformat()
-    if "start_time" not in run_dict:
-        run_dict["start_time"] = current_time.timestamp()
-    if "id" in run_dict:
-        run_dict["_id"] = ObjectId(run_dict["id"])
-    if run_dict.get("metadata") and run_dict.get("metadata", {}).get("project"):
-        run_dict["metadata"]["project"] = get_project_id(run_dict["metadata"]["project"])
-    mongo.runs.insert_one(run_dict)
-    run_dict = serialize(run_dict)
-    update_run_task.apply_async((run_dict["id"],), countdown=5)
-    return run_dict, 201
+    run = Run.from_dict(**connexion.request.get_json())
+
+    if run.data and run.data.get("project"):
+        run.project_id = get_project_id(run.data["project"])
+    run.env = run.data.get("env") if run.data else None
+    run.component = run.data.get("component") if run.data else None
+    # allow start_time to be set by update_run task if no start_time present
+    run.start_time = run.start_time if run.start_time else datetime.utcnow()
+    # if not present, created is the time at which the run is added to the DB
+    run.created = run.created if run.created else datetime.utcnow()
+
+    session.add(run)
+    session.commit()
+    update_run_task.apply_async((run.id,), countdown=5)
+    return run.to_dict(), 201
 
 
 def update_run(id_, run=None):
@@ -126,91 +131,14 @@ def update_run(id_, run=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    run = connexion.request.get_json()
-    if run.get("metadata") and run.get("metadata", {}).get("project"):
-        run["metadata"]["project"] = get_project_id(run["metadata"]["project"])
-    existing_run = mongo.runs.find_one({"_id": ObjectId(id_)})
-    merge_dicts(existing_run, run)
-    mongo.runs.replace_one({"_id": ObjectId(id_)}, run)
-    update_run_task.apply_async((id_,), countdown=5)
-    return serialize(run)
-
-
-def import_run(xml_file):
-    """Imports a JUnit XML file and creates a test run and results from it.
-
-    :param xmlFile: file to upload
-    :type xmlFile: werkzeug.datastructures.FileStorage
-
-    :rtype: Run
-    """
-    if not xml_file:
-        return "Bad request, no file uploaded", 400
-    tree = objectify.parse(xml_file.stream)
-    root = tree.getroot()
-    run_dict = {
-        "duration": root.get("time"),
-        "summary": {
-            "errors": root.get("errors"),
-            "failures": root.get("failures"),
-            "skips": root.get("skips"),
-            "xfailures": root.get("xfailures"),
-            "xpasses": root.get("xpasses"),
-            "tests": root.get("tests"),
-        },
-    }
+    run_dict = connexion.request.get_json()
     if run_dict.get("metadata", {}).get("project"):
-        run_dict["metadata"]["project"] = get_project_id(run_dict["metadata"]["project"])
-    rec = mongo.runs.insert_one(run_dict)
-    run_dict["id"] = str(run_dict.pop("_id"))
-    for testcase in root.testcase:
-        test_name = testcase.get("name").split(".")[-1]
-        if testcase.get("classname"):
-            test_name = testcase.get("classname").split(".")[-1] + "." + test_name
-        result_dict = {
-            "test_id": test_name,
-            "start_time": 0,
-            "duration": float(testcase.get("time")),
-            "metadata": {
-                "run": run_dict["id"],
-                "fspath": testcase.get("file"),
-                "line": testcase.get("line"),
-            },
-            "params": {},
-            "source": root.get("name"),
-        }
-        traceback = None
-        if testcase.find("failure"):
-            result_dict["result"] = "failed"
-            traceback = bytes(str(testcase.failure), "utf8")
-        elif testcase.find("error"):
-            result_dict["result"] = "error"
-            traceback = bytes(str(testcase.error), "utf8")
-        elif testcase.find("xfailure"):
-            result_dict["result"] = "xfailed"
-        elif testcase.find("xpassed"):
-            result_dict["result"] = "xpassed"
-        else:
-            result_dict["result"] = "passed"
-        rec = mongo.results.insert_one(result_dict)
-        if traceback:
-            mongo.fs.upload_from_stream(
-                "traceback.log",
-                traceback,
-                metadata={"contentType": "text/plain", "resultId": str(rec.inserted_id)},
-            )
-        if testcase.find("system-out"):
-            system_out = bytes(str(testcase["system-out"]), "utf8")
-            mongo.fs.upload_from_stream(
-                "system-out.log",
-                system_out,
-                metadata={"contentType": "text/plain", "resultId": str(rec.inserted_id)},
-            )
-        if testcase.find("system-err"):
-            system_err = bytes(str(testcase["system-err"]), "utf8")
-            mongo.fs.upload_from_stream(
-                "system-err.log",
-                system_err,
-                metadata={"contentType": "text/plain", "resultId": str(rec.inserted_id)},
-            )
-    return run_dict, 201
+        run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
+    run = Run.query.get(id_)
+    if not run:
+        return "Run not found", 404
+    run.update(run_dict)
+    session.add(run)
+    session.commit()
+    update_run_task.apply_async((id_,), countdown=5)
+    return run.to_dict()

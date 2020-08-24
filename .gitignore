@@ -72,3 +72,6 @@ package-lock.json
 
 # Frontend
 frontend/public/version.json
+
+# Settings
+backend/settings.yaml

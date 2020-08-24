@@ -1,0 +1,6 @@
+POSTGRESQL_HOST: localhost
+POSTGRESQL_DATABASE: ibutsu
+POSTGRESQL_USER: ibutsu
+POSTGRESQL_PASSWORD: ibutsu
+CELERY_BROKER_URL: 'redis://localhost'
+CELERY_RESULT_BACKEND: 'redis://localhost'

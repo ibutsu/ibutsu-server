@@ -36,7 +36,7 @@ function reportToRow(report) {
   let reportStatus = 'pending';
   let reportLink = '(no filename yet)';
   let actions = [];
-  if (report.status !== undefined) {
+  if (report.status !== undefined && !!report.status) {
     reportStatus = report.status;
   }
   let statusIcon = getIconForStatus(reportStatus);
@@ -155,7 +155,8 @@ export class ReportBuilder extends React.Component {
         pageSize: data.pagination.pageSize,
         totalItems: data.pagination.totalItems,
         totalPages: data.pagination.totalPages,
-        isEmpty: data.pagination.totalItems === 0
+        isEmpty: data.pagination.totalItems === 0,
+        isError: false
       }))
       .catch((error) => {
         console.error('Error fetching result data:', error);

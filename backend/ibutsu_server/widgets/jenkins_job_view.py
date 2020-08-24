@@ -1,112 +1,117 @@
 from ibutsu_server.constants import JJV_RUN_LIMIT
-from ibutsu_server.filters import generate_filter_object
-from ibutsu_server.mongo import mongo
-from pymongo import DESCENDING
+from ibutsu_server.db.base import Integer
+from ibutsu_server.db.base import session
+from ibutsu_server.db.base import Text
+from ibutsu_server.db.models import Run
+from ibutsu_server.filters import apply_filters
+from ibutsu_server.filters import string_to_column
+from sqlalchemy import desc
+from sqlalchemy import func
 
 
 def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, run_limit=None):
-    """ Get a list of Jenkins jobs """
+    """ Get a list of Jenkins jobs"""
     offset = (page * page_size) - page_size
-    aggregation = [
-        {
-            "$match": {
-                "metadata.jenkins.build_number": {"$exists": True},
-                "metadata.jenkins.job_name": {"$exists": True},
-            }
-        },
-        {"$sort": {"start_time": DESCENDING}},
-        {"$limit": run_limit or JJV_RUN_LIMIT},
-        {
-            "$group": {
-                "_id": {
-                    "job_name": "$metadata.jenkins.job_name",
-                    "build_number": "$metadata.jenkins.build_number",
-                },
-                "job_name": {"$first": "$metadata.jenkins.job_name"},
-                "build_number": {"$first": "$metadata.jenkins.build_number"},
-                "build_url": {"$mergeObjects": {"build_url": "$metadata.jenkins.build_url"}},
-                "source": {"$mergeObjects": {"source": "$source"}},
-                "env": {"$mergeObjects": {"env": "$metadata.env"}},
-                "total_execution_time": {"$sum": "$duration"},
-                "tests": {"$sum": "$summary.tests"},
-                "errors": {"$sum": "$summary.errors"},
-                "skips": {"$sum": "$summary.skips"},
-                "failures": {"$sum": "$summary.failures"},
-                "first_start_time": {"$min": "$start_time"},
-                "last_start_time": {"$max": "$start_time"},
-                "max_duration": {"$max": "$duration"},
-            }
-        },
-        {
-            "$project": {
-                "_id": {"$concat": ["$job_name", "-", "$build_number"]},
-                "job_name": "$job_name",
-                "build_url": "$build_url.build_url",
-                "source": "$source.source",
-                "build_number": "$build_number",
-                "total_execution_time": "$total_execution_time",
-                "start_time": "$first_start_time",
-                "env": "$env.env",
-                "duration": {
-                    "$add": [
-                        {"$subtract": ["$last_start_time", "$first_start_time"]},
-                        "$max_duration",
-                    ]
-                },
-                "summary": {
-                    "tests": "$tests",
-                    "errors": "$errors",
-                    "failures": "$failures",
-                    "skips": "$skips",
-                    "passes": {
-                        "$subtract": ["$tests", {"$add": ["$errors", "$failures", "$skips"]}]
-                    },
-                },
-            }
-        },
-        {"$sort": {"start_time": DESCENDING}},
-        {
-            "$facet": {
-                "pagination": [{"$count": "totalItems"}],
-                "jobs": [{"$skip": offset}, {"$limit": page_size}],
-            }
-        },
-    ]
-    if filters:
-        for key, value in filters.items():
-            if key == "job_name" or key == "build_number":
-                key = f"metadata.jenkins.{key}"
-            if key == "env":
-                key = f"metadata.{key}"
-            aggregation[0]["$match"].update({key: value})
-    if project:
-        aggregation[0]["$match"].update({"metadata.project": project})
 
-    return mongo.runs.aggregate(aggregation)
+    # first create the filters
+    query_filters = ["metadata.jenkins.build_number@y", "metadata.jenkins.job_name@y"]
+    if filters:
+        for idx, filter in enumerate(filters):
+            if "job_name" in filter or "build_number" in filter:
+                filters[idx] = f"metadata.jenkins.{filter}"
+        query_filters.extend(filters)
+    if project:
+        query_filters.append(f"project_id={project}")
+    filters = query_filters
+
+    # generate the group_fields
+    job_name = string_to_column("metadata.jenkins.job_name", Run)
+    build_number = string_to_column("metadata.jenkins.build_number", Run)
+    build_url = string_to_column("metadata.jenkins.build_url", Run)
+    env = string_to_column("env", Run)
+
+    # get the runs on which to run the aggregation, we select from a subset of runs to improve
+    # performance, otherwise we'd be aggregating over ALL runs
+    sub_query = (
+        apply_filters(Run.query, filters, Run)
+        .order_by(desc("start_time"))
+        .limit(run_limit or JJV_RUN_LIMIT)
+        .subquery()
+    )
+
+    # create the base query
+    query = (
+        session.query(
+            job_name.label("job_name"),
+            build_number.label("build_number"),
+            func.min(build_url.cast(Text)).label("build_url"),
+            func.min(env).label("env"),
+            func.min(Run.source).label("source"),
+            func.sum(Run.summary["failures"].cast(Integer)).label("failures"),
+            func.sum(Run.summary["errors"].cast(Integer)).label("errors"),
+            func.sum(Run.summary["skips"].cast(Integer)).label("skips"),
+            func.sum(Run.summary["tests"].cast(Integer)).label("tests"),
+            func.min(Run.start_time).label("min_start_time"),
+            func.max(Run.start_time).label("max_start_time"),
+            func.sum(Run.duration).label("total_execution_time"),
+            func.max(Run.duration).label("max_duration"),
+        )
+        .select_entity_from(sub_query)
+        .group_by(job_name, build_number)
+        .order_by(desc("max_start_time"))
+    )
+
+    # apply filters to the query
+    query = apply_filters(query, filters, Run)
+
+    # apply pagination and get data
+    query_data = query.offset(offset).limit(page_size).all()
+
+    # parse the data for the frontend
+    data = {
+        "jobs": [],
+        "pagination": {
+            "page": page,
+            "pageSize": page_size,
+            "totalItems": query.count(),  # TODO: examine performance here
+        },
+    }
+    for datum in query_data:
+        data["jobs"].append(
+            {
+                "_id": f"{datum.job_name}-{datum.build_number}",
+                "build_number": datum.build_number,
+                "build_url": datum.build_url,
+                "duration": (datum.max_start_time.timestamp() - datum.min_start_time.timestamp())
+                + datum.max_duration,  # noqa
+                "env": datum.env,
+                "job_name": datum.job_name,
+                "source": datum.source,
+                "start_time": datum.min_start_time,
+                "summary": {
+                    "errors": datum.errors,
+                    "failures": datum.failures,
+                    "skips": datum.skips,
+                    "tests": datum.tests,
+                    "passes": datum.tests - (datum.errors + datum.failures + datum.skips),
+                },
+                "total_execution_time": datum.total_execution_time,
+            }
+        )
+
+    return data
 
 
 def get_jenkins_job_view(filter_=None, project=None, page=1, page_size=25, run_limit=None):
-    filters = {}
+    filters = []
+
     if filter_:
         for filter_string in filter_.split(","):
-            filter_obj = generate_filter_object(filter_string)
-            if filter_obj:
-                filters.update(filter_obj)
-    aggr = _get_jenkins_aggregation(filters, project, page, page_size, run_limit)
+            filters.append(filter_string)
 
-    try:
-        jenkins_jobs = list(aggr)[0]
-        jenkins_jobs["pagination"] = jenkins_jobs["pagination"][0]
-        total_items = jenkins_jobs["pagination"]["totalItems"]
-        total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-        jenkins_jobs["pagination"].update(
-            {"page": page, "pageSize": page_size, "totalPages": total_pages}
-        )
-    except IndexError:
-        # if no jobs found matching the filters
-        jenkins_jobs = {
-            "jobs": [],
-            "pagination": {"page": page, "pageSize": page_size, "totalItems": 0, "totalPages": 0},
-        }
+    jenkins_jobs = _get_jenkins_aggregation(filters, project, page, page_size, run_limit)
+    total_items = jenkins_jobs["pagination"]["totalItems"]
+    total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
+    jenkins_jobs["pagination"].update({"totalPages": total_pages})
 
     return jenkins_jobs

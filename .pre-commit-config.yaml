@@ -6,7 +6,7 @@ repos:
   - id: reorder-python-imports
     language_version: python3
 - repo: https://github.com/ambv/black
-  rev: 19.10b0
+  rev: 20.8b1
   hooks:
   - id: black
     args: [--safe, --quiet, --line-length, "100"]
@@ -23,11 +23,11 @@ repos:
   - id: debug-statements
     language_version: python3
 - repo: https://gitlab.com/pycqa/flake8
-  rev: 3.8.3
+  rev: 3.8.4
   hooks:
   - id: flake8
     language_version: python3
-    args: [--max-line-length, "100"]
+    args: [--max-line-length, "100", --ignore, "E203, W503"]
 - repo: https://github.com/asottile/pyupgrade
   rev: v2.6.1
   hooks:

@@ -28,7 +28,7 @@ import { OPERATIONS, JJV_FIELDS } from '../constants';
 
 
 function jobToRow(job, analysisViewId) {
-  let start_time = new Date(job.start_time * 1000);
+  let start_time = new Date(job.start_time);
   return {
     cells: [
       analysisViewId ? {title: <Link to={`/view/${analysisViewId}?job_name=${job.job_name}`}>{job.job_name}</Link>} : job.job_name,
@@ -264,13 +264,19 @@ export class JenkinsJobView extends React.Component {
         params.filter.push(key + op + val);
       }
     }
+    params.filter = params.filter.join();  // convert array to a comma-separated string
     fetch(buildUrl(Settings.serverUrl + '/widget/' + this.props.view.widget, params))
       .then(response => response.json())
       .then(data => {
         this.setState({
           rows: data.jobs.map(job => jobToRow(job, analysisViewId)),
-          pagination: data.pagination
+          pagination: data.pagination,
+          isEmpty: data.pagination.totalItems === 0
         });
+      })
+      .catch((error) => {
+        console.error('Error fetching Jenkins data:', error);
+        this.setState({rows: [], isEmpty: false, isError: true});
       });
   }
 

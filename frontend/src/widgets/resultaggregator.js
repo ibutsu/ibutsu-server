@@ -177,7 +177,7 @@ export class ResultAggregatorWidget extends React.Component {
           />
           }
           <ParamDropdown
-            dropdownItems={this.props.dropdownItems || ["result", "metadata.exception_name", "metadata.component", "metadata.classification"]}
+            dropdownItems={this.props.dropdownItems || ["result", "metadata.exception_name", "component", "metadata.classification"]}
             defaultValue={this.params.group_field}
             handleSelect={this.onGroupFieldSelect}
             tooltip={"Group data by:"}
