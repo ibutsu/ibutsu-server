@@ -1,42 +1,49 @@
-from ibutsu_server.mongo import mongo
-from pymongo import DESCENDING
+from ibutsu_server.db.base import Integer
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Run
+from ibutsu_server.filters import convert_filter
+from sqlalchemy import func
 
 PAGE_SIZE = 250
 
 
 def get_result_summary(source=None, env=None, job_name=None, project=None):
     """Get a summary of results"""
-    summary = {"passed": 0, "failed": 0, "skipped": 0, "error": 0, "total": 0}
-    filters = {}
+    summary = {"error": 0, "skipped": 0, "failed": 0, "passed": 0, "total": 0}
+    query = session.query(
+        func.sum(Run.data["summary"]["errors"].cast(Integer)),
+        func.sum(Run.data["summary"]["skips"].cast(Integer)),
+        func.sum(Run.data["summary"]["failures"].cast(Integer)),
+        func.sum(Run.data["summary"]["tests"].cast(Integer)),
+    )
+
+    # parse any filters
+    filters = []
     if source:
-        filters["source"] = {"$eq": source}
+        filters.append(f"source={source}")
     if env:
-        filters["metadata.env"] = {"$eq": env}
+        filters.append(f"metadata.env={env}")
     if job_name:
-        filters["metadata.jenkins.job_name"] = {"$eq": job_name}
+        filters.append(f"metadata.jenkins.job_name={job_name}")
     if project:
-        filters["metadata.project"] = {"$eq": project}
-    offset = 0
-    run_count = 250
-    while run_count == PAGE_SIZE:
-        runs = mongo.runs.find(
-            filters, skip=offset, limit=PAGE_SIZE, sort=[("created", DESCENDING)]
-        )
-        # Convert the MongoDB Cursor into a list
-        runs = list(runs)
-        run_count = len(runs)
-        offset += run_count
-        for run in runs:
-            if not run.get("summary"):
-                continue
-            summary["passed"] += (
-                run["summary"].get("tests", 0)
-                - run["summary"].get("errors", 0)
-                - run["summary"].get("failures", 0)
-                - run["summary"].get("skips", 0)
-            )
-            summary["failed"] += run["summary"].get("failures", 0)
-            summary["error"] += run["summary"].get("errors", 0)
-            summary["skipped"] += run["summary"].get("skips", 0)
-            summary["total"] += run["summary"].get("tests", 0)
+        filters.append(f"metadata.project={project}")
+
+    # TODO: implement some page size here?
+    if filters:
+        for filter_string in filters:
+            filter_clause = convert_filter(filter_string, Run)
+            if filter_clause is not None:
+                query = query.filter(filter_clause)
+
+    # get the total number
+    query_data = query.all()
+
+    # parse the data
+    for error, skipped, failed, total in query_data:
+        summary["error"] += error
+        summary["skipped"] += skipped
+        summary["failed"] += failed
+        summary["total"] += total
+        summary["passed"] += total - (error + skipped + failed)
+
     return summary
