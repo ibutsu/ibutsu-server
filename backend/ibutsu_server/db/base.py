@@ -5,4 +5,5 @@ Model = db.Model
 Column = db.Column
 LargeBinary = db.LargeBinary
 Text = db.Text
+Float = db.Float
 session = db.session
