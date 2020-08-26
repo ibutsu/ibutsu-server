@@ -72,6 +72,11 @@ def convert_filter(filter_string, model):
         return column.in_(value)
     if oper == "~":
         return column.op("~")(value)
+    if oper == "@":
+        if value:
+            return column != None  # noqa
+        else:
+            return column == None  # noqa
     return None
 
 
