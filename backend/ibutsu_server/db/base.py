@@ -6,4 +6,5 @@ Column = db.Column
 LargeBinary = db.LargeBinary
 Integer = db.Integer
 Text = db.Text
+Float = db.Float
 session = db.session
