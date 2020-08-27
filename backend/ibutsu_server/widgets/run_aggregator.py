@@ -4,7 +4,8 @@ from datetime import timedelta
 from ibutsu_server.db.base import Float
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run
-from ibutsu_server.filters import convert_filter
+from ibutsu_server.filters import apply_filters
+from ibutsu_server.filters import string_to_column
 from sqlalchemy import func
 
 
@@ -21,10 +22,7 @@ def _get_recent_run_data(weeks, group_field, project=None):
         filters.append(f"metadata.project={project}")
 
     # generate the group field
-    group_fields = group_field.split(".")
-    group_field = Run.data
-    for group in group_fields:
-        group_field = group_field[group]
+    group_field = string_to_column(group_field, Run)
 
     # create the query
     query = session.query(
@@ -36,10 +34,7 @@ def _get_recent_run_data(weeks, group_field, project=None):
     ).group_by(group_field)
 
     # filter the query
-    for filter_string in filters:
-        filter_clause = convert_filter(filter_string, Run)
-        if filter_clause is not None:
-            query = query.filter(filter_clause)
+    query = apply_filters(query, filters, Run)
 
     # make the query
     query_data = query.all()

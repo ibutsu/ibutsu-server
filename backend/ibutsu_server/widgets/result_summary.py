@@ -1,7 +1,7 @@
 from ibutsu_server.db.base import Integer
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run
-from ibutsu_server.filters import convert_filter
+from ibutsu_server.filters import apply_filters
 from sqlalchemy import func
 
 PAGE_SIZE = 250
@@ -30,10 +30,7 @@ def get_result_summary(source=None, env=None, job_name=None, project=None):
 
     # TODO: implement some page size here?
     if filters:
-        for filter_string in filters:
-            filter_clause = convert_filter(filter_string, Run)
-            if filter_clause is not None:
-                query = query.filter(filter_clause)
+        query = apply_filters(query, filters, Run)
 
     # get the total number
     query_data = query.all()
