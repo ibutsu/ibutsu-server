@@ -56,6 +56,8 @@ const MockRun = {
     failures: 0,
     errors: 0,
     skips: 0,
+    xfailures: 0,
+    xpasses: 0,
     tests: 0
   }
 };
@@ -65,6 +67,8 @@ const colors = {
   'error': 'rgb(223, 169, 78)',
   'passed': 'rgb(92, 183, 92)',
   'skipped': 'rgb(28, 172, 233)',
+  'xfailed': 'rgb(132, 118, 209)',
+  'xpassed': 'rgb(31, 0, 102)',
 };
 
 const icons = {
@@ -72,6 +76,8 @@ const icons = {
   'error': 'pf-icon-warning-triangle',
   'passed': 'pf-icon-ok',
   'skipped': 'pf-icon-off',
+  'xfailed': 'pf-icon-ok',
+  'xpassed': 'pf-icon-error-circle-o',
 };
 
 const match = (node, text) => {
@@ -376,7 +382,7 @@ export class Run extends React.Component {
 
 
   render() {
-    let passed = 0, failed = 0, errors = 0, skipped = 0;
+    let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0;
     let created = 0;
     const { run, columns, rows, classificationTable } = this.state;
     if (run.start_time) {
@@ -399,6 +405,14 @@ export class Run extends React.Component {
       if (run.summary.errors) {
         passed -= run.summary.errors;
         errors = run.summary.errors;
+      }
+      if (run.summary.xfailures) {
+        passed -= run.summary.xfailures;
+        xfailed = run.summary.xfailures;
+      }
+      if (run.summary.xpasses) {
+        passed -= run.summary.xpasses;
+        xpassed = run.summary.xpasses;
       }
       if (run.summary.skips) {
         passed -= run.summary.skips;
@@ -557,6 +571,26 @@ export class Run extends React.Component {
                                           dataListCells={[
                                             <DataListCell key={1}>Error:</DataListCell>,
                                             <DataListCell key={2}>{errors}</DataListCell>
+                                          ]}
+                                        />
+                                      </DataListItemRow>
+                                    </DataListItem>
+                                    <DataListItem aria-labelledby="Xfailed">
+                                      <DataListItemRow>
+                                        <DataListItemCells
+                                          dataListCells={[
+                                            <DataListCell key={1}>Xfailed:</DataListCell>,
+                                            <DataListCell key={2}>{xfailed}</DataListCell>
+                                          ]}
+                                        />
+                                      </DataListItemRow>
+                                    </DataListItem>
+                                    <DataListItem aria-labelledby="Xpassed">
+                                      <DataListItemRow>
+                                        <DataListItemCells
+                                          dataListCells={[
+                                            <DataListCell key={1}>Xpassed:</DataListCell>,
+                                            <DataListCell key={2}>{xpassed}</DataListCell>
                                           ]}
                                         />
                                       </DataListItemRow>

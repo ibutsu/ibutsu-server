@@ -21,7 +21,7 @@ UPDATED_RUN = {
     "_id": ObjectId(MOCK_RUN_ID),
     "id": MOCK_RUN_ID,
     "duration": 1.532734345,
-    "summary": {"errors": 0, "failures": 0, "skips": 0, "tests": 1},
+    "summary": {"errors": 0, "failures": 0, "skips": 0, "xfailures": 0, "xpasses": 0, "tests": 1},
     "metadata": {"component": "login", "env": "qa", "project": MOCK_PROJECT},
     "start_time": MOCK_TIME,
     "created": datetime.fromtimestamp(MOCK_TIME).isoformat(),

@@ -154,6 +154,8 @@ def import_run(xml_file):
             "errors": root.get("errors"),
             "failures": root.get("failures"),
             "skips": root.get("skips"),
+            "xfailures": root.get("xfailures"),
+            "xpasses": root.get("xpasses"),
             "tests": root.get("tests"),
         },
     }
@@ -184,6 +186,10 @@ def import_run(xml_file):
         elif testcase.find("error"):
             result_dict["result"] = "error"
             traceback = bytes(str(testcase.error), "utf8")
+        elif testcase.find("xfailure"):
+            result_dict["result"] = "xfailed"
+        elif testcase.find("xpassed"):
+            result_dict["result"] = "xpassed"
         else:
             result_dict["result"] = "passed"
         rec = mongo.results.insert_one(result_dict)

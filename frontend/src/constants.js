@@ -56,6 +56,8 @@ export const NUMERIC_RUN_FIELDS = [
   'summary.errors',
   'summary.failures',
   'summary.skips',
+  'summary.xfailures',
+  'summary.xpasses',
   'summary.tests'
 ];
 export const STRING_RUN_FIELDS = [

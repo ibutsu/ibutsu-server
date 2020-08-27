@@ -59,6 +59,8 @@ def run_junit_import(import_):
                 "errors": testsuite.get("errors"),
                 "failures": testsuite.get("failures"),
                 "skips": testsuite.get("skipped"),
+                "xfailures": testsuite.get("xfailures"),
+                "xpasses": testsuite.get("xpasses"),
                 "tests": testsuite.get("tests"),
             },
         }
@@ -94,6 +96,10 @@ def run_junit_import(import_):
             elif testcase.find("skipped"):
                 result_dict["result"] = "skipped"
                 skip_reason = str(testcase.skipped)
+            elif testcase.find("xfailure"):
+                result_dict["result"] = "xfailed"
+            elif testcase.find("xpassed"):
+                result_dict["result"] = "xpassed"
             else:
                 result_dict["result"] = "passed"
 
@@ -176,7 +182,14 @@ def run_archive_import(import_):
         else:
             run_dict = {
                 "duration": 0,
-                "summary": {"errors": 0, "failures": 0, "skips": 0, "tests": 0},
+                "summary": {
+                    "errors": 0,
+                    "failures": 0,
+                    "skips": 0,
+                    "xfailures": 0,
+                    "xpasses": 0,
+                    "tests": 0,
+                },
             }
         # patch things up a bit, if necessary
         if run_dict.get("start_time") and not run_dict.get("created"):

@@ -1251,6 +1251,8 @@ components:
           - failed
           - error
           - skipped
+          - xpassed
+          - xfailed
           type: string
         metadata:
           example:
@@ -1276,6 +1278,8 @@ components:
           errors: 1
           failures: 3
           skips: 0
+          xfailures: 0
+          xpasses: 1
           tests: 548
         metadata:
           component: login
@@ -1675,6 +1679,8 @@ components:
             errors: 1
             failures: 3
             skips: 0
+            xfailures: 0
+            xpasses: 1
             tests: 548
         pagination:
           page: 2
