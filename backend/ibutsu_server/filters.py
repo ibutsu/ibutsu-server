@@ -1,5 +1,8 @@
 import re
 
+from ibutsu_server.constants import ARRAY_FIELDS
+from sqlalchemy.dialects.postgresql import array
+
 OPERATORS = {
     "=": "$eq",
     "!": "$ne",
@@ -43,6 +46,8 @@ def convert_filter(filter_string, model):
     field = match.group(1)
     oper = match.group(2)
     value = match.group(3).strip('"')
+    # determine if the field is an array field, if so it requires some additional care
+    is_array_field = field in ARRAY_FIELDS
     # Do some type casting
     if oper == "@":
         # Need to typecast the value for the $exists operation
@@ -69,27 +74,35 @@ def convert_filter(filter_string, model):
                 # Just ignore it and carry on
                 pass
     column = string_to_column(field, model)
-    if oper == "=":
-        return column == value
-    if oper == "!":
-        return column != value
-    if oper == ">":
-        return column > value
-    if oper == "<":
-        return column < value
-    if oper == ")":
-        return column >= value
-    if oper == "(":
-        return column <= value
-    if oper == "*":
-        return column.in_(value)
-    if oper == "~":
-        return column.op("~")(value)
+
     if oper == "@":
         if value:
             return column != None  # noqa
         else:
             return column == None  # noqa
+
+    if is_array_field:
+        if oper == "=":
+            return column.op("@>")(value)
+        if oper == "*":
+            return column.op("?|")(array(value))
+    else:
+        if oper == "=":
+            return column == value
+        if oper == "!":
+            return column != value
+        if oper == ">":
+            return column > value
+        if oper == "<":
+            return column < value
+        if oper == ")":
+            return column >= value
+        if oper == "(":
+            return column <= value
+        if oper == "*":
+            return column.in_(value)
+        if oper == "~":
+            return column.op("~")(value)
     return None
 
 

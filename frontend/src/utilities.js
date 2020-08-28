@@ -17,6 +17,9 @@ import {
 import { Link } from 'react-router-dom';
 import {
   OPERATIONS,
+  ARRAY_OPERATIONS,
+  ARRAY_RESULT_FIELDS,
+  ARRAY_RUN_FIELDS,
   STRING_OPERATIONS,
   STRING_JJV_FIELDS,
   STRING_RUN_FIELDS,
@@ -279,7 +282,10 @@ export function getOperationMode(operation) {
 
 export function getOperationsFromField(field) {
   let operations = OPERATIONS;  // default to all OPERATIONS
-  if (NUMERIC_RUN_FIELDS.includes(field) || NUMERIC_RESULT_FIELDS.includes(field) || NUMERIC_JJV_FIELDS.includes(field)) {
+  if (ARRAY_RESULT_FIELDS.includes(field) || ARRAY_RUN_FIELDS.includes(field)) {
+    operations = ARRAY_OPERATIONS;
+  }
+  else if (NUMERIC_RUN_FIELDS.includes(field) || NUMERIC_RESULT_FIELDS.includes(field) || NUMERIC_JJV_FIELDS.includes(field)) {
     operations = NUMERIC_OPERATIONS;
   }
   else if (STRING_RUN_FIELDS.includes(field) || STRING_RESULT_FIELDS.includes(field) || STRING_JJV_FIELDS.includes(field)) {

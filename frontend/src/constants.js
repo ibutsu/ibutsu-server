@@ -23,7 +23,16 @@ export const NUMERIC_OPERATIONS = {
   'gte': ')',
   'lte': '(',
 };
+export const ARRAY_OPERATIONS = {
+  'eq': '=',
+  'exists': '@',
+  'in': '*',
+};
 export const OPERATIONS = {...STRING_OPERATIONS, ...NUMERIC_OPERATIONS};
+export const ARRAY_RESULT_FIELDS = [
+  'metadata.tags',
+  'metadata.markers',
+];
 export const NUMERIC_RESULT_FIELDS = [
   'duration',
   'metadata.durations.call',
@@ -50,7 +59,10 @@ export const STRING_RESULT_FIELDS = [
   'start_time',  // TODO: handle this with a calendar widget?
   'test_id'
 ];
-export const RESULT_FIELDS = [...NUMERIC_RESULT_FIELDS, ...STRING_RESULT_FIELDS];
+export const RESULT_FIELDS = [...NUMERIC_RESULT_FIELDS, ...STRING_RESULT_FIELDS, ...ARRAY_RESULT_FIELDS];
+export const ARRAY_RUN_FIELDS = [
+  'metadata.tags',
+]
 export const NUMERIC_RUN_FIELDS = [
   'duration',
   'summary.errors',
@@ -64,7 +76,7 @@ export const STRING_RUN_FIELDS = [
   'metadata.env',
   'source'
 ];
-export const RUN_FIELDS = [...NUMERIC_RUN_FIELDS, ...STRING_RUN_FIELDS];
+export const RUN_FIELDS = [...NUMERIC_RUN_FIELDS, ...STRING_RUN_FIELDS, ...ARRAY_RUN_FIELDS];
 export const STRING_JJV_FIELDS = [
   'job_name',
   'source',
