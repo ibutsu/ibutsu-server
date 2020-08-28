@@ -1,4 +1,5 @@
 ALLOWED_TRUE_BOOLEANS = ["y", "t", "1"]
+ARRAY_FIELDS = ["metadata.tags", "metadata.markers"]
 HEATMAP_MAX_BUILDS = 40  # max for number of builds that are possible to display in heatmap
 COUNT_TIMEOUT = 0.5  # timeout for counting the number of documents [s]
 MAX_DOCUMENTS = 100000  # max documents for pagination, when apply_max=True
