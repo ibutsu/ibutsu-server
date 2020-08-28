@@ -1,10 +1,13 @@
-from bson import ObjectId
-from ibutsu_server.mongo import mongo
-from pymongo import DESCENDING
+from ibutsu_server.db.base import Float
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Run
+from ibutsu_server.filters import apply_filters
+from ibutsu_server.filters import string_to_column
+from sqlalchemy import desc
+from sqlalchemy import func
 
 NO_RUN_TEXT = "None"
 NO_PASS_RATE_TEXT = "Build failed"
-HEATMAP_RUN_LIMIT = 2000  # approximately no. plugins * 40 + wiggle room
 
 
 def _calculate_slope(x_data):
@@ -30,106 +33,92 @@ def _calculate_slope(x_data):
 
 
 def _get_builds(job_name, builds, project=None):
-    """ Gets the number of unique builds in the DB """
-    aggregation = [
-        {
-            "$match": {
-                "metadata.jenkins.job_name": job_name,
-                "metadata.jenkins.build_number": {"$exists": True},
-            }
-        },
-        {"$sort": {"start_time": DESCENDING}},
-        {"$limit": HEATMAP_RUN_LIMIT},
-        {
-            "$group": {
-                "_id": "$metadata.jenkins.build_number",
-                "start_time": {"$min": "$start_time"},
-            }
-        },
-        {"$sort": {"start_time": DESCENDING}},
-        {"$limit": builds},
-    ]
+    filters = [f"metadata.jenkins.job_name={job_name}", "metadata.jenkins.build_number@y"]
     if project:
-        aggregation[0]["$match"].update({"metadata.project": project})
-    builds = list(mongo.runs.aggregate(aggregation))
-    return [build["_id"] for build in builds]
+        filters.append(f"metadata.project={project}")
+
+    # generate the group_field
+    group_field = string_to_column("metadata.jenkins.build_number", Run)
+
+    # create the query
+    query = (
+        session.query(group_field.label("build_number"))
+        .group_by("build_number")
+        .order_by(desc("build_number"))
+    )
+
+    # add filters to the query
+    query = apply_filters(query, filters, Run)
+
+    # make the query
+    return [build_number[0] for build_number in query.limit(builds)]
 
 
 def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
-    """Run the aggregation to get the Jenkins heatmap report"""
-    # Get the run IDs for the last 5 Jenkins builds
-    builds_in_db = _get_builds(job_name, builds, project)
-    aggregation = [
-        {
-            "$match": {
-                "metadata.jenkins.job_name": job_name,
-                "metadata.jenkins.build_number": {"$in": builds_in_db},
-            }
-        },
-        {
-            "$group": {
-                "_id": "$metadata.run",
-                "build_number": {"$first": "$metadata.jenkins.build_number"},
-            }
-        },
+    """ Get Jenkins Heatmap Data. """
+
+    # Get the distinct builds that exist in the DB
+    builds = _get_builds(job_name, builds, project)
+
+    # Create the filters for the query
+    filters = [
+        f"metadata.jenkins.job_name={job_name}",
+        f"metadata.jenkins.build_number*{';'.join(builds)}",
+        f"{group_field}@y",
     ]
     if project:
-        aggregation[0]["$match"].update({"metadata.project": project})
+        filters.append(f"metadata.project={project}")
 
-    cursor = mongo.results.aggregate(aggregation)
+    # generate the group_fields
+    group_field = string_to_column(group_field, Run)
+    job_name = string_to_column("metadata.jenkins.job_name", Run)
+    build_number = string_to_column("metadata.jenkins.build_number", Run)
 
-    runs = [run for run in cursor]
-    run_to_build = {str(run["_id"]): run["build_number"] for run in runs}
-    # Figure out the pass rates for each run
-    fail_fields = ["$summary.errors", "$summary.failures"]
+    # create the base query
+    query = session.query(
+        Run.id.label("run_id"),
+        group_field.label("group_field"),
+        job_name.label("job_name"),
+        build_number.label("build_number"),
+        func.sum(Run.data["summary"]["failures"].cast(Float)).label("failures"),
+        func.sum(Run.data["summary"]["errors"].cast(Float)).label("errors"),
+        func.sum(Run.data["summary"]["skips"].cast(Float)).label("skips"),
+        func.sum(Run.data["summary"]["tests"].cast(Float)).label("total"),
+    ).group_by(group_field, job_name, build_number, Run.id)
+
+    # add filters to the query
+    query = apply_filters(query, filters, Run)
+
+    # convert the base query to a sub query
+    subquery = query.subquery()
+
+    # create the main query (this allows us to do math on the SQL side)
     if count_skips:
-        fail_fields.append("$summary.skips")
-    pipeline = [
-        {"$match": {"_id": {"$in": [ObjectId(run["_id"]) for run in runs]}}},
-        {
-            "$project": {
-                "_id": True,
-                "metadata": True,
-                "pass_rate": {
-                    "$multiply": [
-                        {
-                            "$cond": {
-                                "if": {"$eq": ["$summary.tests", 0]},
-                                "then": 0,
-                                "else": {
-                                    "$divide": [
-                                        {"$subtract": ["$summary.tests", {"$add": fail_fields}]},
-                                        "$summary.tests",
-                                    ]
-                                },
-                            }
-                        },
-                        100,
-                    ]
-                },
-            }
-        },
-        {
-            "$group": {
-                "_id": f"${group_field}",
-                "pass_rate": {"$push": "$pass_rate"},
-                "run_ids": {"$push": "$_id"},
-            }
-        },
-    ]
-    # Now calculate the slopes (angle of the trend line, essentially)
-    aggr = [r for r in mongo.runs.aggregate(pipeline)]
-    heatmap = {
-        run["_id"]: [(_calculate_slope(run["pass_rate"]), 0)]
-        + [
-            (pass_rate, str(run_id), run_to_build[str(run_id)])
-            for pass_rate, run_id in zip(run["pass_rate"], run["run_ids"])
-        ]
-        for run in aggr
-        if run["_id"] is not None
-    }
-    # get the build numbers that actually exist in the DB
-    return heatmap, builds_in_db
+        passes = subquery.c.total - (subquery.c.errors + subquery.c.skips + subquery.c.failures)
+    else:
+        passes = subquery.c.total - (subquery.c.errors + subquery.c.failures)
+
+    query = session.query(
+        subquery.c.group_field,
+        subquery.c.build_number,
+        subquery.c.run_id,
+        (100 * passes / subquery.c.total).label("pass_percent"),
+    )
+
+    # parse the data for the frontend
+    query_data = query.all()
+    data = {datum.group_field: [] for datum in query_data}
+    for datum in query_data:
+        data[datum.group_field].append(
+            [round(datum.pass_percent, 2), datum.run_id, datum.build_number]
+        )
+    # compute the slope for each component
+    data_with_slope = data.copy()
+    for key, value in data.items():
+        slope_info = _calculate_slope([v[0] for v in value])
+        data_with_slope[key].insert(0, [slope_info, 0])
+
+    return data_with_slope, builds
 
 
 def _pad_heatmap(heatmap, builds_in_db):
@@ -156,9 +145,7 @@ def _pad_heatmap(heatmap, builds_in_db):
     return padded_dict
 
 
-def get_jenkins_heatmap(
-    job_name, builds, group_field, sort_field="starttime", count_skips=False, project=None
-):
+def get_jenkins_heatmap(job_name, builds, group_field, count_skips=False, project=None):
     """Generate JSON data for a heatmap of Jenkins runs"""
     heatmap, builds_in_db = _get_heatmap(job_name, builds, group_field, count_skips, project)
     # do some postprocessing -- fill runs in which plugins failed to start with null

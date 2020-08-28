@@ -3,7 +3,8 @@ from datetime import timedelta
 
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result
-from ibutsu_server.filters import convert_filter
+from ibutsu_server.filters import apply_filters
+from ibutsu_server.filters import string_to_column
 from sqlalchemy import desc
 from sqlalchemy import func
 
@@ -28,10 +29,7 @@ def _get_recent_result_data(days, group_field, project=None):
         filters.append(f"metadata.project={project}")
 
     # generate the group field
-    group_fields = group_field.split(".")
-    group_field = Result.data
-    for group in group_fields:
-        group_field = group_field[group]
+    group_field = string_to_column(group_field, Result)
 
     # create the query
     query = (
@@ -41,10 +39,7 @@ def _get_recent_result_data(days, group_field, project=None):
     )
 
     # add filters to the query
-    for filter_string in filters:
-        filter_clause = convert_filter(filter_string, Result)
-        if filter_clause is not None:
-            query = query.filter(filter_clause)
+    query = apply_filters(query, filters, Result)
 
     query_data = query.all()
     # parse the data for the frontend
