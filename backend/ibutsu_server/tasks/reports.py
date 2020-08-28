@@ -15,7 +15,6 @@ from ibutsu_server.db.models import Result
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks import task
 from ibutsu_server.templating import render_template
-from ibutsu_server.util import serialize
 from ibutsu_server.util.projects import get_project_id
 
 TREE_ROOT = {
@@ -344,9 +343,8 @@ def generate_csv_report(report):
     csv_file = StringIO()
     csv_writer = DictWriter(csv_file, fieldnames=list(field_names), extrasaction="ignore")
     csv_writer.writeheader()
-    results.rewind()
     for result in results:
-        csv_writer.writerow(_make_row(serialize(result)))
+        csv_writer.writerow(_make_row(result.to_dict()))
     # Write the report to the database
     csv_file.seek(0)
     report_file = ReportFile(
