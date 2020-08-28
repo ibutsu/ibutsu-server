@@ -70,7 +70,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
             else:
                 filter_clause = convert_filter(filter_string, WidgetConfig)
             if filter_clause is not None:
-                query.filter(filter_clause)
+                query = query.filter(filter_clause)
     offset = (page * page_size) - page_size
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)

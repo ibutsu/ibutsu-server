@@ -264,6 +264,7 @@ export class JenkinsJobView extends React.Component {
         params.filter.push(key + op + val);
       }
     }
+    params.filter = params.filter.join();  // convert array to a comma-separated string
     fetch(buildUrl(Settings.serverUrl + '/widget/' + this.props.view.widget, params))
       .then(response => response.json())
       .then(data => {
