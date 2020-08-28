@@ -60,7 +60,7 @@ def add_report(report_parameters=None):
     report = Report.from_dict(report_dict)
     session.add(report)
     session.commit()
-    REPORTS[report_parameters["type"]]["func"].delay(report)
+    REPORTS[report_parameters["type"]]["func"].delay(report.to_dict())
     return report.to_dict(), 201
 
 
@@ -87,8 +87,8 @@ def get_report_list(page=1, page_size=25, project=None):
     :rtype: ReportList
     """
     query = Report.query
-    project_id = get_project_id(project)
-    if project_id:
+    if project:
+        project_id = get_project_id(project)
         query = query.filter(Report.data["metadata"]["project_id"] == project_id)
     offset = (page * page_size) - page_size
     total_items = query.count()
