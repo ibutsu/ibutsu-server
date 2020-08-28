@@ -63,25 +63,22 @@ def _update_import_status(import_record, status):
 def run_junit_import(import_):
     """Import a test run from a JUnit file"""
     # Update the status of the import
-    import_record = session.query(Import).get(import_["id"])
+    import_record = Import.query.get(import_["id"])
     _update_import_status(import_record, "running")
     # Fetch the file contents
-    import_file = (
-        session.query(ImportFile)
-        .filter(ImportFile.data["metadata"]["import_id"] == import_["id"])
-        .first()
-    )
+    import_file = ImportFile.query.filter(
+        ImportFile.data["metadata"]["import_id"] == import_["id"]
+    ).first()
     if not import_file:
         _update_import_status(import_record, "error")
         return
     # Parse the XML and create a run object(s)
-    tree = objectify.parse(import_file.content)
-    root = tree.getroot()
+    tree = objectify.fromstring(import_file.content)
     import_record.data["run_id"] = []
-    for testsuite in root.testsuite:
+    for testsuite in tree.testsuite:
         run_dict = {
             "created": datetime.fromtimestamp(time.time()).isoformat(),
-            "start_time": parser.parse(testsuite.get("timestamp")).strftime("%s"),
+            "start_time": int(parser.parse(testsuite.get("timestamp")).strftime("%s")),
             "duration": testsuite.get("time"),
             "summary": {
                 "errors": testsuite.get("errors"),
@@ -103,7 +100,7 @@ def run_junit_import(import_):
                 test_name = testcase.get("classname").split(".")[-1] + "." + test_name
             result_dict = {
                 "test_id": test_name,
-                "start_time": run["start_time"],
+                "start_time": run_dict["start_time"],
                 "duration": float(testcase.get("time")),
                 "metadata": {
                     "run": run.id,
@@ -172,21 +169,18 @@ def run_junit_import(import_):
 def run_archive_import(import_):
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
-    import_record = session.query(Import).get(str(import_["id"]))
+    import_record = Import.query.get(str(import_["id"]))
     _update_import_status(import_record, "running")
     # Fetch the file contents
-    import_file = (
-        session.query(ImportFile)
-        .filter(ImportFile.data["metadata"]["import_id"] == import_["id"])
-        .first()
-    )
+    import_file = ImportFile.query.filter(
+        ImportFile.data["metadata"]["import_id"] == import_["id"]
+    ).first()
     if not import_file:
         _update_import_status(import_record, "error")
         return
 
     # First open the tarball and pull in the results
     run = None
-    run_dict = None
     results = []
     result_artifacts = {}
     current_dir = None
@@ -243,7 +237,6 @@ def run_archive_import(import_):
             run = Run(id=run_dict["id"], data=run_dict)
         session.add(run)
         session.commit()
-        run_dict = run.to_dict()
         import_record.data["run_id"] = [run.id]
         # Now loop through all the results, and create or update them
         for result in results:
