@@ -26,13 +26,26 @@ def update_run(run_id):
     try:
         # Get a lock so that we don't run this task concurrently
         with redis_client.lock(f"update-run-lock-{run_id}", blocking_timeout=LOCK_EXPIRE):
-            key_map = {"failed": "failures", "error": "errors", "skipped": "skips"}
+            key_map = {
+                "failed": "failures",
+                "error": "errors",
+                "xfailed": "xfailures",
+                "xpassed": "xpasses",
+                "skipped": "skips",
+            }
             run = mongo.runs.find_one({"_id": ObjectId(run_id)})
             if not run:
                 return
             # sort according to starttime to get the most recent starting time of the run
             results = mongo.results.find({"metadata.run": run_id}, sort=[("start_time", ASCENDING)])
-            summary = {"errors": 0, "failures": 0, "skips": 0, "tests": 0}
+            summary = {
+                "errors": 0,
+                "failures": 0,
+                "skips": 0,
+                "xfailures": 0,
+                "xpasses": 0,
+                "tests": 0,
+            }
             run_duration = 0.0
             metadata = run.get("metadata") or {}
             for counter, result in enumerate(results):

@@ -42,6 +42,12 @@ export function getIconForResult(result) {
   else if (result === 'skipped') {
     resultIcon = <ChevronCircleRightIcon />;
   }
+  else if (result === 'xfailed') {
+    resultIcon = <CheckCircleIcon />;
+  }
+  else if (result === 'xpassed') {
+    resultIcon = <TimesCircleIcon />;
+  }
   return resultIcon;
 }
 

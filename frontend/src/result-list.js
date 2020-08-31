@@ -490,7 +490,7 @@ export class ResultList extends React.Component {
             onToggle={this.onResultToggle}
             onSelect={this.onResultSelect}
           >
-            {["passed", "failed", "skipped", "error"].map((option, index) => (
+            {["passed", "xpassed", "failed", "xfailed", "skipped", "error"].map((option, index) => (
               <SelectOption key={index} value={option} />
             ))}
           </Select>

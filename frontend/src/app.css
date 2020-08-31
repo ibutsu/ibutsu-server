@@ -29,6 +29,14 @@ span.skipped, span.pending {
   color: var(--pf-global--active-color--100);
 }
 
+span.xfailed{
+  color: var(--pf-global--palette--purple-400);
+}
+
+span.xpassed{
+  color: var(--pf-global--palette--purple-700);
+}
+
 table.pf-c-table th {
   font-size: 100%;
 }
@@ -51,6 +59,16 @@ table.pf-c-table th {
 .pf-c-badge.skipped {
   color: #fff;
   background-color: var(--pf-global--active-color--100);
+}
+
+.pf-c-badge.xfailed {
+  color: #fff;
+  background-color: var(--pf-global--palette--purple-400);
+}
+
+.pf-c-badge.xpassed {
+  color: #fff;
+  background-color: var(--pf-global--palette--purple-700);
 }
 
 button.pf-c-dropdown__toggle,
@@ -92,6 +110,16 @@ a.typeahead-option {
 
 .pf-c-card.skipped .pf-c-card__header {
   background-color: var(--pf-global--active-color--100);
+  color: var(--pf-global--Color--light-100);
+}
+
+.pf-c-card.xfailed .pf-c-card__header {
+  background-color: var(--pf-global--default-color--200);
+  color: var(--pf-global--Color--light-100);
+}
+
+.pf-c-card.xpassed .pf-c-card__header {
+  background-color: var(--pf-global--danger-color--300);
   color: var(--pf-global--Color--light-100);
 }
 
