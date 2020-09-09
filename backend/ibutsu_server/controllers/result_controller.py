@@ -1,14 +1,13 @@
-import time
+from datetime import datetime
 
 import connexion
-from func_timeout import func_timeout
-from func_timeout import FunctionTimedOut
 from ibutsu_server.constants import COUNT_TIMEOUT
 from ibutsu_server.constants import MAX_DOCUMENTS
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import get_project_id
+from sqlalchemy.exc import OperationalError
 
 
 def add_result(result=None):
@@ -21,14 +20,14 @@ def add_result(result=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    result = Result(data=connexion.request.get_json())
-    if result.data.get("metadata", {}).get("project"):
-        result.data["metadata"]["project"] = get_project_id(result["metadata"]["project"])
-    if "start_time" not in result.data:
-        if "starttime" in result.data:
-            result.data["start_time"] = result.data["starttime"]
-        else:
-            result.data["start_time"] = time.time()
+    result = Result.from_dict(**connexion.request.get_json())
+    if result.data and result.data.get("project"):
+        result.project_id = get_project_id(result.data["project"])
+    result.env = result.data.get("env") if result.data else None
+    result.component = result.data.get("component") if result.data else None
+    result.run_id = result.data.get("run") if result.data else None
+    result.start_time = result.start_time if result.start_time else datetime.utcnow()
+
     session.add(result)
     session.commit()
     return result.to_dict(), 201
@@ -90,8 +89,11 @@ def get_result_list(filter_=None, page=1, page_size=25, apply_max=False):
     offset = (page * page_size) - page_size
     try:
         # if the count is fast, just use it! Even if apply_max is set to true
-        total_items = func_timeout(COUNT_TIMEOUT, query.count)
-    except FunctionTimedOut:
+        session.execute(f"SET statement_timeout TO {int(COUNT_TIMEOUT*1000)}; commit;")
+        total_items = query.count()
+    except OperationalError:
+        # reset the timeout if we hit an exception
+        session.execute("SET statement_timeout TO 0; commit;")
         if apply_max:
             print(
                 f"FunctionTimedOut: 'query.count' with filters: {filter_} timed out, "
@@ -111,9 +113,12 @@ def get_result_list(filter_=None, page=1, page_size=25, apply_max=False):
             )
             # if we don't want to limit documents, just do the standard count
             total_items = query.count()
+    else:
+        # reset the timeout if we don't hit an exception
+        session.execute("SET statement_timeout TO 0; commit;")
 
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    results = query.order_by(Result.data["start_time"].desc()).offset(offset).limit(page_size).all()
+    results = query.order_by(Result.start_time.desc()).offset(offset).limit(page_size).all()
     return {
         "results": [result.to_dict() for result in results],
         "pagination": {
@@ -151,11 +156,13 @@ def update_result(id_, result=None):
         return "Bad request, JSON required", 400
     result_dict = connexion.request.get_json()
     if result_dict.get("metadata", {}).get("project"):
-        result_dict["metadata"]["project"] = get_project_id(result_dict["metadata"]["project"])
+        result_dict["project_id"] = get_project_id(result_dict["metadata"]["project"])
     result = Result.query.get(id_)
     if not result:
         return "Result not found", 404
     result.update(result_dict)
+    result.env = result.data.get("env") if result.data else None
+    result.component = result.data.get("component") if result.data else None
     session.add(result)
     session.commit()
     return result.to_dict()

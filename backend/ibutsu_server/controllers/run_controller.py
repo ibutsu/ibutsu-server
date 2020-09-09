@@ -60,7 +60,7 @@ def get_run_list(filter_=None, page=1, page_size=25):
     offset = (page * page_size) - page_size
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    runs = query.order_by(Run.data["start_time"].desc()).offset(offset).limit(page_size).all()
+    runs = query.order_by(Run.start_time.desc()).offset(offset).limit(page_size).all()
     return {
         "runs": [run.to_dict() for run in runs],
         "pagination": {
@@ -94,15 +94,17 @@ def add_run(run=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON is required", 400
-    run_dict = connexion.request.get_json()
-    current_time = datetime.utcnow()
-    if "created" not in run_dict:
-        run_dict["created"] = current_time.isoformat()
-    if "start_time" not in run_dict:
-        run_dict["start_time"] = current_time.timestamp()
-    if run_dict.get("metadata") and run_dict.get("metadata", {}).get("project"):
-        run_dict["metadata"]["project"] = get_project_id(run_dict["metadata"]["project"])
-    run = Run.from_dict(run_dict)
+    run = Run.from_dict(**connexion.request.get_json())
+
+    if run.data and run.data.get("project"):
+        run.project_id = get_project_id(run.data["project"])
+    run.env = run.data.get("env") if run.data else None
+    run.component = run.data.get("component") if run.data else None
+    # allow start_time to be set by update_run task if no start_time present
+    run.start_time = run.start_time if run.start_time else datetime.utcnow()
+    # if not present, created is the time at which the run is added to the DB
+    run.created = run.created if run.created else datetime.utcnow()
+
     session.add(run)
     session.commit()
     update_run_task.apply_async((run.id,), countdown=5)
@@ -122,8 +124,8 @@ def update_run(id_, run=None):
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
     run_dict = connexion.request.get_json()
-    if run_dict.get("metadata") and run_dict.get("metadata", {}).get("project"):
-        run_dict["metadata"]["project"] = get_project_id(run_dict["metadata"]["project"])
+    if run_dict.get("metadata", {}).get("project"):
+        run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
     run = Run.query.get(id_)
     if not run:
         return "Run not found", 404

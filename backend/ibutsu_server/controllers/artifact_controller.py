@@ -15,12 +15,7 @@ def _build_artifact_response(id_):
     # Create a response with the contents of this file
     response = make_response(artifact.content, 200)
     # Set the content type and the file name
-    if artifact.get("content_type"):
-        file_type = artifact.data["content_type"]
-    elif artifact.get("contentType"):
-        file_type = artifact.data["contentType"]
-    else:
-        file_type = magic.from_buffer(artifact.content, mime=True)
+    file_type = magic.from_buffer(artifact.content, mime=True)
     response.headers["Content-Type"] = file_type
     return artifact, response
 
@@ -45,9 +40,7 @@ def download_artifact(id_):
     :rtype: file
     """
     artifact, response = _build_artifact_response(id_)
-    response.headers["Content-Disposition"] = "attachment; filename={}".format(
-        artifact.data["filename"]
-    )
+    response.headers["Content-Disposition"] = "attachment; filename={}".format(artifact.filename)
     return response
 
 
@@ -75,7 +68,7 @@ def get_artifact_list(result_id=None, page_size=25, page=1):
     """
     query = Artifact.query
     if result_id:
-        query = query.filter(Artifact.data["resultId"] == result_id)
+        query = query.filter(Artifact.result_id == result_id)
     total_items = query.count()
     offset = (page * page_size) - page_size
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
@@ -122,7 +115,12 @@ def upload_artifact(body):
         data["additionalMetadata"] = additional_metadata
     # Reset the file pointer
     file_.seek(0)
-    artifact = Artifact(data=data, content=file_.read())
+    artifact = Artifact(
+        filename=filename,
+        result_id=data["resultId"],
+        content=file_.read(),
+        data=additional_metadata,
+    )
     session.add(artifact)
     session.commit()
     return artifact.to_dict(), 201

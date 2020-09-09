@@ -5,8 +5,6 @@ from csv import DictWriter
 from datetime import datetime
 from io import StringIO
 
-from func_timeout import func_timeout
-from func_timeout import FunctionTimedOut
 from ibutsu_server.config import settings
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Report
@@ -16,6 +14,8 @@ from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks import task
 from ibutsu_server.templating import render_template
 from ibutsu_server.util.projects import get_project_id
+from sqlalchemy.exc import OperationalError
+
 
 TREE_ROOT = {
     "items": {},
@@ -59,8 +59,8 @@ def _get_value(d, *keys):
 
 def _update_report(report):
     """Update the report with the parameters, etc."""
-    report_type = report["parameters"]["type"]
-    report["name"] = _generate_report_name(report["parameters"])
+    report_type = report["params"]["type"]
+    report["name"] = _generate_report_name(report["params"])
     report_filename = "{}.{}".format(report["name"], REPORTS[report_type]["extension"])
     report.update(
         {
@@ -87,7 +87,7 @@ def _update_report(report):
 def _set_report_status(report_id, status):
     """Set a report's status"""
     report = Report.query.get(report_id)
-    report.data["status"] = status
+    report.status = status
     session.add(report)
     session.commit()
 
@@ -108,18 +108,16 @@ def _set_report_empty(report):
 def _build_query(report):
     """Build the filters from a report object"""
     query = Result.query
-    if report["parameters"].get("filter"):
-        for report_filter in report["parameters"]["filter"].split(","):
+    if report["params"].get("filter"):
+        for report_filter in report["params"]["filter"].split(","):
             if report_filter:
                 filter_clause = convert_filter(Result, report_filter.strip())
                 if filter_clause is not None:
                     query = query.filter(filter_clause)
-    if report["parameters"]["source"]:
-        query = query.filter(Result.data["source"] == report["parameters"]["source"])
-    if report["parameters"].get("project"):
-        query = query.filter(
-            Result.data["metadata.project"] == get_project_id(report["parameters"]["project"])
-        )
+    if report["params"]["source"]:
+        query = query.filter(Result.source == report["params"]["source"])
+    if report["params"].get("project"):
+        query = query.filter(Result.project_id == get_project_id(report["params"]["project"]))
     return query
 
 
@@ -127,12 +125,16 @@ def _get_results(report):
     """ Limit the number of documents to REPORT_MAX_DOCUMENTS so as not to crash the server."""
     query = _build_query(report)
     try:
-        if func_timeout(REPORT_COUNT_TIMEOUT, query.count) == 0:
+        session.execute(f"SET statement_timeout TO {int(REPORT_COUNT_TIMEOUT * 1000)}; commit;")
+        if query.count() == 0:
             return None
-    except FunctionTimedOut:
+    except OperationalError:
         pass
+    session.execute("SET statement_timeout TO 0; commit;")
 
-    return query.order_by(Result.data["start_time"].desc()).limit(REPORT_MAX_DOCUMENTS).all()
+    results = query.order_by(Result.start_time.desc()).limit(REPORT_MAX_DOCUMENTS).all()
+
+    return [result.to_dict() for result in results]
 
 
 def _make_result_path(result):
@@ -203,13 +205,13 @@ def _get_files(result):
     """Fetch any reports"""
     return [
         {
-            "filename": report_file["filename"],
+            "filename": report_file.filename,
             "url": "{}/api/artifact/{}/download".format(
                 settings.get("BACKEND_URL", "http://localhost:8080"), str(report_file.id)
             ),
         }
         for report_file in ReportFile.query.filter(
-            ReportFile.data["metadata"]["resultId"] == result.id
+            ReportFile.data["resultId"] == result["id"]
         ).all()
     ]
 
@@ -221,7 +223,7 @@ def _make_dict(results):
         result_path = _make_result_path(result)
         if result.get("duration") and result.get("start_time"):
             try:
-                finish_time = float(result["start_time"]) + float(result["duration"])
+                finish_time = float(result["start_time"].timestamp()) + float(result["duration"])
             except ValueError:
                 finish_time = None
         else:
@@ -231,14 +233,14 @@ def _make_dict(results):
             "files": _get_files(result),
             "exception": _get_value(result, "metadata", "short_tb"),
             "exception_name": _exception_metadata_hack(result),
-            "run": _get_value(result, "metadata", "run"),
+            "run": _get_value(result, "run_id"),
             "qa_contact": _get_value(result, "metadata", "qa_contact"),
             "stream": _get_value(result, "metadata", "stream"),
             "finish_time": finish_time,
             "start_time": _get_value(result, "start_time"),
             "source": result["source"],
             "duration": result.get("duration", 0),
-            "params": _get_value(result, "parameters"),
+            "params": _get_value(result, "params"),
             "build": _get_value(result, "metadata", "build"),
             "jenkins": _get_value(result, "metadata", "jenkins"),
             "_id": result_id,
@@ -337,21 +339,20 @@ def generate_csv_report(report):
     # First, loop through ALL the results and collect the names of the columns
     field_names = set()
     for result in results:
-        row = _make_row(result.to_dict())
+        row = _make_row(result)
         field_names |= set(row.keys())
     # Now rewind the cursor and write the results to the CSV
     csv_file = StringIO()
     csv_writer = DictWriter(csv_file, fieldnames=list(field_names), extrasaction="ignore")
     csv_writer.writeheader()
     for result in results:
-        csv_writer.writerow(_make_row(result.to_dict()))
+        csv_writer.writerow(_make_row(result))
     # Write the report to the database
     csv_file.seek(0)
     report_file = ReportFile(
-        data={
-            "filename": report["filename"],
-            "metadata": {"contentType": "application/csv", "reportId": report["id"]},
-        },
+        filename=report["filename"],
+        data={"contentType": "application/csv"},
+        report_id=report["id"],
         content=csv_file.read().encode("utf8"),
     )
     session.add(report_file)
@@ -371,8 +372,8 @@ def generate_text_report(report):
     text_file = StringIO()
     text_file.write("Test Report\n")
     text_file.write("\n")
-    text_file.write("Filter: {}\n".format(report["parameters"].get("filter", "")))
-    text_file.write("Source: {}\n".format(report["parameters"]["source"]))
+    text_file.write("Filter: {}\n".format(report["params"].get("filter", "")))
+    text_file.write("Source: {}\n".format(report["params"]["source"]))
     text_file.write("\n")
     # Now loop through the results and summarise them
     summary = {
@@ -397,10 +398,9 @@ def generate_text_report(report):
     # Write the report to the database
     text_file.seek(0)
     report_file = ReportFile(
-        data={
-            "filename": report["filename"],
-            "metadata": {"contentType": "text/plain", "reportId": report["id"]},
-        },
+        filename=report["filename"],
+        data={"contentType": "text/plain"},
+        report_id=report["id"],
         content=text_file.read().encode("utf8"),
     )
     session.add(report_file)
@@ -419,10 +419,9 @@ def generate_json_report(report):
     report_dict = _make_dict(results)
     # Write the report to the database
     report_file = ReportFile(
-        data={
-            "filename": report["filename"],
-            "metadata": {"contentType": "application/json", "reportId": report["id"]},
-        },
+        filename=report["filename"],
+        data={"contentType": "application/json"},
+        report_id=report["id"],
         content=json.dumps(report_dict, indent=2).encode("utf8"),
     )
     session.add(report_file)
@@ -466,10 +465,9 @@ def generate_html_report(report):
     )
     # Write the report to the database
     report_file = ReportFile(
-        data={
-            "filename": report["filename"],
-            "metadata": {"contentType": "text/html", "reportId": report["id"]},
-        },
+        filename=report["filename"],
+        data={"contentType": "text/hmtl"},
+        report_id=report["id"],
         content=html_report.encode("utf8"),
     )
     session.add(report_file)
@@ -539,10 +537,9 @@ def generate_exception_report(report):
     )
     # Write the report to the database
     report_file = ReportFile(
-        data={
-            "filename": report["filename"],
-            "metadata": {"contentType": "text/html", "reportId": report["id"]},
-        },
+        filename=report["filename"],
+        data={"contentType": "text/html"},
+        report_id=report["id"],
         content=exception_report.encode("utf8"),
     )
     session.add(report_file)

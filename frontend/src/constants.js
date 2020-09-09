@@ -41,10 +41,11 @@ export const NUMERIC_RESULT_FIELDS = [
   'metadata.jenkins.build_number',
 ];
 export const STRING_RESULT_FIELDS = [
+  'env',
+  'component',
+  'project_id',
   'metadata.assignee',
   'metadata.caseautomation',
-  'metadata.component',
-  'metadata.env',
   'metadata.fspath',
   'metadata.jenkins.job_name',
   'metadata.id',
@@ -72,8 +73,8 @@ export const NUMERIC_RUN_FIELDS = [
 ];
 export const STRING_RUN_FIELDS = [
   'id',
-  'metadata.component',
-  'metadata.env',
+  'component',
+  'env',
   'source'
 ];
 export const RUN_FIELDS = [...NUMERIC_RUN_FIELDS, ...STRING_RUN_FIELDS, ...ARRAY_RUN_FIELDS];

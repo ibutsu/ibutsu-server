@@ -1,4 +1,3 @@
-from ibutsu_server.db.base import Float
 from ibutsu_server.db.base import Integer
 from ibutsu_server.db.base import session
 from ibutsu_server.db.base import Text
@@ -21,14 +20,14 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
                 filters[idx] = f"metadata.jenkins.{filter}"
         query_filters.extend(filters)
     if project:
-        query_filters.append(f"metadata.project={project}")
+        query_filters.append(f"project_id={project}")
     filters = query_filters
 
     # generate the group_fields
     job_name = string_to_column("metadata.jenkins.job_name", Run)
     build_number = string_to_column("metadata.jenkins.build_number", Run)
     build_url = string_to_column("metadata.jenkins.build_url", Run)
-    env = string_to_column("metadata.env", Run)
+    env = string_to_column("env", Run)
 
     # create the base query
     query = (
@@ -36,16 +35,16 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
             job_name.label("job_name"),
             build_number.label("build_number"),
             func.min(build_url.cast(Text)).label("build_url"),
-            func.min(env.cast(Text)).label("env"),
-            func.min(Run.data["source"].cast(Text)).label("source"),
-            func.sum(Run.data["summary"]["failures"].cast(Integer)).label("failures"),
-            func.sum(Run.data["summary"]["errors"].cast(Integer)).label("errors"),
-            func.sum(Run.data["summary"]["skips"].cast(Integer)).label("skips"),
-            func.sum(Run.data["summary"]["tests"].cast(Integer)).label("tests"),
-            func.min(Run.data["start_time"].cast(Float)).label("min_start_time"),
-            func.max(Run.data["start_time"].cast(Float)).label("max_start_time"),
-            func.sum(Run.data["duration"].cast(Float)).label("total_execution_time"),
-            func.max(Run.data["duration"].cast(Float)).label("max_duration"),
+            func.min(env).label("env"),
+            func.min(Run.source).label("source"),
+            func.sum(Run.summary["failures"].cast(Integer)).label("failures"),
+            func.sum(Run.summary["errors"].cast(Integer)).label("errors"),
+            func.sum(Run.summary["skips"].cast(Integer)).label("skips"),
+            func.sum(Run.summary["tests"].cast(Integer)).label("tests"),
+            func.min(Run.start_time).label("min_start_time"),
+            func.max(Run.start_time).label("max_start_time"),
+            func.sum(Run.duration).label("total_execution_time"),
+            func.max(Run.duration).label("max_duration"),
         )
         .group_by(job_name, build_number)
         .order_by(desc("max_start_time"))
@@ -72,7 +71,8 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
                 "_id": f"{datum.job_name}-{datum.build_number}",
                 "build_number": datum.build_number,
                 "build_url": datum.build_url,
-                "duration": (datum.max_start_time - datum.min_start_time) + datum.max_duration,
+                "duration": (datum.max_start_time.timestamp() - datum.min_start_time.timestamp())
+                + datum.max_duration,
                 "env": datum.env,
                 "job_name": datum.job_name,
                 "source": datum.source,

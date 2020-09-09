@@ -17,11 +17,11 @@ def _build_report_response(id_):
     report = Report.query.get(id_)
     if not report:
         return "Report not found", 404
-    report_file = ReportFile.query.filter(ReportFile.data["metadata"]["reportId"] == id_).first()
+    report_file = ReportFile.query.filter(ReportFile.report_id == id_).first()
     if not report_file:
         return "File not found", 404
     response = make_response(report_file.content, 200)
-    response.headers["Content-Type"] = report["mimetype"]
+    response.headers["Content-Type"] = report.mimetype
     return report, response
 
 
@@ -46,18 +46,21 @@ def add_report(report_parameters=None):
     report_parameters = connexion.request.json
     if report_parameters["type"] not in REPORTS:
         return "Bad request, report type does not exist", 400
-    if "project" in report_parameters:
-        report_parameters["project"] = get_project_id(report_parameters["project"])
+
     report_dict = {
         "filename": "",
         "mimetype": "",
+        "name": "",
         "url": "",
         "download_url": "",
         "view_url": "",
-        "parameters": report_parameters,
-        "created": datetime.utcnow().isoformat(),
+        "params": report_parameters,
+        "created": datetime.utcnow(),
     }
-    report = Report.from_dict(report_dict)
+    if "project" in report_parameters:
+        report_dict.project_id = get_project_id(report_parameters["project"])
+
+    report = Report.from_dict(**report_dict)
     session.add(report)
     session.commit()
     REPORTS[report_parameters["type"]]["func"].delay(report.to_dict())
@@ -89,11 +92,11 @@ def get_report_list(page=1, page_size=25, project=None):
     query = Report.query
     if project:
         project_id = get_project_id(project)
-        query = query.filter(Report.data["metadata"]["project_id"] == project_id)
+        query = query.filter(Report.project_id == project_id)
     offset = (page * page_size) - page_size
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    reports = query.order_by(Report.data["created"].desc()).offset(offset).limit(page_size).all()
+    reports = query.order_by(Report.created.desc()).offset(offset).limit(page_size).all()
     return {
         "reports": [report.to_dict() for report in reports],
         "pagination": {
@@ -142,5 +145,5 @@ def download_report(id_, filename):
     :rtype: file
     """
     report, response = _build_report_response(id_)
-    response.headers["Content-Disposition"] = "attachment; filename={}".format(report["filename"])
+    response.headers["Content-Disposition"] = "attachment; filename={}".format(report.filename)
     return response

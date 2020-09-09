@@ -267,7 +267,7 @@ export class Run extends React.Component {
   }
 
   getClassificationTable = () => {
-    this.setState({classificationTable: <ClassifyFailuresTable filters={ {'metadata.run': {op: 'eq', val: this.state.id}} }/>});
+    this.setState({classificationTable: <ClassifyFailuresTable filters={ {'run_id': {op: 'eq', val: this.state.id}} }/>});
   }
 
 
@@ -321,7 +321,7 @@ export class Run extends React.Component {
 
   getResultsForTable() {
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
-    let params = {filter: 'metadata.run=' + this.state.id};
+    let params = {filter: 'run_id=' + this.state.id};
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
     this.setState({rows: [['Loading...', '', '', '']]});
@@ -387,10 +387,7 @@ export class Run extends React.Component {
     let created = 0;
     const { run, columns, rows, classificationTable } = this.state;
     if (run.start_time) {
-      created = new Date(run.start_time * 1000);
-    }
-    else if (typeof run.created === 'number') {
-      created = new Date(run.created * 1000);  // convert the Unix timestamp
+      created = new Date(run.start_time);
     }
     else {
       created = new Date(run.created);
@@ -603,7 +600,7 @@ export class Run extends React.Component {
                       <Button variant="secondary" onClick={this.refreshResults}>Refresh results</Button>
                     </FlexItem>
                     <FlexItem>
-                      <Link to={`/results?metadata.run[eq]=${run.id}`} className="pf-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
+                      <Link to={`/results?run_id[eq]=${run.id}`} className="pf-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
                     </FlexItem>
                   </Flex>
                 </CardHeader>

@@ -35,7 +35,7 @@ def _calculate_slope(x_data):
 def _get_builds(job_name, builds, project=None):
     filters = [f"metadata.jenkins.job_name={job_name}", "metadata.jenkins.build_number@y"]
     if project:
-        filters.append(f"metadata.project={project}")
+        filters.append(f"project_id={project}")
 
     # generate the group_field
     group_field = string_to_column("metadata.jenkins.build_number", Run)
@@ -80,10 +80,10 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
         group_field.label("group_field"),
         job_name.label("job_name"),
         build_number.label("build_number"),
-        func.sum(Run.data["summary"]["failures"].cast(Float)).label("failures"),
-        func.sum(Run.data["summary"]["errors"].cast(Float)).label("errors"),
-        func.sum(Run.data["summary"]["skips"].cast(Float)).label("skips"),
-        func.sum(Run.data["summary"]["tests"].cast(Float)).label("total"),
+        func.sum(Run.summary["failures"].cast(Float)).label("failures"),
+        func.sum(Run.summary["errors"].cast(Float)).label("errors"),
+        func.sum(Run.summary["skips"].cast(Float)).label("skips"),
+        func.sum(Run.summary["tests"].cast(Float)).label("total"),
     ).group_by(group_field, job_name, build_number, Run.id)
 
     # add filters to the query

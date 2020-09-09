@@ -1,22 +1,27 @@
 # coding: utf-8
 from __future__ import absolute_import
 
+from datetime import datetime
 from unittest import skip
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
 from flask import json
 from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockModel
+from ibutsu_server.test import MockRun
 from six import BytesIO
 
 MOCK_ID = "6b26876f-bcd9-49f3-b5bd-35f895a345d1"
-MOCK_RUN = MockModel(
-    MOCK_ID,
-    data={
-        "duration": 540.05433,
-        "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
-    },
+START_TIME = datetime.utcnow()
+MOCK_RUN = MockRun(
+    id=MOCK_ID,
+    summary={"errors": 1, "failures": 3, "skips": 0, "tests": 548},
+    duration=540.05433,
+    data={"component": "test-component", "env": "local"},
+    env="local",
+    component="test-component",
+    start_time=str(START_TIME),
+    created=str(START_TIME),
 )
 MOCK_RUN_DICT = MOCK_RUN.to_dict()
 
@@ -51,8 +56,11 @@ class TestRunController(BaseTestCase):
         Create a run
         """
         run_dict = {
-            "duration": 540.05433,
             "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
+            "duration": 540.05433,
+            "metadata": {"component": "test-component", "env": "local"},
+            "start_time": START_TIME,
+            "created": START_TIME,
         }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(

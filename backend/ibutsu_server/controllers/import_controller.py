@@ -27,15 +27,12 @@ def add_import(import_file=None, *args, **kwargs):
     """
     if not import_file:
         return "Bad request, no file uploaded", 400
-    new_import = Import(
-        data={"status": "pending", "filename": import_file.filename, "format": "", "run_id": ""}
+    new_import = Import.from_dict(
+        **{"status": "pending", "filename": import_file.filename, "format": "", "data": {}}
     )
     session.add(new_import)
     session.commit()
-    new_file = ImportFile(
-        data={"filename": import_file.filename, "metadata": {"import_id": str(new_import.id)}},
-        content=import_file.read(),
-    )
+    new_file = ImportFile(import_id=new_import.id, content=import_file.read())
     session.add(new_file)
     session.commit()
     if import_file.filename.endswith(".xml"):
