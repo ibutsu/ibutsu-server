@@ -1,4 +1,5 @@
 import connexion
+from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS
 from ibutsu_server.constants import WIDGET_TYPES
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import WidgetConfig
@@ -25,11 +26,13 @@ def add_widget_config(widget_config=None):
         data["weight"] = 10
     # Look up the project id
     if data.get("project"):
-        data["project"] = get_project_id(data["project"])
+        data["project_id"] = get_project_id(data.pop("project"))
     # default to make views navigable
-    if data.get("type") == "view" and not data.get("navigable"):
-        data["navigable"] = "true"
-    widget_config = WidgetConfig.from_dict(data)
+    if data.get("navigable"):
+        data["navigable"] = data["navigable"][0] in ALLOWED_TRUE_BOOLEANS
+    if data.get("type") == "view" and data.get("navigable") is not None:
+        data["navigable"] = True
+    widget_config = WidgetConfig.from_dict(**data)
     session.add(widget_config)
     session.commit()
     return widget_config.to_dict(), 201
@@ -64,8 +67,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
         for filter_string in filter_:
             if "project" in filter_string:
                 filter_clause = or_(
-                    WidgetConfig.data["project"].is_(None),
-                    convert_filter(filter_string, WidgetConfig),
+                    WidgetConfig.project_id.is_(None), convert_filter(filter_string, WidgetConfig),
                 )
             else:
                 filter_clause = convert_filter(filter_string, WidgetConfig)
@@ -74,7 +76,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
     offset = (page * page_size) - page_size
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    widgets = query.order_by(WidgetConfig.data["weight"].desc()).offset(offset).limit(page_size)
+    widgets = query.order_by(WidgetConfig.weight.desc()).offset(offset).limit(page_size)
     return {
         "widgets": [widget.to_dict() for widget in widgets],
         "pagination": {
@@ -103,14 +105,16 @@ def update_widget_config(id_):
         return "Bad request, widget type does not exist", 400
     # Look up the project id
     if data.get("project"):
-        data["project"] = get_project_id(data["project"])
+        data["project_id"] = get_project_id(data.pop("project"))
     widget_config = WidgetConfig.query.get(id_)
     # add default weight of 10
-    if not widget_config.get("weight"):
-        widget_config["weight"] = 10
+    if not widget_config.weight:
+        widget_config.weight = 10
     # default to make views navigable
-    if data.get("type") == "view" and not data.get("navigable"):
-        data["navigable"] = "true"
+    if data.get("navigable"):
+        data["navigable"] = data["navigable"][0] in ALLOWED_TRUE_BOOLEANS
+    if data.get("type") and data["type"] == "view" and data.get("navigable") is not None:
+        data.navigable = True
     widget_config.update(data)
     session.add(widget_config)
     session.commit()

@@ -132,22 +132,22 @@ export function resultToRow(result, filterFunc) {
   let classification = '';
   let badge;
   if (filterFunc) {
-    badge = buildBadge('component', result.metadata.component, false,
-      () => filterFunc('metadata.component', result.metadata.component));
+    badge = buildBadge('component', result.component, false,
+      () => filterFunc('component', result.component));
   }
   else {
-    badge = buildBadge('component', result.metadata.component, false);
+    badge = buildBadge('component', result.component, false);
   }
   markers.push(badge);
   markers.push(' ');
   if (result.metadata && result.metadata.env) {
     let badge;
     if (filterFunc) {
-      badge = buildBadge(result.metadata.env, result.metadata.env, false,
-        () => filterFunc('metadata.env', result.metadata.env));
+      badge = buildBadge(result.env, result.env, false,
+        () => filterFunc('env', result.env));
     }
     else {
-      badge = buildBadge(result.metadata.env, result.metadata.env, false);
+      badge = buildBadge(result.env, result.env, false);
     }
     markers.push(badge);
     markers.push(' ');
@@ -161,7 +161,7 @@ export function resultToRow(result, filterFunc) {
     }
   }
   if (result.metadata && result.metadata.run) {
-    runLink = <Link to={`/runs/${result.metadata.run}`}>{result.metadata.run}</Link>;
+    runLink = <Link to={`/runs/${result.run_id}`}>{result.run_id}</Link>;
   }
   if (result.metadata && result.metadata.classification) {
     classification = <Badge isRead>{result.metadata.classification.split('_')[0]}</Badge>;
@@ -172,7 +172,7 @@ export function resultToRow(result, filterFunc) {
       {title: runLink},
       {title: <React.Fragment><span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span> {classification}</React.Fragment>},
       {title: round(result.duration) + 's'},
-      {title: (new Date((result.start_time ? result.start_time : result.starttime) * 1000)).toLocaleString()}
+      {title: (new Date(result.start_time).toLocaleString())}
     ]
   };
 }

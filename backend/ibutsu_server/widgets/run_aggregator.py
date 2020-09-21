@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from datetime import timedelta
 
 from ibutsu_server.db.base import Float
@@ -17,9 +18,9 @@ def _get_recent_run_data(weeks, group_field, project=None):
     time_period_in_sec = current_time - delta
 
     # create filters for start time and that the group_field exists
-    filters = [f"start_time>{time_period_in_sec}", f"{group_field}@y"]
+    filters = [f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}", f"{group_field}@y"]
     if project:
-        filters.append(f"metadata.project={project}")
+        filters.append(f"project_id={project}")
 
     # generate the group field
     group_field = string_to_column(group_field, Run)
@@ -27,10 +28,10 @@ def _get_recent_run_data(weeks, group_field, project=None):
     # create the query
     query = session.query(
         group_field,
-        func.sum(Run.data["summary"]["failures"].cast(Float)),
-        func.sum(Run.data["summary"]["errors"].cast(Float)),
-        func.sum(Run.data["summary"]["skips"].cast(Float)),
-        func.sum(Run.data["summary"]["tests"].cast(Float)),
+        func.sum(Run.summary["failures"].cast(Float)),
+        func.sum(Run.summary["errors"].cast(Float)),
+        func.sum(Run.summary["skips"].cast(Float)),
+        func.sum(Run.summary["tests"].cast(Float)),
     ).group_by(group_field)
 
     # filter the query

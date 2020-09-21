@@ -6,20 +6,19 @@ from unittest.mock import patch
 
 from flask import json
 from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockModel
+from ibutsu_server.test import MockReport
 
 MOCK_ID = "751162a7-b0e0-448e-9af3-676d1a48b0ca"
 MOCK_PARAMS = {"type": "csv", "source": "local"}
-MOCK_REPORT = MockModel(
-    MOCK_ID,
-    {
-        "filename": "report.csv",
-        "mimetype": "text/csv",
-        "url": "",
-        "parameters": MOCK_PARAMS,
-        "created": "2019-09-30T22:08:30.205319",
-    },
-)
+MOCK_DATA = {
+    "id": MOCK_ID,
+    "filename": "report.csv",
+    "mimetype": "text/csv",
+    "url": "",
+    "params": MOCK_PARAMS,
+    "created": "2019-09-30T22:08:30.205319",
+}
+MOCK_REPORT = MockReport.from_dict(**MOCK_DATA)
 MOCK_REPORT_DICT = MOCK_REPORT.to_dict()
 MOCK_CSV = {"func": MagicMock()}
 

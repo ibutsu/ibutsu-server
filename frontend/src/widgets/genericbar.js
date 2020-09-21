@@ -174,7 +174,7 @@ export class GenericBarWidget extends React.Component {
       return (
         <div>
           <ParamDropdown
-            dropdownItems={this.props.dropdownItems || ["metadata.component", "metadata.env", "metadata.jenkins.job_name"]}
+            dropdownItems={this.props.dropdownItems || ["component", "env", "metadata.jenkins.job_name"]}
             defaultValue={this.params.group_field}
             handleSelect={this.onGroupFieldSelect}
             tooltip={"Group data by:"}

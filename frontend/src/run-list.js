@@ -74,35 +74,32 @@ function runToRow(run, filterFunc) {
   let created = 0;
   let badge;
   if (run.start_time) {
-    created = new Date(run.start_time * 1000);
-  }
-  else if (typeof run.created === "number") {
-      created = new Date(run.created * 1000);  // convert the Unix timestamp
+    created = new Date(run.start_time);
   }
   else {
       created = new Date(run.created);
   }
 
   if (filterFunc) {
-    if (run.metadata && run.metadata.component) {
-      badge = buildBadge('component', run.metadata.component, false,
-        () => filterFunc('metadata.component', run.metadata.component));
+    if (run.component) {
+      badge = buildBadge('component', run.component, false,
+        () => filterFunc('component', run.component));
     }
   }
   else {
-    badge = buildBadge('component', run.metadata.component, false);
+    badge = buildBadge('component', run.component, false);
   }
   badges.push(badge);
   badges.push(' ');
 
-  if (run.metadata && run.metadata.env) {
+  if (run.env) {
     let badge;
     if (filterFunc) {
-      badge = buildBadge(run.metadata.env, run.metadata.env, false,
-        () => filterFunc('metadata.env', run.metadata.env));
+      badge = buildBadge(run.env, run.env, false,
+        () => filterFunc('env', run.env));
     }
     else {
-      badge = buildBadge(run.metadata.env, run.metadata.env, false);
+      badge = buildBadge(run.env, run.env, false);
     }
     badges.push(badge)
     badges.push(' ')
@@ -113,7 +110,7 @@ function runToRow(run, filterFunc) {
       {title: round(run.duration) + 's'},
       {title: <RunSummary summary={run.summary} />},
       {title: created.toLocaleString()},
-      {title: <Link to={`/results?metadata.run=${run.id}`}>See results <ChevronRightIcon /></Link>}
+      {title: <Link to={`/results?run_id=${run.id}`}>See results <ChevronRightIcon /></Link>}
     ]
   };
 }

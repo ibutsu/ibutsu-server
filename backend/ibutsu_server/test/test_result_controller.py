@@ -1,25 +1,25 @@
 # coding: utf-8
 from __future__ import absolute_import
 
+from datetime import datetime
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
 from flask import json
 from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockModel
+from ibutsu_server.test import MockResult
 
 MOCK_ID = "99fba7d2-4d32-4b9b-b07f-4200c9717661"
-MOCK_RESULT = MockModel(
-    MOCK_ID,
-    data={
-        "duration": 6.027456183070403,
-        "result": "passed",
-        "metadata": {"jenkins_build": 145, "commit_hash": "F4BA3E12"},
-        "start_time": 0.8008281904610115,
-        "source": "source",
-        "params": {"provider": "vmware", "ip_stack": "ipv4"},
-        "test_id": "test_id",
-    },
+START_TIME = datetime.utcnow()
+MOCK_RESULT = MockResult(
+    id=MOCK_ID,
+    duration=6.027456183070403,
+    result="passed",
+    data={"jenkins_build": 145, "commit_hash": "F4BA3E12"},
+    start_time=str(START_TIME),
+    source="source",
+    params={"provider": "vmware", "ip_stack": "ipv4"},
+    test_id="test_id",
 )
 MOCK_RESULT_DICT = MOCK_RESULT.to_dict()
 
@@ -47,12 +47,21 @@ class TestResultController(BaseTestCase):
 
         Create a test result
         """
+        result = {
+            "duration": 6.027456183070403,
+            "result": "passed",
+            "metadata": {"jenkins_build": 145, "commit_hash": "F4BA3E12"},
+            "start_time": START_TIME,
+            "source": "source",
+            "params": {"provider": "vmware", "ip_stack": "ipv4"},
+            "test_id": "test_id",
+        }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/result",
             method="POST",
             headers=headers,
-            data=json.dumps(MOCK_RESULT.data),
+            data=json.dumps(result),
             content_type="application/json",
         )
         self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
@@ -101,7 +110,6 @@ class TestResultController(BaseTestCase):
             "duration": 6.027456183070403,
             "result": "passed",
             "metadata": {"jenkins_build": 145, "commit_hash": "F4BA3E12"},
-            "start_time": 0.8008281904610115,
             "source": "source",
             "params": {"provider": "vmware", "ip_stack": "ipv4"},
             "test_id": "test_id",

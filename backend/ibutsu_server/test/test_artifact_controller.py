@@ -6,21 +6,21 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockModel
+from ibutsu_server.test import MockArtifact
 from six import BytesIO
 
 
 MOCK_ID = "70202589-4781-4eb9-bcfc-685b1d2c583a"
 MOCK_RESULT_ID = "23cd86d5-a27e-45a4-83a3-12c74d219709"
-MOCK_ARTIFACT = MockModel(
-    MOCK_ID,
-    {
+MOCK_ARTIFACT = MockArtifact(
+    id=MOCK_ID,
+    data={
         "resultId": MOCK_RESULT_ID,
         "filename": "log.txt",
         "contentType": "text/plain",
         "additionalMetadata": {"key": "value"},
     },
-    "filecontent",
+    content="filecontent",
 )
 
 

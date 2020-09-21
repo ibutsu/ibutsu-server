@@ -6,17 +6,18 @@ from unittest.mock import patch
 
 from flask import json
 from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockModel
+from ibutsu_server.test import MockProject
 
 MOCK_ID = "5ac7d645-45a3-4cbe-acb2-c8d6f7e05468"
 MOCK_NAME = "my-project"
 MOCK_DATA = {
+    "id": MOCK_ID,
     "name": MOCK_NAME,
     "title": "My Project",
-    "ownerId": "8f22a434-b160-41ed-b700-0cc3d7f146b1",
-    "groupId": "9af34437-047c-48a5-bd21-6430e4532414",
+    "owner_id": "8f22a434-b160-41ed-b700-0cc3d7f146b1",
+    "group_id": "9af34437-047c-48a5-bd21-6430e4532414",
 }
-MOCK_PROJECT = MockModel(id_=MOCK_ID, data=MOCK_DATA)
+MOCK_PROJECT = MockProject.from_dict(**MOCK_DATA)
 MOCK_PROJECT_DICT = MOCK_PROJECT.to_dict()
 
 

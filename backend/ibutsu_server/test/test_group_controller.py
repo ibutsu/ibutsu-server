@@ -6,10 +6,10 @@ from unittest.mock import patch
 
 from flask import json
 from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockModel
+from ibutsu_server.test import MockGroup
 
 MOCK_ID = "c68506e2-202e-4193-a47d-33f1571d4b3e"
-MOCK_GROUP = MockModel(id_=MOCK_ID, data={"name": "Example group"})
+MOCK_GROUP = MockGroup(id=MOCK_ID, name="Example group", data={})
 MOCK_GROUP_DICT = MOCK_GROUP.to_dict()
 MOCK_LIST_RESPONSE = {"pagination": {"page": 0}, "groups": [MOCK_GROUP]}
 
@@ -96,4 +96,5 @@ class TestGroupController(BaseTestCase):
             content_type="application/json",
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
-        self.assert_equal(response.json, {"id": MOCK_ID, "name": "Changed name"})
+        MOCK_GROUP.update({"name": "Changed name"})
+        self.assert_equal(response.json, MOCK_GROUP.to_dict())

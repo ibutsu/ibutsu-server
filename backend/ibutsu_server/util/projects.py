@@ -7,7 +7,7 @@ def get_project(project_name):
     if is_uuid(project_name):
         project = Project.query.get(project_name)
     else:
-        project = Project.query.filter(Project.data["name"] == project_name).first()
+        project = Project.query.filter(Project.name == project_name).first()
     return project
 
 

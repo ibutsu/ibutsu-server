@@ -28,7 +28,7 @@ import { OPERATIONS, JJV_FIELDS } from '../constants';
 
 
 function jobToRow(job, analysisViewId) {
-  let start_time = new Date(job.start_time * 1000);
+  let start_time = new Date(job.start_time);
   return {
     cells: [
       analysisViewId ? {title: <Link to={`/view/${analysisViewId}?job_name=${job.job_name}`}>{job.job_name}</Link>} : job.job_name,

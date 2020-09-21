@@ -1224,7 +1224,7 @@ components:
         metadata:
           jenkins_build: 145
           commit_hash: F4BA3E12
-        start_time: 0.8008281904610115
+        start_time: 2020-05-15T16:18:32.014053
         source: source
         params:
           provider: vmware
@@ -1240,7 +1240,7 @@ components:
           type: string
         start_time:
           description: Timestamp of starttime.
-          type: number
+          type: string
         duration:
           description: Duration of test in seconds.
           type: number
@@ -1271,7 +1271,7 @@ components:
         created: 2020-05-15T16:18:32.014053
         duration: 540.05433
         source: my-tests
-        start_time: 1589559512.014053
+        start_time: 2020-05-15T16:18:32.014053
         summary:
           errors: 1
           failures: 3
@@ -1299,8 +1299,8 @@ components:
           type: string
         start_time:
           description: The time the test run started
-          example: 1589559512.014053
-          type: number
+          example: 2020-05-15T16:18:32.014053
+          type: string
         summary:
           description: A summary of the test results
           type: object

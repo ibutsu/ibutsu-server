@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from datetime import timedelta
 
 from ibutsu_server.db.base import session
@@ -24,9 +25,9 @@ def _get_recent_result_data(days, group_field, project=None):
     time_period_in_sec = current_time - delta
 
     # create filters for the start time and that the group_field exists
-    filters = [f"start_time>{time_period_in_sec}", f"{group_field}@y"]
+    filters = [f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}", f"{group_field}@y"]
     if project:
-        filters.append(f"metadata.project={project}")
+        filters.append(f"project_id={project}")
 
     # generate the group field
     group_field = string_to_column(group_field, Result)

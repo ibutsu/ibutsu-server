@@ -17,7 +17,7 @@ def add_project(project=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    project = Project.from_dict(connexion.request.get_json())
+    project = Project.from_dict(**connexion.request.get_json())
     session.add(project)
     session.commit()
     return project.to_dict(), 201
@@ -33,7 +33,7 @@ def get_project(id_):
     """
     if not is_uuid(id_):
         id_ = convert_objectid_to_uuid(id_)
-    project = Project.query.filter(Project.data["name"] == id_).first()
+    project = Project.query.filter(Project.name == id_).first()
     if not project:
         project = Project.query.get(id_)
     if not project:
@@ -59,9 +59,9 @@ def get_project_list(owner_id=None, group_id=None, page=1, page_size=25):
     """
     query = Project.query
     if owner_id:
-        query = query.filter(Project.data["ownerId"] == owner_id)
+        query = query.filter(Project.owner_id == owner_id)
     if group_id:
-        query = query.filter(Project.data["groupId"] == group_id)
+        query = query.filter(Project.group_id == group_id)
     offset = (page * page_size) - page_size
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)

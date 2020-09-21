@@ -97,7 +97,7 @@ export class ResultView extends React.Component {
           fetch(Settings.serverUrl + `/artifact/${artifact.id}/view`)
             .then(response => {
               let contentType = response.headers.get('Content-Type');
-              if (contentType.includes('ASCII text')) {
+              if (contentType.includes('text')) {
                 response.text().then(text => {
                   artifactTabs.push(
                     <Tab key={artifact.tabKey} eventKey={artifact.tabKey} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
@@ -163,11 +163,11 @@ export class ResultView extends React.Component {
     const testResult = this.state.testResult;
     const artifactTabs = this.state.artifactTabs;
     const resultIcon = getIconForResult(testResult.result);
-    const startTime = new Date((testResult.start_time ? testResult.start_time : testResult.starttime) * 1000);
+    const startTime = new Date(testResult.start_time);
     const parameters = Object.keys(testResult.params).map((key) => <div key={key}>{key} = {testResult.params[key]}</div>);
     let runLink = '';
-    if (testResult.metadata && testResult.metadata.run) {
-      runLink = <Link to={`/runs/${testResult.metadata.run}`}>{testResult.metadata.run}</Link>;
+    if (testResult.run_id) {
+      runLink = <Link to={`/runs/${testResult.run_id}`}>{testResult.run_id}</Link>;
     }
     return (
       <React.Fragment>

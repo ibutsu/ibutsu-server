@@ -11,10 +11,10 @@ def get_result_summary(source=None, env=None, job_name=None, project=None):
     """Get a summary of results"""
     summary = {"error": 0, "skipped": 0, "failed": 0, "passed": 0, "total": 0}
     query = session.query(
-        func.sum(Run.data["summary"]["errors"].cast(Integer)),
-        func.sum(Run.data["summary"]["skips"].cast(Integer)),
-        func.sum(Run.data["summary"]["failures"].cast(Integer)),
-        func.sum(Run.data["summary"]["tests"].cast(Integer)),
+        func.sum(Run.summary["errors"].cast(Integer)),
+        func.sum(Run.summary["skips"].cast(Integer)),
+        func.sum(Run.summary["failures"].cast(Integer)),
+        func.sum(Run.summary["tests"].cast(Integer)),
     )
 
     # parse any filters
@@ -22,11 +22,11 @@ def get_result_summary(source=None, env=None, job_name=None, project=None):
     if source:
         filters.append(f"source={source}")
     if env:
-        filters.append(f"metadata.env={env}")
+        filters.append(f"env={env}")
     if job_name:
         filters.append(f"metadata.jenkins.job_name={job_name}")
     if project:
-        filters.append(f"metadata.project={project}")
+        filters.append(f"project_id={project}")
 
     # TODO: implement some page size here?
     if filters:

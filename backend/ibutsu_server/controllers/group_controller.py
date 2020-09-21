@@ -13,7 +13,7 @@ def add_group(group=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    group = Group.from_dict(connexion.request.get_json())
+    group = Group.from_dict(**connexion.request.get_json())
     session.add(group)
     return group.to_dict(), 201
 
