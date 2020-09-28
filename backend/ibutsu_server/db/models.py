@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import uuid4
 
 from ibutsu_server.db.base import Boolean
@@ -65,14 +66,15 @@ class FileMixin(ModelMixin):
 
 class Artifact(Model, FileMixin):
     __tablename__ = "artifacts"
-    result_id = Column(PortableUUID(), ForeignKey("results.id"), nullable=False)
-    filename = Column(Text)
+    result_id = Column(PortableUUID(), ForeignKey("results.id"), nullable=False, index=True)
+    filename = Column(Text, index=True)
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
+    upload_date = Column(DateTime, default=datetime.utcnow, index=True)
 
 
 class Group(Model, ModelMixin):
     __tablename__ = "groups"
-    name = Column(Text)
+    name = Column(Text, index=True)
     projects = relationship("Project")
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
 
@@ -80,23 +82,23 @@ class Group(Model, ModelMixin):
 class Import(Model, ModelMixin):
     __tablename__ = "imports"
     file = relationship("ImportFile")
-    filename = Column(Text)
-    format = Column(Text)
+    filename = Column(Text, index=True)
+    format = Column(Text, index=True)
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
-    status = Column(Text)
+    status = Column(Text, index=True)
 
 
 class ImportFile(Model, FileMixin):
     __tablename__ = "import_files"
-    import_id = Column(PortableUUID(), ForeignKey("imports.id"), nullable=False)
+    import_id = Column(PortableUUID(), ForeignKey("imports.id"), nullable=False, index=True)
 
 
 class Project(Model, ModelMixin):
     __tablename__ = "projects"
-    name = Column(Text)
-    title = Column(Text)
-    owner_id = Column(Text)
-    group_id = Column(PortableUUID(), ForeignKey("groups.id"))
+    name = Column(Text, index=True)
+    title = Column(Text, index=True)
+    owner_id = Column(Text, index=True)
+    group_id = Column(PortableUUID(), ForeignKey("groups.id"), index=True)
     reports = relationship("Report")
     results = relationship("Result")
     runs = relationship("Run")
@@ -105,64 +107,64 @@ class Project(Model, ModelMixin):
 
 class Report(Model, ModelMixin):
     __tablename__ = "reports"
-    created = Column(DateTime)
-    download_url = Column(Text)
-    filename = Column(Text)
-    mimetype = Column(Text)
-    name = Column(Text)
+    created = Column(DateTime, default=datetime.utcnow, index=True)
+    download_url = Column(Text, index=True)
+    filename = Column(Text, index=True)
+    mimetype = Column(Text, index=True)
+    name = Column(Text, index=True)
     params = Column(mutable_json_type(dbtype=PortableJSON()))
-    project_id = Column(PortableUUID(), ForeignKey("projects.id"))
+    project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True)
     file = relationship("ReportFile")
-    status = Column(Text)
-    url = Column(Text)
-    view_url = Column(Text)
+    status = Column(Text, index=True)
+    url = Column(Text, index=True)
+    view_url = Column(Text, index=True)
 
 
 class ReportFile(Model, FileMixin):
     __tablename__ = "report_files"
-    report_id = Column(PortableUUID(), ForeignKey("reports.id"), nullable=False)
-    filename = Column(Text)
+    report_id = Column(PortableUUID(), ForeignKey("reports.id"), nullable=False, index=True)
+    filename = Column(Text, index=True)
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
 
 
 class Result(Model, ModelMixin):
     __tablename__ = "results"
     artifacts = relationship("Artifact")
-    component = Column(Text)
+    component = Column(Text, index=True)
     # this is metadata but it is a reserved attr
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
-    duration = Column(Float)
-    env = Column(Text)
+    duration = Column(Float, index=True)
+    env = Column(Text, index=True)
     params = Column(mutable_json_type(dbtype=PortableJSON()))
-    project_id = Column(PortableUUID(), ForeignKey("projects.id"))
-    result = Column(Text)
-    run_id = Column(PortableUUID(), ForeignKey("runs.id"))
-    source = Column(Text)
-    start_time = Column(DateTime)
-    test_id = Column(Text)
+    project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True)
+    result = Column(Text, index=True)
+    run_id = Column(PortableUUID(), ForeignKey("runs.id"), index=True)
+    source = Column(Text, index=True)
+    start_time = Column(DateTime, default=datetime.utcnow, index=True)
+    test_id = Column(Text, index=True)
 
 
 class Run(Model, ModelMixin):
     __tablename__ = "runs"
-    component = Column(Text)
-    created = Column(DateTime)
+    component = Column(Text, index=True)
+    created = Column(DateTime, default=datetime.utcnow, index=True)
     # this is metadata but it is a reserved attr
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
-    duration = Column(Float)
-    env = Column(Text)
-    project_id = Column(PortableUUID(), ForeignKey("projects.id"))
+    duration = Column(Float, index=True)
+    env = Column(Text, index=True)
+    project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True)
     results = relationship("Result")
-    source = Column(Text)
-    start_time = Column(DateTime)
+    source = Column(Text, index=True)
+    start_time = Column(DateTime, default=datetime.utcnow, index=True)
     summary = Column(mutable_json_type(dbtype=PortableJSON()))
 
 
 class WidgetConfig(Model, ModelMixin):
     __tablename__ = "widget_configs"
-    navigable = Column(Boolean)
+    navigable = Column(Boolean, index=True)
     params = Column(mutable_json_type(dbtype=PortableJSON()))
-    project_id = Column(PortableUUID(), ForeignKey("projects.id"))
-    title = Column(Text)
-    type = Column(Text)
-    weight = Column(Integer)
-    widget = Column(Text)
+    project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True)
+    title = Column(Text, index=True)
+    type = Column(Text, index=True)
+    weight = Column(Integer, index=True)
+    widget = Column(Text, index=True)

@@ -341,10 +341,10 @@ export class ResultList extends React.Component {
     let filters = this.state.filters;
     const project = getActiveProject();
     if (project) {
-      filters['metadata.project'] = {'val': project.id, 'op': 'eq'};
+      filters['project_id'] = {'val': project.id, 'op': 'eq'};
     }
-    else if (Object.prototype.hasOwnProperty.call(filters, 'metadata.project')) {
-      delete filters['metadata.project']
+    else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
+      delete filters['project_id']
     }
     if (filters) {
       params['apply_max'] = true;  // if filters are applied limit the documents returned
