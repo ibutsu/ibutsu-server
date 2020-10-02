@@ -171,10 +171,14 @@ def migrate_table(collection, Model, vprint, filter_=None):
                     row["project_id"] = convert_objectid_to_uuid(row["metadata"][field])
                     # also update the metadata field
                     row["metadata"][field] = row["project_id"]
+                    if not is_uuid(row["project_id"]):
+                        row["project_id"] = None
                 elif field == "run":
                     row["run_id"] = convert_objectid_to_uuid(row["metadata"][field])
                     # also update the metadata field
                     row["metadata"][field] = row["run_id"]
+                    if not is_uuid(row["run_id"]):
+                        row["run_id"] = None
                 elif field in ["result_id", "resultId"]:
                     row["result_id"] = convert_objectid_to_uuid(row["metadata"][field])
                 else:
@@ -182,6 +186,8 @@ def migrate_table(collection, Model, vprint, filter_=None):
             if row.get(field):
                 if field == "project":
                     row["project_id"] = convert_objectid_to_uuid(row.pop(field))
+                    if not is_uuid(row["project_id"]):
+                        row["project_id"] = None
 
         # Table specific stuff
         if Model.__tablename__ == "projects":
@@ -202,8 +208,10 @@ def migrate_table(collection, Model, vprint, filter_=None):
                 if row.get("params") and row["params"].get("group_field") == "metadata.component":
                     row["params"]["group_field"] = "component"
 
-        obj = Model.from_dict(**row)
-        session.add(obj)
+        if is_uuid(row["id"]):
+            obj = Model.from_dict(**row)
+            session.add(obj)
+
         if idx % ROWS_TO_COMMIT_AT_ONCE == 0:
             session.commit()
         # for each run migrate the result specific to the run
