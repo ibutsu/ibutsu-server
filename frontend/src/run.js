@@ -343,7 +343,7 @@ export class Run extends React.Component {
   }
 
   getResultsForTree(page) {
-    let params = {filter: 'metadata.run=' + this.state.id};
+    let params = {filter: 'run_id=' + this.state.id};
     params['pageSize'] = 500;
     params['page'] = page;
     fetch(buildUrl(Settings.serverUrl + '/result', params))

@@ -26,6 +26,8 @@ def string_to_column(field, model):
             if idx == 0:
                 continue
             column = column[part]
+        if field not in ARRAY_FIELDS:
+            column = column.as_string()
     else:
         column = getattr(model, field)
     return column

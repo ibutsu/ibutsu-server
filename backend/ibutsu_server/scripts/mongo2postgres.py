@@ -28,10 +28,10 @@ from sqlalchemy.orm import sessionmaker
 UUID_1_EPOCH = datetime(1582, 10, 15, tzinfo=timezone.utc)
 UUID_TICKS = 10000000
 UUID_VARIANT_1 = 0b1000000000000000
-ROWS_TO_COMMIT_AT_ONCE = 10000
-MONTHS_TO_KEEP = 1
+ROWS_TO_COMMIT_AT_ONCE = 1000
+MONTHS_TO_KEEP = 2
 # To avoid foreign key constraints, just shift the range of artifacts to keep a bit
-ARTIFACT_MONTHS_TO_KEEP = 0.75 * MONTHS_TO_KEEP
+ARTIFACT_MONTHS_TO_KEEP = 0.5 * MONTHS_TO_KEEP
 MIGRATION_LIMIT = 10000000000  # mostly for testing purposes
 
 Base = declarative_base()
@@ -69,10 +69,18 @@ FIELDS_TO_TYPECAST = ["navigable", "weight"]
 
 # json indexes for the tables
 INDEXES = {
-    # "results": [
-    # ],
-    # "runs": [
-    # ],
+    "results": [
+        "CREATE INDEX ix_results_jenkins_job_name ON results((data->'jenkins'->>'job_name'));",
+        "CREATE INDEX ix_results_jenkins_build_number "
+        "ON results((data->'jenkins'->>'build_number'));",
+        "CREATE INDEX ix_results_classification ON results((data->>'classification'));",
+        "CREATE INDEX ix_results_assignee ON results((data->>'assignee'));",
+        "CREATE INDEX ix_results_exception_name ON results((data->>'exception_name'));",
+    ],
+    "runs": [
+        "CREATE INDEX ix_runs_jenkins_job_name ON runs((data->'jenkins'->>'job_name'));"
+        "CREATE INDEX ix_runs_jenkins_build_number ON runs((data->'jenkins'->>'build_number'));"
+    ],
 }
 
 
@@ -127,10 +135,6 @@ def setup_postgres(postgres_url):
 def migrate_table(collection, Model, vprint, filter_=None):
     """Migrate a collection from MongoDB into a table in PostgreSQL"""
     # TODO: update indexes once we know them
-    conn = Base.metadata.bind.connect()
-    for sql_index in INDEXES.get(Model.__tablename__, []):
-        vprint(".", end="")
-        conn.execute(sql_index)
 
     if Model.__tablename__ == "runs":
         run_ids = []
@@ -195,6 +199,8 @@ def migrate_table(collection, Model, vprint, filter_=None):
                 if row.get("params") and row["params"].get("sort_field"):
                     # we no longer use this field
                     row["params"].pop("sort_field")
+                if row.get("params") and row["params"].get("group_field") == "metadata.component":
+                    row["params"]["group_field"] = "component"
 
         obj = Model.from_dict(**row)
         session.add(obj)
@@ -288,6 +294,13 @@ def migrate_tables(mongo, vprint, migrate_files=False):
 
     # loop over collections and migrate
     for collection, model in TABLE_MAP:
+        # first create indexes for the table
+        conn = Base.metadata.bind.connect()
+        for sql_index in INDEXES.get(model.__tablename__, []):
+            vprint(".", end="")
+            conn.execute(sql_index)
+
+        # migrate the table over
         vprint("Migrating {} ".format(collection), end="")
         if collection == "runs":
             run_ids = migrate_table(mongo[collection], model, vprint, filter_=filter_)

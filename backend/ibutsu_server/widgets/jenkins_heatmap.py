@@ -1,4 +1,5 @@
 from ibutsu_server.db.base import Float
+from ibutsu_server.db.base import Integer
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters
@@ -42,7 +43,7 @@ def _get_builds(job_name, builds, project=None):
 
     # create the query
     query = (
-        session.query(group_field.label("build_number"))
+        session.query(group_field.cast(Integer).label("build_number"))
         .group_by("build_number")
         .order_by(desc("build_number"))
     )
@@ -51,7 +52,7 @@ def _get_builds(job_name, builds, project=None):
     query = apply_filters(query, filters, Run)
 
     # make the query
-    return [build_number[0] for build_number in query.limit(builds)]
+    return [str(build_number[0]) for build_number in query.limit(builds)]
 
 
 def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
@@ -67,7 +68,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
         f"{group_field}@y",
     ]
     if project:
-        filters.append(f"metadata.project={project}")
+        filters.append(f"project_id={project}")
 
     # generate the group_fields
     group_field = string_to_column(group_field, Run)
