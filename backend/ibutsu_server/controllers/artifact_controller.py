@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import connexion
 import magic
@@ -119,6 +120,7 @@ def upload_artifact(body):
         filename=filename,
         result_id=data["resultId"],
         content=file_.read(),
+        upload_date=datetime.utcnow(),
         data=additional_metadata,
     )
     session.add(artifact)

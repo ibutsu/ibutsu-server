@@ -40,7 +40,7 @@ export class Dashboard extends React.Component {
     let params = {"type": "widget"};
     let project = getActiveProject();
     if (project) {
-      params['filter'] = 'project=' + project.id;
+      params['filter'] = 'project_id=' + project.id;
     }
     fetch(buildUrl(Settings.serverUrl + '/widget-config', params))
       .then(response => response.json())

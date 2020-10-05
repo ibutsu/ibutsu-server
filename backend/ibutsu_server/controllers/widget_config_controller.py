@@ -76,7 +76,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
     offset = (page * page_size) - page_size
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    widgets = query.order_by(WidgetConfig.weight.desc()).offset(offset).limit(page_size)
+    widgets = query.order_by(WidgetConfig.weight.asc()).offset(offset).limit(page_size)
     return {
         "widgets": [widget.to_dict() for widget in widgets],
         "pagination": {

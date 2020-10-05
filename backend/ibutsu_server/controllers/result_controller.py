@@ -81,41 +81,53 @@ def get_result_list(filter_=None, page=1, page_size=25, apply_max=False):
     :rtype: List[Result]
     """
     query = Result.query
+    count_estimate = None
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Result)
             if filter_clause is not None:
                 query = query.filter(filter_clause)
-    offset = (page * page_size) - page_size
-    try:
-        # if the count is fast, just use it! Even if apply_max is set to true
-        session.execute(f"SET statement_timeout TO {int(COUNT_TIMEOUT*1000)}; commit;")
-        total_items = query.count()
-    except OperationalError:
-        # reset the timeout if we hit an exception
-        session.execute("SET statement_timeout TO 0; commit;")
-        if apply_max:
-            print(
-                f"FunctionTimedOut: 'query.count' with filters: {filter_} timed out, "
-                f"using default items of {MAX_DOCUMENTS}"
-            )
-            if offset > MAX_DOCUMENTS:
-                raise ValueError(
-                    f"Offset: {offset} exceeds the "
-                    f"MAX_DOCUMENTS: {MAX_DOCUMENTS} able to be displayed in the UI. "
-                    f"Please use the API for this request."
-                )
-            total_items = MAX_DOCUMENTS
-        else:
-            print(
-                f"FunctionTimedOut: 'query.count' with args: {filter_} timed out, "
-                f"but limit_documents is set to False, proceeding"
-            )
-            # if we don't want to limit documents, just do the standard count
-            total_items = query.count()
     else:
-        # reset the timeout if we don't hit an exception
-        session.execute("SET statement_timeout TO 0; commit;")
+        # use a count estimate when no filter is applied
+        count_estimate = int(
+            session.execute(
+                "SELECT reltuples as approx_count FROM pg_class WHERE relname='results'"
+            ).fetchall()[0][0]
+        )
+
+    offset = (page * page_size) - page_size
+    if not count_estimate:
+        try:
+            # if the count is fast, just use it! Even if apply_max is set to true
+            session.execute(f"SET statement_timeout TO {int(COUNT_TIMEOUT*1000)}; commit;")
+            total_items = query.count()
+        except OperationalError:
+            # reset the timeout if we hit an exception
+            session.execute("SET statement_timeout TO 0; commit;")
+            if apply_max:
+                print(
+                    f"FunctionTimedOut: 'query.count' with filters: {filter_} timed out, "
+                    f"using default items of {MAX_DOCUMENTS}"
+                )
+                if offset > MAX_DOCUMENTS:
+                    raise ValueError(
+                        f"Offset: {offset} exceeds the "
+                        f"MAX_DOCUMENTS: {MAX_DOCUMENTS} able to be displayed in the UI. "
+                        f"Please use the API for this request."
+                    )
+                total_items = MAX_DOCUMENTS
+            else:
+                print(
+                    f"FunctionTimedOut: 'query.count' with args: {filter_} timed out, "
+                    f"but limit_documents is set to False, proceeding"
+                )
+                # if we don't want to limit documents, just do the standard count
+                total_items = query.count()
+        else:
+            # reset the timeout if we don't hit an exception
+            session.execute("SET statement_timeout TO 0; commit;")
+    else:
+        total_items = count_estimate
 
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     results = query.order_by(Result.start_time.desc()).offset(offset).limit(page_size).all()
