@@ -5,7 +5,7 @@ from csv import DictWriter
 from datetime import datetime
 from io import StringIO
 
-from ibutsu_server.config import settings
+from flask import current_app
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Report
 from ibutsu_server.db.models import ReportFile
@@ -67,13 +67,19 @@ def _update_report(report):
             "filename": report_filename,
             "mimetype": REPORTS[report_type]["mimetype"],
             "url": "{}/api/report/{}/download/{}".format(
-                settings.get("BACKEND_URL", "http://localhost:8080"), report["id"], report_filename
+                current_app.config.get("BACKEND_URL", "http://localhost:8080"),
+                report["id"],
+                report_filename,
             ),
             "download_url": "{}/api/report/{}/download/{}".format(
-                settings.get("BACKEND_URL", "http://localhost:8080"), report["id"], report_filename
+                current_app.config.get("BACKEND_URL", "http://localhost:8080"),
+                report["id"],
+                report_filename,
             ),
             "view_url": "{}/api/report/{}/view/{}".format(
-                settings.get("BACKEND_URL", "http://localhost:8080"), report["id"], report_filename
+                current_app.config.get("BACKEND_URL", "http://localhost:8080"),
+                report["id"],
+                report_filename,
             ),
             "status": "running",
         }
@@ -207,7 +213,7 @@ def _get_files(result):
         {
             "filename": report_file.filename,
             "url": "{}/api/artifact/{}/download".format(
-                settings.get("BACKEND_URL", "http://localhost:8080"), str(report_file.id)
+                current_app.config.get("BACKEND_URL", "http://localhost:8080"), str(report_file.id)
             ),
         }
         for report_file in ReportFile.query.filter(

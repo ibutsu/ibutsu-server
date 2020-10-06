@@ -1,4 +1,4 @@
-from ibutsu_server.config import settings
+from flask import current_app
 from sqlalchemy.exc import InterfaceError
 from sqlalchemy.exc import OperationalError
 
@@ -46,7 +46,7 @@ def get_health_info():
     :rtype: HealthInfo
     """
     return {
-        "frontend": settings.get("FRONTEND_URL", "http://localhost:3000"),
-        "backend": settings.get("BACKEND_URL", "http://localhost:8080"),
-        "api_ui": settings.get("BACKEND_URL", "http://localhost:8080") + "/api/ui/",
+        "frontend": current_app.config.get("FRONTEND_URL", "http://localhost:3000"),
+        "backend": current_app.config.get("BACKEND_URL", "http://localhost:8080"),
+        "api_ui": current_app.config.get("BACKEND_URL", "http://localhost:8080") + "/api/ui/",
     }
