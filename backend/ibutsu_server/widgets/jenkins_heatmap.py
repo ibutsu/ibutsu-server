@@ -78,7 +78,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
 
     cursor = mongo.results.aggregate(aggregation)
 
-    runs = [run for run in cursor]
+    runs = [run for run in cursor if ObjectId.is_valid(str(run["_id"]))]
     run_to_build = {str(run["_id"]): run["build_number"] for run in runs}
     # Figure out the pass rates for each run
     fail_fields = ["$summary.errors", "$summary.failures"]
