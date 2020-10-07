@@ -9,7 +9,7 @@ from flask_cors import CORS
 from ibutsu_server.db.base import db
 from ibutsu_server.encoder import JSONEncoder
 from ibutsu_server.tasks import create_celery_app
-from yaml import load as yaml_load
+from yaml import full_load as yaml_load
 
 FRONTEND_PATH = Path("/app/frontend")
 
@@ -36,9 +36,10 @@ def get_app(**extra_config):
     # Shortcut
     config = app.app.config
     config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", True)
-    if Path("./settings.yaml").exists():
+    settings_path = Path("./settings.yaml").resolve()
+    if settings_path.exists():
         # If there's a config file, load it
-        config.from_file("./settings.yaml", load=yaml_load)
+        config.from_mapping(yaml_load(settings_path.open()))
     # Now load config from environment variables
     config.from_mapping(os.environ)
     if config.get("POSTGRESQL_HOST") and config.get("POSTGRESQL_DATABASE"):
