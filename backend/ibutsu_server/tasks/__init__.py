@@ -5,11 +5,10 @@ from celery import Celery
 from celery import signals
 from celery import Task
 from celery.schedules import crontab
-from ibutsu_server.config import settings
+from flask import current_app
 from ibutsu_server.db.base import session
 from redis import Redis
 from redis.exceptions import LockError
-
 
 LOCK_EXPIRE = 1
 task = None
@@ -44,7 +43,7 @@ def create_celery_app(_app=None):
 
     app = Celery(
         "ibutsu_server",
-        broker=settings.get("CELERY_BROKER_URL"),
+        broker=_app.config.get("CELERY_BROKER_URL"),
         include=[
             "ibutsu_server.tasks.db",
             "ibutsu_server.tasks.importers",
@@ -53,7 +52,7 @@ def create_celery_app(_app=None):
             "ibutsu_server.tasks.runs",
         ],
     )
-    app.conf.result_backend = settings.get("CELERY_RESULT_BACKEND")
+    app.conf.result_backend = _app.config.get("CELERY_RESULT_BACKEND")
     app.Task = IbutsuTask
     # Shortcut for the decorator
     task = app.task
@@ -80,8 +79,10 @@ def create_celery_app(_app=None):
 
 
 @contextmanager
-def lock(name, timeout=LOCK_EXPIRE):
-    redis_client = Redis.from_url(settings["CELERY_BROKER_URL"])
+def lock(name, timeout=LOCK_EXPIRE, app=None):
+    if not app:
+        app = current_app
+    redis_client = Redis.from_url(app.config["CELERY_BROKER_URL"])
     try:
         # Get a lock so that we don't run this task concurrently
         with redis_client.lock(name, blocking_timeout=timeout):
