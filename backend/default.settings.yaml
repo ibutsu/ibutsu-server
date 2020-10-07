@@ -1,8 +1,6 @@
-default:
-  HOST: localhost
-  CELERY_BROKER_URL: 'redis://localhost'
-  CELERY_RESULT_BACKEND: 'redis://localhost'
-  SQLALCHEMY_DATABASE_URI: 'postgresql://ibutsu:ibutsu@localhost:5432/ibutsu'
-production:
-  HOST: mongo
-  PORT: 27017
+POSTGRESQL_HOST: localhost
+POSTGRESQL_DATABASE: ibutsu
+POSTGRESQL_USER: ibutsu
+POSTGRESQL_PASSWORD: ibutsu
+CELERY_BROKER_URL: 'redis://localhost'
+CELERY_RESULT_BACKEND: 'redis://localhost'
