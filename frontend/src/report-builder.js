@@ -36,7 +36,7 @@ function reportToRow(report) {
   let reportStatus = 'pending';
   let reportLink = '(no filename yet)';
   let actions = [];
-  if (report.status !== undefined) {
+  if (report.status !== undefined && !!report.status) {
     reportStatus = report.status;
   }
   let statusIcon = getIconForStatus(reportStatus);

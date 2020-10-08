@@ -69,6 +69,9 @@ export function getIconForStatus(status) {
 }
 
 export function toTitleCase(str, convertToSpace=false) {
+  if (!str) {
+    return str;
+  }
   if (convertToSpace) {
     str = str.replace(/_/g, ' ');
   }
