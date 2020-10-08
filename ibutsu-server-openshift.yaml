@@ -233,9 +233,13 @@ objects:
                 key: database-name
                 name: postgresql
           - name: CELERY_BROKER_URL
-            value: redis.${NAMESPACE}.svc
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: CELERY_RESULT_BACKEND
-            value: redis.${NAMESPACE}.svc
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: FRONTEND_URL
+            value: ${FRONTEND_ROUTE}
+          - name: BACKEND_URL
+            value: ${BACKEND_ROUTE}
           image: ibutsu-backend
           imagePullPolicy: Always
           livenessProbe:
@@ -378,10 +382,33 @@ objects:
         - env:
           - name: APP_SCRIPT
             value: celery_worker.sh
+          - name: POSTGRESQL_HOST
+            value: postgresql.${NAMESPACE}.svc
+          - name: POSTGRESQL_PORT
+            value: "5432"
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: postgresql
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: postgresql
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                key: database-name
+                name: postgresql
           - name: CELERY_BROKER_URL
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: CELERY_RESULT_BACKEND
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: FRONTEND_URL
+            value: ${FRONTEND_ROUTE}
+          - name: BACKEND_URL
+            value: ${BACKEND_ROUTE}
           image: ibutsu-worker
           imagePullPolicy: Always
           name: ibutsu-worker
@@ -481,10 +508,33 @@ objects:
       spec:
         containers:
         - env:
+          - name: POSTGRESQL_HOST
+            value: postgresql.${NAMESPACE}.svc
+          - name: POSTGRESQL_PORT
+            value: "5432"
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: postgresql
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: postgresql
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                key: database-name
+                name: postgresql
           - name: CELERY_BROKER_URL
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: CELERY_RESULT_BACKEND
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: FRONTEND_URL
+            value: ${FRONTEND_ROUTE}
+          - name: BACKEND_URL
+            value: ${BACKEND_ROUTE}
           image: ibutsu-scheduler
           imagePullPolicy: Always
           name: ibutsu-scheduler
@@ -730,6 +780,10 @@ objects:
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: CELERY_RESULT_BACKEND
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: FRONTEND_URL
+            value: ${FRONTEND_ROUTE}
+          - name: BACKEND_URL
+            value: ${BACKEND_ROUTE}
           image: ibutsu-task-monitor
           imagePullPolicy: Always
           name: ibutsu-task-monitor
