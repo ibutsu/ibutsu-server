@@ -63,7 +63,7 @@ def add_report(report_parameters=None):
     report = Report.from_dict(**report_dict)
     session.add(report)
     session.commit()
-    REPORTS[report_parameters["type"]]["func"].delay(report.to_dict())
+    REPORTS[report_parameters["type"]]["func"].apply_async((report.to_dict(),), countdown=5)
     return report.to_dict(), 201
 
 
