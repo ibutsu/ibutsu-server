@@ -346,9 +346,7 @@ export class ResultList extends React.Component {
     else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
       delete filters['project_id']
     }
-    if (filters) {
-      params['apply_max'] = true;  // if filters are applied limit the documents returned
-    }
+    params['estimate'] = true;  // use a count estimate for this page
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
     // Convert UI filters to API filters
@@ -531,8 +529,8 @@ export class ResultList extends React.Component {
             </CardBody>
             <CardFooter>
               <Text className="disclaimer" component="h4">
-                * Note: due to the number of results, when filters are applied, the results returned are limited to a max value.
-                Use the API if you need an accurate count.
+                * Note: for performance reasons, the total number of items is an approximation.
+                Use the API with &lsquo;estimate=false&rsquo; if you need an accurate count.
               </Text>
             </CardFooter>
           </Card>

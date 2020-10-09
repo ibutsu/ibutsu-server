@@ -72,9 +72,9 @@ paths:
             type: string
           type: array
         style: form
-      - description: Use a max to limit documents returned
+      - description: Return an estimated count
         in: query
-        name: apply_max
+        name: estimate
         required: false
         schema:
           type: boolean
@@ -404,6 +404,13 @@ paths:
           items:
             type: string
           type: array
+        style: form
+      - description: Return an estimated count
+        in: query
+        name: estimate
+        required: false
+        schema:
+          type: boolean
         style: form
       - $ref: '#/components/parameters/Page'
       - $ref: '#/components/parameters/PageSize'
