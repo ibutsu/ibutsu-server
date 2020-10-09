@@ -1,3 +1,4 @@
+from ibutsu_server.constants import JJV_RUN_LIMIT
 from ibutsu_server.db.base import Integer
 from ibutsu_server.db.base import session
 from ibutsu_server.db.base import Text
@@ -29,6 +30,15 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
     build_url = string_to_column("metadata.jenkins.build_url", Run)
     env = string_to_column("env", Run)
 
+    # get the runs on which to run the aggregation, we select from a subset of runs to improve
+    # performance, otherwise we'd be aggregating over ALL runs
+    sub_query = (
+        apply_filters(Run.query, filters, Run)
+        .order_by(desc("start_time"))
+        .limit(run_limit or JJV_RUN_LIMIT)
+        .subquery()
+    )
+
     # create the base query
     query = (
         session.query(
@@ -46,6 +56,7 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
             func.sum(Run.duration).label("total_execution_time"),
             func.max(Run.duration).label("max_duration"),
         )
+        .select_entity_from(sub_query)
         .group_by(job_name, build_number)
         .order_by(desc("max_start_time"))
     )
@@ -72,7 +83,7 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
                 "build_number": datum.build_number,
                 "build_url": datum.build_url,
                 "duration": (datum.max_start_time.timestamp() - datum.min_start_time.timestamp())
-                + datum.max_duration,
+                + datum.max_duration,  # noqa
                 "env": datum.env,
                 "job_name": datum.job_name,
                 "source": datum.source,
