@@ -270,8 +270,13 @@ export class JenkinsJobView extends React.Component {
       .then(data => {
         this.setState({
           rows: data.jobs.map(job => jobToRow(job, analysisViewId)),
-          pagination: data.pagination
+          pagination: data.pagination,
+          isEmpty: data.pagination.totalItems === 0
         });
+      })
+      .catch((error) => {
+        console.error('Error fetching Jenkins data:', error);
+        this.setState({rows: [], isEmpty: false, isError: true});
       });
   }
 

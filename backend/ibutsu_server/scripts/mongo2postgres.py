@@ -80,6 +80,8 @@ INDEXES = {
     "runs": [
         "CREATE INDEX ix_runs_jenkins_job_name ON runs((data->'jenkins'->>'job_name'));"
         "CREATE INDEX ix_runs_jenkins_build_number ON runs((data->'jenkins'->>'build_number'));"
+        "CREATE INDEX ix_runs_jjn_jbn "
+        "ON runs((data->'jenkins'->>'build_number'), (data->'jenkins'->>'job_name'))"
     ],
 }
 

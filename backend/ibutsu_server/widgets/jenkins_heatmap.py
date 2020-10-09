@@ -1,3 +1,4 @@
+from ibutsu_server.constants import HEATMAP_RUN_LIMIT
 from ibutsu_server.db.base import Float
 from ibutsu_server.db.base import Integer
 from ibutsu_server.db.base import session
@@ -41,9 +42,19 @@ def _get_builds(job_name, builds, project=None):
     # generate the group_field
     group_field = string_to_column("metadata.jenkins.build_number", Run)
 
+    # get the runs on which to run the aggregation, we select from a subset of runs to improve
+    # performance, otherwise we'd be aggregating over ALL runs
+    sub_query = (
+        apply_filters(Run.query, filters, Run)
+        .order_by(desc("start_time"))
+        .limit(HEATMAP_RUN_LIMIT)
+        .subquery()
+    )
+
     # create the query
     query = (
         session.query(group_field.cast(Integer).label("build_number"))
+        .select_entity_from(sub_query)
         .group_by("build_number")
         .order_by(desc("build_number"))
     )
