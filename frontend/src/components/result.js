@@ -197,13 +197,13 @@ export class ResultView extends React.Component {
                       />
                     </DataListItemRow>
                   </DataListItem>
-                  {testResult.metadata && testResult.metadata.component &&
+                  {testResult.component &&
                   <DataListItem aria-labelledby="component-label">
                     <DataListItemRow>
                       <DataListItemCells
                         dataListCells={[
                           <DataListCell key="component-label" width={2}><strong>Component:</strong></DataListCell>,
-                          <DataListCell key="component-data" width={4}><Link to={`/results?metadata.component[eq]=${testResult.metadata.component}`}>{testResult.metadata.component}</Link></DataListCell>
+                          <DataListCell key="component-data" width={4}><Link to={`/results?component[eq]=${testResult.component}`}>{testResult.component}</Link></DataListCell>
                         ]}
                       />
                     </DataListItemRow>
