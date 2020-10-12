@@ -263,7 +263,7 @@ export function getSpinnerRow(columnCount) {
 
 export function getFilterMode(field) {
   let filterMode = 'text';
-  if (field === 'metadata.run') {
+  if (field === 'run_id') {
     filterMode = 'run';
   }
   else if (field === 'result') {

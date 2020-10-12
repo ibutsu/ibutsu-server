@@ -43,6 +43,7 @@ export const NUMERIC_RESULT_FIELDS = [
 export const STRING_RESULT_FIELDS = [
   'env',
   'component',
+  'run_id',
   'project_id',
   'metadata.assignee',
   'metadata.caseautomation',
@@ -52,7 +53,6 @@ export const STRING_RESULT_FIELDS = [
   'metadata.nodeid',
   'metadata.params',
   'metadata.project',
-  'metadata.run',
   'metadata.title',
   'params',
   'result',

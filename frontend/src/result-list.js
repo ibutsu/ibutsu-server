@@ -374,7 +374,7 @@ export class ResultList extends React.Component {
   }
 
   getRuns() {
-    fetch(buildUrl(Settings.serverUrl + '/run', {pageSize: 1000}))
+    fetch(buildUrl(Settings.serverUrl + '/run', {pageSize: 20, estimate: true}))
       .then(response => response.json())
       .then(data => {
         const runs = data.runs.map((run) => run.id);
