@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import {
   Card,
   CardBody,
+  CardFooter,
   PageSection,
   PageSectionVariants,
   Select,
@@ -328,6 +329,7 @@ export class RunList extends React.Component {
     else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
       delete filters['project_id']
     }
+    params['estimate'] = true;
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
     // Convert UI filters to API filters
@@ -475,6 +477,12 @@ export class RunList extends React.Component {
                 onSetPageSize={this.setPageSize}
               />
             </CardBody>
+            <CardFooter>
+              <Text className="disclaimer" component="h4">
+                * Note: for performance reasons, the total number of items is an approximation.
+                Use the API with &lsquo;estimate=false&rsquo; if you need an accurate count.
+              </Text>
+            </CardFooter>
           </Card>
         </PageSection>
       </React.Fragment>

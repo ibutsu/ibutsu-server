@@ -5,10 +5,11 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks.runs import update_run as update_run_task
+from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import get_project_id
 
 
-def get_run_list(filter_=None, page=1, page_size=25):
+def get_run_list(filter_=None, page=1, page_size=25, estimate=False):
     """Get a list of runs
 
     The `filter` parameter takes a list of filters to apply in the form of:
@@ -57,8 +58,12 @@ def get_run_list(filter_=None, page=1, page_size=25):
             filter_clause = convert_filter(filter_string, Run)
             if filter_clause is not None:
                 query = query.filter(filter_clause)
+
+    if estimate:
+        total_items = get_count_estimate(query)
+    else:
+        total_items = query.count()
     offset = (page * page_size) - page_size
-    total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     runs = query.order_by(Run.start_time.desc()).offset(offset).limit(page_size).all()
     return {
