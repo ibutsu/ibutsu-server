@@ -209,6 +209,18 @@ export class ResultView extends React.Component {
                     </DataListItemRow>
                   </DataListItem>
                   }
+                  {testResult.metadata && testResult.metadata.code_link &&
+                  <DataListItem aria-labelledby="code-link-label">
+                    <DataListItemRow>
+                      <DataListItemCells
+                        dataListCells={[
+                          <DataListCell key="code-link-label" width={2}><strong>Code Link:</strong></DataListCell>,
+                          <DataListCell key="code-link-data" width={4}><Linkify componentDecorator={linkifyDecorator}>{testResult.metadata.code_link}</Linkify></DataListCell>
+                        ]}
+                      />
+                    </DataListItemRow>
+                  </DataListItem>
+                  }
                   {testResult.metadata && testResult.metadata.tags &&
                   <DataListItem aria-labelledby="tags-label">
                     <DataListItemRow>
