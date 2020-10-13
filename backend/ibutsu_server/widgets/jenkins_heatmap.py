@@ -1,3 +1,4 @@
+from ibutsu_server.constants import HEATMAP_MAX_BUILDS
 from ibutsu_server.constants import HEATMAP_RUN_LIMIT
 from ibutsu_server.db.base import Float
 from ibutsu_server.db.base import Integer
@@ -44,10 +45,11 @@ def _get_builds(job_name, builds, project=None):
 
     # get the runs on which to run the aggregation, we select from a subset of runs to improve
     # performance, otherwise we'd be aggregating over ALL runs
+    heatmap_run_limit = int((HEATMAP_RUN_LIMIT / HEATMAP_MAX_BUILDS) * builds)
     sub_query = (
         apply_filters(Run.query, filters, Run)
         .order_by(desc("start_time"))
-        .limit(HEATMAP_RUN_LIMIT)
+        .limit(heatmap_run_limit)
         .subquery()
     )
 

@@ -59,10 +59,13 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False):
             if filter_clause is not None:
                 query = query.filter(filter_clause)
 
-    if estimate:
+    if estimate and not filter_:
+        total_items = get_count_estimate(query, no_filter=True, tablename="runs")
+    elif estimate:
         total_items = get_count_estimate(query)
     else:
         total_items = query.count()
+
     offset = (page * page_size) - page_size
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     runs = query.order_by(Run.start_time.desc()).offset(offset).limit(page_size).all()

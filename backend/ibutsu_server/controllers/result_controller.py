@@ -85,7 +85,9 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False):
             if filter_clause is not None:
                 query = query.filter(filter_clause)
 
-    if estimate:
+    if estimate and not filter_:
+        total_items = get_count_estimate(query, no_filter=True, tablename="results")
+    elif estimate:
         total_items = get_count_estimate(query)
     else:
         total_items = query.count()
