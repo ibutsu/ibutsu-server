@@ -5,7 +5,9 @@ Convert a Ibutsu's MongoDB to PSQL
 python3 mongo2postgres.py
     mongodb://localhost/test_artifacts postgresql://ibutsu:ibutsu@localhost:5432/ibutsu -v
 """
+import os
 from argparse import ArgumentParser
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
@@ -13,17 +15,18 @@ from uuid import UUID
 
 from bson import ObjectId
 from gridfs import GridFSBucket
+from ibutsu_server import get_app
+from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact
 from ibutsu_server.db.models import Group
 from ibutsu_server.db.models import Project
+from ibutsu_server.db.models import Report
+from ibutsu_server.db.models import ReportFile
 from ibutsu_server.db.models import Result
 from ibutsu_server.db.models import Run
 from ibutsu_server.db.models import WidgetConfig
 from iso8601 import parse_date
 from pymongo import MongoClient
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 
 
 UUID_1_EPOCH = datetime(1582, 10, 15, tzinfo=timezone.utc)
@@ -34,9 +37,6 @@ MONTHS_TO_KEEP = 2
 # To avoid foreign key constraints, just shift the range of artifacts to keep a bit
 ARTIFACT_MONTHS_TO_KEEP = 0.5 * MONTHS_TO_KEEP
 MIGRATION_LIMIT = 10000000000  # mostly for testing purposes
-
-Base = declarative_base()
-session = None
 
 
 TABLE_MAP = [
@@ -69,27 +69,24 @@ ID_FIELDS = [
 FIELDS_TO_TYPECAST = ["navigable", "weight"]
 
 # json indexes for the tables
-INDEXES = {
-    "results": [
-        "CREATE INDEX IF NOT EXISTS ix_results_jenkins_job_name "
-        "ON results((data->'jenkins'->>'job_name'));",
-        "CREATE INDEX IF NOT EXISTS ix_results_jenkins_build_number "
-        "ON results((data->'jenkins'->>'build_number'));",
-        "CREATE INDEX IF NOT EXISTS ix_results_classification "
-        "ON results((data->>'classification'));",
-        "CREATE INDEX IF NOT EXISTS ix_results_assignee " "ON results((data->>'assignee'));",
-        "CREATE INDEX IF NOT EXISTS ix_results_exception_name "
-        "ON results((data->>'exception_name'));",
-    ],
-    "runs": [
-        "CREATE INDEX IF NOT EXISTS ix_runs_jenkins_job_name "
-        "ON runs((data->'jenkins'->>'job_name'));",
-        "CREATE INDEX IF NOT EXISTS ix_runs_jenkins_build_number "
-        "ON runs((data->'jenkins'->>'build_number'));",
-        "CREATE INDEX IF NOT EXISTS ix_runs_jjn_jbn "
-        "ON runs((data->'jenkins'->>'build_number'), (data->'jenkins'->>'job_name'))",
-    ],
-}
+INDEXES = [
+    "CREATE INDEX IF NOT EXISTS ix_results_jenkins_job_name "
+    "ON results((data->'jenkins'->>'job_name'));",
+    "CREATE INDEX IF NOT EXISTS ix_results_jenkins_build_number "
+    "ON results((data->'jenkins'->>'build_number'));",
+    "CREATE INDEX IF NOT EXISTS ix_results_classification "
+    "ON results((data->>'classification'));",
+    "CREATE INDEX IF NOT EXISTS ix_results_assignee ON results((data->>'assignee'));",
+    "CREATE INDEX IF NOT EXISTS ix_results_exception_name "
+    "ON results((data->>'exception_name'));",
+    "CREATE INDEX IF NOT EXISTS ix_runs_jenkins_job_name "
+    "ON runs((data->'jenkins'->>'job_name'));",
+    "CREATE INDEX IF NOT EXISTS ix_runs_jenkins_build_number "
+    "ON runs((data->'jenkins'->>'build_number'));",
+    "CREATE INDEX IF NOT EXISTS ix_runs_jjn_jbn "
+    "ON runs((data->'jenkins'->>'build_number'), (data->'jenkins'->>'job_name'))",
+    "CREATE INDEX IF NOT EXISTS ix_runs_summary ON runs USING gin (summary)",
+]
 
 
 def is_uuid(candidate):
@@ -129,20 +126,24 @@ def get_mongo(mongo_url, mongo_db):
     return client[mongo_db]
 
 
-def setup_postgres(postgres_url):
-    """Connect to PostgreSQL"""
-    global session
-    engine = create_engine(postgres_url)
-    Base.metadata.bind = engine
-    Base.metadata.create_all()
-    # create a Session
-    Session = sessionmaker(bind=engine)
-    session = Session()
+def build_mongo_connection(url):
+    """Create a MongoDB connection URL"""
+    url_parts = url.split("/")
+    database = url_parts[-1]
+    connection_url = "/".join(url_parts[:-1]) + "/?authSource={}".format(database)
+    return connection_url, database
+
+
+def setup_objects(mongo_url, mongo_db, postgres_url, is_verbose):
+    """Set up the objects needed"""
+    app = get_app(extra_config={"SQLALCHEMY_DATABASE_URI": postgres_url})
+    mongo = get_mongo(mongo_url, mongo_db)
+    vprint = print if is_verbose else fake_print
+    return mongo, app.app, vprint
 
 
 def migrate_table(collection, Model, vprint, limit=None, filter_=None):
     """Migrate a collection from MongoDB into a table in PostgreSQL"""
-    # TODO: update indexes once we know them
 
     if Model.__tablename__ in ["runs", "results"]:
         ids = []
@@ -150,7 +151,7 @@ def migrate_table(collection, Model, vprint, limit=None, filter_=None):
     for idx, row in enumerate(collection.find(filter_, sort=[("_id", -1)])):
         if limit and idx > limit:
             break
-        vprint(".", end="")
+        vprint(".", end="", flush=True)
         mongo_id = row.pop("_id")
         # overwrite id with PSQL uuid
         row["id"] = convert_objectid_to_uuid(mongo_id)
@@ -216,6 +217,9 @@ def migrate_table(collection, Model, vprint, limit=None, filter_=None):
                 if row.get("params") and row["params"].get("group_field") == "metadata.component":
                     row["params"]["group_field"] = "component"
 
+        if Model.__tablename__ == "reports" and "parameters" in row:
+            row["params"] = row.pop("parameters")
+
         if is_uuid(row["id"]):
             obj = Model.from_dict(**row)
             session.add(obj)
@@ -229,7 +233,7 @@ def migrate_table(collection, Model, vprint, limit=None, filter_=None):
     session.commit()
     # at the end of the session do a little cleanup
     if Model.__tablename__ in ["runs", "results"]:
-        conn = Base.metadata.bind.connect()
+        conn = session.get_bind().connect()
         # delete any results or runs without start_time
         sql_delete = f"DELETE FROM {Model.__tablename__} where start_time IS NULL;"
         conn.execute(sql_delete)
@@ -242,13 +246,6 @@ def migrate_table(collection, Model, vprint, limit=None, filter_=None):
 
 def migrate_file(collection, Model, vprint, limit=None, filter_=None):
     """Migrate a GridFS collection from MongoDB into a table in PostgreSQL"""
-    # Access the underlying collection object
-    # TODO: update indexes once we know them
-    conn = Base.metadata.bind.connect()
-    for sql_index in INDEXES.get(Model.__tablename__, []):
-        vprint(".", end="")
-        conn.execute(sql_index)
-
     # for runs and results, sort by descending start_time
     if Model.__tablename__ == "artifacts":
         sort = [("_id", -1)]
@@ -261,7 +258,7 @@ def migrate_file(collection, Model, vprint, limit=None, filter_=None):
     for idx, row in enumerate(collection.find(filter_, sort=sort)):
         if limit and idx > limit:
             break
-        vprint(".", end="")
+        vprint(".", end="", flush=True)
         pg_id = convert_objectid_to_uuid(row._id)
         data = dict()
         data["metadata"] = row.metadata
@@ -283,7 +280,60 @@ def migrate_file(collection, Model, vprint, limit=None, filter_=None):
     vprint(" done")
 
 
-def migrate_tables(mongo, vprint, record_limit, month_limit, migrate_files=False):
+def migrate_runs(app, mongo, run_ids, vprint):
+    """Migrate all the data associated with a particular run id"""
+    try:
+        with app.app_context():
+            # Migrate the actual run first
+            vprint("Migrating runs ", end="", flush=True)
+            migrate_table(
+                mongo.runs,
+                Run,
+                vprint,
+                filter_={"_id": {"$in": [ObjectId(run_id) for run_id in run_ids]}},
+            )
+            # Then migrate the results
+            vprint("Migrating results ", end="", flush=True)
+            result_ids = migrate_table(
+                mongo.results, Result, vprint, filter_={"metadata.run": {"$in": run_ids}}
+            )
+            vprint("Migrating arficats ", end="", flush=True)
+            for batch_num in range((len(result_ids) // 100) + 1):
+                batch = result_ids[batch_num * 100 : 100]
+                migrate_file(
+                    GridFSBucket(mongo, "fs"),
+                    Artifact,
+                    vprint,
+                    filter_={"metadata.resultId": {"$in": batch}},
+                )
+    except Exception as e:
+        print(e)
+        raise e
+
+
+def migrate_reports(app, mongo, vprint, filter_=None):
+    """Migrate all the reports"""
+    with app.app_context():
+        vprint("Migrating reports ", end="", flush=True)
+        migrate_table(mongo.reports, Report, vprint)
+        vprint("Migrating files for reports ", end="", flush=True)
+        migrate_file(GridFSBucket(mongo, "reportFiles"), ReportFile, vprint, filter_=filter_)
+
+
+def migrate_widgets(app, mongo, vprint):
+    """Migrate all the widgets for the dashboards"""
+    with app.app_context():
+        vprint("Migrating widgets ", end="")
+        migrate_table(mongo.widgetConfig, WidgetConfig, vprint)
+
+
+def migrate_projects(mongo, vprint):
+    """Migrate the projects"""
+    vprint("Migrating projects ", end="")
+    migrate_table(mongo.projects, Project, vprint)
+
+
+def migrate_tables(app, mongo, vprint, pool_size, record_limit, month_limit):
     """Migrate all the tables"""
     # first get the time range
     sort = [("_id", -1)]
@@ -299,73 +349,35 @@ def migrate_tables(mongo, vprint, record_limit, month_limit, migrate_files=False
                 "$lt": ObjectId.from_datetime(most_recent_create_time),
             }
         }
-        file_filter = {
-            "_id": {
-                "$gt": ObjectId.from_datetime(
-                    most_recent_create_time - timedelta(days=30 * month_limit * 0.5)
-                ),
-                "$lt": ObjectId.from_datetime(most_recent_create_time),
-            }
-        }
     else:
         table_filter = {"_id": {"$lt": ObjectId.from_datetime(most_recent_create_time)}}
-        file_filter = {"_id": {"$lt": ObjectId.from_datetime(most_recent_create_time)}}
 
-    # loop over collections and migrate
-    for collection, model in TABLE_MAP:
-        # first create indexes for the table
-        conn = Base.metadata.bind.connect()
-        for sql_index in INDEXES.get(model.__tablename__, []):
-            vprint(".", end="")
-            conn.execute(sql_index)
+    # First, migrate the projects
+    with app.app_context():
+        migrate_projects(mongo, vprint)
 
-        # get a list of result_ids
-        result_ids = []
+    # Now create a multiprocessing pool (it automatically uses all processors available)
+    with ThreadPoolExecutor(max_workers=pool_size, thread_name_prefix="ibutsu-") as pool:
+        # Add the widet and reports migration functions to the pool
+        pool.submit(migrate_widgets, app, mongo, vprint)
+        pool.submit(migrate_reports, app, mongo, vprint, table_filter)
+        # Get a list of all the runs, and add a migration job for each run to the pool
+        offset = 0
+        while True:
+            runs = mongo.runs.find(table_filter, sort=sort, skip=offset, limit=100)
+            run_ids = [str(run["_id"]) for run in runs]
+            if not run_ids:
+                break
+            pool.submit(migrate_runs, app, mongo, run_ids, vprint)
+            offset += 100
 
-        # migrate the table over
-        vprint("Migrating {} ".format(collection), end="")
-        if collection == "runs":
-            run_ids = migrate_table(
-                mongo[collection], model, vprint, filter_=table_filter, limit=record_limit
-            )
-        elif collection == "results":
-            # migrate in chunks of 100 runs at a time
-            run_chunks = [run_ids[i : i + 100] for i in range(0, len(run_ids), 100)]
-            for run_list in run_chunks:
-                result_filter = {"metadata.run": {"$in": run_list}}  # filter on runs we know exist
-                result_ids.extend(
-                    migrate_table(mongo[collection], model, vprint, filter_=result_filter)
-                )
-        else:
-            migrate_table(mongo[collection], model, vprint, limit=record_limit)
-    if migrate_files:
-        for collection, model in FILE_MAP:
-            vprint("Migrating {} ".format(collection), end="")
-            if collection == "fs":
-                # migrate in chunks of 1000 results at a time
-                result_chunks = [result_ids[i : i + 1000] for i in range(0, len(result_ids), 1000)]
-                artifact_filter = file_filter.copy()
-                for result_list in result_chunks:
-                    artifact_filter.update({"metadata.resultId": {"$in": result_list}})
-                    migrate_file(
-                        GridFSBucket(mongo, collection), model, vprint, filter_=artifact_filter,
-                    )
-            else:
-                migrate_file(
-                    GridFSBucket(mongo, collection),
-                    model,
-                    vprint,
-                    limit=record_limit,
-                    filter_=file_filter,
-                )
-
-
-def build_mongo_connection(url):
-    """Create a MongoDB connection URL"""
-    url_parts = url.split("/")
-    database = url_parts[-1]
-    connection_url = "/".join(url_parts[:-1]) + "/?authSource={}".format(database)
-    return connection_url, database
+    # create indexes for some of the tables
+    vprint("Creating indexes ", end="", flush=True)
+    conn = session.get_bind().connect()
+    for sql_index in INDEXES:
+        vprint(".", end="", flush=True)
+        conn.execute(sql_index)
+    vprint(" done")
 
 
 def fake_print(*args, **kwargs):
@@ -377,7 +389,9 @@ def parse_args():
     parser.add_argument("mongo_url", help="URL to MongoDB database")
     parser.add_argument("postgres_url", help="URL to PostgreSQL database")
     parser.add_argument("-v", "--verbose", action="store_true", help="Say what I'm doing")
-    parser.add_argument("-f", "--files", action="store_true", help="Migrate artifact files")
+    parser.add_argument(
+        "-p", "--pool-size", type=int, default=None, help="The number of processors to use"
+    )
     parser.add_argument(
         "-l",
         "--limit",
@@ -394,14 +408,15 @@ def parse_args():
 
 
 def main():
+    # Arguments
     args = parse_args()
-    vprint = print if args.verbose else fake_print
-    record_limit = args.limit if args.limit not in ["none", "0"] else None
-    month_limit = args.months if args.months not in ["none", "0"] else None
-    mongo_url, database = build_mongo_connection(args.mongo_url)
-    mongo = get_mongo(mongo_url, database)
-    setup_postgres(args.postgres_url)
-    migrate_tables(mongo, vprint, record_limit, month_limit, args.files)
+    record_limit = int(args.limit) if args.limit not in ["none", "0"] else None
+    month_limit = int(args.months) if args.months not in ["none", "0"] else None
+    # Set up
+    os.environ["SQLALCHEMY_DATABASE_URI"] = args.postgres_url
+    mongo_url, mongo_db = build_mongo_connection(args.mongo_url)
+    mongo, app, vprint = setup_objects(mongo_url, mongo_db, args.postgres_url, args.verbose)
+    migrate_tables(app, mongo, vprint, args.pool_size, record_limit, month_limit)
 
 
 if __name__ == "__main__":
