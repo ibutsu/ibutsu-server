@@ -299,7 +299,7 @@ def migrate_runs(app, mongo, run_ids, vprint):
             )
             vprint("Migrating arficats ", end="", flush=True)
             for batch_num in range((len(result_ids) // 100) + 1):
-                batch = result_ids[batch_num * 100 : 100]
+                batch = result_ids[batch_num * 100 : batch_num * 100 + 100]
                 migrate_file(
                     GridFSBucket(mongo, "fs"),
                     Artifact,
@@ -373,10 +373,11 @@ def migrate_tables(app, mongo, vprint, pool_size, record_limit, month_limit):
 
     # create indexes for some of the tables
     vprint("Creating indexes ", end="", flush=True)
-    conn = session.get_bind().connect()
-    for sql_index in INDEXES:
-        vprint(".", end="", flush=True)
-        conn.execute(sql_index)
+    with app.app_context():
+        conn = session.get_bind().connect()
+        for sql_index in INDEXES:
+            vprint(".", end="", flush=True)
+            conn.execute(sql_index)
     vprint(" done")
 
 
