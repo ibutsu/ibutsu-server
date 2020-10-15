@@ -5,17 +5,17 @@ from csv import DictWriter
 from datetime import datetime
 from io import StringIO
 
-from bson import ObjectId
-from dynaconf import settings
-from func_timeout import func_timeout
-from func_timeout import FunctionTimedOut
-from ibutsu_server.filters import generate_filter_object
-from ibutsu_server.mongo import mongo
-from ibutsu_server.tasks.queues import task
+from flask import current_app
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Report
+from ibutsu_server.db.models import ReportFile
+from ibutsu_server.db.models import Result
+from ibutsu_server.filters import convert_filter
+from ibutsu_server.tasks import task
 from ibutsu_server.templating import render_template
-from ibutsu_server.util import serialize
 from ibutsu_server.util.projects import get_project_id
-from pymongo import DESCENDING
+from sqlalchemy.exc import OperationalError
+
 
 TREE_ROOT = {
     "items": {},
@@ -59,69 +59,88 @@ def _get_value(d, *keys):
 
 def _update_report(report):
     """Update the report with the parameters, etc."""
-    report_type = report["parameters"]["type"]
-    report["name"] = _generate_report_name(report["parameters"])
+    report_type = report["params"]["type"]
+    report["name"] = _generate_report_name(report["params"])
     report_filename = "{}.{}".format(report["name"], REPORTS[report_type]["extension"])
     report.update(
         {
             "filename": report_filename,
             "mimetype": REPORTS[report_type]["mimetype"],
             "url": "{}/api/report/{}/download/{}".format(
-                settings.get("BACKEND_URL", "http://localhost:8080"), report["id"], report_filename
+                current_app.config.get("BACKEND_URL", "http://localhost:8080"),
+                report["id"],
+                report_filename,
             ),
             "download_url": "{}/api/report/{}/download/{}".format(
-                settings.get("BACKEND_URL", "http://localhost:8080"), report["id"], report_filename
+                current_app.config.get("BACKEND_URL", "http://localhost:8080"),
+                report["id"],
+                report_filename,
             ),
             "view_url": "{}/api/report/{}/view/{}".format(
-                settings.get("BACKEND_URL", "http://localhost:8080"), report["id"], report_filename
+                current_app.config.get("BACKEND_URL", "http://localhost:8080"),
+                report["id"],
+                report_filename,
             ),
             "status": "running",
         }
     )
-    mongo.reports.replace_one({"_id": ObjectId(report["id"])}, report)
+    report_record = Report.query.get(report["id"])
+    report_record.update(report)
+    session.add(report_record)
+    session.commit()
+
+
+def _set_report_status(report_id, status):
+    """Set a report's status"""
+    report = Report.query.get(report_id)
+    report.status = status
+    session.add(report)
+    session.commit()
 
 
 def _set_report_done(report):
-    """Set a report's status to "done" and write it to Mongo"""
-    report["status"] = "done"
-    mongo.reports.replace_one({"_id": ObjectId(report["id"])}, report)
+    """Set a report's status to "done" and write it to the database"""
+    _set_report_status(report["id"], "done")
 
 
 def _set_report_empty(report):
     """
-    Set a report's status to "empty" and write it to Mongo. This could happen if e.g. filters
+    Set a report's status to "empty" and write it to the database. This could happen if e.g. filters
     are incorrect.
     """
-    report["status"] = "empty"
-    mongo.reports.replace_one({"_id": ObjectId(report["id"])}, report)
+    _set_report_status(report["id"], "empty")
 
 
-def _build_filters(report):
+def _build_query(report):
     """Build the filters from a report object"""
-    filters = {}
-    if report["parameters"].get("filter"):
-        for f in report["parameters"]["filter"].split(","):
-            if f:
-                filters.update(generate_filter_object(f.strip()))
-    if report["parameters"]["source"]:
-        filters["source"] = {"$eq": report["parameters"]["source"]}
-    if report["parameters"].get("project"):
-        filters["metadata.project"] = get_project_id(report["parameters"]["project"])
-    return filters
+    query = Result.query
+    if report["params"].get("filter"):
+        for report_filter in report["params"]["filter"].split(","):
+            if report_filter:
+                filter_clause = convert_filter(Result, report_filter.strip())
+                if filter_clause is not None:
+                    query = query.filter(filter_clause)
+    if report["params"]["source"]:
+        query = query.filter(Result.source == report["params"]["source"])
+    if report["params"].get("project"):
+        query = query.filter(Result.project_id == get_project_id(report["params"]["project"]))
+    return query
 
 
 def _get_results(report):
     """ Limit the number of documents to REPORT_MAX_DOCUMENTS so as not to crash the server."""
-    filters = _build_filters(report)
+    query = _build_query(report)
     try:
-        if func_timeout(REPORT_COUNT_TIMEOUT, mongo.results.count, args=(filters,)) == 0:
+        session.execute(f"SET statement_timeout TO {int(REPORT_COUNT_TIMEOUT * 1000)}; commit;")
+        if query.count() == 0:
             return None
-    except FunctionTimedOut:
+    except OperationalError:
         pass
+    session.execute("SET statement_timeout TO 0; commit;")
 
-    return mongo.results.find(
-        filters, limit=REPORT_MAX_DOCUMENTS, sort=[("start_time", DESCENDING)]
-    )
+    results = query.order_by(Result.start_time.desc()).limit(REPORT_MAX_DOCUMENTS).all()
+
+    return [result.to_dict() for result in results]
 
 
 def _make_result_path(result):
@@ -189,15 +208,17 @@ def _make_row(old, parent_key=None):
 
 
 def _get_files(result):
-    """Fetch any artifacts"""
+    """Fetch any reports"""
     return [
         {
-            "filename": a.filename,
+            "filename": report_file.filename,
             "url": "{}/api/artifact/{}/download".format(
-                settings.get("BACKEND_URL", "http://localhost:8080"), str(a._id)
+                current_app.config.get("BACKEND_URL", "http://localhost:8080"), str(report_file.id)
             ),
         }
-        for a in mongo.fs.find({"metadata.resultId": str(result["_id"])})
+        for report_file in ReportFile.query.filter(
+            ReportFile.data["resultId"] == result["id"]
+        ).all()
     ]
 
 
@@ -208,7 +229,7 @@ def _make_dict(results):
         result_path = _make_result_path(result)
         if result.get("duration") and result.get("start_time"):
             try:
-                finish_time = float(result["start_time"]) + float(result["duration"])
+                finish_time = float(result["start_time"].timestamp()) + float(result["duration"])
             except ValueError:
                 finish_time = None
         else:
@@ -218,14 +239,14 @@ def _make_dict(results):
             "files": _get_files(result),
             "exception": _get_value(result, "metadata", "short_tb"),
             "exception_name": _exception_metadata_hack(result),
-            "run": _get_value(result, "metadata", "run"),
+            "run": _get_value(result, "run_id"),
             "qa_contact": _get_value(result, "metadata", "qa_contact"),
             "stream": _get_value(result, "metadata", "stream"),
             "finish_time": finish_time,
             "start_time": _get_value(result, "start_time"),
             "source": result["source"],
             "duration": result.get("duration", 0),
-            "params": _get_value(result, "parameters"),
+            "params": _get_value(result, "params"),
             "build": _get_value(result, "metadata", "build"),
             "jenkins": _get_value(result, "metadata", "jenkins"),
             "_id": result_id,
@@ -324,22 +345,24 @@ def generate_csv_report(report):
     # First, loop through ALL the results and collect the names of the columns
     field_names = set()
     for result in results:
-        row = _make_row(serialize(result))
+        row = _make_row(result)
         field_names |= set(row.keys())
     # Now rewind the cursor and write the results to the CSV
     csv_file = StringIO()
     csv_writer = DictWriter(csv_file, fieldnames=list(field_names), extrasaction="ignore")
     csv_writer.writeheader()
-    results.rewind()
     for result in results:
-        csv_writer.writerow(_make_row(serialize(result)))
-    # Write the report to MongoDB GridFS
+        csv_writer.writerow(_make_row(result))
+    # Write the report to the database
     csv_file.seek(0)
-    mongo.report_files.upload_from_stream(
-        report["filename"],
-        csv_file.read().encode("utf8"),
-        metadata={"contentType": "application/csv", "reportId": report["id"]},
+    report_file = ReportFile(
+        filename=report["filename"],
+        data={"contentType": "application/csv"},
+        report_id=report["id"],
+        content=csv_file.read().encode("utf8"),
     )
+    session.add(report_file)
+    session.commit()
     _set_report_done(report)
 
 
@@ -355,8 +378,8 @@ def generate_text_report(report):
     text_file = StringIO()
     text_file.write("Test Report\n")
     text_file.write("\n")
-    text_file.write("Filter: {}\n".format(report["parameters"].get("filter", "")))
-    text_file.write("Source: {}\n".format(report["parameters"]["source"]))
+    text_file.write("Filter: {}\n".format(report["params"].get("filter", "")))
+    text_file.write("Source: {}\n".format(report["params"]["source"]))
     text_file.write("\n")
     # Now loop through the results and summarise them
     summary = {
@@ -375,18 +398,19 @@ def generate_text_report(report):
             summary["other"] += 1
     text_file.writelines(["{}: {}\n".format(key, value) for key, value in summary.items()])
     text_file.write("\n")
-    # Rewind the results and write them to the file
-    results.rewind()
     for result in results:
         result_path = _make_result_path(result)
         text_file.write("{}: {}\n".format(result_path, result["result"]))
-    # Write the report to MongoDB GridFS
+    # Write the report to the database
     text_file.seek(0)
-    mongo.report_files.upload_from_stream(
-        report["filename"],
-        text_file.read().encode("utf8"),
-        metadata={"contentType": "text/plain", "reportId": report["id"]},
+    report_file = ReportFile(
+        filename=report["filename"],
+        data={"contentType": "text/plain"},
+        report_id=report["id"],
+        content=text_file.read().encode("utf8"),
     )
+    session.add(report_file)
+    session.commit()
     _set_report_done(report)
 
 
@@ -399,12 +423,15 @@ def generate_json_report(report):
         _set_report_empty(report)
         return
     report_dict = _make_dict(results)
-    # Write the report to MongoDB GridFS
-    mongo.report_files.upload_from_stream(
-        report["filename"],
-        json.dumps(report_dict, indent=2).encode("utf8"),
-        metadata={"contentType": "application/json", "reportId": report["id"]},
+    # Write the report to the database
+    report_file = ReportFile(
+        filename=report["filename"],
+        data={"contentType": "application/json"},
+        report_id=report["id"],
+        content=json.dumps(report_dict, indent=2).encode("utf8"),
     )
+    session.add(report_file)
+    session.commit()
     _set_report_done(report)
 
 
@@ -442,12 +469,15 @@ def generate_html_report(report):
         counts=counts,
         current_counts=counts,
     )
-    # Write the report to MongoDB GridFS
-    mongo.report_files.upload_from_stream(
-        report["filename"],
-        html_report.encode("utf8"),
-        metadata={"contentType": "text/html", "reportId": report["id"]},
+    # Write the report to the database
+    report_file = ReportFile(
+        filename=report["filename"],
+        data={"contentType": "text/hmtl"},
+        report_id=report["id"],
+        content=html_report.encode("utf8"),
     )
+    session.add(report_file)
+    session.commit()
     _set_report_done(report)
 
 
@@ -455,7 +485,7 @@ def generate_html_report(report):
 def generate_exception_report(report):
     """Generate a text report"""
     _update_report(report)
-    # TODO speed up with mongo filtering
+    # TODO speed up with filtering
     # join with original filter in deepcopied report
     results = _get_results(report)
     if not results:
@@ -511,13 +541,15 @@ def generate_exception_report(report):
         counts=counts,
         current_counts=counts,
     )
-    # Write the report to MongoDB GridFS
-    mongo.report_files.upload_from_stream(
-        report["filename"],
-        exception_report.encode("utf8"),
-        metadata={"contentType": "text/html", "reportId": report["id"]},
+    # Write the report to the database
+    report_file = ReportFile(
+        filename=report["filename"],
+        data={"contentType": "text/html"},
+        report_id=report["id"],
+        content=exception_report.encode("utf8"),
     )
-
+    session.add(report_file)
+    session.commit()
     _set_report_done(report)
 
 

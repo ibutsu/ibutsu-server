@@ -23,7 +23,16 @@ export const NUMERIC_OPERATIONS = {
   'gte': ')',
   'lte': '(',
 };
+export const ARRAY_OPERATIONS = {
+  'eq': '=',
+  'exists': '@',
+  'in': '*',
+};
 export const OPERATIONS = {...STRING_OPERATIONS, ...NUMERIC_OPERATIONS};
+export const ARRAY_RESULT_FIELDS = [
+  'metadata.tags',
+  'metadata.markers',
+];
 export const NUMERIC_RESULT_FIELDS = [
   'duration',
   'metadata.durations.call',
@@ -32,17 +41,18 @@ export const NUMERIC_RESULT_FIELDS = [
   'metadata.jenkins.build_number',
 ];
 export const STRING_RESULT_FIELDS = [
+  'env',
+  'component',
+  'run_id',
+  'project_id',
   'metadata.assignee',
   'metadata.caseautomation',
-  'metadata.component',
-  'metadata.env',
   'metadata.fspath',
   'metadata.jenkins.job_name',
   'metadata.id',
   'metadata.nodeid',
   'metadata.params',
   'metadata.project',
-  'metadata.run',
   'metadata.title',
   'params',
   'result',
@@ -50,7 +60,10 @@ export const STRING_RESULT_FIELDS = [
   'start_time',  // TODO: handle this with a calendar widget?
   'test_id'
 ];
-export const RESULT_FIELDS = [...NUMERIC_RESULT_FIELDS, ...STRING_RESULT_FIELDS];
+export const RESULT_FIELDS = [...NUMERIC_RESULT_FIELDS, ...STRING_RESULT_FIELDS, ...ARRAY_RESULT_FIELDS];
+export const ARRAY_RUN_FIELDS = [
+  'metadata.tags',
+]
 export const NUMERIC_RUN_FIELDS = [
   'duration',
   'summary.errors',
@@ -62,11 +75,11 @@ export const NUMERIC_RUN_FIELDS = [
 ];
 export const STRING_RUN_FIELDS = [
   'id',
-  'metadata.component',
-  'metadata.env',
+  'component',
+  'env',
   'source'
 ];
-export const RUN_FIELDS = [...NUMERIC_RUN_FIELDS, ...STRING_RUN_FIELDS];
+export const RUN_FIELDS = [...NUMERIC_RUN_FIELDS, ...STRING_RUN_FIELDS, ...ARRAY_RUN_FIELDS];
 export const STRING_JJV_FIELDS = [
   'job_name',
   'source',

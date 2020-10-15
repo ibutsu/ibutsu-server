@@ -4,12 +4,14 @@ from __future__ import absolute_import
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
-from bson import ObjectId
 from flask import json
 from ibutsu_server.test import BaseTestCase
+from ibutsu_server.test import MockGroup
 
-MOCK_ID = "cd7994f77bcf8639011507f1"
-MOCK_GROUP = {"_id": ObjectId(MOCK_ID), "id": MOCK_ID, "name": "Example group"}
+MOCK_ID = "c68506e2-202e-4193-a47d-33f1571d4b3e"
+MOCK_GROUP = MockGroup(id=MOCK_ID, name="Example group", data={})
+MOCK_GROUP_DICT = MOCK_GROUP.to_dict()
+MOCK_LIST_RESPONSE = {"pagination": {"page": 0}, "groups": [MOCK_GROUP]}
 
 
 class TestGroupController(BaseTestCase):
@@ -17,32 +19,37 @@ class TestGroupController(BaseTestCase):
 
     def setUp(self):
         """Set up a fake MongoDB object"""
-        self.mongo_patcher = patch("ibutsu_server.controllers.group_controller.mongo")
-        self.mock_mongo = self.mongo_patcher.start()
-        self.mock_mongo.groups = MagicMock()
-        self.mock_mongo.groups.count.return_value = 1
-        self.mock_mongo.groups.find_one.return_value = MOCK_GROUP
-        self.mock_mongo.groups.find.return_value = [MOCK_GROUP]
+        self.mock_limit = MagicMock()
+        self.mock_limit.return_value.offset.return_value.all.return_value = [MOCK_GROUP]
+        self.session_patcher = patch("ibutsu_server.controllers.group_controller.session")
+        self.mock_session = self.session_patcher.start()
+        self.group_patcher = patch("ibutsu_server.controllers.group_controller.Group")
+        self.mock_group = self.group_patcher.start()
+        self.mock_group.from_dict.return_value = MOCK_GROUP
+        self.mock_group.query.count.return_value = 1
+        self.mock_group.query.get.return_value = MOCK_GROUP
+        self.mock_group.query.limit = self.mock_limit
 
     def tearDown(self):
         """Teardown the mocks"""
-        self.mongo_patcher.stop()
+        self.group_patcher.stop()
+        self.session_patcher.stop()
 
     def test_add_group(self):
         """Test case for add_group
 
         Create a new group
         """
-        group = {"id": "af3b3ff0c6188c9ba767", "name": "Example group"}
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/group",
             method="POST",
             headers=headers,
-            data=json.dumps(group),
+            data=json.dumps({"name": "Example group"}),
             content_type="application/json",
         )
         self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_equal(response.json, MOCK_GROUP_DICT)
 
     def test_get_group(self):
         """Test case for get_group
@@ -54,6 +61,7 @@ class TestGroupController(BaseTestCase):
             "/api/group/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_equal(response.json, MOCK_GROUP_DICT)
 
     def test_get_group_list(self):
         """Test case for get_group_list
@@ -66,19 +74,27 @@ class TestGroupController(BaseTestCase):
             "/api/group", method="GET", headers=headers, query_string=query_string
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_equal(
+            response.json,
+            {
+                "groups": [MOCK_GROUP_DICT],
+                "pagination": {"page": 56, "pageSize": 56, "totalItems": 1, "totalPages": 1},
+            },
+        )
 
     def test_update_group(self):
         """Test case for update_group
 
         Update a group
         """
-        group = {"id": "af3b3ff0c6188c9ba767", "name": "Example group"}
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/group/{id}".format(id=MOCK_ID),
             method="PUT",
             headers=headers,
-            data=json.dumps(group),
+            data=json.dumps({"name": "Changed name"}),
             content_type="application/json",
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        MOCK_GROUP.update({"name": "Changed name"})
+        self.assert_equal(response.json, MOCK_GROUP.to_dict())

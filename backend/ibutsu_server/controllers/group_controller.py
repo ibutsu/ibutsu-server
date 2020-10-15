@@ -1,9 +1,6 @@
 import connexion
-from bson import ObjectId
-from ibutsu_server.models.group import Group
-from ibutsu_server.mongo import mongo
-from ibutsu_server.util import merge_dicts
-from ibutsu_server.util import serialize
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Group
 
 
 def add_group(group=None):
@@ -16,24 +13,24 @@ def add_group(group=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    body = Group.from_dict(connexion.request.get_json())
-    group = body.to_dict()
-    mongo.groups.insert_one(group)
-    return serialize(group), 201
+    group = Group.from_dict(**connexion.request.get_json())
+    session.add(group)
+    return group.to_dict(), 201
 
 
 def get_group(id_):
     """Get a group
-
-
 
     :param id: The ID of the group
     :type id: str
 
     :rtype: Group
     """
-    group = mongo.groups.find_one({"_id": ObjectId(id_)})
-    return serialize(group)
+    group = Group.query.get(id_)
+    if group:
+        return group.to_dict()
+    else:
+        return "Group not found", 404
 
 
 def get_group_list(page=1, page_size=25):
@@ -49,11 +46,12 @@ def get_group_list(page=1, page_size=25):
     :rtype: List[Group]
     """
     offset = (page * page_size) - page_size
-    total_items = mongo.groups.count({})
+    query = Group.query
+    total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    groups = mongo.groups.find({}, skip=offset, limit=page_size)
+    groups = query.limit(page_size).offset(offset).all()
     return {
-        "groups": [serialize(group) for group in groups],
+        "groups": [group.to_dict() for group in groups],
         "pagination": {
             "page": page,
             "pageSize": page_size,
@@ -77,9 +75,10 @@ def update_group(id_, group=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    body = Group.from_dict(connexion.request.get_json())
-    group = body.to_dict()
-    existing_group = mongo.groups.find_one({"_id": ObjectId(id_)})
-    merge_dicts(existing_group, group)
-    mongo.groups.replace_one({"_id": ObjectId(id_)}, group)
-    return serialize(group)
+    group = Group.query.get(id_)
+    if not group:
+        return "Group not found", 404
+    group.update(connexion.request.get_json())
+    session.add(group)
+    session.commit()
+    return group.to_dict()

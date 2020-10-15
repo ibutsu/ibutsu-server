@@ -1,9 +1,8 @@
 import connexion
-from bson import ObjectId
-from ibutsu_server.models.project import Project
-from ibutsu_server.mongo import mongo
-from ibutsu_server.util import merge_dicts
-from ibutsu_server.util import serialize
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Project
+from ibutsu_server.util.uuid import convert_objectid_to_uuid
+from ibutsu_server.util.uuid import is_uuid
 
 
 def add_project(project=None):
@@ -18,27 +17,28 @@ def add_project(project=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    project = Project.from_dict(connexion.request.get_json())
-    project_dict = project.to_dict()
-    mongo.projects.insert_one(project_dict)
-    return serialize(project_dict), 201
+    project = Project.from_dict(**connexion.request.get_json())
+    session.add(project)
+    session.commit()
+    return project.to_dict(), 201
 
 
 def get_project(id_):
     """Get a single project by ID
-
-
 
     :param id: ID of test project
     :type id: str
 
     :rtype: Project
     """
-    if ObjectId.is_valid(id_):
-        project = mongo.projects.find_one({"_id": ObjectId(id_)})
-    else:
-        project = mongo.projects.find_one({"name": id_})
-    return serialize(project)
+    if not is_uuid(id_):
+        id_ = convert_objectid_to_uuid(id_)
+    project = Project.query.filter(Project.name == id_).first()
+    if not project:
+        project = Project.query.get(id_)
+    if not project:
+        return "Project not found", 404
+    return project.to_dict()
 
 
 def get_project_list(owner_id=None, group_id=None, page=1, page_size=25):
@@ -57,17 +57,17 @@ def get_project_list(owner_id=None, group_id=None, page=1, page_size=25):
 
     :rtype: List[Project]
     """
-    filters = {}
+    query = Project.query
     if owner_id:
-        filters["ownerId"] = owner_id
+        query = query.filter(Project.owner_id == owner_id)
     if group_id:
-        filters["groupId"] = group_id
+        query = query.filter(Project.group_id == group_id)
     offset = (page * page_size) - page_size
-    total_items = mongo.projects.count(filters)
+    total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    projects = mongo.projects.find(filters, skip=offset, limit=page_size)
+    projects = query.offset(offset).limit(page_size).all()
     return {
-        "projects": [serialize(project) for project in projects],
+        "projects": [project.to_dict() for project in projects],
         "pagination": {
             "page": page,
             "pageSize": page_size,
@@ -80,8 +80,6 @@ def get_project_list(owner_id=None, group_id=None, page=1, page_size=25):
 def update_project(id_, project=None):
     """Update a project
 
-
-
     :param id: ID of test project
     :type id: str
     :param body: Project
@@ -91,9 +89,12 @@ def update_project(id_, project=None):
     """
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
-    body = Project.from_dict(connexion.request.get_json())
-    project = body.to_dict()
-    existing_project = mongo.projects.find_one({"_id": ObjectId(id_)})
-    merge_dicts(existing_project, project)
-    mongo.projects.replace_one({"_id": ObjectId(id_)}, project)
-    return serialize(project)
+    if not is_uuid(id_):
+        id_ = convert_objectid_to_uuid(id_)
+    project = Project.query.get(id_)
+    if not project:
+        return "Project not found", 404
+    project.update(connexion.request.get_json())
+    session.add(project)
+    session.commit()
+    return project.to_dict()

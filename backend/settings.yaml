@@ -1,8 +1,0 @@
-default:
-  HOST: localhost
-  PORT: 27017
-  CELERY_BROKER_URL: 'redis://localhost'
-  CELERY_RESULT_BACKEND: 'redis://localhost'
-production:
-  HOST: mongo
-  PORT: 27017

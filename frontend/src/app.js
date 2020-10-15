@@ -93,7 +93,7 @@ class App extends React.Component {
     let params = {'filter': ['type=view', 'navigable=true']};
     let project = getActiveProject();
     if (project) {
-      params['filter'].push('project=' + project.id);
+      params['filter'].push('project_id=' + project.id);
     }
     fetch(buildUrl(Settings.serverUrl + '/widget-config', params))
       .then(response => response.json())

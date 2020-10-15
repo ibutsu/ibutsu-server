@@ -97,7 +97,7 @@ export class ResultView extends React.Component {
           fetch(Settings.serverUrl + `/artifact/${artifact.id}/view`)
             .then(response => {
               let contentType = response.headers.get('Content-Type');
-              if (contentType.includes('ASCII text')) {
+              if (contentType.includes('text')) {
                 response.text().then(text => {
                   artifactTabs.push(
                     <Tab key={artifact.tabKey} eventKey={artifact.tabKey} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
@@ -163,11 +163,11 @@ export class ResultView extends React.Component {
     const testResult = this.state.testResult;
     const artifactTabs = this.state.artifactTabs;
     const resultIcon = getIconForResult(testResult.result);
-    const startTime = new Date((testResult.start_time ? testResult.start_time : testResult.starttime) * 1000);
+    const startTime = new Date(testResult.start_time);
     const parameters = Object.keys(testResult.params).map((key) => <div key={key}>{key} = {testResult.params[key]}</div>);
     let runLink = '';
-    if (testResult.metadata && testResult.metadata.run) {
-      runLink = <Link to={`/runs/${testResult.metadata.run}`}>{testResult.metadata.run}</Link>;
+    if (testResult.run_id) {
+      runLink = <Link to={`/runs/${testResult.run_id}`}>{testResult.run_id}</Link>;
     }
     return (
       <React.Fragment>
@@ -197,13 +197,25 @@ export class ResultView extends React.Component {
                       />
                     </DataListItemRow>
                   </DataListItem>
-                  {testResult.metadata && testResult.metadata.component &&
+                  {testResult.component &&
                   <DataListItem aria-labelledby="component-label">
                     <DataListItemRow>
                       <DataListItemCells
                         dataListCells={[
                           <DataListCell key="component-label" width={2}><strong>Component:</strong></DataListCell>,
-                          <DataListCell key="component-data" width={4}><Link to={`/results?metadata.component[eq]=${testResult.metadata.component}`}>{testResult.metadata.component}</Link></DataListCell>
+                          <DataListCell key="component-data" width={4}><Link to={`/results?component[eq]=${testResult.component}`}>{testResult.component}</Link></DataListCell>
+                        ]}
+                      />
+                    </DataListItemRow>
+                  </DataListItem>
+                  }
+                  {testResult.metadata && testResult.metadata.code_link &&
+                  <DataListItem aria-labelledby="code-link-label">
+                    <DataListItemRow>
+                      <DataListItemCells
+                        dataListCells={[
+                          <DataListCell key="code-link-label" width={2}><strong>Code Link:</strong></DataListCell>,
+                          <DataListCell key="code-link-data" width={4}><Linkify componentDecorator={linkifyDecorator}>{testResult.metadata.code_link}</Linkify></DataListCell>
                         ]}
                       />
                     </DataListItemRow>

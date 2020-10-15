@@ -1,8 +1,8 @@
-from bson import ObjectId
-from ibutsu_server.mongo import mongo
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Import
+from ibutsu_server.db.models import ImportFile
 from ibutsu_server.tasks.importers import run_archive_import
 from ibutsu_server.tasks.importers import run_junit_import
-from ibutsu_server.util import serialize
 
 
 def get_import(id_):
@@ -13,8 +13,8 @@ def get_import(id_):
 
     :rtype: Run
     """
-    import_ = mongo.imports.find_one({"_id": ObjectId(id_)})
-    return serialize(import_)
+    import_ = Import.query.get(id_)
+    return import_.to_dict()
 
 
 def add_import(import_file=None, *args, **kwargs):
@@ -27,16 +27,18 @@ def add_import(import_file=None, *args, **kwargs):
     """
     if not import_file:
         return "Bad request, no file uploaded", 400
-    new_import = {"status": "pending", "filename": import_file.filename, "format": "", "run_id": ""}
-    mongo.imports.insert_one(new_import)
-    new_import = serialize(new_import)
-    mongo.import_files.upload_from_stream(
-        import_file.filename, import_file.stream, metadata={"importId": new_import["id"]}
+    new_import = Import.from_dict(
+        **{"status": "pending", "filename": import_file.filename, "format": "", "data": {}}
     )
+    session.add(new_import)
+    session.commit()
+    new_file = ImportFile(import_id=new_import.id, content=import_file.read())
+    session.add(new_file)
+    session.commit()
     if import_file.filename.endswith(".xml"):
-        run_junit_import.delay(new_import)
+        run_junit_import.delay(new_import.to_dict())
     elif import_file.filename.endswith(".tar.gz"):
-        run_archive_import.delay(new_import)
+        run_archive_import.delay(new_import.to_dict())
     else:
         return "Unsupported Media Type", 415
-    return new_import, 202
+    return new_import.to_dict(), 202

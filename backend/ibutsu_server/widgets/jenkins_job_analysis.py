@@ -45,7 +45,6 @@ def get_jenkins_analysis_data(job_name, builds, group_field="metadata.component"
         "builds": min(builds, HEATMAP_MAX_BUILDS),
         "group_field": group_field,
         "count_skips": True,
-        "sort_field": "start_time",
     }
     barchart_params = {
         "job_name": job_name,
