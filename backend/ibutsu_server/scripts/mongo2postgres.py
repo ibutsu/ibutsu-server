@@ -335,6 +335,16 @@ def migrate_projects(mongo, vprint):
 
 def migrate_tables(app, mongo, vprint, pool_size, record_limit, month_limit):
     """Migrate all the tables"""
+
+    # create indexes for some of the tables
+    vprint("Creating indexes ", end="", flush=True)
+    with app.app_context():
+        conn = session.get_bind().connect()
+        for sql_index in INDEXES:
+            vprint(".", end="", flush=True)
+            conn.execute(sql_index)
+    vprint(" done")
+
     # first get the time range
     sort = [("_id", -1)]
     most_recent_record = mongo["results"].find_one(sort=sort)
@@ -370,15 +380,6 @@ def migrate_tables(app, mongo, vprint, pool_size, record_limit, month_limit):
                 break
             pool.submit(migrate_runs, app, mongo, run_ids, vprint)
             offset += 100
-
-    # create indexes for some of the tables
-    vprint("Creating indexes ", end="", flush=True)
-    with app.app_context():
-        conn = session.get_bind().connect()
-        for sql_index in INDEXES:
-            vprint(".", end="", flush=True)
-            conn.execute(sql_index)
-    vprint(" done")
 
 
 def fake_print(*args, **kwargs):
