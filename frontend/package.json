@@ -1,6 +1,6 @@
 {
   "name": "ibutsu-frontend",
-  "version": "1.10.2",
+  "version": "1.11.0",
   "private": true,
   "dependencies": {
     "@babel/helper-call-delegate": "^7.8.7",
