@@ -114,7 +114,7 @@ export class ResultView extends React.Component {
                   this.setState({artifactTabs});
                 });
               }
-              else if (contentType.includes('image data')) {
+              else if (contentType.includes('image')) {
                 response.blob().then(blob => {
                   let imageUrl = URL.createObjectURL(blob);
                   artifactTabs.push(
