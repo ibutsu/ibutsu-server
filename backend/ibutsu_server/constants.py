@@ -9,6 +9,7 @@ NUMERIC_FIELDS = [
     "summary.skips",
 ]
 HEATMAP_MAX_BUILDS = 40  # max for number of builds that are possible to display in heatmap
+BARCHART_MAX_BUILDS = 150  # max for number of builds possible to display in bar chart
 COUNT_TIMEOUT = 0.5  # timeout for counting the number of documents [s]
 MAX_DOCUMENTS = 100000  # max documents for pagination, when apply_max=True
 JJV_RUN_LIMIT = 8000  # max runs from which to aggregate Jenkins Jobs
