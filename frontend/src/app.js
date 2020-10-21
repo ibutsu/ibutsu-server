@@ -52,6 +52,9 @@ function getDateString() {
 }
 
 function projectToSelect(project) {
+  if (!project) {
+    return '';
+  }
   return {
     project: project,
     toString: function() {
@@ -78,8 +81,7 @@ class App extends React.Component {
       monitorUploadId: null,
       isAboutOpen: false,
       isProjectSelectorOpen: false,
-      selectedProject: project,
-      selectedProjectTitle: project ? project.title : '',
+      selectedProject: projectToSelect(project),
       searchValue: '',
       projects: [],
       views: []
@@ -216,8 +218,7 @@ class App extends React.Component {
     const project = JSON.stringify(value.project);
     localStorage.setItem('project', project);
     this.setState({
-      selectedProject: value.project,
-      selectedProjectTitle: value.toString(),
+      selectedProject: value,
       isProjectSelectorOpen: false
     });
     this.eventEmitter.emit('projectChange');
@@ -227,7 +228,6 @@ class App extends React.Component {
     localStorage.removeItem('project');
     this.setState({
       selectedProject: null,
-      selectedProjectTitle: '',
       isProjectSelectorOpen: false
     });
     this.eventEmitter.emit('projectChange');
@@ -284,7 +284,7 @@ class App extends React.Component {
             placeholderText="No active project"
             variant={SelectVariant.typeahead}
             isOpen={this.state.isProjectSelectorOpen}
-            selections={this.state.selectedProjectTitle}
+            selections={this.state.selectedProject}
             onToggle={this.onProjectToggle}
             onSelect={this.onProjectSelect}
             onClear={this.onProjectClear}
