@@ -61,7 +61,7 @@ function projectToSelect(project) {
       return this.project.title;
     },
     compareTo: function (value) {
-      return this.project.title.toLowerCase().includes(value.toLowerCase());
+      return this.project.title.toLowerCase().includes(value.project.title.toLowerCase());
     }
   };
 }
