@@ -1,11 +1,14 @@
+from ibutsu_server.constants import BARCHART_MAX_BUILDS
 from ibutsu_server.constants import HEATMAP_MAX_BUILDS
+from ibutsu_server.constants import JJV_RUN_LIMIT
 from ibutsu_server.widgets.jenkins_job_view import get_jenkins_job_view
 
 
 def get_jenkins_line_chart(job_name, builds, group_field="build_number", project=None):
     data = {"duration": {}}
+    run_limit = int((JJV_RUN_LIMIT / BARCHART_MAX_BUILDS) * builds)
     jobs = get_jenkins_job_view(
-        filter_=f"job_name={job_name}", page_size=builds, project=project
+        filter_=f"job_name={job_name}", page_size=builds, project=project, run_limit=run_limit
     ).get("jobs")
     # first determine duration differs from total_execution_time
     run_had_multiple_components = any(
@@ -27,8 +30,9 @@ def get_jenkins_line_chart(job_name, builds, group_field="build_number", project
 
 def get_jenkins_bar_chart(job_name, builds, group_field="build_number", project=None):
     data = {"passed": {}, "skipped": {}, "error": {}, "failed": {}}
+    run_limit = int((JJV_RUN_LIMIT / BARCHART_MAX_BUILDS) * builds)
     jobs = get_jenkins_job_view(
-        filter_=f"job_name={job_name}", page_size=builds, project=project
+        filter_=f"job_name={job_name}", page_size=builds, project=project, run_limit=run_limit
     ).get("jobs")
     for job in jobs:
         data_id = job.get(group_field)
