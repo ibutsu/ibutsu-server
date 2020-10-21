@@ -39,7 +39,7 @@ def get_jenkins_bar_chart(job_name, builds, group_field="build_number", project=
     return data
 
 
-def get_jenkins_analysis_data(job_name, builds, group_field="metadata.component", project=None):
+def get_jenkins_analysis_data(job_name, builds, group_field="component", project=None):
     heatmap_params = {
         "job_name": job_name,
         "builds": min(builds, HEATMAP_MAX_BUILDS),
