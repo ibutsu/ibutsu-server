@@ -249,6 +249,18 @@ export class ResultView extends React.Component {
                     </DataListItemRow>
                   </DataListItem>
                   }
+                  {testResult.result === 'xfailed' && testResult.metadata && testResult.metadata.xfail_reason &&
+                  <DataListItem aria-labelledby="xfail-reason-label">
+                    <DataListItemRow>
+                      <DataListItemCells
+                        dataListCells={[
+                          <DataListCell key="xfail-reason-label" width={2}><strong>Reason xfailed:</strong></DataListCell>,
+                          <DataListCell key="xfail-reason-data" width={4}><Linkify componentDecorator={linkifyDecorator}>{testResult.metadata.xfail_reason}</Linkify></DataListCell>
+                        ]}
+                      />
+                    </DataListItemRow>
+                  </DataListItem>
+                  }
                   {(testResult.result === 'failed' || testResult.result === 'error' || testResult.result === 'skipped') &&
                   <DataListItem aria-labelledby="classification-label">
                     <DataListItemRow>
