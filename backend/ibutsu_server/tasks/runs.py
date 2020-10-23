@@ -23,7 +23,13 @@ def _copy_column(result, run, key):
 def update_run(run_id):
     """Update the run summary from the results, this task will retry 1000 times"""
     with lock(f"update-run-lock-{run_id}"):
-        key_map = {"failed": "failures", "error": "errors", "skipped": "skips"}
+        key_map = {
+            "failed": "failures",
+            "error": "errors",
+            "skipped": "skips",
+            "xpassed": "xpasses",
+            "xfailed": "xfailures",
+        }
         run = Run.query.get(run_id)
         if not run:
             return
@@ -31,7 +37,7 @@ def update_run(run_id):
         results = (
             Result.query.filter(Result.run_id == run_id).order_by(Result.start_time.asc()).all()
         )
-        summary = {"errors": 0, "failures": 0, "skips": 0, "tests": 0}
+        summary = {"errors": 0, "failures": 0, "skips": 0, "tests": 0, "xpasses": 0, "xfailures": 0}
         run_duration = 0.0
         metadata = run.data or {}
         for counter, result in enumerate(results):
