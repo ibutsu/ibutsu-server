@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Tests" time="15.943" tests="1" failures="0">
+  <testsuite name="Root Suite" timestamp="2020-10-05T20:41:16" tests="0" file="root-suite.spec.js" failures="0" time="0">
+  </testsuite>
+  <testsuite name="Visual Testing" timestamp="2020-10-05T20:41:16" tests="1" failures="0" time="15.943">
+    <testcase name="Test navigation" time="15.943" classname="navigation">
+    </testcase>
+  </testsuite>
+</testsuites>

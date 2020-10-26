@@ -1,12 +1,33 @@
 import logging
 from copy import copy
-from unittest.mock import MagicMock
+from inspect import isfunction
 
 import ibutsu_server.tasks
 from flask_testing import TestCase
 from ibutsu_server import get_app
 from ibutsu_server.tasks import create_celery_app
 from ibutsu_server.util import merge_dicts
+
+
+def mock_task(*args, **kwargs):
+    if args and isfunction(args[0]):
+        func = args[0]
+
+        def wrap(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        wrap._orig_func = func
+        return wrap
+    else:
+
+        def decorate(func):
+            def _wrapped(*args, **kwargs):
+                return func(*args, **kwargs)
+
+            _wrapped._orig_func = func
+            return _wrapped
+
+        return decorate
 
 
 class BaseTestCase(TestCase):
@@ -19,6 +40,9 @@ class BaseTestCase(TestCase):
         }
         app = get_app(**extra_config)
         create_celery_app(app.app)
+
+        if ibutsu_server.tasks.task is None:
+            ibutsu_server.tasks.task = mock_task
         return app.app
 
     def assert_201(self, response, message=None):
@@ -142,4 +166,4 @@ class MockRun(MockModel):
 
 
 # Mock out the task decorator
-ibutsu_server.tasks.task = MagicMock()
+ibutsu_server.tasks.task = mock_task
