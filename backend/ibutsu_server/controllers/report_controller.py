@@ -58,7 +58,7 @@ def add_report(report_parameters=None):
         "created": datetime.utcnow(),
     }
     if "project" in report_parameters:
-        report_dict.project_id = get_project_id(report_parameters["project"])
+        report_dict["project_id"] = get_project_id(report_parameters["project"])
 
     report = Report.from_dict(**report_dict)
     session.add(report)

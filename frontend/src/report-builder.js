@@ -113,8 +113,7 @@ export class ReportBuilder extends React.Component {
     });
   }
 
-  onHelpToggle = (event) => {
-    event.preventDefault();
+  onHelpToggle = () => {
     this.setState({isHelpExpanded: !this.state.isHelpExpanded});
   };
 
