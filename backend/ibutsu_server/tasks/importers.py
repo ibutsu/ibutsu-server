@@ -18,7 +18,7 @@ from ibutsu_server.util.uuid import is_uuid
 from lxml import objectify
 
 
-def _create_result(tar, run_id, result, artifacts):
+def _create_result(tar, run_id, result, artifacts, project_id=None):
     """Create a result with artifacts, used in the archive importer"""
     old_id = None
     result_id = convert_objectid_to_uuid(result.get("id"))
@@ -33,6 +33,8 @@ def _create_result(tar, run_id, result, artifacts):
         if "id" in result:
             result.pop("id")
         result["run_id"] = run_id
+        if project_id:
+            result["project_id"] = project_id
         result_record = Result.from_dict(**result)
     session.add(result_record)
     session.commit()
@@ -85,6 +87,8 @@ def run_junit_import(import_):
                 "tests": testsuite.get("tests"),
             },
         }
+        if import_record.data.get("project_id"):
+            run_dict["project_id"] = import_record.data["project_id"]
         # Insert the run, and then update the import with the run id
         run = Run.from_dict(**run_dict)
         session.add(run)
@@ -92,7 +96,7 @@ def run_junit_import(import_):
         run_dict = run.to_dict()
         import_record.data["run_id"].append(run.id)
         # Import the contents of the XML file
-        for testcase in testsuite.testcase:
+        for testcase in testsuite.iterchildren(tag="testcase"):
             test_name = testcase.get("name").split(".")[-1]
             if testcase.get("classname"):
                 test_name = testcase.get("classname").split(".")[-1] + "." + test_name
@@ -109,6 +113,8 @@ def run_junit_import(import_):
                 "params": {},
                 "source": testsuite.get("name"),
             }
+            if import_record.data.get("project_id"):
+                result_dict["project_id"] = import_record.data["project_id"]
             skip_reason, traceback = None, None
             if testcase.find("failure"):
                 result_dict["result"] = "failed"
@@ -231,7 +237,9 @@ def run_archive_import(import_):
         elif not run_dict.get("created") and not run_dict.get("start_time"):
             run_dict["created"] = start_time
             run_dict["start_time"] = start_time
-        if run_dict.get("metadata", {}).get("project"):
+        if import_record.data.get("project_id"):
+            run_dict["project_id"] = import_record.data["project_id"]
+        elif run_dict.get("metadata", {}).get("project"):
             run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
         # If this run has a valid ObjectId, check if this run exists
         if is_uuid(run_dict.get("id")):
@@ -246,7 +254,7 @@ def run_archive_import(import_):
         # Now loop through all the results, and create or update them
         for result in results:
             artifacts = result_artifacts.get(result["id"], [])
-            _create_result(tar, run.id, result, artifacts)
+            _create_result(tar, run.id, result, artifacts, import_record.data.get("project_id"))
     # Update the import record
     _update_import_status(import_record, "done")
     if run:
