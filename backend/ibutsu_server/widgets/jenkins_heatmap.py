@@ -55,24 +55,33 @@ def _get_builds(job_name, builds, project=None):
 
     # create the query
     query = (
-        session.query(group_field.cast(Integer).label("build_number"))
+        session.query(
+            func.min(Run.start_time).label("min_start_time"),
+            group_field.cast(Integer).label("build_number"),
+        )
         .select_entity_from(sub_query)
         .group_by("build_number")
-        .order_by(desc("build_number"))
+        .order_by(desc("min_start_time"))
     )
 
     # add filters to the query
     query = apply_filters(query, filters, Run)
 
     # make the query
-    return [str(build_number[0]) for build_number in query.limit(builds)]
+    builds = [build for build in query.limit(builds)]
+    min_start_times = [build.min_start_time for build in builds]
+    if min_start_times:
+        min_start_time = min([build.min_start_time for build in builds])
+    else:
+        min_start_time = None
+    return min_start_time, [str(build.build_number) for build in builds]
 
 
 def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
     """ Get Jenkins Heatmap Data. """
 
     # Get the distinct builds that exist in the DB
-    builds = _get_builds(job_name, builds, project)
+    min_start_time, builds = _get_builds(job_name, builds, project)
 
     # Create the filters for the query
     filters = [
@@ -80,6 +89,8 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
         f"metadata.jenkins.build_number*{';'.join(builds)}",
         f"{group_field}@y",
     ]
+    if min_start_time:
+        filters.append(f"start_time){min_start_time}")
     if project:
         filters.append(f"project_id={project}")
 
