@@ -55,17 +55,20 @@ def _get_builds(job_name, builds, project=None):
 
     # create the query
     query = (
-        session.query(group_field.cast(Integer).label("build_number"))
+        session.query(
+            func.max(Run.start_time).label("max_start_time"),
+            group_field.cast(Integer).label("build_number"),
+        )
         .select_entity_from(sub_query)
         .group_by("build_number")
-        .order_by(desc("build_number"))
+        .order_by(desc("max_start_time"))
     )
 
     # add filters to the query
     query = apply_filters(query, filters, Run)
 
     # make the query
-    return [str(build_number[0]) for build_number in query.limit(builds)]
+    return [str(build.build_number) for build in query.limit(builds)]
 
 
 def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
