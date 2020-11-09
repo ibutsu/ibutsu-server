@@ -1,6 +1,7 @@
 import re
 
 from ibutsu_server.constants import ARRAY_FIELDS
+from ibutsu_server.constants import NUMERIC_FIELDS
 from sqlalchemy.dialects.postgresql import array
 
 OPERATORS = {
@@ -20,13 +21,16 @@ FILTER_RE = re.compile(r"([a-zA-Z\._]+)([" + "".join(OPERATORS.keys()) + "])(.*)
 
 def string_to_column(field, model):
     field_parts = field.split(".")
-    if field_parts[0] == "data" or field_parts[0] == "metadata":
-        column = model.data
+    if field_parts[0] == "data" or field_parts[0] == "metadata" or field_parts[0] == "summary":
+        if field_parts[0] == "summary":
+            column = model.summary
+        else:
+            column = model.data
         for idx, part in enumerate(field_parts):
             if idx == 0:
                 continue
             column = column[part]
-        if field not in ARRAY_FIELDS:
+        if field not in ARRAY_FIELDS and field not in NUMERIC_FIELDS:
             column = column.as_string()
     else:
         column = getattr(model, field)
