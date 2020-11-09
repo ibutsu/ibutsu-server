@@ -7,6 +7,9 @@ NUMERIC_FIELDS = [
     "summary.errors",
     "summary.passes",
     "summary.skips",
+    "summary.tests",
+    "summary.xfailures",
+    "summary.xpasses",
 ]
 HEATMAP_MAX_BUILDS = 40  # max for number of builds that are possible to display in heatmap
 BARCHART_MAX_BUILDS = 150  # max for number of builds possible to display in bar chart
