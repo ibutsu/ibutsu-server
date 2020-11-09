@@ -388,10 +388,8 @@ paths:
 
         Example queries:
 
-
-            /result?filter=metadata.run=63fe5
-            /result?filter=test_id~neg
-            /result?filter=result!passed
+            /run?filter=metadata.jenkins.job_name=jenkins_job
+            /run?filter=summary.failures>0
 
       operationId: get_run_list
       parameters:
@@ -445,6 +443,46 @@ paths:
       summary: Create a run
       tags:
       - run
+      x-openapi-router-controller: ibutsu_server.controllers.run_controller
+    put:
+      operationId: update_runs
+      parameters:
+      - description: Fields to filter by
+        explode: true
+        in: query
+        name: filter
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+        style: form
+      - $ref: '#/components/parameters/PageSize'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRun'
+        description: The metadata to add to the test runs
+        required: true
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunList'
+          description: Updated Run
+        400:
+          description: Bad request, JSON required
+        401:
+          description: Bad request, can only update metadata
+        404:
+          description: Filter(s) returned no Runs
+        405:
+          description: Bad request, cannot update more than 25 runs at a time
+      summary: Update multiple runs with common metadata
+      tags:
+        - run
       x-openapi-router-controller: ibutsu_server.controllers.run_controller
   /run/{id}:
     get:
@@ -1229,10 +1267,15 @@ components:
   schemas:
     Result:
       example:
+        id: f3a9c425-1cf0-4ed3-b5a4-7e43c9d287b0
         duration: 6.027456183070403
         result: passed
+        project_id: 9212ac64-348f-4c1c-90f7-fd0a45bcb47c
         metadata:
-          jenkins_build: 145
+          jenkins:
+            build_number: 123
+            job_name: test-jenkins-job
+          project: 'insights-qe'
           commit_hash: F4BA3E12
         start_time: 2020-05-15T16:18:32.014053
         source: source
@@ -1243,7 +1286,7 @@ components:
       properties:
         id:
           description: Unique ID of the test result
-          example: af3b3ff0c6188c9ba767
+          example: f3a9c425-1cf0-4ed3-b5a4-7e43c9d287b0
           type: string
         test_id:
           description: Unique id
@@ -1266,7 +1309,10 @@ components:
           type: string
         metadata:
           example:
-            jenkins_build: 145
+            jenkins:
+              job_name: test-jenkins-job
+              build_number: 123
+            project: insights-qe
             commit_hash: F4BA3E12
           type: object
         params:
@@ -1279,11 +1325,13 @@ components:
           type: string
     Run:
       example:
-        id: cd7994f77bcf8639011507f1
+        id: 345f14bf-9f90-4246-8413-44b7ad15ecd9
         created: 2020-05-15T16:18:32.014053
         duration: 540.05433
         source: my-tests
         start_time: 2020-05-15T16:18:32.014053
+        component: login
+        env: qa
         summary:
           errors: 1
           failures: 3
@@ -1297,7 +1345,7 @@ components:
       properties:
         id:
           description: Unique ID of the test run
-          example: xBvhD1
+          example: 345f14bf-9f90-4246-8413-44b7ad15ecd9
           type: string
         created:
           description: The time this record was created
@@ -1322,17 +1370,32 @@ components:
           description: Extra data for this run
           type: object
       type: object
+    UpdateRun:
+      example:
+        metadata:
+          annotation:
+            - name: deploymentAnnotation
+              value: Application was deployed at <timestamp>
+              description: Optional description
+            - name: otherAnnotation
+              value: A different type of annotation
+              description: Optional description
+      properties:
+        metadata:
+          description: Extra data for this run
+          type: object
+      type: object
     Artifact:
       example:
         filename: filename
         resultId: resultId
-        id: 507f1f77bcf86cd799439011
+        id: 2a5bf135-e754-472f-8984-85d90d0ef65c
         additionalMetadata:
           key: '{}'
       properties:
         id:
           description: Unique ID of the artifact
-          example: 507f1f77bcf86cd799439011
+          example: 2a5bf135-e754-472f-8984-85d90d0ef65c
           type: string
         resultId:
           description: ID of test result to attach artifact to
@@ -1346,15 +1409,15 @@ components:
       type: object
     Project:
       example:
-        id: 86cd799439011507f1f77bcf
+        id: 32919850-667a-44de-a4f5-0e6a68e5e7e4
         name: my-project
         title: My Project
-        ownerId: 6afedb7a8348eb4ebdbe0c77
-        groupId: 7a8348eb4e6afedb0c77bdbe
+        ownerId: 10485255-76c2-4e2c-a1c1-0723cbca118a
+        groupId: 75be09af-b68b-4029-91e9-34af007eb35c
       properties:
         id:
           description: Unique ID of the project
-          example: 86cd799439011507f1f77bcf
+          example: 32919850-667a-44de-a4f5-0e6a68e5e7e4
           type: string
         name:
           description: The machine name of the project
@@ -1375,12 +1438,12 @@ components:
       type: object
     Group:
       example:
-        id: af3b3ff0c6188c9ba767
+        id: 3e49847a-c775-4bf7-bd9c-91946869634d
         name: Example group
       properties:
         id:
           description: Unique ID of the project
-          example: af3b3ff0c6188c9ba767
+          example: 3e49847a-c775-4bf7-bd9c-91946869634d
           type: string
         name:
           description: The name of the group
@@ -1408,7 +1471,7 @@ components:
       type: object
     Report:
       example:
-        id: c6188b3fa767f0c9baf3
+        id: 4dfa70aa-cf5d-49b6-aa24-b9bd9a85b7cf
         filename: myreport.zip
         mimetype: application/zip
         url: http://ibutsu/reports/download/myreport.zip
@@ -1422,7 +1485,7 @@ components:
       properties:
         id:
           description: Unique ID of the project
-          example: c6188b3fa767f0c9baf3
+          example: 4dfa70aa-cf5d-49b6-aa24-b9bd9a85b7cf
           type: string
         filename:
           description: The filename of the report
@@ -1453,15 +1516,15 @@ components:
       type: object
     Import:
       example:
-        id: 8ebba624448f749dfc5f
+        id: ab9615f4-3f5a-4a09-a638-1e2995a79f64
         status: done
         filename: test-run.xml
         format: JUnit
-        run_id: 97dd93951b96f9bada68
+        run_id: 14693b7c-befa-4051-be1e-0b1ccc091b04
       properties:
         id:
           description: The database ID of the import
-          example: 8ebba624448f749dfc5f
+          example: ab9615f4-3f5a-4a09-a638-1e2995a79f64
           type: string
         status:
           description: The current status of the import, can be one of "pending", "running", "done"
@@ -1477,12 +1540,12 @@ components:
           type: string
         run_id:
           description: The ID of the run from the import
-          example: 97dd93951b96f9bada68
+          example: 14693b7c-befa-4051-be1e-0b1ccc091b04
           type: string
       type: object
     WidgetConfig:
       example:
-        id: d41d8cd98f00b204e980
+        id: 70e505d7-95ba-4416-8f43-b3eacb1a467a
         type: widget
         widget: jenkins-heatmap
         project: my-project
@@ -1496,7 +1559,7 @@ components:
       properties:
         id:
           description: The internal ID of the WidgetConfig
-          example: d41d8cd98f00b204e980
+          example: 70e505d7-95ba-4416-8f43-b3eacb1a467a
           type: string
         type:
           description: The type of widget, one of either "widget" or "view"
@@ -1683,7 +1746,7 @@ components:
     RunList:
       example:
         runs:
-        - id: cd7994f77bcf8639011507f1
+        - id: 0c7a3790-9a71-4351-8567-e98217ee3067
           duration: 540.05433
           summary:
             errors: 1
@@ -1710,7 +1773,7 @@ components:
         artifacts:
         - filename: filename
           resultId: resultId
-          id: 507f1f77bcf86cd799439011
+          id: d207491a-d7f8-40eb-b26c-41c00c985903
           additionalMetadata:
             key: '{}'
         pagination:
@@ -1729,10 +1792,10 @@ components:
     ProjectList:
       example:
         projects:
-        - id: 86cd799439011507f1f77bcf
+        - id: a8d58357-8b9a-4227-92dc-7dd73565ba01
           name: My Project
-          ownerId: 6afedb7a8348eb4ebdbe0c77
-          groupId: 7a8348eb4e6afedb0c77bdbe
+          ownerId: f158795c-c33b-408f-bbbd-791f771299d5
+          groupId: a0c1bdb4-4cd8-48b7-899d-89af68a2e862
         pagination:
           page: 2
           pageSize: 25
@@ -1749,7 +1812,7 @@ components:
     GroupList:
       example:
         groups:
-        - id: af3b3ff0c6188c9ba767
+        - id: 991c8409-f4dc-4e2e-94f8-60eab9c014e8
           name: Example group
         pagination:
           page: 2
@@ -1767,7 +1830,7 @@ components:
     ReportList:
       example:
         reports:
-        - id: c6188b3fa767f0c9baf3
+        - id: 2a690a2c-3a48-4bdc-af60-32955b990dd0
           filename: myreport.zip
           mimetype: application/zip
           url: http://ibutsu/reports/download/myreport.zip
@@ -1791,7 +1854,7 @@ components:
     WidgetConfigList:
       example:
         widgets:
-          - id: d41d8cd98f00b204e980
+          - id: be014e39-c47b-4552-b453-3bbaa02512be
             type: widget
             widget: heatmap
             params:

@@ -47,8 +47,9 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False):
 
 
     :param filter: A list of filters to apply
-    :param page_size: Limit the number of results returned, defaults to 25
-    :param page: Offset the results list, defaults to 0
+    :param page_size: Limit the number of runs returned, defaults to 25
+    :param page: Offset the runs list, defaults to 0
+    :param estimate: Estimate the count of runs, defaults to False
 
     :rtype: List[Run]
     """
@@ -142,3 +143,46 @@ def update_run(id_, run=None):
     session.commit()
     update_run_task.apply_async((id_,), countdown=5)
     return run.to_dict()
+
+
+def update_runs(filter_=None, page_size=25):
+    """Updates multiple runs with common metadata
+
+    Note: can only be used to update metadata on runs, limited to 25 runs
+
+    :param filter_: A list of filters to apply
+    :param page_size: Limit the number of runs updated, defaults to 1
+
+    :rtype: List[Run]
+    """
+    if not connexion.request.is_json:
+        return "Bad request, JSON required", 400
+
+    run_dict = connexion.request.get_json()
+
+    if not run_dict.get("metadata"):
+        return "Bad request, can only update metadata", 401
+
+    # ensure only metadata is updated
+    run_dict = {"metadata": run_dict.pop("metadata")}
+
+    if page_size > 25:
+        return "Bad request, cannot update more than 25 runs at a time", 405
+
+    if run_dict.get("metadata", {}).get("project"):
+        run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
+
+    runs = get_run_list(filter_, page_size=page_size, estimate=True).get("runs")
+
+    if not runs:
+        return f"No runs found with {filter_}", 404
+
+    model_runs = []
+    for run_json in runs:
+        run = Run.query.get(run_json.get("id"))
+        run.update(run_dict)
+        session.add(run)
+        model_runs.append(run)
+    session.commit()
+
+    return [run.to_dict() for run in model_runs]

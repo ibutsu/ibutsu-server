@@ -98,10 +98,12 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
     group_field = string_to_column(group_field, Run)
     job_name = string_to_column("metadata.jenkins.job_name", Run)
     build_number = string_to_column("metadata.jenkins.build_number", Run)
+    annotation = string_to_column("metadata.annotation", Run)
 
     # create the base query
     query = session.query(
         Run.id.label("run_id"),
+        annotation.label("annotation"),
         group_field.label("group_field"),
         job_name.label("job_name"),
         build_number.label("build_number"),
