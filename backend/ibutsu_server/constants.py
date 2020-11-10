@@ -1,5 +1,5 @@
 ALLOWED_TRUE_BOOLEANS = ["y", "t", "1"]
-ARRAY_FIELDS = ["metadata.tags", "metadata.markers"]
+ARRAY_FIELDS = ["metadata.tags", "metadata.markers", "metadata.annotations"]
 NUMERIC_FIELDS = [
     "duration",
     "start_time",

@@ -112,12 +112,17 @@ export class JenkinsHeatmapWidget extends React.Component {
       else if (isNaN(value[0])) {
         style.background = 'var(--pf-global--info-color--100)';
       }
+      // handle annotations, add a border for cells with annotations
+      if (value[2]) {
+        style.borderRight = 'solid 5px #01FFFF';
+      }
     }
     return style;
   }
 
   renderCell(value) {
     let contents = '';
+    let style = {marginTop: '-4px'};
     if (!!value && (value[1] === 0)) {
       if (value[0] < 0) {
         contents = <ArrowDownIcon />;
@@ -136,9 +141,20 @@ export class JenkinsHeatmapWidget extends React.Component {
       contents = "n/a"
     }
     else if (value) {
-      contents = <Link to={`/runs/${value[1]}`}>{Math.floor(value[0])}</Link>;
+      if (value[2]) {
+        let title = '';
+        value[2].forEach((item) => {
+          if (!!item.name && !!item.value) {
+            title += item.name + ": " + item.value + "\n";
+          }
+        });
+        contents = <p title={title}><Link to={`/runs/${value[1]}`}>{Math.floor(value[0])}</Link></p>;
+      }
+      else {
+        contents = <Link to={`/runs/${value[1]}`}>{Math.floor(value[0])}</Link>;
+      }
     }
-    return <div style={{marginTop: '-4px'}}>{contents}</div>;
+    return <div style={style}>{contents}</div>;
   }
 
   componentDidMount() {
@@ -175,8 +191,8 @@ export class JenkinsHeatmapWidget extends React.Component {
       yLabels.push(key);
       data.push(values);
       values.forEach((item) => {
-        if (!!item && (item.length > 2) && !!item[2]) {
-          newLabels.push(<Link to={`/results?metadata.jenkins.build_number[eq]=${item[2]}&metadata.jenkins.job_name[eq]=` + this.params['job_name']} key={item[2]}>{item[2]}</Link>);
+        if (!!item && (item.length > 2) && !!item[3]) {
+          newLabels.push(<Link to={`/results?metadata.jenkins.build_number[eq]=${item[3]}&metadata.jenkins.job_name[eq]=` + this.params['job_name']} key={item[3]}>{item[3]}</Link>);
         }
       });
       if (newLabels.length > labels.length) {

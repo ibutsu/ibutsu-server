@@ -145,7 +145,7 @@ def update_run(id_, run=None):
     return run.to_dict()
 
 
-def update_runs(filter_=None, page_size=25):
+def bulk_update(filter_=None, page_size=1):
     """Updates multiple runs with common metadata
 
     Note: can only be used to update metadata on runs, limited to 25 runs

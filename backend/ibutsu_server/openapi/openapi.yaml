@@ -444,8 +444,9 @@ paths:
       tags:
       - run
       x-openapi-router-controller: ibutsu_server.controllers.run_controller
-    put:
-      operationId: update_runs
+  /runs/bulk-update:
+    post:
+      operationId: bulk_update
       parameters:
       - description: Fields to filter by
         explode: true
@@ -1373,7 +1374,7 @@ components:
     UpdateRun:
       example:
         metadata:
-          annotation:
+          annotations:
             - name: deploymentAnnotation
               value: Application was deployed at <timestamp>
               description: Optional description
