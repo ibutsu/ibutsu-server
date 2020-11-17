@@ -141,8 +141,8 @@ export class ResultView extends React.Component {
     if (this.state.resultId && !this.state.testResult.id) {
       this.getTestResult(this.state.resultId);
     }
-    if (this.state.resultId || this.state.testResult.id) {
-      this.getTestArtifacts(this.state.testResult.id || this.state.resultId);
+    if (this.state.resultId || (this.state.testResult && this.state.testResult.id)) {
+      this.getTestArtifacts(this.state.testResult.id || this.state.resultId || this.state.id);
     }
   }
 
@@ -162,15 +162,19 @@ export class ResultView extends React.Component {
   render() {
     const testResult = this.state.testResult;
     const artifactTabs = this.state.artifactTabs;
-    const resultIcon = getIconForResult(testResult.result);
-    const startTime = new Date(testResult.start_time);
-    const parameters = Object.keys(testResult.params).map((key) => <div key={key}>{key} = {testResult.params[key]}</div>);
+    let resultIcon = getIconForResult('pending');
+    let startTime = new Date();
+    let parameters = <div/>;
     let runLink = '';
-    if (testResult.run_id) {
+    if (testResult) {
+      resultIcon = getIconForResult(testResult.result);
+      startTime = new Date(testResult.start_time);
+      parameters = Object.keys(testResult.params).map((key) => <div key={key}>{key} = {testResult.params[key]}</div>);
       runLink = <Link to={`/runs/${testResult.run_id}`}>{testResult.run_id}</Link>;
     }
     return (
       <React.Fragment>
+        {this.state.testResult &&
         <Tabs activeKey={this.state.artifactsTabKey} onSelect={this.handleArtifactsTabClick}>
           {!this.props.hideSummary &&
           <Tab eventKey={0} title={<TabTitle icon={InfoCircleIcon} text="Summary" />} style={{backgroundColor: "white"}}>
@@ -451,6 +455,7 @@ export class ResultView extends React.Component {
           </Tab>
           }
         </Tabs>
+        }
       </React.Fragment>
     );
   }
