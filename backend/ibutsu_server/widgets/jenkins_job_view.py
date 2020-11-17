@@ -47,6 +47,8 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
             func.min(build_url.cast(Text)).label("build_url"),
             func.min(env).label("env"),
             func.min(Run.source).label("source"),
+            func.sum(Run.summary["xfailures"].cast(Integer)).label("xfailures"),
+            func.sum(Run.summary["xpasses"].cast(Integer)).label("xpasses"),
             func.sum(Run.summary["failures"].cast(Integer)).label("failures"),
             func.sum(Run.summary["errors"].cast(Integer)).label("errors"),
             func.sum(Run.summary["skips"].cast(Integer)).label("skips"),
@@ -89,6 +91,8 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
                 "source": datum.source,
                 "start_time": datum.min_start_time,
                 "summary": {
+                    "xfailures": datum.xfailures,
+                    "xpasses": datum.xpasses,
                     "errors": datum.errors,
                     "failures": datum.failures,
                     "skips": datum.skips,

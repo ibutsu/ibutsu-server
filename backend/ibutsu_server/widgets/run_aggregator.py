@@ -12,7 +12,7 @@ from sqlalchemy import func
 
 def _get_recent_run_data(weeks, group_field, project=None):
     """Get all the data from the time period and aggregate the results"""
-    data = {"passed": {}, "skipped": {}, "error": {}, "failed": {}}
+    data = {"passed": {}, "skipped": {}, "error": {}, "failed": {}, "xfailed": {}, "xpassed": {}}
     delta = timedelta(weeks=weeks).total_seconds()
     current_time = time.time()
     time_period_in_sec = current_time - delta
@@ -32,6 +32,8 @@ def _get_recent_run_data(weeks, group_field, project=None):
         func.sum(Run.summary["errors"].cast(Float)),
         func.sum(Run.summary["skips"].cast(Float)),
         func.sum(Run.summary["tests"].cast(Float)),
+        func.sum(Run.summary["xpassed"].cast(Float)),
+        func.sum(Run.summary["xfailed"].cast(Float)),
     ).group_by(group_field)
 
     # filter the query
@@ -41,13 +43,22 @@ def _get_recent_run_data(weeks, group_field, project=None):
     query_data = query.all()
 
     # parse the data
-    for group, failed, error, skipped, total in query_data:
+    for group, failed, error, skipped, total, xpassed, xfailed in query_data:
         # convert all data to percentages
         data["failed"][group] = int(round((failed / total) * 100.0))
         data["error"][group] = int(round((error / total) * 100.0))
         data["skipped"][group] = int(round((skipped / total) * 100.0))
+        data["xpassed"][group] = int(round((xpassed or 0.0 / total) * 100.0))
+        data["xfailed"][group] = int(round((xfailed or 0.0 / total) * 100.0))
         data["passed"][group] = int(
-            100 - (data["failed"][group] + data["error"][group] + data["skipped"][group])
+            100
+            - (
+                data["failed"][group]
+                + data["error"][group]
+                + data["skipped"][group]
+                + data["xfailed"][group]
+                + data["xpassed"][group]
+            )
         )
     return data
 
