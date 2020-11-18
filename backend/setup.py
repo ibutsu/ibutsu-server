@@ -5,11 +5,13 @@ from setuptools import setup
 NAME = "ibutsu_server"
 VERSION = "1.11.4"
 REQUIRES = [
+    "alembic",
     # Pin Celery to be compatible with Kombu
     "celery==4.3.0",
     # Pin Kombu to 4.6.3 to get around celery/kombu/issues/236
     "kombu==4.6.3",
     "connexion",
+    "flask_bcrypt",
     "flask_cors",
     "Flask-SQLAlchemy",
     "gunicorn",
