@@ -346,6 +346,10 @@ export function convertDate(s) {
 }
 
 export function cleanPath(path) {
+  if (!path) {
+    // if xml imported results have no fspath
+    return 'Tests';
+  }
   let pathParts = path.split('/');
   // Do this first to reduce looping below
   if (pathParts.indexOf('site-packages') !== -1) {
