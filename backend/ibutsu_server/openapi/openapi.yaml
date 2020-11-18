@@ -752,6 +752,110 @@ paths:
       tags:
       - group
       x-openapi-router-controller: ibutsu_server.controllers.group_controller
+  /dashboard:
+    get:
+      operationId: get_dashboard_list
+      parameters:
+      - description: Filter dashboards by project ID
+        explode: true
+        in: query
+        name: projectId
+        required: false
+        schema:
+          type: string
+        style: form
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/PageSize'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardList'
+          description: Array of dashboards
+      summary: Get a list of dashboards
+      tags:
+      - dashboard
+      x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller
+    post:
+      operationId: add_dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dashboard'
+        description: Dashboard
+        required: true
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+          description: A dashboard was created
+        400:
+          description: Bad request, JSON required
+      summary: Create a dashboard
+      tags:
+      - dashboard
+      x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller
+  /dashboard/{id}:
+    get:
+      operationId: get_dashboard
+      parameters:
+      - description: ID of test dashboard
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+          description: Dashboard object
+        404:
+          description: Dashboard not found
+      summary: Get a single dashboard by ID
+      tags:
+      - dashboard
+      x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller
+    put:
+      operationId: update_dashboard
+      parameters:
+      - description: ID of test dashboard
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Dashboard'
+        description: Dashboard
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+          description: Dashboard object
+        400:
+          description: Bad request, JSON required or not enough parameters
+        404:
+          description: Dashboard not found
+      summary: Update a dashboard
+      tags:
+      - dashboard
+      x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller
   /report:
     get:
       operationId: get_report_list
@@ -1268,7 +1372,7 @@ components:
   schemas:
     Result:
       example:
-        id: f3a9c425-1cf0-4ed3-b5a4-7e43c9d287b0
+        id: a16ad60e-bf23-4195-99dc-594858ad3e5e
         duration: 6.027456183070403
         result: passed
         project_id: 9212ac64-348f-4c1c-90f7-fd0a45bcb47c
@@ -1283,14 +1387,15 @@ components:
         params:
           provider: vmware
           ip_stack: ipv4
-        test_id: test_id
+        test_id: test_click_on_button
       properties:
         id:
           description: Unique ID of the test result
-          example: f3a9c425-1cf0-4ed3-b5a4-7e43c9d287b0
+          example: a16ad60e-bf23-4195-99dc-594858ad3e5e
           type: string
         test_id:
           description: Unique id
+          example: test_click_on_button
           type: string
         start_time:
           description: Timestamp of starttime.
@@ -1326,7 +1431,7 @@ components:
           type: string
     Run:
       example:
-        id: 345f14bf-9f90-4246-8413-44b7ad15ecd9
+        id: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
         created: 2020-05-15T16:18:32.014053
         duration: 540.05433
         source: my-tests
@@ -1346,7 +1451,7 @@ components:
       properties:
         id:
           description: Unique ID of the test run
-          example: 345f14bf-9f90-4246-8413-44b7ad15ecd9
+          example: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
           type: string
         created:
           description: The time this record was created
@@ -1389,17 +1494,18 @@ components:
     Artifact:
       example:
         filename: filename
-        resultId: resultId
-        id: 2a5bf135-e754-472f-8984-85d90d0ef65c
+        result_id: a16ad60e-bf23-4195-99dc-594858ad3e5e
+        id: 22785097-a256-4aad-874b-9c204caba341
         additionalMetadata:
           key: '{}'
       properties:
         id:
           description: Unique ID of the artifact
-          example: 2a5bf135-e754-472f-8984-85d90d0ef65c
+          example: 22785097-a256-4aad-874b-9c204caba341
           type: string
-        resultId:
+        result_id:
           description: ID of test result to attach artifact to
+          example: a16ad60e-bf23-4195-99dc-594858ad3e5e
           type: string
         filename:
           description: ID of pet to update
@@ -1410,15 +1516,15 @@ components:
       type: object
     Project:
       example:
-        id: 32919850-667a-44de-a4f5-0e6a68e5e7e4
+        id: 44941c55-9736-42f6-acce-ca3c4739d0f3
         name: my-project
         title: My Project
-        ownerId: 10485255-76c2-4e2c-a1c1-0723cbca118a
-        groupId: 75be09af-b68b-4029-91e9-34af007eb35c
+        owner_id: 6b8b01ad-a17e-4ca1-8df5-fadb41439567
+        group_id: a16ad60e-bf23-4195-99dc-594858ad3e5e
       properties:
         id:
           description: Unique ID of the project
-          example: 32919850-667a-44de-a4f5-0e6a68e5e7e4
+          example: 44941c55-9736-42f6-acce-ca3c4739d0f3
           type: string
         name:
           description: The machine name of the project
@@ -1428,23 +1534,57 @@ components:
           description: The human-readable title of the project
           example: My project
           type: string
-        ownerId:
+        owner_id:
           description: The ID of the owner of this project
-          example: 6afedb7a8348eb4ebdbe0c77
+          example: 6b8b01ad-a17e-4ca1-8df5-fadb41439567
           type: string
-        groupId:
+        group_id:
           description: The ID of the group of this project
-          example: 7a8348eb4e6afedb0c77bdbe
+          example: a16ad60e-bf23-4195-99dc-594858ad3e5e
+          type: string
+      type: object
+    Dashboard:
+      example:
+        id: 62faa4ce-d264-46c2-813e-579949c8ab9b
+        title: My Dashboard
+        description: A dashboard for me
+        filters: ''
+        project_id: 44941c55-9736-42f6-acce-ca3c4739d0f3
+        user_id: 90be2a4a-1a4d-4779-b40f-f08ccd7101d5
+      properties:
+        id:
+          description: Unique ID of the dashboard
+          example: 62faa4ce-d264-46c2-813e-579949c8ab9b
+          type: string
+        title:
+          description: The title of the dashboard
+          example: My Dashboard
+          type: string
+        description:
+          description: A basic description of the dashboard
+          example: A dashboard for me
+          type: string
+        filters:
+          description: An optional set of filters
+          example: ''
+          type: string
+        project_id:
+          description: The ID of the project this dashboard is associated with
+          example: 44941c55-9736-42f6-acce-ca3c4739d0f3
+          type: string
+        user_id:
+          description: The ID of a user this dashboard might be associated with
+          example: 90be2a4a-1a4d-4779-b40f-f08ccd7101d5
           type: string
       type: object
     Group:
       example:
-        id: 3e49847a-c775-4bf7-bd9c-91946869634d
+        id: a16ad60e-bf23-4195-99dc-594858ad3e5e
         name: Example group
       properties:
         id:
-          description: Unique ID of the project
-          example: 3e49847a-c775-4bf7-bd9c-91946869634d
+          description: Unique ID of the group
+          example: a16ad60e-bf23-4195-99dc-594858ad3e5e
           type: string
         name:
           description: The name of the group
@@ -1472,7 +1612,7 @@ components:
       type: object
     Report:
       example:
-        id: 4dfa70aa-cf5d-49b6-aa24-b9bd9a85b7cf
+        id: a9560d7d-dbe4-4a7f-8d09-dde6b5b137ae
         filename: myreport.zip
         mimetype: application/zip
         url: http://ibutsu/reports/download/myreport.zip
@@ -1485,8 +1625,8 @@ components:
         status: done
       properties:
         id:
-          description: Unique ID of the project
-          example: 4dfa70aa-cf5d-49b6-aa24-b9bd9a85b7cf
+          description: Unique ID of the report
+          example: a9560d7d-dbe4-4a7f-8d09-dde6b5b137ae
           type: string
         filename:
           description: The filename of the report
@@ -1517,15 +1657,15 @@ components:
       type: object
     Import:
       example:
-        id: ab9615f4-3f5a-4a09-a638-1e2995a79f64
+        id: e56740ba-0dbb-43ac-a556-364eefbf1f62
         status: done
         filename: test-run.xml
         format: JUnit
-        run_id: 14693b7c-befa-4051-be1e-0b1ccc091b04
+        run_id: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
       properties:
         id:
           description: The database ID of the import
-          example: ab9615f4-3f5a-4a09-a638-1e2995a79f64
+          example: e56740ba-0dbb-43ac-a556-364eefbf1f62
           type: string
         status:
           description: The current status of the import, can be one of "pending", "running", "done"
@@ -1541,15 +1681,15 @@ components:
           type: string
         run_id:
           description: The ID of the run from the import
-          example: 14693b7c-befa-4051-be1e-0b1ccc091b04
+          example: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
           type: string
       type: object
     WidgetConfig:
       example:
-        id: 70e505d7-95ba-4416-8f43-b3eacb1a467a
+        id: afbcf5c7-1ffd-4367-b228-5a868c29e0ef
         type: widget
         widget: jenkins-heatmap
-        project: my-project
+        project_id: 44941c55-9736-42f6-acce-ca3c4739d0f3
         weight: 0
         params:
           job_name: integration_tests
@@ -1560,7 +1700,7 @@ components:
       properties:
         id:
           description: The internal ID of the WidgetConfig
-          example: 70e505d7-95ba-4416-8f43-b3eacb1a467a
+          example: afbcf5c7-1ffd-4367-b228-5a868c29e0ef
           type: string
         type:
           description: The type of widget, one of either "widget" or "view"
@@ -1570,9 +1710,9 @@ components:
           description: The widget to render, from the list at /widget/types
           example: jenkins-heatmap
           type: string
-        project:
-          description: The project for which the widget is designed
-          example: my-project
+        project_id:
+          description: The project ID for which the widget is designed
+          example: 44941c55-9736-42f6-acce-ca3c4739d0f3
           type: string
         weight:
           description: The weighting for the widget, lower weight means it will display first
@@ -1747,7 +1887,7 @@ components:
     RunList:
       example:
         runs:
-        - id: 0c7a3790-9a71-4351-8567-e98217ee3067
+        - id: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
           duration: 540.05433
           summary:
             errors: 1
@@ -1773,8 +1913,8 @@ components:
       example:
         artifacts:
         - filename: filename
-          resultId: resultId
-          id: d207491a-d7f8-40eb-b26c-41c00c985903
+          resultId: a16ad60e-bf23-4195-99dc-594858ad3e5e
+          id: 22785097-a256-4aad-874b-9c204caba341
           additionalMetadata:
             key: '{}'
         pagination:
@@ -1793,10 +1933,10 @@ components:
     ProjectList:
       example:
         projects:
-        - id: a8d58357-8b9a-4227-92dc-7dd73565ba01
+        - id: 44941c55-9736-42f6-acce-ca3c4739d0f3
           name: My Project
-          ownerId: f158795c-c33b-408f-bbbd-791f771299d5
-          groupId: a0c1bdb4-4cd8-48b7-899d-89af68a2e862
+          ownerId: 6b8b01ad-a17e-4ca1-8df5-fadb41439567
+          groupId: a16ad60e-bf23-4195-99dc-594858ad3e5e
         pagination:
           page: 2
           pageSize: 25
@@ -1810,10 +1950,32 @@ components:
         pagination:
           $ref: '#/components/schemas/Pagination'
       type: object
+    DashboardList:
+      example:
+        dashboards:
+        - id: 62faa4ce-d264-46c2-813e-579949c8ab9b
+          title: My Dashboard
+          description: A dashboard for me
+          filters: ''
+          project_id: 44941c55-9736-42f6-acce-ca3c4739d0f3
+          user_id: 90be2a4a-1a4d-4779-b40f-f08ccd7101d5
+        pagination:
+          page: 2
+          pageSize: 25
+          totalPages: 10
+          totalItems: 243
+      properties:
+        dashboards:
+          items:
+            $ref: '#/components/schemas/Dashboard'
+          type: array
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      type: object
     GroupList:
       example:
         groups:
-        - id: 991c8409-f4dc-4e2e-94f8-60eab9c014e8
+        - id: a16ad60e-bf23-4195-99dc-594858ad3e5e
           name: Example group
         pagination:
           page: 2
@@ -1831,7 +1993,7 @@ components:
     ReportList:
       example:
         reports:
-        - id: 2a690a2c-3a48-4bdc-af60-32955b990dd0
+        - id: a9560d7d-dbe4-4a7f-8d09-dde6b5b137ae
           filename: myreport.zip
           mimetype: application/zip
           url: http://ibutsu/reports/download/myreport.zip
@@ -1855,7 +2017,7 @@ components:
     WidgetConfigList:
       example:
         widgets:
-          - id: be014e39-c47b-4552-b453-3bbaa02512be
+          - id: afbcf5c7-1ffd-4367-b228-5a868c29e0ef
             type: widget
             widget: heatmap
             params:
