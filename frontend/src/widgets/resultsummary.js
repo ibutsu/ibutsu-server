@@ -32,6 +32,8 @@ export class ResultSummaryWidget extends React.Component {
         failed: 0,
         error: 0,
         skipped: 0,
+        xfailed: 0,
+        xpassed: 0,
         other: 0,
         total: 0
       },
@@ -75,6 +77,8 @@ export class ResultSummaryWidget extends React.Component {
                   'var(--pf-global--danger-color--100)',
                   'var(--pf-global--info-color--100)',
                   'var(--pf-global--warning-color--100)',
+                  'var(--pf-global--palette--purple-400)',
+                  'var(--pf-global--palette--purple-700)',
                   'var(--pf-global--primary-color--100)'
                 ];
     return (
@@ -89,7 +93,9 @@ export class ResultSummaryWidget extends React.Component {
                 { x: 'Passed', y: this.state.summary.passed },
                 { x: 'Failed', y: this.state.summary.failed },
                 { x: 'Skipped', y: this.state.summary.skipped },
-                { x: 'Error', y: this.state.summary.error }
+                { x: 'Error', y: this.state.summary.error },
+                { x: 'Xfailed', y: this.state.summary.xfailed },
+                { x: 'Xpassed', y: this.state.summary.xpassed }
               ]}
               labels={({datum}) => `${toTitleCase(datum.x)}: ${datum.y}`}
               height={200}
@@ -116,7 +122,9 @@ export class ResultSummaryWidget extends React.Component {
                 {name: 'Passed (' + this.state.summary.passed + ')'},
                 {name: 'Failed (' + this.state.summary.failed + ')'},
                 {name: 'Skipped (' + this.state.summary.skipped + ')'},
-                {name: 'Error (' + this.state.summary.error + ')'}
+                {name: 'Error (' + this.state.summary.error + ')'},
+                {name: 'Xfailed (' + this.state.summary.xfailed + ')'},
+                {name: 'Xpassed (' + this.state.summary.xpassed + ')'}
               ]}
             height={120}
             orientation="horizontal"

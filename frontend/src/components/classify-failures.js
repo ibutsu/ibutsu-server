@@ -128,7 +128,7 @@ export class ClassifyFailuresTable extends React.Component {
   onSkipCheck = (checked) => {
     let { filters } = this.state;
     if (checked) {
-      filters["result"]["val"] += ";skipped"
+      filters["result"]["val"] += ";skipped;xfailed"
     }
     else {
       filters["result"]["val"] = "failed;error"
@@ -207,7 +207,7 @@ export class ClassifyFailuresTable extends React.Component {
             </FlexItem>
             <FlexItem>
               <TextContent>
-                <Checkbox id="include-skips" label="Include skips" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={this.onSkipCheck}/>
+                <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={this.onSkipCheck}/>
               </TextContent>
             </FlexItem>
             <FlexItem>

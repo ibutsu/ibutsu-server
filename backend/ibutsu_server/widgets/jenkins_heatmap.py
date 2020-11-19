@@ -108,6 +108,8 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
         func.sum(Run.summary["failures"].cast(Float)).label("failures"),
         func.sum(Run.summary["errors"].cast(Float)).label("errors"),
         func.sum(Run.summary["skips"].cast(Float)).label("skips"),
+        func.sum(Run.summary["xfailures"].cast(Float)).label("xfailures"),
+        func.sum(Run.summary["xpasses"].cast(Float)).label("xpasses"),
         func.sum(Run.summary["tests"].cast(Float)).label("total"),
     ).group_by(group_field, job_name, build_number, Run.id)
 
@@ -119,9 +121,17 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
 
     # create the main query (this allows us to do math on the SQL side)
     if count_skips:
-        passes = subquery.c.total - (subquery.c.errors + subquery.c.skips + subquery.c.failures)
+        passes = subquery.c.total - (
+            subquery.c.errors
+            + subquery.c.skips
+            + subquery.c.failures
+            + subquery.c.xpasses
+            + subquery.c.xfailures
+        )
     else:
-        passes = subquery.c.total - (subquery.c.errors + subquery.c.failures)
+        passes = subquery.c.total - (
+            subquery.c.errors + subquery.c.failures + subquery.c.xpasses + subquery.c.xfailures
+        )
 
     query = session.query(
         subquery.c.group_field,

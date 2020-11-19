@@ -9,12 +9,22 @@ PAGE_SIZE = 250
 
 def get_result_summary(source=None, env=None, job_name=None, project=None):
     """Get a summary of results"""
-    summary = {"error": 0, "skipped": 0, "failed": 0, "passed": 0, "total": 0}
+    summary = {
+        "error": 0,
+        "skipped": 0,
+        "failed": 0,
+        "passed": 0,
+        "total": 0,
+        "xfailed": 0,
+        "xpassed": 0,
+    }
     query = session.query(
         func.sum(Run.summary["errors"].cast(Integer)),
         func.sum(Run.summary["skips"].cast(Integer)),
         func.sum(Run.summary["failures"].cast(Integer)),
         func.sum(Run.summary["tests"].cast(Integer)),
+        func.sum(Run.summary["xfailures"].cast(Integer)),
+        func.sum(Run.summary["xpasses"].cast(Integer)),
     )
 
     # parse any filters
@@ -36,11 +46,13 @@ def get_result_summary(source=None, env=None, job_name=None, project=None):
     query_data = query.all()
 
     # parse the data
-    for error, skipped, failed, total in query_data:
+    for error, skipped, failed, total, xfailed, xpassed in query_data:
         summary["error"] += error
         summary["skipped"] += skipped
         summary["failed"] += failed
         summary["total"] += total
-        summary["passed"] += total - (error + skipped + failed)
+        summary["xfailed"] += xfailed or 0.0
+        summary["xpassed"] += xpassed or 0.0
+        summary["passed"] += total - (error + skipped + failed + xpassed + xfailed)
 
     return summary

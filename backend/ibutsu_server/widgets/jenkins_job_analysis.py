@@ -29,7 +29,7 @@ def get_jenkins_line_chart(job_name, builds, group_field="build_number", project
 
 
 def get_jenkins_bar_chart(job_name, builds, group_field="build_number", project=None):
-    data = {"passed": {}, "skipped": {}, "error": {}, "failed": {}}
+    data = {"passed": {}, "skipped": {}, "error": {}, "failed": {}, "xpassed": {}, "xfailed": {}}
     run_limit = int((JJV_RUN_LIMIT / BARCHART_MAX_BUILDS) * builds)
     jobs = get_jenkins_job_view(
         filter_=f"job_name={job_name}", page_size=builds, project=project, run_limit=run_limit
@@ -40,6 +40,8 @@ def get_jenkins_bar_chart(job_name, builds, group_field="build_number", project=
         data["skipped"][data_id] = job["summary"].get("skips")
         data["error"][data_id] = job["summary"].get("errors")
         data["failed"][data_id] = job["summary"].get("failures")
+        data["xfailed"][data_id] = job["summary"].get("xfailures")
+        data["xpassed"][data_id] = job["summary"].get("xpasses")
     return data
 
 

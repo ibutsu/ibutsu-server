@@ -166,6 +166,12 @@ export class JenkinsJobAnalysisView extends React.Component {
     else if (key === 'error') {
       color = 'var(--pf-global--warning-color--100)';
     }
+    else if (key === 'xfailed') {
+      color = 'var(--pf-global--palette--purple-400)';
+    }
+    else if (key === 'xpassed') {
+      color = 'var(--pf-global--palette--purple-700)';
+    }
     return color;
   }
 
