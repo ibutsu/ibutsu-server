@@ -98,10 +98,12 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
     group_field = string_to_column(group_field, Run)
     job_name = string_to_column("metadata.jenkins.job_name", Run)
     build_number = string_to_column("metadata.jenkins.build_number", Run)
+    annotations = string_to_column("metadata.annotations", Run)
 
     # create the base query
     query = session.query(
         Run.id.label("run_id"),
+        annotations.label("annotations"),
         group_field.label("group_field"),
         job_name.label("job_name"),
         build_number.label("build_number"),
@@ -137,6 +139,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
         subquery.c.group_field,
         subquery.c.build_number,
         subquery.c.run_id,
+        subquery.c.annotations,
         (100 * passes / subquery.c.total).label("pass_percent"),
     )
 
@@ -145,7 +148,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
     data = {datum.group_field: [] for datum in query_data}
     for datum in query_data:
         data[datum.group_field].append(
-            [round(datum.pass_percent, 2), datum.run_id, datum.build_number]
+            [round(datum.pass_percent, 2), datum.run_id, datum.annotations, datum.build_number]
         )
     # compute the slope for each component
     data_with_slope = data.copy()
@@ -166,10 +169,10 @@ def _pad_heatmap(heatmap, builds_in_db):
         # skip first item in list which contains slope info
         run_list = heatmap[group][1:]
         padded_run_list = []
-        completed_runs = {run[2]: run for run in run_list}
+        completed_runs = {run[3]: run for run in run_list}
         for build in builds_in_db:
             if build not in completed_runs.keys():
-                padded_run_list.append((NO_PASS_RATE_TEXT, NO_RUN_TEXT, build))
+                padded_run_list.append((NO_PASS_RATE_TEXT, NO_RUN_TEXT, None, build))
             else:
                 padded_run_list.append(completed_runs[build])
         # add the slope info back in
