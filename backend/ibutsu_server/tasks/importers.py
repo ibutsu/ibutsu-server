@@ -98,8 +98,10 @@ def run_junit_import(import_):
         # Import the contents of the XML file
         for testcase in testsuite.iterchildren(tag="testcase"):
             test_name = testcase.get("name").split(".")[-1]
+            backup_fspath = None
             if testcase.get("classname"):
                 test_name = testcase.get("classname").split(".")[-1] + "." + test_name
+                backup_fspath = "/".join(testcase.get("classname").split(".")[0:-1])
             result_dict = {
                 "test_id": test_name,
                 "start_time": run_dict["start_time"],
@@ -107,7 +109,7 @@ def run_junit_import(import_):
                 "run_id": run.id,
                 "metadata": {
                     "run": run.id,
-                    "fspath": testcase.get("file"),
+                    "fspath": testcase.get("file") or backup_fspath,
                     "line": testcase.get("line"),
                 },
                 "params": {},
