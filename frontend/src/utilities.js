@@ -311,6 +311,14 @@ export function getActiveProject() {
   return project;
 }
 
+export function getActiveDashboard() {
+  let dashboard = localStorage.getItem('dashboard');
+  if (dashboard) {
+    dashboard = JSON.parse(dashboard);
+  }
+  return dashboard;
+}
+
 export function processPyTestPath(path) {
   if (path && path.indexOf('/') === 0) {
     path = path.substring(1);

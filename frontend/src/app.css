@@ -143,6 +143,22 @@ a.typeahead-option {
   outline: none;
 }
 
+#dashboard-selector .pf-c-select__toggle::before {
+  border-color: var(--pf-global--BackgroundColor--light-200);
+}
+
+#dashboard-selector .pf-c-select__toggle,
+#dashboard-selector .pf-c-select__toggle * {
+  background-color: var(--pf-global--BackgroundColor--light-200);
+  color: var(--pf-global--Color--dark-100);
+}
+
+#dashboard-selector .pf-c-select input,
+#dashboard-selector .pf-c-select button {
+  border-color: var(--pf-global--BackgroundColor--light-200);
+  outline: none;
+}
+
 div[data-id=heatmap] > div > div:first-child > div {
   padding-left: 7px;
   transform: rotate(-90deg);
