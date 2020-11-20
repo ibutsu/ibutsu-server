@@ -6,7 +6,11 @@ from connexion import App
 from flask import redirect
 from flask import request
 from flask_cors import CORS
+from ibutsu_server.auth import bcrypt
+from ibutsu_server.db import upgrades
 from ibutsu_server.db.base import db
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import upgrade_db
 from ibutsu_server.encoder import JSONEncoder
 from ibutsu_server.tasks import create_celery_app
 from yaml import full_load as yaml_load
@@ -35,6 +39,7 @@ def get_app(**extra_config):
 
     # Shortcut
     config = app.app.config
+    config.setdefault("BCRYPT_LOG_ROUNDS", 20)
     config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", True)
     settings_path = Path("./settings.yaml").resolve()
     if settings_path.exists():
@@ -65,9 +70,11 @@ def get_app(**extra_config):
 
     CORS(app.app)
     db.init_app(app.app)
+    bcrypt.init_app(app.app)
 
     with app.app.app_context():
         db.create_all()
+        upgrade_db(session, upgrades)
 
     @app.route("/")
     def index():
