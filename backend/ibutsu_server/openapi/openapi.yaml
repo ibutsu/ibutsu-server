@@ -759,7 +759,15 @@ paths:
       - description: Filter dashboards by project ID
         explode: true
         in: query
-        name: projectId
+        name: project_id
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Filter dashboards by user ID
+        explode: true
+        in: query
+        name: user_id
         required: false
         schema:
           type: string
@@ -853,6 +861,26 @@ paths:
         404:
           description: Dashboard not found
       summary: Update a dashboard
+      tags:
+      - dashboard
+      x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller
+    delete:
+      operationId: delete_dashboard
+      parameters:
+      - description: ID of dashboard to delete
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        200:
+          description: The dashboard was deleted
+        404:
+          description: The dashboard was not found
+      summary: Delete a dashboard
       tags:
       - dashboard
       x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller

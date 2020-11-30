@@ -1,6 +1,7 @@
 import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Dashboard
+from ibutsu_server.db.models import WidgetConfig
 
 
 def add_dashboard(dashboard=None):
@@ -88,3 +89,23 @@ def update_dashboard(id_, dashboard=None):
     session.add(dashboard)
     session.commit()
     return dashboard.to_dict()
+
+
+def delete_dashboard(id_):
+    """Deletes a dashboard
+
+    :param id: ID of the dashboard to delete
+    :type id: str
+
+    :rtype: tuple
+    """
+    dashboard = Dashboard.query.get(id_)
+    if not dashboard:
+        return "Not Found", 404
+    else:
+        widget_configs = WidgetConfig.query.filter(WidgetConfig.dashboard_id == dashboard.id).all()
+        for widget_config in widget_configs:
+            session.delete(widget_config)
+        session.delete(dashboard)
+        session.commit()
+        return "OK", 200

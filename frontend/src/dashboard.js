@@ -2,10 +2,15 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
+  Flex,
+  FlexItem,
   Grid,
   GridItem,
   PageSection,
   PageSectionVariants,
+  Select,
+  SelectOption,
+  SelectVariant,
   TextContent,
   Text
 } from '@patternfly/react-core';
@@ -18,7 +23,23 @@ import {
   ResultAggregatorWidget,
   ResultSummaryWidget
 } from './widgets';
-import { buildUrl, getActiveProject } from './utilities.js';
+import { buildUrl, getActiveProject, getActiveDashboard } from './utilities.js';
+
+
+function dashboardToSelect(dashboard) {
+  if (!dashboard) {
+    return '';
+  }
+  return {
+    dashboard: dashboard,
+    toString: function() {
+      return this.dashboard.title;
+    },
+    compareTo: function (value) {
+      return this.dashboard.title.toLowerCase().includes(value.dashboard.title.toLowerCase());
+    }
+  };
+}
 
 
 export class Dashboard extends React.Component {
@@ -28,18 +49,59 @@ export class Dashboard extends React.Component {
 
   constructor(props) {
     super(props);
+    let dashboard = getActiveDashboard();
     this.state = {
-      widgets: []
+      widgets: [],
+      dashboards: [],
+      selectedDashboard: dashboardToSelect(dashboard),
+      isDashboardSelectorOpen: false
     };
     props.eventEmitter.on('projectChange', () => {
-      this.getWidgets();
+      this.getDashboards();
     });
+  }
+
+  getDashboards() {
+    let params = {};
+    let project = getActiveProject();
+    if (project) {
+      params['project_id'] = project.id;
+    }
+    fetch(buildUrl(Settings.serverUrl + '/dashboard', params))
+      .then(response => response.json())
+      .then(data => {
+        this.setState(
+          {dashboards: data['dashboards']},
+          () => {
+            // If the current dashboard is not in current list
+            if (this.state.selectedDashboard) {
+              let selectedId = null;
+              data['dashboards'].forEach(item => {
+                if (item.id === this.state.selectedDashboard.dashboard.id) {
+                  selectedId = item.id;
+                }
+              });
+              if (!selectedId) {
+                localStorage.removeItem('dashboard');
+                this.setState({selectedDashboard: null}, this.getWidgets);
+              }
+            }
+            else {
+              this.getWidgets();
+            }
+          }
+        );
+      });
   }
 
   getWidgets() {
     let params = {"type": "widget"};
     let project = getActiveProject();
-    if (project) {
+    let dashboard = getActiveDashboard();
+    if (dashboard) {
+      params['filter'] = 'dashboard_id=' + dashboard.id;
+    }
+    else if (project) {
       params['filter'] = 'project_id=' + project.id;
     }
     fetch(buildUrl(Settings.serverUrl + '/widget-config', params))
@@ -50,6 +112,9 @@ export class Dashboard extends React.Component {
           if (project) {
             widget.params['project'] = project.id;
           }
+          else if (this.state.selectedDashboard && this.state.selectedDashboard.dashboard.project_id) {
+            widget.params['project'] = this.state.selectedDashboard.dashboard.project_id;
+          }
           else {
             delete widget.params['project'];
           }
@@ -58,7 +123,33 @@ export class Dashboard extends React.Component {
       });
   }
 
+  onDashboardToggle = (isOpen) => {
+    this.setState({isDashboardSelectorOpen: isOpen});
+  };
+
+  onDashboardSelect = (event, value, isPlaceholder) => {
+    if (isPlaceholder) {
+      this.onDashboardClear();
+      return;
+    }
+    const dashboard = JSON.stringify(value.dashboard);
+    localStorage.setItem('dashboard', dashboard);
+    this.setState({
+      selectedDashboard: value,
+      isDashboardSelectorOpen: false
+    }, this.getWidgets);
+  };
+
+  onDashboardClear = () => {
+    localStorage.removeItem('dashboard');
+    this.setState({
+      selectedDashboard: null,
+      isDashboardSelectorOpen: false
+    }, this.getWidgets);
+  }
+
   componentDidMount() {
+    this.getDashboards();
     this.getWidgets();
   }
 
@@ -68,9 +159,29 @@ export class Dashboard extends React.Component {
     return (
       <React.Fragment>
         <PageSection variant={PageSectionVariants.light}>
-          <TextContent>
-            <Text component="h1">Dashboard</Text>
-          </TextContent>
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+            <FlexItem>
+              <TextContent>
+                <Text component="h1">Dashboard</Text>
+              </TextContent>
+            </FlexItem>
+            <FlexItem id="dashboard-selector">
+              <Select
+                ariaLabelTypeAhead="Select a dashboard"
+                placeholderText="No active dashboard"
+                variant={SelectVariant.typeahead}
+                isOpen={this.state.isDashboardSelectorOpen}
+                selections={this.state.selectedDashboard}
+                onToggle={this.onDashboardToggle}
+                onSelect={this.onDashboardSelect}
+                onClear={this.onDashboardClear}
+              >
+                {this.state.dashboards.map(dashboard => (
+                  <SelectOption key={dashboard.id} value={dashboardToSelect(dashboard)} />
+                ))}
+              </Select>
+            </FlexItem>
+          </Flex>
         </PageSection>
         <PageSection>
           {!!widgets &&
