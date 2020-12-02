@@ -23,14 +23,17 @@ WIDGET_METHODS = {
 RESERVED_PARAMS = {"filter": "filter_"}
 
 
-def get_widget_types():
+def get_widget_types(type_=None):
     """Get the types of widgets that are available
 
     :rtype: list
     """
-    page_size = len(WIDGET_TYPES.keys())
+    widget_types = WIDGET_TYPES.values()
+    if type_:
+        widget_types = list(filter(lambda wt: wt["type"] == type_, widget_types))
+    page_size = len(widget_types)
     return {
-        "types": list(WIDGET_TYPES.values()),
+        "types": list(widget_types),
         "pagination": {"page": 1, "pageSize": page_size, "totalItems": page_size, "totalPages": 1},
     }
 

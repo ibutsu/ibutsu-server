@@ -4,6 +4,8 @@ export { FileUpload } from './fileupload';
 export { FilterTable } from './filtertable';
 export { ParamDropdown } from './widget-components';
 export { MultiValueInput } from './multivalueinput';
+export { NewDashboardModal } from './new-dashboard-modal';
+export { NewWidgetWizard } from './new-widget-wizard';
 export { ResultView } from './result';
 export { RunSummary } from './runsummary';
 export { TableEmptyState, TableErrorState } from './tablestates';
