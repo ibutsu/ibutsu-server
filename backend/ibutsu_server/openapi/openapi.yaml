@@ -1135,7 +1135,17 @@ paths:
       x-openapi-router-controller: ibutsu_server.controllers.widget_controller
   /widget/types:
     get:
+      description: A list of widget types
       operationId: get_widget_types
+      parameters:
+      - description: Filter by type of widget
+        explode: true
+        in: query
+        name: type
+        required: false
+        schema:
+          type: string
+        style: form
       responses:
         200:
           content:
@@ -1796,6 +1806,7 @@ components:
           - name: sort_field
             description: The field to sort results by
             type: string
+        type: widget
       properties:
         id:
           description: A unique identifier for this widget type
@@ -1827,6 +1838,10 @@ components:
           items:
             $ref: '#/components/schemas/WidgetParam'
           type: array
+        type:
+          description: The type of widget (widget, view)
+          example: widget
+          type: string
       type: object
     Health:
       example:

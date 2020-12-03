@@ -34,13 +34,13 @@ WIDGET_TYPES = {
                 "description": "The field in a result to group by",
                 "type": "string",
             },
-            {"name": "sort_field", "description": "The field to sort results by", "type": "string"},
             {
                 "name": "count_skips",
                 "description": "Count skips against the pass rate",
                 "type": "boolean",
             },
         ],
+        "type": "widget",
     },
     "run-aggregator": {
         "id": "run-aggregator",
@@ -63,6 +63,7 @@ WIDGET_TYPES = {
                 "type": "string",
             },
         ],
+        "type": "widget",
     },
     "result-summary": {
         "id": "result-summary",
@@ -81,6 +82,7 @@ WIDGET_TYPES = {
             },
             {"name": "job_name", "description": "Filter by Jenkins job name", "type": "string"},
         ],
+        "type": "widget",
     },
     "result-aggregator": {
         "id": "result-aggregator",
@@ -103,6 +105,7 @@ WIDGET_TYPES = {
                 "type": "string",
             },
         ],
+        "type": "widget",
     },
     "jenkins-job-view": {
         "id": "jenkins-job-view",
@@ -121,6 +124,7 @@ WIDGET_TYPES = {
                 "type": "integer",
             },
         ],
+        "type": "view",
     },
     "jenkins-analysis-view": {
         "id": "jenkins-analysis-view",
@@ -129,21 +133,26 @@ WIDGET_TYPES = {
             {"name": "job_name", "description": "The name of the Jenkins Job", "type": "string"},
             {"name": "builds", "description": "The number of builds to fetch", "type": "integer"},
         ],
+        "type": "view",
     },
     "jenkins-bar-chart": {
         "id": "jenkins-bar-chart",
         "title": "Jenkins Bar Chart",
+        "description": "A bar chart of Jenkins build statuses",
         "params": [
             {"name": "job_name", "description": "The name of the Jenkins Job", "type": "string"},
             {"name": "builds", "description": "The number of builds to fetch", "type": "integer"},
         ],
+        "type": "widget",
     },
     "jenkins-line-chart": {
         "id": "jenkins-line-chart",
         "title": "Jenkins Line Chart",
+        "description": "A line chart of Jenkins build statuses",
         "params": [
             {"name": "job_name", "description": "The name of the Jenkins Job", "type": "string"},
             {"name": "builds", "description": "The number of builds to fetch", "type": "integer"},
         ],
+        "type": "widget",
     },
 }

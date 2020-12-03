@@ -144,19 +144,27 @@ a.typeahead-option {
 }
 
 #dashboard-selector .pf-c-select__toggle::before {
-  border-color: var(--pf-global--BackgroundColor--light-200);
+  border-color: var(--pf-global--BackgroundColor--light-300);
 }
 
 #dashboard-selector .pf-c-select__toggle,
 #dashboard-selector .pf-c-select__toggle * {
-  background-color: var(--pf-global--BackgroundColor--light-200);
-  color: var(--pf-global--Color--dark-100);
+  background-color: var(--pf-global--BackgroundColor--light-300);
+  color: var(--pf-global--Color--dark-300);
 }
 
 #dashboard-selector .pf-c-select input,
 #dashboard-selector .pf-c-select button {
-  border-color: var(--pf-global--BackgroundColor--light-200);
+  border-color: var(--pf-global--BackgroundColor--light-300);
   outline: none;
+}
+
+#dashboard-selector .pf-c-select__toggle.pf-m-disabled,
+#dashboard-selector .pf-c-select__toggle:disabled,
+#dashboard-selector .pf-c-select__toggle.pf-m-disabled * ,
+#dashboard-selector .pf-c-select__toggle:disabled * {
+  background-color: var(--pf-global--BackgroundColor--light-200);
+  color: var(--pf-global--Color--dark-100);
 }
 
 div[data-id=heatmap] > div > div:first-child > div {

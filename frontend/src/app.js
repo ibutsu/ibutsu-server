@@ -290,7 +290,7 @@ class App extends React.Component {
             onClear={this.onProjectClear}
           >
             {this.state.projects.map(project => (
-              <SelectOption key={project.id} value={projectToSelect(project)} />
+              <SelectOption key={project.id} value={projectToSelect(project)} description={project.name} />
             ))}
           </Select>
         </FlexItem>
