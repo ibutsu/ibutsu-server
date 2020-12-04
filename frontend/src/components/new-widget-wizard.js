@@ -44,6 +44,7 @@ export class NewWidgetWizard extends React.Component {
       params: {},
       weight: 0,
       isTitleValid: false,
+      areParamsFilled: false,
       selectedType: null,
       selectedTypeId: null,
       stepIdReached: 1
@@ -87,6 +88,7 @@ export class NewWidgetWizard extends React.Component {
       params: [],
       weight: 0,
       isTitleValid: false,
+      areParamsFilled: false,
       selectedType: null,
       selectedTypeId: null,
       stepIdReached: 1
@@ -99,6 +101,7 @@ export class NewWidgetWizard extends React.Component {
       params: [],
       weight: 0,
       isTitleValid: false,
+      areParamsFilled: false,
       selectedType: null,
       selectedTypeId: null,
       stepIdReached: 1
@@ -115,10 +118,13 @@ export class NewWidgetWizard extends React.Component {
         selectedType = widgetType;
         widgetType.params.forEach(param => {
           let paramDefault = '';
-          if (param.type === 'integer' || param.type === 'float') {
-            // NOTE: This is a somewhat arbitrary value picked because it should be good enough for
-            //       now. In future we will have default values for the parameters in the widget
-            //       definitions.
+          if (param.default) {
+            // if the widget has a default defined, use that
+            paramDefault = param.default;
+          }
+          else if (param.type === 'integer' || param.type === 'float') {
+            // NOTE: This is a somewhat arbitrary value, numeric parameters should have sensible
+            //       defaults provided in constants.py
             paramDefault = 3;
           }
           else if (param.type === 'boolean') {
@@ -141,11 +147,24 @@ export class NewWidgetWizard extends React.Component {
 
   onParamChange = (value, event) => {
     const params = this.state.params;
-    params[event.target.name] = value;
+    let areParamsFilled = true;
+    if (event) {
+      params[event.target.name] = value;
+    }
     this.setState({params: params});
+    this.state.selectedType.params.forEach(widgetParam => {
+        console.log(widgetParam);
+        if ((widgetParam.required) && (!params[widgetParam.name])) {
+          areParamsFilled = false;
+        }
+    });
+    this.setState({areParamsFilled: areParamsFilled});
   }
 
   onNext = ({id}) => {
+    if (id === 3) {
+      this.onParamChange('', null);
+    }
     this.setState({
       stepIdReached: this.state.stepIdReached < id ? id : this.state.stepIdReached
     });
@@ -160,7 +179,7 @@ export class NewWidgetWizard extends React.Component {
   }
 
   render() {
-    const { widgetTypes, selectedType, selectedTypeId, stepIdReached, isTitleValid } = this.state;
+    const { widgetTypes, selectedType, selectedTypeId, stepIdReached, isTitleValid, areParamsFilled } = this.state;
     const steps = [
       {
         id: 1,
@@ -200,6 +219,7 @@ export class NewWidgetWizard extends React.Component {
         id: 3,
         name: 'Set parameters',
         canJumpTo: stepIdReached >= 3,
+        enableNext: areParamsFilled,
         component: (
           <Form isHorizontal>
             <Title headingLevel="h1" size="xl">Set widget parameters</Title>
@@ -210,7 +230,8 @@ export class NewWidgetWizard extends React.Component {
                   <FormGroup
                     label={param.name}
                     fieldId={param.name}
-                    helperText={param.description}>
+                    helperText={param.description}
+                    isRequired={param.required}>
                     <TextInput
                       value={this.state.params[param.name]}
                       type={(param.type === 'integer' || param.type === 'float') ? 'number' : 'text'}
@@ -218,6 +239,7 @@ export class NewWidgetWizard extends React.Component {
                       aria-describedby={`${param.name}-helper`}
                       name={param.name}
                       onChange={this.onParamChange}
+                      isRequired={param.required}
                     />
                   </FormGroup>
                 }
@@ -225,6 +247,7 @@ export class NewWidgetWizard extends React.Component {
                   <FormGroup
                     label={param.name}
                     fieldId={param.name}
+                    isRequired={param.required}
                     hasNoPaddingTop>
                     <Checkbox
                       isChecked={this.state.params[param.name]}
@@ -239,9 +262,11 @@ export class NewWidgetWizard extends React.Component {
                     label={param.name}
                     fieldId={param.name}
                     helperText={`${param.description}. Place items on separate lines.`}>
+                    isRequired={param.required}
                     <TextArea
                       id={param.name}
                       name={param.name}
+                      isRequired={param.required}
                       value={this.state.params[param.name]}
                       onChange={this.onParamChange}
                       resizeOrientation='vertical' />
