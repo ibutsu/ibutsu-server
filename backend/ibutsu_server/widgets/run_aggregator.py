@@ -10,7 +10,7 @@ from ibutsu_server.filters import string_to_column
 from sqlalchemy import func
 
 
-def _get_recent_run_data(weeks, group_field, project=None):
+def _get_recent_run_data(weeks, group_field, project=None, additional_filters=None):
     """Get all the data from the time period and aggregate the results"""
     data = {"passed": {}, "skipped": {}, "error": {}, "failed": {}, "xfailed": {}, "xpassed": {}}
     delta = timedelta(weeks=weeks).total_seconds()
@@ -19,6 +19,8 @@ def _get_recent_run_data(weeks, group_field, project=None):
 
     # create filters for start time and that the group_field exists
     filters = [f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}", f"{group_field}@y"]
+    if additional_filters:
+        filters.extend(additional_filters.split(","))
     if project:
         filters.append(f"project_id={project}")
 
@@ -63,7 +65,9 @@ def _get_recent_run_data(weeks, group_field, project=None):
     return data
 
 
-def get_recent_run_data(weeks, group_field, project=None, chart_type="bar"):
+def get_recent_run_data(
+    weeks, group_field, project=None, chart_type="bar", additional_filters=None
+):
     # TODO: Implement line chart by splitting weeks of data into distinct blocks of time
-    data = _get_recent_run_data(weeks, group_field, project)
+    data = _get_recent_run_data(weeks, group_field, project, additional_filters)
     return data

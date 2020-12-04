@@ -39,6 +39,12 @@ WIDGET_TYPES = {
                 "description": "Count skips against the pass rate",
                 "type": "boolean",
             },
+            {
+                "name": "additional_filters",
+                "description": "Comma-separated list of additional filters, e.g. "
+                "'metadata.tags=platform-experience,metadata.assignee=username'",
+                "type": "string",
+            },
         ],
         "type": "widget",
     },
@@ -62,6 +68,12 @@ WIDGET_TYPES = {
                 "description": "Type of chart with which to display results, e.g. 'bar' or 'line'",
                 "type": "string",
             },
+            {
+                "name": "additional_filters",
+                "description": "Comma-separated list of additional filters, e.g. "
+                "'metadata.tags=platform-experience,metadata.assignee=username'",
+                "type": "string",
+            },
         ],
         "type": "widget",
     },
@@ -81,6 +93,12 @@ WIDGET_TYPES = {
                 "type": "string",
             },
             {"name": "job_name", "description": "Filter by Jenkins job name", "type": "string"},
+            {
+                "name": "additional_filters",
+                "description": "Comma-separated list of additional filters, e.g. "
+                "'metadata.tags=platform-experience,metadata.assignee=username'",
+                "type": "string",
+            },
         ],
         "type": "widget",
     },
@@ -102,6 +120,12 @@ WIDGET_TYPES = {
             {
                 "name": "chart_type",
                 "description": "Type of chart with which to display results, e.g. 'pie' or 'bar'",
+                "type": "string",
+            },
+            {
+                "name": "additional_filters",
+                "description": "Comma-separated list of additional filters, e.g. "
+                "'metadata.tags=platform-experience,metadata.assignee=username'",
                 "type": "string",
             },
         ],
