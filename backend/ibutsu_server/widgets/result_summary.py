@@ -7,7 +7,7 @@ from sqlalchemy import func
 PAGE_SIZE = 250
 
 
-def get_result_summary(source=None, env=None, job_name=None, project=None):
+def get_result_summary(source=None, env=None, job_name=None, project=None, additional_filters=None):
     """Get a summary of results"""
     summary = {
         "error": 0,
@@ -37,6 +37,8 @@ def get_result_summary(source=None, env=None, job_name=None, project=None):
         filters.append(f"metadata.jenkins.job_name={job_name}")
     if project:
         filters.append(f"project_id={project}")
+    if additional_filters:
+        filters.extend(additional_filters.split(","))
 
     # TODO: implement some page size here?
     if filters:

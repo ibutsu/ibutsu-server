@@ -35,8 +35,10 @@ def _calculate_slope(x_data):
     return slope
 
 
-def _get_builds(job_name, builds, project=None):
+def _get_builds(job_name, builds, project=None, additional_filters=None):
     filters = [f"metadata.jenkins.job_name={job_name}", "metadata.jenkins.build_number@y"]
+    if additional_filters:
+        filters.extend(additional_filters.split(","))
     if project:
         filters.append(f"project_id={project}")
 
@@ -77,11 +79,11 @@ def _get_builds(job_name, builds, project=None):
     return min_start_time, [str(build.build_number) for build in builds]
 
 
-def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
+def _get_heatmap(job_name, builds, group_field, count_skips, project=None, additional_filters=None):
     """ Get Jenkins Heatmap Data. """
 
     # Get the distinct builds that exist in the DB
-    min_start_time, builds = _get_builds(job_name, builds, project)
+    min_start_time, builds = _get_builds(job_name, builds, project, additional_filters)
 
     # Create the filters for the query
     filters = [
@@ -89,6 +91,8 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None):
         f"metadata.jenkins.build_number*{';'.join(builds)}",
         f"{group_field}@y",
     ]
+    if additional_filters:
+        filters.extend(additional_filters.split(","))
     if min_start_time:
         filters.append(f"start_time){min_start_time}")
     if project:
@@ -183,9 +187,13 @@ def _pad_heatmap(heatmap, builds_in_db):
     return padded_dict
 
 
-def get_jenkins_heatmap(job_name, builds, group_field, count_skips=False, project=None):
+def get_jenkins_heatmap(
+    job_name, builds, group_field, count_skips=False, project=None, additional_filters=None
+):
     """Generate JSON data for a heatmap of Jenkins runs"""
-    heatmap, builds_in_db = _get_heatmap(job_name, builds, group_field, count_skips, project)
+    heatmap, builds_in_db = _get_heatmap(
+        job_name, builds, group_field, count_skips, project, additional_filters
+    )
     # do some postprocessing -- fill runs in which plugins failed to start with null
     heatmap = _pad_heatmap(heatmap, builds_in_db)
     return {"heatmap": heatmap}
