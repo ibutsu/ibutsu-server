@@ -23,27 +23,40 @@ WIDGET_TYPES = {
         "title": "Jenkins Pipeline Heatmap",
         "description": "A heatmap of test runs from a Jenkins pipeline",
         "params": [
-            {"name": "job_name", "description": "The Jenkins job name", "type": "string"},
+            {
+                "name": "job_name",
+                "description": "The Jenkins job name, "
+                "this is the value of the 'metadata.jenkins.job_name' key.",
+                "type": "string",
+                "required": True,
+            },
             {
                 "name": "builds",
-                "description": "The number of Jenkins builds to analyze",
+                "description": "The number of Jenkins builds to analyze.",
                 "type": "integer",
+                "default": 5,
+                "required": True,
             },
             {
                 "name": "group_field",
-                "description": "The field in a result to group by",
+                "description": "The field in a result to group by, typically 'component'",
                 "type": "string",
+                "required": True,
+                "default": "component",
             },
             {
                 "name": "count_skips",
-                "description": "Count skips against the pass rate",
+                "description": "Count skips against the pass rate.",
                 "type": "boolean",
+                "required": False,
+                "default": True,
             },
             {
                 "name": "additional_filters",
                 "description": "Comma-separated list of additional filters, e.g. "
                 "'metadata.tags=platform-experience,metadata.assignee=username'",
                 "type": "string",
+                "required": False,
             },
         ],
         "type": "widget",
@@ -55,24 +68,31 @@ WIDGET_TYPES = {
         "params": [
             {
                 "name": "group_field",
-                "description": "Run metadata to order by, e.g. 'component' or 'env'",
+                "description": "Run data to order by, e.g. 'component' or 'env'",
                 "type": "string",
+                "required": True,
+                "default": "component",
             },
             {
                 "name": "weeks",
-                "description": "The number of weeks back in test results to look",
+                "description": "Aggregate test results from <weeks> weeks ago, e.g. 4",
                 "type": "integer",
+                "required": True,
+                "default": 4,
             },
             {
                 "name": "chart_type",
                 "description": "Type of chart with which to display results, e.g. 'bar' or 'line'",
                 "type": "string",
+                "required": False,
+                "default": "bar",
             },
             {
                 "name": "additional_filters",
                 "description": "Comma-separated list of additional filters, e.g. "
                 "'metadata.tags=platform-experience,metadata.assignee=username'",
                 "type": "string",
+                "required": False,
             },
         ],
         "type": "widget",
@@ -84,20 +104,28 @@ WIDGET_TYPES = {
         "params": [
             {
                 "name": "source",
-                "description": "Filter the results before summarising by the source",
+                "description": "Filter test results by a specific 'source'",
                 "type": "string",
+                "required": False,
             },
             {
                 "name": "env",
-                "description": "Filter by environment, using the metadata.env field",
+                "description": "Filter test results by a specific 'env'",
                 "type": "string",
+                "required": False,
             },
-            {"name": "job_name", "description": "Filter by Jenkins job name", "type": "string"},
+            {
+                "name": "job_name",
+                "description": "Filter test results by a specific jenkins job",
+                "type": "string",
+                "required": False,
+            },
             {
                 "name": "additional_filters",
                 "description": "Comma-separated list of additional filters, e.g. "
                 "'metadata.tags=platform-experience,metadata.assignee=username'",
                 "type": "string",
+                "required": False,
             },
         ],
         "type": "widget",
@@ -109,24 +137,32 @@ WIDGET_TYPES = {
         "params": [
             {
                 "name": "group_field",
-                "description": "Result metadata or data to count against",
+                "description": "Result data to group by, e.g. 'env', "
+                "'metadata.assignee', 'metadata.exception_name'",
                 "type": "string",
+                "required": True,
+                "default": "result",
             },
             {
                 "name": "days",
-                "description": "The number of days from which to poll the results",
+                "description": "Aggregate test results from <days> days ago, e.g. 3",
                 "type": "float",
+                "required": True,
+                "default": 3,
             },
             {
                 "name": "chart_type",
                 "description": "Type of chart with which to display results, e.g. 'pie' or 'bar'",
                 "type": "string",
+                "required": False,
+                "default": "pie",
             },
             {
                 "name": "additional_filters",
                 "description": "Comma-separated list of additional filters, e.g. "
                 "'metadata.tags=platform-experience,metadata.assignee=username'",
                 "type": "string",
+                "required": False,
             },
         ],
         "type": "widget",
@@ -162,20 +198,43 @@ WIDGET_TYPES = {
     "jenkins-bar-chart": {
         "id": "jenkins-bar-chart",
         "title": "Jenkins Bar Chart",
-        "description": "A bar chart of Jenkins build statuses",
+        "description": "A bar chart to display aggregate test results "
+        "for a particular jenkins job over time",
         "params": [
-            {"name": "job_name", "description": "The name of the Jenkins Job", "type": "string"},
-            {"name": "builds", "description": "The number of builds to fetch", "type": "integer"},
+            {
+                "name": "job_name",
+                "description": "The name of the Jenkins Job",
+                "type": "string",
+                "required": True,
+            },
+            {
+                "name": "builds",
+                "description": "The number of builds to fetch",
+                "type": "integer",
+                "required": True,
+                "default": 30,
+            },
         ],
         "type": "widget",
     },
     "jenkins-line-chart": {
         "id": "jenkins-line-chart",
         "title": "Jenkins Line Chart",
-        "description": "A line chart of Jenkins build statuses",
+        "description": "A line chart to display Jenkins job run time for a particular jenkins job",
         "params": [
-            {"name": "job_name", "description": "The name of the Jenkins Job", "type": "string"},
-            {"name": "builds", "description": "The number of builds to fetch", "type": "integer"},
+            {
+                "name": "job_name",
+                "description": "The name of the Jenkins Job",
+                "type": "string",
+                "required": True,
+            },
+            {
+                "name": "builds",
+                "description": "The number of builds to fetch",
+                "type": "integer",
+                "required": False,
+                "default": 30,
+            },
         ],
         "type": "widget",
     },
