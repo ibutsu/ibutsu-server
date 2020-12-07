@@ -17,6 +17,13 @@ COUNT_TIMEOUT = 0.5  # timeout for counting the number of documents [s]
 MAX_DOCUMENTS = 100000  # max documents for pagination, when apply_max=True
 JJV_RUN_LIMIT = 8000  # max runs from which to aggregate Jenkins Jobs
 HEATMAP_RUN_LIMIT = 3000  # max runs from which to determine recent Jenkins builds
+_ADDITIONAL_FILTERS_PARAM = {
+    "name": "additional_filters",
+    "description": "Comma-separated list of additional filters, cf. "
+    "https://docs.ibutsu-project.org/en/latest/user-guide/filter-help.html ",
+    "type": "string",
+    "required": False,
+}
 WIDGET_TYPES = {
     "jenkins-heatmap": {
         "id": "jenkins-heatmap",
@@ -51,13 +58,7 @@ WIDGET_TYPES = {
                 "required": False,
                 "default": True,
             },
-            {
-                "name": "additional_filters",
-                "description": "Comma-separated list of additional filters, e.g. "
-                "'metadata.tags=platform-experience,metadata.assignee=username'",
-                "type": "string",
-                "required": False,
-            },
+            _ADDITIONAL_FILTERS_PARAM,
         ],
         "type": "widget",
     },
@@ -87,13 +88,7 @@ WIDGET_TYPES = {
                 "required": False,
                 "default": "bar",
             },
-            {
-                "name": "additional_filters",
-                "description": "Comma-separated list of additional filters, e.g. "
-                "'metadata.tags=platform-experience,metadata.assignee=username'",
-                "type": "string",
-                "required": False,
-            },
+            _ADDITIONAL_FILTERS_PARAM,
         ],
         "type": "widget",
     },
@@ -120,13 +115,7 @@ WIDGET_TYPES = {
                 "type": "string",
                 "required": False,
             },
-            {
-                "name": "additional_filters",
-                "description": "Comma-separated list of additional filters, e.g. "
-                "'metadata.tags=platform-experience,metadata.assignee=username'",
-                "type": "string",
-                "required": False,
-            },
+            _ADDITIONAL_FILTERS_PARAM,
         ],
         "type": "widget",
     },
@@ -157,13 +146,7 @@ WIDGET_TYPES = {
                 "required": False,
                 "default": "pie",
             },
-            {
-                "name": "additional_filters",
-                "description": "Comma-separated list of additional filters, e.g. "
-                "'metadata.tags=platform-experience,metadata.assignee=username'",
-                "type": "string",
-                "required": False,
-            },
+            _ADDITIONAL_FILTERS_PARAM,
         ],
         "type": "widget",
     },

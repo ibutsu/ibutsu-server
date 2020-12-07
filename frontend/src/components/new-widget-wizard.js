@@ -25,7 +25,9 @@ import {
   TableBody,
 } from '@patternfly/react-table';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import Linkify from 'react-linkify';
 
+import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
 
 export class NewWidgetWizard extends React.Component {
@@ -230,7 +232,7 @@ export class NewWidgetWizard extends React.Component {
                   <FormGroup
                     label={param.name}
                     fieldId={param.name}
-                    helperText={param.description}
+                    helperText={<Linkify componentDecorator={linkifyDecorator}>{param.description}</Linkify>}
                     isRequired={param.required}>
                     <TextInput
                       value={this.state.params[param.name]}

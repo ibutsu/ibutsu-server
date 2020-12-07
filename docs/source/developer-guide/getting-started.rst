@@ -12,7 +12,7 @@ To run the server locally, you will need the following installed:
 - NPM
 - yarn
 - redis (strongly recommend a container)
-- mongo (strongly recommend a container)
+- PostgreSQL (strongly recommend a container)
 
 To run the containers, you will need either one of the following installed:
 
@@ -61,10 +61,10 @@ code, the server will rebuild your app and run the new code.
 
 Open your browser and go to `localhost:3000 <http://localhost:3000/>`_ to see the web UI.
 
-Run MongoDB and Redis
+Run PGSQL and Redis
 ---------------------
 
-Next you'll need to set up a MongoDB server. The easiest is to just run a MongoDB server in a
+Next you'll need to set up a PostgreSQL server. The easiest is to just run a MongoDB server in a
 container:
 
 .. note::
@@ -74,7 +74,7 @@ container:
 
 .. code:: bash
 
-    podman run --name mongo -d -p "27017:27017" mongo
+    podman run --publish 5432:5432 --name postgres -e POSTGRES_USER=ibutsu -e POSTGRES_PASSWORD=ibutsu -e POSTGRES_DB=ibutsu -d postgres
 
 
 If you don't have redis installed locally, you'll want to also run a redis container.
