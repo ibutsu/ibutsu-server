@@ -19,11 +19,11 @@ import {
   Text,
   Title,
 } from '@patternfly/react-core';
-import { ArchiveIcon, CubesIcon, PlusCircleIcon, TachometerAltIcon } from '@patternfly/react-icons';
+import { ArchiveIcon, CubesIcon, PlusCircleIcon, TachometerAltIcon, TimesCircleIcon } from '@patternfly/react-icons';
 
 import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
-import { NewDashboardModal, NewWidgetWizard } from './components';
+import { DeleteDashboardModal, NewDashboardModal, NewWidgetWizard } from './components';
 import {
   GenericBarWidget,
   JenkinsHeatmapWidget,
@@ -177,6 +177,31 @@ export class Dashboard extends React.Component {
       });
   }
 
+  onDeleteDashboardClick = () => {
+    this.setState({isDeleteDashboardOpen: true});
+  }
+
+  onDeleteDashboardClose = () => {
+    this.setState({isDeleteDashboardOpen: false});
+  }
+
+  onDeleteDashboard = () => {
+    const dashboard = getActiveDashboard();
+
+    fetch(Settings.serverUrl + '/dashboard/' + dashboard.id, {
+        method: 'DELETE',
+      })
+        .then(response => response.json())
+        .then(() => {
+          localStorage.removeItem('dashboard');
+          this.getDashboards();
+          this.setState({
+            isDeleteDashboardOpen: false,
+            selectedDashboard: null
+          });
+        });
+  }
+
   onAddWidgetClick = () => {
     this.setState({isWidgetWizardOpen: true});
   }
@@ -235,7 +260,7 @@ export class Dashboard extends React.Component {
                   ))}
                 </Select>
               </FlexItem>
-              <FlexItem>
+              <FlexItem spacer={{ default: 'spacerNone' }}>
                 <Button
                   aria-label="New dashboard"
                   variant="plain"
@@ -244,6 +269,17 @@ export class Dashboard extends React.Component {
                   onClick={this.onNewDashboardClick}
                 >
                   <PlusCircleIcon />
+                </Button>
+              </FlexItem>
+              <FlexItem>
+                <Button
+                  aria-label="Delete dashboard"
+                  variant="plain"
+                  title="Delete dashboard"
+                  isDisabled={!dashboard}
+                  onClick={this.onDeleteDashboardClick}
+                >
+                  <TimesCircleIcon />
                 </Button>
               </FlexItem>
             </Flex>
@@ -331,6 +367,7 @@ export class Dashboard extends React.Component {
         </PageSection>
         <NewDashboardModal project={project} isOpen={this.state.isNewDashboardOpen} onSave={this.onNewDashboardSave} onClose={this.onNewDashboardClose} />
         <NewWidgetWizard dashboard={dashboard} isOpen={this.state.isWidgetWizardOpen} onSave={this.onNewWidgetSave} onClose={this.onNewWidgetClose} />
+        <DeleteDashboardModal isOpen={this.state.isDeleteDashboardOpen} onDelete={this.onDeleteDashboard} onClose={this.onDeleteDashboardClose} />
       </React.Fragment>
     );
   }
