@@ -18,7 +18,10 @@ import {
   TextContent,
   TextInput
 } from '@patternfly/react-core';
+import Linkify from 'react-linkify';
 
+
+import { linkifyDecorator } from './components/decorators';
 import { Settings } from './settings';
 import {
   buildUrl,
@@ -226,32 +229,7 @@ export class ReportBuilder extends React.Component {
                   <TextInput type="text" id="report-filter" value={this.state.reportFilter} onChange={this.onReportFilterChange} />
                   <ExpandableSection toggleText="Filter Help" onToggle={this.onHelpToggle} isExpanded={this.state.isHelpExpanded}>
                     <TextContent>
-                      <p>The filter parameter takes a comma-separated list of filters to apply in the form of:</p>
-                      <pre style={{marginLeft: "1rem"}}><code>&lt;name&gt;&lt;operator&gt;&lt;value&gt;,...</code></pre>
-                      <p>where:</p>
-                      <ul>
-                        <li><code>name</code> is any valid column in the database</li>
-                        <li><code>operator</code> is one of <code>=</code>, <code>!</code>, <code>&gt;</code>, <code>&lt;</code>, <code>)</code>, <code>(</code>, <code>~</code>, <code>*</code></li>
-                        <li><code>value</code> is what you want to filter by</li>
-                      </ul>
-                      <p>Operators are simple correspondents to MongoDB&apos;s query selectors:</p>
-                      <ul>
-                        <li><code>=</code> becomes <code>$eq</code></li>
-                        <li><code>!</code> becomes <code>$ne</code></li>
-                        <li><code>&gt;</code> becomes <code>$gt</code></li>
-                        <li><code>&lt;</code> becomes <code>$lt</code></li>
-                        <li><code>)</code> becomes <code>$gte</code></li>
-                        <li><code>(</code> becomes <code>$lte</code></li>
-                        <li><code>~</code> becomes <code>$regex</code></li>
-                        <li><code>*</code> becomes <code>$in</code></li>
-                        <li><code>@</code> becomes <code>$exists</code></li>
-                      </ul>
-                      <p>Note:</p>
-                      <p style={{marginLeft: "1rem"}}>For the <code>$exists</code> operator, <code>true</code>, <code>t</code>, <code>yes</code>, <code>y</code> and <code>1</code> will all be considered true,
-                         all other values are considered false.</p>
-                      <p>Example queries:</p>
-                      <pre style={{marginLeft: "1rem"}}><code>metadata.run=63fe5</code></pre>
-                      <pre style={{marginLeft: "1rem"}}><code>test_id~neg,result!passed</code></pre>
+                      <p>The filter parameter takes a comma-separated list of filters to apply. <Linkify componentDecorator={linkifyDecorator}>https://docs.ibutsu-project.org/en/latest/user-guide/filter-help.html</Linkify></p>
                     </TextContent>
                   </ExpandableSection>
                 </FormGroup>
