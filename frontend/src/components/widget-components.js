@@ -10,25 +10,34 @@ import {
   Text,
   Tooltip
 } from '@patternfly/react-core';
-import { PficonHistoryIcon } from '@patternfly/react-icons';
+import { PficonHistoryIcon, TimesIcon  } from '@patternfly/react-icons';
 
 
 export class WidgetHeader extends React.Component {
   static propTypes = {
+    id: PropTypes.string,
     getDataFunc: PropTypes.func,
+    onDeleteClick: PropTypes.func,
     title: PropTypes.string,
     actions: PropTypes.array
   }
 
   render () {
-    const { title, getDataFunc, actions } = this.props;
+    const { title, getDataFunc, actions, onDeleteClick } = this.props;
     return (
       <CardHeader data-id="widget-header">
         <Text component="h2" style={{ fontSize: 20 }}>{title}</Text>
         {actions}
+        {getDataFunc &&
         <Button variant="plain" onClick={getDataFunc} title="Refresh" aria-label="Refresh" isInline>
           <PficonHistoryIcon />
         </Button>
+        }
+        {onDeleteClick &&
+         <Button variant="plain" onClick={onDeleteClick} title="Remove from dashboard" aria-label="Delete" isInline>
+          <TimesIcon />
+        </Button>
+        }
       </CardHeader>
     );
   }

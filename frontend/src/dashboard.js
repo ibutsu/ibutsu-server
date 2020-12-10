@@ -23,7 +23,7 @@ import { ArchiveIcon, CubesIcon, PlusCircleIcon, TachometerAltIcon, TimesCircleI
 
 import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
-import { DeleteDashboardModal, NewDashboardModal, NewWidgetWizard } from './components';
+import { DeleteModal, NewDashboardModal, NewWidgetWizard } from './components';
 import {
   GenericBarWidget,
   JenkinsHeatmapWidget,
@@ -202,6 +202,25 @@ export class Dashboard extends React.Component {
         });
   }
 
+  onDeleteWidget = () => {
+    fetch(Settings.serverUrl + '/widget-config/' + this.state.currentWidgetId, {
+        method: 'DELETE',
+      })
+        .then(response => response.json())
+        .then(() => {
+          this.getWidgets();
+          this.setState({isDeleteWidgetOpen: false});
+        });
+  }
+
+  onDeleteWidgetClick = (id) => {
+    this.setState({isDeleteWidgetOpen: true, currentWidgetId: id});
+  }
+
+  onDeleteWidgetClose = () => {
+    this.setState({isDeleteWidgetOpen: false});
+  }
+
   onAddWidgetClick = () => {
     this.setState({isWidgetWizardOpen: true});
   }
@@ -306,16 +325,36 @@ export class Dashboard extends React.Component {
                 return (
                   <GridItem xl={4} lg={6} md={12} key={widget.id}>
                     {(widget.type === "widget" && widget.widget === "jenkins-heatmap") &&
-                      <JenkinsHeatmapWidget title={widget.title} params={widget.params} includeAnalysisLink={true}/>
+                      <JenkinsHeatmapWidget
+                        title={widget.title}
+                        params={widget.params}
+                        includeAnalysisLink={true}
+                        onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                      />
                     }
                     {(widget.type === "widget" && widget.widget === "run-aggregator") &&
-                      <GenericBarWidget title={widget.title} params={widget.params} horizontal={true} percentData={true} barWidth={20}/>
+                      <GenericBarWidget
+                        title={widget.title}
+                        params={widget.params}
+                        horizontal={true}
+                        percentData={true}
+                        barWidth={20}
+                        onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                      />
                     }
                     {(widget.type === "widget" && widget.widget === "result-summary") &&
-                      <ResultSummaryWidget title={widget.title} params={widget.params}/>
+                      <ResultSummaryWidget
+                        title={widget.title}
+                        params={widget.params}
+                        onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                      />
                     }
                     {(widget.type === "widget" && widget.widget === "result-aggregator") &&
-                      <ResultAggregatorWidget title={widget.title} params={widget.params}/>
+                      <ResultAggregatorWidget
+                        title={widget.title}
+                        params={widget.params}
+                        onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                      />
                     }
                   </GridItem>
                 );
@@ -367,7 +406,20 @@ export class Dashboard extends React.Component {
         </PageSection>
         <NewDashboardModal project={project} isOpen={this.state.isNewDashboardOpen} onSave={this.onNewDashboardSave} onClose={this.onNewDashboardClose} />
         <NewWidgetWizard dashboard={dashboard} isOpen={this.state.isWidgetWizardOpen} onSave={this.onNewWidgetSave} onClose={this.onNewWidgetClose} />
-        <DeleteDashboardModal isOpen={this.state.isDeleteDashboardOpen} onDelete={this.onDeleteDashboard} onClose={this.onDeleteDashboardClose} />
+        <DeleteModal
+          title="Delete dashboard"
+          body={<>Would you like to delete the current dashboard? <strong>ALL WIDGETS</strong> on the dashboard will also be deleted.</>}
+          isOpen={this.state.isDeleteDashboardOpen}
+          onDelete={this.onDeleteDashboard}
+          onClose={this.onDeleteDashboardClose}
+        />
+        <DeleteModal
+          title="Delete widget"
+          body="Would you like to delete the selected widget?"
+          isOpen={this.state.isDeleteWidgetOpen}
+          onDelete={this.onDeleteWidget}
+          onClose={this.onDeleteWidgetClose}
+        />
       </React.Fragment>
     );
   }
