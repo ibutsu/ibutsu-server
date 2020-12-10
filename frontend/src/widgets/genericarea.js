@@ -43,6 +43,7 @@ export class GenericAreaWidget extends React.Component {
     widgetEndpoint: PropTypes.string,
     xLabel: PropTypes.string,
     yLabel: PropTypes.string,
+    onDeleteClick: PropTypes.func,
   }
 
   constructor(props) {
@@ -152,7 +153,7 @@ export class GenericAreaWidget extends React.Component {
     const legendData = this.getLegendData();
     return (
       <Card>
-        <WidgetHeader title={this.title} getDataFunc={this.getData}/>
+        <WidgetHeader title={this.title} getDataFunc={this.getData} onDeleteClick={this.props.onDeleteClick}/>
         <CardBody data-id="generic-area">
           {this.state.areaChartError &&
             <p>Error fetching data</p>

@@ -9,16 +9,18 @@ import {
 } from '@patternfly/react-core';
 
 
-export class DeleteDashboardModal extends React.Component {
+export class DeleteModal extends React.Component {
   static propTypes = {
-    dashboard: PropTypes.object,
+    id: PropTypes.object,
+    title: PropTypes.string,
+    body: PropTypes.string,
     onDelete: PropTypes.func,
     onClose: PropTypes.func,
     isOpen: PropTypes.bool
   };
 
   onDelete = () => {
-    this.props.onDelete(this.props.dashboard);
+    this.props.onDelete(this.props.id);
   }
 
   onClose = () => {
@@ -29,7 +31,7 @@ export class DeleteDashboardModal extends React.Component {
     return (
       <Modal
         variant={ModalVariant.small}
-        title="Delete dashboard"
+        title={this.props.title}
         isOpen={this.props.isOpen}
         onClose={this.onClose}
         actions={[
@@ -37,7 +39,7 @@ export class DeleteDashboardModal extends React.Component {
           <Button key="cancel" variant="link" onClick={this.onClose}>Cancel</Button>
         ]}
       >
-      <Text>Would you like to delete the current dashboard? <strong>ALL WIDGETS</strong> on the dashboard will also be <strong>deleted</strong>.</Text>
+      <Text>{this.props.body}</Text>
       </Modal>
     );
   }
