@@ -64,7 +64,7 @@ Open your browser and go to `localhost:3000 <http://localhost:3000/>`_ to see th
 Run PGSQL and Redis
 ---------------------
 
-Next you'll need to set up a PostgreSQL server. The easiest is to just run a MongoDB server in a
+Next you'll need to set up a PostgreSQL server. It is easiest to just run the server in a
 container:
 
 .. note::
