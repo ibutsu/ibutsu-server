@@ -1503,16 +1503,33 @@ components:
           description: A source for this test run
           example: my-tests
           type: string
+          nullable: true
         start_time:
           description: The time the test run started
           example: 2020-05-15T16:18:32.014053
           type: string
+        component:
+          description: A component
+          example: login
+          type: string
+          nullable: true
+        env:
+          description: The environment which is being tested
+          example: qa
+          type: string
+          nullable: true
+        project_id:
+          description: The project this run is associated with
+          example: 44941c55-9736-42f6-acce-ca3c4739d0f3
+          type: string
+          nullable: true
         summary:
           description: A summary of the test results
           type: object
         metadata:
-          description: Extra data for this run
+          description: Extra metadata for this run
           type: object
+          nullable: true
       type: object
     UpdateRun:
       example:
