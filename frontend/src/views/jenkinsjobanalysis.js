@@ -43,7 +43,7 @@ export class JenkinsJobAnalysisView extends React.Component {
       isError: false,
       isLoading: true,
       filters: filters,
-      activeTab: 'heatmap',
+      activeTab: this.getTabIndex('heatmap'),
       barWidth: 8,
       builds: 20,
       heatmapParams: {},
@@ -51,12 +51,16 @@ export class JenkinsJobAnalysisView extends React.Component {
       linechartParams: {},
       countSkips: 'Yes'
     };
+    // Watch the history to update tabs
+    this.unlisten = this.props.history.listen(() => {
+      const tabIndex = this.getTabIndex('heatmap');
+      this.setState({activeTab: tabIndex});
+    });
   }
 
-  onTabSelect = (event, tabIndex) => {
-    this.setState({
-      activeTab: tabIndex
-    });
+  getTabIndex(defaultValue) {
+    defaultValue = defaultValue || null;
+    return this.props.location.hash !== '' ? this.props.location.hash.substring(1) : defaultValue;
   }
 
   getWidgetParams = () => {
@@ -88,23 +92,6 @@ export class JenkinsJobAnalysisView extends React.Component {
           isLoading: false,
         });
       });
-  }
-
-  componentDidMount() {
-    this.getWidgetParams();
-  }
-
-  onBuildSelect = (value) => {
-    this.setState({builds: value}, () => {
-      this.getWidgetParams();
-      this.getBarWidth();
-    });
-  }
-
-  onSkipSelect = (value) => {
-    this.setState({countSkips: value}, () => {
-      this.getWidgetParams();
-    });
   }
 
   getBarWidth() {
@@ -140,10 +127,6 @@ export class JenkinsJobAnalysisView extends React.Component {
       />);
   }
 
-  handleSwitch = isChecked => {
-    this.setState({isAreaChart: isChecked});
-  }
-
   getSwitch() {
     const { isAreaChart } = this.state;
     return (<Switch
@@ -173,6 +156,41 @@ export class JenkinsJobAnalysisView extends React.Component {
       color = 'var(--pf-global--palette--purple-700)';
     }
     return color;
+  }
+
+  onTabSelect = (event, tabIndex) => {
+    const loc = this.props.history.location;
+    this.props.history.push({
+      pathname: loc.pathname,
+      search: loc.search,
+      hash: '#' + tabIndex
+    });
+    this.setState({activeTab: tabIndex});
+  }
+
+  onBuildSelect = (value) => {
+    this.setState({builds: value}, () => {
+      this.getWidgetParams();
+      this.getBarWidth();
+    });
+  }
+
+  onSkipSelect = (value) => {
+    this.setState({countSkips: value}, () => {
+      this.getWidgetParams();
+    });
+  }
+
+  handleSwitch = isChecked => {
+    this.setState({isAreaChart: isChecked});
+  }
+
+  componentDidMount() {
+    this.getWidgetParams();
+  }
+
+  componentDidUnmount() {
+    this.unlisten();
   }
 
   render() {
@@ -207,7 +225,7 @@ export class JenkinsJobAnalysisView extends React.Component {
           {this.getSwitch()}
         </div>
         }
-      <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect}>
+      <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
         <Tab eventKey='heatmap' title={'Heatmap'} style={{backgroundColor: 'white'}}>
           {!isLoading && activeTab === "heatmap" &&
           <JenkinsHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true}/>

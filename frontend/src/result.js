@@ -14,7 +14,9 @@ import { ResultView } from './components';
 
 export class Result extends React.Component {
   static propTypes = {
-    match: PropTypes.object
+    match: PropTypes.object,
+    history: PropTypes.object,
+    location: PropTypes.object
   }
 
   constructor(props) {
@@ -51,7 +53,7 @@ export class Result extends React.Component {
           </TextContent>
         </PageSection>
         <PageSection>
-          <ResultView testResult={testResult} />
+          <ResultView testResult={testResult} history={this.props.history} location={this.props.location}/>
         </PageSection>
       </React.Fragment>
     );

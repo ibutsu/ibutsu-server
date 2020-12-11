@@ -109,7 +109,9 @@ const searchTree = (node, text) => {
 
 export class Run extends React.Component {
   static propTypes = {
-    match: PropTypes.object
+    match: PropTypes.object,
+    history: PropTypes.object,
+    location: PropTypes.object
   };
 
   constructor(props) {
@@ -124,7 +126,7 @@ export class Run extends React.Component {
       selectedResults: [],
       cursor: null,
       filteredTree: {},
-      activeTab: 'summary',
+      activeTab: this.getTabIndex('summary'),
       treeSearch: '',
       pageSize: 10,
       page: 1,
@@ -135,6 +137,18 @@ export class Run extends React.Component {
       resultsTree: {core: {data: []}},
       treeData: [],
     };
+    // Watch the history to update tabs
+    this.unlisten = this.props.history.listen(() => {
+      const tabIndex = this.getTabIndex('summary');
+      this.setState({activeTab: tabIndex}, () => {
+        this.updateTab(tabIndex);
+      });
+    });
+  }
+
+  getTabIndex(defaultValue) {
+    defaultValue = defaultValue || null;
+    return this.props.location.hash !== '' ? this.props.location.hash.substring(1) : defaultValue;
   }
 
   buildTree(results) {
@@ -253,14 +267,7 @@ export class Run extends React.Component {
     });
   }
 
-  onSearch = (value) => {
-    this.setState({treeSearch: value}, this.setFilteredTree);
-  }
-
-  onTabSelect = (event, tabIndex) => {
-    this.setState({
-      activeTab: tabIndex
-    });
+  updateTab(tabIndex) {
     if (tabIndex === 'results-list') {
       this.getResultsForTable();
     }
@@ -272,11 +279,24 @@ export class Run extends React.Component {
     }
   }
 
+  onSearch = (value) => {
+    this.setState({treeSearch: value}, this.setFilteredTree);
+  }
+
+  onTabSelect = (event, tabIndex) => {
+    const loc = this.props.history.location;
+    this.props.history.push({
+      pathname: loc.pathname,
+      search: loc.search,
+      hash: '#' + tabIndex
+    });
+    this.setState({activeTab: tabIndex});
+    this.updateTab(tabIndex);
+  }
+
   getClassificationTable = () => {
     this.setState({classificationTable: <ClassifyFailuresTable filters={ {'run_id': {op: 'eq', val: this.state.id}} }/>});
   }
-
-
 
   onToggle = (node) => {
     if (node.result) {
@@ -322,7 +342,9 @@ export class Run extends React.Component {
   getRun() {
     fetch(Settings.serverUrl + '/run/' + this.state.id)
       .then(response => response.json())
-      .then(data => this.setState({run: data}));
+      .then(data => this.setState({run: data}, () => {
+        this.updateTab(this.state.activeTab);
+      }));
   }
 
   getResultsForTable() {
@@ -377,6 +399,10 @@ export class Run extends React.Component {
 
   componentDidMount() {
     this.getRun();
+  }
+
+  componentWillUnmount() {
+    this.unlisten();
   }
 
   handleJSTreeChange(event, treeEvent) {
@@ -436,7 +462,7 @@ export class Run extends React.Component {
           </TextContent>
         </PageSection>
         <PageSection>
-          <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect}>
+          <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
             <Tab eventKey={'summary'} title={<TabTitle icon={InfoCircleIcon} text="Summary" />} style={{backgroundColor: 'white'}}>
               <Card>
                 <CardBody style={{padding: 0}} id="run-detail">
@@ -674,7 +700,7 @@ export class Run extends React.Component {
                         <GridItem span={7}>
                           {this.state.testResult &&
                             <Card className={this.state.testResult.result}>
-                              <CardHeader style={{paddingBottom: "1.2em", marginBottom: "1.2em"}}>
+                              <CardHeader>
                                 {this.state.testResult.test_id}
                                 {this.state.testResult.metadata.markers &&
                                   <div style={{float: 'right'}}>
@@ -684,7 +710,7 @@ export class Run extends React.Component {
                                   </div>
                                 }
                               </CardHeader>
-                              <CardBody>
+                              <CardBody style={{backgroundColor: "var(--pf-c-page__main-section--BackgroundColor)", paddingTop: "1.2em"}}>
                                 <ResultView testResult={this.state.testResult}/>
                               </CardBody>
                             </Card>
