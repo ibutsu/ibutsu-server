@@ -276,6 +276,10 @@ class App extends React.Component {
         </NavList>
       </Nav>
     );
+    const uploadParams = {};
+    if (this.state.selectedProject && this.state.selectedProject.project) {
+      uploadParams['project'] = this.state.selectedProject.project.id;
+    }
     const topNav = (
       <Flex>
         <FlexItem id="project-selector">
@@ -303,7 +307,7 @@ class App extends React.Component {
             <Button variant="plain" onClick={this.toggleAbout}><QuestionCircleIcon /></Button>
           </PageHeaderToolsItem>
           <PageHeaderToolsItem>
-            <FileUpload component="button" className="pf-c-button pf-m-plain" isUnstyled name="importFile" url={`${Settings.serverUrl}/import`} multiple={false} beforeUpload={this.onBeforeUpload} afterUpload={this.onAfterUpload} title="Upload JUnit XML"><UploadIcon /> Import</FileUpload>
+            <FileUpload component="button" className="pf-c-button pf-m-plain" isUnstyled name="importFile" url={`${Settings.serverUrl}/import`} params={uploadParams} multiple={false} beforeUpload={this.onBeforeUpload} afterUpload={this.onAfterUpload} title="Import xUnit XML or Ibutsu Archive"><UploadIcon /> Import</FileUpload>
           </PageHeaderToolsItem>
           <PageHeaderToolsItem>
             <a href={apiUiUrl} className="pf-c-button pf-m-plain" target="_blank" rel="noopener noreferrer"><ServerIcon/> API</a>

@@ -5,6 +5,7 @@ export class FileUpload extends React.Component {
   static propTypes = {
     url: PropTypes.string.isRequired,
     name: PropTypes.string,
+    params: PropTypes.object,
     multiple: PropTypes.bool,
     onClick: PropTypes.func,
     beforeUpload: PropTypes.func,
@@ -52,6 +53,11 @@ export class FileUpload extends React.Component {
     // Upload the file
     const formData = new FormData();
     formData.append(this.state.name, file);
+    if (this.props.params) {
+      Object.keys(this.props.params).forEach(key => {
+        formData.append(key, this.props.params[key]);
+      });
+    }
     fetch(this.state.url, {method: 'POST', body: formData}).then((response) => {
       if (this.state.afterUpload) {
         this.state.afterUpload(response);
