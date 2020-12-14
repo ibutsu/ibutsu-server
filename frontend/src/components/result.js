@@ -59,6 +59,8 @@ export class ResultView extends React.Component {
     resultId: PropTypes.string,
     hideSummary: PropTypes.bool,
     hideTestObject: PropTypes.bool,
+    history: PropTypes.object,
+    location: PropTypes.object
   }
 
   constructor(props) {
@@ -67,15 +69,49 @@ export class ResultView extends React.Component {
       testResult: this.props.testResult || MockTest,
       id: this.props.resultId || null,
       artifacts: [],
-      artifactsTabKey: 0,
+      activeTab: this.getTabIndex(this.getDefaultTab()),
       artifactTabs: []
     };
+    if (this.props.history) {
+      // Watch the history to update tabs
+      this.unlisten = this.props.history.listen(() => {
+        this.setState({activeTab: this.getTabIndex()});
+      });
+    }
   }
 
-  handleArtifactsTabClick = (event, tabIndex) => {
-    this.setState({
-      artifactsTabKey: tabIndex
-    });
+  getDefaultTab() {
+    if (!this.props.hideSummary) {
+      return 'summary';
+    }
+    else if (!!this.state && this.state.artifactTabs.length > 0) {
+      return this.state.artifactTabs[0].key;
+    }
+    else {
+      return null;
+    }
+  }
+
+  getTabIndex(defaultValue) {
+    defaultValue = defaultValue || null;
+    if (!!this.props.location && this.props.location.hash !== '') {
+      return this.props.location.hash.substring(1);
+    }
+    else {
+      return defaultValue;
+    }
+  }
+
+  onTabSelect = (event, tabIndex) => {
+    if (this.props.history) {
+      const loc = this.props.history.location;
+      this.props.history.push({
+        pathname: loc.pathname,
+        search: loc.search,
+        hash: '#' + tabIndex
+      });
+    }
+    this.setState({activeTab: tabIndex});
   };
 
   getTestResult(resultId) {
@@ -88,19 +124,15 @@ export class ResultView extends React.Component {
     fetch(buildUrl(Settings.serverUrl + '/artifact', {resultId: resultId}))
       .then(response => response.json())
       .then(data => {
-        this.setState({artifacts: data.artifacts});
-        let tabKey = this.props.hideSummary ? 0 : 1;
         let artifactTabs = [];
         data.artifacts.forEach((artifact) => {
-          artifact.tabKey = tabKey;
-          tabKey++;
           fetch(Settings.serverUrl + `/artifact/${artifact.id}/view`)
             .then(response => {
               let contentType = response.headers.get('Content-Type');
               if (contentType.includes('text')) {
                 response.text().then(text => {
                   artifactTabs.push(
-                    <Tab key={artifact.tabKey} eventKey={artifact.tabKey} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
                       <Card>
                         <CardBody>
                           <Editor fontFamily="Hack, monospace" theme="dark" value={text} height="40rem" options={{readOnly: true}} />
@@ -118,7 +150,7 @@ export class ResultView extends React.Component {
                 response.blob().then(blob => {
                   let imageUrl = URL.createObjectURL(blob);
                   artifactTabs.push(
-                    <Tab key={artifact.tabKey} eventKey={artifact.tabKey} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
                       <Card>
                         <CardBody>
                           <img src={imageUrl} alt={artifact.filename}/>
@@ -159,9 +191,17 @@ export class ResultView extends React.Component {
     this.getResult();
   }
 
+  componentWillUnmount() {
+    if (this.unlisten) {
+      this.unlisten();
+    }
+  }
+
   render() {
-    const testResult = this.state.testResult;
-    const artifactTabs = this.state.artifactTabs;
+    let { testResult, artifactTabs, activeTab } = this.state;
+    if (activeTab === null) {
+      activeTab = this.getDefaultTab();
+    }
     let resultIcon = getIconForResult('pending');
     let startTime = new Date();
     let parameters = <div/>;
@@ -175,9 +215,9 @@ export class ResultView extends React.Component {
     return (
       <React.Fragment>
         {this.state.testResult &&
-        <Tabs activeKey={this.state.artifactsTabKey} onSelect={this.handleArtifactsTabClick}>
+        <Tabs activeKey={activeTab} onSelect={this.onTabSelect} isBox>
           {!this.props.hideSummary &&
-          <Tab eventKey={0} title={<TabTitle icon={InfoCircleIcon} text="Summary" />} style={{backgroundColor: "white"}}>
+          <Tab eventKey="summary" title={<TabTitle icon={InfoCircleIcon} text="Summary" />} style={{backgroundColor: "white"}}>
             <Card>
               <CardBody style={{padding: 0}}>
                 <DataList selectedDataListItemId={null} aria-label="Test Result" style={{borderBottom: "none", borderTop: "none"}}>
@@ -446,7 +486,7 @@ export class ResultView extends React.Component {
           }
           {artifactTabs}
           {!this.props.hideTestObject &&
-          <Tab eventKey={99} title={<TabTitle icon={CodeIcon} text="Test Object" />} style={{backgroundColor: "white"}}>
+          <Tab eventKey="test-object" title={<TabTitle icon={CodeIcon} text="Test Object" />} style={{backgroundColor: "white"}}>
             <Card>
               <CardBody>
                 <ReactJson src={testResult} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} />
