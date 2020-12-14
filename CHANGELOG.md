@@ -1,3 +1,19 @@
+Version 1.12.1
+==============
+
+* Release 1.12.1
+* Remember tab + updates (#115)
+* Update API spec to allow null values in Runs (#118)
+* Pass project along with file when importing via the UI (closes #110) (#116)
+* Remove reference to MongoDB in docs
+* Add a button for deleting a single widget from a dashboard
+* Add some documentation about filters, fixup docs elsewhere
+* Add a button to delete dashboards
+* Add some default fields and specify whether it's required
+* Add custom filters for some widgets
+* Bring the CHANGELOG up to date (#103)
+* Add a new option to the release script to update the changelog (#102)
+
 Version 1.12.0
 ==============
 
