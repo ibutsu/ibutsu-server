@@ -4,9 +4,10 @@ from ibutsu_server.db.base import Column
 from ibutsu_server.db.base import ForeignKey
 from ibutsu_server.db.types import PortableUUID
 from sqlalchemy import MetaData
+from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
-__version__ = 1
+__version__ = 2
 
 
 def get_upgrade_op(session):
@@ -50,3 +51,27 @@ def upgrade_1(session):
             "owner_id",
             schema=Column(PortableUUID(), ForeignKey("users.id"), index=True),
         )
+
+
+def upgrade_2(session):
+    """Version 2 upgrade
+
+    This upgrade adds indices for the metadata.tags fields in the results/runs tables.
+
+    It is equivalent to running the following SQL statements:
+        CREATE INDEX IF NOT EXISTS ix_runs_tags ON runs USING gin ((data->'tags'));
+        CREATE INDEX IF NOT EXISTS ix_results_tags ON results USING gin ((data->'tags'));
+    """
+    TABLES = ["runs", "results"]
+
+    engine = session.get_bind()
+    op = get_upgrade_op(session)
+
+    if engine.url.get_dialect().name == "postgresql":
+        for table in TABLES:
+            op.create_index(
+                f"ix_{table}_tags",
+                table,
+                [quoted_name("(data->'tags')", False)],
+                postgresql_using="gin",
+            )
