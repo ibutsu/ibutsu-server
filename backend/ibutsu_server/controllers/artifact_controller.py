@@ -6,6 +6,7 @@ import magic
 from flask import make_response
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact
+from ibutsu_server.util.uuid import validate_uuid
 
 
 def _build_artifact_response(id_):
@@ -45,6 +46,7 @@ def download_artifact(id_):
     return response
 
 
+@validate_uuid
 def get_artifact(id_):
     """Return a single artifact
 

@@ -7,6 +7,7 @@ from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks.runs import update_run as update_run_task
 from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import get_project_id
+from ibutsu_server.util.uuid import validate_uuid
 
 
 def get_run_list(filter_=None, page=1, page_size=25, estimate=False):
@@ -81,6 +82,7 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False):
     }
 
 
+@validate_uuid
 def get_run(id_):
     """Get a run
 

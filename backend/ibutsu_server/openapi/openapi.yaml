@@ -113,13 +113,14 @@ paths:
     get:
       operationId: get_result
       parameters:
-      - description: ID of pet to return
+      - description: ID of result to return (uuid required)
         explode: false
         in: path
         name: id
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -144,6 +145,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       requestBody:
         $ref: '#/components/requestBodies/Result'
@@ -236,6 +238,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -256,6 +259,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -281,6 +285,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -323,6 +328,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -496,6 +502,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -506,7 +513,7 @@ paths:
           description: Run item
         404:
           description: Run not found
-      summary: Get a single run by ID
+      summary: Get a single run by ID (uuid required)
       tags:
       - run
       x-openapi-router-controller: ibutsu_server.controllers.run_controller
@@ -520,6 +527,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       requestBody:
         content:
@@ -633,6 +641,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       requestBody:
         content:
@@ -705,6 +714,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -729,6 +739,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       requestBody:
         content:
@@ -818,6 +829,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -842,6 +854,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       requestBody:
         content:
@@ -874,6 +887,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -942,6 +956,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -966,6 +981,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -987,6 +1003,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       - description: The file name of the downloadable report
         explode: false
@@ -1037,6 +1054,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       - description: The file name of the downloadable report
         explode: false
@@ -1112,6 +1130,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       - description: The parameters for the widget
         in: query
@@ -1213,6 +1232,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -1237,6 +1257,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       requestBody:
         $ref: '#/components/requestBodies/WidgetConfig'
@@ -1265,6 +1286,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:
@@ -1367,6 +1389,7 @@ paths:
         required: true
         schema:
           type: string
+          format: uuid
         style: simple
       responses:
         200:

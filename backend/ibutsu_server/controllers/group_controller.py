@@ -1,6 +1,7 @@
 import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Group
+from ibutsu_server.util.uuid import validate_uuid
 
 
 def add_group(group=None):
@@ -18,6 +19,7 @@ def add_group(group=None):
     return group.to_dict(), 201
 
 
+@validate_uuid
 def get_group(id_):
     """Get a group
 

@@ -5,6 +5,7 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import get_project_id
+from ibutsu_server.util.uuid import validate_uuid
 from sqlalchemy import or_
 
 
@@ -38,6 +39,7 @@ def add_widget_config(widget_config=None):
     return widget_config.to_dict(), 201
 
 
+@validate_uuid
 def get_widget_config(id_):
     """Get a widget
 
@@ -67,7 +69,8 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
         for filter_string in filter_:
             if "project" in filter_string:
                 filter_clause = or_(
-                    WidgetConfig.project_id.is_(None), convert_filter(filter_string, WidgetConfig),
+                    WidgetConfig.project_id.is_(None),
+                    convert_filter(filter_string, WidgetConfig),
                 )
             else:
                 filter_clause = convert_filter(filter_string, WidgetConfig)

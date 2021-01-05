@@ -19,6 +19,17 @@ def is_uuid(candidate):
         return False
 
 
+def validate_uuid(function):
+    def validate(**kwargs):
+        candidate = kwargs.get("id_")
+        if not is_uuid(candidate):
+            return f"ID: {candidate} is not a valid UUID", 400
+        else:
+            return function(**kwargs)
+
+    return validate
+
+
 def convert_objectid_to_uuid(object_id):
     """Convert an ObjectId to a UUID"""
     if isinstance(object_id, str) and not is_uuid(object_id) and ObjectId.is_valid(object_id):

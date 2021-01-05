@@ -7,6 +7,7 @@ from ibutsu_server.db.models import Report
 from ibutsu_server.db.models import ReportFile
 from ibutsu_server.tasks.reports import REPORTS
 from ibutsu_server.util.projects import get_project_id
+from ibutsu_server.util.uuid import validate_uuid
 
 
 def _build_report_response(id_):
@@ -67,6 +68,7 @@ def add_report(report_parameters=None):
     return report.to_dict(), 201
 
 
+@validate_uuid
 def get_report(id_):
     """Get a report
 
