@@ -341,14 +341,6 @@ export class Run extends React.Component {
     this.getResultsForTable();
   }
 
-//  getRun() {
-//    fetch(Settings.serverUrl + '/run/' + this.state.id)
-//      .then(response => response.json())
-//      .then(data => this.setState({run: data}, () => {
-//        this.updateTab(this.state.activeTab);
-//      }));
-//  }
-
   getRun() {
     fetch(Settings.serverUrl + '/run/' + this.state.id)
       .then(response => {
