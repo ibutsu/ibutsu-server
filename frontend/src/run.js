@@ -35,6 +35,7 @@ import {
   MessagesIcon,
   RepositoryIcon
 } from '@patternfly/react-icons';
+
 import { Link } from 'react-router-dom';
 import ReactJson from 'react-json-view';
 
@@ -49,6 +50,7 @@ import {
   round
 } from './utilities';
 import {
+  EmptyObject,
   FilterTable,
   ClassifyFailuresTable,
   ResultView,
@@ -339,12 +341,27 @@ export class Run extends React.Component {
     this.getResultsForTable();
   }
 
+//  getRun() {
+//    fetch(Settings.serverUrl + '/run/' + this.state.id)
+//      .then(response => response.json())
+//      .then(data => this.setState({run: data}, () => {
+//        this.updateTab(this.state.activeTab);
+//      }));
+//  }
+
   getRun() {
     fetch(Settings.serverUrl + '/run/' + this.state.id)
-      .then(response => response.json())
+      .then(response => {
+        this.setState({ "httpStatus": response.status });
+        if (!response.ok) {
+          throw new Error("Failed with HTTP code " + response.status);
+        }
+        return response.json();
+      })
       .then(data => this.setState({run: data}, () => {
         this.updateTab(this.state.activeTab);
-      }));
+      }))
+      .catch(error => console.log(error));
   }
 
   getResultsForTable() {
@@ -417,7 +434,12 @@ export class Run extends React.Component {
   render() {
     let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0;
     let created = 0;
+    let isNotFound = false;
     const { run, columns, rows, classificationTable } = this.state;
+
+    if (!this.state.httpStatus || [404, 500].includes(this.state.httpStatus)) {
+      isNotFound = true;
+    }
     if (run.start_time) {
       created = new Date(run.start_time);
     }
@@ -462,243 +484,247 @@ export class Run extends React.Component {
           </TextContent>
         </PageSection>
         <PageSection>
-          <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-            <Tab eventKey={'summary'} title={<TabTitle icon={InfoCircleIcon} text="Summary" />} style={{backgroundColor: 'white'}}>
-              <Card>
-                <CardBody style={{padding: 0}} id="run-detail">
-                  <Grid style={{backgroundColor: '#fff'}}>
-                    <GridItem span={6}>
-                      <DataList selectedDataListItemId={null} aria-label="Run properties" style={{borderBottom: 'none', borderTop: 'none'}}>
-                        <DataListItem aria-labelledby="Duration">
-                          <DataListItemRow>
-                            <DataListItemCells
-                              dataListCells={[
-                                <DataListCell key={1} width={2}><strong>Duration:</strong></DataListCell>,
-                                <DataListCell key={2} width={4}>{round(run.duration)}s</DataListCell>
-                              ]}
-                            />
-                          </DataListItemRow>
-                        </DataListItem>
-                        <DataListItem aria-labelledby="Started">
-                          <DataListItemRow>
-                            <DataListItemCells
-                              dataListCells={[
-                                <DataListCell key={1} width={2}><strong>Started:</strong></DataListCell>,
-                                <DataListCell key={2} width={4}>{created.toLocaleString()}</DataListCell>
-                              ]}
-                            />
-                          </DataListItemRow>
-                        </DataListItem>
-                        {run.metadata && run.metadata.component &&
-                        <DataListItem aria-labelledby="Component">
-                          <DataListItemRow>
-                            <DataListItemCells
-                              dataListCells={[
-                                <DataListCell key={1} width={2}><strong>Component:</strong></DataListCell>,
-                                <DataListCell key={2} width={4}>{run.metadata.component}</DataListCell>
-                              ]}
-                            />
-                          </DataListItemRow>
-                        </DataListItem>
-                        }
-                        {run.metadata && run.metadata.env &&
-                        <DataListItem aria-labelledby="Environment">
-                          <DataListItemRow>
-                            <DataListItemCells
-                              dataListCells={[
-                                <DataListCell key={1} width={2}><strong>Environment:</strong></DataListCell>,
-                                <DataListCell key={2} width={4}>{run.metadata.env}</DataListCell>
-                              ]}
-                            />
-                          </DataListItemRow>
-                        </DataListItem>
-                        }
-                        {run.metadata && run.metadata.tags &&
-                          <DataListItem aria-labelledby="tags-label">
+          {isNotFound &&
+          <EmptyObject headingText="Run not found" returnLink="/runs" returnLinkText="Return to runs list" />
+          }
+          {!isNotFound &&
+            <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
+              <Tab eventKey={'summary'} title={<TabTitle icon={InfoCircleIcon} text="Summary" />} style={{backgroundColor: 'white'}}>
+                <Card>
+                  <CardBody style={{padding: 0}} id="run-detail">
+                    <Grid style={{backgroundColor: '#fff'}}>
+                      <GridItem span={6}>
+                        <DataList selectedDataListItemId={null} aria-label="Run properties" style={{borderBottom: 'none', borderTop: 'none'}}>
+                          <DataListItem aria-labelledby="Duration">
                             <DataListItemRow>
                               <DataListItemCells
                                 dataListCells={[
-                                  <DataListCell key="tags-label" width={2}><strong>Tags:</strong></DataListCell>,
-                                  <DataListCell key="tags-data" width={4}>
-                                    <Flex>
-                                      {run.metadata.tags.map((tag) => <FlexItem spacer={{ default: 'spacerXs' }} key={tag}><Label color="blue" variant="filled">{tag}</Label></FlexItem>)}
-                                    </Flex>
+                                  <DataListCell key={1} width={2}><strong>Duration:</strong></DataListCell>,
+                                  <DataListCell key={2} width={4}>{round(run.duration)}s</DataListCell>
+                                ]}
+                              />
+                            </DataListItemRow>
+                          </DataListItem>
+                          <DataListItem aria-labelledby="Started">
+                            <DataListItemRow>
+                              <DataListItemCells
+                                dataListCells={[
+                                  <DataListCell key={1} width={2}><strong>Started:</strong></DataListCell>,
+                                  <DataListCell key={2} width={4}>{created.toLocaleString()}</DataListCell>
+                                ]}
+                              />
+                            </DataListItemRow>
+                          </DataListItem>
+                          {run.metadata && run.metadata.component &&
+                          <DataListItem aria-labelledby="Component">
+                            <DataListItemRow>
+                              <DataListItemCells
+                                dataListCells={[
+                                  <DataListCell key={1} width={2}><strong>Component:</strong></DataListCell>,
+                                  <DataListCell key={2} width={4}>{run.metadata.component}</DataListCell>
+                                ]}
+                              />
+                            </DataListItemRow>
+                          </DataListItem>
+                          }
+                          {run.metadata && run.metadata.env &&
+                            <DataListItem aria-labelledby="Environment">
+                              <DataListItemRow>
+                                <DataListItemCells
+                                  dataListCells={[
+                                    <DataListCell key={1} width={2}><strong>Environment:</strong></DataListCell>,
+                                    <DataListCell key={2} width={4}>{run.metadata.env}</DataListCell>
+                                  ]}
+                                />
+                              </DataListItemRow>
+                            </DataListItem>
+                          }
+                          {run.metadata && run.metadata.tags &&
+                            <DataListItem aria-labelledby="tags-label">
+                              <DataListItemRow>
+                                <DataListItemCells
+                                  dataListCells={[
+                                    <DataListCell key="tags-label" width={2}><strong>Tags:</strong></DataListCell>,
+                                    <DataListCell key="tags-data" width={4}>
+                                      <Flex>
+                                        {run.metadata.tags.map((tag) => <FlexItem spacer={{ default: 'spacerXs' }} key={tag}><Label color="blue" variant="filled">{tag}</Label></FlexItem>)}
+                                      </Flex>
+                                    </DataListCell>
+                                  ]}
+                                />
+                              </DataListItemRow>
+                            </DataListItem>
+                          }
+                        {run.metadata && run.metadata.jenkins && run.metadata.jenkins.job_name &&
+                          <DataListItem aria-labelledby="Jenkins Job Name">
+                            <DataListItemRow>
+                              <DataListItemCells
+                                dataListCells={[
+                                  <DataListCell key={1} width={2}><strong>Jenkins Job Name:</strong></DataListCell>,
+                                  <DataListCell key={2} width={4}>{run.metadata.jenkins.job_name}</DataListCell>
+                                ]}
+                              />
+                            </DataListItemRow>
+                          </DataListItem>
+                          }
+                          {run.source &&
+                            <DataListItem aria-labelledby="Source">
+                              <DataListItemRow>
+                                <DataListItemCells
+                                  dataListCells={[
+                                    <DataListCell key={1} width={2}><strong>Source:</strong></DataListCell>,
+                                    <DataListCell key={2} width={4}>{run.source}</DataListCell>
+                                  ]}
+                                />
+                              </DataListItemRow>
+                            </DataListItem>
+                          }
+                        </DataList>
+                      </GridItem>
+                      <GridItem span={6}>
+                        <DataList selectedDataListItemId={null} aria-label="Summary properties" style={{borderBottom: 0, borderTop: 0}}>
+                          <DataListItem aria-labelledby="Summary">
+                            <DataListItemRow>
+                              <DataListItemCells
+                                style={{paddingBottom: 0}}
+                                dataListCells={[
+                                  <DataListCell key={1} width={2}><strong>Summary:</strong></DataListCell>,
+                                  <DataListCell key={2} width={4} style={{paddingTop: 0}}>
+                                    <DataList selectedDataListItemId={null} aria-label="Summary" style={{borderBottom: 0, borderTop: 0}}>
+                                      <DataListItem aria-labelledby="Total">
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>Total:</DataListCell>,
+                                              <DataListCell key={2}>{run.summary.tests}</DataListCell>
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </DataListItem>
+                                      <DataListItem aria-labelledby="Passed">
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>Passed:</DataListCell>,
+                                              <DataListCell key={2}>{passed}</DataListCell>
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </DataListItem>
+                                      <DataListItem aria-labelledby="Failed">
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>Failed:</DataListCell>,
+                                              <DataListCell key={2}>{failed}</DataListCell>
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </DataListItem>
+                                      <DataListItem aria-labelledby="Error">
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>Error:</DataListCell>,
+                                              <DataListCell key={2}>{errors}</DataListCell>
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </DataListItem>
+                                      <DataListItem aria-labelledby="Xfailed">
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>Xfailed:</DataListCell>,
+                                              <DataListCell key={2}>{xfailed}</DataListCell>
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </DataListItem>
+                                      <DataListItem aria-labelledby="Xpassed">
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>Xpassed:</DataListCell>,
+                                              <DataListCell key={2}>{xpassed}</DataListCell>
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </DataListItem>
+                                      <DataListItem aria-labelledby="Skipped">
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>Skipped:</DataListCell>,
+                                              <DataListCell key={2}>{skipped}</DataListCell>
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </DataListItem>
+                                    </DataList>
                                   </DataListCell>
                                 ]}
                               />
                             </DataListItemRow>
                           </DataListItem>
-                        }
-                        {run.metadata && run.metadata.jenkins && run.metadata.jenkins.job_name &&
-                        <DataListItem aria-labelledby="Jenkins Job Name">
-                          <DataListItemRow>
-                            <DataListItemCells
-                              dataListCells={[
-                                <DataListCell key={1} width={2}><strong>Jenkins Job Name:</strong></DataListCell>,
-                                <DataListCell key={2} width={4}>{run.metadata.jenkins.job_name}</DataListCell>
-                              ]}
-                            />
-                          </DataListItemRow>
-                        </DataListItem>
-                        }
-                        {run.source &&
-                        <DataListItem aria-labelledby="Source">
-                          <DataListItemRow>
-                            <DataListItemCells
-                              dataListCells={[
-                                <DataListCell key={1} width={2}><strong>Source:</strong></DataListCell>,
-                                <DataListCell key={2} width={4}>{run.source}</DataListCell>
-                              ]}
-                            />
-                          </DataListItemRow>
-                        </DataListItem>
-                        }
-                      </DataList>
-                    </GridItem>
-                    <GridItem span={6}>
-                      <DataList selectedDataListItemId={null} aria-label="Summary properties" style={{borderBottom: 0, borderTop: 0}}>
-                        <DataListItem aria-labelledby="Summary">
-                          <DataListItemRow>
-                            <DataListItemCells
-                              style={{paddingBottom: 0}}
-                              dataListCells={[
-                                <DataListCell key={1} width={2}><strong>Summary:</strong></DataListCell>,
-                                <DataListCell key={2} width={4} style={{paddingTop: 0}}>
-                                  <DataList selectedDataListItemId={null} aria-label="Summary" style={{borderBottom: 0, borderTop: 0}}>
-                                    <DataListItem aria-labelledby="Total">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>Total:</DataListCell>,
-                                            <DataListCell key={2}>{run.summary.tests}</DataListCell>
-                                          ]}
-                                        />
-                                      </DataListItemRow>
-                                    </DataListItem>
-                                    <DataListItem aria-labelledby="Passed">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>Passed:</DataListCell>,
-                                            <DataListCell key={2}>{passed}</DataListCell>
-                                          ]}
-                                        />
-                                      </DataListItemRow>
-                                    </DataListItem>
-                                    <DataListItem aria-labelledby="Failed">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>Failed:</DataListCell>,
-                                            <DataListCell key={2}>{failed}</DataListCell>
-                                          ]}
-                                        />
-                                      </DataListItemRow>
-                                    </DataListItem>
-                                    <DataListItem aria-labelledby="Error">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>Error:</DataListCell>,
-                                            <DataListCell key={2}>{errors}</DataListCell>
-                                          ]}
-                                        />
-                                      </DataListItemRow>
-                                    </DataListItem>
-                                    <DataListItem aria-labelledby="Xfailed">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>Xfailed:</DataListCell>,
-                                            <DataListCell key={2}>{xfailed}</DataListCell>
-                                          ]}
-                                        />
-                                      </DataListItemRow>
-                                    </DataListItem>
-                                    <DataListItem aria-labelledby="Xpassed">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>Xpassed:</DataListCell>,
-                                            <DataListCell key={2}>{xpassed}</DataListCell>
-                                          ]}
-                                        />
-                                      </DataListItemRow>
-                                    </DataListItem>
-                                    <DataListItem aria-labelledby="Skipped">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>Skipped:</DataListCell>,
-                                            <DataListCell key={2}>{skipped}</DataListCell>
-                                          ]}
-                                        />
-                                      </DataListItemRow>
-                                    </DataListItem>
-                                  </DataList>
-                                </DataListCell>
-                              ]}
-                            />
-                          </DataListItemRow>
-                        </DataListItem>
-                      </DataList>
-                    </GridItem>
-                  </Grid>
-                </CardBody>
-              </Card>
-            </Tab>
-            <Tab eventKey={'results-list'} title={<TabTitle icon={CatalogIcon} text="Results List" />} style={{backgroundColor: 'white'}}>
-              <Card className="pf-u-mt-lg">
-                <CardHeader>
-                  <Flex style={{ width: '100%' }}>
-                    <FlexItem grow={{ default: 'grow' }}>
-                      <TextContent>
-                        <Text component="h2" className="pf-c-title pf-m-xl">Test Results</Text>
-                      </TextContent>
-                    </FlexItem>
-                    <FlexItem>
-                      <Button variant="secondary" onClick={this.refreshResults}>Refresh results</Button>
-                    </FlexItem>
-                    <FlexItem>
-                      <Link to={`/results?run_id[eq]=${run.id}`} className="pf-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
-                    </FlexItem>
-                  </Flex>
-                </CardHeader>
-                <CardBody>
-                  <FilterTable
-                    columns={columns}
-                    rows={rows}
-                    pagination={pagination}
-                    isEmpty={this.state.isEmpty}
-                    isError={this.state.isError}
-                    onSetPage={this.setPage}
-                    onSetPageSize={this.pageSizeSelect}
-                  />
-                </CardBody>
-              </Card>
-            </Tab>
-            <Tab eventKey={'results-tree'} title={<TabTitle icon={RepositoryIcon} text="Results Tree" />} style={{backgroundColor: "white"}}>
-              <Card className="pf-u-mt-lg">
-                <CardBody>
-                  <Grid gutter="sm">
-                    {false && <GridItem span={12}>
+                        </DataList>
+                      </GridItem>
+                    </Grid>
+                  </CardBody>
+                </Card>
+              </Tab>
+              <Tab eventKey={'results-list'} title={<TabTitle icon={CatalogIcon} text="Results List" />} style={{backgroundColor: 'white'}}>
+                <Card className="pf-u-mt-lg">
+                  <CardHeader>
+                    <Flex style={{ width: '100%' }}>
+                      <FlexItem grow={{ default: 'grow' }}>
+                        <TextContent>
+                          <Text component="h2" className="pf-c-title pf-m-xl">Test Results</Text>
+                        </TextContent>
+                      </FlexItem>
+                      <FlexItem>
+                        <Button variant="secondary" onClick={this.refreshResults}>Refresh results</Button>
+                      </FlexItem>
+                      <FlexItem>
+                        <Link to={`/results?run_id[eq]=${run.id}`} className="pf-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
+                      </FlexItem>
+                    </Flex>
+                  </CardHeader>
+                  <CardBody>
+                    <FilterTable
+                      columns={columns}
+                      rows={rows}
+                      pagination={pagination}
+                      isEmpty={this.state.isEmpty}
+                      isError={this.state.isError}
+                      onSetPage={this.setPage}
+                      onSetPageSize={this.pageSizeSelect}
+                    />
+                  </CardBody>
+                </Card>
+              </Tab>
+              <Tab eventKey={'results-tree'} title={<TabTitle icon={RepositoryIcon} text="Results Tree" />} style={{backgroundColor: "white"}}>
+                <Card className="pf-u-mt-lg">
+                  <CardBody>
+                    <Grid gutter="sm">
+                      {false && <GridItem span={12}>
                         <div style={{paddingTop: "1em"}}>
                           <TextInput value={this.state.treeSearch} type="text" onChange={this.onSearch} placeholder="Search tree..." aria-label="Filter tree" />
                         </div>
                       </GridItem>
-                    }
-                    {this.state.resultsTree.core.data.length === 0 &&
-                      <GridItem span={12}>
-                        <Bullseye><center><Spinner size="xl"/></center></Bullseye>
-                      </GridItem>
-                    }
-                    {this.state.resultsTree.core.data !== 0 &&
-                      <React.Fragment>
-                        <GridItem span={5}>
-                          <TreeView treeData={this.state.resultsTree} onChange={(e, data) => this.handleJSTreeChange(e, data)}/>
+                      }
+                      {this.state.resultsTree.core.data.length === 0 &&
+                        <GridItem span={12}>
+                          <Bullseye><center><Spinner size="xl"/></center></Bullseye>
                         </GridItem>
-                        <GridItem span={7}>
-                          {this.state.testResult &&
+                      }
+                      {this.state.resultsTree.core.data !== 0 &&
+                        <React.Fragment>
+                          <GridItem span={5}>
+                            <TreeView treeData={this.state.resultsTree} onChange={(e, data) => this.handleJSTreeChange(e, data)}/>
+                          </GridItem>
+                          <GridItem span={7}>
+                            {this.state.testResult &&
                             <Card className={this.state.testResult.result}>
                               <CardHeader>
                                 {this.state.testResult.test_id}
@@ -714,25 +740,26 @@ export class Run extends React.Component {
                                 <ResultView testResult={this.state.testResult}/>
                               </CardBody>
                             </Card>
-                          }
-                        </GridItem>
-                      </React.Fragment>
-                    }
-                  </Grid>
-                </CardBody>
-              </Card>
-            </Tab>
-            <Tab eventKey={'classify-failures'} title={<TabTitle icon={MessagesIcon} text="Classify Failures" />} style={{backgroundColor: "white"}}>
-              {classificationTable}
-            </Tab>
-            <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: "white"}}>
-              <Card>
-                <CardBody>
-                  <ReactJson src={run} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} />
-                </CardBody>
-              </Card>
-            </Tab>
-          </Tabs>
+                            }
+                          </GridItem>
+                        </React.Fragment>
+                      }
+                    </Grid>
+                  </CardBody>
+                </Card>
+              </Tab>
+              <Tab eventKey={'classify-failures'} title={<TabTitle icon={MessagesIcon} text="Classify Failures" />} style={{backgroundColor: "white"}}>
+                {classificationTable}
+              </Tab>
+              <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: "white"}}>
+                <Card>
+                  <CardBody>
+                    <ReactJson src={run} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} />
+                  </CardBody>
+                </Card>
+              </Tab>
+            </Tabs>
+          }
         </PageSection>
       </React.Fragment>
     );

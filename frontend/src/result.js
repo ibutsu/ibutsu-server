@@ -9,7 +9,7 @@ import {
 } from '@patternfly/react-core';
 
 import { Settings } from './settings';
-import { ResultView } from './components';
+import { EmptyObject, ResultView } from './components';
 
 
 export class Result extends React.Component {
@@ -32,7 +32,13 @@ export class Result extends React.Component {
       return;
     }
     fetch(Settings.serverUrl + '/result/' + this.state.id)
-      .then(response => response.json())
+      .then(response => {
+        this.setState({ "httpStatus": response.status });
+        if (!response.ok) {
+          throw new Error("Failed with HTTP code " + response.status);
+        }
+        return response.json();
+      })
       .then(data => {
         this.setState({testResult: data});
       })
@@ -44,16 +50,25 @@ export class Result extends React.Component {
   }
 
   render() {
+    let isNotFound = false;
     const testResult = this.state.testResult;
+    if (!this.state.httpStatus || [404, 500].includes(this.state.httpStatus)) {
+      isNotFound = true;
+    }
     return (
       <React.Fragment>
         <PageSection variant={PageSectionVariants.light}>
           <TextContent>
-            <Text component="h1">{testResult && testResult.test_id}</Text>
+            <Text component="h1">
+              {testResult && testResult.test_id}
+              {!testResult && <Text>Result</Text>}
+            </Text>
           </TextContent>
         </PageSection>
         <PageSection>
-          <ResultView testResult={testResult} history={this.props.history} location={this.props.location}/>
+          {isNotFound &&
+          <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list" />}
+          {!isNotFound && <ResultView testResult={testResult} history={this.props.history} location={this.props.location}/>}
         </PageSection>
       </React.Fragment>
     );
