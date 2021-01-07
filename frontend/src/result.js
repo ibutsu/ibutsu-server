@@ -22,6 +22,7 @@ export class Result extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      isResultValid: false,
       testResult: null,
       id: props.match.params.id
     };
@@ -33,8 +34,9 @@ export class Result extends React.Component {
     }
     fetch(Settings.serverUrl + '/result/' + this.state.id)
       .then(response => {
-        this.setState({ "httpStatus": response.status });
-        if (!response.ok) {
+        if (response.ok) {
+          this.setState({"isResultValid": true});
+        } else {
           throw new Error("Failed with HTTP code " + response.status);
         }
         return response.json();
@@ -50,11 +52,7 @@ export class Result extends React.Component {
   }
 
   render() {
-    let isNotFound = false;
     const testResult = this.state.testResult;
-    if (!this.state.httpStatus || [404, 500].includes(this.state.httpStatus)) {
-      isNotFound = true;
-    }
     return (
       <React.Fragment>
         <PageSection variant={PageSectionVariants.light}>
@@ -66,9 +64,9 @@ export class Result extends React.Component {
           </TextContent>
         </PageSection>
         <PageSection>
-          {isNotFound &&
+          {!this.state.isResultValid &&
           <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list" />}
-          {!isNotFound && <ResultView testResult={testResult} history={this.props.history} location={this.props.location}/>}
+          {this.state.isResultValid && <ResultView testResult={testResult} history={this.props.history} location={this.props.location}/>}
         </PageSection>
       </React.Fragment>
     );

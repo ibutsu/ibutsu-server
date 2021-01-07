@@ -134,6 +134,7 @@ export class Run extends React.Component {
       page: 1,
       totalItems: 0,
       totalPages: 0,
+      isRunValid: false,
       isEmpty: false,
       isError: false,
       resultsTree: {core: {data: []}},
@@ -344,8 +345,9 @@ export class Run extends React.Component {
   getRun() {
     fetch(Settings.serverUrl + '/run/' + this.state.id)
       .then(response => {
-        this.setState({ "httpStatus": response.status });
-        if (!response.ok) {
+        if (response.ok) {
+          this.setState({"isRunValid": true});
+        } else {
           throw new Error("Failed with HTTP code " + response.status);
         }
         return response.json();
@@ -426,12 +428,8 @@ export class Run extends React.Component {
   render() {
     let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0;
     let created = 0;
-    let isNotFound = false;
     const { run, columns, rows, classificationTable } = this.state;
 
-    if (!this.state.httpStatus || [404, 500].includes(this.state.httpStatus)) {
-      isNotFound = true;
-    }
     if (run.start_time) {
       created = new Date(run.start_time);
     }
@@ -476,10 +474,10 @@ export class Run extends React.Component {
           </TextContent>
         </PageSection>
         <PageSection>
-          {isNotFound &&
+          {!this.state.isRunValid &&
           <EmptyObject headingText="Run not found" returnLink="/runs" returnLinkText="Return to runs list" />
           }
-          {!isNotFound &&
+          {this.state.isRunValid &&
             <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
               <Tab eventKey={'summary'} title={<TabTitle icon={InfoCircleIcon} text="Summary" />} style={{backgroundColor: 'white'}}>
                 <Card>

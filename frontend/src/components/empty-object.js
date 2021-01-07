@@ -27,20 +27,14 @@ export class EmptyObject extends React.Component {
         <EmptyState>
           <EmptyStateIcon icon={SearchIcon} />
           <Text headingLevel="h1" size="lg">
-            {!this.props.headingText &&
-            <Text>This object couldn&apos;t be found.</Text>}
-            {this.props.headingText}
+            {this.props.headingText ? this.props.headingText : "This object couldn't be found."}
           </Text>
           <EmptyStateBody>
-            {!this.props.bodyText &&
-            <Text>Either the object doesn&apos;t exist or the ID is invalid.</Text>}
-            {this.props.bodyText}
+            {this.props.bodyText ? this.props.bodyText : "Either the object doesn't exist or the ID is invalid."}
           </EmptyStateBody>
           <NavLink style={{ color: 'white' }} to={!this.props.returnLink ?  '' : this.props.returnLink}>
             <Button variant="primary" style = {{ margin: '25px' }}>
-              {!this.props.returnLinkText &&
-              <Text>Return to dashboard</Text>}
-              {this.props.returnLinkText}
+              {this.props.returnLinkText ? this.props.returnLinkText : "Return to dashboard"}
             </Button>
           </NavLink>
         </EmptyState>
