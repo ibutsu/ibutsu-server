@@ -9,7 +9,7 @@ import {
 } from '@patternfly/react-core';
 
 import { Settings } from './settings';
-import { ResultView } from './components';
+import { EmptyObject, ResultView } from './components';
 
 
 export class Result extends React.Component {
@@ -22,6 +22,7 @@ export class Result extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      isResultValid: false,
       testResult: null,
       id: props.match.params.id
     };
@@ -32,7 +33,14 @@ export class Result extends React.Component {
       return;
     }
     fetch(Settings.serverUrl + '/result/' + this.state.id)
-      .then(response => response.json())
+      .then(response => {
+        if (response.ok) {
+          this.setState({"isResultValid": true});
+        } else {
+          throw new Error("Failed with HTTP code " + response.status);
+        }
+        return response.json();
+      })
       .then(data => {
         this.setState({testResult: data});
       })
@@ -49,11 +57,15 @@ export class Result extends React.Component {
       <React.Fragment>
         <PageSection variant={PageSectionVariants.light}>
           <TextContent>
-            <Text component="h1">{testResult && testResult.test_id}</Text>
+            <Text component="h1">
+              {testResult ? testResult.test_id : <Text>Result</Text>}
+            </Text>
           </TextContent>
         </PageSection>
         <PageSection>
-          <ResultView testResult={testResult} history={this.props.history} location={this.props.location}/>
+          {this.state.isResultValid ?
+            <ResultView testResult={testResult} history={this.props.history} location={this.props.location}/> :
+            <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list"/>}
         </PageSection>
       </React.Fragment>
     );

@@ -1,6 +1,7 @@
 export { ClassificationDropdown, MultiClassificationDropdown } from './classification-dropdown';
 export { ClassifyFailuresTable } from './classify-failures';
 export { DeleteModal } from './delete-modal';
+export { EmptyObject } from './empty-object';
 export { FileUpload } from './fileupload';
 export { FilterTable } from './filtertable';
 export { ParamDropdown } from './widget-components';
