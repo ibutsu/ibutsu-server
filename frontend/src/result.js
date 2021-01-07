@@ -58,15 +58,14 @@ export class Result extends React.Component {
         <PageSection variant={PageSectionVariants.light}>
           <TextContent>
             <Text component="h1">
-              {testResult && testResult.test_id}
-              {!testResult && <Text>Result</Text>}
+              {testResult ? testResult.test_id : <Text>Result</Text>}
             </Text>
           </TextContent>
         </PageSection>
         <PageSection>
-          {!this.state.isResultValid &&
-          <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list" />}
-          {this.state.isResultValid && <ResultView testResult={testResult} history={this.props.history} location={this.props.location}/>}
+          {this.state.isResultValid ?
+            <ResultView testResult={testResult} history={this.props.history} location={this.props.location}/> :
+            <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list"/>}
         </PageSection>
       </React.Fragment>
     );
