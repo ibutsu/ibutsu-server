@@ -5,8 +5,10 @@ from ibutsu_server.db.models import ImportFile
 from ibutsu_server.tasks.importers import run_archive_import
 from ibutsu_server.tasks.importers import run_junit_import
 from ibutsu_server.util.projects import get_project_id
+from ibutsu_server.util.uuid import validate_uuid
 
 
+@validate_uuid
 def get_import(id_):
     """Get a run
 

@@ -2,6 +2,7 @@ import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Dashboard
 from ibutsu_server.db.models import WidgetConfig
+from ibutsu_server.util.uuid import validate_uuid
 
 
 def add_dashboard(dashboard=None):
@@ -20,6 +21,7 @@ def add_dashboard(dashboard=None):
     return dashboard.to_dict(), 201
 
 
+@validate_uuid
 def get_dashboard(id_):
     """Get a single dashboard by ID
 
