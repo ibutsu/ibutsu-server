@@ -1102,7 +1102,7 @@ objects:
                   - >
                     trap "echo Backup failed; exit 0" ERR;
                     FILENAME=backup-${PGDATABASE}-`date +%Y-%m-%d`.dump;
-                    time (find /database-backup -type f -name "backup-${PGDATABASE}-*" -exec ls -ltr "{}" + | head -n -${BACKUP_KEEP} | xargs rm -fr;
+                    time (find /database-backup -type f -name "backup-${PGDATABASE}-*" -exec ls "{}" + | head -n -${BACKUP_KEEP} | xargs rm -fr;
                     pg_dump --format=custom --compress=9 --jobs=1 --no-owner --exclude-schema=$BACKUP_EXCLUDE --file=$FILENAME;
                     echo "";
                     echo -n "Backup successful: "; du -h /database-backup/$FILENAME;
