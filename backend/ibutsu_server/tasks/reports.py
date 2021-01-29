@@ -10,7 +10,7 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Report
 from ibutsu_server.db.models import ReportFile
 from ibutsu_server.db.models import Result
-from ibutsu_server.filters import convert_filter
+from ibutsu_server.filters import apply_filters
 from ibutsu_server.tasks import task
 from ibutsu_server.templating import render_template
 from ibutsu_server.util.projects import get_project_id
@@ -115,11 +115,9 @@ def _build_query(report):
     """Build the filters from a report object"""
     query = Result.query
     if report["params"].get("filter"):
-        for report_filter in report["params"]["filter"].split(","):
-            if report_filter:
-                filter_clause = convert_filter(Result, report_filter.strip())
-                if filter_clause is not None:
-                    query = query.filter(filter_clause)
+        filters = report["params"]["filter"].split(",")
+        if filters:
+            query = apply_filters(query, filters, Result)
     if report["params"]["source"]:
         query = query.filter(Result.source == report["params"]["source"])
     if report["params"].get("project"):
