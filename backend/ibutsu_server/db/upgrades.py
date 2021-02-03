@@ -56,11 +56,14 @@ def upgrade_1(session):
 def upgrade_2(session):
     """Version 2 upgrade
 
-    This upgrade adds indices for the metadata.tags fields in the results/runs tables.
+    This upgrade adds indices for the metadata.tags, metadata.requirements fields in the
+    results/runs tables.
 
     It is equivalent to running the following SQL statements:
         CREATE INDEX IF NOT EXISTS ix_runs_tags ON runs USING gin ((data->'tags'));
         CREATE INDEX IF NOT EXISTS ix_results_tags ON results USING gin ((data->'tags'));
+        CREATE INDEX IF NOT EXISTS ix_results_requirements ON results
+            USING gin ((data->'requirements'));
     """
     TABLES = ["runs", "results"]
 
@@ -75,3 +78,10 @@ def upgrade_2(session):
                 [quoted_name("(data->'tags')", False)],
                 postgresql_using="gin",
             )
+            if table == "results":
+                op.create_index(
+                    f"ix_{table}_requirements",
+                    table,
+                    [quoted_name("(data->'requirements')", False)],
+                    postgresql_using="gin",
+                )
