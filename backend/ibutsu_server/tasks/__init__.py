@@ -62,7 +62,17 @@ def create_celery_app(_app=None):
             "task": "ibutsu_server.tasks.db.prune_old_files",
             "schedule": crontab(minute=0, hour=4, day_of_week=6),  # 4 am on Saturday, after DB dump
             "args": (3,),  # delete any artifact file older than 3 months
-        }
+        },
+        "prune-old-results": {
+            "task": "ibutsu_server.tasks.db.prune_old_results",
+            "schedule": crontab(minute=0, hour=5, day_of_week=6),  # 5 am on Saturday
+            "args": (5,),  # delete any results older than 5 months
+        },
+        "prune-old-runs": {
+            "task": "ibutsu_server.tasks.db.prune_old_runs",
+            "schedule": crontab(minute=0, hour=6, day_of_week=6),  # 6 am on Saturday
+            "args": (12,),  # delete any runs older than 12 months
+        },
     }
 
     @signals.task_failure.connect
