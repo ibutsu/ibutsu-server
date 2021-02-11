@@ -1,0 +1,81 @@
+# Test Job for running a backup immediately
+# The command should match that of 'pgsql-backup-cronjob' exactly
+# To kickoff the job, run:
+#   oc create -f pgsql-backup-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  annotations:
+    cronjob.kubernetes.io/instantiate: manual
+  creationTimestamp: null
+  name: test-pgsql-backup
+  namespace: iqe-ibutsu-server
+spec:
+  selector: {}
+  template:
+    metadata:
+      name: test-psql-backup
+    spec:
+      volumes:
+        - name: database-backups
+          persistentVolumeClaim:
+            claimName: database-backups
+        - configMap:
+            defaultMode: 420
+            name: ocp-pgsql-custom-config
+          name: postgresql-config
+      containers:
+        - name: postgresql-backup
+          image: >-
+            image-registry.openshift-image-registry.svc:5000/openshift/postgresql@sha256:fd6a31238840a009aa024a88a1dc95cc6e61067650cad2fad0db4f52c9265496
+          command:
+            - 'bash'
+            - '-eo'
+            - 'pipefail'
+            - '-c'
+            - >
+              trap "echo 'Backup failed'; exit 0" ERR;
+              FILENAME=backup-${PGDATABASE}-`date +%Y-%m-%d`.dump;
+              cd /var/lib/database-backup;
+              find . -type f -name "backup-${PGDATABASE}-*" -exec ls "{}" + | head -n -${BACKUP_KEEP} | xargs rm -fr;
+              echo "Backing up database...";
+              PGPASSWORD="$PGPASSWORD" pg_dump -v --username=$PGUSER --host=$PGHOST --port=$PGPORT --dbname=$PGDATABASE --exclude-table=artifacts --format=custom --compress=9 --jobs=1 --no-owner --file=$FILENAME;
+              echo "";
+              echo -n "Backup successful: "; du -h ./$FILENAME;
+              echo "To restore, use:";
+              echo "~# pg_restore --user=$PGUSER --password=<PGPASSWD> --host=$PGHOST --port=$PGPORT --database=$PGDATABASE $FILENAME"
+          resources:
+          limits:
+            cpu: 250m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          env:
+            - name: PGHOST
+              value: postgresql.iqe-ibutsu-server.svc
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  key: database-user
+                  name: postgresql
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: database-password
+                  name: postgresql
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  key: database-name
+                  name: postgresql
+            - name: BACKUP_KEEP
+              value: '5'
+          volumeMounts:
+            - name: database-backups
+              mountPath: /var/lib/database-backup
+            - name: postgresql-config
+              mountPath: /opt/app-root/src/postgresql-cfg
+      restartPolicy: Never
