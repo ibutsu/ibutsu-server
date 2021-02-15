@@ -1,3 +1,15 @@
+Version 1.12.2
+==============
+
+* Add ocp templates for backup cronjob
+* Add in tasks to prune old runs and results from the DB
+* Also index requirements
+* Fix filters on reports
+* Add a upgrade function to add gin indexes on metadata.tags
+* Added EmptyObject component for missing results/runs (#133)
+* Validate UUID in OpenAPI spec and controllers
+* Just use "ls" rather than "ls -ltr"
+
 Version 1.12.1
 ==============
 
