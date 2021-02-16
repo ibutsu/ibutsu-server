@@ -1,7 +1,7 @@
 # ===============================================
 # Database Backup Cronjob
 # To add this to your project run:
-#   oc create -f pgsql-backup-cronjob.yaml
+#   oc process -f pgsql-backup-cronjob.yaml | oc create -f -
 # ===============================================
 kind: Template
 apiVersion: v1

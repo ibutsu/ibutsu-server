@@ -3,7 +3,7 @@
 # This provides a cron-based vacuum of the
 # entire DB
 # To add this to your project run:
-#   oc create -f pgsql-vacuum-cronjob.yaml
+#   oc process -f pgsql-vacuum-cronjob.yaml | oc create -f -
 # ===============================================
 kind: Template
 apiVersion: v1
