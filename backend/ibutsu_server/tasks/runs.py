@@ -23,40 +23,42 @@ def _copy_column(result, run, key):
 def update_run(run_id):
     """Update the run summary from the results, this task will retry 1000 times"""
     with lock(f"update-run-lock-{run_id}"):
-        key_map = {
-            "failed": "failures",
-            "error": "errors",
-            "skipped": "skips",
-            "xpassed": "xpasses",
-            "xfailed": "xfailures",
-        }
         run = Run.query.get(run_id)
         if not run:
             return
-        # sort according to starttime to get the most recent starting time of the run
+        # sort according to start_time to get the most recent starting time of the run
         results = (
-            Result.query.filter(Result.run_id == run_id).order_by(Result.start_time.asc()).all()
+            Result.query.filter(Result.run_id == run_id).order_by(Result.start_time.asc()).limit(1)
         )
-        summary = {"errors": 0, "failures": 0, "skips": 0, "tests": 0, "xpasses": 0, "xfailures": 0}
-        run_duration = 0.0
-        metadata = run.data or {}
-        for counter, result in enumerate(results):
-            if counter == 0:
-                for column in COLUMNS_TO_COPY:
-                    _copy_column(result, run, column)
+        summary = {
+            "errors": run.summary.get("errors", 0),
+            "failures": run.summary.get("failures", 0),
+            "skips": run.summary.get("skips", 0),
+            "tests": run.summary.get("tests", 0),
+            "xpasses": run.summary.get("xpasses", 0),
+            "xfailures": run.summary.get("xfailures", 0),
+            "collected": run.summary.get("collected", 0),
+        }
+        # determine the number of passes
+        summary["passes"] = summary["tests"] - (
+            summary["errors"]
+            + summary["xpasses"]
+            + summary["xfailures"]
+            + summary["failures"]
+            + summary["skips"]
+        )
+        # determine the number of tests that didn't run
+        summary["not_run"] = max(summary["collected"] - summary["tests"], 0)
 
-            summary["tests"] += 1
-            key = key_map.get(result.result, None)
-            if key:
-                summary[key] += 1
-            if result.duration:
-                run_duration += result.duration
+        # copy over some metadata from the results
+        metadata = run.data or {}
+        for result in results:
+            for column in COLUMNS_TO_COPY:
+                _copy_column(result, run, column)
 
             for key in METADATA_TO_COPY:
                 _copy_result_metadata(result, metadata, key)
 
         run.update({"summary": summary, "data": metadata})
-        if run_duration:
-            run.duration = run_duration
         session.add(run)
         session.commit()

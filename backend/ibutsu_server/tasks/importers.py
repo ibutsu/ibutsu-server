@@ -97,7 +97,9 @@ def run_junit_import(import_):
         import_record.data["run_id"].append(run.id)
         # Import the contents of the XML file
         for testcase in testsuite.iterchildren(tag="testcase"):
-            test_name = testcase.get("name").split(".")[-1]
+            test_name = ""
+            if testcase.get("name"):
+                test_name = testcase.get("name").split(".")[-1]
             backup_fspath = None
             if testcase.get("classname"):
                 test_name = testcase.get("classname").split(".")[-1] + "." + test_name
