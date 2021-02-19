@@ -14,6 +14,7 @@ NUMERIC_FIELDS = [
 HEATMAP_MAX_BUILDS = 40  # max for number of builds that are possible to display in heatmap
 BARCHART_MAX_BUILDS = 150  # max for number of builds possible to display in bar chart
 COUNT_TIMEOUT = 0.5  # timeout for counting the number of documents [s]
+COUNT_ESTIMATE_LIMIT = 1000  # if count estimate < COUNT_ESTIMATE_LIMIT, actually count
 MAX_DOCUMENTS = 100000  # max documents for pagination, when apply_max=True
 JJV_RUN_LIMIT = 8000  # max runs from which to aggregate Jenkins Jobs
 HEATMAP_RUN_LIMIT = 3000  # max runs from which to determine recent Jenkins builds
