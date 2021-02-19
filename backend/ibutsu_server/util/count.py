@@ -1,6 +1,7 @@
 """ Utility functions for counting rows in large tables"""
 from contextlib import contextmanager
 
+from ibutsu_server.constants import COUNT_ESTIMATE_LIMIT
 from ibutsu_server.constants import COUNT_TIMEOUT
 from ibutsu_server.db.base import session
 from ibutsu_server.db.util import Explain
@@ -15,15 +16,18 @@ def _get_count_from_explain(query):
 def get_count_estimate(query, no_filter=False, **kwargs):
     """
     Given tablename, return an estimated count of the number of rows in the table.
-
-    Only valid when NO filters are applied
     """
     if no_filter:
         tablename = kwargs.get("tablename")
         sql = f"SELECT reltuples as approx_count FROM pg_class WHERE relname='{tablename}'"
         return int(session.execute(sql).fetchall()[0][0])
     else:
-        return _get_count_from_explain(query)
+        estimate = _get_count_from_explain(query)
+        # if the estimate is < COUNT_ESTIMATE_LIMIT
+        # then probably there aren't too many rows, just regularly count them
+        if estimate < COUNT_ESTIMATE_LIMIT:
+            return query.count()
+        return estimate
 
 
 @contextmanager
