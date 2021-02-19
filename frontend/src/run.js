@@ -426,8 +426,9 @@ export class Run extends React.Component {
 
 
   render() {
-    let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0;
+    let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0, not_run = 0;
     let created = 0;
+    let calculatePasses = true;
     const { run, columns, rows, classificationTable } = this.state;
 
     if (run.start_time) {
@@ -437,28 +438,38 @@ export class Run extends React.Component {
       created = new Date(run.created);
     }
     if (run.summary) {
-      if (run.summary.tests) {
+      if (run.summary.passes) {
+        passed = run.summary.passes;
+        calculatePasses = false;
+      }
+      if (run.summary.tests && calculatePasses) {
         passed = run.summary.tests;
       }
       if (run.summary.failures) {
-        passed -= run.summary.failures;
+        passed -= calculatePasses ? run.summary.failures : 0;
         failed = run.summary.failures;
       }
       if (run.summary.errors) {
-        passed -= run.summary.errors;
+        passed -= calculatePasses ? run.summary.errors : 0;
         errors = run.summary.errors;
       }
       if (run.summary.xfailures) {
-        passed -= run.summary.xfailures;
+        passed -= calculatePasses ? run.summary.xfailures : 0;
         xfailed = run.summary.xfailures;
       }
       if (run.summary.xpasses) {
-        passed -= run.summary.xpasses;
+        passed -= calculatePasses ? run.summary.xpasses : 0;
         xpassed = run.summary.xpasses;
       }
       if (run.summary.skips) {
-        passed -= run.summary.skips;
+        passed -= calculatePasses ? run.summary.skips : 0;
         skipped = run.summary.skips;
+      }
+      if (run.summary.not_run) {
+        not_run = run.summary.not_run;
+      }
+      else if (run.summary.collected) {
+        not_run = run.summary.collected - run.summary.tests;
       }
     }
     const pagination = {
@@ -586,7 +597,7 @@ export class Run extends React.Component {
                                           <DataListItemCells
                                             dataListCells={[
                                               <DataListCell key={1}>Total:</DataListCell>,
-                                              <DataListCell key={2}>{run.summary.tests}</DataListCell>
+                                              <DataListCell key={2}>{run.summary.collected ? run.summary.collected : run.summary.tests}</DataListCell>
                                             ]}
                                           />
                                         </DataListItemRow>
@@ -647,6 +658,16 @@ export class Run extends React.Component {
                                             dataListCells={[
                                               <DataListCell key={1}>Skipped:</DataListCell>,
                                               <DataListCell key={2}>{skipped}</DataListCell>
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </DataListItem>
+                                      <DataListItem aria-labelledby="Not Run">
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>Not Run:</DataListCell>,
+                                              <DataListCell key={2}>{not_run}</DataListCell>
                                             ]}
                                           />
                                         </DataListItemRow>
