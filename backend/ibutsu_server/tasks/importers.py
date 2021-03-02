@@ -73,18 +73,25 @@ def run_junit_import(import_):
     # Parse the XML and create a run object(s)
     tree = objectify.fromstring(import_file.content)
     import_record.data["run_id"] = []
-    for testsuite in tree.testsuite:
+    # Handle structures where testsuite is/isn't the top level tag
+    if tree.tag == "testsuite":
+        testsuites = tree
+    else:
+        testsuites = tree.testsuite
+    for ts in testsuites:
+        # Use current time as start time if no start time is present
+        start_time = parser.parse(ts.get("timestamp")) if ts.get("timestamp") else datetime.utcnow()
         run_dict = {
             "created": datetime.utcnow(),
-            "start_time": parser.parse(testsuite.get("timestamp")),
-            "duration": testsuite.get("time"),
+            "start_time": start_time,
+            "duration": ts.get("time"),
             "summary": {
-                "errors": testsuite.get("errors"),
-                "failures": testsuite.get("failures"),
-                "skips": testsuite.get("skipped"),
-                "xfailures": testsuite.get("xfailures"),
-                "xpasses": testsuite.get("xpasses"),
-                "tests": testsuite.get("tests"),
+                "errors": ts.get("errors"),
+                "failures": ts.get("failures"),
+                "skips": ts.get("skipped"),
+                "xfailures": ts.get("xfailures"),
+                "xpasses": ts.get("xpasses"),
+                "tests": ts.get("tests"),
             },
         }
         if import_record.data.get("project_id"):
@@ -96,7 +103,7 @@ def run_junit_import(import_):
         run_dict = run.to_dict()
         import_record.data["run_id"].append(run.id)
         # Import the contents of the XML file
-        for testcase in testsuite.iterchildren(tag="testcase"):
+        for testcase in ts.iterchildren(tag="testcase"):
             test_name = ""
             if testcase.get("name"):
                 test_name = testcase.get("name").split(".")[-1]
@@ -115,7 +122,7 @@ def run_junit_import(import_):
                     "line": testcase.get("line"),
                 },
                 "params": {},
-                "source": testsuite.get("name"),
+                "source": ts.get("name"),
             }
             if import_record.data.get("project_id"):
                 result_dict["project_id"] = import_record.data["project_id"]
