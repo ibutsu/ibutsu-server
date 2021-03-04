@@ -1437,6 +1437,8 @@ components:
         duration: 6.027456183070403
         result: passed
         project_id: 9212ac64-348f-4c1c-90f7-fd0a45bcb47c
+        component: login
+        env: qa
         metadata:
           jenkins:
             build_number: 123
@@ -1474,6 +1476,26 @@ components:
           - xpassed
           - xfailed
           type: string
+        component:
+          description: A component
+          example: login
+          type: string
+          nullable: true
+        env:
+          description: The environment which is being tested
+          example: qa
+          type: string
+          nullable: true
+        run_id:
+          description: The run this result is associated with
+          example: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
+          type: string
+          nullable: true
+        project_id:
+          description: The project this run is associated with
+          example: 44941c55-9736-42f6-acce-ca3c4739d0f3
+          type: string
+          nullable: true
         metadata:
           example:
             jenkins:
@@ -1490,6 +1512,11 @@ components:
         source:
           description: Where the data came from (useful for filtering)
           type: string
+      required:
+        - test_id
+        - start_time
+        - result
+      type: object
     Run:
       example:
         id: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
@@ -1553,6 +1580,9 @@ components:
           description: Extra metadata for this run
           type: object
           nullable: true
+      required:
+        - duration
+        - start_time
       type: object
     UpdateRun:
       example:
