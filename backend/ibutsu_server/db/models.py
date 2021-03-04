@@ -41,15 +41,15 @@ class ModelMixin(object):
     def to_dict(self):
         record_dict = {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
         # when outputting info, translate data to metadata
-        if record_dict.get("data"):
-            record_dict["metadata"] = record_dict.pop("data")
+        if "data" in record_dict:
+            record_dict["metadata"] = record_dict.pop("data") or {}
         return record_dict
 
     @classmethod
     def from_dict(cls, **record_dict):
         # because metadata is a reserved attr name, translate it to data
-        if record_dict.get("metadata"):
-            record_dict["data"] = record_dict.pop("metadata")
+        if "metadata" in record_dict:
+            record_dict["data"] = record_dict.pop("metadata") or {}
         return cls(**record_dict)
 
     def update(self, record_dict):
@@ -57,10 +57,10 @@ class ModelMixin(object):
             record_dict.pop("id")
         group_dict = self.to_dict()
         merge_dicts(group_dict, record_dict)
-        if group_dict.get("metadata"):
+        if "metadata" in group_dict:
             group_dict["data"] = group_dict.pop("metadata")
-        if record_dict.get("metadata"):
-            record_dict["data"] = record_dict.get("metadata")
+        if "metadata" in record_dict:
+            record_dict["data"] = record_dict["metadata"]
         for key, value in record_dict.items():
             setattr(self, key, value)
 
