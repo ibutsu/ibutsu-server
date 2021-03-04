@@ -71,8 +71,8 @@ class FileMixin(ModelMixin):
     def to_dict(self):
         record_dict = {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
         record_dict.pop("content")
-        if record_dict.get("data"):
-            record_dict["additional_metadata"] = record_dict.pop("data")
+        if "data" in record_dict:
+            record_dict["additional_metadata"] = record_dict.pop("data") or {}
         return record_dict
 
 

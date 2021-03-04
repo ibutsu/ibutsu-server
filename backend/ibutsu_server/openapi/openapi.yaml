@@ -1437,6 +1437,8 @@ components:
         duration: 6.027456183070403
         result: passed
         project_id: 9212ac64-348f-4c1c-90f7-fd0a45bcb47c
+        component: login
+        env: qa
         metadata:
           jenkins:
             build_number: 123
@@ -1474,6 +1476,26 @@ components:
           - xpassed
           - xfailed
           type: string
+        component:
+          description: A component
+          example: login
+          type: string
+          nullable: true
+        env:
+          description: The environment which is being tested
+          example: qa
+          type: string
+          nullable: true
+        run_id:
+          description: The run this result is associated with
+          example: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
+          type: string
+          nullable: true
+        project_id:
+          description: The project this run is associated with
+          example: 44941c55-9736-42f6-acce-ca3c4739d0f3
+          type: string
+          nullable: true
         metadata:
           example:
             jenkins:
@@ -1490,6 +1512,7 @@ components:
         source:
           description: Where the data came from (useful for filtering)
           type: string
+      type: object
     Run:
       example:
         id: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
@@ -1574,8 +1597,9 @@ components:
         filename: filename
         result_id: a16ad60e-bf23-4195-99dc-594858ad3e5e
         id: 22785097-a256-4aad-874b-9c204caba341
-        additionalMetadata:
+        additional_metadata:
           key: '{}'
+        upload_date: 2021-03-08T14:48:51+00:00
       properties:
         id:
           description: Unique ID of the artifact
@@ -1588,9 +1612,12 @@ components:
         filename:
           description: ID of pet to update
           type: string
-        additionalMetadata:
+        additional_metadata:
           description: Additional data to pass to server
           type: object
+        upload_date:
+          description: The date this artifact was uploaded
+          type: string
       type: object
     Project:
       example:
@@ -1998,7 +2025,8 @@ components:
         - filename: filename
           resultId: a16ad60e-bf23-4195-99dc-594858ad3e5e
           id: 22785097-a256-4aad-874b-9c204caba341
-          additionalMetadata:
+          upload_date: 2021-03-08T14:48:51+00:00
+          additional_metadata:
             key: '{}'
         pagination:
           page: 2
