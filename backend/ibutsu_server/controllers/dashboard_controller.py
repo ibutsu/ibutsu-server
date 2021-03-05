@@ -30,7 +30,7 @@ def get_dashboard(id_):
 
     :rtype: Dashboard
     """
-    dashboard = Dashboard.query.filter(Dashboard.name == id_).first()
+    dashboard = Dashboard.query.filter(Dashboard.id == id_).first()
     if not dashboard:
         dashboard = Dashboard.query.get(id_)
     if not dashboard:
