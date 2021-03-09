@@ -88,7 +88,7 @@ if [[ "$CAN_COMMIT" = true ]]; then
     if [[ $GENERATE_CHANGELOG = true ]]; then
         COMMIT_MSG="$COMMIT_MSG\n\n$CHANGELOG"
     fi
-    git commit -q -m $COMMIT_MSG
+    git commit -q -m "$COMMIT_MSG"
     echo "done, new branch created: $BRANCH_NAME"
     if [[ "$CAN_PUSH" = true ]]; then
         echo -n "Pushing up to origin/$BRANCH_NAME..."
