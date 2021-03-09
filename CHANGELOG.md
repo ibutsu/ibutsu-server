@@ -1,3 +1,16 @@
+Version 1.13.0
+==============
+
+* Fix bugs in the OpenAPI specification, and make sure to drop the 'data' attribute before sending it out (#153)
+* Use 'id' rather than 'name'
+* Use 'in' rather than dict.get()
+* updated importer to work with older style junit xml
+* Use the number of collected tests
+* Add a note on how to generate the changelog (#148)
+* Actually count when we are filtering on very small subset of rows
+* oc create -f will just create the template, we need to process it
+* Add cronjob/job for nightly vacuuming of database
+
 Version 1.12.2
 ==============
 
