@@ -23,7 +23,7 @@ REQUIRES = [
     "PyYAML",
     "redis",
     "setuptools >= 21.0.0",
-    "sqlalchemy",
+    "sqlalchemy==1.3.23",
     "sqlalchemy-json",
     "swagger-ui-bundle==0.0.2",
     # Pin this for now, once other libraries are updated, drop this pin
