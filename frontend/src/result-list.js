@@ -15,10 +15,10 @@ import {
   TextInput
 } from '@patternfly/react-core';
 
+import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
   buildParams,
-  buildUrl,
   getActiveProject,
   getFilterMode,
   getOperationMode,
@@ -357,8 +357,8 @@ export class ResultList extends React.Component {
         params.filter.push(key + op + val);
       }
     }
-    fetch(buildUrl(Settings.serverUrl + '/result', params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'result'], params)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
         rows: data.results.map((result) => resultToRow(result, this.setFilter)),
         page: data.pagination.page,
@@ -374,8 +374,8 @@ export class ResultList extends React.Component {
   }
 
   getRuns() {
-    fetch(buildUrl(Settings.serverUrl + '/run', {pageSize: 500, estimate: true}))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'run'], {pageSize: 500, estimate: true})
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         const runs = data.runs.map((run) => run.id);
         this.setState({runs: runs, filteredRuns: runs});

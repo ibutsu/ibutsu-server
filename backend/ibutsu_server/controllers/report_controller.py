@@ -26,7 +26,7 @@ def _build_report_response(id_):
     return report, response
 
 
-def get_report_types():
+def get_report_types(token_info=None, user=None):
     """Get the types of reports that are available
 
     :rtype: list
@@ -69,7 +69,7 @@ def add_report(report_parameters=None):
 
 
 @validate_uuid
-def get_report(id_):
+def get_report(id_, token_info=None, user=None):
     """Get a report
 
     :param id: The ID of the report
@@ -81,7 +81,7 @@ def get_report(id_):
     return report.to_dict()
 
 
-def get_report_list(page=1, page_size=25, project=None):
+def get_report_list(page=1, page_size=25, project=None, token_info=None, user=None):
     """Get a list of reports
 
     :param page: Set the page of items to return, defaults to 1
@@ -127,7 +127,7 @@ def delete_report(id_):
         return "Not Found", 404
 
 
-def view_report(id_, filename):
+def view_report(id_, filename, token_info=None, user=None):
     """View the report file
 
     :param id_: The ID of the report to view
@@ -138,7 +138,7 @@ def view_report(id_, filename):
     return _build_report_response(id_)[1]
 
 
-def download_report(id_, filename):
+def download_report(id_, filename, token_info=None, user=None):
     """Download the report file
 
     :param id_: The ID of the report to download

@@ -1,13 +1,15 @@
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
+from ibutsu_server.db.base import Boolean
 from ibutsu_server.db.base import Column
 from ibutsu_server.db.base import ForeignKey
+from ibutsu_server.db.base import Text
 from ibutsu_server.db.types import PortableUUID
 from sqlalchemy import MetaData
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
-__version__ = 3
+__version__ = 4
 
 
 def get_upgrade_op(session):
@@ -33,7 +35,7 @@ def upgrade_1(session):
     if (
         "dashboards" in metadata.tables
         and widget_configs is not None
-        and not hasattr(widget_configs.columns, "dashboard_id")
+        and "dashboard_id" not in [col.name for col in widget_configs.columns]
     ):
         op.add_column("widget_configs", Column("dashboard_id", PortableUUID, server_default=null()))
         if engine.url.get_dialect().name != "sqlite":
@@ -69,22 +71,34 @@ def upgrade_2(session):
 
     engine = session.get_bind()
     op = get_upgrade_op(session)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
 
     if engine.url.get_dialect().name == "postgresql":
-        for table in TABLES:
-            op.create_index(
-                f"ix_{table}_tags",
-                table,
-                [quoted_name("(data->'tags')", False)],
-                postgresql_using="gin",
-            )
-            if table == "results":
+        for table_name in TABLES:
+            tags_index_name = f"ix_{table_name}_tags"
+            reqs_index_name = f"ix_{table_name}_requirements"
+            table = metadata.tables.get(table_name)
+            if (
+                table_name in metadata.tables
+                and table is not None
+                and tags_index_name not in [idx.name for idx in table.indexes]
+            ):
                 op.create_index(
-                    f"ix_{table}_requirements",
-                    table,
-                    [quoted_name("(data->'requirements')", False)],
+                    tags_index_name,
+                    table_name,
+                    [quoted_name("(data->'tags')", False)],
                     postgresql_using="gin",
                 )
+                if table_name == "results" and reqs_index_name not in [
+                    idx.name for idx in table.indexes
+                ]:
+                    op.create_index(
+                        reqs_index_name,
+                        table_name,
+                        [quoted_name("(data->'requirements')", False)],
+                        postgresql_using="gin",
+                    )
 
 
 def upgrade_3(session):
@@ -102,7 +116,7 @@ def upgrade_3(session):
     if (
         "runs" in metadata.tables
         and artifacts is not None
-        and not hasattr(artifacts.columns, "run_id")
+        and "run_id" not in [col.name for col in artifacts.columns]
     ):
         op.alter_column("artifacts", "result_id", nullable=True, server_default=null())
         op.add_column("artifacts", Column("run_id", PortableUUID, server_default=null()))
@@ -115,3 +129,26 @@ def upgrade_3(session):
                 ["run_id"],
                 ["id"],
             )
+
+
+def upgrade_4(session):
+    """Version 4 upgrade
+
+    This upgrade removes the "nullable" constraint on the password field, and adds a "is_superadmin"
+    field to the user table.
+    """
+    engine = session.get_bind()
+    op = get_upgrade_op(session)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    users = metadata.tables.get("users")
+
+    if (
+        "users" in metadata.tables
+        and users is not None
+        and "is_superadmin" not in [col.name for col in users.columns]
+    ):
+        op.alter_column("users", "_password", nullable=True)
+        op.add_column("users", Column("is_superadmin", Boolean, default=False))
+        op.add_column("users", Column("is_active", Boolean, default=False))
+        op.add_column("users", Column("activation_code", Text, default=None))

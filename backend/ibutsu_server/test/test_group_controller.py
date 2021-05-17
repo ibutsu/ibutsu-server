@@ -40,7 +40,11 @@ class TestGroupController(BaseTestCase):
 
         Create a new group
         """
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/group",
             method="POST",
@@ -56,7 +60,7 @@ class TestGroupController(BaseTestCase):
 
         Get a group
         """
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/group/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
@@ -69,7 +73,7 @@ class TestGroupController(BaseTestCase):
         Get a list of groups
         """
         query_string = [("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/group", method="GET", headers=headers, query_string=query_string
         )
@@ -87,7 +91,11 @@ class TestGroupController(BaseTestCase):
 
         Update a group
         """
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/group/{id}".format(id=MOCK_ID),
             method="PUT",

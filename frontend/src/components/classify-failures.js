@@ -20,10 +20,10 @@ import {
   expandable
 } from '@patternfly/react-table';
 
+import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   buildParams,
-  buildUrl,
   getSpinnerRow,
   resultToClassificationRow,
 } from '../utilities';
@@ -212,8 +212,8 @@ export class ClassifyFailuresTable extends React.Component {
     }
 
     this.setState({rows: [['Loading...', '', '', '', '']]});
-    fetch(buildUrl(Settings.serverUrl + '/result', params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'result'], params)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
           results: data.results,
           rows: data.results.map((result, index) => resultToClassificationRow(result, index, this.setFilter)).flat(),
@@ -230,7 +230,7 @@ export class ClassifyFailuresTable extends React.Component {
   }
 
   getExceptions() {
-    fetch(buildUrl(Settings.serverUrl + '/widget/result-aggregator', {group_field: 'metadata.exception_name', run_id: this.props.run_id}))
+    HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], {group_field: 'metadata.exception_name', run_id: this.props.run_id})
     .then(response => response.json())
     .then(data => {
       this.setState({exceptions: data})

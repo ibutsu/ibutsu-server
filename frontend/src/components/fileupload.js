@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import { HttpClient } from '../services/http';
+
 export class FileUpload extends React.Component {
   static propTypes = {
     url: PropTypes.string.isRequired,
@@ -27,7 +29,6 @@ export class FileUpload extends React.Component {
       afterUpload: props.afterUpload ? props.afterUpload : null
     };
     this.inputRef = React.createRef();
-    this.buttonRef = React.createRef();
   }
 
   onUploadClick = (e) => {
@@ -50,15 +51,10 @@ export class FileUpload extends React.Component {
   }
 
   uploadFile = (file) => {
-    // Upload the file
-    const formData = new FormData();
-    formData.append(this.state.name, file);
-    if (this.props.params) {
-      Object.keys(this.props.params).forEach(key => {
-        formData.append(key, this.props.params[key]);
-      });
-    }
-    fetch(this.state.url, {method: 'POST', body: formData}).then((response) => {
+    const files = {};
+    files[this.state.name] = file;
+    HttpClient.upload(this.state.url, files, this.props.params).then((response) => {
+      response = HttpClient.handleResponse(response, 'response');
       if (this.state.afterUpload) {
         this.state.afterUpload(response);
       }
@@ -72,7 +68,7 @@ export class FileUpload extends React.Component {
     return (
       <React.Fragment>
         <input type="file" multiple={this.state.multiple} style={{display: 'none'}} onChange={this.onFileChange} ref={this.inputRef} />
-        <Component className={className} style={styles} onClick={this.onUploadClick} ref={this.buttonRef}>
+        <Component className={className} style={styles} onClick={this.onUploadClick}>
           {children}
         </Component>
       </React.Fragment>

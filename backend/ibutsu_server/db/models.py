@@ -20,6 +20,7 @@ from ibutsu_server.util import merge_dicts
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import backref
 from sqlalchemy_json import mutable_json_type
 
 
@@ -123,10 +124,10 @@ class Project(Model, ModelMixin):
     owner_id = Column(PortableUUID(), ForeignKey("users.id"), index=True)
     group_id = Column(PortableUUID(), ForeignKey("groups.id"), index=True)
     reports = relationship("Report")
-    results = relationship("Result")
-    runs = relationship("Run")
-    dashboards = relationship("Dashboard")
-    widget_configs = relationship("WidgetConfig")
+    results = relationship("Result", backref="project")
+    runs = relationship("Run", backref="project")
+    dashboards = relationship("Dashboard", backref="project")
+    widget_configs = relationship("WidgetConfig", backref="project")
 
 
 class Report(Model, ModelMixin):
@@ -166,6 +167,7 @@ class Result(Model, ModelMixin):
     source = Column(Text, index=True)
     start_time = Column(DateTime, default=datetime.utcnow, index=True)
     test_id = Column(Text, index=True)
+    artifacts = relationship("Artifact", backref="result")
 
 
 class Run(Model, ModelMixin):
@@ -199,19 +201,37 @@ class WidgetConfig(Model, ModelMixin):
 class User(Model, ModelMixin):
     __tablename__ = "users"
     email = Column(Text, index=True, nullable=False, unique=True)
-    _password = Column(Text, nullable=False)
+    _password = Column(Text, nullable=True)
     name = Column(Text)
+    activation_code = Column(Text, nullable=True)
+    is_superadmin = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=False)
     group_id = Column(PortableUUID(), ForeignKey("groups.id"), index=True)
     dashboards = relationship("Dashboard")
-    projects = relationship("Project", secondary=users_projects, lazy="subquery")
+    owned_projects = relationship("Project", backref="owner")
+    tokens = relationship("Token", backref="user")
+    projects = relationship(
+        "Project", secondary=users_projects, backref=backref("users", lazy="subquery")
+    )
 
     @hybrid_property
     def password(self):
         return self._password
 
     @password.setter
-    def _set_password(self, plaintext):
-        self._password = bcrypt.generate_password_hash(plaintext)
+    def password(self, value):
+        self._password = bcrypt.generate_password_hash(value).decode("utf8")
+
+    def check_password(self, plaintext):
+        return bcrypt.check_password_hash(self.password, plaintext)
+
+
+class Token(Model, ModelMixin):
+    __tablename__ = "tokens"
+    name = Column(Text, nullable=False)
+    token = Column(Text, nullable=False)
+    expires = Column(DateTime)
+    user_id = Column(PortableUUID(), ForeignKey("users.id"), index=True)
 
 
 class Meta(Model):
@@ -250,14 +270,16 @@ def upgrade_db(session, upgrades):
                 upgrade_func = getattr(upgrades, f"upgrade_{db_version:d}")
                 upgrade_func(session)
                 session.commit()
-                # Update the version number AFTER a commit so that we are sure the previous
-                # transaction happened
-                meta_version.value = str(db_version)
-                session.commit()
-                db_version += 1
-            except (SQLAlchemyError, DBAPIError):
+            except (SQLAlchemyError, DBAPIError) as e:
                 # Could not run the upgrade
-                break
+                if "already exists" not in str(e):
+                    print(e)
+                    break
+            # Update the version number AFTER a commit so that we are sure the previous
+            # transaction happened
+            meta_version.value = str(db_version)
+            session.commit()
+            db_version += 1
     except (SQLAlchemyError, DBAPIError):
         version_meta = Meta(key="version", value=int(upgrades.__version__))
         session.add(version_meta)

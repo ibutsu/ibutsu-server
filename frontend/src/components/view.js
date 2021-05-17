@@ -8,6 +8,7 @@ import {
   TextContent
 } from '@patternfly/react-core';
 
+import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { JenkinsJobView, JenkinsJobAnalysisView } from '../views';
 
@@ -32,8 +33,8 @@ export class View extends React.Component {
   }
 
   getView() {
-    fetch(Settings.serverUrl + '/widget-config/' + this.state.id)
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'widget-config', this.state.id])
+      .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({view: data}));
   }
 

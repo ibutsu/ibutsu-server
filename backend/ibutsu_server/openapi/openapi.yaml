@@ -4,28 +4,32 @@ info:
   title: Ibutsu API
   version: 1.13.4
 servers:
-- url: /api
+  - url: /api
 tags:
-- description: The result of a test
-  name: result
-- description: An artifact generated during the running of a test
-  name: artifact
-- description: A collection of test results
-  name: run
-- description: A collection of test runs
-  name: project
-- description: A group of projects
-  name: group
-- description: A report
-  name: report
-- description: A health report
-  name: health
-- description: Widgets
-  name: widget
-- description: Widget configuration
-  name: widget-config
-- description: Celery task
-  name: task
+  - description: The result of a test
+    name: result
+  - description: An artifact generated during the running of a test
+    name: artifact
+  - description: A collection of test results
+    name: run
+  - description: A collection of test runs
+    name: project
+  - description: A group of projects
+    name: group
+  - description: A report
+    name: report
+  - description: A health report
+    name: health
+  - description: Widgets
+    name: widget
+  - description: Widget configuration
+    name: widget-config
+  - description: Celery task
+    name: task
+  - description: Login related methods
+    name: login
+security:
+  - jwt: []
 paths:
   /result:
     get:
@@ -64,25 +68,25 @@ paths:
             /result?filter=result!passed
       operationId: get_result_list
       parameters:
-      - description: Fields to filter by
-        explode: true
-        in: query
-        name: filter
-        required: false
-        schema:
-          items:
-            type: string
-          type: array
-        style: form
-      - description: Return an estimated count
-        in: query
-        name: estimate
-        required: false
-        schema:
-          type: boolean
-        style: form
-      - $ref: '#/components/parameters/Page'
-      - $ref: '#/components/parameters/PageSize'
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - description: Return an estimated count
+          in: query
+          name: estimate
+          required: false
+          schema:
+            type: boolean
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         200:
           content:
@@ -98,7 +102,7 @@ paths:
           description: Query being evaluated in a celery task
       summary: Get the list of results.
       tags:
-      - result
+        - result
       x-openapi-router-controller: ibutsu_server.controllers.result_controller
     post:
       operationId: add_result
@@ -115,21 +119,21 @@ paths:
           description: Bad request, JSON required or not enough parameters
       summary: Create a test result
       tags:
-      - result
+        - result
       x-openapi-router-controller: ibutsu_server.controllers.result_controller
   /result/{id}:
     get:
       operationId: get_result
       parameters:
-      - description: ID of result to return (uuid required)
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of result to return (uuid required)
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           content:
@@ -141,20 +145,20 @@ paths:
           description: Result not found
       summary: Get a single result
       tags:
-      - result
+        - result
       x-openapi-router-controller: ibutsu_server.controllers.result_controller
     put:
       operationId: update_result
       parameters:
-      - description: ID of result to update
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of result to update
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       requestBody:
         $ref: '#/components/requestBodies/Result'
       responses:
@@ -170,32 +174,32 @@ paths:
           description: Result not found
       summary: Updates a single result
       tags:
-      - result
+        - result
       x-openapi-router-controller: ibutsu_server.controllers.result_controller
   /artifact:
     get:
       operationId: get_artifact_list
       parameters:
-      - description: The result ID to filter by
-        explode: true
-        in: query
-        name: resultId
-        required: false
-        schema:
-          type: string
-          format: uuid
-        style: form
-      - description: The run ID to filter by
-        explode: true
-        in: query
-        name: runId
-        required: false
-        schema:
-          type: string
-          format: uuid
-        style: form
-      - $ref: '#/components/parameters/Page'
-      - $ref: '#/components/parameters/PageSize'
+        - description: The result ID to filter by
+          explode: true
+          in: query
+          name: resultId
+          required: false
+          schema:
+            type: string
+            format: uuid
+          style: form
+        - description: The run ID to filter by
+          explode: true
+          in: query
+          name: runId
+          required: false
+          schema:
+            type: string
+            format: uuid
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         200:
           content:
@@ -205,7 +209,7 @@ paths:
           description: Array of artifacts
       summary: Get a (filtered) list of artifacts
       tags:
-      - artifact
+        - artifact
       x-openapi-router-controller: ibutsu_server.controllers.artifact_controller
     post:
       operationId: upload_artifact
@@ -231,8 +235,8 @@ paths:
                   description: Additional data to pass to server
                   type: object
               required:
-              - file
-              - filename
+                - file
+                - filename
               type: object
       responses:
         201:
@@ -245,21 +249,21 @@ paths:
           description: Bad request, not enough parameters
       summary: Uploads a test run artifact
       tags:
-      - artifact
+        - artifact
       x-openapi-router-controller: ibutsu_server.controllers.artifact_controller
   /artifact/{id}:
     delete:
       operationId: delete_artifact
       parameters:
-      - description: ID of artifact to delete
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of artifact to delete
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           description: The artifact was deleted
@@ -267,20 +271,20 @@ paths:
           description: The artifact was not found
       summary: Delete an artifact
       tags:
-      - artifact
+        - artifact
       x-openapi-router-controller: ibutsu_server.controllers.artifact_controller
     get:
       operationId: get_artifact
       parameters:
-      - description: ID of artifact to return
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of artifact to return
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           content:
@@ -292,21 +296,21 @@ paths:
           description: Artifact not found
       summary: Get a single artifact
       tags:
-      - artifact
+        - artifact
       x-openapi-router-controller: ibutsu_server.controllers.artifact_controller
   /artifact/{id}/download:
     get:
       operationId: download_artifact
       parameters:
-      - description: ID of artifact to return
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of artifact to return
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           content:
@@ -335,21 +339,21 @@ paths:
           description: Artifact not found
       summary: Download an artifact
       tags:
-      - artifact
+        - artifact
       x-openapi-router-controller: ibutsu_server.controllers.artifact_controller
   /artifact/{id}/view:
     get:
       operationId: view_artifact
       parameters:
-      - description: ID of artifact to return
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of artifact to return
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           content:
@@ -378,7 +382,7 @@ paths:
           description: Artifact not found
       summary: Stream an artifact directly to the client/browser
       tags:
-      - artifact
+        - artifact
       x-openapi-router-controller: ibutsu_server.controllers.artifact_controller
   /run:
     get:
@@ -419,25 +423,25 @@ paths:
 
       operationId: get_run_list
       parameters:
-      - description: Fields to filter by
-        explode: true
-        in: query
-        name: filter
-        required: false
-        schema:
-          items:
-            type: string
-          type: array
-        style: form
-      - description: Return an estimated count
-        in: query
-        name: estimate
-        required: false
-        schema:
-          type: boolean
-        style: form
-      - $ref: '#/components/parameters/Page'
-      - $ref: '#/components/parameters/PageSize'
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - description: Return an estimated count
+          in: query
+          name: estimate
+          required: false
+          schema:
+            type: boolean
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         200:
           content:
@@ -453,7 +457,7 @@ paths:
           description: Query being evaluated in a celery task
       summary: Get a list of the test runs
       tags:
-      - run
+        - run
       x-openapi-router-controller: ibutsu_server.controllers.run_controller
     post:
       operationId: add_run
@@ -474,23 +478,23 @@ paths:
           description: Bad request, JSON required
       summary: Create a run
       tags:
-      - run
+        - run
       x-openapi-router-controller: ibutsu_server.controllers.run_controller
   /runs/bulk-update:
     post:
       operationId: bulk_update
       parameters:
-      - description: Fields to filter by
-        explode: true
-        in: query
-        name: filter
-        required: false
-        schema:
-          items:
-            type: string
-          type: array
-        style: form
-      - $ref: '#/components/parameters/PageSize'
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - $ref: '#/components/parameters/PageSize'
       requestBody:
         content:
           application/json:
@@ -521,15 +525,15 @@ paths:
     get:
       operationId: get_run
       parameters:
-      - description: ID of test run
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of test run
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           content:
@@ -541,20 +545,20 @@ paths:
           description: Run not found
       summary: Get a single run by ID (uuid required)
       tags:
-      - run
+        - run
       x-openapi-router-controller: ibutsu_server.controllers.run_controller
     put:
       operationId: update_run
       parameters:
-      - description: ID of the test run
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of the test run
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       requestBody:
         content:
           application/json:
@@ -575,30 +579,30 @@ paths:
           description: Run not found
       summary: Update a single run
       tags:
-      - run
+        - run
       x-openapi-router-controller: ibutsu_server.controllers.run_controller
   /project:
     get:
       operationId: get_project_list
       parameters:
-      - description: Filter projects by owner ID
-        explode: true
-        in: query
-        name: ownerId
-        required: false
-        schema:
-          type: string
-        style: form
-      - description: Filter projects by group ID
-        explode: true
-        in: query
-        name: groupId
-        required: false
-        schema:
-          type: string
-        style: form
-      - $ref: '#/components/parameters/Page'
-      - $ref: '#/components/parameters/PageSize'
+        - description: Filter projects by owner ID
+          explode: true
+          in: query
+          name: ownerId
+          required: false
+          schema:
+            type: string
+          style: form
+        - description: Filter projects by group ID
+          explode: true
+          in: query
+          name: groupId
+          required: false
+          schema:
+            type: string
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         200:
           content:
@@ -608,7 +612,7 @@ paths:
           description: Array of projects
       summary: Get a list of projects
       tags:
-      - project
+        - project
       x-openapi-router-controller: ibutsu_server.controllers.project_controller
     post:
       operationId: add_project
@@ -630,20 +634,20 @@ paths:
           description: Bad request, JSON required
       summary: Create a project
       tags:
-      - project
+        - project
       x-openapi-router-controller: ibutsu_server.controllers.project_controller
   /project/{id}:
     get:
       operationId: get_project
       parameters:
-      - description: ID of test project
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-        style: simple
+        - description: ID of test project
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
       responses:
         200:
           content:
@@ -655,20 +659,20 @@ paths:
           description: Project not found
       summary: Get a single project by ID
       tags:
-      - project
+        - project
       x-openapi-router-controller: ibutsu_server.controllers.project_controller
     put:
       operationId: update_project
       parameters:
-      - description: ID of test project
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of test project
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       requestBody:
         content:
           application/json:
@@ -688,14 +692,14 @@ paths:
           description: Project not found
       summary: Update a project
       tags:
-      - project
+        - project
       x-openapi-router-controller: ibutsu_server.controllers.project_controller
   /group:
     get:
       operationId: get_group_list
       parameters:
-      - $ref: '#/components/parameters/Page'
-      - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         200:
           content:
@@ -705,7 +709,7 @@ paths:
           description: A list of groups
       summary: Get a list of groups
       tags:
-      - group
+        - group
       x-openapi-router-controller: ibutsu_server.controllers.group_controller
     post:
       operationId: add_group
@@ -727,21 +731,21 @@ paths:
           description: Bad request, probably not enough parameters
       summary: Create a new group
       tags:
-      - group
+        - group
       x-openapi-router-controller: ibutsu_server.controllers.group_controller
   /group/{id}:
     get:
       operationId: get_group
       parameters:
-      - description: The ID of the group
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: The ID of the group
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           content:
@@ -753,20 +757,20 @@ paths:
           description: Group not found
       summary: Get a group
       tags:
-      - group
+        - group
       x-openapi-router-controller: ibutsu_server.controllers.group_controller
     put:
       operationId: update_group
       parameters:
-      - description: The ID of the group
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: The ID of the group
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       requestBody:
         content:
           application/json:
@@ -787,30 +791,30 @@ paths:
           description: Group not found
       summary: Update a group
       tags:
-      - group
+        - group
       x-openapi-router-controller: ibutsu_server.controllers.group_controller
   /dashboard:
     get:
       operationId: get_dashboard_list
       parameters:
-      - description: Filter dashboards by project ID
-        explode: true
-        in: query
-        name: project_id
-        required: false
-        schema:
-          type: string
-        style: form
-      - description: Filter dashboards by user ID
-        explode: true
-        in: query
-        name: user_id
-        required: false
-        schema:
-          type: string
-        style: form
-      - $ref: '#/components/parameters/Page'
-      - $ref: '#/components/parameters/PageSize'
+        - description: Filter dashboards by project ID
+          explode: true
+          in: query
+          name: project_id
+          required: false
+          schema:
+            type: string
+          style: form
+        - description: Filter dashboards by user ID
+          explode: true
+          in: query
+          name: user_id
+          required: false
+          schema:
+            type: string
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         200:
           content:
@@ -820,7 +824,7 @@ paths:
           description: Array of dashboards
       summary: Get a list of dashboards
       tags:
-      - dashboard
+        - dashboard
       x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller
     post:
       operationId: add_dashboard
@@ -842,21 +846,21 @@ paths:
           description: Bad request, JSON required
       summary: Create a dashboard
       tags:
-      - dashboard
+        - dashboard
       x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller
   /dashboard/{id}:
     get:
       operationId: get_dashboard
       parameters:
-      - description: ID of test dashboard
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of test dashboard
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           content:
@@ -868,20 +872,20 @@ paths:
           description: Dashboard not found
       summary: Get a single dashboard by ID
       tags:
-      - dashboard
+        - dashboard
       x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller
     put:
       operationId: update_dashboard
       parameters:
-      - description: ID of test dashboard
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of test dashboard
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       requestBody:
         content:
           application/json:
@@ -901,20 +905,20 @@ paths:
           description: Dashboard not found
       summary: Update a dashboard
       tags:
-      - dashboard
+        - dashboard
       x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller
     delete:
       operationId: delete_dashboard
       parameters:
-      - description: ID of dashboard to delete
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of dashboard to delete
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           description: The dashboard was deleted
@@ -922,22 +926,22 @@ paths:
           description: The dashboard was not found
       summary: Delete a dashboard
       tags:
-      - dashboard
+        - dashboard
       x-openapi-router-controller: ibutsu_server.controllers.dashboard_controller
   /report:
     get:
       operationId: get_report_list
       parameters:
-      - $ref: '#/components/parameters/Page'
-      - $ref: '#/components/parameters/PageSize'
-      - description: Filter reports by project ID
-        explode: true
-        in: query
-        name: project
-        required: false
-        schema:
-          type: string
-        style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - description: Filter reports by project ID
+          explode: true
+          in: query
+          name: project
+          required: false
+          schema:
+            type: string
+          style: form
       responses:
         200:
           content:
@@ -947,7 +951,7 @@ paths:
           description: A list of reports
       summary: Get a list of reports
       tags:
-      - report
+        - report
       x-openapi-router-controller: ibutsu_server.controllers.report_controller
     post:
       operationId: add_report
@@ -969,21 +973,21 @@ paths:
           description: Bad request, probably not enough parameters
       summary: Create a new report
       tags:
-      - report
+        - report
       x-openapi-router-controller: ibutsu_server.controllers.report_controller
   /report/{id}:
     get:
       operationId: get_report
       parameters:
-      - description: The ID of the report
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: The ID of the report
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           content:
@@ -995,20 +999,20 @@ paths:
           description: Report not found
       summary: Get a report
       tags:
-      - report
+        - report
       x-openapi-router-controller: ibutsu_server.controllers.report_controller
     delete:
       operationId: delete_report
       parameters:
-      - description: ID of report to delete
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of report to delete
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           description: The report was deleted
@@ -1016,29 +1020,29 @@ paths:
           description: The report was not found
       summary: Delete a report
       tags:
-      - report
+        - report
       x-openapi-router-controller: ibutsu_server.controllers.report_controller
   /report/{id}/view/{filename}:
     get:
       operationId: view_report
       parameters:
-      - description: The ID of the report
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
-      - description: The file name of the downloadable report
-        explode: false
-        in: path
-        name: filename
-        required: true
-        schema:
-          type: string
-        style: simple
+        - description: The ID of the report
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+        - description: The file name of the downloadable report
+          explode: false
+          in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+          style: simple
       responses:
         200:
           content:
@@ -1067,29 +1071,29 @@ paths:
           description: Artifact not found
       summary: View a report
       tags:
-      - report
+        - report
       x-openapi-router-controller: ibutsu_server.controllers.report_controller
   /report/{id}/download/{filename}:
     get:
       operationId: download_report
       parameters:
-      - description: The ID of the report
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
-      - description: The file name of the downloadable report
-        explode: false
-        in: path
-        name: filename
-        required: true
-        schema:
-          type: string
-        style: simple
+        - description: The ID of the report
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+        - description: The file name of the downloadable report
+          explode: false
+          in: path
+          name: filename
+          required: true
+          schema:
+            type: string
+          style: simple
       responses:
         200:
           content:
@@ -1118,7 +1122,7 @@ paths:
           description: Artifact not found
       summary: Download a report
       tags:
-      - report
+        - report
       x-openapi-router-controller: ibutsu_server.controllers.report_controller
   /report/types:
     get:
@@ -1143,27 +1147,28 @@ paths:
           description: A list of types of reports available
       summary: Get a list of report types
       tags:
-      - report
+        - report
       x-openapi-router-controller: ibutsu_server.controllers.report_controller
   /widget/{id}:
     get:
       operationId: get_widget
       parameters:
-      - description: The widget identifier
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-        style: simple
-      - description: The parameters for the widget
-        in: query
-        name: params
-        schema:
-          type: object
-        style: form
-        explode: true
+        - description: The widget identifier
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+        - description: The parameters for the widget
+          in: query
+          name: params
+          schema:
+            type: object
+          style: form
+          explode: true
       responses:
         200:
           content:
@@ -1175,21 +1180,21 @@ paths:
           description: No widget of this type exists
       summary: Generate data for a dashboard widget
       tags:
-      - widget
+        - widget
       x-openapi-router-controller: ibutsu_server.controllers.widget_controller
   /widget/types:
     get:
       description: A list of widget types
       operationId: get_widget_types
       parameters:
-      - description: Filter by type of widget
-        explode: true
-        in: query
-        name: type
-        required: false
-        schema:
-          type: string
-        style: form
+        - description: Filter by type of widget
+          explode: true
+          in: query
+          name: type
+          required: false
+          schema:
+            type: string
+          style: form
       responses:
         200:
           content:
@@ -1199,25 +1204,25 @@ paths:
           description: A list of types of widgets available
       summary: Get a list of widget types
       tags:
-      - widget
+        - widget
       x-openapi-router-controller: ibutsu_server.controllers.widget_controller
   /widget-config:
     get:
       description: A list of widget configurations
       operationId: get_widget_config_list
       parameters:
-      - description: Fields to filter by
-        explode: true
-        in: query
-        name: filter
-        required: false
-        schema:
-          items:
-            type: string
-          type: array
-        style: form
-      - $ref: '#/components/parameters/Page'
-      - $ref: '#/components/parameters/PageSize'
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
       responses:
         200:
           content:
@@ -1227,7 +1232,7 @@ paths:
           description: successful operation
       summary: Get the list of widget configurations
       tags:
-      - widget-config
+        - widget-config
       x-openapi-router-controller: ibutsu_server.controllers.widget_config_controller
     post:
       operationId: add_widget_config
@@ -1244,21 +1249,21 @@ paths:
           description: Bad request, JSON required or not enough parameters
       summary: Create a widget configuration
       tags:
-      - widget-config
+        - widget-config
       x-openapi-router-controller: ibutsu_server.controllers.widget_config_controller
   /widget-config/{id}:
     get:
       operationId: get_widget_config
       parameters:
-      - description: ID of widget config to return
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of widget config to return
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           content:
@@ -1275,15 +1280,15 @@ paths:
     put:
       operationId: update_widget_config
       parameters:
-      - description: ID of widget configuration to update
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of widget configuration to update
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       requestBody:
         $ref: '#/components/requestBodies/WidgetConfig'
       responses:
@@ -1299,20 +1304,20 @@ paths:
           description: Widget configuration not found
       summary: Updates a single widget configuration
       tags:
-      - widget-config
+        - widget-config
       x-openapi-router-controller: ibutsu_server.controllers.widget_config_controller
     delete:
       operationId: delete_widget_config
       parameters:
-      - description: ID of widget configuration to delete
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: ID of widget configuration to delete
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           description: The widget configuration was deleted
@@ -1320,7 +1325,7 @@ paths:
           description: The widget configuration was not found
       summary: Delete a widget configuration
       tags:
-      - widget-config
+        - widget-config
       x-openapi-router-controller: ibutsu_server.controllers.widget_config_controller
   /health:
     get:
@@ -1334,7 +1339,7 @@ paths:
           description: A health report
       summary: Get a general health report
       tags:
-      - health
+        - health
       x-openapi-router-controller: ibutsu_server.controllers.health_controller
   /health/database:
     get:
@@ -1354,7 +1359,7 @@ paths:
           description: A health report with an error
       summary: Get a health report for the database
       tags:
-      - health
+        - health
       x-openapi-router-controller: ibutsu_server.controllers.health_controller
   /health/info:
     get:
@@ -1368,7 +1373,7 @@ paths:
           description: Some information about the server
       summary: Get information about the server
       tags:
-      - health
+        - health
       x-openapi-router-controller: ibutsu_server.controllers.health_controller
   /import:
     post:
@@ -1389,7 +1394,7 @@ paths:
                   description: Additional metadata about imported run
                   type: object
               required:
-              - importFile
+                - importFile
               type: object
             encoding:
               importFile:
@@ -1411,21 +1416,21 @@ paths:
           description: Unsupported Media Type. This file cannot be imported
       summary: Import a file into Ibutsu. This can be either a JUnit XML file, or an Ibutsu archive
       tags:
-      - import
+        - import
       x-openapi-router-controller: ibutsu_server.controllers.import_controller
   /import/{id}:
     get:
       operationId: get_import
       parameters:
-      - description: The ID of the import
-        explode: false
-        in: path
-        name: id
-        required: true
-        schema:
-          type: string
-          format: uuid
-        style: simple
+        - description: The ID of the import
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
       responses:
         200:
           content:
@@ -1443,7 +1448,7 @@ paths:
           description: The import does not exist
       summary: Get the status of an import
       tags:
-      - import
+        - import
       x-openapi-router-controller: ibutsu_server.controllers.import_controller
   /task/{id}:
     get:
@@ -1481,6 +1486,248 @@ paths:
       tags:
         - task
       x-openapi-router-controller: ibutsu_server.controllers.task_controller
+  /login:
+    post:
+      operationId: login
+      requestBody:
+        $ref: '#/components/requestBodies/Credentials'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginToken'
+          description: The user was authenticated
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginError'
+          description: There was an error when the user tried to log in
+      tags:
+        - login
+      security: []
+      x-openapi-router-controller: ibutsu_server.controllers.login_controller
+  /login/support:
+    get:
+      operationId: support
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginSupport'
+          description: A list of the login types supported by the backend
+      tags:
+        - login
+      security: []
+      x-openapi-router-controller: ibutsu_server.controllers.login_controller
+  /login/config/{provider}:
+    get:
+      operationId: config
+      parameters:
+        - description: The login provider's configuration
+          explode: false
+          in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginConfig'
+          description: A list of the login types supported by the backend
+      tags:
+        - login
+      security: []
+      x-openapi-router-controller: ibutsu_server.controllers.login_controller
+  /login/auth/{provider}:
+    get:
+      operationId: auth
+      parameters:
+        - description: The login provider's configuration
+          explode: false
+          in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        200:
+          description: Successful auth
+      tags:
+        - login
+      security: []
+      x-openapi-router-controller: ibutsu_server.controllers.login_controller
+  /login/register:
+    post:
+      operationId: register
+      requestBody:
+        $ref: '#/components/requestBodies/AccountRegistration'
+      responses:
+        201:
+          description: The user was registered
+        401:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginError'
+          description: There was an error when the user tried to log in
+      tags:
+        - login
+      security: []
+      x-openapi-router-controller: ibutsu_server.controllers.login_controller
+  /login/recover:
+    post:
+      operationId: recover
+      requestBody:
+        $ref: '#/components/requestBodies/AccountRecovery'
+      responses:
+        201:
+          description: An e-mail was sent to the user
+        400:
+          description: There was an error when the user tried to recover their account
+      tags:
+        - login
+      security: []
+      x-openapi-router-controller: ibutsu_server.controllers.login_controller
+  /login/reset-password:
+    post:
+      operationId: reset_password
+      requestBody:
+        $ref: '#/components/requestBodies/AccountReset'
+      responses:
+        201:
+          description: The user's password was reset
+        400:
+          description: There was an error when the user tried to reset their password
+      tags:
+        - login
+      security: []
+      x-openapi-router-controller: ibutsu_server.controllers.login_controller
+  /login/activate/{activation_code}:
+    get:
+      operationId: activate
+      parameters:
+        - description: The activation code
+          explode: false
+          in: path
+          name: activation_code
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        302:
+          description: Redirect the user to the login page
+        404:
+          description: The activation code was not found
+      tags:
+        - login
+      security: []
+      x-openapi-router-controller: ibutsu_server.controllers.login_controller
+  /user:
+    get:
+      operationId: get_user
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: The details of the logged in user
+        401:
+          description: The user needs to be logged in
+      summary: Return the user details for the current user
+      tags:
+        - user
+      x-openapi-router-controller: ibutsu_server.controllers.user_controller
+  /user/token:
+    get:
+      operationId: get_token_list
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenList'
+          description: The list of tokens for the logged in user
+        401:
+          description: The user needs to be logged in
+      summary: Return the tokens for the user
+      tags:
+        - user
+      x-openapi-router-controller: ibutsu_server.controllers.user_controller
+    post:
+      operationId: add_token
+      requestBody:
+        $ref: '#/components/requestBodies/CreateToken'
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+          description: The newly created token
+        401:
+          description: The user needs to be logged in
+      summary: Create a token for the current user
+      tags:
+        - user
+      x-openapi-router-controller: ibutsu_server.controllers.user_controller
+  /user/token/{id}:
+    get:
+      operationId: get_token
+      parameters:
+        - description: The id of a token
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+          description: A single token for the logged in user
+        401:
+          description: The user needs to be logged in
+      summary: Retrieve a single token for the current user
+      tags:
+        - user
+      x-openapi-router-controller: ibutsu_server.controllers.user_controller
+    delete:
+      operationId: delete_token
+      parameters:
+        - description: The id of a token
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        200:
+          description: The token was deleted
+        401:
+          description: The user needs to be logged in
+      summary: Delete the token
+      tags:
+        - user
+      x-openapi-router-controller: ibutsu_server.controllers.user_controller
 components:
   requestBodies:
     Result:
@@ -1501,6 +1748,36 @@ components:
           schema:
             $ref: '#/components/schemas/WidgetConfig'
       description: Widget configuration
+    Credentials:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Credentials'
+      description: A login object
+    AccountRegistration:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountRegistration'
+      description: A user registering their account
+    AccountRecovery:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountRecovery'
+      description: A user recovering their password
+    AccountReset:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountReset'
+      description: A user resetting their password
+    CreateToken:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateToken'
+      description: Create a token for a user
   schemas:
     Result:
       example:
@@ -2018,6 +2295,236 @@ components:
           example: http://localhost:8080/api/ui/
           type: string
       type: object
+    LoginToken:
+      example:
+        token: eyJhbGciOiJIUzI1NiJ9.SGVsbG8sIHdvcmxkIQ.onO9Ihudz3WkiauDO2Uhyuz0Y18UASXlSc1eS0NkWyA
+      properties:
+        token:
+          description: The JWT token returned from a successful login
+          example: eyJhbGciOiJIUzI1NiJ9.SGVsbG8sIHdvcmxkIQ.onO9Ihudz3WkiauDO2Uhyuz0Y18UASXlSc1eS0NkWyA
+          type: string
+      type: object
+    LoginError:
+      example:
+        code: ERR01
+        message: Username or password was invalid
+      properties:
+        code:
+          description: An error code generated by the server
+          example: ERR01
+          type: string
+        message:
+          description: The error message that corresponds with the error code
+          example: Username or password was invalid
+          type: string
+      type: object
+    LoginSupport:
+      example:
+        user: true
+        keycloak: true
+        google: false
+        github: true
+        facebook: false
+        gitlab: true
+      properties:
+        user:
+          description: Flag to see if email/password login is available
+          example: true
+          type: boolean
+        keycloak:
+          description: Flag to see if Keycloak login is available
+          example: true
+          type: boolean
+        google:
+          description: Flag to see if Google login is available
+          example: true
+          type: boolean
+        github:
+          description: Flag to see if GitHub login is available
+          example: true
+          type: boolean
+        facebook:
+          description: Flag to see if Facebook login is available
+          example: true
+          type: boolean
+        gitlab:
+          description: Flag to see if GitLab login is available
+          example: true
+          type: boolean
+      type: object
+    LoginConfig:
+      example:
+        client_id: ff542f48922114019fc5befd0fa0e107b494c365fa4f8af09f3fcb2eb6dc0f77
+        redirect_uri: /api/login/oauth
+        scope: read:user
+      properties:
+        client_id:
+          description: The client ID for the provider
+          example: ff542f48922114019fc5befd0fa0e107b494c365fa4f8af09f3fcb2eb6dc0f77
+          type: string
+        redirect_uri:
+          description: The redirect URI for the provider to call back
+          example: /api/login/oauth
+          type: string
+        scope:
+          description: The OAuth2 permission scope
+          example: read:user
+          type: string
+      type: object
+    Credentials:
+      example:
+        email: me@example.com
+        password: mysupersecretpassword
+      properties:
+        email:
+          description: The e-mail address of the user
+          example: me@example.com
+          type: string
+        password:
+          description: The password for the user
+          example: mysupersecretpassword
+          type: string
+      required:
+        - email
+        - password
+      type: object
+    AccountRegistration:
+      example:
+        email: user@domain.com
+        password: supersecretpassword
+      properties:
+        email:
+          description: The user's e-mail address
+          example: user@domain.com
+          type: string
+        password:
+          description: The user's password
+          example: supersecretpassword
+          type: string
+      required:
+        - email
+        - password
+      type: object
+    AccountRecovery:
+      example:
+        email: user@domain.com
+      properties:
+        email:
+          description: The user's e-mail address
+          example: user@domain.com
+          type: string
+      required:
+        - email
+      type: object
+    AccountReset:
+      example:
+        activation_code: YjdmYWFkMTItNzkxZC00MjE4LTgwZGItOWFlOWM2Y2RhOTM5
+        password: supersecretpassword
+      properties:
+        activation_code:
+          description: The activation code generated by Ibutsu
+          example: YjdmYWFkMTItNzkxZC00MjE4LTgwZGItOWFlOWM2Y2RhOTM5
+          type: string
+        password:
+          description: The user's password
+          example: supersecretpassword
+          type: string
+      required:
+        - activation_code
+        - password
+      type: object
+    User:
+      example:
+        id: 81e2c9d6-1593-4559-af4f-90f6f1f8fa03
+        email: user@domain.com
+        name: Namey McNameface
+        is_superadmin: false
+        is_active: true
+        group_id: a16ad60e-bf23-4195-99dc-594858ad3e5e
+      properties:
+        id:
+          description: The ID of the user
+          example: 81e2c9d6-1593-4559-af4f-90f6f1f8fa03
+          type: string
+        email:
+          description: The user's e-mail address
+          example: user@domain.com
+          type: string
+        name:
+          description: The user's name
+          example: Namey McNameface
+          type: string
+          nullable: true
+        is_superadmin:
+          description: Flag to show if a user is a super-admin
+          example: false
+          type: boolean
+        is_active:
+          description: Flag to show if the user is active
+          example: true
+          type: boolean
+        group_id:
+          description: The ID of the group of this project
+          example: a16ad60e-bf23-4195-99dc-594858ad3e5e
+          type: string
+          nullable: true
+      required:
+        - id
+        - email
+      type: object
+    CreateToken:
+      example:
+        name: My user token
+        expires: 2038-12-31T23:59:59+0000
+      properties:
+        name:
+          description: The name given to this token
+          example: My user token
+          type: string
+        expires:
+          description: The date and time when this token expires
+          example: 2038-12-31T23:59:59+0000
+          type: string
+          nullable: true
+      required:
+        - name
+        - expires
+      type: object
+    Token:
+      example:
+        id: e2772010-bc06-47ed-8b6b-767ab87427cc
+        user_id: 81e2c9d6-1593-4559-af4f-90f6f1f8fa03
+        name: My user token
+        expires: 2038-12-31T23:59:59+0000
+        token: 64ad787a-5aa8-48fa-842e-6e3b9631308a
+      properties:
+        id:
+          description: The ID of the token
+          example: e2772010-bc06-47ed-8b6b-767ab87427cc
+          type: string
+        user_id:
+          description: The ID of the user that owns this token
+          example: 81e2c9d6-1593-4559-af4f-90f6f1f8fa03
+          type: string
+        name:
+          description: The name given to this token
+          example: My user token
+          type: string
+        expires:
+          description: The date and time when this token expires
+          example: 2038-12-31T23:59:59+0000
+          type: string
+          nullable: true
+        token:
+          description: The token itself
+          example: 64ad787a-5aa8-48fa-842e-6e3b9631308a
+          type: string
+      required:
+        - id
+        - user_id
+        - name
+        - token
+      type: object
     Pagination:
       example:
         page: 2
@@ -2246,6 +2753,27 @@ components:
         pagination:
           $ref: '#/components/schemas/Pagination'
       type: object
+    TokenList:
+      example:
+        tokens:
+          - id: e2772010-bc06-47ed-8b6b-767ab87427cc
+            user_id: 81e2c9d6-1593-4559-af4f-90f6f1f8fa03
+            name: My user token
+            expires: 2038-12-31T23:59:59+0000
+            token: 64ad787a-5aa8-48fa-842e-6e3b9631308a
+        pagination:
+          page: 1
+          pageSize: 25
+          totalPages: 1
+          totalItems: 1
+      properties:
+        tokens:
+          items:
+            $ref: '#/components/schemas/Token'
+          type: array
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      type: object
   parameters:
     Page:
       description: Set the page of items to return, defaults to 1
@@ -2268,7 +2796,8 @@ components:
         type: integer
       style: form
   securitySchemes:
-    api_key:
-      in: header
-      name: api_key
-      type: apiKey
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-bearerInfoFunc: ibutsu_server.util.jwt.decode_token

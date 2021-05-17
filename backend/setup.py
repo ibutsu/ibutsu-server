@@ -9,26 +9,31 @@ REQUIRES = [
     # Pin Celery to be compatible with Kombu
     "celery==4.3.0",
     # Pin Kombu to 4.6.3 to get around celery/kombu/issues/236
-    "kombu==4.6.3",
     "connexion",
     "flask_bcrypt",
     "flask_cors",
+    "flask_mail",
     "Flask-SQLAlchemy",
+    "google-api-python-client",
+    "google-auth",
+    "google-auth-httplib2",
+    "google-auth-oauthlib",
     "gunicorn",
+    "kombu==4.6.3",
     "lxml",
     "psycopg2-binary",
     "pymongo",
+    "python-jose[cryptography]",
     "python-magic",
     "python_dateutil==2.6.0",
     "PyYAML",
     "redis",
     "setuptools >= 21.0.0",
-    "sqlalchemy==1.3.23",
     "sqlalchemy-json",
+    "sqlalchemy==1.3.23",
     "swagger-ui-bundle==0.0.2",
-    # Pin this for now, once other libraries are updated, drop this pin
-    "werkzeug",
     "vine<5.0.0a1",
+    "werkzeug",
 ]
 
 setup(

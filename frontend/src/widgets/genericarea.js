@@ -19,8 +19,9 @@ import {
   Text,
 } from '@patternfly/react-core';
 
+import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { buildUrl, toTitleCase } from '../utilities';
+import { toTitleCase } from '../utilities';
 import { WidgetHeader } from '../components/widget-components';
 
 
@@ -70,8 +71,9 @@ export class GenericAreaWidget extends React.Component {
   getData() {
     this.setState({isLoading: true});
     let widgetEndpoint = this.props.widgetEndpoint || 'jenkins-line-chart';
-    fetch(buildUrl(Settings.serverUrl + '/widget/' + widgetEndpoint, this.params))
+    HttpClient.get([Settings.serverUrl, 'widget', widgetEndpoint], this.params)
       .then(response => {
+        response = HttpClient.handleResponse(response, 'response');
         if (!response.ok) {
           throw Error(response.statusText);
         }

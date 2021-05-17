@@ -4,12 +4,13 @@ from ibutsu_server.constants import WIDGET_TYPES
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.filters import convert_filter
-from ibutsu_server.util.projects import get_project_id
+from ibutsu_server.util.projects import get_project
+from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.uuid import validate_uuid
 from sqlalchemy import or_
 
 
-def add_widget_config(widget_config=None):
+def add_widget_config(widget_config=None, token_info=None, user=None):
     """Create a new widget config
 
     :param widget_config: The widget_config to save
@@ -27,7 +28,10 @@ def add_widget_config(widget_config=None):
         data["weight"] = 10
     # Look up the project id
     if data.get("project"):
-        data["project_id"] = get_project_id(data.pop("project"))
+        project = get_project(data.pop("project"))
+        if not project_has_user(project, user):
+            return "Forbidden", 403
+        data["project_id"] = project.id
     # default to make views navigable
     if data.get("navigable"):
         data["navigable"] = data["navigable"][0] in ALLOWED_TRUE_BOOLEANS
@@ -91,7 +95,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
     }
 
 
-def update_widget_config(id_):
+def update_widget_config(id_, token_info=None, user=None):
     """Updates a single widget config
 
     :param id: ID of widget to update
@@ -108,7 +112,10 @@ def update_widget_config(id_):
         return "Bad request, widget type does not exist", 400
     # Look up the project id
     if data.get("project"):
-        data["project_id"] = get_project_id(data.pop("project"))
+        project = get_project(data.pop("project"))
+        if not project_has_user(project, user):
+            return "Forbidden", 403
+        data["project_id"] = project.id
     widget_config = WidgetConfig.query.get(id_)
     # add default weight of 10
     if not widget_config.weight:

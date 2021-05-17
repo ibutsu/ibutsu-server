@@ -6,6 +6,10 @@ import magic
 from flask import make_response
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact
+from ibutsu_server.db.models import Result
+from ibutsu_server.db.models import User
+from ibutsu_server.util.projects import add_user_filter
+from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.uuid import validate_uuid
 
 
@@ -22,7 +26,7 @@ def _build_artifact_response(id_):
     return artifact, response
 
 
-def view_artifact(id_):
+def view_artifact(id_, token_info=None, user=None):
     """Stream an artifact directly to the client/browser
 
     :param id: ID of the artifact to download
@@ -30,10 +34,13 @@ def view_artifact(id_):
 
     :rtype: file
     """
-    return _build_artifact_response(id_)[1]
+    artifact, response = _build_artifact_response(id_)
+    if not project_has_user(artifact.result.project, user):
+        return "Forbidden", 403
+    return response
 
 
-def download_artifact(id_):
+def download_artifact(id_, token_info=None, user=None):
     """Download an artifact
 
     :param id: ID of artifact to download
@@ -42,12 +49,14 @@ def download_artifact(id_):
     :rtype: file
     """
     artifact, response = _build_artifact_response(id_)
+    if not project_has_user(artifact.result.project, user):
+        return "Forbidden", 403
     response.headers["Content-Disposition"] = "attachment; filename={}".format(artifact.filename)
     return response
 
 
 @validate_uuid
-def get_artifact(id_):
+def get_artifact(id_, token_info=None, user=None):
     """Return a single artifact
 
     :param id: ID of the artifact
@@ -58,10 +67,14 @@ def get_artifact(id_):
     artifact = Artifact.query.get(id_)
     if not artifact:
         return "Not Found", 404
+    if not project_has_user(artifact.result.project, user):
+        return "Forbidden", 403
     return artifact.to_dict()
 
 
-def get_artifact_list(result_id=None, run_id=None, page_size=25, page=1):
+def get_artifact_list(
+    result_id=None, run_id=None, page_size=25, page=1, token_info=None, user=None
+):
     """Get a list of artifact files for result
 
     :param id: ID of test result
@@ -70,10 +83,15 @@ def get_artifact_list(result_id=None, run_id=None, page_size=25, page=1):
     :rtype: List[Artifact]
     """
     query = Artifact.query
+    user = User.query.get(user)
+    if "result_id" in connexion.request.args:
+        result_id = connexion.request.args["result_id"]
     if result_id:
         query = query.filter(Artifact.result_id == result_id)
     if run_id:
         query = query.filter(Artifact.run_id == run_id)
+    if user:
+        query = add_user_filter(query, user)
     total_items = query.count()
     offset = (page * page_size) - page_size
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
@@ -89,7 +107,7 @@ def get_artifact_list(result_id=None, run_id=None, page_size=25, page=1):
     }
 
 
-def upload_artifact(body):
+def upload_artifact(body, token_info=None, user=None):
     """Uploads a artifact artifact
 
     :param result_id: ID of result to attach artifact to
@@ -107,6 +125,9 @@ def upload_artifact(body):
     """
     result_id = body.get("result_id")
     run_id = body.get("run_id")
+    result = Result.query.get(result_id)
+    if result and not project_has_user(result.project, user):
+        return "Forbidden", 403
     filename = body.get("filename")
     additional_metadata = body.get("additional_metadata", {})
     file_ = connexion.request.files["file"]
@@ -150,7 +171,7 @@ def upload_artifact(body):
     return artifact.to_dict(), 201
 
 
-def delete_artifact(id_):
+def delete_artifact(id_, token_info=None, user=None):
     """Deletes an artifact
 
     :param id: ID of the artifact to delete
@@ -161,7 +182,8 @@ def delete_artifact(id_):
     artifact = Artifact.query.get(id_)
     if not artifact:
         return "Not Found", 404
-    else:
-        session.delete(artifact)
-        session.commit()
-        return "OK", 200
+    if not project_has_user(artifact.result.project, user):
+        return "Forbidden", 403
+    session.delete(artifact)
+    session.commit()
+    return "OK", 200

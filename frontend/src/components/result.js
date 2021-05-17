@@ -23,10 +23,11 @@ import Linkify from 'react-linkify';
 import ReactJson from 'react-json-view';
 import Editor from '@monaco-editor/react';
 
+import { HttpClient } from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
 import { linkifyDecorator } from './decorators'
 import { Settings } from '../settings';
-import { buildUrl, getIconForResult, round } from '../utilities';
+import { getIconForResult, round } from '../utilities';
 import { TabTitle } from './tabs';
 
 const MockTest = {
@@ -115,18 +116,19 @@ export class ResultView extends React.Component {
   };
 
   getTestResult(resultId) {
-    fetch(Settings.serverUrl + '/result/' + resultId)
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'result', resultId])
+      .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({testResult: data}));
   }
 
   getTestArtifacts(resultId) {
-    fetch(buildUrl(Settings.serverUrl + '/artifact', {resultId: resultId}))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'artifact'], {resultId: resultId})
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         let artifactTabs = [];
         data.artifacts.forEach((artifact) => {
-          fetch(Settings.serverUrl + `/artifact/${artifact.id}/view`)
+          console.log(artifact);
+          HttpClient.get([Settings.serverUrl, 'artifact', artifact.id, 'view'])
             .then(response => {
               let contentType = response.headers.get('Content-Type');
               if (contentType.includes('text')) {
@@ -135,7 +137,7 @@ export class ResultView extends React.Component {
                     <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
                       <Card>
                         <CardBody>
-                          <Editor fontFamily="Hack, monospace" theme="dark" value={text} height="40rem" options={{readOnly: true}} />
+                          <Editor fontFamily="Hack, monospace" theme="vs-dark" value={text} height="40rem" options={{readOnly: true}} />
                         </CardBody>
                         <CardFooter>
                           <Button component="a" href={`${Settings.serverUrl}/artifact/${artifact.id}/download`}>Download {artifact.filename}</Button>
