@@ -13,7 +13,7 @@ DAYS_IN_MONTH = 30
 
 @task
 def prune_old_files(months=5):
-    """ Delete artifact files older than specified months (here defined as 30 days). """
+    """Delete artifact files older than specified months (here defined as 30 days)."""
     try:
         if isinstance(months, str):
             months = int(months)

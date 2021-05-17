@@ -38,7 +38,7 @@ def string_to_column(field, model):
 
 
 def apply_filters(query, filter_list, model):
-    """ Given a list of filters and a query object, applies the filters to the query."""
+    """Given a list of filters and a query object, applies the filters to the query."""
     for filter_string in filter_list:
         filter_clause = convert_filter(filter_string, model)
         if filter_clause is not None:

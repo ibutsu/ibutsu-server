@@ -80,7 +80,7 @@ def _get_builds(job_name, builds, project=None, additional_filters=None):
 
 
 def _get_heatmap(job_name, builds, group_field, count_skips, project=None, additional_filters=None):
-    """ Get Jenkins Heatmap Data. """
+    """Get Jenkins Heatmap Data."""
 
     # Get the distinct builds that exist in the DB
     min_start_time, builds = _get_builds(job_name, builds, project, additional_filters)

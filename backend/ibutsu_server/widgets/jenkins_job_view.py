@@ -10,7 +10,7 @@ from sqlalchemy import func
 
 
 def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, run_limit=None):
-    """ Get a list of Jenkins jobs"""
+    """Get a list of Jenkins jobs"""
     offset = (page * page_size) - page_size
 
     # first create the filters

@@ -18,6 +18,7 @@ COUNT_ESTIMATE_LIMIT = 1000  # if count estimate < COUNT_ESTIMATE_LIMIT, actuall
 MAX_DOCUMENTS = 100000  # max documents for pagination, when apply_max=True
 JJV_RUN_LIMIT = 8000  # max runs from which to aggregate Jenkins Jobs
 HEATMAP_RUN_LIMIT = 3000  # max runs from which to determine recent Jenkins builds
+SYNC_RUN_TIME = 15 * 60  # time for searching through aborted runs [s]
 _ADDITIONAL_FILTERS_PARAM = {
     "name": "additional_filters",
     "description": "Comma-separated list of additional filters, cf. "

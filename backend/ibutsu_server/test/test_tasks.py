@@ -66,7 +66,7 @@ class TestRunTasks(BaseTestCase):
 
         mocked_lock.return_value.__enter__.return_value = None
         mocked_run.query.get.return_value = MOCK_RUN
-        mocked_result.query.return_value.filter.return_value.limit.return_value = MOCK_RESULTS
+        mocked_result.query.return_value.filter.return_value.all.return_value = MOCK_RESULTS
 
         update_run = update_run._orig_func
         update_run(MOCK_RUN_ID)
@@ -74,6 +74,6 @@ class TestRunTasks(BaseTestCase):
         mocked_lock.assert_called_once()
         mocked_run.query.get.assert_called_once_with(MOCK_RUN_ID)
         mocked_result.query.filter.assert_called_once()
-        mocked_result.query.filter.return_value.order_by.return_value.limit.assert_called_once()
+        mocked_result.query.filter.return_value.order_by.return_value.all.assert_called_once()
         mocked_session.add.assert_called_once()
         mocked_session.commit.assert_called_once()
