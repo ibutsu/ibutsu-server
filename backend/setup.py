@@ -27,7 +27,7 @@ REQUIRES = [
     "sqlalchemy-json",
     "swagger-ui-bundle==0.0.2",
     # Pin this for now, once other libraries are updated, drop this pin
-    "werkzeug==0.16.1",
+    "werkzeug",
     "vine<5.0.0a1",
 ]
 
