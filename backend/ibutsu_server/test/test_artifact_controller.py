@@ -67,7 +67,9 @@ class TestArtifactController(BaseTestCase):
         """
         headers = {"Accept": "application/octet-stream"}
         response = self.client.open(
-            "/api/artifact/{id}/download".format(id=MOCK_ID), method="GET", headers=headers,
+            "/api/artifact/{id}/download".format(id=MOCK_ID),
+            method="GET",
+            headers=headers,
         )
         self.mock_artifact.query.get.assert_called_once_with(MOCK_ID)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
@@ -79,7 +81,9 @@ class TestArtifactController(BaseTestCase):
         """
         headers = {"Accept": "application/json"}
         response = self.client.open(
-            "/api/artifact/{id}".format(id=MOCK_ID), method="GET", headers=headers,
+            "/api/artifact/{id}".format(id=MOCK_ID),
+            method="GET",
+            headers=headers,
         )
         self.mock_artifact.query.get.assert_called_once_with(MOCK_ID)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))

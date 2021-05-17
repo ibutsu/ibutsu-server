@@ -79,3 +79,6 @@ backend/settings.yaml
 # pytest-ibutsu stuff
 *.tar.gz
 .last*
+
+# celery beat
+celerybeat*

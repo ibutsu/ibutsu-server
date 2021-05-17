@@ -126,7 +126,7 @@ def _build_query(report):
 
 
 def _get_results(report):
-    """ Limit the number of documents to REPORT_MAX_DOCUMENTS so as not to crash the server."""
+    """Limit the number of documents to REPORT_MAX_DOCUMENTS so as not to crash the server."""
     query = _build_query(report)
     try:
         session.execute(f"SET statement_timeout TO {int(REPORT_COUNT_TIMEOUT * 1000)}; commit;")

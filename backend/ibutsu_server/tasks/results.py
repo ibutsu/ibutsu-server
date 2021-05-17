@@ -7,7 +7,7 @@ from ibutsu_server.tasks import task
 
 @task
 def add_result_start_time(run_id):
-    """ Update all results in a run to add the 'start_time' field to a result"""
+    """Update all results in a run to add the 'start_time' field to a result"""
     with lock(f"update-run-lock-{run_id}"):
         run = Run.query.get(run_id)
         if not run:
