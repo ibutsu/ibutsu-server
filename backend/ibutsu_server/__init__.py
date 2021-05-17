@@ -41,10 +41,13 @@ def get_app(**extra_config):
     config = app.app.config
     config.setdefault("BCRYPT_LOG_ROUNDS", 20)
     config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", True)
-    settings_path = Path("./settings.yaml").resolve()
-    if settings_path.exists():
-        # If there's a config file, load it
-        config.from_mapping(yaml_load(settings_path.open()))
+    if hasattr(config, "from_file"):
+        config.from_file(str(Path("./settings.yaml").resolve()), yaml_load, silent=True)
+    else:
+        settings_path = Path("./settings.yaml").resolve()
+        if settings_path.exists():
+            # If there's a config file, load it
+            config.from_mapping(yaml_load(settings_path.open()))
     # Now load config from environment variables
     config.from_mapping(os.environ)
     if config.get("POSTGRESQL_HOST") and config.get("POSTGRESQL_DATABASE"):

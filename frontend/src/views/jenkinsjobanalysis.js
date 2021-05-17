@@ -6,9 +6,10 @@ import {
   Tab,
   Tabs,
 } from '@patternfly/react-core';
+
+import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
-  buildUrl,
   getActiveProject,
   parseFilter,
 } from '../utilities';
@@ -81,8 +82,8 @@ export class JenkinsJobAnalysisView extends React.Component {
       params['job_name'] = this.state.filters.job_name.val;
     }
     params['builds'] = this.state.builds;
-    fetch(buildUrl(Settings.serverUrl + '/widget/' + this.props.view.widget, params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'widget', this.props.view.widget], params)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         data.heatmap_params['count_skips'] = (this.state.countSkips === 'Yes');
         this.setState({

@@ -9,6 +9,7 @@ from unittest.mock import patch
 from flask import json
 from ibutsu_server.test import BaseTestCase
 from ibutsu_server.test import MockRun
+from ibutsu_server.util.jwt import generate_token
 from six import BytesIO
 
 MOCK_ID = "6b26876f-bcd9-49f3-b5bd-35f895a345d1"
@@ -35,6 +36,11 @@ class TestRunController(BaseTestCase):
         self.mock_limit.return_value.offset.return_value.all.return_value = [MOCK_RUN]
         self.session_patcher = patch("ibutsu_server.controllers.run_controller.session")
         self.mock_session = self.session_patcher.start()
+        self.project_has_user_patcher = patch(
+            "ibutsu_server.controllers.run_controller.project_has_user"
+        )
+        self.mock_project_has_user = self.project_has_user_patcher.start()
+        self.mock_project_has_user.return_value = True
         self.run_patcher = patch("ibutsu_server.controllers.run_controller.Run")
         self.mock_run = self.run_patcher.start()
         self.mock_run.from_dict.return_value = MOCK_RUN
@@ -43,11 +49,13 @@ class TestRunController(BaseTestCase):
         self.mock_run.query.limit = self.mock_limit
         self.task_patcher = patch("ibutsu_server.controllers.run_controller.update_run_task")
         self.mock_update_run_task = self.task_patcher.start()
+        self.jwt_token = generate_token("test-user")
 
     def tearDown(self):
         """Teardown the mocks"""
         self.task_patcher.stop()
         self.run_patcher.stop()
+        self.project_has_user_patcher.stop()
         self.session_patcher.stop()
 
     def test_add_run(self):
@@ -62,7 +70,11 @@ class TestRunController(BaseTestCase):
             "start_time": START_TIME,
             "created": START_TIME,
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/run",
             method="POST",
@@ -79,7 +91,7 @@ class TestRunController(BaseTestCase):
 
         Get a single run by ID
         """
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/run/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
@@ -92,7 +104,7 @@ class TestRunController(BaseTestCase):
         Get a list of the test runs
         """
         query_string = [("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/run", method="GET", headers=headers, query_string=query_string
         )
@@ -104,7 +116,11 @@ class TestRunController(BaseTestCase):
 
         Import a JUnit XML file
         """
-        headers = {"Accept": "application/json", "Content-Type": "multipart/form-data"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "multipart/form-data",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         data = dict(xml_file=(BytesIO(b"some file data"), "file.txt"))
         response = self.client.open(
             "/api/run/import",
@@ -124,7 +140,11 @@ class TestRunController(BaseTestCase):
             "duration": 540.05433,
             "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/run/{id}".format(id=MOCK_ID),
             method="PUT",

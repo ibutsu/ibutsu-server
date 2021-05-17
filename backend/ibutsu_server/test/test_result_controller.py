@@ -7,7 +7,9 @@ from unittest.mock import patch
 
 from flask import json
 from ibutsu_server.test import BaseTestCase
+from ibutsu_server.test import MockProject
 from ibutsu_server.test import MockResult
+from ibutsu_server.util.jwt import generate_token
 
 MOCK_ID = "99fba7d2-4d32-4b9b-b07f-4200c9717661"
 START_TIME = datetime.utcnow()
@@ -20,6 +22,7 @@ MOCK_RESULT = MockResult(
     source="source",
     params={"provider": "vmware", "ip_stack": "ipv4"},
     test_id="test_id",
+    project=MockProject(),
 )
 MOCK_RESULT_DICT = MOCK_RESULT.to_dict()
 
@@ -31,15 +34,22 @@ class TestResultController(BaseTestCase):
         """Set up a fake MongoDB object"""
         self.session_patcher = patch("ibutsu_server.controllers.result_controller.session")
         self.mock_session = self.session_patcher.start()
+        self.project_has_user_patcher = patch(
+            "ibutsu_server.controllers.result_controller.project_has_user"
+        )
+        self.mock_project_has_user = self.project_has_user_patcher.start()
+        self.mock_project_has_user.return_value = True
         self.result_patcher = patch("ibutsu_server.controllers.result_controller.Result")
         self.mock_result = self.result_patcher.start()
         self.mock_result.return_value = MOCK_RESULT
         self.mock_result.from_dict.return_value = MOCK_RESULT
         self.mock_result.query.get.return_value = MOCK_RESULT
+        self.jwt_token = generate_token("test-user")
 
     def tearDown(self):
         """Teardown the mocks"""
         self.result_patcher.stop()
+        self.project_has_user_patcher.stop()
         self.session_patcher.stop()
 
     def test_add_result(self):
@@ -56,7 +66,11 @@ class TestResultController(BaseTestCase):
             "params": {"provider": "vmware", "ip_stack": "ipv4"},
             "test_id": "test_id",
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/result",
             method="POST",
@@ -72,7 +86,7 @@ class TestResultController(BaseTestCase):
 
         Get a single result
         """
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/result/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
@@ -90,7 +104,7 @@ class TestResultController(BaseTestCase):
         self.mock_result.query.count.return_value = 1
         self.mock_result.query.filter.return_value.count.return_value = 1
         query_string = [("filter", "metadata.component=frontend"), ("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/result", method="GET", headers=headers, query_string=query_string
         )
@@ -114,7 +128,11 @@ class TestResultController(BaseTestCase):
             "params": {"provider": "vmware", "ip_stack": "ipv4"},
             "test_id": "test_id",
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/result/{id}".format(id=MOCK_ID),
             method="PUT",

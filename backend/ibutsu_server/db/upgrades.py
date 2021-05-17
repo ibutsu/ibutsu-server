@@ -1,5 +1,6 @@
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
+from ibutsu_server.db.base import Boolean
 from ibutsu_server.db.base import Column
 from ibutsu_server.db.base import ForeignKey
 from ibutsu_server.db.types import PortableUUID
@@ -7,7 +8,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
-__version__ = 2
+__version__ = 3
 
 
 def get_upgrade_op(session):
@@ -85,3 +86,14 @@ def upgrade_2(session):
                     [quoted_name("(data->'requirements')", False)],
                     postgresql_using="gin",
                 )
+
+
+def upgrade_3(session):
+    """Version 3 upgrade
+
+    This upgrade removes the "nullable" constraint on the password field, and adds a "is_superadmin"
+    field to the user table.
+    """
+    op = get_upgrade_op(session)
+    op.alter_column("users", "_password", nullable=False)
+    op.add_column("users", Column("is_superadmin", Boolean, default=False))

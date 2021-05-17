@@ -9,6 +9,9 @@ import {
   AlertVariant,
   Brand,
   Button,
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
   Flex,
   FlexItem,
   Nav,
@@ -28,8 +31,8 @@ import {
 } from '@patternfly/react-core';
 import EventEmitter from 'wolfy87-eventemitter';
 
-import { UploadIcon, ServerIcon, QuestionCircleIcon } from '@patternfly/react-icons';
-import { BrowserRouter as Router, NavLink, Route, Switch, withRouter } from 'react-router-dom';
+import { CaretDownIcon, UploadIcon, ServerIcon, QuestionCircleIcon, UserIcon } from '@patternfly/react-icons';
+import { NavLink, Route, Switch, withRouter } from 'react-router-dom';
 import accessibleStyles from '@patternfly/patternfly/utilities/Accessibility/accessibility.css';
 import { css } from '@patternfly/react-styles';
 
@@ -42,7 +45,9 @@ import { Result } from './result';
 import { Settings } from './settings';
 import { FileUpload, View } from './components';
 import { ALERT_TIMEOUT, MONITOR_UPLOAD_TIMEOUT, VERSION_CHECK_TIMEOUT } from './constants';
-import { buildUrl, getActiveProject } from './utilities';
+import { AuthService } from './services/auth';
+import { HttpClient } from './services/http';
+import { getActiveProject } from './utilities';
 import { version } from '../package.json'
 import './app.css';
 
@@ -67,7 +72,7 @@ function projectToSelect(project) {
 }
 
 
-class App extends React.Component {
+export class App extends React.Component {
   constructor(props) {
     super(props);
     let project = getActiveProject();
@@ -84,7 +89,8 @@ class App extends React.Component {
       selectedProject: projectToSelect(project),
       searchValue: '',
       projects: [],
-      views: []
+      views: [],
+      isUserDropdownOpen: false
     };
     this.eventEmitter.on('projectChange', () => {
       this.getViews();
@@ -97,8 +103,8 @@ class App extends React.Component {
     if (project) {
       params['filter'].push('project_id=' + project.id);
     }
-    fetch(buildUrl(Settings.serverUrl + '/widget-config', params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'widget-config'], params)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         data.widgets.forEach(widget => {
           if (project) {
@@ -149,6 +155,7 @@ class App extends React.Component {
   }
 
   onAfterUpload = (response) => {
+    response = HttpClient.handleResponse(response, 'response');
     if (response.status >= 200 && response.status < 400) {
       response.json().then((importObject) => {
         this.showNotification('info', 'Import Starting', importObject.filename + ' is being imported...');
@@ -164,8 +171,8 @@ class App extends React.Component {
   }
 
   monitorUpload = () => {
-    fetch(Settings.serverUrl + '/import/' + this.state.importId)
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'import', this.state.importId])
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         if (data['status'] === 'done') {
           clearInterval(this.state.monitorUploadId);
@@ -186,8 +193,8 @@ class App extends React.Component {
 
   checkVersion() {
     const frontendUrl = window.location.origin;
-    fetch(frontendUrl + '/version.json?v=' + getDateString())
-      .then(response => response.json())
+    HttpClient.get([frontendUrl, 'version.json'], {'v': getDateString()})
+      .then(response => HttpClient.handleResponse(response))
       .then((data) => {
         if (data && data.version && (data.version !== this.version)) {
           const action = <AlertActionLink onClick={() => { window.location.reload(); }}>Reload</AlertActionLink>;
@@ -197,8 +204,8 @@ class App extends React.Component {
   }
 
   getProjects() {
-    fetch(Settings.serverUrl + '/project')
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'project'])
+      .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({projects: data['projects']}));
   }
 
@@ -231,6 +238,19 @@ class App extends React.Component {
       isProjectSelectorOpen: false
     });
     this.eventEmitter.emit('projectChange');
+  }
+
+  onUserDropdownToggle = (isOpen) => {
+    this.setState({isUserDropdownOpen: isOpen});
+  };
+
+  onUserDropdownSelect = () => {
+    this.setState({isUserDropdownOpen: false});
+  };
+
+  logout = () => {
+    AuthService.logout();
+    window.location = "/";
   }
 
   componentWillUnmount() {
@@ -312,6 +332,26 @@ class App extends React.Component {
           <PageHeaderToolsItem>
             <a href={apiUiUrl} className="pf-c-button pf-m-plain" target="_blank" rel="noopener noreferrer"><ServerIcon/> API</a>
           </PageHeaderToolsItem>
+          <PageHeaderToolsItem id="user-dropdown">
+            <Dropdown
+              onSelect={this.onUserDropdownSelect}
+              toggle={
+                <DropdownToggle
+                  id="user-dropdown-toggle"
+                  onToggle={this.onUserDropdownToggle}
+                  toggleIndicator={CaretDownIcon}
+                  icon={<UserIcon />}
+                  isPlain={true}
+                >
+                  {AuthService.getUser() && (AuthService.getUser().name || AuthService.getUser().email)}
+                </DropdownToggle>
+              }
+              isOpen={this.state.isUserDropdownOpen}
+              dropdownItems={[
+                <DropdownItem key="logout" component="button" onClick={this.logout}>Logout</DropdownItem>
+              ]}
+            />
+          </PageHeaderToolsItem>
         </PageHeaderToolsGroup>
       </PageHeaderTools>
     );
@@ -326,8 +366,7 @@ class App extends React.Component {
     const sidebar = <PageSidebar nav={navigation} theme="dark" />;
 
     return (
-      <Router>
-        <React.Fragment>
+      <React.Fragment>
           <AboutModal
             isOpen={this.state.isAboutOpen}
             onClose={this.toggleAbout}
@@ -335,7 +374,7 @@ class App extends React.Component {
             brandImageAlt="Ibutsu"
             productName="Ibutsu"
             backgroundImageSrc="/images/about-bg.jpg"
-            trademark="Copyright (c) 2020 Red Hat, Inc."
+            trademark="Copyright (c) 2021 Red Hat, Inc."
           >
             <TextContent>
               <TextList component="dl">
@@ -394,10 +433,7 @@ class App extends React.Component {
               <Route path="/view/:id" component={View} />
             </Switch>
           </Page>
-        </React.Fragment>
-      </Router>
+      </React.Fragment>
     );
   }
 }
-
-export default App;

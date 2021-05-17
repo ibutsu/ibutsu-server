@@ -7,6 +7,7 @@ from unittest.mock import patch
 from flask import json
 from ibutsu_server.test import BaseTestCase
 from ibutsu_server.test import MockProject
+from ibutsu_server.util.jwt import generate_token
 
 MOCK_ID = "5ac7d645-45a3-4cbe-acb2-c8d6f7e05468"
 MOCK_NAME = "my-project"
@@ -28,6 +29,16 @@ class TestProjectController(BaseTestCase):
         """Set up a fake MongoDB object"""
         self.session_patcher = patch("ibutsu_server.controllers.project_controller.session")
         self.mock_session = self.session_patcher.start()
+        self.project_has_user_patcher = patch(
+            "ibutsu_server.controllers.project_controller.project_has_user"
+        )
+        self.mock_project_has_user = self.project_has_user_patcher.start()
+        self.mock_project_has_user.return_value = True
+        self.add_user_filter_patcher = patch(
+            "ibutsu_server.controllers.project_controller.add_user_filter"
+        )
+        self.mock_add_user_filter = self.add_user_filter_patcher.start()
+        self.mock_add_user_filter.side_effect = lambda query, user: query
         self.project_patcher = patch("ibutsu_server.controllers.project_controller.Project")
         self.mock_project = self.project_patcher.start()
         self.mock_project.return_value = MOCK_PROJECT
@@ -39,10 +50,13 @@ class TestProjectController(BaseTestCase):
         self.mock_project.query.filter.return_value.limit = mock_limit
         self.mock_project.query.count.return_value = 1
         self.mock_project.query.filter.return_value.count.return_value = 1
+        self.jwt_token = generate_token("test-user")
 
     def tearDown(self):
         """Teardown the mocks"""
         self.project_patcher.stop()
+        self.add_user_filter_patcher.stop()
+        self.project_has_user_patcher.stop()
         self.session_patcher.stop()
 
     def test_add_project(self):
@@ -50,7 +64,11 @@ class TestProjectController(BaseTestCase):
 
         Create a project
         """
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/project",
             method="POST",
@@ -69,7 +87,7 @@ class TestProjectController(BaseTestCase):
         Get a single project by ID
         """
         self.mock_project.query.filter.return_value.first.return_value = None
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/project/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
@@ -83,7 +101,7 @@ class TestProjectController(BaseTestCase):
         Get a single project by name
         """
         self.mock_project.query.filter.return_value.first.return_value = MOCK_PROJECT
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/project/{id}".format(id=MOCK_NAME), method="GET", headers=headers
         )
@@ -105,7 +123,7 @@ class TestProjectController(BaseTestCase):
             ("page", 56),
             ("pageSize", 56),
         ]
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/project", method="GET", headers=headers, query_string=query_string
         )
@@ -127,7 +145,11 @@ class TestProjectController(BaseTestCase):
         }
         updated_dict = MOCK_PROJECT_DICT.copy()
         updated_dict.update(updates)
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/project/{id}".format(id=MOCK_ID),
             method="PUT",

@@ -17,11 +17,11 @@ import {
 import { ChevronRightIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
+import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
   buildBadge,
   buildParams,
-  buildUrl,
   getActiveProject,
   getFilterMode,
   getOperationMode,
@@ -348,8 +348,8 @@ export class RunList extends React.Component {
         params.filter.push(key + op + val);
       }
     }
-    fetch(buildUrl(Settings.serverUrl + '/run', params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'run'], params)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
         rows: data.runs.map((run) => runToRow(run, this.setFilter)),
         page: data.pagination.page,

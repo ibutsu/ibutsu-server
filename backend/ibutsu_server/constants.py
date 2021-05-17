@@ -1,3 +1,30 @@
+OAUTH_CONFIG = {
+    "google": {
+        "scope": ["https://www.googleapis.com/auth/userinfo.profile"],
+        "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
+        "token_url": "https://oauth2.googleapis.com/token",
+        "user_url": "https://www.googleapis.com/oauth2/v1/userinfo?alt=json",
+    },
+    "github": {
+        "scope": ["user"],
+        "user_url": "https://api.github.com/user",
+        "auth_url": "https://github.com/login/oauth/authorize",
+        "token_url": "https://github.com/login/oauth/access_token",
+    },
+    "facebook": {
+        "scope": ["email", "public_profile"],
+        "auth_url": "https://www.facebook.com/v11.0/dialog/oauth",
+        "user_url": "",
+        "token_url": "https://graph.facebook.com/v11.0/oauth/access_token",
+    },
+    "gitlab": {
+        "scope": ["read_user"],
+        "sep": "+",
+        "user_url": "/api/v4/user",
+        "auth_url": "/oauth/authorize",
+        "token_url": "/oauth/token",
+    },
+}
 ALLOWED_TRUE_BOOLEANS = ["y", "t", "1"]
 ARRAY_FIELDS = ["metadata.tags", "metadata.markers", "metadata.annotations"]
 NUMERIC_FIELDS = [

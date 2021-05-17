@@ -3,16 +3,20 @@ from datetime import datetime
 import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run
+from ibutsu_server.db.models import User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks.runs import update_run as update_run_task
 from ibutsu_server.util.count import get_count_estimate
+from ibutsu_server.util.projects import add_user_filter
+from ibutsu_server.util.projects import get_project
 from ibutsu_server.util.projects import get_project_id
+from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.query import query_as_task
 from ibutsu_server.util.uuid import validate_uuid
 
 
 @query_as_task
-def get_run_list(filter_=None, page=1, page_size=25, estimate=False):
+def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=None, user=None):
     """Get a list of runs
 
     The `filter` parameter takes a list of filters to apply in the form of:
@@ -56,7 +60,10 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False):
 
     :rtype: List[Run]
     """
+    user = User.query.get(user)
     query = Run.query
+    if user:
+        query = add_user_filter(query, user, Run.project)
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Run)
@@ -85,7 +92,7 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False):
 
 
 @validate_uuid
-def get_run(id_):
+def get_run(id_, token_info=None, user=None):
     """Get a run
 
     :param id: The ID of the run
@@ -94,10 +101,12 @@ def get_run(id_):
     :rtype: Run
     """
     run = Run.query.get(id_)
+    if not project_has_user(run.project, user):
+        return "Forbidden", 403
     return run.to_dict() if run else ("Run not found", 404)
 
 
-def add_run(run=None):
+def add_run(run=None, token_info=None, user=None):
     """Create a new run
 
     :param body: Run object
@@ -110,7 +119,9 @@ def add_run(run=None):
     run = Run.from_dict(**connexion.request.get_json())
 
     if run.data and run.data.get("project"):
-        run.project_id = get_project_id(run.data["project"])
+        run.project = get_project(run.data["project"])
+        if not project_has_user(run.project, user):
+            return "Forbidden", 403
     run.env = run.data.get("env") if run.data else None
     run.component = run.data.get("component") if run.data else None
     # allow start_time to be set by update_run task if no start_time present
@@ -124,7 +135,7 @@ def add_run(run=None):
     return run.to_dict(), 201
 
 
-def update_run(id_, run=None):
+def update_run(id_, run=None, token_info=None, user=None):
     """Updates a single run
 
     :param id: ID of run to update
@@ -139,7 +150,11 @@ def update_run(id_, run=None):
     run_dict = connexion.request.get_json()
     if run_dict.get("metadata", {}).get("project"):
         run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
+        if not project_has_user(run_dict["project_id"], user):
+            return "Forbidden", 403
     run = Run.query.get(id_)
+    if run and not project_has_user(run.project, user):
+        return "Forbidden", 403
     if not run:
         return "Run not found", 404
     run.update(run_dict)
@@ -149,7 +164,7 @@ def update_run(id_, run=None):
     return run.to_dict()
 
 
-def bulk_update(filter_=None, page_size=1):
+def bulk_update(filter_=None, page_size=1, token_info=None, user=None):
     """Updates multiple runs with common metadata
 
     Note: can only be used to update metadata on runs, limited to 25 runs
@@ -174,7 +189,10 @@ def bulk_update(filter_=None, page_size=1):
         return "Bad request, cannot update more than 25 runs at a time", 405
 
     if run_dict.get("metadata", {}).get("project"):
-        run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
+        project = get_project(run_dict["metadata"]["project"])
+        if not project_has_user(project, user):
+            return "Forbidden", 403
+        run_dict["project_id"] = project.id
 
     runs = get_run_list(filter_=filter_, page_size=page_size, estimate=True).get("runs")
 
