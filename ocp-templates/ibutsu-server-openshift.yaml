@@ -1100,14 +1100,16 @@ objects:
                   - 'pipefail'
                   - '-c'
                   - >
-                    trap "echo Backup failed; exit 0" ERR;
+                    trap "echo 'Backup failed'; exit 0" ERR;
                     FILENAME=backup-${PGDATABASE}-`date +%Y-%m-%d`.dump;
-                    time (find /database-backup -type f -name "backup-${PGDATABASE}-*" -exec ls "{}" + | head -n -${BACKUP_KEEP} | xargs rm -fr;
-                    pg_dump --format=custom --compress=9 --jobs=1 --no-owner --exclude-schema=$BACKUP_EXCLUDE --file=$FILENAME;
+                    cd /var/lib/database-backup;
+                    find . -type f -name "backup-${PGDATABASE}-*" -exec ls -ltr "{}" + | head -n -${BACKUP_KEEP} | xargs rm -fr;
+                    echo "Backing up database...";
+                    PGPASSWORD="$PGPASSWORD" pg_dump -v --username=$PGUSER --host=$PGHOST --port=$PGPORT --dbname=$PGDATABASE --exclude-table=artifacts --format=custom --compress=9 --jobs=1 --no-owner --file=$FILENAME;
                     echo "";
-                    echo -n "Backup successful: "; du -h /database-backup/$FILENAME;
+                    echo -n "Backup successful: "; du -h ./$FILENAME;
                     echo "To restore, use:";
-                    echo "~# pg_restore --user=$PGUSER --password --host=$PGHOST --port=$PGPORT --database=$PGDATABASE $FILENAME"
+                    echo "~# pg_restore --user=$PGUSER --password=<PGPASSWD> --host=$PGHOST --port=$PGPORT --database=$PGDATABASE $FILENAME"
                 resources:
                 limits:
                   cpu: 250m

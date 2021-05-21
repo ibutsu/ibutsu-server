@@ -26,8 +26,7 @@ spec:
           name: postgresql-config
       containers:
         - name: postgresql-backup
-          image: >-
-            image-registry.openshift-image-registry.svc:5000/openshift/postgresql@sha256:fd6a31238840a009aa024a88a1dc95cc6e61067650cad2fad0db4f52c9265496
+          image: postgresql:12
           command:
             - 'bash'
             - '-eo'
