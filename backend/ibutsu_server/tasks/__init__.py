@@ -48,6 +48,7 @@ def create_celery_app(_app=None):
         include=[
             "ibutsu_server.tasks.db",
             "ibutsu_server.tasks.importers",
+            "ibutsu_server.tasks.query",
             "ibutsu_server.tasks.reports",
             "ibutsu_server.tasks.results",
             "ibutsu_server.tasks.runs",
