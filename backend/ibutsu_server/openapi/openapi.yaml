@@ -1444,7 +1444,7 @@ paths:
               schema:
                 type: object
           description: The task has completed and the data has been returned
-        204:
+        206:
           content:
             application/json:
               schema:

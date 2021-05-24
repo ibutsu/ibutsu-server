@@ -1,7 +1,7 @@
 from celery.result import AsyncResult
 from ibutsu_server.util.uuid import validate_uuid
 
-_STATE_TO_CODE = {"SUCCESS": 200, "PENDING": 204, "STARTED": 204, "RETRY": 204, "FAILURE": 203}
+_STATE_TO_CODE = {"SUCCESS": 200, "PENDING": 206, "STARTED": 206, "RETRY": 206, "FAILURE": 203}
 
 
 @validate_uuid
