@@ -6,6 +6,7 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters
 from ibutsu_server.filters import string_to_column
+from sqlalchemy import case
 from sqlalchemy import desc
 from sqlalchemy import func
 
@@ -144,7 +145,13 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
         subquery.c.build_number,
         subquery.c.run_id,
         subquery.c.annotations,
-        (100 * passes / subquery.c.total).label("pass_percent"),
+        # handle potential division by 0 errors, if the total is 0, set the pass_percent to 0
+        case(
+            [
+                (subquery.c.total == 0, 0),
+            ],
+            else_=(100 * passes / subquery.c.total),
+        ).label("pass_percent"),
     )
 
     # parse the data for the frontend
