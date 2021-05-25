@@ -6,6 +6,7 @@ from ibutsu_server.db.models import Result
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import get_project_id
+from ibutsu_server.util.query import query_as_task
 from ibutsu_server.util.uuid import validate_uuid
 
 
@@ -32,6 +33,7 @@ def add_result(result=None):
     return result.to_dict(), 201
 
 
+@query_as_task
 def get_result_list(filter_=None, page=1, page_size=25, estimate=False):
     """Gets all results
 
@@ -95,6 +97,7 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False):
 
     offset = (page * page_size) - page_size
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
+
     results = query.order_by(Result.start_time.desc()).offset(offset).limit(page_size).all()
     return {
         "results": [result.to_dict() for result in results],

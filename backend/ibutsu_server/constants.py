@@ -11,6 +11,7 @@ NUMERIC_FIELDS = [
     "summary.xfailures",
     "summary.xpasses",
 ]
+MAX_PAGE_SIZE = 500  # max page size API can return, page_sizes over this are sent to a worker
 HEATMAP_MAX_BUILDS = 40  # max for number of builds that are possible to display in heatmap
 BARCHART_MAX_BUILDS = 150  # max for number of builds possible to display in bar chart
 COUNT_TIMEOUT = 0.5  # timeout for counting the number of documents [s]

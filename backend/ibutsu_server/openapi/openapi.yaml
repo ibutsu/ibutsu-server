@@ -24,6 +24,8 @@ tags:
   name: widget
 - description: Widget configuration
   name: widget-config
+- description: Celery task
+  name: task
 paths:
   /result:
     get:
@@ -88,6 +90,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/ResultList'
           description: successful operation
+        201:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Query being evaluated in a celery task
       summary: Get the list of results.
       tags:
       - result
@@ -425,6 +433,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/RunList'
           description: Array of Runs
+        201:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Query being evaluated in a celery task
       summary: Get a list of the test runs
       tags:
       - run
@@ -1410,6 +1424,42 @@ paths:
       tags:
       - import
       x-openapi-router-controller: ibutsu_server.controllers.import_controller
+  /task/{id}:
+    get:
+      operationId: get_task
+      parameters:
+        - description: The ID of the task
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: The task has completed and the data has been returned
+        206:
+          content:
+            application/json:
+              schema:
+                type: object
+          description: The task either doesn't exist or hasn't finished
+        203:
+          content:
+            text/plain:
+              schema:
+                type: object
+          description: Error occurred in the task
+      summary: Get the status or result of a task
+      tags:
+        - task
+      x-openapi-router-controller: ibutsu_server.controllers.task_controller
 components:
   requestBodies:
     Result:
