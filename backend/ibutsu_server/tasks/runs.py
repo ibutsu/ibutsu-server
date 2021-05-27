@@ -74,7 +74,8 @@ def update_run(run_id):
                 summary[key] += 1
             # update the number of tests that actually ran
             summary["tests"] += 1
-            run.duration += result.duration
+            if result.duration:
+                run.duration += result.duration
 
         # determine the number of passes
         summary["passes"] = summary["tests"] - (
