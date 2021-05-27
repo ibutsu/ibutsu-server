@@ -1,8 +1,15 @@
 FROM registry.access.redhat.com/ubi8/python-38
 
+# add application sources with correct perms for OCP
+USER 0
 COPY . /app
 WORKDIR /app
-RUN pip install --no-cache-dir -U pip && pip install --no-cache-dir -r requirements.txt
+RUN chown -R 1001:0 ./
 USER 1001
+
+# Install deps
+RUN pip install --no-cache-dir -U pip setuptools wheel && pip install --no-cache-dir -r requirements.txt
 ENTRYPOINT ["celery"]
+
+# Run application
 CMD ["worker", "-E", "-A", "ibutsu_server.tasks.queues:app", "--loglevel=info", "--concurrency", "1", "--hostname", "ibutsu-worker@%n"]
