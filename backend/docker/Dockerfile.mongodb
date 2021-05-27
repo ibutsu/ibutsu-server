@@ -1,4 +1,0 @@
-FROM docker-registry.default.svc:5000/openshift/mongodb
-# FROM centos/mongodb-34-centos7
-
-ADD docker/mongod.conf ${APP_DATA}/mongodb-cfg/mongod.conf
