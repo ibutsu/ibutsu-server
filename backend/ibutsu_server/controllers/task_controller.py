@@ -19,7 +19,9 @@ def get_task(id_):
 
     if async_result.state == "SUCCESS":
         response["message"] = "Task has succeeded"
-        response.update(async_result.get())
+        result = async_result.get()
+        if result:
+            response.update(async_result.get())
     elif async_result.state == "PENDING":
         response["message"] = "Task not yet started or invalid, check back later"
     elif async_result.state == "STARTED":
