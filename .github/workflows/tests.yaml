@@ -50,3 +50,29 @@ jobs:
       - name: Run frontend tests
         working-directory: ./frontend
         run: yarn test
+
+  build-backend:
+    runs-on: ubuntu-20.04
+    needs: test-backend
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build backend image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          context: ./backend
+          image: ibutsu-backend
+          dockerfiles: |
+            ./backend/docker/Dockerfile.backend
+
+  build-frontend:
+    runs-on: ubuntu-20.04
+    needs: test-frontend
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build frontend image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          context: ./frontend
+          image: ibutsu-frontend
+          dockerfiles: |
+            ./frontend/docker/Dockerfile.frontend
