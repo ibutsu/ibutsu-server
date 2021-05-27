@@ -54,15 +54,18 @@ jobs:
   build-backend:
     runs-on: ubuntu-20.04
     needs: test-backend
+    strategy:
+      matrix:
+        app: [backend, scheduler, worker]
     steps:
       - uses: actions/checkout@v2
-      - name: Build backend image
+      - name: Build image ${{ matrix.app }}
         uses: redhat-actions/buildah-build@v2
         with:
           context: ./backend
-          image: ibutsu-backend
+          image: ibutsu-${{ matrix.app }}
           dockerfiles: |
-            ./backend/docker/Dockerfile.backend
+            ./backend/docker/Dockerfile.${{ matrix.app }}
 
   build-frontend:
     runs-on: ubuntu-20.04
