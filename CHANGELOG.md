@@ -1,3 +1,13 @@
+Version 1.13.2
+==============
+
+* Fix division by 0 in the jenkins heatmap
+* Change 204 to 206
+* Add an API endpoint to check the status of a task
+* Small changes to OCP templates
+* Update pre-commit; add in task for syncing aborted runs
+* Update the Python dependencies (#169)
+
 Version 1.13.1
 ==============
 
