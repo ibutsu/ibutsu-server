@@ -209,7 +209,10 @@ class User(Model, ModelMixin):
 
     @password.setter
     def _set_password(self, plaintext):
-        self._password = bcrypt.generate_password_hash(plaintext)
+        self._password = bcrypt.generate_password_hash(plaintext).decode("utf8")
+
+    def check_password(self, plaintext):
+        return bcrypt.check_password_hash(self.password, plaintext)
 
 
 class Meta(Model):

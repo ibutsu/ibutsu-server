@@ -18,6 +18,7 @@ REQUIRES = [
     "lxml",
     "psycopg2-binary",
     "pymongo",
+    "python-jose[cryptography]",
     "python-magic",
     "python_dateutil==2.6.0",
     "PyYAML",
@@ -26,7 +27,6 @@ REQUIRES = [
     "sqlalchemy==1.3.23",
     "sqlalchemy-json",
     "swagger-ui-bundle==0.0.2",
-    # Pin this for now, once other libraries are updated, drop this pin
     "werkzeug",
     "vine<5.0.0a1",
 ]

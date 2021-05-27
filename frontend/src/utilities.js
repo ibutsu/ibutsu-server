@@ -101,24 +101,6 @@ export function buildParams(filters) {
   return getParams;
 }
 
-export function buildUrl(url, params) {
-  // shorthand
-  const esc = encodeURIComponent;
-  let query = [];
-  for (const key of Object.keys(params)) {
-    const value = params[key];
-    if (value instanceof Array) {
-      value.forEach(element => {
-        query.push(esc(key) + '=' + esc(element));
-      });
-    }
-    else {
-      query.push(esc(key) + '=' + esc(value));
-    }
-  }
-  return url + '?' + query.join('&');
-}
-
 export function round(number) {
   let rounded = Math.round(number * 10);
   return rounded / 10;

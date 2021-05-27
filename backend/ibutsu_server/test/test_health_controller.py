@@ -4,8 +4,7 @@ from __future__ import absolute_import
 import unittest
 
 from ibutsu_server.test import BaseTestCase
-
-# from unittest.mock import patch
+from ibutsu_server.util.jwt import generate_token
 
 
 class TestHealthController(BaseTestCase):
@@ -16,7 +15,10 @@ class TestHealthController(BaseTestCase):
 
         Get a health report for the database
         """
-        headers = {"Accept": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": "Bearer " + generate_token("test-user"),
+        }
         response = self.client.open("/api/health/database", method="GET", headers=headers)
         self.assert_500(response, "Response body is : " + response.data.decode("utf-8"))
 
@@ -25,7 +27,10 @@ class TestHealthController(BaseTestCase):
 
         Get a general health report
         """
-        headers = {"Accept": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": "Bearer " + generate_token("test-user"),
+        }
         response = self.client.open("/api/health", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
 

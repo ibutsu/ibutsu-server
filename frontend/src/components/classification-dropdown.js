@@ -7,6 +7,7 @@ import {
   DropdownToggle
 } from '@patternfly/react-core';
 
+import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { CLASSIFICATION } from '../constants.js';
 
@@ -38,11 +39,7 @@ export class ClassificationDropdown extends React.Component {
     let testResult = this.state.testResult;
     testResult['metadata']['classification'] = event.target.getAttribute('value');
     this.setState({testResult: testResult, isClassificationOpen: !this.state.isClassificationOpen});
-    fetch(Settings.serverUrl + '/result/' + testResult['id'], {
-      method: 'PUT',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(testResult)
-    });
+    HttpClient.put([Settings.serverUrl, 'result', testResult['id']], {}, testResult);
   }
 
   render() {
@@ -84,11 +81,8 @@ export class MultiClassificationDropdown extends React.Component {
     else {
       selectedResults.forEach(result => {
         result['metadata']['classification'] = classification;
-        fetch(Settings.serverUrl + '/result/' + result['id'], {
-          method: 'PUT',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(result)
-        }).then(this.props.refreshFunc());
+        HttpClient.put([Settings.serverUrl, 'result', result['id']], {}, result)
+          .then(this.props.refreshFunc());
       })
       this.setState({isClassificationOpen: !this.state.isClassificationOpen});
     }

@@ -21,6 +21,7 @@ import {
 } from '@patternfly/react-core';
 import { ArchiveIcon, CubesIcon, PlusCircleIcon, TachometerAltIcon, TimesCircleIcon } from '@patternfly/react-icons';
 
+import { HttpClient } from './services/http';
 import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
 import { DeleteModal, NewDashboardModal, NewWidgetWizard } from './components';
@@ -30,7 +31,7 @@ import {
   ResultAggregatorWidget,
   ResultSummaryWidget
 } from './widgets';
-import { buildUrl, getActiveProject, getActiveDashboard } from './utilities.js';
+import { getActiveProject, getActiveDashboard } from './utilities.js';
 
 
 function dashboardToSelect(dashboard) {
@@ -82,8 +83,8 @@ export class Dashboard extends React.Component {
       return;
     }
     params['project_id'] = project.id;
-    fetch(buildUrl(Settings.serverUrl + '/dashboard', params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'dashboard'], params)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         this.setState(
           {dashboards: data['dashboards']},
@@ -116,8 +117,8 @@ export class Dashboard extends React.Component {
       return;
     }
     params['filter'] = 'dashboard_id=' + dashboard.id;
-    fetch(buildUrl(Settings.serverUrl + '/widget-config', params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'widget-config'], params)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         // set the widget project param
         data.widgets.forEach(widget => {
@@ -161,12 +162,8 @@ export class Dashboard extends React.Component {
   }
 
   onNewDashboardSave = (newDashboard) => {
-    fetch(Settings.serverUrl + '/dashboard', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(newDashboard)
-    })
-      .then(response => response.json())
+    HttpClient.post([Settings.serverUrl, 'dashboard'], newDashboard)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         localStorage.setItem('dashboard', JSON.stringify(data));
         this.getDashboards();
@@ -188,10 +185,8 @@ export class Dashboard extends React.Component {
   onDeleteDashboard = () => {
     const dashboard = getActiveDashboard();
 
-    fetch(Settings.serverUrl + '/dashboard/' + dashboard.id, {
-        method: 'DELETE',
-      })
-        .then(response => response.json())
+    HttpClient.delete([Settings.serverUrl, 'dashboard', dashboard.id])
+        .then(response => HttpClient.handleResponse(response))
         .then(() => {
           localStorage.removeItem('dashboard');
           this.getDashboards();
@@ -203,10 +198,8 @@ export class Dashboard extends React.Component {
   }
 
   onDeleteWidget = () => {
-    fetch(Settings.serverUrl + '/widget-config/' + this.state.currentWidgetId, {
-        method: 'DELETE',
-      })
-        .then(response => response.json())
+    HttpClient.delete([Settings.serverUrl, 'widget-config', this.state.currentWidgetId])
+        .then(response => HttpClient.handleResponse(response))
         .then(() => {
           this.getWidgets();
           this.setState({isDeleteWidgetOpen: false});
@@ -234,11 +227,7 @@ export class Dashboard extends React.Component {
     if (!newWidget.project_id && project) {
       newWidget.project_id = project.id;
     }
-    fetch(Settings.serverUrl + '/widget-config', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(newWidget)
-    }).then(() => { this.getWidgets(); });
+    HttpClient.post([Settings.serverUrl, 'widget-config'], newWidget).then(() => { this.getWidgets() });
     this.setState({isWidgetWizardOpen: false});
   }
 
@@ -273,6 +262,7 @@ export class Dashboard extends React.Component {
                   onToggle={this.onDashboardToggle}
                   onSelect={this.onDashboardSelect}
                   onClear={this.onDashboardClear}
+                  isPlain
                 >
                   {this.state.dashboards.map(dashboard => (
                     <SelectOption key={dashboard.id} value={dashboardToSelect(dashboard)} />

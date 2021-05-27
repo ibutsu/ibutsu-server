@@ -47,7 +47,7 @@ def download_artifact(id_):
 
 
 @validate_uuid
-def get_artifact(id_):
+def get_artifact(id_, token_info=None, user=None):
     """Return a single artifact
 
     :param id: ID of the artifact

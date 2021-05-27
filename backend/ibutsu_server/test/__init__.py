@@ -37,6 +37,13 @@ class BaseTestCase(TestCase):
             "TESTING": True,
             "LIVESERVER_PORT": 0,
             "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "GOOGLE_CLIENT_ID": "123456@client.google.com",
+            "GITHUB_CLIENT_ID": None,
+            "DROPBOX_CLIENT_ID": None,
+            "FACEBOOK_CLIENT_ID": None,
+            "GITLAB_CLIENT_ID": "dfgfdgh4563453456dsfgdsfg456",
+            "GITLAB_BASE_URL": "https://gitlab.com",
+            "JWT_SECRET": "89807erkjhdfgu768dfsgdsfg345r",
         }
         app = get_app(**extra_config)
         create_celery_app(app.app)
@@ -163,6 +170,20 @@ class MockRun(MockModel):
         "start_time",
         "summary",
     ]
+
+
+class MockUser(MockModel):
+    COLUMNS = [
+        "id",
+        "email",
+        "password",
+        "name",
+        "group_id",
+    ]
+
+    def check_password(self, plain):
+        self._test_password = plain
+        return self.password == plain
 
 
 # Mock out the task decorator

@@ -1,3 +1,24 @@
+OAUTH_CONFIG = {
+    "google": {
+        "scope": ["https://www.googleapis.com/auth/userinfo.profile"],
+    },
+    "github": {
+        "scope": ["read:user"],
+    },
+    "dropbox": {
+        "scope": ["account_info.read"],
+    },
+    "facebook": {
+        "scope": ["email", "public_profile"],
+    },
+    "gitlab": {
+        "scope": ["read_user"],
+        "sep": "+",
+        "user_url": "/api/v4/user",
+        "auth_url": "/oauth/authorize",
+        "token_url": "/oauth/token",
+    },
+}
 ALLOWED_TRUE_BOOLEANS = ["y", "t", "1"]
 ARRAY_FIELDS = ["metadata.tags", "metadata.markers", "metadata.annotations"]
 NUMERIC_FIELDS = [

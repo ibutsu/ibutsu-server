@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { TabTitleIcon, TabTitleText } from '@patternfly/react-core';
 
 export class TabTitle extends React.Component {
-  propTypes = {
+  static propTypes = {
     icon: PropTypes.object,
     text: PropTypes.string
   }

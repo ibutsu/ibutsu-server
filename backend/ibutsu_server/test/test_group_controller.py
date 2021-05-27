@@ -7,6 +7,7 @@ from unittest.mock import patch
 from flask import json
 from ibutsu_server.test import BaseTestCase
 from ibutsu_server.test import MockGroup
+from ibutsu_server.util.jwt import generate_token
 
 MOCK_ID = "c68506e2-202e-4193-a47d-33f1571d4b3e"
 MOCK_GROUP = MockGroup(id=MOCK_ID, name="Example group", data={})
@@ -29,6 +30,7 @@ class TestGroupController(BaseTestCase):
         self.mock_group.query.count.return_value = 1
         self.mock_group.query.get.return_value = MOCK_GROUP
         self.mock_group.query.limit = self.mock_limit
+        self.jwt_token = generate_token("test-user")
 
     def tearDown(self):
         """Teardown the mocks"""
@@ -40,7 +42,11 @@ class TestGroupController(BaseTestCase):
 
         Create a new group
         """
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/group",
             method="POST",
@@ -56,7 +62,7 @@ class TestGroupController(BaseTestCase):
 
         Get a group
         """
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/group/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
@@ -69,7 +75,7 @@ class TestGroupController(BaseTestCase):
         Get a list of groups
         """
         query_string = [("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/group", method="GET", headers=headers, query_string=query_string
         )
@@ -87,7 +93,11 @@ class TestGroupController(BaseTestCase):
 
         Update a group
         """
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/group/{id}".format(id=MOCK_ID),
             method="PUT",

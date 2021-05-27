@@ -39,9 +39,9 @@ import {
 import { Link } from 'react-router-dom';
 import ReactJson from 'react-json-view';
 
+import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
-  buildUrl,
   cleanPath,
   convertDate,
   getSpinnerRow,
@@ -305,8 +305,8 @@ export class Run extends React.Component {
     if (node.result) {
       this.setState({currentTest: node.result}, () => {
         if (!this.state.currentTest.artifacts) {
-          fetch(buildUrl(Settings.serverUrl + '/artifact', {resultId: this.state.currentTest.id}))
-            .then(response => response.json())
+          HttpClient.get([Settings.serverUrl, 'artifact'], {resultId: this.state.currentTest.id})
+            .then(response => HttpClient.handleResponse(response))
             .then(data => {
               let { currentTest } = this.state;
               currentTest.artifacts = data.artifacts;
@@ -343,8 +343,9 @@ export class Run extends React.Component {
   }
 
   getRun() {
-    fetch(Settings.serverUrl + '/run/' + this.state.id)
+    HttpClient.get([Settings.serverUrl, 'run', this.state.id])
       .then(response => {
+        response = HttpClient.handleResponse(response, 'response');
         if (response.ok) {
           this.setState({"isRunValid": true});
         } else {
@@ -364,8 +365,8 @@ export class Run extends React.Component {
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
     this.setState({rows: [['Loading...', '', '', '']]});
-    fetch(buildUrl(Settings.serverUrl + '/result', params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'result'], params)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
           results: data.results,
           rows: data.results.map((result) => resultToRow(result)),
@@ -385,8 +386,8 @@ export class Run extends React.Component {
     let params = {filter: 'run_id=' + this.state.id};
     params['pageSize'] = 500;
     params['page'] = page;
-    fetch(buildUrl(Settings.serverUrl + '/result', params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'result'], params)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         let treeData = [];
         if (page !== 1) {

@@ -75,6 +75,7 @@ frontend/public/version.json
 
 # Settings
 backend/settings.yaml
+backend/settings.local.yaml
 
 # pytest-ibutsu stuff
 *.tar.gz

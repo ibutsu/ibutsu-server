@@ -23,7 +23,7 @@ def add_project(project=None):
     return project.to_dict(), 201
 
 
-def get_project(id_):
+def get_project(id_, token_info=None, user=None):
     """Get a single project by ID
 
     :param id: ID of test project
@@ -41,10 +41,10 @@ def get_project(id_):
     return project.to_dict()
 
 
-def get_project_list(owner_id=None, group_id=None, page=1, page_size=25):
+def get_project_list(
+    owner_id=None, group_id=None, page=1, page_size=25, token_info=None, user=None
+):
     """Get a list of projects
-
-
 
     :param owner_id: Filter projects by owner ID
     :type owner_id: str

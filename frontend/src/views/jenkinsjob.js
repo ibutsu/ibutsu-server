@@ -12,10 +12,10 @@ import {
 import { ChevronRightIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
+import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   buildParams,
-  buildUrl,
   getActiveProject,
   getFilterMode,
   getOperationMode,
@@ -235,8 +235,8 @@ export class JenkinsJobView extends React.Component {
     let project = getActiveProject();
 
     // get the widget ID for the analysis view
-    fetch(buildUrl(Settings.serverUrl + '/widget-config', {"filter": "widget=jenkins-analysis-view"}))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'widget-config'], {"filter": "widget=jenkins-analysis-view"})
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
           analysisViewId = data.widgets[0].id
       }).catch(error => {
@@ -265,8 +265,8 @@ export class JenkinsJobView extends React.Component {
       }
     }
     params.filter = params.filter.join();  // convert array to a comma-separated string
-    fetch(buildUrl(Settings.serverUrl + '/widget/' + this.props.view.widget, params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'widget', this.props.view.widget, params])
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         this.setState({
           rows: data.jobs.map(job => jobToRow(job, analysisViewId)),

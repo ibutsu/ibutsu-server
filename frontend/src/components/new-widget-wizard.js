@@ -27,6 +27,7 @@ import {
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import Linkify from 'react-linkify';
 
+import { HttpClient } from '../services/http';
 import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
 
@@ -173,8 +174,8 @@ export class NewWidgetWizard extends React.Component {
   }
 
   componentDidMount() {
-    fetch(Settings.serverUrl + '/widget/types?type=widget')
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'widget', 'types'], {'type': 'widget'})
+      .then(response => HttpClient.handleResponse(response))
       .then(data => {
         this.setState({widgetTypes: data.types});
       });

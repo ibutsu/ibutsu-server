@@ -13,7 +13,7 @@ export class DeleteModal extends React.Component {
   static propTypes = {
     id: PropTypes.object,
     title: PropTypes.string,
-    body: PropTypes.string,
+    body: PropTypes.node,
     onDelete: PropTypes.func,
     onClose: PropTypes.func,
     isOpen: PropTypes.bool

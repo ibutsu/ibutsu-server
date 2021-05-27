@@ -20,7 +20,7 @@ def add_group(group=None):
 
 
 @validate_uuid
-def get_group(id_):
+def get_group(id_, token_info=None, user=None):
     """Get a group
 
     :param id: The ID of the group
@@ -35,7 +35,7 @@ def get_group(id_):
         return "Group not found", 404
 
 
-def get_group_list(page=1, page_size=25):
+def get_group_list(page=1, page_size=25, token_info=None, user=None):
     """Get a list of groups
 
 

@@ -8,6 +8,7 @@ import {
   Text
 } from '@patternfly/react-core';
 
+import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import { EmptyObject, ResultView } from './components';
 
@@ -32,8 +33,9 @@ export class Result extends React.Component {
     if (!this.state.id) {
       return;
     }
-    fetch(Settings.serverUrl + '/result/' + this.state.id)
+    HttpClient.get([Settings.serverUrl, 'result', this.state.id])
       .then(response => {
+        response = HttpClient.handleResponse(response, 'response');
         if (response.ok) {
           this.setState({"isResultValid": true});
         } else {

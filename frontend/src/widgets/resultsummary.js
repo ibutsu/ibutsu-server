@@ -12,8 +12,9 @@ import {
   Text
 } from '@patternfly/react-core';
 
+import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { buildUrl, toTitleCase } from '../utilities';
+import { toTitleCase } from '../utilities';
 import { WidgetHeader } from '../components/widget-components';
 
 export class ResultSummaryWidget extends React.Component {
@@ -46,8 +47,9 @@ export class ResultSummaryWidget extends React.Component {
 
   getResultSummary = () => {
     this.setState({isLoading: true});
-    fetch(buildUrl(Settings.serverUrl + '/widget/result-summary', this.params))
+    HttpClient.get([Settings.serverUrl, 'widget', 'result-summary'], this.params)
       .then(response => {
+        response = HttpClient.handleResponse(response, 'response');
         if (!response.ok) {
           throw Error(response.statusText);
         }

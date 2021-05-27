@@ -10,7 +10,7 @@ except ImportError:
     IS_CONNECTED = False
 
 
-def get_health():
+def get_health(token_info=None, user=None):
     """Get a health report
 
     :rtype: Health
@@ -18,7 +18,7 @@ def get_health():
     return {"status": "OK", "message": "Service is running"}
 
 
-def get_database_health():
+def get_database_health(token_info=None, user=None):
     """Get a health report for the database
 
     :rtype: Health
@@ -40,7 +40,7 @@ def get_database_health():
     return response
 
 
-def get_health_info():
+def get_health_info(token_info=None, user=None):
     """Get the information about this server
 
     :rtype: HealthInfo

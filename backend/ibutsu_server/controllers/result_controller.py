@@ -34,7 +34,7 @@ def add_result(result=None):
 
 
 @query_as_task
-def get_result_list(filter_=None, page=1, page_size=25, estimate=False):
+def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_info=None, user=None):
     """Gets all results
 
     The `filter` parameter takes a list of filters to apply in the form of:
@@ -111,7 +111,7 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False):
 
 
 @validate_uuid
-def get_result(id_):
+def get_result(id_, token_info=None, user=None):
     """Get a single result
 
     :param id: ID of Result to return
