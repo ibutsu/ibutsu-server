@@ -21,4 +21,5 @@ To run the server locally, you will need the following installed:
 
 ## Documentation
 
-Please visit [Ibutsu's Documentation](https://docs.ibutsu-project.org/) for more information.
+Please visit [Ibutsu's Documentation](https://docs.ibutsu-project.org/) for more information about
+the server and local development.
