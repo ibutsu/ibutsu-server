@@ -176,7 +176,7 @@ def bulk_update(filter_=None, page_size=1):
     if run_dict.get("metadata", {}).get("project"):
         run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
 
-    runs = get_run_list(filter_, page_size=page_size, estimate=True).get("runs")
+    runs = get_run_list(filter_=filter_, page_size=page_size, estimate=True).get("runs")
 
     if not runs:
         return f"No runs found with {filter_}", 404
