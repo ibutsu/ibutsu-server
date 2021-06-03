@@ -6,7 +6,6 @@ from celery import signals
 from celery import Task
 from celery.schedules import crontab
 from flask import current_app
-from ibutsu_server.constants import SYNC_RUN_TIME
 from ibutsu_server.db.base import session
 from redis import Redis
 from redis.exceptions import LockError
@@ -77,7 +76,7 @@ def create_celery_app(_app=None):
         },
         "sync-aborted-runs": {
             "task": "ibutsu_server.tasks.runs.sync_aborted_runs",
-            "schedule": SYNC_RUN_TIME,
+            "schedule": 0.5 * 60 * 60,  # this will run every 30 minutes, schedule is in [s]
         },
     }
 
