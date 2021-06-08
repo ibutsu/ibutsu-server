@@ -5,6 +5,9 @@ FROM registry.access.redhat.com/ubi8/nodejs-14
 # and set permissions so that the container runs without root access
 USER 0
 ADD . /tmp/src
+COPY ./docker/start-frontend.sh /usr/bin/start-frontend.sh
+RUN chmod +x /usr/bin/start-frontend.sh
+RUN chown 1001:0 /usr/bin/start-frontend.sh
 RUN chown -R 1001:0 /tmp/src
 USER 1001
 
@@ -12,4 +15,4 @@ USER 1001
 RUN /usr/libexec/s2i/assemble
 
 # Set the default command for the resulting image
-CMD /usr/libexec/s2i/run
+ENTRYPOINT [ "start-frontend.sh" ]
