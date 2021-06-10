@@ -1360,10 +1360,9 @@ paths:
                 project:
                   description: The project associated with this import
                   type: string
-                metadataFile:
-                  description: The file containing metadata about the file to import
-                  format: binary
-                  type: string
+                metadata:
+                  description: Additional metadata about imported run
+                  type: object
               required:
               - importFile
               type: object
@@ -1771,7 +1770,6 @@ components:
         filename: test-run.xml
         format: JUnit
         run_id: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
-        metadata: test-run-metadata.xml
       properties:
         id:
           description: The database ID of the import
@@ -1793,9 +1791,6 @@ components:
           description: The ID of the run from the import
           example: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
           type: string
-        metadata:
-          description: Extra data for this import
-          type: object
       type: object
     WidgetConfig:
       example:

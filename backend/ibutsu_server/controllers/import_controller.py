@@ -21,7 +21,7 @@ def get_import(id_):
     return import_.to_dict()
 
 
-def add_import(import_file=None, project=None, metadata_file=None, *args, **kwargs):
+def add_import(import_file=None, project=None, metadata=None, *args, **kwargs):
     """Imports a JUnit XML file and creates a test run and results from it.
 
     :param import_file: file to upload
@@ -31,7 +31,7 @@ def add_import(import_file=None, project=None, metadata_file=None, *args, **kwar
     """
     if not import_file:
         return "Bad request, no file uploaded", 400
-    data = {"metadata": metadata_file}
+    data = {"metadata": metadata}
     if connexion.request.form.get("project"):
         project = connexion.request.form["project"]
     if project:
