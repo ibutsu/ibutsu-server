@@ -18,7 +18,7 @@ from ibutsu_server.util.uuid import is_uuid
 from lxml import objectify
 
 
-def _create_result(tar, run_id, result, artifacts, project_id=None):
+def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
     """Create a result with artifacts, used in the archive importer"""
     old_id = None
     result_id = convert_objectid_to_uuid(result.get("id"))
@@ -36,6 +36,8 @@ def _create_result(tar, run_id, result, artifacts, project_id=None):
         if project_id:
             result["project_id"] = project_id
         result_record = Result.from_dict(**result)
+    if metadata:
+        result["metadata"] = metadata
     session.add(result_record)
     session.commit()
     result = result_record.to_dict()
@@ -94,9 +96,12 @@ def run_junit_import(import_):
                 "tests": ts.get("tests"),
             },
         }
+
         if import_record.data.get("project_id"):
             run_dict["project_id"] = import_record.data["project_id"]
         # Insert the run, and then update the import with the run id
+        if import_record.data.get("metadata"):
+            run_dict["metadata"] = import_record.data["metadata"]
         run = Run.from_dict(**run_dict)
         session.add(run)
         session.commit()
@@ -124,6 +129,8 @@ def run_junit_import(import_):
                 "params": {},
                 "source": ts.get("name"),
             }
+            if import_record.data.get("metadata"):
+                result_dict["metadata"] = import_record.data["metadata"]
             if import_record.data.get("project_id"):
                 result_dict["project_id"] = import_record.data["project_id"]
             skip_reason, traceback = None, None
