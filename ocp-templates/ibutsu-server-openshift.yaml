@@ -174,7 +174,7 @@ objects:
       sourceStrategy:
         from:
           kind: ImageStreamTag
-          name: python:3.6
+          name: python:3.8
           namespace: openshift
         env:
         - name: GIT_SSL_NO_VERIFY

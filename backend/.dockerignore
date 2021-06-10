@@ -3,8 +3,6 @@
 README.md
 tox.ini
 git_push.sh
-test-requirements.txt
-setup.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -31,6 +29,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+node_modules/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

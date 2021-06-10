@@ -1,9 +1,16 @@
 FROM registry.access.redhat.com/ubi8/python-38
 
-ENV BROKER_URL=redis://localhost
-
+# add application sources with correct perms for OCP
+USER 0
 COPY . /app
 WORKDIR /app
-RUN pip install --no-cache-dir -U pip && pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir flower
+RUN chown -R 1001:0 ./
 USER 1001
+
+ENV BROKER_URL=redis://localhost
+
+# Install dependencies
+RUN pip install --no-cache-dir -U pip && pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir flower
+
+# Run application
 CMD celery flower -A ibutsu_server.tasks.queues:app --loglevel=info --broker=$BROKER_URL
