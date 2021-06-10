@@ -69,6 +69,7 @@ package-lock.json
 
 # Virtual environment
 .ibutsu-env
+.ibutsu_env
 
 # Frontend
 frontend/public/version.json
