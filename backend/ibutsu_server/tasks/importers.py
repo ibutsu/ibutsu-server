@@ -35,11 +35,11 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         result["run_id"] = run_id
         if project_id:
             result["project_id"] = project_id
+        if metadata and "metadata" in result:
+            result["metadata"].update(metadata)
+        elif metadata:
+            result["metadata"] = metadata
         result_record = Result.from_dict(**result)
-    # this does nothing here as far as I can tell, need to move it up
-    # note that metadata seems to be reserved: refer to db>models.py
-    if metadata:
-        result["metadata"] = metadata
     session.add(result_record)
     session.commit()
     result = result_record.to_dict()
@@ -243,10 +243,6 @@ def run_archive_import(import_):
             elif member.isfile():
                 artifacts.append(member)
         if result:
-            if metadata and "metadata" in result:
-                result["metadata"].update(metadata)
-            elif metadata:
-                result["metadata"] = metadata
             results.append(result)
             result_artifacts[result["id"]] = artifacts
         if run:
@@ -294,7 +290,14 @@ def run_archive_import(import_):
         # Now loop through all the results, and create or update them
         for result in results:
             artifacts = result_artifacts.get(result["id"], [])
-            _create_result(tar, run.id, result, artifacts, import_record.data.get("project_id"))
+            _create_result(
+                tar,
+                run.id,
+                result,
+                artifacts,
+                import_record.data.get("project_id"),
+                metadata=metadata,
+            )
     # Update the import record
     _update_import_status(import_record, "done")
     if run:
