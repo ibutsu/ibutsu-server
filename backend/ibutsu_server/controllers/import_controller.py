@@ -31,11 +31,14 @@ def add_import(import_file=None, project=None, metadata=None, *args, **kwargs):
     """
     if not import_file:
         return "Bad request, no file uploaded", 400
-    data = {"metadata": metadata}
+    data = {}
     if connexion.request.form.get("project"):
         project = connexion.request.form["project"]
     if project:
         data["project_id"] = get_project_id(project)
+    if connexion.request.form.get("metadata"):
+        metadata = connexion.request.form.get("metadata")
+    data["metadata"] = metadata
     new_import = Import.from_dict(
         **{"status": "pending", "filename": import_file.filename, "format": "", "data": data}
     )

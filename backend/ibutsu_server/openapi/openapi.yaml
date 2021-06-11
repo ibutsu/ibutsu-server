@@ -1366,6 +1366,13 @@ paths:
               required:
               - importFile
               type: object
+            encoding:
+              importFile:
+                contentType: application/octet-stream
+              metadata:
+                contentType: application/json
+              project:
+                contentType: text/plain
       responses:
         201:
           content:

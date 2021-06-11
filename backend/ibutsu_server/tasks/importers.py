@@ -36,6 +36,8 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         if project_id:
             result["project_id"] = project_id
         result_record = Result.from_dict(**result)
+    # this does nothing here as far as I can tell, need to move it up
+    # note that metadata seems to be reserved: refer to db>models.py
     if metadata:
         result["metadata"] = metadata
     session.add(result_record)
@@ -99,9 +101,16 @@ def run_junit_import(import_):
 
         if import_record.data.get("project_id"):
             run_dict["project_id"] = import_record.data["project_id"]
-        # Insert the run, and then update the import with the run id
+
         if import_record.data.get("metadata"):
-            run_dict["metadata"] = import_record.data["metadata"]
+            # metadata is expected to be a json dict
+            metadata = json.loads(import_record.data["metadata"])
+            run_dict["data"] = metadata
+        else:
+            # set to none here to avoid adding nothing to the result dict later
+            metadata = None
+
+        # Insert the run, and then update the import with the run id
         run = Run.from_dict(**run_dict)
         session.add(run)
         session.commit()
@@ -129,8 +138,10 @@ def run_junit_import(import_):
                 "params": {},
                 "source": ts.get("name"),
             }
-            if import_record.data.get("metadata"):
-                result_dict["metadata"] = import_record.data["metadata"]
+
+            # Extend the result metadata with import metadata
+            if metadata:
+                result_dict["metadata"].update(metadata)
             if import_record.data.get("project_id"):
                 result_dict["project_id"] = import_record.data["project_id"]
             skip_reason, traceback = None, None
@@ -194,6 +205,9 @@ def run_archive_import(import_):
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
     import_record = Import.query.get(str(import_["id"]))
+    if import_record.data.get("metadata"):
+        # metadata is expected to be a json dict
+        metadata = json.loads(import_record.data["metadata"])
     _update_import_status(import_record, "running")
     # Fetch the file contents
     import_file = ImportFile.query.filter(ImportFile.import_id == import_["id"]).first()
@@ -229,6 +243,10 @@ def run_archive_import(import_):
             elif member.isfile():
                 artifacts.append(member)
         if result:
+            if metadata and "metadata" in result:
+                result["metadata"].update(metadata)
+            elif metadata:
+                result["metadata"] = metadata
             results.append(result)
             result_artifacts[result["id"]] = artifacts
         if run:
@@ -259,6 +277,10 @@ def run_archive_import(import_):
             run_dict["project_id"] = import_record.data["project_id"]
         elif run_dict.get("metadata", {}).get("project"):
             run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
+        if metadata and "metadata" in run_dict:
+            run_dict["metadata"].update(metadata)
+        elif metadata:
+            run_dict["metadata"] = metadata
         # If this run has a valid ObjectId, check if this run exists
         if is_uuid(run_dict.get("id")):
             run = session.query(Run).get(run_dict["id"])
