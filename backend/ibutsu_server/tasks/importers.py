@@ -38,7 +38,8 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         if metadata and "metadata" in result:
             result["metadata"].update(metadata)
         elif metadata:
-            result["metadata"] = metadata
+            result["metadata"] = {}
+            result["metadata"].update(metadata)
         result_record = Result.from_dict(**result)
     session.add(result_record)
     session.commit()
@@ -276,7 +277,8 @@ def run_archive_import(import_):
         if metadata and "metadata" in run_dict:
             run_dict["metadata"].update(metadata)
         elif metadata:
-            run_dict["metadata"] = metadata
+            run_dict["metadata"] = {}
+            run_dict["metadata"].update(metadata)
         # If this run has a valid ObjectId, check if this run exists
         if is_uuid(run_dict.get("id")):
             run = session.query(Run).get(run_dict["id"])
