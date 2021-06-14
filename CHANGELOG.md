@@ -1,3 +1,20 @@
+Version 1.13.3
+==============
+
+* Add a script to build a settings file at container runtime
+* Small changes to dockerfiles
+* Add a script to start ibutsu in a podman pod
+* Sync aborted runs from the last 3 hrs
+* Small bugs fixes
+* Also fix possibility that duration is None is update_run task
+* Handle 'None' results in the task controller
+* Change the user when copying over the application
+* Use Ubi8 images
+* Build worker, schedule too
+* Add a build image stage in tests.yaml
+* remove travis.yml
+* Change from travis to gh action
+
 Version 1.13.2
 ==============
 
