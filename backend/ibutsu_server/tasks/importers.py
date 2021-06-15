@@ -40,6 +40,9 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         elif metadata:
             result["metadata"] = {}
             result["metadata"].update(metadata)
+        if "metadata" in result:
+            result["env"] = result["metadata"].get("env")
+            result["component"] = result["metadata"].get("component")
         result_record = Result.from_dict(**result)
     session.add(result_record)
     session.commit()
