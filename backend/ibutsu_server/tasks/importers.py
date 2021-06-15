@@ -103,13 +103,11 @@ def run_junit_import(import_):
         if import_record.data.get("project_id"):
             run_dict["project_id"] = import_record.data["project_id"]
 
+        metadata = None
         if import_record.data.get("metadata"):
             # metadata is expected to be a json dict
-            metadata = json.loads(import_record.data["metadata"])
+            metadata = import_record.data["metadata"]
             run_dict["data"] = metadata
-        else:
-            # set to none here to avoid adding nothing to the result dict later
-            metadata = None
 
         # Insert the run, and then update the import with the run id
         run = Run.from_dict(**run_dict)
@@ -206,9 +204,10 @@ def run_archive_import(import_):
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
     import_record = Import.query.get(str(import_["id"]))
+    metadata = None
     if import_record.data.get("metadata"):
         # metadata is expected to be a json dict
-        metadata = json.loads(import_record.data["metadata"])
+        metadata = import_record.data["metadata"]
     _update_import_status(import_record, "running")
     # Fetch the file contents
     import_file = ImportFile.query.filter(ImportFile.import_id == import_["id"]).first()

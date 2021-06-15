@@ -1,3 +1,5 @@
+import json
+
 import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Import
@@ -37,7 +39,7 @@ def add_import(import_file=None, project=None, metadata=None, *args, **kwargs):
     if project:
         data["project_id"] = get_project_id(project)
     if connexion.request.form.get("metadata"):
-        metadata = connexion.request.form.get("metadata")
+        metadata = json.loads(connexion.request.form.get("metadata"))
     data["metadata"] = metadata
     new_import = Import.from_dict(
         **{"status": "pending", "filename": import_file.filename, "format": "", "data": data}
