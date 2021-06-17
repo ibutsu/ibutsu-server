@@ -35,12 +35,9 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         result["run_id"] = run_id
         if project_id:
             result["project_id"] = project_id
-        if metadata and "metadata" in result:
+        if metadata:
+            result["metadata"] = result.get("metadata", {})
             result["metadata"].update(metadata)
-        elif metadata:
-            result["metadata"] = {}
-            result["metadata"].update(metadata)
-        if "metadata" in result:
             result["env"] = result["metadata"].get("env")
             result["component"] = result["metadata"].get("component")
         result_record = Result.from_dict(**result)
@@ -111,6 +108,9 @@ def run_junit_import(import_):
             # metadata is expected to be a json dict
             metadata = import_record.data["metadata"]
             run_dict["data"] = metadata
+            # add env and component directly to the run dict if it exists in the metadata
+            run_dict["env"] = metadata.get("env")
+            run_dict["component"] = metadata.get("component")
 
         # Insert the run, and then update the import with the run id
         run = Run.from_dict(**run_dict)
@@ -141,9 +141,11 @@ def run_junit_import(import_):
                 "source": ts.get("name"),
             }
 
-            # Extend the result metadata with import metadata
+            # Extend the result metadata with import metadata, and add env and component
             if metadata:
                 result_dict["metadata"].update(metadata)
+                result_dict["env"] = run_dict.get("env")
+                result_dict["component"] = run_dict.get("component")
             if import_record.data.get("project_id"):
                 result_dict["project_id"] = import_record.data["project_id"]
             skip_reason, traceback = None, None
@@ -276,10 +278,8 @@ def run_archive_import(import_):
             run_dict["project_id"] = import_record.data["project_id"]
         elif run_dict.get("metadata", {}).get("project"):
             run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
-        if metadata and "metadata" in run_dict:
-            run_dict["metadata"].update(metadata)
-        elif metadata:
-            run_dict["metadata"] = {}
+        if metadata:
+            run_dict["metadata"] = run_dict.get("metadata", {})
             run_dict["metadata"].update(metadata)
         # If this run has a valid ObjectId, check if this run exists
         if is_uuid(run_dict.get("id")):
