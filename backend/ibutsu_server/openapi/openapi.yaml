@@ -1374,9 +1374,19 @@ paths:
                 project:
                   description: The project associated with this import
                   type: string
+                metadata:
+                  description: Additional metadata about imported run
+                  type: object
               required:
               - importFile
               type: object
+            encoding:
+              importFile:
+                contentType: application/octet-stream
+              metadata:
+                contentType: application/json
+              project:
+                contentType: text/plain
       responses:
         201:
           content:

@@ -18,7 +18,7 @@ from ibutsu_server.util.uuid import is_uuid
 from lxml import objectify
 
 
-def _create_result(tar, run_id, result, artifacts, project_id=None):
+def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
     """Create a result with artifacts, used in the archive importer"""
     old_id = None
     result_id = convert_objectid_to_uuid(result.get("id"))
@@ -35,6 +35,11 @@ def _create_result(tar, run_id, result, artifacts, project_id=None):
         result["run_id"] = run_id
         if project_id:
             result["project_id"] = project_id
+        if metadata:
+            result["metadata"] = result.get("metadata", {})
+            result["metadata"].update(metadata)
+            result["env"] = result["metadata"].get("env")
+            result["component"] = result["metadata"].get("component")
         result_record = Result.from_dict(**result)
     session.add(result_record)
     session.commit()
@@ -94,8 +99,19 @@ def run_junit_import(import_):
                 "tests": ts.get("tests"),
             },
         }
+
         if import_record.data.get("project_id"):
             run_dict["project_id"] = import_record.data["project_id"]
+
+        metadata = None
+        if import_record.data.get("metadata"):
+            # metadata is expected to be a json dict
+            metadata = import_record.data["metadata"]
+            run_dict["data"] = metadata
+            # add env and component directly to the run dict if it exists in the metadata
+            run_dict["env"] = metadata.get("env")
+            run_dict["component"] = metadata.get("component")
+
         # Insert the run, and then update the import with the run id
         run = Run.from_dict(**run_dict)
         session.add(run)
@@ -124,6 +140,12 @@ def run_junit_import(import_):
                 "params": {},
                 "source": ts.get("name"),
             }
+
+            # Extend the result metadata with import metadata, and add env and component
+            if metadata:
+                result_dict["metadata"].update(metadata)
+                result_dict["env"] = run_dict.get("env")
+                result_dict["component"] = run_dict.get("component")
             if import_record.data.get("project_id"):
                 result_dict["project_id"] = import_record.data["project_id"]
             skip_reason, traceback = None, None
@@ -187,6 +209,10 @@ def run_archive_import(import_):
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
     import_record = Import.query.get(str(import_["id"]))
+    metadata = None
+    if import_record.data.get("metadata"):
+        # metadata is expected to be a json dict
+        metadata = import_record.data["metadata"]
     _update_import_status(import_record, "running")
     # Fetch the file contents
     import_file = ImportFile.query.filter(ImportFile.import_id == import_["id"]).first()
@@ -252,6 +278,9 @@ def run_archive_import(import_):
             run_dict["project_id"] = import_record.data["project_id"]
         elif run_dict.get("metadata", {}).get("project"):
             run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
+        if metadata:
+            run_dict["metadata"] = run_dict.get("metadata", {})
+            run_dict["metadata"].update(metadata)
         # If this run has a valid ObjectId, check if this run exists
         if is_uuid(run_dict.get("id")):
             run = session.query(Run).get(run_dict["id"])
@@ -265,7 +294,14 @@ def run_archive_import(import_):
         # Now loop through all the results, and create or update them
         for result in results:
             artifacts = result_artifacts.get(result["id"], [])
-            _create_result(tar, run.id, result, artifacts, import_record.data.get("project_id"))
+            _create_result(
+                tar,
+                run.id,
+                result,
+                artifacts,
+                import_record.data.get("project_id"),
+                metadata=metadata,
+            )
     # Update the import record
     _update_import_status(import_record, "done")
     if run:
