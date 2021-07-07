@@ -13,46 +13,6 @@ OKD/OpenShift Template
   # ===============================================
   # Frontend
   # ===============================================
-  - kind: BuildConfig
-    apiVersion: v1
-    metadata:
-      labels:
-        app: ${APP_NAME}
-      name: ibutsu-frontend
-      namespace: ${NAMESPACE}
-    spec:
-      resources:
-        limits:
-          memory: 2Gi
-      source:
-        type: Git
-        git:
-          ref: ${IBUTSU_REPO_BRANCH}
-          uri: ${IBUTSU_REPO_URL}
-        contextDir: frontend
-      strategy:
-        sourceStrategy:
-          from:
-            kind: ImageStreamTag
-            name: nodejs:latest
-            namespace: openshift
-          env:
-          - name: YARN_ENABLED
-            value: "true"
-          - name: GIT_SSL_NO_VERIFY
-            value: "true"
-          - name: REACT_APP_SERVER_URL
-            value: ${BACKEND_ROUTE}
-        type: Source
-      output:
-        to:
-          kind: ImageStreamTag
-          name: ibutsu-frontend:latest
-      triggers:
-      - imageChange:
-        type: ImageChange
-      - type: ConfigChange
-  # -----------------------------------------------
   - kind: DeploymentConfig
     apiVersion: v1
     metadata:
@@ -73,7 +33,12 @@ OKD/OpenShift Template
             deploymentConfig: ibutsu-frontend
         spec:
           containers:
-          - image: ibutsu-frontend
+          - env:
+              - name: REACT_APP_SERVER_URL
+                value: ${BACKEND_ROUTE}
+              - name: NODE_ENV
+                value: production
+          - image: frontend
             imagePullPolicy: Always
             livenessProbe:
               failureThreshold: 3
@@ -111,7 +76,7 @@ OKD/OpenShift Template
           - ibutsu-frontend
           from:
             kind: ImageStreamTag
-            name: ibutsu-frontend:latest
+            name: frontend:latest
             namespace: ${NAMESPACE}
         type: ImageChange
       - type: ConfigChange
@@ -119,13 +84,23 @@ OKD/OpenShift Template
   - kind: ImageStream
     apiVersion: v1
     metadata:
-      name: ibutsu-frontend
+      name: frontend
       annotations:
         description: "The frontend of Ibutsu server"
-        openshift.io/image.insecureRepository: "true"
     spec:
       lookupPolicy:
-        local: true
+        local: false
+      tags:
+      - annotations: null
+        from:
+          kind: DockerImage
+          name: quay.io/ibutsu/frontend
+        generation: 3
+        importPolicy:
+          scheduled: true
+        name: latest
+        referencePolicy:
+          type: Source
   # -----------------------------------------------
   - kind: Service
     apiVersion: v1
@@ -162,42 +137,6 @@ OKD/OpenShift Template
   # ===============================================
   # Backend
   # ===============================================
-  - kind: BuildConfig
-    apiVersion: v1
-    metadata:
-      labels:
-        app: ${APP_NAME}
-      name: ibutsu-backend
-      namespace: ${NAMESPACE}
-    spec:
-      source:
-        type: Git
-        git:
-          uri: ${IBUTSU_REPO_URL}
-          ref: ${IBUTSU_REPO_BRANCH}
-        contextDir: backend
-      strategy:
-        type: Source
-        sourceStrategy:
-          from:
-            kind: ImageStreamTag
-            name: python:3.6
-            namespace: openshift
-          env:
-          - name: GIT_SSL_NO_VERIFY
-            value: "true"
-          - name: UPGRADE_PIP_TO_LATEST
-            value: "true"
-      output:
-        to:
-          kind: ImageStreamTag
-          name: ibutsu-backend:latest
-      runPolicy: Serial
-      triggers:
-      - imageChange:
-        type: ImageChange
-      - type: ConfigChange
-  # -----------------------------------------------
   - kind: DeploymentConfig
     apiVersion: v1
     metadata:
@@ -250,7 +189,7 @@ OKD/OpenShift Template
               value: ${FRONTEND_ROUTE}
             - name: BACKEND_URL
               value: ${BACKEND_ROUTE}
-            image: ibutsu-backend
+            image: backend
             imagePullPolicy: Always
             livenessProbe:
               failureThreshold: 3
@@ -288,7 +227,7 @@ OKD/OpenShift Template
           - ibutsu-backend
           from:
             kind: ImageStreamTag
-            name: ibutsu-backend:latest
+            name: backend:latest
             namespace: ${NAMESPACE}
         type: ImageChange
       - type: ConfigChange
@@ -296,13 +235,23 @@ OKD/OpenShift Template
   - kind: ImageStream
     apiVersion: v1
     metadata:
-      name: ibutsu-backend
+      name: backend
       annotations:
-        description: "The backend of Ibutsu server"
-        openshift.io/image.insecureRepository: "true"
+        description: "The api of Ibutsu server"
     spec:
       lookupPolicy:
-        local: true
+        local: false
+      tags:
+      - annotations: null
+        from:
+          kind: DockerImage
+          name: quay.io/ibutsu/backend
+        generation: 3
+        importPolicy:
+          scheduled: true
+        name: latest
+        referencePolicy:
+          type: Source
   # -----------------------------------------------
   - kind: Service
     apiVersion: v1
@@ -338,37 +287,6 @@ OKD/OpenShift Template
   # ===============================================
   # Worker
   # ===============================================
-  - kind: BuildConfig
-    apiVersion: v1
-    metadata:
-      labels:
-        app: ${APP_NAME}
-      name: ibutsu-worker
-      namespace: ${NAMESPACE}
-    spec:
-      source:
-        type: Git
-        git:
-          uri: ${IBUTSU_REPO_URL}
-          ref: ${IBUTSU_REPO_BRANCH}
-        contextDir: backend
-      strategy:
-        dockerStrategy:
-          dockerfilePath: docker/Dockerfile.worker
-          env:
-          - name: GIT_SSL_NO_VERIFY
-            value: "true"
-        type: Docker
-      output:
-        to:
-          kind: ImageStreamTag
-          name: ibutsu-worker:latest
-      runPolicy: Serial
-      triggers:
-      - imageChange:
-        type: ImageChange
-      - type: ConfigChange
-  # -----------------------------------------------
   - kind: DeploymentConfig
     apiVersion: v1
     metadata:
@@ -419,7 +337,7 @@ OKD/OpenShift Template
               value: ${FRONTEND_ROUTE}
             - name: BACKEND_URL
               value: ${BACKEND_ROUTE}
-            image: ibutsu-worker
+            image: worker
             imagePullPolicy: Always
             name: ibutsu-worker
             resources: {}
@@ -434,7 +352,7 @@ OKD/OpenShift Template
           - ibutsu-worker
           from:
             kind: ImageStreamTag
-            name: ibutsu-worker:latest
+            name: worker:latest
             namespace: ${NAMESPACE}
         type: ImageChange
       - type: ConfigChange
@@ -442,13 +360,23 @@ OKD/OpenShift Template
   - kind: ImageStream
     apiVersion: v1
     metadata:
-      name: ibutsu-worker
+      name: worker
       annotations:
-        description: "A Celery worker for Ibutsu"
-        openshift.io/image.insecureRepository: "true"
+        description: "The celery worker of Ibutsu server"
     spec:
       lookupPolicy:
-        local: true
+        local: false
+      tags:
+      - annotations: null
+        from:
+          kind: DockerImage
+          name: quay.io/ibutsu/worker
+        generation: 3
+        importPolicy:
+          scheduled: true
+        name: latest
+        referencePolicy:
+          type: Source
   # -----------------------------------------------
   - kind: Service
     apiVersion: v1
@@ -466,37 +394,6 @@ OKD/OpenShift Template
   # ===============================================
   # Scheduler
   # ===============================================
-  - kind: BuildConfig
-    apiVersion: v1
-    metadata:
-      labels:
-        app: ${APP_NAME}
-      name: ibutsu-scheduler
-      namespace: ${NAMESPACE}
-    spec:
-      source:
-        type: Git
-        git:
-          uri: ${IBUTSU_REPO_URL}
-          ref: ${IBUTSU_REPO_BRANCH}
-        contextDir: backend
-      strategy:
-        dockerStrategy:
-          dockerfilePath: docker/Dockerfile.scheduler
-          env:
-          - name: GIT_SSL_NO_VERIFY
-            value: "true"
-        type: Docker
-      output:
-        to:
-          kind: ImageStreamTag
-          name: ibutsu-scheduler:latest
-      runPolicy: Serial
-      triggers:
-      - imageChange:
-        type: ImageChange
-      - type: ConfigChange
-  # -----------------------------------------------
   - kind: DeploymentConfig
     apiVersion: v1
     metadata:
@@ -545,7 +442,7 @@ OKD/OpenShift Template
               value: ${FRONTEND_ROUTE}
             - name: BACKEND_URL
               value: ${BACKEND_ROUTE}
-            image: ibutsu-scheduler
+            image: scheduler
             imagePullPolicy: Always
             name: ibutsu-scheduler
             resources: {}
@@ -560,7 +457,7 @@ OKD/OpenShift Template
           - ibutsu-scheduler
           from:
             kind: ImageStreamTag
-            name: ibutsu-scheduler:latest
+            name: scheduler:latest
             namespace: ${NAMESPACE}
         type: ImageChange
       - type: ConfigChange
@@ -568,10 +465,23 @@ OKD/OpenShift Template
   - kind: ImageStream
     apiVersion: v1
     metadata:
-      name: ibutsu-scheduler
+      name: scheduler
       annotations:
-        description: "A Celery beat scheduler for Ibutsu"
-        openshift.io/image.insecureRepository: "true"
+        description: "Celery beat scheduler for periodic tasks in Ibutsu server"
+    spec:
+      lookupPolicy:
+        local: false
+      tags:
+      - annotations: null
+        from:
+          kind: DockerImage
+          name: quay.io/ibutsu/scheduler
+        generation: 3
+        importPolicy:
+          scheduled: true
+        name: latest
+        referencePolicy:
+          type: Source
   # -----------------------------------------------
   - kind: Service
     apiVersion: v1
@@ -705,125 +615,6 @@ OKD/OpenShift Template
       tls:
         insecureEdgeTerminationPolicy: Redirect
         termination: edge
-  # ===============================================
-  # Task Monitor
-  # ===============================================
-  - kind: BuildConfig
-    apiVersion: v1
-    metadata:
-      labels:
-        app: ${APP_NAME}
-      name: ibutsu-task-monitor
-      namespace: ${NAMESPACE}
-    spec:
-      source:
-        type: Git
-        git:
-          uri: ${IBUTSU_REPO_URL}
-          ref: ${IBUTSU_REPO_BRANCH}
-        contextDir: backend
-      strategy:
-        type: Source
-        sourceStrategy:
-          from:
-            kind: ImageStreamTag
-            name: python:3.6
-            namespace: openshift
-          env:
-          - name: GIT_SSL_NO_VERIFY
-            value: "true"
-          - name: UPGRADE_PIP_TO_LATEST
-            value: "true"
-      output:
-        to:
-          kind: ImageStreamTag
-          name: ibutsu-task-monitor:latest
-      runPolicy: Serial
-      triggers:
-      - imageChange:
-        type: ImageChange
-      - type: ConfigChange
-  # -----------------------------------------------
-  - kind: DeploymentConfig
-    apiVersion: v1
-    metadata:
-      labels:
-        app: ${APP_NAME}
-      name: ibutsu-task-monitor
-      namespace: ${NAMESPACE}
-    spec:
-      replicas: 1
-      selector:
-        deploymentConfig: ibutsu-task-monitor
-      strategy:
-        type: Rolling
-      template:
-        metadata:
-          labels:
-            app: ${APP_NAME}
-            deploymentConfig: ibutsu-task-monitor
-        spec:
-          containers:
-          - env:
-            - name: APP_FILE
-              value: ibutsu_server/tasks/monitor.py
-            - name: POSTGRESQL_HOST
-              value: postgresql.${NAMESPACE}.svc
-            - name: POSTGRESQL_PORT
-              value: "5432"
-            - name: POSTGRESQL_USER
-              valueFrom:
-                secretKeyRef:
-                  key: database-user
-                  name: postgresql
-            - name: POSTGRESQL_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: database-password
-                  name: postgresql
-            - name: POSTGRESQL_DATABASE
-              valueFrom:
-                secretKeyRef:
-                  key: database-name
-                  name: postgresql
-            - name: CELERY_BROKER_URL
-              value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
-            - name: CELERY_RESULT_BACKEND
-              value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
-            - name: FRONTEND_URL
-              value: ${FRONTEND_ROUTE}
-            - name: BACKEND_URL
-              value: ${BACKEND_ROUTE}
-            image: ibutsu-task-monitor
-            imagePullPolicy: Always
-            name: ibutsu-task-monitor
-            resources: {}
-            terminationMessagePath: /dev/termination-log
-            terminationMessagePolicy: File
-          dnsPolicy: ClusterFirst
-          restartPolicy: Always
-      triggers:
-      - imageChangeParams:
-          automatic: true
-          containerNames:
-          - ibutsu-task-monitor
-          from:
-            kind: ImageStreamTag
-            name: ibutsu-task-monitor:latest
-            namespace: ${NAMESPACE}
-        type: ImageChange
-      - type: ConfigChange
-  # -----------------------------------------------
-  - kind: ImageStream
-    apiVersion: v1
-    metadata:
-      name: ibutsu-task-monitor
-      annotations:
-        description: "A task monitor for watching report-related tasks"
-        openshify.io/image.insecureRepository: "true"
-    spec:
-      lookupPolicy:
-        local: true
   # ===============================================
   # PostgreSQL
   # ===============================================
@@ -1107,14 +898,16 @@ OKD/OpenShift Template
                     - 'pipefail'
                     - '-c'
                     - >
-                      trap "echo Backup failed; exit 0" ERR;
+                      trap "echo 'Backup failed'; exit 0" ERR;
                       FILENAME=backup-${PGDATABASE}-`date +%Y-%m-%d`.dump;
-                      time (find /database-backup -type f -name "backup-${PGDATABASE}-*" -exec ls -ltr "{}" + | head -n -${BACKUP_KEEP} | xargs rm -fr;
-                      pg_dump --format=custom --compress=9 --jobs=1 --no-owner --exclude-schema=$BACKUP_EXCLUDE --file=$FILENAME;
+                      cd /var/lib/database-backup;
+                      find . -type f -name "backup-${PGDATABASE}-*" -exec ls -ltr "{}" + | head -n -${BACKUP_KEEP} | xargs rm -fr;
+                      echo "Backing up database...";
+                      PGPASSWORD="$PGPASSWORD" pg_dump -v --username=$PGUSER --host=$PGHOST --port=$PGPORT --dbname=$PGDATABASE --exclude-table=artifacts --format=custom --compress=9 --jobs=1 --no-owner --file=$FILENAME;
                       echo "";
-                      echo -n "Backup successful: "; du -h /database-backup/$FILENAME;
+                      echo -n "Backup successful: "; du -h ./$FILENAME;
                       echo "To restore, use:";
-                      echo "~# pg_restore --user=$PGUSER --password --host=$PGHOST --port=$PGPORT --database=$PGDATABASE $FILENAME"
+                      echo "~# pg_restore --user=$PGUSER --password=<PGPASSWD> --host=$PGHOST --port=$PGPORT --database=$PGDATABASE $FILENAME"
                   resources:
                   limits:
                     cpu: 250m
