@@ -29,29 +29,41 @@ First, install yarn if you don't have it already, and set up the frontend.
 Many Linux distributions offer Yarn in their package repositories. Both Debian and Fedora package
 Yarn as ``yarnpkg``.
 
-Install Yarn on Fedora::
+Install Yarn on Fedora:
+
+.. code-block:: shell
 
    sudo dnf install -y yarnpkg
 
-Install Yarn on Debian::
+Install Yarn on Debian:
+
+.. code-block:: shell
 
    sudo apt install yarnpkg
 
 
-If you don't wnat to use the packaged version of Yarn, you can install it via ``npm``::
+If you don't wnat to use the packaged version of Yarn, you can install it via ``npm``:
+
+.. code-block:: shell
 
     cd ibutsu-server/frontend
     npm install yarn
 
-Just remember that you'll need to specify the full path when running Yarn::
+Just remember that you'll need to specify the full path when running Yarn:
+
+.. code-block:: shell
 
     node_modules/.bin/yarn <action>
 
-Now that Yarn is installed, use Yarn to install the frontend's dependencies::
+Now that Yarn is installed, use Yarn to install the frontend's dependencies:
+
+.. code-block:: shell
 
    yarn install
 
-Then to start the development server for the frontend using yarn::
+Then to start the development server for the frontend using yarn:
+
+.. code-block:: shell
 
     yarn run devserver
 
@@ -72,7 +84,7 @@ container:
     In all these examples, we use ``podman``, but you can substitute ``docker`` in its place.
 
 
-.. code:: bash
+.. code:: shell
 
     podman run --publish 5432:5432 --name postgres -e POSTGRES_USER=ibutsu -e POSTGRES_PASSWORD=ibutsu -e POSTGRES_DB=ibutsu -d postgres
 
@@ -80,7 +92,7 @@ container:
 If you don't have redis installed locally, you'll want to also run a redis container.
 This is required for ``celery``.
 
-.. code:: bash
+.. code:: shell
 
     podman run --name redis -d -p "6379:6379" redis
 
@@ -90,7 +102,7 @@ Install Dependencies
 
 You'll want to set up a virtual environment for the backend, and install the dependencies:
 
-.. code:: bash
+.. code:: shell
 
     cd ibutsu-server/backend
     virtualenv .ibutsu-env --python python3
@@ -102,7 +114,7 @@ Run Celery Worker
 
 Start the celery worker using the ``backend/celery_worker.sh`` script or via:
 
-.. code:: bash
+.. code:: shell
 
     celery worker -E -A ibutsu_server.tasks.queues:app --loglevel=info
 
@@ -114,7 +126,7 @@ Start the celery worker using the ``backend/celery_worker.sh`` script or via:
 
 (Optional) Start the celery task monitor:
 
-.. code:: bash
+.. code:: shell
 
     .ibutsu-env/bin/python ibutsu_server/tasks/monitor.py
 
@@ -127,7 +139,7 @@ Run the API Backend
 
 Run the Ibutsu server backend using Python:
 
-.. code:: bash
+.. code:: shell
 
     .ibutsu-env/bin/python -m ibutsu_server
 

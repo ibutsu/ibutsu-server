@@ -5,9 +5,9 @@ Project Structure
 
 The Ibutsu project is divided into 3 main components:
 
- * API client
- * pytest plugin
- * Server
+* API client
+* pytest plugin
+* Server
 
 
 API Client
@@ -18,12 +18,14 @@ to generate the client from the API.
 
 To regenerate the client, run the regeneration script in the root of the repository:
 
-.. code:: bash
+.. code:: shell
 
    ./regenerate-client.sh --commit --push --delete path/to/openapi.yaml
 
 
-To understand what the options do, just use the ``--help`` option::
+To understand what the options do, just use the ``--help`` option:
+
+.. code-block:: shell
 
    ./regenerate-client.sh --help
    Usage: regenerate-client.sh [-h|--help] [-c|--commit] [-p|--push] [-d|--delete] OPENAPI_FILE
@@ -39,12 +41,16 @@ pytest Plugin
 -------------
 
 The pytest plugin simply uses the API client to send test results from a pytest run to an Ibutsu
-server. The plugin can be installed from PyPI via pip::
+server. The plugin can be installed from PyPI via pip:
+
+.. code-block:: shell
 
    pip install pytest-ibutsu
 
 Of course if you want to develop this, you're not going to want to install it from PyPI, so let's
-rather do an editable installation::
+rather do an editable installation:
+
+.. code-block:: shell
 
    pip install -e .
 
@@ -54,8 +60,8 @@ Server
 
 The server is further divided into two separate apps:
 
- * Frontend
- * Backend
+* Frontend
+* Backend
 
 
 Frontend
@@ -70,8 +76,8 @@ Backend
 
 The backend of the server is made up of 5 parts:
 
- * The API itself, written in Python/Flask/Connexion
- * The task worker, which runs async tasks, written with Celery
- * The task monitor, which keeps tabs on task failures
- * A `MongoDB <https://mongodb.com>`_ instance, which is the database
- * A `Redis <https://redis.io>`_ instance, which is used by the task worker
+* The API itself, written in Python/Flask/Connexion
+* The task worker, which runs async tasks, written with Celery
+* The task monitor, which keeps tabs on task failures
+* A `MongoDB <https://mongodb.com>`_ instance, which is the database
+* A `Redis <https://redis.io>`_ instance, which is used by the task worker

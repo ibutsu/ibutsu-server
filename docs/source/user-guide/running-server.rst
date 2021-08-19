@@ -28,6 +28,8 @@ Deploying to OKD
 If you want to deploy Ibutsu to `OKD <https://www.okd.io/>`_ or `OpenShift <https://www.openshift.com/>`_,
 we have also included an :ref:`examples/okd-template` example.
 
-To create a project in OKD from this template, run the following command::
+To create a project in OKD from this template, run the following command:
+
+.. code-block:: shell
 
    oc create -f ibutsu-okd-template.yaml
