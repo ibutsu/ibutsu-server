@@ -18,24 +18,32 @@ Sending results on-the-fly
 
 Ibutsu has a companion pytest plugin which can be used to send results to Ibutsu from pytest.
 
-You can install the pytest plugin via pip::
+You can install the pytest plugin via pip:
+
+.. code-block:: shell
 
    pip install pytest-ibutsu
 
 
 Once installed, you can activate the Ibutsu pytest plugin by specifying your Ibutsu server on the
-command line::
+command line:
+
+.. code-block:: shell
 
    pytest --ibutsu http://ibutsu-server/api
 
 
 If you're running Ibutsu locally for development, and you want to upload results to your local
-instance, you can do that too::
+instance, you can do that too:
+
+.. code-block:: shell
 
    pytest --ibtusu http://127.0.0.1:8080/api
 
 
-You can also specify the project, source and extra metadata via command line arguments::
+You can also specify the project, source and extra metadata via command line arguments:
+
+.. code-block:: shell
 
    pytest --ibutsu http://ibutsu-server/api --ibutsu-project my-project
    pytest --ibutsu http://ibutsu-server/api --ibutsu-data key=value --ibutsu-data key2=value2
@@ -55,7 +63,9 @@ appropriate archive.
 Via the Ibutsu API
 ******************
 Archives may be imported via the ``import`` API endpoint. For example, one may use the
-following curl command::
+following curl command:
+
+.. code-block:: shell
 
   curl --form importFile=@<file-name>.tar.gz http://ibutsu-server/api/import
 
@@ -77,7 +87,9 @@ does not upload screenshots and log files.
 Via the Ibutsu API
 ##################
 Junit XML files generated from pytest can be imported at the ``import`` API endpoint. For example,
-one may use the following curl command::
+one may use the following curl command:
+
+.. code-block:: shell
 
   curl --form importFile=@<file-name>.xml http://ibusu-server/api/import
 
@@ -86,7 +98,9 @@ Installing the API client
 
 There is also a Python API client that can be used to push results into Ibutsu.
 
-You can install the API client via pip::
+You can install the API client via pip:
+
+.. code-block:: shell
 
    pip install ibutsu-client
 
