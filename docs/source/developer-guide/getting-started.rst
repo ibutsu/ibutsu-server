@@ -137,6 +137,12 @@ The task monitor checks the task queue for failures.
 Run the API Backend
 -------------------
 
+Create ``backend/settings.yaml``, start with copying ``backend/default.settings.yaml``
+
+.. code:: shell
+
+    cp backend/default.settings.yaml backend/settings.yaml
+
 Run the Ibutsu server backend using Python:
 
 .. code:: shell
