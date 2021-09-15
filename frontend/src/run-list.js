@@ -483,6 +483,7 @@ export class RunList extends React.Component {
                 onClearFilters={this.clearFilters}
                 onSetPage={this.setPage}
                 onSetPageSize={this.setPageSize}
+                hideFilters={["project_id"]}
               />
             </CardBody>
             <CardFooter>

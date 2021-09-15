@@ -525,6 +525,7 @@ export class ResultList extends React.Component {
                 onApplyReport={this.applyReport}
                 onSetPage={this.setPage}
                 onSetPageSize={this.setPageSize}
+                hideFilters={["project_id"]}
               />
             </CardBody>
             <CardFooter>

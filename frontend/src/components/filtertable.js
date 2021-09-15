@@ -26,6 +26,7 @@ export class FilterTable extends React.Component {
     actions: PropTypes.array,
     filters: PropTypes.array,
     activeFilters: PropTypes.object,
+    hideFilters: PropTypes.array,
     pagination: PropTypes.object,
     isEmpty: PropTypes.bool,
     isError: PropTypes.bool,
@@ -59,6 +60,7 @@ export class FilterTable extends React.Component {
     let rows = this.props.rows || [];
     let actions = this.props.actions || [];
     let filters = this.props.filters || [];
+    let hideFilters = this.props.hideFilters || [];
     let activeFilters = this.props.activeFilters || {};
     let pagination = this.props.pagination || {page: 0, pageSize: 0, totalItems: 0};
     let canSelectAll = this.props.canSelectAll || false;
@@ -103,6 +105,7 @@ export class FilterTable extends React.Component {
           <Flex grow={{default: 'grow'}}>
             {Object.keys(activeFilters).map(key => (
             <FlexItem spacer={{ default: 'spacerXs'}} key={key}>
+              {!hideFilters.includes(key) &&
               <ChipGroup categoryName={key}>
                 <Chip onClick={() => onRemoveFilter(key)}>
                   {(typeof activeFilters[key] === 'object') &&
@@ -114,6 +117,7 @@ export class FilterTable extends React.Component {
                   {(typeof activeFilters[key] !== 'object') && activeFilters[key]}
                 </Chip>
               </ChipGroup>
+              }
             </FlexItem>
             ))}
           </Flex>

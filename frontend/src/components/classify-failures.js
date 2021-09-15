@@ -36,7 +36,8 @@ import {
 
 export class ClassifyFailuresTable extends React.Component {
   static propTypes = {
-    filters: PropTypes.object
+    filters: PropTypes.object,
+    run_id: PropTypes.string
   };
 
   constructor(props) {
@@ -59,7 +60,9 @@ export class ClassifyFailuresTable extends React.Component {
       isExceptionOpen: false,
       exceptions: [],
       includeSkipped: false,
-      filters: Object.assign({'result': {op: 'in', val: 'failed;error'}}, props.filters),
+      filters: Object.assign({
+        'result': {op: 'in', val: 'failed;error'},
+        'run_id': {op: 'eq', val: props.run_id}}, props.filters),
     };
     this.refreshResults = this.refreshResults.bind(this);
     this.onCollapse = this.onCollapse.bind(this);
@@ -227,7 +230,7 @@ export class ClassifyFailuresTable extends React.Component {
   }
 
   getExceptions() {
-    fetch(buildUrl(Settings.serverUrl + '/widget/result-aggregator', {group_field: 'metadata.exception_name', days: 365, additional_filters: 'run_id=' + this.state.filters.run_id.val}))
+    fetch(buildUrl(Settings.serverUrl + '/widget/result-aggregator', {group_field: 'metadata.exception_name', run_id: this.props.run_id}))
     .then(response => response.json())
     .then(data => {
       this.setState({exceptions: data})
@@ -255,9 +258,8 @@ export class ClassifyFailuresTable extends React.Component {
       totalItems: this.state.totalItems
     }
     // filters for the exception
-    const exception_filters = [
+    const exceptionFilters = [
       <React.Fragment key="value">
-        {exceptions.length > 0 &&
         <Select
           aria-label="exception-filter"
           placeholderText="Filter by exception"
@@ -265,6 +267,7 @@ export class ClassifyFailuresTable extends React.Component {
           isOpen={isExceptionOpen}
           selections={exceptionSelections}
           maxHeight={"1140%"}
+          isDisabled={exceptions.length < 2}
           onToggle={this.onExceptionToggle}
           onSelect={this.onExceptionSelect}
           onClear={this.onExceptionClear}
@@ -273,7 +276,6 @@ export class ClassifyFailuresTable extends React.Component {
             <SelectOption key={index} value={option._id} description={option.count + ' results'}/>
           ))}
         </Select>
-        }
       </React.Fragment>
     ]
     return (
@@ -312,8 +314,9 @@ export class ClassifyFailuresTable extends React.Component {
             onRowSelect={this.onTableRowSelect}
             variant={TableVariant.compact}
             activeFilters={this.state.filters}
-            filters={exception_filters}
+            filters={exceptionFilters}
             onRemoveFilter={this.removeFilter}
+            hideFilters={["run_id", "project_id"]}
           />
         </CardBody>
       </Card>
