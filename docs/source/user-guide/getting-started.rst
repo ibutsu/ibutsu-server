@@ -38,7 +38,7 @@ instance, you can do that too:
 
 .. code-block:: shell
 
-   pytest --ibtusu http://127.0.0.1:8080/api
+   pytest --ibutsu http://127.0.0.1:8080/api
 
 
 You can also specify the project, source and extra metadata via command line arguments:
