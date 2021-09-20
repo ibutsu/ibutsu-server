@@ -5,6 +5,7 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks.runs import update_run as update_run_task
+from ibutsu_server.util import merge_dicts
 from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.query import query_as_task
@@ -184,7 +185,9 @@ def bulk_update(filter_=None, page_size=1):
     model_runs = []
     for run_json in runs:
         run = Run.query.get(run_json.get("id"))
-        run.update(run_dict)
+        # update the json dict of the run with the new metadata
+        merge_dicts(run_dict, run_json)
+        run.update(run_json)
         session.add(run)
         model_runs.append(run)
     session.commit()
