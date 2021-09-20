@@ -38,8 +38,8 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         if metadata:
             result["metadata"] = result.get("metadata", {})
             result["metadata"].update(metadata)
-            result["env"] = result["metadata"].get("env")
-            result["component"] = result["metadata"].get("component")
+        result["env"] = result.get("metadata", {}).get("env")
+        result["component"] = result.get("metadata", {}).get("component")
         result_record = Result.from_dict(**result)
     session.add(result_record)
     session.commit()
@@ -265,6 +265,9 @@ def run_archive_import(import_):
                 },
             }
         # patch things up a bit, if necessary
+        if metadata:
+            run_dict["metadata"] = run_dict.get("metadata", {})
+            run_dict["metadata"].update(metadata)
         if run_dict.get("id"):
             run_dict["id"] = convert_objectid_to_uuid(run_dict["id"])
         if run_dict.get("start_time") and not run_dict.get("created"):
@@ -278,9 +281,11 @@ def run_archive_import(import_):
             run_dict["project_id"] = import_record.data["project_id"]
         elif run_dict.get("metadata", {}).get("project"):
             run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
-        if metadata:
-            run_dict["metadata"] = run_dict.get("metadata", {})
-            run_dict["metadata"].update(metadata)
+        if run_dict.get("metadata", {}).get("component"):
+            run_dict["component"] = run_dict["metadata"]["component"]
+        if run_dict.get("metadata", {}).get("env"):
+            run_dict["env"] = run_dict["metadata"]["env"]
+
         # If this run has a valid ObjectId, check if this run exists
         if is_uuid(run_dict.get("id")):
             run = session.query(Run).get(run_dict["id"])
@@ -299,7 +304,7 @@ def run_archive_import(import_):
                 run.id,
                 result,
                 artifacts,
-                import_record.data.get("project_id"),
+                project_id=run_dict.get("project_id") or import_record.data.get("project_id"),
                 metadata=metadata,
             )
     # Update the import record
