@@ -63,7 +63,7 @@ if [[ $PRINT_NEW_VERSION = true ]]; then
 fi
 
 echo "Updating files to $NEW_VERSION"
-SED_VERSION=$(echo "$CURRENT_VERSION" | sed -r 's/[\.]+/\\\./g')
+SED_VERSION=$(echo "$CURRENT_VERSION" | sed 's/-beta//' | sed -r 's/[\.]+/\\\./g')
 for FNAME in ${VERSIONED_FILES[@]}; do
     echo " - ${FNAME/$BASE_DIR\//}"
     sed -i "s/$SED_VERSION/$NEW_VERSION/g" $FNAME
