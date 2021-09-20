@@ -1,3 +1,19 @@
+Version 1.13.4
+==============
+
+* Update default timeouts in OCP templates (#204)
+* Fixed a spelling error (#212)
+* Fix the archive import
+* Set failed reports as failed in the DB
+* Add support for run_id, hiding filter chips in FilterTable
+* Fix bulk_update endpoint
+* Add a checkbox select filter for exceptions
+* Add docs reference for backend/settings.yaml
+* Migrate to use the Furo theme in the docs. Looks much nicer and provides both a light and dark theme
+* add support for import metadata (#194)
+* Update OCP template config
+* Update readme with badges
+
 Version 1.13.3
 ==============
 
