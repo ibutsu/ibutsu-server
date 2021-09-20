@@ -7,6 +7,7 @@ from celery import Task
 from celery.schedules import crontab
 from flask import current_app
 from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Report
 from redis import Redis
 from redis.exceptions import LockError
 
@@ -29,6 +30,11 @@ def create_celery_app(_app=None):
             with _app.app_context():
                 return super().__call__(*args, **kwargs)
 
+        def _set_report_error(self, report):
+            report.status = "error"
+            session.add(report)
+            session.commit()
+
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
             """
             After each Celery task, teardown our db session.
@@ -40,6 +46,18 @@ def create_celery_app(_app=None):
                 if not isinstance(retval, Exception):
                     session.commit()
             session.remove()
+
+        def on_failure(self, exc, task_id, args, kwargs, einfo):
+            # if the task is related to a report, set that report to failed
+            try:
+                with _app.app_context():
+                    report_id = args[0].get("id")  # get the report ID from the task
+                    report = Report.query.get(report_id)
+                    # if this is actually a report ID, set it as an error
+                    if report:
+                        self._set_report_error(report)
+            except (IndexError, TypeError):
+                pass
 
     app = Celery(
         "ibutsu_server",
