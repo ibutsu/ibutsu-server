@@ -298,7 +298,7 @@ export class Run extends React.Component {
   }
 
   getClassificationTable = () => {
-    this.setState({classificationTable: <ClassifyFailuresTable filters={ {'run_id': {op: 'eq', val: this.state.id}} }/>});
+    this.setState({classificationTable: <ClassifyFailuresTable run_id={this.state.id}/>});
   }
 
   onToggle = (node) => {

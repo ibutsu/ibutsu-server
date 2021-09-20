@@ -17,18 +17,22 @@ def _get_min_count(days):
         return days ** 5
 
 
-def _get_recent_result_data(days, group_field, project=None, additional_filters=None):
+def _get_recent_result_data(group_field, days, project=None, run_id=None, additional_filters=None):
     """Count occurrences of distinct fields within results."""
-    delta = timedelta(days=days).total_seconds()
-    current_time = time.time()
-    time_period_in_sec = current_time - delta
+    filters = [f"{group_field}@y"]
 
-    # create filters for the start time and that the group_field exists
-    filters = [f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}", f"{group_field}@y"]
+    if days:
+        delta = timedelta(days=days).total_seconds()
+        current_time = time.time()
+        time_period_in_sec = current_time - delta
+        # create filters for the start time and that the group_field exists
+        filters.append(f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}")
     if additional_filters:
         filters.extend(additional_filters.split(","))
     if project:
         filters.append(f"project_id={project}")
+    if run_id:
+        filters.append(f"run_id={run_id}")
 
     # generate the group field
     group_field = string_to_column(group_field, Result)
@@ -50,7 +54,13 @@ def _get_recent_result_data(days, group_field, project=None, additional_filters=
 
 
 def get_recent_result_data(
-    days, group_field, project=None, chart_type="pie", additional_filters=None
+    group_field, days=None, project=None, chart_type="pie", run_id=None, additional_filters=None
 ):
-    data = _get_recent_result_data(days, group_field, project, additional_filters)
+    data = _get_recent_result_data(
+        group_field,
+        days=days,
+        project=project,
+        run_id=run_id,
+        additional_filters=additional_filters,
+    )
     return data

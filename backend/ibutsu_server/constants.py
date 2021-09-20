@@ -139,8 +139,14 @@ WIDGET_TYPES = {
                 "name": "days",
                 "description": "Aggregate test results from <days> days ago, e.g. 3",
                 "type": "float",
-                "required": True,
+                "required": False,
                 "default": 3,
+            },
+            {
+                "name": "run_id",
+                "description": "Aggregate results from a specific run",
+                "type": "string",
+                "required": False,
             },
             {
                 "name": "chart_type",

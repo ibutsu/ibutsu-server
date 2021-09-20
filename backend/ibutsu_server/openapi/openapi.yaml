@@ -1144,7 +1144,6 @@ paths:
         required: true
         schema:
           type: string
-          format: uuid
         style: simple
       - description: The parameters for the widget
         in: query

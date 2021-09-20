@@ -9,6 +9,9 @@ import {
   Checkbox,
   Flex,
   FlexItem,
+  Select,
+  SelectOption,
+  SelectVariant,
   TextContent,
   Text,
 } from '@patternfly/react-core';
@@ -33,7 +36,8 @@ import {
 
 export class ClassifyFailuresTable extends React.Component {
   static propTypes = {
-    filters: PropTypes.object
+    filters: PropTypes.object,
+    run_id: PropTypes.string
   };
 
   constructor(props) {
@@ -50,8 +54,15 @@ export class ClassifyFailuresTable extends React.Component {
       totalPages: 0,
       isEmpty: false,
       isError: false,
+      isFieldOpen: false,
+      isOperationOpen: false,
+      exceptionSelections: [],
+      isExceptionOpen: false,
+      exceptions: [],
       includeSkipped: false,
-      filters: Object.assign({'result': {op: 'in', val: 'failed;error'}}, props.filters),
+      filters: Object.assign({
+        'result': {op: 'in', val: 'failed;error'},
+        'run_id': {op: 'eq', val: props.run_id}}, props.filters),
     };
     this.refreshResults = this.refreshResults.bind(this);
     this.onCollapse = this.onCollapse.bind(this);
@@ -61,6 +72,39 @@ export class ClassifyFailuresTable extends React.Component {
     this.setState({selectedResults: []});
     this.getResultsForTable();
   }
+
+  onExceptionToggle = isExpanded => {
+    this.setState({isExceptionOpen: isExpanded}, this.applyFilter);
+  }
+
+  applyExceptionFilter = () => {
+    let { filters, exceptionSelections } = this.state;
+    if (exceptionSelections.length > 0) {
+      filters["metadata.exception_name"] = Object.assign({op: 'in', val: exceptionSelections.join(';')});
+      this.setState({filters}, this.refreshResults);
+    }
+    else {
+      delete filters["metadata.exception_name"];
+      this.setState({filters}, this.refreshResults);
+    }
+  }
+
+  onExceptionSelect = (event, selection) => {
+    const exceptionSelections = this.state.exceptionSelections;
+    if (exceptionSelections.includes(selection)) {
+      this.setState({exceptionSelections: exceptionSelections.filter(item => item !== selection)}, this.applyExceptionFilter);
+    }
+    else {
+     this.setState({exceptionSelections: [...exceptionSelections, selection]}, this.applyExceptionFilter);
+    }
+  };
+
+  onExceptionClear = () => {
+    this.setState({
+      exceptionSelections: [],
+      isExceptionOpen: false
+    }, this.applyExceptionFilter);
+  };
 
   onCollapse(event, rowIndex, isOpen) {
     const { rows } = this.state;
@@ -120,7 +164,7 @@ export class ClassifyFailuresTable extends React.Component {
   removeFilter = id => {
     if (id === "metadata.exception_name") {   // only remove exception_name filter
       this.updateFilters(id, null, null, () => {
-        this.setState({page: 1}, this.refreshResults);
+        this.setState({exceptionSelections: [], page: 1}, this.applyExceptionFilter);
       });
     }
   }
@@ -185,17 +229,55 @@ export class ClassifyFailuresTable extends React.Component {
       });
   }
 
+  getExceptions() {
+    fetch(buildUrl(Settings.serverUrl + '/widget/result-aggregator', {group_field: 'metadata.exception_name', run_id: this.props.run_id}))
+    .then(response => response.json())
+    .then(data => {
+      this.setState({exceptions: data})
+    })
+  }
+
   componentDidMount() {
     this.getResultsForTable();
+    this.getExceptions();
   }
 
   render() {
-    const { columns, rows, selectedResults, includeSkipped } = this.state;
+    const {
+      columns,
+      rows,
+      selectedResults,
+      includeSkipped,
+      isExceptionOpen,
+      exceptionSelections,
+      exceptions,
+    } = this.state;
     const pagination = {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
     }
+    // filters for the exception
+    const exceptionFilters = [
+      <React.Fragment key="value">
+        <Select
+          aria-label="exception-filter"
+          placeholderText="Filter by exception"
+          variant={SelectVariant.checkbox}
+          isOpen={isExceptionOpen}
+          selections={exceptionSelections}
+          maxHeight={"1140%"}
+          isDisabled={exceptions.length < 2}
+          onToggle={this.onExceptionToggle}
+          onSelect={this.onExceptionSelect}
+          onClear={this.onExceptionClear}
+        >
+          {exceptions.map((option, index) => (
+            <SelectOption key={index} value={option._id} description={option.count + ' results'}/>
+          ))}
+        </Select>
+      </React.Fragment>
+    ]
     return (
       <Card className="pf-u-mt-lg">
         <CardHeader>
@@ -232,7 +314,9 @@ export class ClassifyFailuresTable extends React.Component {
             onRowSelect={this.onTableRowSelect}
             variant={TableVariant.compact}
             activeFilters={this.state.filters}
+            filters={exceptionFilters}
             onRemoveFilter={this.removeFilter}
+            hideFilters={["run_id", "project_id"]}
           />
         </CardBody>
       </Card>
