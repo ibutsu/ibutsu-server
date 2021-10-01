@@ -78,7 +78,8 @@ class FileMixin(ModelMixin):
 
 class Artifact(Model, FileMixin):
     __tablename__ = "artifacts"
-    result_id = Column(PortableUUID(), ForeignKey("results.id"), nullable=False, index=True)
+    result_id = Column(PortableUUID(), ForeignKey("results.id"), index=True)
+    run_id = Column(PortableUUID(), ForeignKey("runs.id"), index=True)
     filename = Column(Text, index=True)
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
     upload_date = Column(DateTime, default=datetime.utcnow, index=True)
@@ -169,6 +170,7 @@ class Result(Model, ModelMixin):
 
 class Run(Model, ModelMixin):
     __tablename__ = "runs"
+    artifacts = relationship("Artifact")
     component = Column(Text, index=True)
     created = Column(DateTime, default=datetime.utcnow, index=True)
     # this is metadata but it is a reserved attr
