@@ -1,12 +1,12 @@
 exclude: iqe/data/plugin_skel
 repos:
 - repo: https://github.com/asottile/reorder_python_imports
-  rev: v2.5.0
+  rev: v2.6.0
   hooks:
   - id: reorder-python-imports
     language_version: python3
 - repo: https://github.com/ambv/black
-  rev: 21.5b1
+  rev: 21.9b0
   hooks:
   - id: black
     args: [--safe, --quiet, --line-length, "100"]
@@ -29,12 +29,12 @@ repos:
     language_version: python3
     args: [--max-line-length, "100", --ignore, "E203, W503"]
 - repo: https://github.com/asottile/pyupgrade
-  rev: v2.16.0
+  rev: v2.29.0
   hooks:
   - id: pyupgrade
     language_version: python3
 - repo: https://github.com/pre-commit/mirrors-eslint
-  rev: v7.26.0
+  rev: v8.0.0-rc.0
   hooks:
   - id: eslint
     additional_dependencies:
