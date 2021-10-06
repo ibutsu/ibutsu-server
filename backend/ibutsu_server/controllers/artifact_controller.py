@@ -61,7 +61,7 @@ def get_artifact(id_):
     return artifact.to_dict()
 
 
-def get_artifact_list(result_id=None, page_size=25, page=1):
+def get_artifact_list(result_id=None, run_id=None, page_size=25, page=1):
     """Get a list of artifact files for result
 
     :param id: ID of test result
@@ -72,6 +72,8 @@ def get_artifact_list(result_id=None, page_size=25, page=1):
     query = Artifact.query
     if result_id:
         query = query.filter(Artifact.result_id == result_id)
+    if run_id:
+        query = query.filter(Artifact.run_id == run_id)
     total_items = query.count()
     offset = (page * page_size) - page_size
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
@@ -92,6 +94,8 @@ def upload_artifact(body):
 
     :param result_id: ID of result to attach artifact to
     :type result_id: str
+    :param run_id: ID of run to attach artifact to
+    :type run_id: str
     :param filename: filename for storage
     :type filename: string
     :param file: file to upload
@@ -102,11 +106,17 @@ def upload_artifact(body):
     :rtype: tuple
     """
     result_id = body.get("result_id")
+    run_id = body.get("run_id")
     filename = body.get("filename")
     additional_metadata = body.get("additional_metadata", {})
     file_ = connexion.request.files["file"]
     content_type = magic.from_buffer(file_.read())
-    data = {"contentType": content_type, "resultId": result_id, "filename": filename}
+    data = {
+        "contentType": content_type,
+        "resultId": result_id,
+        "runId": run_id,
+        "filename": filename,
+    }
     if additional_metadata:
         if isinstance(additional_metadata, str):
             try:
@@ -118,13 +128,23 @@ def upload_artifact(body):
         data["additionalMetadata"] = additional_metadata
     # Reset the file pointer
     file_.seek(0)
-    artifact = Artifact(
-        filename=filename,
-        result_id=data["resultId"],
-        content=file_.read(),
-        upload_date=datetime.utcnow(),
-        data=additional_metadata,
-    )
+    if data.get("runId"):
+        artifact = Artifact(
+            filename=filename,
+            run_id=data["runId"],
+            content=file_.read(),
+            upload_date=datetime.utcnow(),
+            data=additional_metadata,
+        )
+    else:
+        artifact = Artifact(
+            filename=filename,
+            result_id=data["resultId"],
+            content=file_.read(),
+            upload_date=datetime.utcnow(),
+            data=additional_metadata,
+        )
+
     session.add(artifact)
     session.commit()
     return artifact.to_dict(), 201

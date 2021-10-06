@@ -8,6 +8,7 @@ import {
   Card,
   CardHeader,
   CardBody,
+  CardFooter,
   DataList,
   DataListCell,
   DataListItem,
@@ -31,6 +32,8 @@ import {
   CatalogIcon,
   ChevronRightIcon,
   CodeIcon,
+  FileAltIcon,
+  FileImageIcon,
   InfoCircleIcon,
   MessagesIcon,
   RepositoryIcon
@@ -38,6 +41,7 @@ import {
 
 import { Link } from 'react-router-dom';
 import ReactJson from 'react-json-view';
+import Editor from '@monaco-editor/react';
 
 import { Settings } from './settings';
 import {
@@ -139,6 +143,8 @@ export class Run extends React.Component {
       isError: false,
       resultsTree: {core: {data: []}},
       treeData: [],
+      artifacts: [],
+      artifactTabs: []
     };
     // Watch the history to update tabs
     this.unlisten = this.props.history.listen(() => {
@@ -270,6 +276,55 @@ export class Run extends React.Component {
     });
   }
 
+  getRunArtifacts() {
+    fetch(buildUrl(Settings.serverUrl + '/artifact', {runId: this.state.id}))
+      .then(response => response.json())
+      .then(data => {
+        let artifactTabs = [];
+        data.artifacts.forEach((artifact) => {
+          fetch(Settings.serverUrl + `/artifact/${artifact.id}/view`)
+            .then(response => {
+              let contentType = response.headers.get('Content-Type');
+              if (contentType.includes('text')) {
+                response.text().then(text => {
+                  artifactTabs.push(
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
+                      <Card>
+                        <CardBody>
+                          <Editor fontFamily="Hack, monospace" theme="dark" value={text} height="40rem" options={{readOnly: true}} />
+                        </CardBody>
+                        <CardFooter>
+                          <Button component="a" href={`${Settings.serverUrl}/artifact/${artifact.id}/download`}>Download {artifact.filename}</Button>
+                        </CardFooter>
+                      </Card>
+                    </Tab>
+                  );
+                  this.setState({artifactTabs});
+                });
+              }
+              else if (contentType.includes('image')) {
+                response.blob().then(blob => {
+                  let imageUrl = URL.createObjectURL(blob);
+                  artifactTabs.push(
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
+                      <Card>
+                        <CardBody>
+                          <img src={imageUrl} alt={artifact.filename}/>
+                        </CardBody>
+                        <CardFooter>
+                          <Button component="a" href={`${Settings.serverUrl}/artifact/${artifact.id}/download`}>Download {artifact.filename}</Button>
+                        </CardFooter>
+                      </Card>
+                    </Tab>
+                  );
+                  this.setState({artifactTabs});
+                });
+              }
+            });
+        });
+      });
+  }
+
   updateTab(tabIndex) {
     if (tabIndex === 'results-list') {
       this.getResultsForTable();
@@ -353,6 +408,7 @@ export class Run extends React.Component {
         return response.json();
       })
       .then(data => this.setState({run: data}, () => {
+        this.getRunArtifacts();
         this.updateTab(this.state.activeTab);
       }))
       .catch(error => console.log(error));
@@ -429,7 +485,7 @@ export class Run extends React.Component {
     let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0, not_run = 0;
     let created = 0;
     let calculatePasses = true;
-    const { run, columns, rows, classificationTable } = this.state;
+    const { run, columns, rows, classificationTable, artifactTabs } = this.state;
 
     if (run.start_time) {
       created = new Date(run.start_time);
@@ -762,6 +818,7 @@ export class Run extends React.Component {
               <Tab eventKey={'classify-failures'} title={<TabTitle icon={MessagesIcon} text="Classify Failures" />} style={{backgroundColor: "white"}}>
                 {classificationTable}
               </Tab>
+              {artifactTabs}
               <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: "white"}}>
                 <Card>
                   <CardBody>

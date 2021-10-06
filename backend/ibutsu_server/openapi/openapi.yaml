@@ -183,6 +183,16 @@ paths:
         required: false
         schema:
           type: string
+          format: uuid
+        style: form
+      - description: The run ID to filter by
+        explode: true
+        in: query
+        name: runId
+        required: false
+        schema:
+          type: string
+          format: uuid
         style: form
       - $ref: '#/components/parameters/Page'
       - $ref: '#/components/parameters/PageSize'
@@ -207,6 +217,9 @@ paths:
                 resultId:
                   description: ID of result to attach artifact to
                   type: string
+                runId:
+                  description: ID of run to attach artifact to
+                  type: string
                 filename:
                   description: ID of pet to update
                   type: string
@@ -218,7 +231,6 @@ paths:
                   description: Additional data to pass to server
                   type: object
               required:
-              - resultId
               - file
               - filename
               type: object
@@ -1667,6 +1679,10 @@ components:
         result_id:
           description: ID of test result to attach artifact to
           example: a16ad60e-bf23-4195-99dc-594858ad3e5e
+          type: string
+        run_id:
+          description: ID of test run to attach artifact to
+          example: 04af3d2a-55c5-4562-9ed6-3bf30ac6753e
           type: string
         filename:
           description: ID of pet to update

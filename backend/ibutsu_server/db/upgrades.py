@@ -7,7 +7,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
-__version__ = 2
+__version__ = 3
 
 
 def get_upgrade_op(session):
@@ -33,7 +33,7 @@ def upgrade_1(session):
     if (
         "dashboards" in metadata.tables
         and widget_configs is not None
-        and not widget_configs.columns.contains_column("dashboard_id")
+        and not hasattr(widget_configs.columns, "dashboard_id")
     ):
         op.add_column("widget_configs", Column("dashboard_id", PortableUUID, server_default=null()))
         if engine.url.get_dialect().name != "sqlite":
@@ -85,3 +85,33 @@ def upgrade_2(session):
                     [quoted_name("(data->'requirements')", False)],
                     postgresql_using="gin",
                 )
+
+
+def upgrade_3(session):
+    """Version 3 upgrade
+
+    This upgrade:
+        - makes the 'result_id' column of artifacts nullable
+        - adds a 'run_id' to the artifacts table
+    """
+    engine = session.get_bind()
+    op = get_upgrade_op(session)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    artifacts = metadata.tables.get("artifacts")
+    if (
+        "runs" in metadata.tables
+        and artifacts is not None
+        and not hasattr(artifacts.columns, "run_id")
+    ):
+        op.alter_column("artifacts", "result_id", nullable=True, server_default=null())
+        op.add_column("artifacts", Column("run_id", PortableUUID, server_default=null()))
+        if engine.url.get_dialect().name != "sqlite":
+            # SQLite doesn't support ALTER TABLE ADD CONSTRAINT
+            op.create_foreign_key(
+                "fk_artifacts_run_id",
+                "artifacts",
+                "runs",
+                ["run_id"],
+                ["id"],
+            )
