@@ -28,8 +28,8 @@ def _calculate_slope(x_data):
     x_avg = sum(x_data) / len(x_data)
     y_avg = sum(y_data) / len(y_data)
     try:
-        slope = sum([(x - x_avg) * (y - y_avg) for x, y in zip(x_data, y_data)]) / sum(
-            [(x - x_avg) ** 2 for x in x_data]
+        slope = sum((x - x_avg) * (y - y_avg) for x, y in zip(x_data, y_data)) / sum(
+            (x - x_avg) ** 2 for x in x_data
         )
     except ZeroDivisionError:
         slope = 0
@@ -74,7 +74,7 @@ def _get_builds(job_name, builds, project=None, additional_filters=None):
     builds = [build for build in query.limit(builds)]
     min_start_times = [build.min_start_time for build in builds]
     if min_start_times:
-        min_start_time = min([build.min_start_time for build in builds])
+        min_start_time = min(build.min_start_time for build in builds)
     else:
         min_start_time = None
     return min_start_time, [str(build.build_number) for build in builds]
