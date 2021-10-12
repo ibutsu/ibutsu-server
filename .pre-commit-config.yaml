@@ -34,11 +34,15 @@ repos:
   - id: pyupgrade
     language_version: python3
 - repo: https://github.com/pre-commit/mirrors-eslint
-  rev: v8.0.0-rc.0
+  rev: v8.0.0-1
   hooks:
   - id: eslint
     additional_dependencies:
     - eslint
     - eslint-plugin-react
     - eslint-plugin-import
-    - babel-eslint
+    - "@babel/eslint-parser"
+    - "@babel/plugin-proposal-class-properties"
+    - "@babel/plugin-proposal-private-methods"
+    - "@babel/plugin-syntax-jsx"
+    - "@babel/preset-flow"
