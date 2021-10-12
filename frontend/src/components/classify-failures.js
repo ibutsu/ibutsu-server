@@ -9,9 +9,6 @@ import {
   Checkbox,
   Flex,
   FlexItem,
-  Select,
-  SelectOption,
-  SelectVariant,
   TextContent,
   Text,
 } from '@patternfly/react-core';
@@ -31,6 +28,7 @@ import { OPERATIONS } from '../constants';
 import {
   FilterTable,
   MultiClassificationDropdown,
+  MetaFilter,
 } from './index';
 
 
@@ -56,10 +54,9 @@ export class ClassifyFailuresTable extends React.Component {
       isError: false,
       isFieldOpen: false,
       isOperationOpen: false,
-      exceptionSelections: [],
-      isExceptionOpen: false,
-      exceptions: [],
       includeSkipped: false,
+      exceptions: [],
+      assignees: [],
       filters: Object.assign({
         'result': {op: 'in', val: 'failed;error'},
         'run_id': {op: 'eq', val: props.run_id}}, props.filters),
@@ -73,38 +70,17 @@ export class ClassifyFailuresTable extends React.Component {
     this.getResultsForTable();
   }
 
-  onExceptionToggle = isExpanded => {
-    this.setState({isExceptionOpen: isExpanded}, this.applyFilter);
-  }
-
-  applyExceptionFilter = () => {
-    let { filters, exceptionSelections } = this.state;
-    if (exceptionSelections.length > 0) {
-      filters["metadata.exception_name"] = Object.assign({op: 'in', val: exceptionSelections.join(';')});
+  applyFilter = (field, value) => {
+    let {filters} = this.state
+    if (value.length > 0) {
+      filters["metadata." + field] = Object.assign({op: 'in', val: value.join(';')});
       this.setState({filters}, this.refreshResults);
     }
     else {
-      delete filters["metadata.exception_name"];
+      delete filters["metadata." + field];
       this.setState({filters}, this.refreshResults);
     }
   }
-
-  onExceptionSelect = (event, selection) => {
-    const exceptionSelections = this.state.exceptionSelections;
-    if (exceptionSelections.includes(selection)) {
-      this.setState({exceptionSelections: exceptionSelections.filter(item => item !== selection)}, this.applyExceptionFilter);
-    }
-    else {
-     this.setState({exceptionSelections: [...exceptionSelections, selection]}, this.applyExceptionFilter);
-    }
-  };
-
-  onExceptionClear = () => {
-    this.setState({
-      exceptionSelections: [],
-      isExceptionOpen: false
-    }, this.applyExceptionFilter);
-  };
 
   onCollapse(event, rowIndex, isOpen) {
     const { rows } = this.state;
@@ -237,9 +213,19 @@ export class ClassifyFailuresTable extends React.Component {
     })
   }
 
+  getAssignees() {
+    // assignee may get promoted to metadata from user_properties, #211
+    fetch(buildUrl(Settings.serverUrl + '/widget/result-aggregator', {group_field: 'metadata.user_properties.assignee', run_id: this.props.run_id}))
+    .then(response => response.json())
+    .then(data => {
+      this.setState({assignees: data})
+    })
+  }
+
   componentDidMount() {
     this.getResultsForTable();
     this.getExceptions();
+    this.getAssignees();
   }
 
   render() {
@@ -248,35 +234,19 @@ export class ClassifyFailuresTable extends React.Component {
       rows,
       selectedResults,
       includeSkipped,
-      isExceptionOpen,
-      exceptionSelections,
       exceptions,
+      assignees,
     } = this.state;
     const pagination = {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
     }
-    // filters for the exception
-    const exceptionFilters = [
-      <React.Fragment key="value">
-        <Select
-          aria-label="exception-filter"
-          placeholderText="Filter by exception"
-          variant={SelectVariant.checkbox}
-          isOpen={isExceptionOpen}
-          selections={exceptionSelections}
-          maxHeight={"1140%"}
-          isDisabled={exceptions.length < 2}
-          onToggle={this.onExceptionToggle}
-          onSelect={this.onExceptionSelect}
-          onClear={this.onExceptionClear}
-        >
-          {exceptions.map((option, index) => (
-            <SelectOption key={index} value={option._id} description={option.count + ' results'}/>
-          ))}
-        </Select>
-      </React.Fragment>
+    // filters for the metadata
+    const resultFilters = [
+      <MetaFilter key="exception" filter_field="exception_name" filter_options={exceptions} applyFunc={this.applyFilter}/>,
+      // assignee may get promoted to metadata from user_properties, #211
+      <MetaFilter key="assignee" filter_field="user_properties.assignee" filter_options={assignees} applyFunc={this.applyFilter}/>
     ]
     return (
       <Card className="pf-u-mt-lg">
@@ -314,7 +284,7 @@ export class ClassifyFailuresTable extends React.Component {
             onRowSelect={this.onTableRowSelect}
             variant={TableVariant.compact}
             activeFilters={this.state.filters}
-            filters={exceptionFilters}
+            filters={resultFilters}
             onRemoveFilter={this.removeFilter}
             hideFilters={["run_id", "project_id"]}
           />

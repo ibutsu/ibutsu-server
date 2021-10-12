@@ -9,7 +9,10 @@ import {
   Flex,
   FlexItem,
   Pagination,
-  PaginationVariant
+  PaginationVariant,
+  Select,
+  SelectOption,
+  SelectVariant,
 } from '@patternfly/react-core';
 import {
   Table,
@@ -158,5 +161,73 @@ export class FilterTable extends React.Component {
         />
       </React.Fragment>
     );
+  }
+}
+
+
+export class MetaFilter extends React.Component {
+  static propTypes = {
+    filter_field: PropTypes.string,
+    filter_options: PropTypes.array,
+    applyFunc: PropTypes.func,
+  };
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      isFilterOpen: false,
+      filterSelections: [],
+    };
+  }
+
+  onFilterToggle = isExpanded => {
+    this.setState({isFilterOpen: isExpanded})
+  };
+
+  onFilterSelect = (event, selection) => {
+    const filterSelections = this.state.filterSelections
+    if (filterSelections.includes(selection)) {
+      this.setState(
+        {filterSelections: filterSelections.filter(item => item !== selection)},
+        () =>this.props.applyFunc(this.props.filter_field, this.state.filterSelections))
+    }
+    else {
+      this.setState(
+        {filterSelections: [...filterSelections, selection]},
+        () =>this.props.applyFunc(this.props.filter_field, this.state.filterSelections)
+      )
+    }
+  };
+
+  onFilterClear = () => {
+    this.setState(
+      {filterSelections: [], isFilterOpen: false},
+      () => this.props.applyFunc(this.props.filter_field, this.state.filterSelections))
+  };
+
+  render () {
+    const {filter_field, filter_options} = this.props
+    const {isFilterOpen, filterSelections} = this.state
+
+    return (
+      <React.Fragment key={filter_field}>
+        <Select
+          aria-label={filter_field+"filter"}
+          placeholderText={"Filter by " + filter_field}
+          variant={SelectVariant.checkbox}
+          isOpen={isFilterOpen}
+          selections={filterSelections}
+          maxHeight={"1140%"}
+          isDisabled={filter_options.length < 2}
+          onToggle={this.onFilterToggle}
+          onSelect={this.onFilterSelect}
+          onClear={this.onFilterClear}
+        >
+          {filter_options.map((option, index) => (
+            <SelectOption key={index} value={option._id} description={option.count + ' results'}/>
+          ))}
+        </Select>
+      </React.Fragment>
+    )
   }
 }
