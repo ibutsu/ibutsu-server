@@ -46,3 +46,4 @@ repos:
     - "@babel/plugin-proposal-private-methods"
     - "@babel/plugin-syntax-jsx"
     - "@babel/preset-flow"
+    - "@babel/core"
