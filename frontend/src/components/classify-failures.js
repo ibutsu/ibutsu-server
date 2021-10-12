@@ -9,9 +9,6 @@ import {
   Checkbox,
   Flex,
   FlexItem,
-  Select,
-  SelectOption,
-  SelectVariant,
   TextContent,
   Text,
 } from '@patternfly/react-core';
@@ -24,13 +21,15 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   buildParams,
+  toAPIFilter,
   getSpinnerRow,
   resultToClassificationRow,
 } from '../utilities';
-import { OPERATIONS } from '../constants';
+import { FILTERABLE_RESULT_FIELDS } from '../constants';
 import {
   FilterTable,
   MultiClassificationDropdown,
+  MetaFilter,
 } from './index';
 
 
@@ -38,7 +37,7 @@ export class ClassifyFailuresTable extends React.Component {
   static propTypes = {
     filters: PropTypes.object,
     run_id: PropTypes.string
-  };
+  }
 
   constructor(props) {
     super(props);
@@ -56,9 +55,6 @@ export class ClassifyFailuresTable extends React.Component {
       isError: false,
       isFieldOpen: false,
       isOperationOpen: false,
-      exceptionSelections: [],
-      isExceptionOpen: false,
-      exceptions: [],
       includeSkipped: false,
       filters: Object.assign({
         'result': {op: 'in', val: 'failed;error'},
@@ -72,39 +68,6 @@ export class ClassifyFailuresTable extends React.Component {
     this.setState({selectedResults: []});
     this.getResultsForTable();
   }
-
-  onExceptionToggle = isExpanded => {
-    this.setState({isExceptionOpen: isExpanded}, this.applyFilter);
-  }
-
-  applyExceptionFilter = () => {
-    let { filters, exceptionSelections } = this.state;
-    if (exceptionSelections.length > 0) {
-      filters["metadata.exception_name"] = Object.assign({op: 'in', val: exceptionSelections.join(';')});
-      this.setState({filters}, this.refreshResults);
-    }
-    else {
-      delete filters["metadata.exception_name"];
-      this.setState({filters}, this.refreshResults);
-    }
-  }
-
-  onExceptionSelect = (event, selection) => {
-    const exceptionSelections = this.state.exceptionSelections;
-    if (exceptionSelections.includes(selection)) {
-      this.setState({exceptionSelections: exceptionSelections.filter(item => item !== selection)}, this.applyExceptionFilter);
-    }
-    else {
-     this.setState({exceptionSelections: [...exceptionSelections, selection]}, this.applyExceptionFilter);
-    }
-  };
-
-  onExceptionClear = () => {
-    this.setState({
-      exceptionSelections: [],
-      isExceptionOpen: false
-    }, this.applyExceptionFilter);
-  };
 
   onCollapse(event, rowIndex, isOpen) {
     const { rows } = this.state;
@@ -146,7 +109,7 @@ export class ClassifyFailuresTable extends React.Component {
 
   updateFilters(name, operator, value, callback) {
     let filters = this.state.filters;
-    if (!value) {
+    if ((value === null) || (value.length === 0)) {
       delete filters[name];
     }
     else {
@@ -156,27 +119,20 @@ export class ClassifyFailuresTable extends React.Component {
   }
 
   setFilter = (field, value) => {
-    this.updateFilters(field, 'eq', value, () => {
-      this.refreshResults();
-    })
-  };
+    // maybe process values array to string format here instead of expecting caller to do it?
+    let operator = (value.includes(";")) ? 'in' : 'eq'
+    this.updateFilters(field, operator, value, this.refreshResults)
+  }
 
   removeFilter = id => {
-    if (id === "metadata.exception_name") {   // only remove exception_name filter
-      this.updateFilters(id, null, null, () => {
-        this.setState({exceptionSelections: [], page: 1}, this.applyExceptionFilter);
-      });
+    if ((id !== "result") && (id !== "run_id")) {   // Don't allow removal of error/failure filter
+      this.updateFilters(id, null, null, this.refreshResults)
     }
   }
 
   onSkipCheck = (checked) => {
     let { filters } = this.state;
-    if (checked) {
-      filters["result"]["val"] += ";skipped;xfailed"
-    }
-    else {
-      filters["result"]["val"] = "failed;error"
-    }
+    filters["result"]["val"] = ("failed;error") + ((checked) ? ";skipped;xfailed" : "")
     this.setState(
       {includeSkipped: checked, filters},
       this.refreshResults
@@ -199,17 +155,9 @@ export class ClassifyFailuresTable extends React.Component {
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
     // get only failed results
     let params = buildParams(filters);
-    params['filter'] = [];
+    params['filter'] = toAPIFilter(filters);
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
-    // Convert UI filters to API filters
-    for (let key in filters) {
-      if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key]) {
-        let val = filters[key]['val'];
-        const op = OPERATIONS[filters[key]['op']];
-        params.filter.push(key + op + val);
-      }
-    }
 
     this.setState({rows: [['Loading...', '', '', '', '']]});
     HttpClient.get([Settings.serverUrl, 'result'], params)
@@ -229,17 +177,8 @@ export class ClassifyFailuresTable extends React.Component {
       });
   }
 
-  getExceptions() {
-    HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], {group_field: 'metadata.exception_name', run_id: this.props.run_id})
-    .then(response => response.json())
-    .then(data => {
-      this.setState({exceptions: data})
-    })
-  }
-
   componentDidMount() {
     this.getResultsForTable();
-    this.getExceptions();
   }
 
   render() {
@@ -248,35 +187,24 @@ export class ClassifyFailuresTable extends React.Component {
       rows,
       selectedResults,
       includeSkipped,
-      isExceptionOpen,
-      exceptionSelections,
-      exceptions,
+      filters
     } = this.state;
+    const { run_id } = this.props
     const pagination = {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
     }
-    // filters for the exception
-    const exceptionFilters = [
-      <React.Fragment key="value">
-        <Select
-          aria-label="exception-filter"
-          placeholderText="Filter by exception"
-          variant={SelectVariant.checkbox}
-          isOpen={isExceptionOpen}
-          selections={exceptionSelections}
-          maxHeight={"1140%"}
-          isDisabled={exceptions.length < 2}
-          onToggle={this.onExceptionToggle}
-          onSelect={this.onExceptionSelect}
-          onClear={this.onExceptionClear}
-        >
-          {exceptions.map((option, index) => (
-            <SelectOption key={index} value={option._id} description={option.count + ' results'}/>
-          ))}
-        </Select>
-      </React.Fragment>
+    // filters for the metadata
+    const resultFilters = [
+      <MetaFilter
+        key="metafilter"
+        // user_properties fields shouldn't be injected here
+        fieldOptions={FILTERABLE_RESULT_FIELDS}
+        runId={run_id}
+        setFilter={this.setFilter}
+        customFilters={{'result': filters['result']}}
+      />,
     ]
     return (
       <Card className="pf-u-mt-lg">
@@ -314,7 +242,7 @@ export class ClassifyFailuresTable extends React.Component {
             onRowSelect={this.onTableRowSelect}
             variant={TableVariant.compact}
             activeFilters={this.state.filters}
-            filters={exceptionFilters}
+            filters={resultFilters}
             onRemoveFilter={this.removeFilter}
             hideFilters={["run_id", "project_id"]}
           />
