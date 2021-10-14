@@ -15,13 +15,50 @@ MOCK_RESULT = MockResult(
     id=MOCK_ID,
     duration=6.027456183070403,
     result="passed",
-    data={"jenkins_build": 145, "commit_hash": "F4BA3E12"},
+    component="fake-component",
+    data={
+        "jenkins_build": 145,
+        "commit_hash": "F4BA3E12",
+        "assignee": "jdoe",
+        "component": "fake-component",
+    },
     start_time=str(START_TIME),
     source="source",
     params={"provider": "vmware", "ip_stack": "ipv4"},
     test_id="test_id",
 )
 MOCK_RESULT_DICT = MOCK_RESULT.to_dict()
+# the result to be POST'ed to Ibutsu, we expect it to transformed into MOCK_RESULT
+ADDED_RESULT = MockResult(
+    id=MOCK_ID,
+    duration=6.027456183070403,
+    result="passed",
+    data={
+        "jenkins_build": 145,
+        "commit_hash": "F4BA3E12",
+        "user_properties": {"assignee": "jdoe", "component": "fake-component"},
+    },
+    start_time=str(START_TIME),
+    source="source",
+    params={"provider": "vmware", "ip_stack": "ipv4"},
+    test_id="test_id",
+)
+UPDATED_RESULT = MockResult(
+    id=MOCK_ID,
+    duration=6.027456183070403,
+    result="failed",
+    component="blah",
+    data={
+        "jenkins_build": 146,
+        "commit_hash": "F4BA3E12",
+        "assignee": "new_assignee",
+        "component": "blah",
+    },
+    start_time=str(START_TIME),
+    source="source_updated",
+    params={"provider": "vmware", "ip_stack": "ipv4"},
+    test_id="test_id_updated",
+)
 
 
 class TestResultController(BaseTestCase):
@@ -34,7 +71,7 @@ class TestResultController(BaseTestCase):
         self.result_patcher = patch("ibutsu_server.controllers.result_controller.Result")
         self.mock_result = self.result_patcher.start()
         self.mock_result.return_value = MOCK_RESULT
-        self.mock_result.from_dict.return_value = MOCK_RESULT
+        self.mock_result.from_dict.return_value = ADDED_RESULT
         self.mock_result.query.get.return_value = MOCK_RESULT
 
     def tearDown(self):
@@ -47,15 +84,7 @@ class TestResultController(BaseTestCase):
 
         Create a test result
         """
-        result = {
-            "duration": 6.027456183070403,
-            "result": "passed",
-            "metadata": {"jenkins_build": 145, "commit_hash": "F4BA3E12"},
-            "start_time": START_TIME,
-            "source": "source",
-            "params": {"provider": "vmware", "ip_stack": "ipv4"},
-            "test_id": "test_id",
-        }
+        result = ADDED_RESULT.to_dict()
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/result",
@@ -107,12 +136,14 @@ class TestResultController(BaseTestCase):
         Updates a single result
         """
         result = {
-            "duration": 6.027456183070403,
-            "result": "passed",
-            "metadata": {"jenkins_build": 145, "commit_hash": "F4BA3E12"},
-            "source": "source",
-            "params": {"provider": "vmware", "ip_stack": "ipv4"},
-            "test_id": "test_id",
+            "result": "failed",
+            "metadata": {
+                "jenkins_build": 146,
+                "commit_hash": "F4BA3E12",
+                "user_properties": {"assignee": "new_assignee", "component": "blah"},
+            },
+            "source": "source_updated",
+            "test_id": "test_id_updated",
         }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
@@ -123,5 +154,4 @@ class TestResultController(BaseTestCase):
             content_type="application/json",
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
-        MOCK_RESULT.update(result)
-        assert response.json == MOCK_RESULT.to_dict()
+        assert response.json == UPDATED_RESULT.to_dict()

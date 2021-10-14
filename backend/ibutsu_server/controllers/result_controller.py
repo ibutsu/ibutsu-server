@@ -4,6 +4,7 @@ import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result
 from ibutsu_server.filters import convert_filter
+from ibutsu_server.util import merge_dicts
 from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.query import query_as_task
@@ -21,8 +22,16 @@ def add_result(result=None):
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
     result = Result.from_dict(**connexion.request.get_json())
+
     if result.data and result.data.get("project"):
         result.project_id = get_project_id(result.data["project"])
+
+    # promote user_properties to the level of metadata
+    if result.data and result.data.get("user_properties"):
+        user_properties = result.data.pop("user_properties")
+        merge_dicts(user_properties, result.data)
+
+    # promote some fields to their own column
     result.env = result.data.get("env") if result.data else None
     result.component = result.data.get("component") if result.data else None
     result.run_id = result.data.get("run") if result.data else None
@@ -138,6 +147,12 @@ def update_result(id_, result=None):
     result_dict = connexion.request.get_json()
     if result_dict.get("metadata", {}).get("project"):
         result_dict["project_id"] = get_project_id(result_dict["metadata"]["project"])
+
+    # promote user_properties to the level of metadata
+    if result_dict.get("metadata", {}).get("user_properties"):
+        user_properties = result_dict["metadata"].pop("user_properties")
+        merge_dicts(user_properties, result_dict["metadata"])
+
     result = Result.query.get(id_)
     if not result:
         return "Result not found", 404
