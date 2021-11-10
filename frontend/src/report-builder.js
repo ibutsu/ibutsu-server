@@ -20,11 +20,10 @@ import {
 } from '@patternfly/react-core';
 import Linkify from 'react-linkify';
 
-
+import { HttpClient } from './services/http';
 import { linkifyDecorator } from './components/decorators';
 import { Settings } from './settings';
 import {
-  buildUrl,
   getIconForStatus,
   toTitleCase,
   parseFilter,
@@ -149,8 +148,8 @@ export class ReportBuilder extends React.Component {
     if (project) {
       params['project'] = project.id;
     }
-    fetch(buildUrl(Settings.serverUrl + '/report', params))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'report'], params)
+      .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
         rows: data.reports.map((report) => reportToRow(report)),
         page: data.pagination.page,
@@ -167,8 +166,8 @@ export class ReportBuilder extends React.Component {
   }
 
   getReportTypes() {
-    fetch(Settings.serverUrl + '/report/types')
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'report', 'types'])
+      .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({reportTypes: data}));
   }
 
@@ -182,12 +181,7 @@ export class ReportBuilder extends React.Component {
     if (project) {
       params['project'] = project.id;
     }
-    fetch(Settings.serverUrl + '/report', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(params)
-    })
-    .then(() => this.getReports());
+    HttpClient.post([Settings.serverUrl, 'report'], params).then(() => this.getReports());
   };
 
   componentDidMount() {

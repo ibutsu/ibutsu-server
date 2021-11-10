@@ -9,6 +9,7 @@ Float = db.Float
 ForeignKey = db.ForeignKey
 Integer = db.Integer
 LargeBinary = db.LargeBinary
+String = db.String
 Table = db.Table
 Text = db.Text
 relationship = db.relationship

@@ -47,7 +47,11 @@ class TestReportController(BaseTestCase):
         Create a new report
         """
         body = {"type": "csv", "source": "local"}
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         with patch.dict("ibutsu_server.controllers.report_controller.REPORTS", {"csv": MOCK_CSV}):
             response = self.client.open(
                 "/api/report",
@@ -64,7 +68,7 @@ class TestReportController(BaseTestCase):
 
         Get a report
         """
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/report/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
@@ -81,7 +85,7 @@ class TestReportController(BaseTestCase):
         mock_limit.return_value.all.return_value = [MOCK_REPORT]
         self.mock_report.query.order_by.return_value.offset.return_value.limit = mock_limit
         query_string = [("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         with patch(
             "ibutsu_server.controllers.report_controller.get_project_id"
         ) as mocked_get_project_id:

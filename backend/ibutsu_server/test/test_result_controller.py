@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from flask import json
 from ibutsu_server.test import BaseTestCase
+from ibutsu_server.test import MockProject
 from ibutsu_server.test import MockResult
 
 MOCK_ID = "99fba7d2-4d32-4b9b-b07f-4200c9717661"
@@ -26,6 +27,7 @@ MOCK_RESULT = MockResult(
     source="source",
     params={"provider": "vmware", "ip_stack": "ipv4"},
     test_id="test_id",
+    project=MockProject(),
 )
 MOCK_RESULT_DICT = MOCK_RESULT.to_dict()
 # the result to be POST'ed to Ibutsu, we expect it to transformed into MOCK_RESULT
@@ -42,6 +44,7 @@ ADDED_RESULT = MockResult(
     source="source",
     params={"provider": "vmware", "ip_stack": "ipv4"},
     test_id="test_id",
+    project=MockProject(),
 )
 UPDATED_RESULT = MockResult(
     id=MOCK_ID,
@@ -58,6 +61,7 @@ UPDATED_RESULT = MockResult(
     source="source_updated",
     params={"provider": "vmware", "ip_stack": "ipv4"},
     test_id="test_id_updated",
+    project=MockProject(),
 )
 
 
@@ -68,15 +72,28 @@ class TestResultController(BaseTestCase):
         """Set up a fake MongoDB object"""
         self.session_patcher = patch("ibutsu_server.controllers.result_controller.session")
         self.mock_session = self.session_patcher.start()
+        self.project_has_user_patcher = patch(
+            "ibutsu_server.controllers.result_controller.project_has_user"
+        )
+        self.mock_project_has_user = self.project_has_user_patcher.start()
+        self.mock_project_has_user.return_value = True
         self.result_patcher = patch("ibutsu_server.controllers.result_controller.Result")
         self.mock_result = self.result_patcher.start()
         self.mock_result.return_value = MOCK_RESULT
-        self.mock_result.from_dict.return_value = ADDED_RESULT
         self.mock_result.query.get.return_value = MOCK_RESULT
+        self.mock_result.from_dict.return_value = ADDED_RESULT
+        self.add_user_filter_patcher = patch(
+            "ibutsu_server.controllers.result_controller.add_user_filter"
+        )
+        self.mock_add_user_filter = self.add_user_filter_patcher.start()
+        self.mock_add_user_filter.return_value.count.return_value = 1
+        self.mock_add_user_filter.return_value.get.return_value = MOCK_RESULT
 
     def tearDown(self):
         """Teardown the mocks"""
+        self.add_user_filter_patcher.stop()
         self.result_patcher.stop()
+        self.project_has_user_patcher.stop()
         self.session_patcher.stop()
 
     def test_add_result(self):
@@ -85,7 +102,11 @@ class TestResultController(BaseTestCase):
         Create a test result
         """
         result = ADDED_RESULT.to_dict()
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/result",
             method="POST",
@@ -101,7 +122,7 @@ class TestResultController(BaseTestCase):
 
         Get a single result
         """
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/result/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
@@ -113,13 +134,13 @@ class TestResultController(BaseTestCase):
 
         Get the list of results.
         """
-        mock_offset = MagicMock()
-        mock_offset.return_value.limit.return_value.all.return_value = [MOCK_RESULT]
-        self.mock_result.query.filter.return_value.order_by.return_value.offset = mock_offset
-        self.mock_result.query.count.return_value = 1
-        self.mock_result.query.filter.return_value.count.return_value = 1
+        mock_all = MagicMock(return_value=[MOCK_RESULT])
+        mock_filter = MagicMock()
+        mock_filter.order_by.return_value.offset.return_value.limit.return_value.all = mock_all
+        mock_filter.count.return_value = 1
+        self.mock_add_user_filter.return_value.filter.return_value = mock_filter
         query_string = [("filter", "metadata.component=frontend"), ("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json"}
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
             "/api/result", method="GET", headers=headers, query_string=query_string
         )
@@ -145,7 +166,11 @@ class TestResultController(BaseTestCase):
             "source": "source_updated",
             "test_id": "test_id_updated",
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/result/{id}".format(id=MOCK_ID),
             method="PUT",

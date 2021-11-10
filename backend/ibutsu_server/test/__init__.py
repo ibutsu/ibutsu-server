@@ -1,12 +1,17 @@
 import logging
-from copy import copy
 from inspect import isfunction
 
 import ibutsu_server.tasks
 from flask_testing import TestCase
 from ibutsu_server import get_app
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Token
+from ibutsu_server.db.models import User
 from ibutsu_server.tasks import create_celery_app
 from ibutsu_server.util import merge_dicts
+from ibutsu_server.util.jwt import generate_token
+
+# from copy import copy
 
 
 def mock_task(*args, **kwargs):
@@ -37,9 +42,28 @@ class BaseTestCase(TestCase):
             "TESTING": True,
             "LIVESERVER_PORT": 0,
             "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "GOOGLE_CLIENT_ID": "123456@client.google.com",
+            "GITHUB_CLIENT_ID": None,
+            "FACEBOOK_APP_ID": None,
+            "GITLAB_CLIENT_ID": "dfgfdgh4563453456dsfgdsfg456",
+            "GITLAB_BASE_URL": "https://gitlab.com",
+            "JWT_SECRET": "89807erkjhdfgu768dfsgdsfg345r",
+            "KEYCLOAK_BASE_URL": None,
+            "KEYCLOAK_CLIENT_ID": None,
         }
         app = get_app(**extra_config)
         create_celery_app(app.app)
+
+        # Add a test user
+        with app.app.app_context():
+            self.test_user = User(name="Test User", email="test@example.com", is_active=True)
+            session.add(self.test_user)
+            session.commit()
+            self.jwt_token = generate_token(self.test_user.id)
+            token = Token(name="login-token", user=self.test_user, token=self.jwt_token)
+            session.add(token)
+            session.commit()
+            session.refresh(self.test_user)
 
         if ibutsu_server.tasks.task is None:
             ibutsu_server.tasks.task = mock_task
@@ -75,10 +99,14 @@ class MockModel(object):
                 setattr(self, column, None)
 
     def to_dict(self):
-        record_dict = copy(self.__dict__)
+        record_dict = {col: self.__dict__[col] for col in self.COLUMNS}
         # when outputting info, translate data to metadata
         if record_dict.get("data"):
             record_dict["metadata"] = record_dict.pop("data")
+        # If we have any items that are not JSON serializable, fix them
+        for key, value in record_dict.items():
+            if isinstance(value, MockModel):
+                record_dict[key] = value.to_dict()
         return record_dict
 
     @classmethod
@@ -102,7 +130,7 @@ class MockModel(object):
 
 
 class MockArtifact(MockModel):
-    COLUMNS = ["id", "filename", "result_id", "data", "content"]
+    COLUMNS = ["id", "filename", "result_id", "data", "content", "result"]
 
 
 class MockGroup(MockModel):
@@ -131,6 +159,7 @@ class MockResult(MockModel):
         "source",
         "start_time",
         "test_id",
+        "project",
     ]
 
 
@@ -162,7 +191,22 @@ class MockRun(MockModel):
         "source",
         "start_time",
         "summary",
+        "project",
     ]
+
+
+class MockUser(MockModel):
+    COLUMNS = [
+        "id",
+        "email",
+        "password",
+        "name",
+        "group_id",
+    ]
+
+    def check_password(self, plain):
+        self._test_password = plain
+        return self.password == plain
 
 
 # Mock out the task decorator

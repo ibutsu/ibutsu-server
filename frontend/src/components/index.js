@@ -1,5 +1,6 @@
 export { ClassificationDropdown, MultiClassificationDropdown } from './classification-dropdown';
 export { ClassifyFailuresTable } from './classify-failures';
+export { AddTokenModal } from './add-token-modal';
 export { DeleteModal } from './delete-modal';
 export { EmptyObject } from './empty-object';
 export { FileUpload } from './fileupload';

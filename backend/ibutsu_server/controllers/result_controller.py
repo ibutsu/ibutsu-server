@@ -3,15 +3,18 @@ from datetime import datetime
 import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result
+from ibutsu_server.db.models import User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util import merge_dicts
 from ibutsu_server.util.count import get_count_estimate
-from ibutsu_server.util.projects import get_project_id
+from ibutsu_server.util.projects import add_user_filter
+from ibutsu_server.util.projects import get_project
+from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.query import query_as_task
 from ibutsu_server.util.uuid import validate_uuid
 
 
-def add_result(result=None):
+def add_result(result=None, token_info=None, user=None):
     """Creates a test result
 
     :param body: Result item
@@ -24,7 +27,9 @@ def add_result(result=None):
     result = Result.from_dict(**connexion.request.get_json())
 
     if result.data and result.data.get("project"):
-        result.project_id = get_project_id(result.data["project"])
+        result.project = get_project(result.data["project"])
+        if not project_has_user(result.project, user):
+            return "Forbidden", 403
 
     # promote user_properties to the level of metadata
     if result.data and result.data.get("user_properties"):
@@ -43,7 +48,7 @@ def add_result(result=None):
 
 
 @query_as_task
-def get_result_list(filter_=None, page=1, page_size=25, estimate=False):
+def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_info=None, user=None):
     """Gets all results
 
     The `filter` parameter takes a list of filters to apply in the form of:
@@ -90,7 +95,10 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False):
 
     :rtype: List[Result]
     """
+    user = User.query.get(user)
     query = Result.query
+    if user:
+        query = add_user_filter(query, user)
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Result)
@@ -120,7 +128,7 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False):
 
 
 @validate_uuid
-def get_result(id_):
+def get_result(id_, token_info=None, user=None):
     """Get a single result
 
     :param id: ID of Result to return
@@ -129,10 +137,12 @@ def get_result(id_):
     :rtype: Result
     """
     result = Result.query.get(id_)
+    if not project_has_user(result.project, user):
+        return "Forbidden", 403
     return (result.to_dict(), 200) if result else ("Result not found", 404)
 
 
-def update_result(id_, result=None):
+def update_result(id_, result=None, token_info=None, user=None):
     """Updates a single result
 
     :param id: ID of result to update
@@ -146,7 +156,10 @@ def update_result(id_, result=None):
         return "Bad request, JSON required", 400
     result_dict = connexion.request.get_json()
     if result_dict.get("metadata", {}).get("project"):
-        result_dict["project_id"] = get_project_id(result_dict["metadata"]["project"])
+        project = get_project(result_dict["metadata"]["project"])
+        if not project_has_user(project, user):
+            return "Forbidden", 403
+        result_dict["project_id"] = project.id
 
     # promote user_properties to the level of metadata
     if result_dict.get("metadata", {}).get("user_properties"):
@@ -154,6 +167,8 @@ def update_result(id_, result=None):
         merge_dicts(user_properties, result_dict["metadata"])
 
     result = Result.query.get(id_)
+    if not project_has_user(result.project, user):
+        return "Forbidden", 403
     if not result:
         return "Result not found", 404
     result.update(result_dict)

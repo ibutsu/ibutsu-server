@@ -1,5 +1,6 @@
 #!/bin/bash
 POD_NAME="ibutsu"
+JWT_SECRET=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
 echo 'Creating ibutsu pod...'
 podman pod create -p 8080:8080 -p 3000:3000 --name $POD_NAME
@@ -23,6 +24,7 @@ podman run -dit \
        --rm \
        --pod $POD_NAME \
        --name ibutsu-backend \
+       -e JWT_SECRET=$JWT_SECRET \
        -w /mnt \
        -v./backend:/mnt/:Z \
        python:latest \

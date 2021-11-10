@@ -15,8 +15,9 @@ import {
   Text
 } from '@patternfly/react-core';
 
+import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { buildUrl, toTitleCase } from '../utilities';
+import { toTitleCase } from '../utilities';
 import { ParamDropdown, WidgetHeader } from '../components/widget-components';
 
 
@@ -44,11 +45,11 @@ export class ResultAggregatorWidget extends React.Component {
     };
   }
 
-
   getResultData() {
     this.setState({isLoading: true});
-    fetch(buildUrl(Settings.serverUrl + '/widget/result-aggregator', this.params))
+    HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], this.params)
       .then(response => {
+        response = HttpClient.handleResponse(response, 'response');
         if (!response.ok) {
           throw Error(response.statusText);
         }

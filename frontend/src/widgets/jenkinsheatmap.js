@@ -17,8 +17,8 @@ import {
 import { Link } from 'react-router-dom';
 import HeatMap from 'react-heatmap-grid';
 
+import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { buildUrl } from '../utilities';
 import { ParamDropdown, WidgetHeader } from '../components/widget-components';
 
 
@@ -47,8 +47,8 @@ export class JenkinsHeatmapWidget extends React.Component {
   }
 
   getJenkinsAnalysisViewId() {
-    fetch(buildUrl(Settings.serverUrl + '/widget-config', {"filter": "widget=jenkins-analysis-view"}))
-      .then(response => response.json())
+    HttpClient.get([Settings.serverUrl, 'widget-config'], {"filter": "widget=jenkins-analysis-view"})
+      .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({analysisViewId: data.widgets[0].id}))
       .catch(error => console.log(error));
   }
@@ -70,8 +70,9 @@ export class JenkinsHeatmapWidget extends React.Component {
   getHeatmap() {
     this.setState({isLoading: true})
     this.getJenkinsAnalysisViewId();
-    fetch(buildUrl(Settings.serverUrl + '/widget/jenkins-heatmap', this.params))
+    HttpClient.get([Settings.serverUrl, 'widget', 'jenkins-heatmap'], this.params)
       .then(response => {
+        response = HttpClient.handleResponse(response, 'response');
         if (!response.ok) {
           throw Error(response.statusText);
         }
