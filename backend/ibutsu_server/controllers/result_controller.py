@@ -98,16 +98,15 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
     user = User.query.get(user)
     query = Result.query
     if user:
-        query = add_user_filter(query, user)
+        query = add_user_filter(query, user, model=Result)
+
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Result)
             if filter_clause is not None:
                 query = query.filter(filter_clause)
 
-    if estimate and not filter_:
-        total_items = get_count_estimate(query, no_filter=True, tablename="results")
-    elif estimate:
+    if estimate:
         total_items = get_count_estimate(query)
     else:
         total_items = query.count()
