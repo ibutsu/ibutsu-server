@@ -7,9 +7,12 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.util import Explain
 
 
-def _get_count_from_explain(query):
-    explain_result = session.execute(Explain(query)).fetchall()[0][0]
-    rows = int(explain_result.split("rows")[-1].split("=")[1].split(" ")[0])
+def _get_count_from_explain(query, model):
+    explain_result = session.execute(Explain(query)).fetchall()
+    for result in explain_result:
+        if f"on {model.__tablename__}" in result[0]:
+            break
+    rows = int(result[0].split("rows")[-1].split("=")[1].split(" ")[0])
     return rows
 
 
@@ -18,11 +21,14 @@ def get_count_estimate(query, no_filter=False, **kwargs):
     Given tablename, return an estimated count of the number of rows in the table.
     """
     if no_filter:
-        tablename = kwargs.get("tablename")
+        if kwargs.get("model"):
+            tablename = kwargs["model"].__tablename__
+        else:
+            tablename = kwargs.get("tablename")
         sql = f"SELECT reltuples as approx_count FROM pg_class WHERE relname='{tablename}'"
         return int(session.execute(sql).fetchall()[0][0])
     else:
-        estimate = _get_count_from_explain(query)
+        estimate = _get_count_from_explain(query, kwargs.get("model"))
         # if the estimate is < COUNT_ESTIMATE_LIMIT
         # then probably there aren't too many rows, just regularly count them
         if estimate < COUNT_ESTIMATE_LIMIT:

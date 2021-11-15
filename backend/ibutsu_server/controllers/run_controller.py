@@ -73,7 +73,7 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
                 query = query.filter(filter_clause)
 
     if estimate:
-        total_items = get_count_estimate(query)
+        total_items = get_count_estimate(query, model=Run)
     else:
         total_items = query.count()
 

@@ -1,30 +1,35 @@
 from ibutsu_server.db.models import Result
 from ibutsu_server.db.models import Run
+from ibutsu_server.db.models import User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks import task
 from ibutsu_server.util.count import get_count_estimate
+from ibutsu_server.util.projects import add_user_filter
 
 
 TABLENAME_TO_MODEL = {"results": Result, "runs": Run}
 
 
 @task
-def query_task(filter_=None, page=1, page_size=25, estimate=False, tablename="results"):
+def query_task(filter_=None, page=1, page_size=25, estimate=False, user=None, tablename="results"):
     """
     Run a large query as a task.
     """
     model = TABLENAME_TO_MODEL[tablename]
+    user = User.query.get(user)
     query = model.query
+
+    if user:
+        query = add_user_filter(query, user, filter_=filter_, model=model)
+
     if filter_:
         for filter_string in filter_:
-            filter_clause = convert_filter(filter_string, Result)
+            filter_clause = convert_filter(filter_string, model)
             if filter_clause is not None:
                 query = query.filter(filter_clause)
 
-    if estimate and not filter_:
-        total_items = get_count_estimate(query, no_filter=True, tablename=tablename)
-    elif estimate:
-        total_items = get_count_estimate(query)
+    if estimate:
+        total_items = get_count_estimate(query, model=model)
     else:
         total_items = query.count()
 

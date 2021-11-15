@@ -107,7 +107,7 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
                 query = query.filter(filter_clause)
 
     if estimate:
-        total_items = get_count_estimate(query)
+        total_items = get_count_estimate(query, model=Result)
     else:
         total_items = query.count()
 
