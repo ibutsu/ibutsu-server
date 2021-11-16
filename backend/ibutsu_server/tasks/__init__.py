@@ -42,9 +42,8 @@ def create_celery_app(_app=None):
             Flask-SQLAlchemy uses create_scoped_session at startup which avoids any setup on a
             per-request basis. This means Celery can piggyback off of this initialization.
             """
-            if _app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"]:
-                if not isinstance(retval, Exception):
-                    session.commit()
+            if _app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] and not isinstance(retval, Exception):
+                session.commit()
             session.remove()
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):

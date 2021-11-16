@@ -46,11 +46,9 @@ class TestProjectController(BaseTestCase):
         self.mock_add_user_filter.return_value.get.return_value = MOCK_PROJECT
         self.mock_add_user_filter.return_value.offset.return_value = mock_offset
         self.mock_add_user_filter.return_value.count.return_value = 1
-        # self.mock_add_user_filter.return_value.filter.return_value.count.return_value = 1
         self.project_patcher = patch("ibutsu_server.controllers.project_controller.Project")
         self.mock_project = self.project_patcher.start()
         self.mock_project.query.get.return_value = MOCK_PROJECT
-        # self.mock_project.query.filter.return_value.first.return_value = MOCK_PROJECT
         self.mock_project.from_dict.return_value = MOCK_PROJECT
 
     def tearDown(self):

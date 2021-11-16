@@ -83,7 +83,7 @@ export class RunSummary extends React.Component {
 function runToRow(run, filterFunc) {
   let badges = [];
   let created = 0;
-  let badge;
+  let componentBadge;
   if (run.start_time) {
     created = new Date(run.start_time);
   }
@@ -93,25 +93,25 @@ function runToRow(run, filterFunc) {
 
   if (filterFunc) {
     if (run.component) {
-      badge = buildBadge('component', run.component, false,
+      componentBadge = buildBadge('component', run.component, false,
         () => filterFunc('component', run.component));
     }
   }
   else {
-    badge = buildBadge('component', run.component, false);
+    componentBadge = buildBadge('component', run.component, false);
   }
-  badges.push(badge);
+  badges.push(componentBadge);
 
   if (run.env) {
-    let badge;
+    let envBadge;
     if (filterFunc) {
-      badge = buildBadge(run.env, run.env, false,
+      envBadge = buildBadge(run.env, run.env, false,
         () => filterFunc('env', run.env));
     }
     else {
-      badge = buildBadge(run.env, run.env, false);
+      envBadge = buildBadge(run.env, run.env, false);
     }
-    badges.push(badge)
+    badges.push(envBadge);
   }
   return {
     "cells": [

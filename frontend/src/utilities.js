@@ -152,26 +152,26 @@ export function resultToRow(result, filterFunc) {
   let markers = [];
   let runLink = '';
   let classification = '';
-  let badge;
+  let componentBadge;
   if (filterFunc) {
-    badge = buildBadge('component', result.component, false,
+    componentBadge = buildBadge('component', result.component, false,
       () => filterFunc('component', result.component));
   }
   else {
-    badge = buildBadge('component', result.component, false);
+    componentBadge = buildBadge('component', result.component, false);
   }
-  markers.push(badge);
+  markers.push(componentBadge);
   markers.push(' ');
   if (result.metadata && result.metadata.env) {
-    let badge;
+    let envBadge;
     if (filterFunc) {
-      badge = buildBadge(result.env, result.env, false,
+      envBadge = buildBadge(result.env, result.env, false,
         () => filterFunc('env', result.env));
     }
     else {
-      badge = buildBadge(result.env, result.env, false);
+      envBadge = buildBadge(result.env, result.env, false);
     }
-    markers.push(badge);
+    markers.push(envBadge);
     markers.push(' ');
   }
   if (result.metadata && result.metadata.markers) {

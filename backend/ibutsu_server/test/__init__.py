@@ -11,8 +11,6 @@ from ibutsu_server.tasks import create_celery_app
 from ibutsu_server.util import merge_dicts
 from ibutsu_server.util.jwt import generate_token
 
-# from copy import copy
-
 
 def mock_task(*args, **kwargs):
     if args and isfunction(args[0]):
