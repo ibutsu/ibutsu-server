@@ -99,11 +99,13 @@ def update_project(id_, project=None, token_info=None, user=None):
     if not is_uuid(id_):
         id_ = convert_objectid_to_uuid(id_)
     project = Project.query.get(id_)
-    user = User.query.get(user)
-    if project and project.owner.id != user.id:
-        return "Forbidden", 403
+
     if not project:
         return "Project not found", 404
+
+    user = User.query.get(user)
+    if not user.is_superadmin and (not project.owner or project.owner.id != user.id):
+        return "Forbidden", 403
 
     # handle updating users separately
     updates = connexion.request.get_json()

@@ -1647,10 +1647,10 @@
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
 
-"@greatsumini/react-facebook-login@^2.1.1":
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/@greatsumini/react-facebook-login/-/react-facebook-login-2.1.1.tgz#98a13cec3732a544c3c2ee3974756f906afa2ad5"
-  integrity sha512-LrB0+YB5nYDuu95rILnw9Yrox8rPmLVVXUlaqdVlnNBzU9SgXMZ/6k81YUd5Sig9KPDwNW+rzoANCOq5cGLJKQ==
+"@greatsumini/react-facebook-login@^2.1.4":
+  version "2.1.4"
+  resolved "https://registry.yarnpkg.com/@greatsumini/react-facebook-login/-/react-facebook-login-2.1.4.tgz#a7d95e6c12be965daabc4e2fff7f1f53974a3384"
+  integrity sha512-Zo+Yo0HazkbaTDvTqJ1BxCzPIcitFUhC/bAiPLBH2fefWLJoN0oZRSc0TCD5zYvf/dCjd83Jhea/1VHETkvO0w==
 
 "@hapi/address@2.x.x":
   version "2.1.4"
