@@ -1,7 +1,6 @@
 from ibutsu_server.db.models import Project
 from ibutsu_server.db.models import User
 from ibutsu_server.util.uuid import is_uuid
-from sqlalchemy.sql.expression import or_
 
 
 def get_project(project_name):
@@ -30,14 +29,18 @@ def project_has_user(project, user):
     return user in project.users or project.owner.id == user.id
 
 
-def add_user_filter(query, user, project=None):
+def add_user_filter(query, user, model=None):
     """Filter a list of projects by user"""
     if isinstance(user, str):
         user = User.query.get(user)
     if user.is_superadmin:
         return query
-    if project:
-        query = query.filter(or_(User.projects.any(id=project.id), project.owner == user))
-    else:
-        query = query.filter(or_(Project.users.any(id=user.id), Project.owner == user))
+    # filter the query by the list of user projects
+    if model:
+        if model == Project:
+            attr = "id"
+        else:
+            attr = "project_id"
+        query = query.filter(getattr(model, attr).in_([p.id for p in user.projects]))
+
     return query

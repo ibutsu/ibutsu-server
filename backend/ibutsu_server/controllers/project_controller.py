@@ -11,8 +11,6 @@ from ibutsu_server.util.uuid import is_uuid
 def add_project(project=None, token_info=None, user=None):
     """Create a project
 
-
-
     :param body: Project
     :type body: dict | bytes
 
@@ -24,6 +22,7 @@ def add_project(project=None, token_info=None, user=None):
     user = User.query.get(user)
     if user:
         project.owner = user
+        project.users.append(user)
     session.add(project)
     session.commit()
     return project.to_dict(), 201
@@ -65,7 +64,7 @@ def get_project_list(
 
     :rtype: List[Project]
     """
-    query = add_user_filter(Project.query, user)
+    query = add_user_filter(Project.query, user, model=Project)
     if owner_id:
         query = query.filter(Project.owner_id == owner_id)
     if group_id:

@@ -107,6 +107,10 @@ class MockModel(object):
         for key, value in record_dict.items():
             if isinstance(value, MockModel):
                 record_dict[key] = value.to_dict()
+            elif isinstance(value, list):
+                for index, item in enumerate(record_dict[key]):
+                    if isinstance(item, MockModel):
+                        record_dict[key][index] = item.to_dict()
         return record_dict
 
     @classmethod
@@ -142,7 +146,7 @@ class MockImport(MockModel):
 
 
 class MockProject(MockModel):
-    COLUMNS = ["id", "name", "title", "owner_id", "group_id"]
+    COLUMNS = ["id", "name", "title", "owner_id", "group_id", "users"]
 
 
 class MockResult(MockModel):

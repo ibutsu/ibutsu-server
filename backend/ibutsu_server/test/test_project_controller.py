@@ -7,6 +7,7 @@ from unittest.mock import patch
 from flask import json
 from ibutsu_server.test import BaseTestCase
 from ibutsu_server.test import MockProject
+from ibutsu_server.test import MockUser
 
 MOCK_ID = "5ac7d645-45a3-4cbe-acb2-c8d6f7e05468"
 MOCK_NAME = "my-project"
@@ -16,8 +17,10 @@ MOCK_DATA = {
     "title": "My Project",
     "owner_id": "8f22a434-b160-41ed-b700-0cc3d7f146b1",
     "group_id": "9af34437-047c-48a5-bd21-6430e4532414",
+    "users": [],
 }
 MOCK_PROJECT = MockProject.from_dict(**MOCK_DATA)
+MOCK_USER = MockUser.from_dict(**{"id": MOCK_DATA["owner_id"]})
 MOCK_PROJECT_DICT = MOCK_PROJECT.to_dict()
 
 
@@ -62,6 +65,11 @@ class TestProjectController(BaseTestCase):
 
         Create a project
         """
+        # this is the only test that needs the User to be patched
+        self.user_patcher = patch("ibutsu_server.controllers.project_controller.User")
+        self.mock_user = self.user_patcher.start()
+        self.mock_user.query.get.return_value = MOCK_USER
+
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -78,6 +86,8 @@ class TestProjectController(BaseTestCase):
         self.assert_equal(response.json, MOCK_PROJECT_DICT)
         self.mock_session.add.assert_called_once_with(MOCK_PROJECT)
         self.mock_session.commit.assert_called_once()
+        # teardown user patcher
+        self.user_patcher.stop()
 
     def test_get_project_by_id(self):
         """Test case for get_project
