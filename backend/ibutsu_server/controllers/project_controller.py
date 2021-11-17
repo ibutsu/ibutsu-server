@@ -104,7 +104,16 @@ def update_project(id_, project=None, token_info=None, user=None):
         return "Forbidden", 403
     if not project:
         return "Project not found", 404
-    project.update(connexion.request.get_json())
+
+    # handle updating users separately
+    updates = connexion.request.get_json()
+    for username in updates.pop("users", []):
+        user_to_add = User.query.filter_by(email=username).first()
+        if user_to_add and user_to_add not in project.users:
+            project.users.append(user_to_add)
+
+    # update the rest of the project info
+    project.update(updates)
     session.add(project)
     session.commit()
     return project.to_dict()
