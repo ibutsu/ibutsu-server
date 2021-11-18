@@ -44,7 +44,7 @@ def add_widget_config(widget_config=None, token_info=None, user=None):
 
 
 @validate_uuid
-def get_widget_config(id_):
+def get_widget_config(id_, token_info=None, user=None):
     """Get a widget
 
     :param id: The ID of the widget
