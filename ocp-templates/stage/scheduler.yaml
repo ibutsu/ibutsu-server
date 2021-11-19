@@ -57,9 +57,9 @@ objects:
           - name: CELERY_RESULT_BACKEND
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: FRONTEND_URL
-            value: ${FRONTEND_ROUTE}
+            value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
-            value: ${BACKEND_ROUTE}
+            value: https://${BACKEND_ROUTE}
           image: scheduler
           imagePullPolicy: Always
           name: ibutsu-scheduler

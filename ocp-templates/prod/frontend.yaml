@@ -29,7 +29,7 @@ objects:
         containers:
         - env:
             - name: REACT_APP_SERVER_URL
-              value: ${BACKEND_ROUTE}
+              value: https://${BACKEND_ROUTE}/api
             - name: NODE_ENV
               value: production
           image: frontend

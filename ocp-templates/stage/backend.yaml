@@ -30,6 +30,10 @@ objects:
         - env:
           - name: APP_CONFIG
             value: config.py
+          - name: PORT
+            value: 8080
+          - name: GUNICORN_PROCESSES
+            value: 1
           - name: HAS_FRONTEND
             value: "false"
           - name: POSTGRESQL_HOST
@@ -61,9 +65,9 @@ objects:
           - name: CELERY_RESULT_BACKEND
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: FRONTEND_URL
-            value: ${FRONTEND_ROUTE}
+            value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
-            value: ${BACKEND_ROUTE}
+            value: https://${BACKEND_ROUTE}
           image: backend
           imagePullPolicy: Always
           livenessProbe:
