@@ -1,0 +1,141 @@
+# Template for ibutsu prod server
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ibutsu-scheduler-template
+# ===============================================
+# Scheduler
+# ===============================================
+objects:
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-scheduler
+    namespace: ${NAMESPACE}
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: ibutsu-scheduler
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ${APP_NAME}
+          deploymentConfig: ibutsu-scheduler
+      spec:
+        containers:
+        - env:
+          - name: POSTGRESQL_HOST
+            value: postgresql.${NAMESPACE}.svc
+          - name: POSTGRESQL_PORT
+            value: "5432"
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: postgresql
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: postgresql
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                key: database-name
+                name: postgresql
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: redis
+          - name: CELERY_BROKER_URL
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: CELERY_RESULT_BACKEND
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: FRONTEND_URL
+            value: ${FRONTEND_ROUTE}
+          - name: BACKEND_URL
+            value: ${BACKEND_ROUTE}
+          image: scheduler
+          imagePullPolicy: Always
+          name: ibutsu-scheduler
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ibutsu-scheduler
+        from:
+          kind: ImageStreamTag
+          name: scheduler:latest
+          namespace: ${NAMESPACE}
+      type: ImageChange
+    - type: ConfigChange
+# -----------------------------------------------
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: scheduler
+    annotations:
+      description: "Celery beat scheduler for periodic tasks in Ibutsu Server"
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: quay.io/ibutsu/scheduler:latest
+      generation: 3
+      importPolicy:
+        scheduled: true
+      name: latest
+      referencePolicy:
+        type: Source
+# -----------------------------------------------
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-scheduler
+    namespace: ${NAMESPACE}
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      deploymentConfig: ibutsu-scheduler
+# ===============================================
+# Parameters
+# ===============================================
+parameters:
+- name: APP_NAME
+  displayName: App Name
+  description: The name of the application
+  value: ibutsu-server
+- name: NAMESPACE
+  displayName: Namespace
+  description: The namespace for all of the images, applications, etc.
+  value: iqe-ibutsu-server
+- name: BACKEND_ROUTE
+  displayName: Backend Route
+  description: The URL of the backend of the Ibutsu server
+  value: ibutsu-api.example.com
+- name: FRONTEND_ROUTE
+  displayName: Frontend Route
+  description: The URL of the frontend of the Ibutsu server
+  value: ibutsu.example.com
+- name: REDIS_PASSWORD
+  displayName: Redis Password
+  description: The password for Redis
+  generate: expression
+  from: '[\w]{16}'
