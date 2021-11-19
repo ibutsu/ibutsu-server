@@ -1,0 +1,328 @@
+# Template for ibutsu prod server
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ibutsu-postgres-template
+# ===============================================
+# PostgreSQL
+# ===============================================
+objects:
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+      template: postgresql-persistent-template
+    name: postgresql
+    namespace: ${NAMESPACE}
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: postgresql
+    strategy:
+      resources: {}
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: ${APP_NAME}
+          deploymentConfig: postgresql
+      spec:
+        containers:
+        - env:
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                key: database-name
+                name: postgresql
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: postgresql
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: postgresql
+          image: postgresql:12
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+              - /usr/libexec/check-container
+              - --live
+            initialDelaySeconds: 120
+            timeoutSeconds: 10
+          name: postgresql
+          ports:
+          - containerPort: 5432
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /usr/libexec/check-container
+            initialDelaySeconds: 5
+            timeoutSeconds: 10
+          resources:
+            limits:
+              memory: 512Mi
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          volumeMounts:
+          - mountPath: /var/lib/pgsql/data
+            name: postgresql-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        volumes:
+        - name: postgresql-data
+          persistentVolumeClaim:
+            claimName: postgresql
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - postgresql
+        from:
+          kind: ImageStreamTag
+          name: postgresql:12
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+# -----------------------------------------------
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: postgresql
+    namespace: ${NAMESPACE}
+  spec:
+    ports:
+    - name: postgresql
+      port: 5432
+      protocol: TCP
+      targetPort: 5432
+    selector:
+      deploymentConfig: postgresql
+# -----------------------------------------------
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: postgresql
+    namespace: ${NAMESPACE}
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${POSTGRESQL_STORAGE}
+# -----------------------------------------------
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: postgresql
+    namespace: ${NAMESPACE}
+  type: opaque
+  stringData:
+    database-name: ${POSTGRESQL_DATABASE}
+    database-password: ${POSTGRESQL_PASSWORD}
+    database-user: ${POSTGRESQL_USER}
+# ===============================================
+# Database Backup Cronjob
+# ===============================================
+- kind: CronJob
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: database-backup
+    namespace: ${NAMESPACE}
+  spec:
+    schedule: ${BACKUP_SCHEDULE}
+    concurrencyPolicy: Forbid
+    jobTemplate:
+      spec:
+        template:
+          spec:
+            volumes:
+              - name: database-backups
+                persistentVolumeClaim:
+                  claimName: ${BACKUP_VOLUME_CLAIM}
+            containers:
+              - name: postgresql-backup
+                image: postgresql:12
+                command:
+                  - 'bash'
+                  - '-eo'
+                  - 'pipefail'
+                  - '-c'
+                  - >
+                    trap "echo 'Backup failed'; exit 0" ERR;
+                    FILENAME=backup-${PGDATABASE}-`date +%Y-%m-%d`.dump;
+                    cd /var/lib/database-backup;
+                    find . -type f -name "backup-${PGDATABASE}-*" -exec ls -ltr "{}" + | head -n -${BACKUP_KEEP} | xargs rm -fr;
+                    echo "Backing up database...";
+                    PGPASSWORD="$PGPASSWORD" pg_dump -v --username=$PGUSER --host=$PGHOST --port=$PGPORT --dbname=$PGDATABASE --exclude-table=artifacts --format=custom --compress=9 --jobs=1 --no-owner --file=$FILENAME;
+                    echo "";
+                    echo -n "Backup successful: "; du -h ./$FILENAME;
+                    echo "To restore, use:";
+                    echo "~# pg_restore --user=$PGUSER --password=<PGPASSWD> --host=$PGHOST --port=$PGPORT --database=$PGDATABASE $FILENAME"
+                resources:
+                limits:
+                  cpu: 250m
+                  memory: 1Gi
+                requests:
+                  cpu: 100m
+                  memory: 512Mi
+                env:
+                  - name: PGHOST
+                    value: postgresql.${NAMESPACE}.svc
+                  - name: PGPORT
+                    value: "5432"
+                  - name: PGUSER
+                    valueFrom:
+                      secretKeyRef:
+                        key: database-user
+                        name: postgresql
+                  - name: PGPASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: database-password
+                        name: postgresql
+                  - name: PGDATABASE
+                    valueFrom:
+                      secretKeyRef:
+                        key: database-name
+                        name: postgresql
+                  - name: BACKUP_KEEP
+                    value: ${BACKUP_KEEP}
+                volumeMounts:
+                  - name: database-backups
+                    mountPath: /var/lib/database-backup
+            restartPolicy: Never
+# -----------------------------------------------
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ${BACKUP_VOLUME_CLAIM}
+    namespace: ${NAMESPACE}
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${BACKUP_STORAGE}
+# ===============================================
+# Database Vacuum Cronjob
+# ===============================================
+- kind: CronJob
+  apiVersion: batch/v1beta1
+  metadata:
+    name: database-vacuum
+    namespace: ${NAMESPACE}
+  spec:
+    schedule: ${VACUUM_SCHEDULE}
+    concurrencyPolicy: Forbid
+    jobTemplate:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: postgresql-vacuum
+                image: postgresql:12
+                command:
+                  - 'bash'
+                  - '-eo'
+                  - 'pipefail'
+                  - '-c'
+                  - >
+                    trap "echo 'VACUUM failed'; exit 0" ERR;
+                    echo "Backing up database...";
+                    PGPASSWORD="$PGPASSWORD" psql --username=$PGUSER --host=$PGHOST --port=$PGPORT --dbname=$PGDATABASE --command 'VACUUM (verbose);';
+                    echo "";
+                    echo -n "VACUUM successful."
+                resources:
+                limits:
+                  cpu: 250m
+                  memory: 1Gi
+                requests:
+                  cpu: 100m
+                  memory: 512Mi
+                env:
+                  - name: PGHOST
+                    value: postgresql.${NAMESPACE}.svc
+                  - name: PGPORT
+                    value: "5432"
+                  - name: PGUSER
+                    valueFrom:
+                      secretKeyRef:
+                        key: database-user
+                        name: postgresql
+                  - name: PGPASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        key: database-password
+                        name: postgresql
+                  - name: PGDATABASE
+                    valueFrom:
+                      secretKeyRef:
+                        key: database-name
+                        name: postgresql
+            restartPolicy: Never
+# ===============================================
+# Parameters
+# ===============================================
+parameters:
+- name: POSTGRESQL_USER
+  displayName: PostgreSQL User
+  description: The username for authentication in PostgreSQL
+  generate: expression
+  from: 'user[\a\d]{4}'
+- name: POSTGRESQL_PASSWORD
+  displayName: PostgreSQL Password
+  description: The password for the PostgreSQL user
+  generate: expression
+  from: '[\w]{16}'
+- name: POSTGRESQL_DATABASE
+  displayName: PostgreSQL Database
+  description: The name of the database to use in PostgreSQL
+  value: ibutsu
+- name: POSTGRESQL_STORAGE
+  displayName: PostgreSQL Storage
+  description: The amount of storage space for the database to use
+  value: 100Gi
+- name: APP_NAME
+  displayName: App Name
+  description: The name of the application
+  value: ibutsu-server
+- name: NAMESPACE
+  displayName: Namespace
+  description: The namespace for all of the images, applications, etc.
+  value: iqe-ibutsu-server
+- name: BACKUP_VOLUME_CLAIM
+  displayName: Backup volume claim
+  description: The name for the volume claim for storing backups.
+  value: database-backup
+- name: BACKUP_STORAGE
+  displayName: Backup storage
+  description: The amount of storage for the DB backup volume claim
+  value: 30Gi
+- name: BACKUP_KEEP
+  displayName: Number of backups to keep
+  description: The number of backups to keep in the DB backup volume claim
+  value: '5'
+- name: BACKUP_SCHEDULE
+  displayName: Cron-like schedule to run backup
+  description: Cron-like schedule for run DB backup
+  value: '1 0 * * 6'
+- name: VACUUM_SCHEDULE
+  displayName: Cron-like schedule to run vacuum
+  description: Cron-like schedule to run DB vacuum
+  value: '1 1 * * *'

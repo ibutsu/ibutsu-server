@@ -1,0 +1,151 @@
+# Template for ibutsu stage server
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ibutsu-redis-stage-template
+# ===============================================
+# Redis
+# ===============================================
+objects:
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+      template: redis-persistent-template
+    name: redis
+    namespace: ${NAMESPACE}
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: redis
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          deploymentConfig: redis
+      spec:
+        containers:
+        - env:
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: redis
+          image: redis
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            tcpSocket:
+              port: 6379
+            timeoutSeconds: 1
+          name: redis
+          ports:
+          - containerPort: 6379
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - '-i'
+              - '-c'
+              - >-
+                test "$(redis-cli -h 127.0.0.1 -a $REDIS_PASSWORD ping)" ==
+                "PONG"
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            limits:
+              memory: 512Mi
+          securityContext:
+            capabilities: {}
+            privileged: false
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+          - mountPath: /var/lib/redis/data
+            name: redis-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+          - redis
+        from:
+          kind: ImageStreamTag
+          name: redis:latest
+          namespace: openshift
+      type: ImageChange
+    - type: ConfigChange
+# -----------------------------------------------
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: redis
+    namespace: ${NAMESPACE}
+  spec:
+    ports:
+      - port: 6379
+        targetPort: 6379
+    selector:
+      deploymentConfig: redis
+# -----------------------------------------------
+- kind: PersistentVolumeClaim
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: redis
+    namespace: ${NAMESPACE}
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${REDIS_STORAGE}
+# -----------------------------------------------
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: redis
+    namespace: ${NAMESPACE}
+  type: opaque
+  stringData:
+    database-password: ${REDIS_PASSWORD}
+# ===============================================
+# Parameters
+# ===============================================
+parameters:
+- name: APP_NAME
+  displayName: App Name
+  description: The name of the application
+  value: ibutsu-server
+- name: NAMESPACE
+  displayName: Namespace
+  description: The namespace for all of the images, applications, etc.
+  value: iqe-stage-ibutsu-server
+- name: REDIS_PASSWORD
+  displayName: Redis Password
+  description: The password for Redis
+  generate: expression
+  from: '[\w]{16}'
+- name: REDIS_STORAGE
+  displayName: Redis Storage
+  description: The amount of storage space for Redis to use
+  value: 2Gi
