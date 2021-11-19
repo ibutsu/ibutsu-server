@@ -265,7 +265,7 @@ export class JenkinsJobView extends React.Component {
       }
     }
     params.filter = params.filter.join();  // convert array to a comma-separated string
-    HttpClient.get([Settings.serverUrl, 'widget', this.props.view.widget, params])
+    HttpClient.get([Settings.serverUrl, 'widget', this.props.view.widget], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         this.setState({
