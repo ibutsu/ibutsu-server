@@ -13,6 +13,7 @@ from ibutsu_server.db.base import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import upgrade_db
 from ibutsu_server.db.models import User
+from ibutsu_server.db.util import add_superadmin
 from ibutsu_server.encoder import JSONEncoder
 from ibutsu_server.tasks import create_celery_app
 from ibutsu_server.util.jwt import decode_token
@@ -42,7 +43,7 @@ def get_app(**extra_config):
 
     # Shortcut
     config = app.app.config
-    config.setdefault("BCRYPT_LOG_ROUNDS", 20)
+    config.setdefault("BCRYPT_LOG_ROUNDS", 12)
     config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", True)
     if hasattr(config, "from_file"):
         config.from_file(str(Path("./settings.yaml").resolve()), yaml_load, silent=True)
@@ -81,6 +82,16 @@ def get_app(**extra_config):
 
     with app.app.app_context():
         db.create_all()
+        # add a superadmin user
+        if config.get("IBUTSU_SUPERADMIN_EMAIL") and config.get("IBUTSU_SUPERADMIN_PASSWORD"):
+            add_superadmin(
+                session,
+                admin_user={
+                    "email": config["IBUTSU_SUPERADMIN_EMAIL"],
+                    "password": config["IBUTSU_SUPERADMIN_PASSWORD"],
+                    "name": config.get("IBUTSU_SUPERADMIN_NAME"),
+                },
+            )
         upgrade_db(session, upgrades)
 
     @app.route("/")
