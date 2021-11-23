@@ -12,8 +12,10 @@ from ibutsu_server.db import upgrades
 from ibutsu_server.db.base import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import upgrade_db
+from ibutsu_server.db.models import User
 from ibutsu_server.encoder import JSONEncoder
 from ibutsu_server.tasks import create_celery_app
+from ibutsu_server.util.jwt import decode_token
 from yaml import full_load as yaml_load
 
 FRONTEND_PATH = Path("/app/frontend")
@@ -87,9 +89,21 @@ def get_app(**extra_config):
 
     @app.route("/admin/run-task", methods=["POST"])
     def run_task():
+        # get params
         params = request.get_json(force=True, silent=True)
         if not params:
             return "Bad request", 400
+        # get user info
+        token = params.get("token")
+        if not token:
+            return "Unauthorized", 401
+        user_id = decode_token(token).get("sub")
+        if not user_id:
+            return "Unauthorized", 401
+        user = User.query.get(user_id)
+        if not user or not user.is_superadmin:
+            return "Forbidden", 403
+        # get task info
         task_path = params.get("task")
         task_params = params.get("params", {})
         if not task_path:
