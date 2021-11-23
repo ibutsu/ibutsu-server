@@ -1,9 +1,6 @@
 """
 Various utility DB functions
 """
-from base64 import urlsafe_b64encode
-from uuid import uuid4
-
 from ibutsu_server.db.models import User
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import _literal_as_text
@@ -51,7 +48,6 @@ def add_superadmin(session, admin_user):
             password=admin_user["password"],
             is_superadmin=True,
             is_active=True,
-            activation_code=urlsafe_b64encode(str(uuid4()).encode("utf8")).strip(b"=").decode(),
         )
 
     session.add(user)
