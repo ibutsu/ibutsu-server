@@ -99,7 +99,10 @@ export class Login extends React.Component {
   }
 
   onLoginButtonClick = event => {
-    event.preventDefault();
+    // check if null to allow login via enter key
+    if (event) {
+      event.preventDefault();
+    }
     var isValidEmail = !!this.state.emailValue,
         isValidPassword = !!this.state.passwordValue,
         alert = null;
@@ -128,6 +131,13 @@ export class Login extends React.Component {
             isValidPassword: false
           });
         });
+    }
+  }
+
+  onEnterKeyPress = (target) => {
+    // allow login by pressing the enter key
+    if (target.charCode == 13) {
+      this.onLoginButtonClick();
     }
   }
 
@@ -294,9 +304,9 @@ export class Login extends React.Component {
         brandImgAlt="Ibutsu"
         backgroundImgSrc={backgroundImages}
         backgroundImgAlt="Background image"
-        textContent="Ibutsu is an open source test result aggregation. Collect and display your test results, view artifacts, and monitor tests."
+        textContent="Ibutsu is an open source test result aggregation tool. Collect and display your test results, view artifacts, and monitor tests."
         loginTitle="Log in to your account"
-        loginSubtitle="Please use your e-mail address and password, or login via one of the links below"
+        loginSubtitle="Please use your e-mail address and password, or login via one of the links below."
         socialMediaLoginContent={socialMediaLoginContent}
         signUpForAccountMessage={signUpForAccountMessage}
         forgotCredentials={forgotCredentials}
@@ -327,6 +337,7 @@ export class Login extends React.Component {
               aria-describedby="email-helper"
               value={this.state.emailValue}
               onChange={this.onEmailChange}
+              onKeyPress={this.onEnterKeyPress}
             />
           </FormGroup>
           <FormGroup
@@ -345,7 +356,8 @@ export class Login extends React.Component {
                 validated={this.state.isValidPassword ? 'default' : 'error'}
                 aria-describedby="password-helper"
                 value={this.state.passwordValue}
-                onChange={this.onPasswordChange} />
+                onChange={this.onPasswordChange}
+                onKeyPress={this.onEnterKeyPress} />
               }
               {this.state.isPasswordVisible &&
               <TextInput
@@ -356,7 +368,9 @@ export class Login extends React.Component {
                 validated={this.state.isValidPassword ? 'default' : 'error'}
                 aria-describedby="password-helper"
                 value={this.state.passwordValue}
-                onChange={this.onPasswordChange} />}
+                onChange={this.onPasswordChange}
+                onKeyPress={this.onEnterKeyPress} />
+              }
               <Button variant="control" aria-label="Show password" onClick={this.onPasswordVisibleClick}>
                 {!this.state.isPasswordVisible && <EyeIcon/>}
                 {this.state.isPasswordVisible && <EyeSlashIcon/>}
