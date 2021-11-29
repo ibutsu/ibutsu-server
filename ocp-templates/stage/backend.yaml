@@ -31,9 +31,9 @@ objects:
           - name: APP_CONFIG
             value: config.py
           - name: PORT
-            value: 8080
+            value: "8080"
           - name: GUNICORN_PROCESSES
-            value: 1
+            value: "1"
           - name: HAS_FRONTEND
             value: "false"
           - name: POSTGRESQL_HOST
@@ -60,6 +60,21 @@ objects:
               secretKeyRef:
                 key: database-password
                 name: redis
+          - name: IBUTSU_SUPERADMIN_EMAIL
+            valueFrom:
+              secretKeyRef:
+                key: email
+                name: ibutsu-superadmin
+          - name: IBUTSU_SUPERADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: ibutsu-superadmin
+          - name: IBUTSU_SUPERADMIN_NAME
+            valueFrom:
+              secretKeyRef:
+                key: name
+                name: ibutsu-superadmin
           - name: CELERY_BROKER_URL
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: CELERY_RESULT_BACKEND
@@ -163,6 +178,17 @@ objects:
     tls:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
+# ------------------------------------------------
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: ibutsu-superadmin
+    namespace: ${NAMESPACE}
+  type: opaque
+  stringData:
+    email: ${IBUTSU_SUPERADMIN_EMAIL}
+    password: ${IBUTSU_SUPERADMIN_PASSWORD}
+    name: ${IBUTSU_SUPERADMIN_NAME}
 # ===============================================
 # Parameters
 # ===============================================
@@ -188,3 +214,17 @@ parameters:
   description: The password for Redis
   generate: expression
   from: '[\w]{16}'
+- name: IBUTSU_SUPERADMIN_EMAIL
+  displayName: Superadmin Email
+  description: The email for the superadmin of Ibutsu
+  generate: expression
+  from: 'admin-[\a\d]{8}@ibutsu.com'
+- name: IBUTSU_SUPERADMIN_PASSWORD
+  displayName: Superadmin Password
+  description: The password for the superadmin of Ibutsu
+  generate: expression
+  from: '[\w]{16}'
+- name: IBUTSU_SUPERADMIN_NAME
+  displayName: Superadmin Name
+  description: The name superadmin of Ibutsu
+  value: Ibutsu Admin
