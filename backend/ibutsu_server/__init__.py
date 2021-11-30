@@ -35,6 +35,11 @@ def _make_sql_url(hostname, database, **kwargs):
     return "postgresql://{}/{}".format(url, database)
 
 
+def _make_broker_url(hostname, password, port):
+    user_pass_str = ":{}@".format(password) if password else ""
+    return "redis://{}{}:{}".format(user_pass_str, hostname, port)
+
+
 def get_app(**extra_config):
     """Create the WSGI application"""
 
@@ -64,7 +69,13 @@ def get_app(**extra_config):
                     port=config.get("POSTGRESQL_PORT"),
                     user=config.get("POSTGRESQL_USER"),
                     password=config.get("POSTGRESQL_PASSWORD"),
-                )
+                ),
+                "CELERY_BROKER_URL": config.get("CELERY_BROKER_URL")
+                or _make_broker_url(
+                    config.get("REDIS_HOSTNAME"),
+                    config.get("REDIS_PASSWORD"),
+                    config.get("REDIS_PORT"),
+                ),
             }
         )
     # Load any extra config

@@ -1,0 +1,145 @@
+# Template for ibutsu prod server
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ibutsu-flower-template
+# ===============================================
+# Flower
+# ===============================================
+objects:
+- kind: BuildConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: celery-flower
+  spec:
+    source:
+      type: Git
+      git:
+        uri: ${IBUTSU_REPO_URL}
+        ref: ${IBUTSU_REPO_BRANCH}
+      contextDir: backend
+    strategy:
+      dockerStrategy:
+        dockerfilePath: docker/Dockerfile.flower
+        env:
+          - name: GIT_SSL_NO_VERIFY
+            value: 'true'
+      type: Docker
+    output:
+      to:
+        kind: ImageStreamTag
+        name: celery-flower:latest
+    runPolicy: Serial
+    triggers:
+      - type: ConfigChange
+      - imageChange:
+        type: ImageChange
+# -----------------------------------------------
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: celery-flower
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: celery-flower
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ${APP_NAME}
+          deploymentConfig: celery-flower
+      spec:
+        containers:
+        - env:
+          - name: BROKER_URL
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          image: celery-flower
+          imagePullPolicy: Always
+          name: celery-flower
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - celery-flower
+        from:
+          kind: ImageStreamTag
+          name: celery-flower:latest
+      type: ImageChange
+    - type: ConfigChange
+# -----------------------------------------------
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: celery-flower
+    annotations:
+      description: "A monitoring application for Celery task queues"
+      openshift.io/image.insecureRepository: "true"
+  spec:
+    lookupPolicy:
+      local: true
+# -----------------------------------------------
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: celery-flower
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 5555
+    selector:
+      deploymentConfig: celery-flower
+# -----------------------------------------------
+- kind: Route
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: celery-flower
+    annotations:
+      description: "A route to Celery Flower"
+  spec:
+    host: ${BACKEND_ROUTE}
+    to:
+      kind: Service
+      name: celery-flower
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
+# ===============================================
+# Parameters
+# ===============================================
+parameters:
+- name: APP_NAME
+  displayName: App Name
+  description: The name of the application
+  value: ibutsu-server
+- name: BACKEND_ROUTE
+  displayName: Backend Route
+  description: The URL for flower in the Ibutsu server
+  value: ibutsu-api.example.com
+- name: REDIS_PASSWORD
+  displayName: Redis Password
+  description: The password for Redis
+  generate: expression
+  from: '[\w]{16}'
+- name: IBUTSU_REPO_URL
+  displayName: Ibutsu Repository URL
+  description: The URL of the git repository with the Ibutsu server source code
+  value: https://github.com/ibutsu/ibutsu-server.git
+- name: IBUTSU_REPO_BRANCH
+  displayName: Ibutsu Repository Branch
+  description: The branch to pull the code from (defaults to master)
+  value: master
