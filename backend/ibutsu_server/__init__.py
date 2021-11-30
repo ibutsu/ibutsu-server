@@ -82,6 +82,7 @@ def get_app(**extra_config):
 
     with app.app.app_context():
         db.create_all()
+        upgrade_db(session, upgrades)
         # add a superadmin user
         if config.get("IBUTSU_SUPERADMIN_EMAIL") and config.get("IBUTSU_SUPERADMIN_PASSWORD"):
             add_superadmin(
@@ -92,7 +93,6 @@ def get_app(**extra_config):
                     "name": config.get("IBUTSU_SUPERADMIN_NAME"),
                 },
             )
-        upgrade_db(session, upgrades)
 
     @app.route("/")
     def index():
