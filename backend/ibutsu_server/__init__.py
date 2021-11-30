@@ -35,7 +35,9 @@ def _make_sql_url(hostname, database, **kwargs):
     return "postgresql://{}/{}".format(url, database)
 
 
-def _make_broker_url(hostname, password, port):
+def _make_broker_url(env_var_value, hostname, password, port):
+    if env_var_value:
+        return env_var_value
     user_pass_str = ":{}@".format(password) if password else ""
     return "redis://{}{}:{}".format(user_pass_str, hostname, port)
 
@@ -70,8 +72,14 @@ def get_app(**extra_config):
                     user=config.get("POSTGRESQL_USER"),
                     password=config.get("POSTGRESQL_PASSWORD"),
                 ),
-                "CELERY_BROKER_URL": config.get("CELERY_BROKER_URL")
-                or _make_broker_url(
+                "CELERY_BROKER_URL": _make_broker_url(
+                    config.get("CELERY_BROKER_URL"),
+                    config.get("REDIS_HOSTNAME"),
+                    config.get("REDIS_PASSWORD"),
+                    config.get("REDIS_PORT"),
+                ),
+                "CELERY_RESULT_BACKEND": _make_broker_url(
+                    config.get("CELERY_RESULT_BACKEND"),
                     config.get("REDIS_HOSTNAME"),
                     config.get("REDIS_PASSWORD"),
                     config.get("REDIS_PORT"),

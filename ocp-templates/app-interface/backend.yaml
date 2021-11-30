@@ -91,16 +91,12 @@ objects:
               secretKeyRef:
                 key: name
                 name: ibutsu-superadmin
-          - name: CELERY_BROKER_URL
-            value: redis://:${REDIS_PASSWORD}@${REDIS_HOSTNAME}
-          - name: CELERY_RESULT_BACKEND
-            value: redis://:${REDIS_PASSWORD}@${REDIS_HOSTNAME}
           - name: FRONTEND_URL
             value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
             value: https://${BACKEND_ROUTE}
-          image: backend
-          imagePullPolicy: Always
+          image: quay.io/ibutsu/backend:${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
             httpGet:
@@ -131,14 +127,6 @@ objects:
         dnsPolicy: ClusterFirst
         restartPolicy: Always
     triggers:
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - ibutsu-backend
-        from:
-          kind: ImageStreamTag
-          name: backend:latest
-      type: ImageChange
     - type: ConfigChange
 # -----------------------------------------------
 - kind: Service
@@ -153,33 +141,6 @@ objects:
       targetPort: 8080
     selector:
       deploymentConfig: ibutsu-backend
-# -----------------------------------------------
-- kind: Route
-  apiVersion: v1
-  metadata:
-    labels:
-      app: ${APP_NAME}
-    name: ibutsu-backend
-    annotations:
-      description: "A route to the backend"
-  spec:
-    host: ${BACKEND_ROUTE}
-    to:
-      kind: Service
-      name: ibutsu-backend
-    tls:
-      insecureEdgeTerminationPolicy: Redirect
-      termination: edge
-# ------------------------------------------------
-- kind: Secret
-  apiVersion: v1
-  metadata:
-    name: ibutsu-superadmin
-  type: opaque
-  stringData:
-    email: ${IBUTSU_SUPERADMIN_EMAIL}
-    password: ${IBUTSU_SUPERADMIN_PASSWORD}
-    name: ${IBUTSU_SUPERADMIN_NAME}
 # ===============================================
 # Parameters
 # ===============================================
@@ -196,22 +157,5 @@ parameters:
   displayName: Frontend Route
   description: The URL of the frontend of the Ibutsu server
   value: ibutsu.example.com
-- name: REDIS_PASSWORD
-  displayName: Redis Password
-  description: The password for Redis
-  generate: expression
-  from: '[\w]{16}'
-- name: IBUTSU_SUPERADMIN_EMAIL
-  displayName: Superadmin Email
-  description: The email for the superadmin of Ibutsu
-  generate: expression
-  from: 'admin-[\a\d]{8}@ibutsu.com'
-- name: IBUTSU_SUPERADMIN_PASSWORD
-  displayName: Superadmin Password
-  description: The password for the superadmin of Ibutsu
-  generate: expression
-  from: '[\w]{16}'
-- name: IBUTSU_SUPERADMIN_NAME
-  displayName: Superadmin Name
-  description: The name superadmin of Ibutsu
-  value: Ibutsu Admin
+- name: IMAGE_TAG
+  value: latest

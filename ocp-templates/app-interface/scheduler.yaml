@@ -28,39 +28,52 @@ objects:
         containers:
         - env:
           - name: POSTGRESQL_HOST
-            value: postgresql.${NAMESPACE}.svc
+            valueFrom:
+              secretKeyRef:
+                key: db.host
+                name: ibutsu-db
           - name: POSTGRESQL_PORT
-            value: "5432"
+            valueFrom:
+              secretKeyRef:
+                key: db.port
+                name: ibutsu-db
           - name: POSTGRESQL_USER
             valueFrom:
               secretKeyRef:
-                key: database-user
-                name: postgresql
+                key: db.user
+                name: ibutsu-db
           - name: POSTGRESQL_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: database-password
-                name: postgresql
+                key: db.password
+                name: ibutsu-db
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
-                key: database-name
-                name: postgresql
+                key: db.name
+                name: ibutsu-db
           - name: REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: database-password
+                key: db.password
                 name: redis
-          - name: CELERY_BROKER_URL
-            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
-          - name: CELERY_RESULT_BACKEND
-            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+                optional: true
+          - name: REDIS_HOSTNAME
+            valueFrom:
+              secretKeyRef:
+                key: db.endpoint
+                name: redis
+          - name: REDIS_PORT
+            valueFrom:
+              secretKeyRef:
+                key: db.port
+                name: redis
           - name: FRONTEND_URL
             value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
             value: https://${BACKEND_ROUTE}
-          image: scheduler
-          imagePullPolicy: Always
+          image: quay.io/ibutsu/scheduler:${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
           name: ibutsu-scheduler
           resources: {}
           terminationMessagePath: /dev/termination-log
@@ -68,36 +81,7 @@ objects:
         dnsPolicy: ClusterFirst
         restartPolicy: Always
     triggers:
-    - imageChangeParams:
-        automatic: true
-        containerNames:
-        - ibutsu-scheduler
-        from:
-          kind: ImageStreamTag
-          name: scheduler:latest
-      type: ImageChange
     - type: ConfigChange
-# -----------------------------------------------
-- kind: ImageStream
-  apiVersion: v1
-  metadata:
-    name: scheduler
-    annotations:
-      description: "Celery beat scheduler for periodic tasks in Ibutsu Server"
-  spec:
-    lookupPolicy:
-      local: false
-    tags:
-    - annotations: null
-      from:
-        kind: DockerImage
-        name: quay.io/ibutsu/scheduler:latest
-      generation: 3
-      importPolicy:
-        scheduled: true
-      name: latest
-      referencePolicy:
-        type: Source
 # -----------------------------------------------
 - kind: Service
   apiVersion: v1
@@ -127,8 +111,5 @@ parameters:
   displayName: Frontend Route
   description: The URL of the frontend of the Ibutsu server
   value: ibutsu.example.com
-- name: REDIS_PASSWORD
-  displayName: Redis Password
-  description: The password for Redis
-  generate: expression
-  from: '[\w]{16}'
+- name: IMAGE_TAG
+  value: latest
