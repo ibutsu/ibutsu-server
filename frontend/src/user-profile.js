@@ -54,7 +54,7 @@ export class UserProfile extends React.Component {
     const { user, projects } = this.state;
     let projectInfo = [];
     // create the project rows
-    if (projects) {
+    if (projects && user) {
       projectInfo.push(projects.map((project) => (
             <DataListCell key={project.name} className="pf-u-p-sm">
               <span> {project.title} </span>
