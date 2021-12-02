@@ -72,20 +72,27 @@ def get_app(**extra_config):
                     user=config.get("POSTGRESQL_USER"),
                     password=config.get("POSTGRESQL_PASSWORD"),
                 ),
-                "CELERY_BROKER_URL": _make_broker_url(
-                    config.get("CELERY_BROKER_URL"),
-                    config.get("REDIS_HOSTNAME"),
-                    config.get("REDIS_PASSWORD"),
-                    config.get("REDIS_PORT"),
-                ),
-                "CELERY_RESULT_BACKEND": _make_broker_url(
-                    config.get("CELERY_RESULT_BACKEND"),
-                    config.get("REDIS_HOSTNAME"),
-                    config.get("REDIS_PASSWORD"),
-                    config.get("REDIS_PORT"),
-                ),
             }
         )
+
+    # Set celery broker URL
+    config.update(
+        {
+            "CELERY_BROKER_URL": _make_broker_url(
+                config.get("CELERY_BROKER_URL"),
+                config.get("REDIS_HOSTNAME"),
+                config.get("REDIS_PASSWORD"),
+                config.get("REDIS_PORT"),
+            ),
+            "CELERY_RESULT_BACKEND": _make_broker_url(
+                config.get("CELERY_RESULT_BACKEND"),
+                config.get("REDIS_HOSTNAME"),
+                config.get("REDIS_PASSWORD"),
+                config.get("REDIS_PORT"),
+            ),
+        }
+    )
+
     # Load any extra config
     config.update(extra_config)
 
