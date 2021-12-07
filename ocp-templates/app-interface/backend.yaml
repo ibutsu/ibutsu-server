@@ -1,0 +1,398 @@
+# Template for ibutsu prod server
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ibutsu-backend-template
+# ===============================================
+# Backend
+# ===============================================
+objects:
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-backend
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: ibutsu-backend
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ${APP_NAME}
+          deploymentConfig: ibutsu-backend
+      spec:
+        containers:
+        - env:
+          - name: GUNICORN_PROCESSES
+            value: "1"
+          - name: PORT
+            value: "8080"
+          - name: APP_CONFIG
+            value: config.py
+          - name: HAS_FRONTEND
+            value: "false"
+          - name: POSTGRESQL_HOST
+            valueFrom:
+              secretKeyRef:
+                key: db.host
+                name: ibutsu-db
+          - name: POSTGRESQL_PORT
+            valueFrom:
+              secretKeyRef:
+                key: db.port
+                name: ibutsu-db
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: db.user
+                name: ibutsu-db
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: db.password
+                name: ibutsu-db
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                key: db.name
+                name: ibutsu-db
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: db.password
+                name: redis
+                optional: true
+          - name: REDIS_HOSTNAME
+            valueFrom:
+              secretKeyRef:
+                key: db.endpoint
+                name: redis
+          - name: REDIS_PORT
+            valueFrom:
+              secretKeyRef:
+                key: db.port
+                name: redis
+          - name: IBUTSU_SUPERADMIN_EMAIL
+            valueFrom:
+              secretKeyRef:
+                key: email
+                name: ibutsu-superadmin
+          - name: IBUTSU_SUPERADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: ibutsu-superadmin
+          - name: IBUTSU_SUPERADMIN_NAME
+            valueFrom:
+              secretKeyRef:
+                key: name
+                name: ibutsu-superadmin
+          - name: FRONTEND_URL
+            value: https://${FRONTEND_ROUTE}
+          - name: BACKEND_URL
+            value: https://${BACKEND_ROUTE}
+          image: quay.io/ibutsu/backend:${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 20
+          name: ibutsu-backend
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            successThreshold: 1
+            timeoutSeconds: 20
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+    triggers:
+    - type: ConfigChange
+# -----------------------------------------------
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-backend
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      deploymentConfig: ibutsu-backend
+
+# ===============================================
+# Flower
+# ===============================================
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: celery-flower
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: celery-flower
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ${APP_NAME}
+          deploymentConfig: celery-flower
+      spec:
+        containers:
+        - env:
+          # TOOD: use redis secret to set this
+          - name: BROKER_URL
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          image: celery-flower
+          imagePullPolicy: IfNotPresent
+          name: quay.io/ibutsu/flower:${IMAGE_TAG}
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+    triggers:
+    - type: ConfigChange
+# -----------------------------------------------
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: celery-flower
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 5555
+    selector:
+      deploymentConfig: celery-flower
+
+# ===============================================
+# Scheduler
+# ===============================================
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-scheduler
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: ibutsu-scheduler
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ${APP_NAME}
+          deploymentConfig: ibutsu-scheduler
+      spec:
+        containers:
+        - env:
+          - name: POSTGRESQL_HOST
+            valueFrom:
+              secretKeyRef:
+                key: db.host
+                name: ibutsu-db
+          - name: POSTGRESQL_PORT
+            valueFrom:
+              secretKeyRef:
+                key: db.port
+                name: ibutsu-db
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: db.user
+                name: ibutsu-db
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: db.password
+                name: ibutsu-db
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                key: db.name
+                name: ibutsu-db
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: db.password
+                name: redis
+                optional: true
+          - name: REDIS_HOSTNAME
+            valueFrom:
+              secretKeyRef:
+                key: db.endpoint
+                name: redis
+          - name: REDIS_PORT
+            valueFrom:
+              secretKeyRef:
+                key: db.port
+                name: redis
+          - name: FRONTEND_URL
+            value: https://${FRONTEND_ROUTE}
+          - name: BACKEND_URL
+            value: https://${BACKEND_ROUTE}
+          image: quay.io/ibutsu/scheduler:${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          name: ibutsu-scheduler
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+    triggers:
+    - type: ConfigChange
+# -----------------------------------------------
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-scheduler
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      deploymentConfig: ibutsu-scheduler
+
+# ===============================================
+# Worker
+# ===============================================
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-worker
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: ibutsu-worker
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          app: ${APP_NAME}
+          deploymentConfig: ibutsu-worker
+      spec:
+        containers:
+        - env:
+          - name: APP_SCRIPT
+            value: celery_worker.sh
+          - name: POSTGRESQL_HOST
+            valueFrom:
+              secretKeyRef:
+                key: db.host
+                name: ibutsu-db
+          - name: POSTGRESQL_PORT
+            valueFrom:
+              secretKeyRef:
+                key: db.port
+                name: ibutsu-db
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: db.user
+                name: ibutsu-db
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: db.password
+                name: ibutsu-db
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                key: db.name
+                name: ibutsu-db
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: db.password
+                name: redis
+                optional: true
+          - name: REDIS_HOSTNAME
+            valueFrom:
+              secretKeyRef:
+                key: db.endpoint
+                name: redis
+          - name: REDIS_PORT
+            valueFrom:
+              secretKeyRef:
+                key: db.port
+                name: redis
+          - name: FRONTEND_URL
+            value: https://${FRONTEND_ROUTE}
+          - name: BACKEND_URL
+            value: https://${BACKEND_ROUTE}
+          image: quay.io/ibutsu/worker:${IMAGE_TAG}
+          imagePullPolicy: IfNotPresent
+          name: ibutsu-worker
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+    triggers:
+    - type: ConfigChange
+# -----------------------------------------------
+- kind: Service
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-worker
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      deploymentConfig: ibutsu-worker
+
+# ===============================================
+# Parameters
+# ===============================================
+parameters:
+- name: APP_NAME
+  displayName: App Name
+  description: The name of the application
+  value: ibutsu-server
+- name: BACKEND_ROUTE
+  displayName: Backend Route
+  description: The URL of the backend of the Ibutsu server
+  value: ibutsu-api.example.com
+- name: FRONTEND_ROUTE
+  displayName: Frontend Route
+  description: The URL of the frontend of the Ibutsu server
+  value: ibutsu.example.com
+- name: IMAGE_TAG
+  value: latest
