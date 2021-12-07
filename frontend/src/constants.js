@@ -60,6 +60,26 @@ export const STRING_RESULT_FIELDS = [
   'start_time',  // TODO: handle this with a calendar widget?
   'test_id'
 ];
+export const FILTERABLE_RESULT_FIELDS = [
+  'env',
+  'component',
+  'metadata.assignee',
+  // TODO support array filtering
+  // https://github.com/ibutsu/ibutsu-server/issues/228
+  //'metadata.statuses.call',
+  //'metadata.statuses.setup',
+  //'metadata.statuses.teardown',
+  'metadata.caseautomation',
+  'metadata.exception_name',
+  'metadata.fspath',
+  'metadata.importance',
+  'metadata.title',
+  // TODO support object/dict filtering
+  // https://github.com/ibutsu/ibutsu-server/issues/229
+  //'metadata.params',
+  //'metadata.markers',
+
+]
 export const RESULT_FIELDS = [...NUMERIC_RESULT_FIELDS, ...STRING_RESULT_FIELDS, ...ARRAY_RESULT_FIELDS];
 export const ARRAY_RUN_FIELDS = [
   'metadata.tags',

@@ -101,6 +101,37 @@ export function buildParams(filters) {
   return getParams;
 }
 
+export function buildUrl(url, params) {
+  // shorthand
+  const esc = encodeURIComponent;
+  let query = [];
+  for (const key of Object.keys(params)) {
+    const value = params[key];
+    if (value instanceof Array) {
+      value.forEach(element => {
+        query.push(esc(key) + '=' + esc(element));
+      });
+    }
+    else {
+      query.push(esc(key) + '=' + esc(value));
+    }
+  }
+  return url + '?' + query.join('&');
+}
+
+export function toAPIFilter(filters) {
+  // Take UI style filter object with field/op/val keys and generate an array of filter strings for the API
+  let filter_strings = []
+  for (const key in filters) {
+    if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key]) {
+      const val = filters[key]['val'];
+      const op = OPERATIONS[filters[key]['op']];
+      filter_strings.push(key + op + val);
+    }
+  }
+  return filter_strings
+}
+
 export function round(number) {
   let rounded = Math.round(number * 10);
   return rounded / 10;

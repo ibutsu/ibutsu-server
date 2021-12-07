@@ -60,8 +60,11 @@ docs/_build/
 # PyBuilder
 target/
 
-#Ipython Notebook
+# Ipython Notebook
 .ipynb_checkpoints
+
+# Editors
+.vscode
 
 # NodeJS stuff
 node_modules
@@ -70,6 +73,7 @@ package-lock.json
 # Virtual environment
 .ibutsu-env
 .ibutsu_env
+.ibutsu
 
 # Frontend
 frontend/public/version.json
