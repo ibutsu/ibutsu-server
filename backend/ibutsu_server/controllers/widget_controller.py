@@ -23,6 +23,37 @@ WIDGET_METHODS = {
 RESERVED_PARAMS = {"filter": "filter_"}
 
 
+def _pre_process_params(params):
+    """Reduce congnitive complexity"""
+    new_params = params.copy()
+    for param in params.keys():
+        # Some parameters are Python reserved words
+        if param in RESERVED_PARAMS:
+            new_params.pop(param)
+            new_params[RESERVED_PARAMS.get(param)] = params[param]
+    params = new_params.copy()
+    return params
+
+
+def _typecast_params(widget_id, params):
+    """Reduce congnitive complexity"""
+    param_types = {p["name"]: p["type"] for p in WIDGET_TYPES[widget_id]["params"]}
+    for param in params.keys():
+        if isinstance(params[param], list) and param_types.get(param) != "list":
+            # This is a horrible hack to try to get around a problem in prod
+            # that we can't reproduce locally
+            params[param] = params[param][0]
+        if param in param_types and param_types[param] == "integer":
+            params[param] = int(params[param])
+        elif param in param_types and param_types[param] == "boolean":
+            params[param] = params[param].lower()[0] in ALLOWED_TRUE_BOOLEANS
+        elif param in param_types and param_types[param] == "float":
+            params[param] = float(params[param])
+        elif param in param_types and param_types[param] == "list":
+            params[param] = params[param].split(",")
+    return params
+
+
 def get_widget_types(type_=None):
     """Get the types of widgets that are available
 
@@ -48,26 +79,6 @@ def get_widget(id_):
     """
     if id_ not in WIDGET_TYPES.keys():
         return "Widget not found", 404
-    param_types = {p["name"]: p["type"] for p in WIDGET_TYPES[id_]["params"]}
-    params = dict(connexion.request.args)
-    new_params = params.copy()
-    for param in params.keys():
-        # Some parameters are Python reserved words
-        if param in RESERVED_PARAMS:
-            new_params.pop(param)
-            new_params[RESERVED_PARAMS.get(param)] = params[param]
-    params = new_params.copy()
-    for param in params.keys():
-        if isinstance(params[param], list) and param_types.get(param) != "list":
-            # This is a horrible hack to try to get around a problem in prod
-            # that we can't reproduce locally
-            params[param] = params[param][0]
-        if param in param_types and param_types[param] == "integer":
-            params[param] = int(params[param])
-        elif param in param_types and param_types[param] == "boolean":
-            params[param] = params[param].lower()[0] in ALLOWED_TRUE_BOOLEANS
-        elif param in param_types and param_types[param] == "float":
-            params[param] = float(params[param])
-        elif param in param_types and param_types[param] == "list":
-            params[param] = params[param].split(",")
+    params = _pre_process_params(dict(connexion.request.args))
+    params = _typecast_params(id_, params)
     return WIDGET_METHODS[id_](**params)

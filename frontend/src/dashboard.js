@@ -265,8 +265,8 @@ export class Dashboard extends React.Component {
                   onClear={this.onDashboardClear}
                   isPlain
                 >
-                  {this.state.dashboards.map(dashboard => (
-                    <SelectOption key={dashboard.id} value={dashboardToSelect(dashboard)} />
+                  {this.state.dashboards.map(dash => (
+                    <SelectOption key={dash.id} value={dashboardToSelect(dash)} />
                   ))}
                 </Select>
               </FlexItem>

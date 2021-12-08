@@ -136,13 +136,13 @@ export class App extends React.Component {
     this.setState({notifications}, () => {
       if (timeout === true) {
         setTimeout(() => {
-          let notifications = this.state.notifications.filter((n) => {
+          let notifs = this.state.notifications.filter((n) => {
             if (n.type === type && n.title === title && n.message === message) {
               return false;
             }
             return true;
           });
-          this.setState({notifications});
+          this.setState({notifications: notifs});
         }, ALERT_TIMEOUT);
       }
     });

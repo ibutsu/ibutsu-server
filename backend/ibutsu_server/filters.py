@@ -15,8 +15,53 @@ OPERATORS = {
     "*": "$in",
     "@": "$exists",
 }
-
+OPER_COMPARE = {
+    "=": lambda column, value: column == value,
+    "!": lambda column, value: column != value,
+    ">": lambda column, value: column > value,
+    "<": lambda column, value: column < value,
+    ")": lambda column, value: column >= value,
+    "(": lambda column, value: column <= value,
+    "*": lambda column, value: column.in_(value),
+    "~": lambda column, value: column.op("~")(value),
+}
 FILTER_RE = re.compile(r"([a-zA-Z\._]+)([" + "".join(OPERATORS.keys()) + "])(.*)")
+FLOAT_RE = re.compile(r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?")
+
+
+def _to_int_or_float(value):
+    """To reduce cognitive complexity"""
+    if value.isdigit():
+        # Try to typecast if we get a digit
+        try:
+            value = int(value)
+        except (ValueError, TypeError):
+            # Just ignore it and carry on if there's a problem
+            pass
+    elif FLOAT_RE.match(value):
+        # Lastly, try to convert to a float
+        try:
+            value = float(value)
+        except (ValueError, TypeError):
+            # Just ignore it and carry on
+            pass
+    return value
+
+
+def _null_compare(column, value):
+    """To reduce cognitive complexity"""
+    if value[0].lower() in ["y", "t", "1"]:
+        return column != None  # noqa
+    else:
+        return column == None  # noqa
+
+
+def _array_compare(oper, column, value):
+    """To reduce cognitive complexity"""
+    if oper == "=":
+        return column.op("@>")(value)
+    if oper == "*":
+        return column.op("?|")(array(value))
 
 
 def string_to_column(field, model):
@@ -53,62 +98,19 @@ def convert_filter(filter_string, model):
     field = match.group(1)
     oper = match.group(2)
     value = match.group(3).strip('"')
+    column = string_to_column(field, model)
     # determine if the field is an array field, if so it requires some additional care
     is_array_field = field in ARRAY_FIELDS
     # Do some type casting
     if oper == "@":
-        # Need to typecast the value for the $exists operation
-        if value[0].lower() in ["y", "t", "1"]:
-            value = True
-        else:
-            value = False
+        return _null_compare(column, value)
     elif oper == "*":
         value = value.split(";")
     elif "build_number" not in field:
         # This is a horrible hack, because Jenkins build numbers are strings :-(
-        if value.isdigit():
-            # Try to typecast if we get a digit
-            try:
-                value = int(value)
-            except (ValueError, TypeError):
-                # Just ignore it and carry on if there's a problem
-                pass
-        else:
-            # Lastly, try to convert to a float
-            try:
-                value = float(value)
-            except (ValueError, TypeError):
-                # Just ignore it and carry on
-                pass
-
-    column = string_to_column(field, model)
-
-    if oper == "@":
-        if value:
-            return column != None  # noqa
-        else:
-            return column == None  # noqa
+        value = _to_int_or_float(value)
 
     if is_array_field:
-        if oper == "=":
-            return column.op("@>")(value)
-        if oper == "*":
-            return column.op("?|")(array(value))
+        return _array_compare(oper, column, value)
     else:
-        if oper == "=":
-            return column == value
-        if oper == "!":
-            return column != value
-        if oper == ">":
-            return column > value
-        if oper == "<":
-            return column < value
-        if oper == ")":
-            return column >= value
-        if oper == "(":
-            return column <= value
-        if oper == "*":
-            return column.in_(value)
-        if oper == "~":
-            return column.op("~")(value)
-    return None
+        return OPER_COMPARE[oper](column, value)

@@ -122,7 +122,7 @@ export class ResultAggregatorWidget extends React.Component {
           {(!this.state.resultAggregatorError && this.state.isLoading) &&
           <Text component="h2">Loading ...</Text>
           }
-          {(!this.state.resultAggregatorError && !this.state.isLoading && this.params.chart_type === "pie" && !(this.state.total === 0)) &&
+          {(!this.state.resultAggregatorError && !this.state.isLoading && this.params.chart_type === "pie" && this.state.total !== 0) &&
             <ChartPie
               ariaDesc="Results categorized"
               ariaTitle="pie-chart"
@@ -146,7 +146,7 @@ export class ResultAggregatorWidget extends React.Component {
               themeColor={ChartThemeColor.multi}
             />
           }
-          {(!this.state.resultAggregatorError && !this.state.isLoading && this.params.chart_type === "donut" && !(this.state.total === 0)) &&
+          {(!this.state.resultAggregatorError && !this.state.isLoading && this.params.chart_type === "donut" && this.state.total !== 0) &&
             <ChartDonut
               ariaDesc="Results categorized"
               ariaTitle="donut-chart"
@@ -164,7 +164,7 @@ export class ResultAggregatorWidget extends React.Component {
           }
         </CardBody>
         <CardFooter>
-          {!this.state.isLoading && !(this.state.total === 0) &&
+          {!this.state.isLoading && this.state.total !== 0 &&
           <ChartLegend
             data={this.state.legendData}
             height={120}

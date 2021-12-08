@@ -8,7 +8,6 @@ REQUIRES = [
     "alembic",
     # Pin Celery to be compatible with Kombu
     "celery==4.3.0",
-    # Pin Kombu to 4.6.3 to get around celery/kombu/issues/236
     "connexion",
     "flask_bcrypt",
     "flask_cors",
@@ -19,6 +18,7 @@ REQUIRES = [
     "google-auth-httplib2",
     "google-auth-oauthlib",
     "gunicorn",
+    # Pin Kombu to 4.6.3 to get around celery/kombu/issues/236
     "kombu==4.6.3",
     "lxml",
     "psycopg2-binary",

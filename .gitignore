@@ -88,3 +88,7 @@ backend/settings.local.yaml
 
 # celery beat
 celerybeat*
+
+# SonarQube
+.scannerwork/
+sonar-project.properties

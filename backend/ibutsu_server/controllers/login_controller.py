@@ -1,6 +1,4 @@
 import json
-import random
-import string
 from base64 import urlsafe_b64encode
 from urllib.parse import urlencode
 from uuid import uuid4
@@ -43,9 +41,55 @@ To activate your account, please click on the link below:
 Ibutsu"""
 
 
-def _generate_state():
-    allowed_chars = string.ascii_letters + string.punctuation
-    return "".join(random.choice(allowed_chars) for x in range(40))
+def _get_provider_config(provider):
+    """To reduce congnitive complexity"""
+    if provider == "keycloak":
+        # Do the kc stuff
+        return get_keycloak_config(is_private=True)
+    else:
+        return get_provider_config(provider, is_private=True)
+
+
+def _get_user_from_provider(provider, provider_config, code):
+    """To reduce congnitive complexity"""
+    user = None
+    if provider == "google":
+        # Google does things its own way...
+        try:
+            # Verify the token
+            id_info = id_token.verify_oauth2_token(code, Request(), provider_config["client_id"])
+            # ID token is valid. Get the user's Google Account ID from the decoded token.
+            user = get_user_from_provider(provider, id_info)
+        except ValueError:
+            # Invalid token
+            return "Unauthorized", 401
+    else:
+        # For everyone else
+        payload = {
+            "client_id": provider_config["client_id"],
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": provider_config["redirect_uri"],
+        }
+        if provider_config.get("client_secret"):
+            payload["client_secret"] = provider_config["client_secret"]
+        response = requests.post(
+            provider_config["token_url"], data=payload, headers={"Accept": "application/json"}
+        )
+        if response.status_code == 200:
+            if provider == "keycloak":
+                user = get_user_from_keycloak(response.json())
+            else:
+                user = get_user_from_provider(provider, response.json())
+    return user
+
+
+def _find_or_create_token(token_name, user):
+    """To reduce congnitive complexity"""
+    token = Token.query.filter(Token.name == token_name, Token.user_id == user.id).first()
+    if not token:
+        token = Token(name=token_name, user_id=user.id)
+    return token
 
 
 def login(email=None, password=None):
@@ -105,46 +149,12 @@ def auth(provider):
     frontend_url = build_url(
         current_app.config.get("FRONTEND_URL", "http://localhost:3000"), "login"
     )
-    if provider == "keycloak":
-        # Do the kc stuff
-        provider_config = get_keycloak_config(is_private=True)
-    else:
-        provider_config = get_provider_config(provider, is_private=True)
-    user = None
-    if provider == "google":
-        # Google does things its own way...
-        try:
-            # Verify the token
-            id_info = id_token.verify_oauth2_token(code, Request(), provider_config["client_id"])
-            # ID token is valid. Get the user's Google Account ID from the decoded token.
-            user = get_user_from_provider(provider, id_info)
-        except ValueError:
-            # Invalid token
-            return "Unauthorized", 401
-    else:
-        # For everyone else
-        payload = {
-            "client_id": provider_config["client_id"],
-            "code": code,
-            "grant_type": "authorization_code",
-            "redirect_uri": provider_config["redirect_uri"],
-        }
-        if provider_config.get("client_secret"):
-            payload["client_secret"] = provider_config["client_secret"]
-        response = requests.post(
-            provider_config["token_url"], data=payload, headers={"Accept": "application/json"}
-        )
-        if response.status_code == 200:
-            if provider == "keycloak":
-                user = get_user_from_keycloak(response.json())
-            else:
-                user = get_user_from_provider(provider, response.json())
+    provider_config = _get_provider_config(provider)
+    user = _get_user_from_provider(provider, provider_config, code)
     if not user:
         return "Unauthorized", 401
     jwt_token = generate_token(user.id)
-    token = Token.query.filter(Token.name == "login-token", Token.user_id == user.id).first()
-    if not token:
-        token = Token(name="login-token", user_id=user.id)
+    token = _find_or_create_token("login-token", user)
     token.token = jwt_token
     session.add(token)
     session.commit()
@@ -159,8 +169,6 @@ def auth(provider):
                 data=json.dumps({"email": user.email, "name": user.name, "token": jwt_token})
             )
         )
-    # Finally, if nothing above works or is caught, return a 401
-    return "Unauthorized", 401
 
 
 def register(email=None, password=None):
