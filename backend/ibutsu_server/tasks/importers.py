@@ -194,44 +194,65 @@ def run_junit_import(import_):
     # Parse the XML and create a run object(s)
     tree = objectify.fromstring(import_file.content)
     import_record.data["run_id"] = []
+    # Use current time as start time if no start time is present
+    start_time = parser.parse(tree.get("timestamp")) if tree.get("timestamp") else datetime.utcnow()
+    run_dict = {
+        "created": datetime.utcnow(),
+        "start_time": start_time,
+        "duration": float(tree.get("time", 0.0)),
+        "summary": {
+            "errors": int(tree.get("errors", 0)),
+            "failures": int(tree.get("failures", 0)),
+            "skips": int(tree.get("skipped", 0)),
+            "xfailures": int(tree.get("xfailures", 0)),
+            "xpasses": int(tree.get("xpasses", 0)),
+            "tests": int(tree.get("tests", 0)),
+        },
+    }
+
+    if import_record.data.get("project_id"):
+        run_dict["project_id"] = import_record.data["project_id"]
+
+    metadata = None
+    if import_record.data.get("metadata"):
+        # metadata is expected to be a json dict
+        metadata = import_record.data["metadata"]
+        run_dict["data"] = metadata
+        # add env and component directly to the run dict if it exists in the metadata
+        run_dict["env"] = metadata.get("env")
+        run_dict["component"] = metadata.get("component")
+
+    # Insert the run, and then update the import with the run id
+    run = Run.from_dict(**run_dict)
+    session.add(run)
+    session.commit()
+    run_dict = run.to_dict()
+    import_record.data["run_id"].append(run.id)
+
+    # If the top level "testsuites" element doesn't have these, we'll need to build them manually
+    run_data = {
+        "duration": 0.0,
+        "errors": 0,
+        "failures": 0,
+        "skips": 0,
+        "xfailures": 0,
+        "xpasses": 0,
+        "tests": 0,
+    }
+
     # Handle structures where testsuite is/isn't the top level tag
     testsuites = _get_ts_element(tree)
+
+    # Run through the test suites and import all the test results
     for ts in testsuites:
-        # Use current time as start time if no start time is present
-        start_time = _parse_timestamp(ts)
-        run_dict = {
-            "created": datetime.utcnow(),
-            "start_time": start_time,
-            "duration": ts.get("time"),
-            "summary": {
-                "errors": ts.get("errors"),
-                "failures": ts.get("failures"),
-                "skips": ts.get("skipped"),
-                "xfailures": ts.get("xfailures"),
-                "xpasses": ts.get("xpasses"),
-                "tests": ts.get("tests"),
-            },
-        }
+        run_data["duration"] += float(ts.get("time", 0.0))
+        run_data["errors"] += int(ts.get("errors", 0))
+        run_data["failures"] += int(ts.get("failures", 0))
+        run_data["skips"] += int(ts.get("skipped", 0))
+        run_data["xfailures"] += int(ts.get("xfailures", 0))
+        run_data["xpasses"] += int(ts.get("xpasses", 0))
+        run_data["tests"] += int(ts.get("tests", 0))
 
-        if import_record.data.get("project_id"):
-            run_dict["project_id"] = import_record.data["project_id"]
-
-        metadata = None
-        if import_record.data.get("metadata"):
-            # metadata is expected to be a json dict
-            metadata = import_record.data["metadata"]
-            run_dict["data"] = metadata
-            # add env and component directly to the run dict if it exists in the metadata
-            run_dict["env"] = metadata.get("env")
-            run_dict["component"] = metadata.get("component")
-
-        # Insert the run, and then update the import with the run id
-        run = Run.from_dict(**run_dict)
-        session.add(run)
-        session.commit()
-        run_dict = run.to_dict()
-        import_record.data["run_id"].append(run.id)
-        # Import the contents of the XML file
         for testcase in ts.iterchildren(tag="testcase"):
             test_name, backup_fspath = _get_test_name_path(testcase)
             result_dict = {
@@ -256,6 +277,56 @@ def run_junit_import(import_):
             session.commit()
             _add_artifacts(result, testcase, traceback, session)
 
+            if traceback:
+                session.add(
+                    Artifact(
+                        filename="traceback.log",
+                        result_id=result.id,
+                        data={"contentType": "text/plain", "resultId": result.id},
+                        content=traceback,
+                    )
+                )
+            if testcase.find("system-out"):
+                system_out = bytes(str(testcase["system-out"]), "utf8")
+                session.add(
+                    Artifact(
+                        filename="system-out.log",
+                        result_id=result.id,
+                        data={"contentType": "text/plain", "resultId": result.id},
+                        content=system_out,
+                    )
+                )
+            if testcase.find("system-err"):
+                system_err = bytes(str(testcase["system-err"]), "utf8")
+                session.add(
+                    Artifact(
+                        filename="system-err.log",
+                        result_id=result.id,
+                        data={"contentType": "text/plain", "resultId": result.id},
+                        content=system_err,
+                    )
+                )
+            session.commit()
+
+    # Check if we need to update the run
+    if not run.duration:
+        run.duration = run_data["duration"]
+    if not run.summary["errors"]:
+        run.summary["errors"] = run_data["errors"]
+    if not run.summary["failures"]:
+        run.summary["failures"] = run_data["failures"]
+    if not run.summary["skips"]:
+        run.summary["skips"] = run_data["skips"]
+    if not run.summary["xfailures"]:
+        run.summary["xfailures"] = run_data["xfailures"]
+    if not run.summary["xpasses"]:
+        run.summary["xpasses"] = run_data["xpasses"]
+    if not run.summary["tests"]:
+        run.summary["tests"] = run_data["tests"]
+    session.add(run)
+    session.commit()
+
+    # Update the status of the import, now that we're all done
     _update_import_status(import_record, "done")
 
 
