@@ -8,7 +8,6 @@ import {
   FormAlert,
   FormGroup,
   InputGroup,
-  // LoginForm,
   LoginMainFooterBandItem,
   LoginMainFooterLinksItem,
   LoginPage,
@@ -76,6 +75,7 @@ export class Login extends React.Component {
       isValidPassword: true,
       isPasswordVisible: false,
       externalLogins: {},
+      isLoggingIn: false,
       from: getLocationFrom(props.location),
       alert: getAlert(props.location)
     };
@@ -100,6 +100,7 @@ export class Login extends React.Component {
 
   onLoginButtonClick = event => {
     // check if null to allow login via enter key
+    this.setState({isLoggingIn: true});
     if (event) {
       event.preventDefault();
     }
@@ -131,6 +132,9 @@ export class Login extends React.Component {
             isValidPassword: false
           });
         });
+    }
+    else {
+      this.setState({isLoggingIn: false});
     }
   }
 
@@ -378,7 +382,15 @@ export class Login extends React.Component {
             </InputGroup>
           </FormGroup>
           <ActionGroup>
-            <Button variant="primary" isBlock onClick={this.onLoginButtonClick}>Log In</Button>
+            <Button
+              variant="primary"
+              isBlock
+              isLoading={this.state.isLoggingIn}
+              isDisabled={this.state.isLoggingIn}
+              onClick={this.onLoginButtonClick}
+            >
+              {this.state.isLoggingIn ? 'Logging in...' : 'Log In'}
+            </Button>
           </ActionGroup>
         </Form>
       </LoginPage>
