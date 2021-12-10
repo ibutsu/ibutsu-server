@@ -91,6 +91,11 @@ objects:
               secretKeyRef:
                 key: name
                 name: ibutsu-superadmin
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                key: value
+                name: jwt-secret
           - name: FRONTEND_URL
             value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
