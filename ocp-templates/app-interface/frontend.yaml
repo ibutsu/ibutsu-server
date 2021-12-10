@@ -31,7 +31,7 @@ objects:
               value: https://${BACKEND_ROUTE}/api
             - name: NODE_ENV
               value: production
-          image: quay.io/ibutsu/frontend:${IMAGE_TAG}
+          image: quay.io/cloudservices/ibutsu-frontend:${IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
