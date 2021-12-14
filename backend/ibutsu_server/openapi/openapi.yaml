@@ -1647,6 +1647,37 @@ paths:
       tags:
         - user
       x-openapi-router-controller: ibutsu_server.controllers.user_controller
+  /users:
+    get:
+      operationId: get_user_list
+      parameters:
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserList'
+          description: Returns a list of users
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+      tags:
+        - user
+      summary: Return list of users
+      x-openapi-router-controller: ibutsu_server.controllers.user_controller
   /user/token:
     get:
       operationId: get_token_list
@@ -2770,6 +2801,24 @@ components:
         tokens:
           items:
             $ref: '#/components/schemas/Token'
+          type: array
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+      type: object
+    UserList:
+      example:
+        users:
+          - id: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
+            email: jdoe@example.com
+        pagination:
+          page: 2
+          pageSize: 25
+          totalPages: 10
+          totalItems: 243
+      properties:
+        users:
+          items:
+            $ref: '#/components/schemas/User'
           type: array
         pagination:
           $ref: '#/components/schemas/Pagination'
