@@ -198,13 +198,7 @@ class MockRun(MockModel):
 
 
 class MockUser(MockModel):
-    COLUMNS = [
-        "id",
-        "email",
-        "password",
-        "name",
-        "group_id",
-    ]
+    COLUMNS = ["id", "email", "password", "name", "group_id", "is_superadmin"]
 
     def check_password(self, plain):
         self._test_password = plain
