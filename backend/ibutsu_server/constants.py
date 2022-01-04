@@ -8,6 +8,7 @@ OAUTH_CONFIG = {
     "github": {
         "scope": ["user"],
         "user_url": "https://api.github.com/user",
+        "email_url": "https://api.github.com/user/emails",
         "auth_url": "https://github.com/login/oauth/authorize",
         "token_url": "https://github.com/login/oauth/access_token",
     },
