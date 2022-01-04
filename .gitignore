@@ -92,3 +92,6 @@ celerybeat*
 # SonarQube
 .scannerwork/
 sonar-project.properties
+
+scripts/populate-users-data.py
+users_data.json
