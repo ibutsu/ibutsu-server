@@ -105,9 +105,19 @@ def login(email=None, password=None):
     if not connexion.request.is_json:
         return "Bad request, JSON is required", 400
     login = connexion.request.get_json()
+
     if not login.get("email") or not login.get("password"):
         return {"code": "EMPTY", "message": "Username and/or password are empty"}, 401
     user = User.query.filter_by(email=login["email"]).first()
+
+    # superadmins can login even if local login is disabled
+    if user and not user.is_superadmin and not current_app.config.get("USER_LOGIN_ENABLED", True):
+        return {
+            "code": "INVALID",
+            "message": "Username/password auth is disabled. "
+            "Please login via one of the links below.",
+        }, 401
+
     if user and user.check_password(login["password"]):
         login_token = generate_token(user.id)
         token = Token.query.filter(Token.name == "login-token", Token.user_id == user.id).first()
@@ -118,13 +128,20 @@ def login(email=None, password=None):
         session.commit()
         return {"name": user.name, "email": user.email, "token": login_token}
     else:
-        return {"code": "INVALID", "message": "Username and/or password are invalid"}, 401
+        if not current_app.config.get("USER_LOGIN_ENABLED", True):
+            return {
+                "code": "INVALID",
+                "message": "Username/password auth is disabled. "
+                "Please login via one of the links below.",
+            }, 401
+        else:
+            return {"code": "INVALID", "message": "Username and/or password are invalid"}, 401
 
 
 def support():
     """Return the authentication types that the server supports"""
     return {
-        "user": True,
+        "user": current_app.config.get("USER_LOGIN_ENABLED", True),
         "keycloak": get_keycloak_config().get("client_id") is not None,
         "google": get_provider_config("google")["client_id"] is not None,
         "github": get_provider_config("github")["client_id"] is not None,

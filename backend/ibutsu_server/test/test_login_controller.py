@@ -11,7 +11,9 @@ from ibutsu_server.util.jwt import generate_token
 MOCK_ID = "6f7c2d52-54dc-4309-8e2e-c74515d39455"
 MOCK_EMAIL = "test@example.com"
 MOCK_PASSWORD = "my super secret password"
-MOCK_USER = MockUser(id=MOCK_ID, email=MOCK_EMAIL, password=MOCK_PASSWORD, name="Test User")
+MOCK_USER = MockUser(
+    id=MOCK_ID, email=MOCK_EMAIL, password=MOCK_PASSWORD, name="Test User", is_superadmin=False
+)
 
 
 class TestLoginController(BaseTestCase):

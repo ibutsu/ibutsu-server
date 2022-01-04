@@ -121,7 +121,8 @@ export class Login extends React.Component {
             this.setState({
               alert: {message: AuthService.loginError.message, status: 'danger'},
               isValidEmail: false,
-              isValidPassword: false
+              isValidPassword: false,
+              isLoggingIn: false
             });
           }
         })
@@ -129,7 +130,8 @@ export class Login extends React.Component {
           this.setState({
             alert: {message: error, status: 'danger'},
             isValidEmail: false,
-            isValidPassword: false
+            isValidPassword: false,
+            isLoggingIn: false
           });
         });
     }
@@ -162,7 +164,9 @@ export class Login extends React.Component {
 
   onKeycloakLogin = () => {
     const { server_url, realm, client_id } = this.state.externalLogins.keycloak;
-    KeycloakService.login(server_url, realm, client_id);
+    this.setState({isLoggingIn: true}, () => {
+      KeycloakService.login(server_url, realm, client_id);
+    });
   }
 
   onFacebookLogin = (response) => {
