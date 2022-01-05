@@ -35,6 +35,8 @@ def get_provider_config(provider, is_private=False):
             )
         elif provider_config.get("token_url"):
             config["token_url"] = build_url(server_url, provider_config["token_url"])
+        if provider_config.get("email_url"):
+            config["email_url"] = build_url(server_url, provider_config["email_url"])
     return config
 
 
@@ -53,8 +55,24 @@ def get_user_from_provider(provider, auth_data):
             user_dict = response.json()
         else:
             return None
-    if "email" not in user_dict:
-        return None
+    if not user_dict.get("email"):
+        if provider_config.get("email_url"):
+            # GitHub only returns the publically visible e-mail address with the user, so we need
+            # to make another request to get the e-mail address, see the this answer for more info:
+            # https://stackoverflow.com/a/35387123
+            response = requests.get(
+                provider_config["email_url"], headers={"Authorization": f"Bearer {access_token}"}
+            )
+            if response.status_code == 200:
+                emails = response.json()
+                primary_email = [email for email in emails if email["primary"]]
+                user_dict["email"] = (
+                    primary_email[0]["email"] if primary_email else emails[0]["email"]
+                )
+            else:
+                return None
+        else:
+            return None
     user = User.query.filter(User.email == user_dict["email"]).first()
     if not user:
         user = User(email=user_dict["email"], name=user_dict["name"], _password=user_dict["id"])
