@@ -34,6 +34,9 @@ export class RunSummary extends React.Component {
       passed -= summary.xpasses;
       xpassed = summary.xpasses;
     }
+    if (summary.passes) {
+      passed = summary.passes;
+    }
     return (
       <React.Fragment>
         {passed > 0 && <span className="pf-c-badge passed" title="Passed">{passed}</span>}

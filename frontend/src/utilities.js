@@ -29,7 +29,7 @@ import {
   NUMERIC_RESULT_FIELDS,
   NUMERIC_RUN_FIELDS,
 } from './constants';
-import { ClassificationDropdown, ResultView } from './components';
+import { ClassificationDropdown } from './components';
 
 export function getIconForResult(result) {
   let resultIcon = '';
@@ -201,8 +201,6 @@ export function resultToRow(result, filterFunc) {
 
 export function resultToClassificationRow(result, index, filterFunc) {
   let resultIcon = getIconForResult(result.result);
-  let hideSummary = true;
-  let hideTestObject = true;
   let markers = [];
   let exceptionBadge;
 
@@ -226,15 +224,11 @@ export function resultToClassificationRow(result, index, filterFunc) {
     }
   }
 
-  if (result.result === "skipped") {
-    hideSummary=false;
-    hideTestObject=false;
-  }
-
   return [
     // parent row
     {
       "isOpen": false,
+      "result": result,
       "cells": [
         {title: <React.Fragment><Link to={`/results/${result.id}`}>{result.test_id}</Link> {markers}</React.Fragment>},
         {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
@@ -243,10 +237,43 @@ export function resultToClassificationRow(result, index, filterFunc) {
         {title: round(result.duration) + 's'},
       ],
     },
-    // child row
+    // child row (this is set in the onCollapse function for lazy-loading)
     {
       "parent": 2*index,
-      "cells": [{title: <ResultView hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={result}/>}]
+      "cells": [{title: <div/>}]
+    }
+  ];
+}
+
+export function resultToTestHistoryRow(result, index, filterFunc) {
+  let resultIcon = getIconForResult(result.result);
+  let exceptionBadge;
+
+  if (filterFunc) {
+    exceptionBadge = buildBadge('exception_name', result.metadata.exception_name, false,
+      () => filterFunc('metadata.exception_name', result.metadata.exception_name));
+  }
+  else {
+    exceptionBadge = buildBadge('exception_name', result.metadata.exception_name, false);
+  }
+
+  return [
+    // parent row
+    {
+      "isOpen": false,
+      "result": result,
+      "cells": [
+        {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
+        {title: <span className={result.source}>{result.source}</span>},
+        {title: <React.Fragment>{exceptionBadge}</React.Fragment>},
+        {title: round(result.duration) + 's'},
+        {title: (new Date(result.start_time).toLocaleString())},
+      ],
+    },
+    // child row (this is set in the onCollapse function for lazy-loading)
+    {
+      "parent": 2*index,
+      "cells": [{title: <div/>}]
     }
   ];
 }

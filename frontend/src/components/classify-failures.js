@@ -30,6 +30,7 @@ import {
   FilterTable,
   MultiClassificationDropdown,
   MetaFilter,
+  ResultView
 } from './index';
 
 
@@ -71,10 +72,22 @@ export class ClassifyFailuresTable extends React.Component {
 
   onCollapse(event, rowIndex, isOpen) {
     const { rows } = this.state;
+
+    // lazy-load the result view so we don't have to make a bunch of artifact requests
+    if (isOpen) {
+      let result = rows[rowIndex].result;
+      let hideSummary=true;
+      let hideTestObject=true;
+      if (result.result === "skipped") {
+        hideSummary=false;
+        hideTestObject=false;
+      }
+      rows[rowIndex + 1].cells = [{
+        title: <ResultView hideTestHistory={false} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={rows[rowIndex].result}/>
+      }]
+    }
     rows[rowIndex].isOpen = isOpen;
-    this.setState({
-      rows
-    });
+    this.setState({rows});
   }
 
   onTableRowSelect = (event, isSelected, rowId) => {

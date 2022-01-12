@@ -17,7 +17,7 @@ import {
   Tabs,
   Tab
 } from '@patternfly/react-core';
-import { FileAltIcon, FileImageIcon, InfoCircleIcon, CodeIcon } from '@patternfly/react-icons';
+import { FileAltIcon, FileImageIcon, InfoCircleIcon, CodeIcon, SearchIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import Linkify from 'react-linkify';
 import ReactJson from 'react-json-view';
@@ -29,6 +29,7 @@ import { linkifyDecorator } from './decorators'
 import { Settings } from '../settings';
 import { getIconForResult, round } from '../utilities';
 import { TabTitle } from './tabs';
+import { TestHistoryTable } from './test-history';
 
 const MockTest = {
   id: null,
@@ -60,6 +61,7 @@ export class ResultView extends React.Component {
     resultId: PropTypes.string,
     hideSummary: PropTypes.bool,
     hideTestObject: PropTypes.bool,
+    hideTestHistory: PropTypes.bool,
     history: PropTypes.object,
     location: PropTypes.object
   }
@@ -71,7 +73,8 @@ export class ResultView extends React.Component {
       id: this.props.resultId || null,
       artifacts: [],
       activeTab: this.getTabIndex(this.getDefaultTab()),
-      artifactTabs: []
+      artifactTabs: [],
+      testHistoryTable: null,
     };
     if (this.props.history) {
       // Watch the history to update tabs
@@ -103,6 +106,12 @@ export class ResultView extends React.Component {
     }
   }
 
+  updateTab(tabIndex) {
+    if (tabIndex === 'test-history') {
+      this.getTestHistoryTable();
+    }
+  }
+
   onTabSelect = (event, tabIndex) => {
     if (this.props.history) {
       const loc = this.props.history.location;
@@ -113,7 +122,12 @@ export class ResultView extends React.Component {
       });
     }
     this.setState({activeTab: tabIndex});
+    this.updateTab(tabIndex);
   };
+
+  getTestHistoryTable = () => {
+    this.setState({testHistoryTable: <TestHistoryTable testResult={this.state.testResult}/>});
+  }
 
   getTestResult(resultId) {
     HttpClient.get([Settings.serverUrl, 'result', resultId])
@@ -200,7 +214,7 @@ export class ResultView extends React.Component {
   }
 
   render() {
-    let { testResult, artifactTabs, activeTab } = this.state;
+    let { testResult, artifactTabs, activeTab, testHistoryTable } = this.state;
     if (activeTab === null) {
       activeTab = this.getDefaultTab();
     }
@@ -487,6 +501,11 @@ export class ResultView extends React.Component {
           </Tab>
           }
           {artifactTabs}
+          {!this.props.hideTestHistory &&
+          <Tab eventKey="test-history" title={<TabTitle icon={SearchIcon} text="Test History"/>} style={{backgroundColor: "white"}}>
+          {testHistoryTable}
+          </Tab>
+          }
           {!this.props.hideTestObject &&
           <Tab eventKey="test-object" title={<TabTitle icon={CodeIcon} text="Test Object" />} style={{backgroundColor: "white"}}>
             <Card>
