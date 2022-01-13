@@ -101,7 +101,7 @@ def get_app(**extra_config):
         "openapi.yaml", arguments={"title": "Ibutsu"}, base_path="/api", pythonic_params=True
     )
 
-    CORS(app.app)
+    CORS(app.app, resources={r"/*": {"origins": "*", "send_wildcard": False}})
     db.init_app(app.app)
     bcrypt.init_app(app.app)
     Mail(app.app)
