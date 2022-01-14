@@ -74,6 +74,7 @@ export class Login extends React.Component {
       passwordValue: '',
       isValidPassword: true,
       isPasswordVisible: false,
+      loginSupport: {},
       externalLogins: {},
       isLoggingIn: false,
       from: getLocationFrom(props.location),
@@ -177,6 +178,7 @@ export class Login extends React.Component {
     HttpClient.get([Settings.serverUrl, 'login', 'support'])
       .then(response => response.json())
       .then(data => {
+        this.setState({loginSupport: data});
         for (const [key, value] of Object.entries(data)) {
           if (key !== 'user' && value) {
             HttpClient.get([Settings.serverUrl, 'login', 'config', key])
@@ -296,6 +298,8 @@ export class Login extends React.Component {
         <NavLink to="/forgot-password">Forgot username or password?</NavLink>
       </LoginMainFooterBandItem>
     );
+    const loginWithUserDescription = 'Please use your e-mail address and password, or login via one of the icons below the Log In button.';
+    const loginWithoutUserDescription = 'Log in via one of the icons below.';
 
     const backgroundImages = {
       lg: '/images/pfbg_1200.jpg',
@@ -314,11 +318,12 @@ export class Login extends React.Component {
         backgroundImgAlt="Background image"
         textContent="Ibutsu is an open source test result aggregation tool. Collect and display your test results, view artifacts, and monitor tests."
         loginTitle="Log in to your account"
-        loginSubtitle="Please use your e-mail address and password, or login via one of the links below."
+        loginSubtitle={this.state.loginSupport.user ? loginWithUserDescription : loginWithoutUserDescription}
         socialMediaLoginContent={socialMediaLoginContent}
-        signUpForAccountMessage={signUpForAccountMessage}
-        forgotCredentials={forgotCredentials}
+        signUpForAccountMessage={this.state.loginSupport.user ? signUpForAccountMessage : ''}
+        forgotCredentials={this.state.loginSupport.user ? forgotCredentials : ''}
       >
+        {this.state.loginSupport.user &&
         <Form>
           <FormAlert>
           {this.state.alert && this.state.alert.message &&
@@ -397,6 +402,7 @@ export class Login extends React.Component {
             </Button>
           </ActionGroup>
         </Form>
+        }
       </LoginPage>
     );
   }
