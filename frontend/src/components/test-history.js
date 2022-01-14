@@ -14,7 +14,6 @@ import {
   FlexItem,
   TextContent,
   Text,
-  Tooltip
 } from '@patternfly/react-core';
 import {
   TableVariant,
@@ -233,13 +232,30 @@ export class TestHistoryTable extends React.Component {
       columns,
       rows,
       onlyFailures,
-      historySummary
+      historySummary,
+      dropdownSelection
     } = this.state;
     const pagination = {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
     }
+    const dropdownValues = Object.assign({
+      "1 Week": 0.25,
+      "2 Weeks": 0.5,
+      "1 Month": 1.0,
+      "2 Months": 2.0,
+      "3 Months": 3.0,
+      "5 Months": 5.0
+    })
+    let dropdownItems = [];
+    Object.keys(dropdownValues).forEach(key => {
+      dropdownItems.push(
+        <DropdownItem key={key} value={dropdownValues[key]} autoFocus={key === dropdownSelection}>
+          {key}
+        </DropdownItem>
+      )
+    });
 
     return (
       <Card className="pf-u-mt-lg">
@@ -247,11 +263,18 @@ export class TestHistoryTable extends React.Component {
           <Flex style={{ width: '100%' }}>
             <FlexItem grow={{ default: 'grow' }}>
               <TextContent>
-                <Text component="h3" className="pf-c-title pf-m-xl">
+                <Text component="h2" className="pf-c-title pf-m-xl">
                   Test History
-                  {historySummary &&
-                  <RunSummary summary={historySummary}/>
-                  }
+                </Text>
+              </TextContent>
+            </FlexItem>
+            <FlexItem>
+              <TextContent>
+                <Text component="h3">
+                Summary:&nbsp;
+                {historySummary &&
+                <RunSummary summary={historySummary}/>
+                }
                 </Text>
               </TextContent>
             </FlexItem>
@@ -262,21 +285,10 @@ export class TestHistoryTable extends React.Component {
             </FlexItem>
             <FlexItem>
               <Dropdown
-                toggle={
-                <Tooltip content={<div>Amount of time to gather results</div>}>
-                  <DropdownToggle isDisabled={false} onToggle={this.onDropdownToggle}>{this.state.dropdownSelection}</DropdownToggle>
-                </Tooltip>
-                }
+                toggle={<DropdownToggle isDisabled={false} onToggle={this.onDropdownToggle}>Time range</DropdownToggle>}
                 onSelect={this.onDropdownSelect}
                 isOpen={this.state.isDropdownOpen}
-                dropdownItems={[
-                  <DropdownItem key='1 Weeks' value={0.25}>{'1 Week'}</DropdownItem>,
-                  <DropdownItem key='2 Weeks' value={0.5}>{'2 Weeks'}</DropdownItem>,
-                  <DropdownItem key='1 Month' value={1.0}>{'1 Month'}</DropdownItem>,
-                  <DropdownItem key='2 Months' value={2.0}>{'2 Months'}</DropdownItem>,
-                  <DropdownItem key='3 Months' value={3.0}>{'3 Months'}</DropdownItem>,
-                  <DropdownItem key='5 Months' value={5.0}>{'5 Months'}</DropdownItem>,
-                ]}
+                dropdownItems={dropdownItems}
               />
             </FlexItem>
             <FlexItem>
