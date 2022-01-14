@@ -7,6 +7,9 @@ import {
   CardHeader,
   CardBody,
   Checkbox,
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
   Flex,
   FlexItem,
   TextContent,
@@ -23,30 +26,27 @@ import {
   buildParams,
   toAPIFilter,
   getSpinnerRow,
-  resultToClassificationRow,
+  resultToTestHistoryRow,
 } from '../utilities';
-import { FILTERABLE_RESULT_FIELDS } from '../constants';
 import {
   FilterTable,
-  MultiClassificationDropdown,
-  MetaFilter,
-  ResultView
+  ResultView,
+  RunSummary
 } from './index';
 
 
-export class ClassifyFailuresTable extends React.Component {
+export class TestHistoryTable extends React.Component {
   static propTypes = {
     filters: PropTypes.object,
-    run_id: PropTypes.string
+    testResult: PropTypes.object,
   }
 
   constructor(props) {
     super(props);
     this.state = {
-      columns: [{title: 'Test', cellFormatters: [expandable]}, 'Result', 'Exception Name', 'Classification', 'Duration'],
+      columns: [{title: 'Result', cellFormatters: [expandable]}, 'Source', 'Exception Name', 'Duration', 'Start Time'],
       rows: [getSpinnerRow(5)],
       results: [],
-      selectedResults: [],
       cursor: null,
       pageSize: 10,
       page: 1,
@@ -56,17 +56,23 @@ export class ClassifyFailuresTable extends React.Component {
       isError: false,
       isFieldOpen: false,
       isOperationOpen: false,
-      includeSkipped: false,
+      isDropdownOpen: false,
+      onlyFailures: false,
+      historySummary: null,
+      dropdownSelection: '1 Week',
       filters: Object.assign({
-        'result': {op: 'in', val: 'failed;error'},
-        'run_id': {op: 'eq', val: props.run_id}}, props.filters),
+        'result': {op: 'in', val: "passed;skipped;failed;error;xpassed;xfailed"},
+        'test_id': {op: 'eq', val: props.testResult.test_id},
+        'env': {op: 'eq', val: props.testResult.env},
+        // default to filter only from 1 weeks ago to the most test's start_time.
+        'start_time': {op: 'gt', val: new Date(new Date(props.testResult.start_time).getTime() - (0.25 * 30 * 86400 * 1000)).toISOString()}
+        }, props.filters),
     };
     this.refreshResults = this.refreshResults.bind(this);
     this.onCollapse = this.onCollapse.bind(this);
   }
 
   refreshResults = () => {
-    this.setState({selectedResults: []});
     this.getResultsForTable();
   }
 
@@ -78,34 +84,16 @@ export class ClassifyFailuresTable extends React.Component {
       let result = rows[rowIndex].result;
       let hideSummary=true;
       let hideTestObject=true;
-      if (result.result === "skipped") {
+      if (["passed", "skipped"].includes(result.result)) {
         hideSummary=false;
         hideTestObject=false;
       }
       rows[rowIndex + 1].cells = [{
-        title: <ResultView hideTestHistory={false} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={rows[rowIndex].result}/>
+        title: <ResultView hideTestHistory={true} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={rows[rowIndex].result}/>
       }]
     }
     rows[rowIndex].isOpen = isOpen;
     this.setState({rows});
-  }
-
-  onTableRowSelect = (event, isSelected, rowId) => {
-    let rows;
-    if (rowId === -1) {
-      rows = this.state.rows.map(oneRow => {
-        oneRow.selected = isSelected;
-        return oneRow;
-      });
-    }
-    else {
-      rows = [...this.state.rows];
-      rows[rowId].selected = isSelected;
-    }
-    this.setState({
-      rows,
-    });
-    this.getSelectedResults();
   }
 
   setPage = (_event, pageNumber) => {
@@ -138,34 +126,79 @@ export class ClassifyFailuresTable extends React.Component {
   }
 
   removeFilter = id => {
-    if ((id !== "result") && (id !== "run_id")) {   // Don't allow removal of error/failure filter
+    if ((id !== "result") && (id !== "test_id")) {   // Don't allow removal of error/failure filter
       this.updateFilters(id, null, null, this.refreshResults)
     }
   }
 
-  onSkipCheck = (checked) => {
+  onFailuresCheck = (checked) => {
     let { filters } = this.state;
-    filters["result"]["val"] = ("failed;error") + ((checked) ? ";skipped;xfailed" : "")
+    filters["result"]["val"] = ("failed;error") + ((checked) ? ";skipped;xfailed" : ";skipped;xfailed;xpassed;passed")
     this.setState(
-      {includeSkipped: checked, filters},
+      {onlyFailures: checked, filters},
       this.refreshResults
     );
   }
 
-  getSelectedResults = () => {
-    const { results, rows } = this.state;
-    let selectedResults = [];
-    for (const [index, row] of rows.entries()) {
-      if (row.selected && row.parent == null) {  // rows with a parent attr are the child rows
-        selectedResults.push(results[index / 2]);  // divide by 2 to convert row index to result index
-      }
-    }
-    this.setState({selectedResults});
+  onDropdownToggle = isOpen => {
+    this.setState({isDropdownOpen: isOpen});
+  }
+
+  onDropdownSelect = event => {
+    let { filters } = this.state;
+    let { testResult } = this.props;
+    let startTime = new Date(testResult.start_time);
+    let months = event.target.getAttribute('value');
+    let selection = event.target.text
+    // here a month is considered to be 30 days, and there are 86400*1000 ms in a day
+    let timeRange = new Date(startTime.getTime() - (months * 30 * 86400 * 1000));
+    // set the filters
+    filters["start_time"] = {op: "gt", val: timeRange.toISOString()}
+    this.setState({filters, isDropdownOpen: false, dropdownSelection: selection}, this.refreshResults);
+  }
+
+  getHistorySummary() {
+    // get the passed/failed/etc test summary
+    let filters = {... this.state.filters};
+    // disregard result filter (we want all results)
+    delete filters["result"];
+    let api_filter = toAPIFilter(filters).join()
+    let dataToSummary = Object.assign({
+      'passed': 'passes',
+      'failed': 'failures',
+      'error': 'errors',
+      'skipped': 'skips',
+      'xfailed': 'xfailures',
+      'xpassed': 'xpasses'
+    })
+    let summary = Object.assign({
+      "passes": 0,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "xfailures": 0,
+      "xpasses": 0
+    });
+
+    HttpClient.get(
+      [Settings.serverUrl, 'widget', 'result-aggregator'],
+        {
+          group_field: 'result',
+          additional_filters: api_filter,
+        }
+      )
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => {
+        data.forEach(item => {
+          summary[dataToSummary[item['_id']]] = item['count']
+        })
+        this.setState({historySummary: summary})
+      })
   }
 
   getResultsForTable() {
     const filters = this.state.filters;
-    this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
+    this.setState({rows: [getSpinnerRow(4)], isEmpty: false, isError: false});
     // get only failed results
     let params = buildParams(filters);
     params['filter'] = toAPIFilter(filters);
@@ -177,13 +210,13 @@ export class ClassifyFailuresTable extends React.Component {
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
           results: data.results,
-          rows: data.results.map((result, index) => resultToClassificationRow(result, index, this.setFilter)).flat(),
+          rows: data.results.map((result, index) => resultToTestHistoryRow(result, index, this.setFilter)).flat(),
           page: data.pagination.page,
           pageSize: data.pagination.pageSize,
           totalItems: data.pagination.totalItems,
           totalPages: data.pagination.totalPages,
           isEmpty: data.pagination.totalItems === 0,
-      }))
+      }, this.getHistorySummary))
       .catch((error) => {
         console.error('Error fetching result data:', error);
         this.setState({rows: [], isEmpty: false, isError: true});
@@ -198,43 +231,65 @@ export class ClassifyFailuresTable extends React.Component {
     const {
       columns,
       rows,
-      selectedResults,
-      includeSkipped,
-      filters
+      onlyFailures,
+      historySummary,
+      dropdownSelection
     } = this.state;
-    const { run_id } = this.props
     const pagination = {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
     }
-    // filters for the metadata
-    const resultFilters = [
-      <MetaFilter
-        key="metafilter"
-        // user_properties fields shouldn't be injected here
-        fieldOptions={FILTERABLE_RESULT_FIELDS}
-        runId={run_id}
-        setFilter={this.setFilter}
-        customFilters={{'result': filters['result']}}
-      />,
-    ]
+    const dropdownValues = Object.assign({
+      "1 Week": 0.25,
+      "2 Weeks": 0.5,
+      "1 Month": 1.0,
+      "2 Months": 2.0,
+      "3 Months": 3.0,
+      "5 Months": 5.0
+    })
+    let dropdownItems = [];
+    Object.keys(dropdownValues).forEach(key => {
+      dropdownItems.push(
+        <DropdownItem key={key} value={dropdownValues[key]} autoFocus={key === dropdownSelection}>
+          {key}
+        </DropdownItem>
+      )
+    });
+
     return (
       <Card className="pf-u-mt-lg">
         <CardHeader>
           <Flex style={{ width: '100%' }}>
             <FlexItem grow={{ default: 'grow' }}>
               <TextContent>
-                <Text component="h2" className="pf-c-title pf-m-xl">Test Failures</Text>
+                <Text component="h2" className="pf-c-title pf-m-xl">
+                  Test History
+                </Text>
               </TextContent>
             </FlexItem>
             <FlexItem>
               <TextContent>
-                <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={this.onSkipCheck}/>
+                <Text component="h3">
+                Summary:&nbsp;
+                {historySummary &&
+                <RunSummary summary={historySummary}/>
+                }
+                </Text>
               </TextContent>
             </FlexItem>
             <FlexItem>
-              <MultiClassificationDropdown selectedResults={selectedResults} refreshFunc={this.refreshResults}/>
+              <TextContent>
+                <Checkbox id="only-failures" label="Only show failures/errors" isChecked={onlyFailures} aria-label="only-failures-checkbox" onChange={this.onFailuresCheck}/>
+              </TextContent>
+            </FlexItem>
+            <FlexItem>
+              <Dropdown
+                toggle={<DropdownToggle isDisabled={false} onToggle={this.onDropdownToggle}>Time range</DropdownToggle>}
+                onSelect={this.onDropdownSelect}
+                isOpen={this.state.isDropdownOpen}
+                dropdownItems={dropdownItems}
+              />
             </FlexItem>
             <FlexItem>
               <Button variant="secondary" onClick={this.refreshResults}>Refresh results</Button>
@@ -251,13 +306,11 @@ export class ClassifyFailuresTable extends React.Component {
             onCollapse={this.onCollapse}
             onSetPage={this.setPage}
             onSetPageSize={this.pageSizeSelect}
-            canSelectAll={true}
-            onRowSelect={this.onTableRowSelect}
+            canSelectAll={false}
             variant={TableVariant.compact}
             activeFilters={this.state.filters}
-            filters={resultFilters}
             onRemoveFilter={this.removeFilter}
-            hideFilters={["run_id", "project_id"]}
+            hideFilters={["project_id", "result", "test_id"]}
           />
         </CardBody>
       </Card>

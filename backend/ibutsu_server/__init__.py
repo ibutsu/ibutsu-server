@@ -63,7 +63,7 @@ def get_app(**extra_config):
     config.from_mapping(os.environ)
     # convert str to bool for USER_LOGIN_ENABLED
     if isinstance(config.get("USER_LOGIN_ENABLED", True), str):
-        config["USER_LOGIN_ENABLED"] = config["USER_LOGIN_ENABLED"][0] in ["y", "t", "1"]
+        config["USER_LOGIN_ENABLED"] = config["USER_LOGIN_ENABLED"].lower()[0] in ["y", "t", "1"]
     if config.get("POSTGRESQL_HOST") and config.get("POSTGRESQL_DATABASE"):
         # If you have environment variables, like when running on OpenShift, create the db url
         config.update(
