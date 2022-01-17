@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-
 import {
+  Badge,
   Button,
   Card,
   CardHeader,
@@ -19,6 +19,7 @@ import {
   TableVariant,
   expandable
 } from '@patternfly/react-table';
+import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
@@ -60,6 +61,7 @@ export class TestHistoryTable extends React.Component {
       onlyFailures: false,
       historySummary: null,
       dropdownSelection: '1 Week',
+      lastPassedDate: 'n/a',
       filters: Object.assign({
         'result': {op: 'in', val: "passed;skipped;failed;error;xpassed;xfailed"},
         'test_id': {op: 'eq', val: props.testResult.test_id},
@@ -73,7 +75,7 @@ export class TestHistoryTable extends React.Component {
   }
 
   refreshResults = () => {
-    this.getResultsForTable();
+    this.getHistorySummary();
   }
 
   onCollapse(event, rowIndex, isOpen) {
@@ -84,7 +86,7 @@ export class TestHistoryTable extends React.Component {
       let result = rows[rowIndex].result;
       let hideSummary=true;
       let hideTestObject=true;
-      if (["passed", "skipped"].includes(result.result)) {
+      if (["passed", "skipped", "xfailed"].includes(result.result)) {
         hideSummary=false;
         hideTestObject=false;
       }
@@ -192,14 +194,43 @@ export class TestHistoryTable extends React.Component {
         data.forEach(item => {
           summary[dataToSummary[item['_id']]] = item['count']
         })
-        this.setState({historySummary: summary})
+        this.setState({historySummary: summary}, this.getResultsForTable)
       })
+  }
+
+  getLastPassed(){
+    // get the passed/failed/etc test summary
+    let filters = {... this.state.filters};
+    // disregard result filter so we can filter on last passed
+    delete filters["result"];
+    delete filters["start_time"];
+    filters["result"] = {"op": "eq", "val": "passed"}
+    let params = buildParams(filters);
+    params['filter'] = toAPIFilter(filters);
+    params['pageSize'] = 1;
+    params['page'] = 1;
+
+    HttpClient.get([Settings.serverUrl, 'result'], params)
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => this.setState({
+          lastPassedDate:
+            <React.Fragment>
+              <Link target="_blank" rel="noopener noreferrer" to={`/results/${data.results[0].id}`}>
+                <Badge isRead>
+                  {new Date(data.results[0].start_time).toLocaleString()}
+                </Badge>
+              </Link>
+            </React.Fragment>
+      }))
+      .catch((error) => {
+        console.error('Error fetching result data:', error);
+        this.setState({lastPassedDate: <Badge isRead>{'n/a'}</Badge>});
+      });
   }
 
   getResultsForTable() {
     const filters = this.state.filters;
     this.setState({rows: [getSpinnerRow(4)], isEmpty: false, isError: false});
-    // get only failed results
     let params = buildParams(filters);
     params['filter'] = toAPIFilter(filters);
     params['pageSize'] = this.state.pageSize;
@@ -216,7 +247,7 @@ export class TestHistoryTable extends React.Component {
           totalItems: data.pagination.totalItems,
           totalPages: data.pagination.totalPages,
           isEmpty: data.pagination.totalItems === 0,
-      }, this.getHistorySummary))
+      }))
       .catch((error) => {
         console.error('Error fetching result data:', error);
         this.setState({rows: [], isEmpty: false, isError: true});
@@ -224,7 +255,8 @@ export class TestHistoryTable extends React.Component {
   }
 
   componentDidMount() {
-    this.getResultsForTable();
+    this.getHistorySummary();
+    this.getLastPassed();
   }
 
   render() {
@@ -270,16 +302,6 @@ export class TestHistoryTable extends React.Component {
             </FlexItem>
             <FlexItem>
               <TextContent>
-                <Text component="h3">
-                Summary:&nbsp;
-                {historySummary &&
-                <RunSummary summary={historySummary}/>
-                }
-                </Text>
-              </TextContent>
-            </FlexItem>
-            <FlexItem>
-              <TextContent>
                 <Checkbox id="only-failures" label="Only show failures/errors" isChecked={onlyFailures} aria-label="only-failures-checkbox" onChange={this.onFailuresCheck}/>
               </TextContent>
             </FlexItem>
@@ -309,6 +331,15 @@ export class TestHistoryTable extends React.Component {
             canSelectAll={false}
             variant={TableVariant.compact}
             activeFilters={this.state.filters}
+            filters={[
+              <Text key="summary" component="h4">
+                Summary:&nbsp;
+                {historySummary &&
+                <RunSummary summary={historySummary}/>
+                }
+              </Text>,
+              <Text key="last-passed" component="h4">Last passed:&nbsp;{this.state.lastPassedDate}</Text>,
+            ]}
             onRemoveFilter={this.removeFilter}
             hideFilters={["project_id", "result", "test_id"]}
           />

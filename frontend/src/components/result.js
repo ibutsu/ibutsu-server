@@ -59,6 +59,7 @@ export class ResultView extends React.Component {
   static propTypes = {
     testResult: PropTypes.object,
     resultId: PropTypes.string,
+    defaultTab: PropTypes.string,
     hideSummary: PropTypes.bool,
     hideTestObject: PropTypes.bool,
     hideTestHistory: PropTypes.bool,
@@ -85,7 +86,10 @@ export class ResultView extends React.Component {
   }
 
   getDefaultTab() {
-    if (!this.props.hideSummary) {
+    if (this.props.defaultTab) {
+      return this.props.defaultTab;
+    }
+    else if (!this.props.hideSummary) {
       return 'summary';
     }
     else if (!!this.state && this.state.artifactTabs.length > 0) {
@@ -205,6 +209,9 @@ export class ResultView extends React.Component {
 
   componentDidMount() {
     this.getResult();
+    if (this.state.activeTab === "test-history") {
+      this.getTestHistoryTable();
+    }
   }
 
   componentWillUnmount() {

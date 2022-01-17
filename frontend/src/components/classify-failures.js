@@ -78,12 +78,14 @@ export class ClassifyFailuresTable extends React.Component {
       let result = rows[rowIndex].result;
       let hideSummary=true;
       let hideTestObject=true;
+      let defaultTab="test-history";
       if (result.result === "skipped") {
         hideSummary=false;
         hideTestObject=false;
+        defaultTab="summary";
       }
       rows[rowIndex + 1].cells = [{
-        title: <ResultView hideTestHistory={false} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={rows[rowIndex].result}/>
+        title: <ResultView defaultTab={defaultTab} hideTestHistory={false} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={rows[rowIndex].result}/>
       }]
     }
     rows[rowIndex].isOpen = isOpen;
