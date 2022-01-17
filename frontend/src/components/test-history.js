@@ -209,6 +209,7 @@ export class TestHistoryTable extends React.Component {
     params['filter'] = toAPIFilter(filters);
     params['pageSize'] = 1;
     params['page'] = 1;
+    params['estimate'] = 'true';
 
     HttpClient.get([Settings.serverUrl, 'result'], params)
       .then(response => HttpClient.handleResponse(response))
@@ -235,6 +236,7 @@ export class TestHistoryTable extends React.Component {
     params['filter'] = toAPIFilter(filters);
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
+    params['estimate'] = 'true';
 
     this.setState({rows: [['Loading...', '', '', '', '']]});
     HttpClient.get([Settings.serverUrl, 'result'], params)
