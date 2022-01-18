@@ -7,7 +7,7 @@ VERSION = "2.0.0"
 REQUIRES = [
     "alembic",
     # Pin Celery to be compatible with Kombu
-    "celery==4.3.0",
+    "celery==5.2.2",
     "connexion",
     "flask_bcrypt",
     "flask_cors",
