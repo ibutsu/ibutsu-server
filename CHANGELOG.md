@@ -1,3 +1,49 @@
+Version 2.0.0
+=============
+
+* Estimate count on test-history page
+* Small improvements to the test history tab
+* Hide username/password related components when user login is disabled (#279)
+* Add test history tab to Result page (#276)
+* Address some issues raised by static analysis (#278)
+* Convert USER_LOGIN_ENABLED to bool if given as env var
+* Get a user's primary e-mail on GitHub if they have no public e-mail address (#272)
+* Add a way to disabled basic auth for non-superadmins
+* Add get_user_list endpoint
+* Fix keycloak login (#270)
+* Update docker image names (#267)
+* Show login progress feedback (#266)
+* Add build_deploy script for App-SRE builds (#265)
+* A single jUnit XML file is a single test run, refactor the importer to take this into account
+* Some code refactoring after static analysis. (#245)
+* Implement MetaFilter with separate field and value (#225)
+* Adjustments for app-sre deployment (#256)
+* Fix small FE bug on user profile page
+* Add superadmin user after upgrading db
+* Add a task for adding users/project owners
+* Add superadmin to the ocp template files
+* Add ability to create superadmin user on startup
+* Allow logging in by hitting 'Enter'
+* Require superadmin token for running admin task
+* Update pods script to create an admin user, a project, standardise on echo, and make the output prettier. (#247)
+* Some small fixes to ENV vars
+* Split templates into one file for each
+* Update @greatsumini/react-facebook-login
+* Fix Jenkins Job View
+* Allow superadmins to update projects
+* Support adding users to projects
+* Add project info to the profile page
+* Filter runs/results on user projects, if none specified
+* Bump url-parse from 1.5.1 to 1.5.3 in /frontend (#234)
+* Bump tmpl from 1.0.4 to 1.0.5 in /frontend (#233)
+* Bump tar from 6.1.0 to 6.1.11 in /frontend (#232)
+* Add authentication and authorisation to Ibutsu
+* Promote user property data to metadata
+* Add babel core dependency
+* Switch from 'babel-eslint' to '@babel/eslint-parser'
+* Update and re-apply pre-commit (#216)
+* Support adding artifacts to test runs (#215)
+
 Version 1.13.4
 ==============
 
