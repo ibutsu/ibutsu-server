@@ -81,6 +81,8 @@ def _get_user_from_provider(provider, provider_config, code):
                 user = get_user_from_keycloak(response.json())
             else:
                 user = get_user_from_provider(provider, response.json())
+        else:
+            print("Error getting token:", response.text)
     return user
 
 
