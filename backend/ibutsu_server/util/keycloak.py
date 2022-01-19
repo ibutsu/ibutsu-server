@@ -12,6 +12,8 @@ def get_keycloak_config(is_private=False):
     ):
         return {}
     backend_url = current_app.config.get("BACKEND_URL", "http://localhost:8080/api")
+    if not backend_url.endswith("/api"):
+        backend_url += "/api"
     server_url = current_app.config.get("KEYCLOAK_BASE_URL")
     if not server_url.endswith("auth"):
         server_url = build_url(server_url, "auth")
@@ -50,4 +52,6 @@ def get_user_from_keycloak(auth_data):
             session.add(user)
             session.commit()
         return user
+    else:
+        print("Error getting user, response:", response.text)
     return None
