@@ -65,7 +65,8 @@ podman run -dit \
        -w /mnt \
        -v./frontend:/mnt/:Z \
        node:latest \
-       /bin/bash -c 'yarn install &&
+       /bin/bash -c 'export NODE_OPTIONS=--openssl-legacy-provider &&
+       		     yarn install &&
                      yarn run devserver' > /dev/null
 echo "done."
 echo -n "Waiting for frontend to respond..."
@@ -87,6 +88,6 @@ echo ""
 echo "Ibutsu has been deployed into the pod: ${POD_NAME}."
 echo "  Frontend URL: http://localhost:3000"
 echo "  Backend URL: http://localhost:8080"
-echo "  Admin user: admin@example / admin12345"
+echo "  Admin user: admin@example.com / admin12345"
 echo "  Project ID: ${PROJECT_ID}"
 echo "Stop the pod by running: 'podman pod rm -f ${POD_NAME}'"
