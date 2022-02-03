@@ -13,6 +13,7 @@ OPERATORS = {
     "(": "$lte",
     "~": "$regex",
     "*": "$in",
+    "%": "$ilike",
     "@": "$exists",
 }
 OPER_COMPARE = {
@@ -24,6 +25,7 @@ OPER_COMPARE = {
     "(": lambda column, value: column <= value,
     "*": lambda column, value: column.in_(value),
     "~": lambda column, value: column.op("~")(value),
+    "%": lambda column, value: column.ilike("%" + value + "%"),
 }
 FILTER_RE = re.compile(r"([a-zA-Z\._]+)([" + "".join(OPERATORS.keys()) + "])(.*)")
 FLOAT_RE = re.compile(r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?")

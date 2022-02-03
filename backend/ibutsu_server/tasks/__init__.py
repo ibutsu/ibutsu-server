@@ -104,7 +104,7 @@ def create_celery_app(_app=None):
         einfo = kwargs.get("einfo")
         logging.warning("Uncaught exception: %r for task %s", einfo, task)
         # Incremental backoff, starts at a minute and maxes out at 1 hour.
-        backoff = min(2 ** task.request.retries, 3600)
+        backoff = min(2**task.request.retries, 3600)
         task.retry(countdown=backoff)
 
     return app

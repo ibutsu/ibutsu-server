@@ -127,11 +127,28 @@ export class AuthService {
         else {
           return false;
         }
-      })
-      .catch(() => false);
+      });
   }
 
   static logout() {
     localStorage.removeItem('user');
+  }
+
+  static isSuperAdmin() {
+    // Cannot use the HttpClient service here, otherwise we have circular imports
+    const user = AuthService.getUser();
+    if (!user) {
+      return false;
+    }
+    return fetch(Settings.serverUrl + '/user', {
+      headers: {
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer ' + user.token
+      }
+    })
+      .then(response => response.json())
+      .then(json => {
+        return json.is_superadmin;
+      });
   }
 }

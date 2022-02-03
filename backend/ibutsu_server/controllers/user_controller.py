@@ -4,7 +4,6 @@ import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token
 from ibutsu_server.db.models import User
-from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.jwt import generate_token
 from ibutsu_server.util.uuid import validate_uuid
 
@@ -28,39 +27,6 @@ def get_user(token_info=None, user=None):
         return "Not authorized", 401
 
     return _hide_sensitive_fields(user.to_dict())
-
-
-def get_user_list(filter_=None, page=1, page_size=25, token_info=None, user=None):
-    """
-    Return a list of users (only superadmins can run this function)
-    """
-    user = User.query.get(user)
-    query = User.query
-    if not user:
-        return "Not authorized", 401
-    if not user.is_superadmin:
-        return "Forbidden", 403
-
-    if filter_:
-        for filter_string in filter_:
-            filter_clause = convert_filter(filter_string, User)
-            if filter_clause is not None:
-                query = query.filter(filter_clause)
-
-    total_items = query.count()
-
-    offset = (page * page_size) - page_size
-    total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    users = query.order_by(User.email.asc()).offset(offset).limit(page_size).all()
-    return {
-        "users": [_hide_sensitive_fields(user.to_dict()) for user in users],
-        "pagination": {
-            "page": page,
-            "pageSize": page_size,
-            "totalItems": total_items,
-            "totalPages": total_pages,
-        },
-    }
 
 
 def get_token_list(page=1, page_size=25, token_info=None, user=None):

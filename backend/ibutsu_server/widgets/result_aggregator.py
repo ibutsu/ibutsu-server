@@ -14,7 +14,7 @@ def _get_min_count(days):
     if days <= 1:
         return 2e2 * days
     else:
-        return days ** 5
+        return days**5
 
 
 def _get_recent_result_data(group_field, days, project=None, run_id=None, additional_filters=None):

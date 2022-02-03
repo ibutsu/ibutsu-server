@@ -59,7 +59,7 @@ export class UserProfile extends React.Component {
             <DataListCell key={project.name} className="pf-u-p-sm">
               <span> {project.title} </span>
               {project.owner_id === user.id &&
-                <Label className="project-owner-label" variant="outline" color="green"> Owner </Label>
+                <Label className="project-owner-label" variant="filled" color="green" isCompact>Owner</Label>
               }
             </DataListCell>
       )))
@@ -71,7 +71,7 @@ export class UserProfile extends React.Component {
             <React.Fragment>
               <span> Profile </span>
               {user && user.is_superadmin &&
-                <Label className="super-admin-label" variant="outline" color="blue"> Super Administrator</Label>
+                <Label className="super-admin-label" variant="filled" color="blue">Administrator</Label>
               }
             </React.Fragment>
           </Title>

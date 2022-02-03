@@ -88,7 +88,7 @@ export class HttpClient {
         options['headers'] = new Headers({'Content-Type': 'application/json'});
       }
     }
-    options['method'] = 'POST';
+    options['method'] = 'PUT';
     return fetch(url, options);
   }
 

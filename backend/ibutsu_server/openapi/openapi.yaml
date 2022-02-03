@@ -1647,37 +1647,6 @@ paths:
       tags:
         - user
       x-openapi-router-controller: ibutsu_server.controllers.user_controller
-  /users:
-    get:
-      operationId: get_user_list
-      parameters:
-        - description: Fields to filter by
-          explode: true
-          in: query
-          name: filter
-          required: false
-          schema:
-            items:
-              type: string
-            type: array
-          style: form
-        - $ref: '#/components/parameters/Page'
-        - $ref: '#/components/parameters/PageSize'
-      responses:
-        200:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserList'
-          description: Returns a list of users
-        401:
-          description: The user needs to be logged in
-        403:
-          description: The user needs to be a superadmin
-      tags:
-        - user
-      summary: Return list of users
-      x-openapi-router-controller: ibutsu_server.controllers.user_controller
   /user/token:
     get:
       operationId: get_token_list
@@ -1759,6 +1728,292 @@ paths:
       tags:
         - user
       x-openapi-router-controller: ibutsu_server.controllers.user_controller
+  /admin/user:
+    get:
+      operationId: get_user_list
+      parameters:
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserList'
+          description: Returns a list of users
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+      tags:
+        - admin/user management
+      summary: Administration endpoint to return a list of users. Only accessible to superadmins.
+      x-openapi-router-controller: ibutsu_server.controllers.admin.user_controller
+    post:
+      operationId: add_user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        description: A user
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: A user was created
+        400:
+          description: Bad request, JSON required
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+      tags:
+        - admin/user management
+      summary: Administration endpoint to manually add a user. Only accessible to superadmins.
+      x-openapi-router-controller: ibutsu_server.controllers.admin.user_controller
+  /admin/user/{id}:
+    get:
+      operationId: get_user
+      parameters:
+        - description: The id of a user
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: Returns a user
+        401:
+          description: The querying user needs to be logged in
+        403:
+          description: The querying user needs to be a superadmin
+        404:
+          description: The requested user does not exist
+      tags:
+        - admin/user management
+      summary: Administration endpoint to return a user. Only accessible to superadmins.
+      x-openapi-router-controller: ibutsu_server.controllers.admin.user_controller
+    put:
+      operationId: update_user
+      parameters:
+        - description: The ID of the user to update
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/User'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: successful operation
+        400:
+          description: Bad reqest, JSON required or not enough parameters
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+        404:
+          description: User not found
+      summary: Administration endpoint to update a user. Only accessible to superadmins.
+      tags:
+        - admin/user management
+      x-openapi-router-controller: ibutsu_server.controllers.admin.user_controller
+    delete:
+      operationId: delete_user
+      parameters:
+        - description: The ID of the user to delete
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+      responses:
+        200:
+          description: The specified user was deleted
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+        404:
+          description: User not found
+      summary: Administration endpoint to delete a user. Only accessible to superadmins.
+      tags:
+        - admin/user management
+      x-openapi-router-controller: ibutsu_server.controllers.admin.user_controller
+  /admin/project:
+    get:
+      operationId: get_project_list
+      parameters:
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectList'
+          description: Returns a list of projects
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+      tags:
+        - admin/project management
+      summary: Administration endpoint to return a list of projects. Only accessible to superadmins.
+      x-openapi-router-controller: ibutsu_server.controllers.admin.project_controller
+    post:
+      operationId: add_project
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+        description: A project
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: A project was created
+        400:
+          description: Bad request, JSON required
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+      tags:
+        - admin/project management
+      summary: Administration endpoint to manually add a project. Only accessible to superadmins.
+      x-openapi-router-controller: ibutsu_server.controllers.admin.project_controller
+  /admin/project/{id}:
+    get:
+      operationId: get_project
+      parameters:
+        - description: The id of a project
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: Returns a projects
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+        404:
+          description: The project does not exist
+      tags:
+        - admin/project management
+      summary: Administration endpoint to return a project. Only accessible to superadmins.
+      x-openapi-router-controller: ibutsu_server.controllers.admin.project_controller
+    put:
+      operationId: update_project
+      parameters:
+        - description: The ID of the project to update
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/Project'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: successful operation
+        400:
+          description: Bad reqest, JSON required or not enough parameters
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+        404:
+          description: Project not found
+      summary: Administration endpoint to update a project. Only accessible to superadmins.
+      tags:
+        - admin/project management
+      x-openapi-router-controller: ibutsu_server.controllers.admin.project_controller
+    delete:
+      operationId: delete_project
+      parameters:
+        - description: The ID of the project to delete
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+      responses:
+        200:
+          description: The specified project was deleted
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+        404:
+          description: Project not found
+      summary: Administration endpoint to delete a project. Only accessible to superadmins.
+      tags:
+        - admin/project management
+      x-openapi-router-controller: ibutsu_server.controllers.admin.project_controller
 components:
   requestBodies:
     Result:
@@ -1809,6 +2064,52 @@ components:
           schema:
             $ref: '#/components/schemas/CreateToken'
       description: Create a token for a user
+    User:
+      content:
+        application/json:
+          schema:
+            example:
+              id: 81e2c9d6-1593-4559-af4f-90f6f1f8fa03
+              email: user@domain.com
+              name: Namey McNameface
+              is_superadmin: false
+              is_active: true
+              group_id: a16ad60e-bf23-4195-99dc-594858ad3e5e
+            properties:
+              id:
+                description: The ID of the user
+                example: 81e2c9d6-1593-4559-af4f-90f6f1f8fa03
+                type: string
+              email:
+                description: The user's e-mail address
+                example: user@domain.com
+                type: string
+              name:
+                description: The user's name
+                example: Namey McNameface
+                type: string
+                nullable: true
+              is_superadmin:
+                description: Flag to show if a user is a super-admin
+                example: false
+                type: boolean
+              is_active:
+                description: Flag to show if the user is active
+                example: true
+                type: boolean
+              group_id:
+                description: The ID of the group of this project
+                example: a16ad60e-bf23-4195-99dc-594858ad3e5e
+                type: string
+                nullable: true
+            required:
+              - email
+            type: object
+    Project:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Project'
   schemas:
     Result:
       example:
@@ -2500,7 +2801,6 @@ components:
           type: string
           nullable: true
       required:
-        - id
         - email
       type: object
     CreateToken:
