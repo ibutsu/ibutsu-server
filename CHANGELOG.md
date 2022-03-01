@@ -1,3 +1,17 @@
+Version 2.0.1
+=============
+
+* Clear projects and dashboards when logging out. Fixes #295
+* fix metadata reading during test import
+* Bump url-parse from 1.5.3 to 1.5.10 in /frontend
+* Bump follow-redirects from 1.14.7 to 1.14.8 in /frontend
+* newbie fixes
+* Bump nanoid from 3.1.23 to 3.2.0 in /frontend
+* Only filter on env if an env is not null
+* Add some logging and a URL check (#284)
+* Bump follow-redirects from 1.14.1 to 1.14.7 in /frontend
+* Add JWT secret to template files
+
 Version 2.0.0
 =============
 
