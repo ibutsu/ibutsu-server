@@ -13,11 +13,15 @@ which is browseable from `/api/ui/`
 
 ## Requirements
 
-To run the server locally for development, you can use `podman` by running:
+To run the server locally for development, you can use `podman` by first running:
+```console
+ln -s backend/default.settings.yaml backend/settings.yaml
+```
+from the root of the repository, then:
 ```console
 ./scripts/ibutsu-pod.sh
 ```
-from the root of the repository.
+to start the project.
 
 Otherwise the following must be installed:
 
