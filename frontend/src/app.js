@@ -47,7 +47,7 @@ import { FileUpload, View } from './components';
 import { ALERT_TIMEOUT, MONITOR_UPLOAD_TIMEOUT, VERSION_CHECK_TIMEOUT } from './constants';
 import { AuthService } from './services/auth';
 import { HttpClient } from './services/http';
-import { getActiveProject } from './utilities';
+import { getActiveProject, clearActiveProject, clearActiveDashboard } from './utilities';
 import { version } from '../package.json'
 import './app.css';
 
@@ -249,6 +249,8 @@ export class App extends React.Component {
   };
 
   logout = () => {
+    clearActiveProject();
+    clearActiveDashboard();
     AuthService.logout();
     window.location = "/";
   }

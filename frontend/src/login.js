@@ -23,6 +23,7 @@ import { HttpClient } from './services/http';
 import { AuthService } from './services/auth';
 import { KeycloakService } from './services/keycloak';
 import { Settings } from './settings';
+import { clearActiveDashboard, clearActiveProject } from './utilities';
 
 function getLocationFrom(location) {
   let { from } = location.state || {from: {pathname: '/'}};
@@ -116,6 +117,8 @@ export class Login extends React.Component {
       AuthService.login(this.state.emailValue, this.state.passwordValue)
         .then(isLoggedIn => {
           if (isLoggedIn) {
+            clearActiveDashboard();
+            clearActiveProject();
             window.location = this.state.from.pathname;
           }
           else {
@@ -149,6 +152,9 @@ export class Login extends React.Component {
   }
 
   onOAuth2Success = (response) => {
+    // Make sure there are no active projects or dashboards selected
+    clearActiveDashboard();
+    clearActiveProject();
     AuthService.setUser(response);
     window.location = this.state.from.pathname;
   }
@@ -158,6 +164,9 @@ export class Login extends React.Component {
     HttpClient.get([redirect_uri], {"code": response["tokenId"]})
       .then(response => response.json())
       .then(user => {
+        // Make sure there are no active projects or dashboards selected
+        clearActiveDashboard();
+        clearActiveProject();
         AuthService.setUser(user);
         window.location = this.state.from.pathname;
       });
@@ -166,6 +175,9 @@ export class Login extends React.Component {
   onKeycloakLogin = () => {
     const { server_url, realm, client_id } = this.state.externalLogins.keycloak;
     this.setState({isLoggingIn: true}, () => {
+      // Make sure there are no active projects or dashboards selected
+      clearActiveDashboard();
+      clearActiveProject();
       KeycloakService.login(server_url, realm, client_id);
     });
   }

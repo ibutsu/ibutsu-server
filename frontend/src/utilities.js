@@ -351,12 +351,20 @@ export function getActiveProject() {
   return project;
 }
 
+export function clearActiveProject() {
+  localStorage.removeItem('project');
+}
+
 export function getActiveDashboard() {
   let dashboard = localStorage.getItem('dashboard');
   if (dashboard) {
     dashboard = JSON.parse(dashboard);
   }
   return dashboard;
+}
+
+export function clearActiveDashboard() {
+  localStorage.removeItem('dashboard');
 }
 
 export function processPyTestPath(path) {
