@@ -161,7 +161,7 @@ def _populate_result_metadata(run_dict, result_dict, import_record, has_metadata
     """To reduce cognitive complexity"""
     # Extend the result metadata with import metadata, and add env and component
     if has_metadata:
-        result_dict["metadata"].update(run_dict["data"])
+        result_dict["metadata"].update(run_dict["metadata"])
         result_dict["env"] = run_dict.get("env")
         result_dict["component"] = run_dict.get("component")
     if import_record.data.get("project_id"):
