@@ -83,6 +83,11 @@ objects:
             value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
             value: https://${BACKEND_ROUTE}
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                key: value
+                name: jwt-secret
           image: backend
           imagePullPolicy: Always
           livenessProbe:
@@ -189,6 +194,14 @@ objects:
     email: ${IBUTSU_SUPERADMIN_EMAIL}
     password: ${IBUTSU_SUPERADMIN_PASSWORD}
     name: ${IBUTSU_SUPERADMIN_NAME}
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: jwt-secret
+    namespace: ${NAMESPACE}
+  type: opaque
+  stringData:
+    value: ${JWT_SECRET}
 # ===============================================
 # Parameters
 # ===============================================
@@ -228,3 +241,8 @@ parameters:
   displayName: Superadmin Name
   description: The name superadmin of Ibutsu
   value: Ibutsu Admin
+- name: JWT_SECRET
+  displayName: Secret for generating jwt tokens
+  description: Random secret for generating jwt tokens
+  generate: expression
+  from: '[\w]{16}'
