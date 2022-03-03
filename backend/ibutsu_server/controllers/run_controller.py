@@ -119,10 +119,10 @@ def add_run(run=None, token_info=None, user=None):
     run = Run.from_dict(**connexion.request.get_json())
 
     if run.data and run.data.get("project"):
-        run.project = get_project(run.data["project"])
-        print(run.project)
-        if not project_has_user(run.project, user):
+        project = get_project(run.data["project"])
+        if not project_has_user(project, user):
             return "Forbidden", 403
+        run.project = project
     run.env = run.data.get("env") if run.data else None
     run.component = run.data.get("component") if run.data else None
     # allow start_time to be set by update_run task if no start_time present
