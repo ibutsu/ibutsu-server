@@ -123,8 +123,8 @@ def upload_artifact(body, token_info=None, user=None):
 
     :rtype: tuple
     """
-    result_id = body.get("result_id")
-    run_id = body.get("run_id")
+    result_id = body.get("result_id") or body.get("resultId")
+    run_id = body.get("run_id") or body.get("resultId")
     result = Result.query.get(result_id)
     if result and not project_has_user(result.project, user):
         return "Forbidden", 403
