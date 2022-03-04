@@ -27,9 +27,10 @@ def add_result(result=None, token_info=None, user=None):
     result = Result.from_dict(**connexion.request.get_json())
 
     if result.data and result.data.get("project"):
-        result.project = get_project(result.data["project"])
-        if not project_has_user(result.project, user):
+        project = get_project(result.data["project"])
+        if not project_has_user(project, user):
             return "Forbidden", 403
+        result.project = project
 
     # promote user_properties to the level of metadata
     if result.data and result.data.get("user_properties"):
