@@ -1,3 +1,10 @@
+Version 2.0.2
+=============
+
+* Fall back to older id fields
+* Prevent a possible null result id
+* Prevent a possible null run id
+
 Version 2.0.1
 =============
 
