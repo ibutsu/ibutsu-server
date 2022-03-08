@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites>
+    <testsuite name="pytest" tests="1" errors="0" failures="0" skipped="0" time="2335.183"
+               timestamp="2022-03-07T21:20:16.602815">
+        <testcase name="action-plugin-docs" classname="sanity"/>
+    </testsuite>
+</testsuites>
