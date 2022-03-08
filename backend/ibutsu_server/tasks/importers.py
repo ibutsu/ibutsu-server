@@ -258,7 +258,7 @@ def run_junit_import(import_):
             result_dict = {
                 "test_id": test_name,
                 "start_time": run_dict["start_time"],
-                "duration": float(testcase.get("time")),
+                "duration": float(testcase.get("time") or 0),
                 "run_id": run.id,
                 "metadata": {
                     "run": run.id,
