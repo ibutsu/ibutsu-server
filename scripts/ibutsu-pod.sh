@@ -28,9 +28,16 @@ podman run -dit \
        --pod $POD_NAME \
        --name ibutsu-backend \
        -e JWT_SECRET=$JWT_SECRET \
+       -e POSTGRESQL_HOST=127.0.0.1 \
+       -e POSTGRESQL_PORT=5432 \
+       -e POSTGRESQL_DATABASE=ibutsu \
+       -e POSTGRESQL_USER=ibutsu \
+       -e POSTGRESQL_PASSWORD=ibutsu \
+       -e CELERY_BROKER_URL='redis://127.0.0.1:6379' \
+       -e CELERY_RESULT_BACKEND='redis://127.0.0.1:6379' \
        -w /mnt \
        -v./backend:/mnt/:Z \
-       python:latest \
+       python:3.8.12 \
        /bin/bash -c 'python -m venv .ibutsu_env && source .ibutsu_env/bin/activate &&
                      pip install -U pip setuptools wheel &&
                      pip install -r requirements.txt &&
@@ -49,9 +56,16 @@ podman run -dit \
        --pod $POD_NAME \
        --name ibutsu-worker \
        -e COLUMNS=80 \
+       -e POSTGRESQL_HOST=127.0.0.1 \
+       -e POSTGRESQL_PORT=5432 \
+       -e POSTGRESQL_DATABASE=ibutsu \
+       -e POSTGRESQL_USER=ibutsu \
+       -e POSTGRESQL_PASSWORD=ibutsu \
+       -e CELERY_BROKER_URL='redis://127.0.0.1:6379' \
+       -e CELERY_RESULT_BACKEND='redis://127.0.0.1:6379' \
        -w /mnt \
        -v./backend:/mnt/:Z \
-       python:latest \
+       python:3.8.12 \
        /bin/bash -c 'python -m venv .ibutsu_env && source .ibutsu_env/bin/activate &&
                      pip install -U pip setuptools wheel &&
                      pip install -r requirements.txt &&
@@ -64,7 +78,7 @@ podman run -dit \
        --name ibutsu-frontend \
        -w /mnt \
        -v./frontend:/mnt/:Z \
-       node:latest \
+       node:14 \
        /bin/bash -c 'yarn install &&
                      yarn run devserver' > /dev/null
 echo "done."
