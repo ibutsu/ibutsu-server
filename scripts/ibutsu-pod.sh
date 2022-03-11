@@ -2,6 +2,7 @@
 POD_NAME="ibutsu"
 JWT_SECRET=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
 
+echo "Stop the pod by running: 'podman pod rm -f ${POD_NAME}'"
 echo -n "Creating ibutsu pod..."
 podman pod create -p 8080:8080 -p 3000:3000 --name $POD_NAME > /dev/null
 echo "done."
@@ -33,8 +34,11 @@ podman run -dit \
        -e POSTGRESQL_DATABASE=ibutsu \
        -e POSTGRESQL_USER=ibutsu \
        -e POSTGRESQL_PASSWORD=ibutsu \
-       -e CELERY_BROKER_URL='redis://127.0.0.1:6379' \
-       -e CELERY_RESULT_BACKEND='redis://127.0.0.1:6379' \
+       -e CELERY_BROKER_URL=redis://127.0.0.1:6379 \
+       -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
+       -e IBUTSU_SUPERADMIN_EMAIL=admin@example.com \
+       -e IBUTSU_SUPERADMIN_PASSWORD=admin12345 \
+       -e IBUTSU_SUPERADMIN_NAME=Administrator \
        -w /mnt \
        -v./backend:/mnt/:Z \
        python:3.8.12 \
@@ -61,8 +65,8 @@ podman run -dit \
        -e POSTGRESQL_DATABASE=ibutsu \
        -e POSTGRESQL_USER=ibutsu \
        -e POSTGRESQL_PASSWORD=ibutsu \
-       -e CELERY_BROKER_URL='redis://127.0.0.1:6379' \
-       -e CELERY_RESULT_BACKEND='redis://127.0.0.1:6379' \
+       -e CELERY_BROKER_URL=redis://127.0.0.1:6379 \
+       -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
        -w /mnt \
        -v./backend:/mnt/:Z \
        python:3.8.12 \
@@ -88,13 +92,8 @@ until $(curl --output /dev/null --silent --head --fail http://localhost:3000); d
   sleep 5
 done
 echo "done."
-echo -n "Creating admin user..."
-podman exec -it ibutsu-postgres psql -U ibutsu ibutsu -c "INSERT INTO users (id, name, email, _password, is_active, is_superadmin) VALUES ('048ad927-300d-47cd-8548-fe58360bfdc3', 'Administrator', 'admin@example.com', '\$2b\$20\$4BYZCFA.mXvrVxbfQtj91uCK4raYZiyCRSaYhq0AlHrAxk6J609Iy', true, true)" > /dev/null
-echo "done."
-echo -n "Getting JWT token for admin user..."
-LOGIN_TOKEN=`curl --no-progress-meter --header "Content-Type: application/json" --request POST --data '{"email": "admin@example.com", "password": "admin12345"}' http://localhost:8080/api/login | grep 'token' | cut -d\" -f 4`
-echo "done."
 echo -n "Creating default project..."
+LOGIN_TOKEN=`curl --no-progress-meter --header "Content-Type: application/json" --request POST --data '{"email": "admin@example.com", "password": "admin12345"}' http://localhost:8080/api/login | grep 'token' | cut -d\" -f 4`
 PROJECT_ID=`curl --no-progress-meter --header "Content-Type: application/json" --header "Authorization: Bearer ${LOGIN_TOKEN}" --request POST --data '{"name": "my-project", "title": "My Project"}' http://localhost:8080/api/project | grep '"id"' | cut -d\" -f 4`
 echo "done."
 echo ""
