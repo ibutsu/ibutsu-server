@@ -26,6 +26,7 @@ export class JenkinsHeatmapWidget extends React.Component {
   static propTypes = {
     title: PropTypes.string,
     params: PropTypes.object,
+    labelWidth: PropTypes.number,
     hideDropdown: PropTypes.bool,
     dropdownItems: PropTypes.array,
     includeAnalysisLink: PropTypes.bool,
@@ -36,6 +37,7 @@ export class JenkinsHeatmapWidget extends React.Component {
     super(props);
     this.title = props.title || 'Jenkins Heatmap';
     this.params = props.params || {};
+    this.labelWidth = props.labelWidth || 200;
     this.getHeatmap = this.getHeatmap.bind(this);
     this.onBuildSelect = this.onBuildSelect.bind(this);
     this.state = {
@@ -190,7 +192,7 @@ export class JenkinsHeatmapWidget extends React.Component {
     for (const key of Object.keys(this.state.data.heatmap)) {
       const newLabels = [];
       const values = this.state.data.heatmap[key];
-      yLabels.push(key);
+      yLabels.push(<div key={key} title={key} className="ellipsis">{key}</div>);
       data.push(values);
       values.forEach((item) => {
         if (!!item && (item.length > 2) && !!item[3]) {
@@ -214,7 +216,7 @@ export class JenkinsHeatmapWidget extends React.Component {
           <HeatMap
             xLabels={xLabels}
             yLabels={yLabels}
-            yLabelWidth={200}
+            yLabelWidth={this.labelWidth}
             yLabelTextAlign={"left"}
             data={data}
             squares
