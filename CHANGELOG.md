@@ -1,3 +1,11 @@
+Version 2.0.3
+=============
+
+* Add an ellipsis to the heatmap labels
+* Move admin creation into environment variables
+* fix ibutsu-pod script
+* Allow to import tests cases without time attr
+
 Version 2.0.2
 =============
 
