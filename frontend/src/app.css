@@ -233,3 +233,11 @@ div[data-id=widget-param-dropdown] > div {
   background-position: top right;
   background-size: contain;
 }
+
+.ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+}

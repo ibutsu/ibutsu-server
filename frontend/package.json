@@ -42,7 +42,7 @@
     "react-facebook-login": "^4.1.1",
     "react-github-login": "^1.0.3",
     "react-google-login": "^5.2.2",
-    "react-heatmap-grid": "^0.8.1",
+    "react-heatmap-grid": "^0.9.0",
     "react-json-view": "^1.19.1",
     "react-linkify": "^1.0.0-alpha",
     "react-password-strength-bar": "^0.3.5",

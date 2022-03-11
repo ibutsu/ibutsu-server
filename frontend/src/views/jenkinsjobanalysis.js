@@ -229,7 +229,7 @@ export class JenkinsJobAnalysisView extends React.Component {
       <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
         <Tab eventKey='heatmap' title={'Heatmap'} style={{backgroundColor: 'white'}}>
           {!isLoading && activeTab === "heatmap" &&
-          <JenkinsHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true}/>
+          <JenkinsHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true} labelWidth={400}/>
           }
         </Tab>
         <Tab eventKey='overall-health' title={'Overall Health'} style={{backgroundColor: 'white'}}>
