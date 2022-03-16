@@ -1,0 +1,68 @@
+version: '3'
+services:
+  frontend:
+    environment:
+      NODE_ENV: production
+      REACT_APP_SERVER_URL: http://localhost:8080/api
+    image: node:14
+    command: /bin/bash -c 'yarn install && yarn run devserver'
+    working_dir: /mnt
+    user: ${UID:-1000}
+    volumes:
+      - "./frontend:/mnt"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+  backend:
+    environment:
+      - JWT_SECRET=jwtsecret
+      - POSTGRESQL_HOST=postgres
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_DATABASE=ibutsu
+      - POSTGRESQL_USER=ibutsu
+      - POSTGRESQL_PASSWORD=ibutsu
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+      - IBUTSU_SUPERADMIN_EMAIL=admin@example.com
+      - IBUTSU_SUPERADMIN_PASSWORD=admin12345
+      - IBUTSU_SUPERADMIN_NAME=Administrator
+    image: python:3
+    command: /bin/bash -c 'python -m venv .ibutsu_env && source .ibutsu_env/bin/activate && pip install -U pip setuptools wheel && pip install -r requirements.txt && python -m ibutsu_server'
+    working_dir: /mnt
+    volumes:
+      - "./backend:/mnt"
+    user: ${UID:-1000}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+  worker:
+    environment:
+      - COLUMNS=80
+      - POSTGRESQL_HOST=postgres
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_DATABASE=ibutsu
+      - POSTGRESQL_USER=ibutsu
+      - POSTGRESQL_PASSWORD=ibutsu
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+    image: python:3
+    command: /bin/bash -c 'python -m venv .ibutsu_env && source .ibutsu_env/bin/activate && pip install -U pip setuptools wheel && pip install -r requirements.txt && ./celery_worker.sh'
+    working_dir: /mnt
+    volumes:
+      - "./backend:/mnt"
+    user: ${UID:-1000}
+    depends_on:
+      - backend
+      - postgres
+      - redis
+  postgres:
+    environment:
+      POSTGRES_USER: ibutsu
+      POSTGRES_PASSWORD: ibutsu
+      POSTGRES_DB: ibutsu
+    image: postgres:14
+  redis:
+    image: redis:latest
