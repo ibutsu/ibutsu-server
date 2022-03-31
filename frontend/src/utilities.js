@@ -31,6 +31,11 @@ import {
 } from './constants';
 import { ClassificationDropdown } from './components';
 
+
+export function getDateString() {
+  return String((new Date()).getTime());
+}
+
 export function getIconForResult(result) {
   let resultIcon = '';
   if (result === 'passed') {
@@ -365,6 +370,21 @@ export function getActiveDashboard() {
 
 export function clearActiveDashboard() {
   localStorage.removeItem('dashboard');
+}
+
+export function projectToOption(project) {
+  if (!project) {
+    return '';
+  }
+  return {
+    project: project,
+    toString: function() {
+      return this.project.title;
+    },
+    compareTo: function (value) {
+      return this.project.id == value.project.id;
+    }
+  };
 }
 
 export function processPyTestPath(path) {

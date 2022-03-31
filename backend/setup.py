@@ -33,7 +33,7 @@ REQUIRES = [
     "sqlalchemy==1.3.23",
     "swagger-ui-bundle==0.0.2",
     "vine<5.0.0a1",
-    "werkzeug",
+    "werkzeug~=2.0.0",
 ]
 
 setup(

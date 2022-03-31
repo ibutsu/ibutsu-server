@@ -225,6 +225,13 @@ class User(Model, ModelMixin):
     def check_password(self, plaintext):
         return bcrypt.check_password_hash(self.password, plaintext)
 
+    def to_dict(self, with_projects=False):
+        """An overridden method to include projects"""
+        user_dict = super().to_dict()
+        if with_projects:
+            user_dict["projects"] = [project.to_dict() for project in self.projects]
+        return user_dict
+
 
 class Token(Model, ModelMixin):
     __tablename__ = "tokens"
