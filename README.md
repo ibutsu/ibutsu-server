@@ -11,22 +11,64 @@ user interface.
 Ibutsu has a RESTful API built using the [OpenAPI specification](https://github.com/swagger-api/swagger-core/wiki)
 which is browseable from `/api/ui/`
 
-## Requirements
+## Running locally
 
-To run the server locally for development, you can use `podman` by first running:
+To run the server locally for development, you can use `podman` or Docker Compose.
+
+### `podman`
+
+To run Ibutsu using `podman`, use the `ibutsu-pod.sh` utility script:
+
 ```console
-ln -s backend/default.settings.yaml backend/settings.yaml
+./script/ibutsu-pod.sh --create-admin --create-project
 ```
-from the root of the repository, then:
+
+This will start up the containers and create an administrator and a project.
+
+If you want to persistent the data in the containers, use the `--persistent` option:
+
 ```console
-./scripts/ibutsu-pod.sh
+./scripts/ibutsu-pod.sh --persistent
 ```
-to start the project.
 
-Otherwise the following must be installed:
+By default the script stores persistent data in two directories, `.postgres-data` and `.redis-data`.
+If you would prefer to use `podman` volumes, specify the `--use-volumes` option:
 
-- Python 3.6+
-- NPM
+```console
+./scripts/ibutsu-pod.sh --persistent --use-volumes
+```
+
+To see all the options provided by the `ibutsu-pod.sh` script, use the `-h` option:
+
+```console
+./scripts/ibutsu-pod.sh -h
+Usage: ibutsu-pod.sh [-h|--help] [-p|--persistent] [-V|--use-volumes] [-A|--create-admin] [-P|--create-project] [POD_NAME]
+
+optional arguments:
+  -h, --help            show this help message
+  -p, --persistent      persist the data in the containers
+  -V, --use-volumes     use podman volumes to store data
+  -A, --create-admin    create an administrator ('admin@example.com')
+  -P, --create-project  create a default project ('my-project')
+  POD_NAME              the name of the pod, 'ibutsu' if ommitted
+
+```
+
+### Docker Compose
+
+There is a pre-created Docker Compose file for running a development environment locally:
+
+```console
+docker-compose -f docker-compose.dev.yaml
+```
+
+### Without containers
+
+Using either `podman` or Docker Compose is the recommended way to run Ibutsu locally. If you don't
+want to use the containers, the following must be installed:
+
+- Python 3.8+
+- NodeJS
 - yarn
 - redis (strongly recommend a container)
 - PostgreSQL (strongly recommend a container)
