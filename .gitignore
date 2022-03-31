@@ -93,5 +93,10 @@ celerybeat*
 .scannerwork/
 sonar-project.properties
 
+# Persistent data
+.postgres-data/
+.redis-data/
+.jwtsecret
+
 scripts/populate-users-data.py
 users_data.json
