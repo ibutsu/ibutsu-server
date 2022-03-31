@@ -8,19 +8,79 @@ Requirements
 
 To run the server locally, you will need the following installed:
 
-- Python 3.6+
-- NPM
+- Python 3.8+
+- NodeJS
 - yarn
 - redis (strongly recommend a container)
 - PostgreSQL (strongly recommend a container)
 
 To run the containers, you will need either one of the following installed:
 
-- Docker
+- Docker and Docker Compose
 - Podman
 
+Running Locally
+---------------
+
+To run the server locally for development, you can use ``podman`` or Docker Compose.
+
+podman
+^^^^^^
+
+To run Ibutsu using ``podman``, use the ``ibutsu-pod.sh`` utility script:
+
+.. code-block:: shell
+
+   $ ./script/ibutsu-pod.sh --create-admin --create-project
+
+This will start up the containers and create an administrator and a project.
+
+If you want to persistent the data in the containers, use the ``--persistent`` option:
+
+.. code-block:: shell
+
+   $ ./script/ibutsu-pod.sh --persistent
+
+By default the script stores persistent data in two directories, ``.postgres-data`` and ``.redis-data``.
+If you would prefer to use ``podman`` volumes, specify the ``--use-volumes`` option:
+
+.. code-block:: shell
+
+   $ ./scripts/ibutsu-pod.sh --persistent --use-volumes
+
+To see all the options provided by the ``ibutsu-pod.sh`` script, use the ``-h`` option:
+
+.. code-block:: shell
+
+   $ ./scripts/ibutsu-pod.sh -h
+   Usage: ibutsu-pod.sh [-h|--help] [-p|--persistent] [-V|--use-volumes] [-A|--create-admin] [-P|--create-project] [POD_NAME]
+
+   optional arguments:
+     -h, --help            show this help message
+     -p, --persistent      persist the data in the containers
+     -V, --use-volumes     use podman volumes to store data
+     -A, --create-admin    create an administrator ('admin@example.com')
+     -P, --create-project  create a default project ('my-project')
+     POD_NAME              the name of the pod, 'ibutsu' if ommitted
+
+
+Docker Compose
+^^^^^^^^^^^^^^
+
+There is a pre-created Docker Compose file for running a development environment locally:
+
+.. code-block:: shell
+
+   $ docker-compose -f docker-compose.dev.yaml
+
+Without Containers
+^^^^^^^^^^^^^^^^^^
+
+Using either ``podman`` or Docker Compose is the recommended way to run Ibutsu locally. If you don't
+want to use the containers, the following instructions should help you get up and running:
+
 Run the Frontend
-----------------
+~~~~~~~~~~~~~~~~
 
 When running on your local computer, the server is made up of two parts, the frontend and the
 backend. The backend runs the api while the frontend hosts the UI.
@@ -73,8 +133,8 @@ code, the server will rebuild your app and run the new code.
 
 Open your browser and go to `localhost:3000 <http://localhost:3000/>`_ to see the web UI.
 
-Run PGSQL and Redis
----------------------
+Run PostgreSQL and Redis
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Next you'll need to set up a PostgreSQL server. It is easiest to just run the server in a
 container:
@@ -98,7 +158,7 @@ This is required for ``celery``.
 
 
 Install Dependencies
---------------------
+~~~~~~~~~~~~~~~~~~~~
 
 You'll want to set up a virtual environment for the backend, and install the dependencies:
 
@@ -110,7 +170,7 @@ You'll want to set up a virtual environment for the backend, and install the dep
 
 
 Run Celery Worker
------------------
+~~~~~~~~~~~~~~~~~
 
 Start the celery worker using the ``backend/celery_worker.sh`` script or via:
 
@@ -135,7 +195,7 @@ The task monitor checks the task queue for failures.
 
 
 Run the API Backend
--------------------
+~~~~~~~~~~~~~~~~~~~
 
 Create ``backend/settings.yaml``, start with copying ``backend/default.settings.yaml``
 
