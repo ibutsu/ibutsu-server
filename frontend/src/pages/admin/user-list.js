@@ -17,7 +17,7 @@ import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { getSpinnerRow } from '../../utilities';
+import { debounce, getSpinnerRow } from '../../utilities';
 import { FilterTable } from '../../components';
 
 function userToRow(user, onDeleteClick) {
@@ -46,17 +46,6 @@ function userToRow(user, onDeleteClick) {
       }
     ]
   }
-}
-
-function debounce(func, timeout = 500) {
-  let timerId;
-  return (...args) => {
-    if (!timerId) {
-      func.apply(this, args);
-    }
-    clearTimeout(timerId);
-    timerId = setTimeout(() => { timerId = undefined; }, timeout);
-  };
 }
 
 export class UserList extends React.Component {

@@ -43,6 +43,18 @@ export class UserEdit extends React.Component {
     };
   }
 
+  onUserNameChanged = (value) => {
+    const { user } = this.state;
+    user.name = value;
+    this.setState({user});
+  }
+
+  onUserEmailChanged = (value) => {
+    const { user } = this.state;
+    user.email = value;
+    this.setState({user});
+  }
+
   onIsActiveToggle = (checked) => {
     const { user } = this.state;
     user.is_active = checked;
@@ -127,7 +139,7 @@ export class UserEdit extends React.Component {
           <Title headingLevel="h1" size='2xl' className="pf-c-title">
             Users / {user && user.name} {' '}
             {user && user.is_superadmin &&
-              <Label className="super-admin-label" variant="outline" color="blue"> Super Administrator</Label>
+              <Label className="super-admin-label" variant="outline" color="blue">Administrator</Label>
             }
           </Title>
         </PageSection>
@@ -169,10 +181,10 @@ export class UserEdit extends React.Component {
                     onChange={this.onIsActiveToggle}
                   />
                   <Checkbox
-                    label="Is super administrator"
+                    label="Is administrator"
                     id="userIsAdmin"
                     name="userIsAdmin"
-                    aria-label="User is super administrator"
+                    aria-label="User is administrator"
                     isChecked={user.is_superadmin}
                     onChange={this.onIsAdminToggle}
                   />

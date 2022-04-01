@@ -2,26 +2,38 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
+  Button,
   Card,
   CardBody,
+  Modal,
   PageSection,
   PageSectionVariants,
   Text,
   TextContent,
+  TextInput
 } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { getSpinnerRow } from '../../utilities';
+import { debounce, getSpinnerRow } from '../../utilities';
 import { FilterTable } from '../../components';
 
-function projectToRow(project) {
+function projectToRow(project, onDeleteClick) {
   return {
     "cells": [
-      {title: project.name},
       {title: project.title},
-      {title: ""},
-      {title: ""}
+      {title: project.name},
+      {title: project.owner && project.owner.name},
+      {
+        title: (
+          <div style={{textAlign: "right"}}>
+            <Link to={`/admin/projects/${project.id}`} className="pf-c-button pf-m-primary">Edit</Link>
+            &nbsp;
+            <Button variant="danger" onClick={() => onDeleteClick(project.id)}>Delete</Button>
+          </div>
+        )
+      }
     ]
   }
 }
@@ -47,15 +59,20 @@ export class ProjectList extends React.Component {
       }
     }
     this.state = {
-      columns: ['Email', 'Display Name', 'Projects', 'Actions'],
+      columns: ['Title', 'Name', 'Owner', ''],
       rows: [getSpinnerRow(4)],
+      projects: [],
       users: [],
       page: page,
       pageSize: pageSize,
       totalItems: 0,
       totalPages: 0,
       isError: false,
-      isEmpty: false
+      isEmpty: false,
+      selectedProject: null,
+      isDeleting: false,
+      isDeleteModalOpen: false,
+      textFilter: ''
     };
   }
 
@@ -63,7 +80,7 @@ export class ProjectList extends React.Component {
     let params = [];
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.history.replace('/admin/users?' + params.join('&'));
+    this.props.history.replace('/admin/projects?' + params.join('&'));
   }
 
   setPage = (_event, pageNumber) => {
@@ -80,17 +97,21 @@ export class ProjectList extends React.Component {
     });
   }
 
-  getUsers() {
+  getProjects() {
     // Show a spinner
     this.setState({rows: [getSpinnerRow(4)], isEmpty: false, isError: false});
     let params = {
       pageSize: this.state.pageSize,
       page: this.state.page
     };
-    HttpClient.get([Settings.serverUrl, 'admin', 'users'], params)
+    if (this.state.textFilter) {
+      params['filter'] = ['title%' + this.state.textFilter];
+    }
+    HttpClient.get([Settings.serverUrl, 'admin', 'project'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
-        rows: data.users.map((user) => projectToRow(user)),
+        rows: data.projects.map((project) => projectToRow(project, this.onDeleteClick)),
+        projects: data.projects,
         page: data.pagination.page,
         pageSize: data.pagination.pageSize,
         totalItems: data.pagination.totalItems,
@@ -98,23 +119,54 @@ export class ProjectList extends React.Component {
         isEmpty: data.pagination.totalItems === 0
       }))
       .catch((error) => {
-        console.error('Error fetching users data:', error);
+        console.error('Error fetching projects data:', error);
         this.setState({rows: [], isEmpty: false, isError: true});
       });
   }
 
+  onDeleteClick = (projectId) => {
+    const selectedProject = this.state.projects.find((project) => project.id == projectId);
+    this.setState({selectedProject: selectedProject, isDeleteModalOpen: true});
+  };
+
+  onDeleteModalClose = () => {
+    this.setState({isDeleteModalOpen: false});
+  };
+
+  onModalDeleteClick = () => {
+    // spinner
+    HttpClient.delete([Settings.serverUrl, 'admin', 'project', this.state.selectedProject.id])
+      .then(response => HttpClient.handleResponse(response))
+      .then(() => {
+        this.getProjects();
+        this.setState({isDeleteModalOpen: false});
+      });
+  }
+
+  onTextChanged = (newValue) => {
+    this.setState({textFilter: newValue}, debounce(() => {
+      if (newValue.length >= 3 || newValue.length == 0) {
+        this.updateUrl();
+        this.getProjects();
+      }
+    }));
+  };
+
   componentDidMount() {
-    this.getUsers();
+    this.getProjects();
   }
 
   render() {
     document.title = 'Projects - Administration | Ibutsu';
-    const { columns, rows } = this.state;
+    const { columns, rows, textFilter } = this.state;
     const pagination = {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
     };
+    const filters = [
+      <TextInput type="text" id="filter" placeholder="Search for project..." value={textFilter || ''} onChange={this.onTextChanged} style={{height: "inherit"}} key="textFilter"/>
+    ];
     return (
       <React.Fragment>
         <PageSection id="page" variant={PageSectionVariants.light}>
@@ -128,6 +180,7 @@ export class ProjectList extends React.Component {
               <FilterTable
                 columns={columns}
                 rows={rows}
+                filters={filters}
                 pagination={pagination}
                 isEmpty={this.state.isEmpty}
                 isError={this.state.isError}
@@ -137,6 +190,22 @@ export class ProjectList extends React.Component {
             </CardBody>
           </Card>
         </PageSection>
+        <Modal
+          title="Confirm Delete"
+          variant="small"
+          isOpen={this.state.isDeleteModalOpen}
+          onClose={this.onDeleteModalClose}
+          actions={[
+            <Button key="delete" variant="danger" isLoading={this.state.isDeleting} isDisabled={this.state.isDeleting} onClick={this.onModalDeleteClick}>
+              {this.state.isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>,
+            <Button key="cancel" variant="secondary" isDisabled={this.state.isDeleting} onClick={this.onDeleteModalClose}>
+              Cancel
+            </Button>
+          ]}
+        >
+          Are you sure you want to delete &ldquo;{this.state.selectedProject && this.state.selectedProject.title}&rdquo;? This cannot be undone!
+        </Modal>
       </React.Fragment>
     );
   }

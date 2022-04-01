@@ -86,15 +86,8 @@ export class TestHistoryTable extends React.Component {
 
     // lazy-load the result view so we don't have to make a bunch of artifact requests
     if (isOpen) {
-      let result = rows[rowIndex].result;
-      let hideSummary=true;
-      let hideTestObject=true;
-      if (["passed", "skipped", "xfailed"].includes(result.result)) {
-        hideSummary=false;
-        hideTestObject=false;
-      }
       rows[rowIndex + 1].cells = [{
-        title: <ResultView hideTestHistory={true} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={rows[rowIndex].result}/>
+        title: <ResultView hideTestHistory={true} hideSummary={false} hideTestObject={false} testResult={rows[rowIndex].result}/>
       }]
     }
     rows[rowIndex].isOpen = isOpen;

@@ -16,7 +16,6 @@ from ibutsu_server.db.base import Table
 from ibutsu_server.db.base import Text
 from ibutsu_server.db.types import PortableJSON
 from ibutsu_server.db.types import PortableUUID
-from ibutsu_server.util import merge_dicts
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -56,13 +55,11 @@ class ModelMixin(object):
     def update(self, record_dict):
         if "id" in record_dict:
             record_dict.pop("id")
-        group_dict = self.to_dict()
-        merge_dicts(group_dict, record_dict)
-        if "metadata" in group_dict:
-            group_dict["data"] = group_dict.pop("metadata")
-        if "metadata" in record_dict:
-            record_dict["data"] = record_dict["metadata"]
-        for key, value in record_dict.items():
+        values_dict = self.to_dict()
+        values_dict.update(record_dict)
+        if "metadata" in values_dict:
+            values_dict["data"] = values_dict.pop("metadata")
+        for key, value in values_dict.items():
             setattr(self, key, value)
 
 
@@ -128,6 +125,13 @@ class Project(Model, ModelMixin):
     runs = relationship("Run", backref="project")
     dashboards = relationship("Dashboard", backref="project")
     widget_configs = relationship("WidgetConfig", backref="project")
+
+    def to_dict(self, with_owner=False):
+        """An overridden method to include the owner"""
+        project_dict = super().to_dict()
+        if with_owner and self.owner:
+            project_dict["owner"] = self.owner.to_dict()
+        return project_dict
 
 
 class Report(Model, ModelMixin):

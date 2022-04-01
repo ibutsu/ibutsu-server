@@ -382,7 +382,13 @@ export function projectToOption(project) {
       return this.project.title;
     },
     compareTo: function (value) {
-      return this.project.id == value.project.id;
+      if (value.project) {
+        return this.project.id == value.project.id;
+      }
+      else {
+        return this.project.name.toLowerCase().includes(value.toLowerCase()) ||
+          this.project.title.toLowerCase().includes(value.toLowerCase());
+      }
     }
   };
 }
@@ -435,4 +441,15 @@ export function cleanPath(path) {
     pathParts = pathParts.slice(1);
   }
   return pathParts.join('/');
+}
+
+export function debounce(func, timeout = 500) {
+  let timerId;
+  return (...args) => {
+    if (!timerId) {
+      func.apply(this, args);
+    }
+    clearTimeout(timerId);
+    timerId = setTimeout(() => { timerId = undefined; }, timeout);
+  };
 }

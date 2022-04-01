@@ -2327,10 +2327,12 @@ components:
           description: The ID of the owner of this project
           example: 6b8b01ad-a17e-4ca1-8df5-fadb41439567
           type: string
+          nullable: true
         group_id:
           description: The ID of the group of this project
           example: a16ad60e-bf23-4195-99dc-594858ad3e5e
           type: string
+          nullable: true
       type: object
     Dashboard:
       example:
