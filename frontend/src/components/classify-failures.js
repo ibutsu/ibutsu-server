@@ -122,7 +122,7 @@ export class ClassifyFailuresTable extends React.Component {
     });
   }
 
-  updateFilters(name, operator, value, callback) {
+  updateFilters(filterId, name, operator, value, callback) {
     let filters = this.state.filters;
     if ((value === null) || (value.length === 0)) {
       delete filters[name];
@@ -133,15 +133,15 @@ export class ClassifyFailuresTable extends React.Component {
     this.setState({filters: filters, page: 1}, callback);
   }
 
-  setFilter = (field, value) => {
+  setFilter = (filterId, field, value) => {
     // maybe process values array to string format here instead of expecting caller to do it?
     let operator = (value.includes(";")) ? 'in' : 'eq'
-    this.updateFilters(field, operator, value, this.refreshResults)
+    this.updateFilters(filterId, field, operator, value, this.refreshResults)
   }
 
-  removeFilter = id => {
+  removeFilter = (filterId, id) => {
     if ((id !== "result") && (id !== "run_id")) {   // Don't allow removal of error/failure filter
-      this.updateFilters(id, null, null, this.refreshResults)
+      this.updateFilters(filterId, id, null, null, this.refreshResults)
     }
   }
 
@@ -173,7 +173,6 @@ export class ClassifyFailuresTable extends React.Component {
     params['filter'] = toAPIFilter(filters);
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
-
     this.setState({rows: [['Loading...', '', '', '', '']]});
     HttpClient.get([Settings.serverUrl, 'result'], params)
       .then(response => HttpClient.handleResponse(response))
@@ -219,6 +218,10 @@ export class ClassifyFailuresTable extends React.Component {
         runId={run_id}
         setFilter={this.setFilter}
         customFilters={{'result': filters['result']}}
+        activeFilters={this.state.filters}
+        onRemoveFilter={this.removeFilter}
+        hideFilters={["run_id", "project_id"]}
+        id={0}
       />,
     ]
     return (
@@ -256,10 +259,7 @@ export class ClassifyFailuresTable extends React.Component {
             canSelectAll={true}
             onRowSelect={this.onTableRowSelect}
             variant={TableVariant.compact}
-            activeFilters={this.state.filters}
             filters={resultFilters}
-            onRemoveFilter={this.removeFilter}
-            hideFilters={["run_id", "project_id"]}
           />
         </CardBody>
       </Card>

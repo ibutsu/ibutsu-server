@@ -128,7 +128,7 @@ export function toAPIFilter(filters) {
   // Take UI style filter object with field/op/val keys and generate an array of filter strings for the API
   let filter_strings = []
   for (const key in filters) {
-    if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key]) {
+    if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key] && key !== 'id') {
       const val = filters[key]['val'];
       const op = OPERATIONS[filters[key]['op']];
       filter_strings.push(key + op + val);
@@ -241,6 +241,47 @@ export function resultToClassificationRow(result, index, filterFunc) {
         {title: <ClassificationDropdown testResult={result} />},
         {title: round(result.duration) + 's'},
       ],
+    },
+    // child row (this is set in the onCollapse function for lazy-loading)
+    {
+      "parent": 2*index,
+      "cells": [{title: <div/>}]
+    }
+  ];
+}
+
+export function resultToComparisonRow(result, index) {
+  let resultIcons = [];
+  let markers = [];
+  result.forEach(result => {
+    resultIcons.push(getIconForResult(result.result))
+    if (result.metadata && result.metadata.markers) {
+        for (const marker of result.metadata.markers) {
+          // Don't add duplicate markers
+          if (markers.filter(m => m.key === marker.name).length === 0) {
+            markers.push(<Badge isRead key={marker.name}>{marker.name}</Badge>);
+          }
+        }
+      }
+  });
+
+  if (result[0].metadata && result[0].metadata.component) {
+    markers.push(<Badge key={result[0].metadata.component}>{result[0].metadata.component}</Badge>);
+  }
+
+  let cells = []
+  cells.push({title: <React.Fragment><Link to={`/results/${result[0].id}`}>{result[0].test_id}</Link> {markers}</React.Fragment>});
+  result.forEach((result, index) => {
+    cells.push({title: <span className={result.result}>{resultIcons[index]} {toTitleCase(result.result)}</span>});
+  });
+
+
+  return [
+    // parent row
+    {
+      "isOpen": false,
+      "result": result,
+      "cells": cells,
     },
     // child row (this is set in the onCollapse function for lazy-loading)
     {

@@ -33,9 +33,9 @@ def add_widget_config(widget_config=None, token_info=None, user=None):
             return "Forbidden", 403
         data["project_id"] = project.id
     # default to make views navigable
-    if data.get("navigable"):
+    if data.get("navigable") and isinstance(data["navigable"], str):
         data["navigable"] = data["navigable"][0] in ALLOWED_TRUE_BOOLEANS
-    if data.get("type") == "view" and data.get("navigable") is not None:
+    if data.get("type") == "view" and data.get("navigable") is None:
         data["navigable"] = True
     widget_config = WidgetConfig.from_dict(**data)
     session.add(widget_config)
@@ -121,10 +121,10 @@ def update_widget_config(id_, token_info=None, user=None):
     if not widget_config.weight:
         widget_config.weight = 10
     # default to make views navigable
-    if data.get("navigable"):
+    if data.get("navigable") and isinstance(data["navigable"], str):
         data["navigable"] = data["navigable"][0] in ALLOWED_TRUE_BOOLEANS
-    if data.get("type") and data["type"] == "view" and data.get("navigable") is not None:
-        data.navigable = True
+    if data.get("type") and data["type"] == "view" and data.get("navigable") is None:
+        data["navigable"] = True
     widget_config.update(data)
     session.add(widget_config)
     session.commit()

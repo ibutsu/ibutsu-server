@@ -88,7 +88,7 @@ export class FilterTable extends React.Component {
             }
           </Flex>
           }
-          <Flex align={{default: 'alignRight'}}>
+          <Flex alignSelf={{default: 'alignSelfFlexEnd'}} direction={{default: 'column'}} align={{default: 'alignRight'}}>
             <FlexItem>
               <Pagination
                 perPage={pagination.pageSize}
@@ -173,19 +173,21 @@ export class FilterTable extends React.Component {
 // with FilterTable. See https://github.com/ibutsu/ibutsu-server/issues/230
 export class MetaFilter extends React.Component {
   static propTypes = {
-    // could reference constants directly
-    fieldOptions: PropTypes.array,
-    // make optional?
+    fieldOptions: PropTypes.array,  // could reference constants directly
     runId: PropTypes.string,
     setFilter: PropTypes.func,
-    // more advanced handling of filter objects? the results-aggregator endpoint takes a string filter
-    customFilters: PropTypes.object,
+    customFilters: PropTypes.object, // more advanced handling of filter objects? the results-aggregator endpoint takes a string filter
+    onRemoveFilter: PropTypes.func,
+    onApplyReport: PropTypes.func,
+    hideFilters: PropTypes.array,
+    activeFilters: PropTypes.object,
+    id: PropTypes.number,
   };
 
   constructor(props) {
     super(props);
     this.state = {
-      fieldSelection: null,
+      fieldSelection: [],
       isFieldOpen: false,
       isValueOpen: false,
       valueOptions: [],
@@ -220,50 +222,81 @@ export class MetaFilter extends React.Component {
     const valueSelections = this.state.valueSelections;
     let updatedValues = (valueSelections.includes(selection))
       ? valueSelections.filter(item => item !== selection)
-      : [...valueSelections, selection];
-    this.setState({valueSelections: updatedValues}, () => {
-      this.props.setFilter(this.state.fieldSelection, this.state.valueSelections.join(';'));
-    });
+      : [...valueSelections, selection]
+
+    this.setState(
+      {valueSelections: updatedValues},
+      () => this.props.setFilter(this.props.id, this.state.fieldSelection, this.state.valueSelections.join(';'))
+    )
   };
 
   onFieldClear = () => {
     this.setState({
-      fieldSelection: null,
-      valueSelections: [],
+      fieldSelection: [],
       isFieldOpen: false,
-      isValueOpen: false
+      isValueOpen: false,
+      valueOptions: [],
+      valueSelections: [],
     });
   };
 
   onValueClear = () => {
-    this.setState({valueSelections: [], isValueOpen: false}, () => {
-      this.props.setFilter(this.state.fieldSelection, this.state.valueSelections);
-    });
+    this.setState(
+      {valueSelections: [], isValueOpen: false},
+      () => this.props.setFilter(this, this.state.fieldSelection, this.state.valueSelections)
+    )
   }
 
   updateValueOptions = () => {
     const { fieldSelection } = this.state;
-    const { customFilters } = this.props;
+    const customFilters = this.props.activeFilters;
     console.debug('CUSTOMFILTER: ' + customFilters);
 
     if (fieldSelection !== null) {
       let api_filter = toAPIFilter(customFilters).join();
       console.debug('APIFILTER: ' + customFilters);
 
-      HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], {
-        group_field: fieldSelection,
-        run_id: this.props.runId,
-        additional_filters: api_filter,
-      })
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          this.setState({valueOptions: data});
-        });
+      // make runId optional
+      let params = {}
+      if (this.props.runId) {
+        params = {
+          group_field: fieldSelection,
+          run_id: this.props.runId,
+          additional_filters: api_filter,
+        }
+      } else {
+        params = {
+          group_field: fieldSelection,
+          additional_filters: api_filter,
+        }
+      }
+
+      HttpClient.get(
+        [Settings.serverUrl, 'widget', 'result-aggregator'],
+        params
+      )
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => {
+        this.setState({valueOptions: data})
+      });
     }
   }
 
   render () {
-    const { isFieldOpen, fieldSelection, isValueOpen, valueOptions, valueSelections } = this.state;
+    const {
+      isFieldOpen,
+      fieldSelection,
+      isValueOpen,
+      valueOptions,
+      valueSelections,
+    } = this.state;
+    const {
+      onRemoveFilter,
+      onApplyReport,
+      id
+    } = this.props;
+    let hideFilters = this.props.hideFilters || [];
+    let activeFilters = this.props.activeFilters || {};
     let field_selected = this.state.fieldSelection !== null;
     let values_available = valueOptions.length > 0;
     let value_placeholder = "Select a field first" ; // default instead of an else block
@@ -275,37 +308,77 @@ export class MetaFilter extends React.Component {
     }
     return (
       <React.Fragment>
-        <Select key="metafield_select"
-          aria-label="metadata-field-filter"
-          placeholderText="Select metadata field"
-          variant={SelectVariant.single}
-          isOpen={isFieldOpen}
-          selections={fieldSelection}
-          maxHeight={"1140%"}
-          onToggle={this.onFieldToggle}
-          onSelect={this.onFieldSelect}
-          onClear={this.onFieldClear}
-        >
-          {this.props.fieldOptions.map((option, index) => (
-            <SelectOption key={index} value={option}/>
-          ))}
-        </Select>
-        <Select key="metavalue_select"
-          typeAheadAriaLabel={value_placeholder}
-          placeholderText={value_placeholder}
-          variant={SelectVariant.typeaheadMulti}
-          isOpen={isValueOpen}
-          selections={valueSelections}
-          maxHeight={"1140%"}
-          isDisabled={!field_selected || (field_selected && !values_available) }
-          onToggle={this.onValueToggle}
-          onSelect={this.onValueSelect}
-          onClear={this.onValueClear}
-        >
-          {valueOptions.map((option, index) => (
-            <SelectOption key={index} value={option._id} description={option.count + ' results'}/>
-          ))}
-        </Select>
+        <Flex>
+          <FlexItem>
+            <Select key="metafield_select"
+              aria-label="metadata-field-filter"
+              placeholderText="Select metadata field"
+              variant={SelectVariant.typeaheadMulti}
+              isOpen={isFieldOpen}
+              selections={fieldSelection}
+              maxHeight={"1140%"}
+              onToggle={this.onFieldToggle}
+              onSelect={this.onFieldSelect}
+              onClear={this.onFieldClear}
+              isCreatable={true}
+            >
+              {this.props.fieldOptions.map((option, index) => (
+                <SelectOption key={index} value={option}/>
+              ))}
+            </Select>
+            <Select key="metavalue_select"
+              typeAheadAriaLabel={value_placeholder}
+              placeholderText={value_placeholder}
+              variant={SelectVariant.typeaheadMulti}
+              isOpen={isValueOpen}
+              selections={valueSelections}
+              maxHeight={"1140%"}
+              isDisabled={!field_selected || (field_selected && !values_available) }
+              onToggle={this.onValueToggle}
+              onSelect={this.onValueSelect}
+              onClear={this.onValueClear}
+            >
+              {valueOptions.map((option, index) => (
+                <SelectOption key={index} value={option._id} description={option.count + ' results'}/>
+              ))}
+            </Select>
+          </FlexItem>
+        </Flex>
+        {Object.keys(activeFilters).length > 0 &&
+        <Flex style={{marginTop: "1rem", fontWeight: 'normal'}}>
+          <Flex>
+            <FlexItem style={{marginBottom: "0.5rem"}}>
+              Active filters
+            </FlexItem>
+          </Flex>
+          <Flex grow={{default: 'grow'}}>
+            {Object.keys(activeFilters).map(key => (
+            <FlexItem style={{marginBottom: "0.5rem"}} spacer={{ default: 'spacerXs'}} key={key}>
+              {!hideFilters.includes(key) &&
+              <ChipGroup categoryName={key}>
+                <Chip onClick={() => onRemoveFilter(id, key)}>
+                  {(typeof activeFilters[key] === 'object') &&
+                    <React.Fragment>
+                      <Badge isRead={true}>{activeFilters[key]['op']}</Badge>
+                      {activeFilters[key]['val']}
+                    </React.Fragment>
+                  }
+                  {(typeof activeFilters[key] !== 'object') && activeFilters[key]}
+                </Chip>
+              </ChipGroup>
+              }
+            </FlexItem>
+            ))}
+          </Flex>
+          {onApplyReport &&
+          <Flex>
+            <FlexItem style={{marginLeft: "0.75em"}}>
+              <Button onClick={onApplyReport} variant="secondary">Use Active Filters in Report</Button>
+            </FlexItem>
+          </Flex>
+          }
+        </Flex>
+        }
       </React.Fragment>
     );
   }
