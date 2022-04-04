@@ -43,8 +43,8 @@ def get_user_list(filter_=None, page=1, page_size=25, token_info=None, user=None
             if filter_clause is not None:
                 query = query.filter(filter_clause)
 
-    total_items = query.count()
     offset = (page * page_size) - page_size
+    total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     users = query.order_by(User.email.asc()).offset(offset).limit(page_size).all()
     return {

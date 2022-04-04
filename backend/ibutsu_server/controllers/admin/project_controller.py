@@ -3,6 +3,7 @@ from flask import abort
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project
 from ibutsu_server.db.models import User
+from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.admin import check_user_is_admin
 from ibutsu_server.util.uuid import convert_objectid_to_uuid
 from ibutsu_server.util.uuid import is_uuid
@@ -43,11 +44,11 @@ def get_project(id_, token_info=None, user=None):
         project = Project.query.filter(Project.name == id_).first()
     if not project:
         abort(404)
-    return project.to_dict()
+    return project.to_dict(with_owner=True)
 
 
 def get_project_list(
-    owner_id=None, group_id=None, page=1, page_size=25, token_info=None, user=None
+    filter_=None, owner_id=None, group_id=None, page=1, page_size=25, token_info=None, user=None
 ):
     """Get a list of projects
 
@@ -64,16 +65,23 @@ def get_project_list(
     """
     check_user_is_admin(user)
     query = Project.query
+
+    if filter_:
+        for filter_string in filter_:
+            filter_clause = convert_filter(filter_string, Project)
+            if filter_clause is not None:
+                query = query.filter(filter_clause)
     if owner_id:
         query = query.filter(Project.owner_id == owner_id)
     if group_id:
         query = query.filter(Project.group_id == group_id)
+
     offset = (page * page_size) - page_size
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     projects = query.offset(offset).limit(page_size).all()
     return {
-        "projects": [project.to_dict() for project in projects],
+        "projects": [project.to_dict(with_owner=True) for project in projects],
         "pagination": {
             "page": page,
             "pageSize": page_size,
@@ -103,15 +111,26 @@ def update_project(id_, project=None, token_info=None, user=None):
     if not project:
         abort(404)
 
+    # Grab the fields from the request
+    project_dict = connexion.request.get_json()
+
+    # If the "owner" field is set, ignore it
+    project_dict.pop("owner", None)
+
     # handle updating users separately
-    updates = connexion.request.get_json()
-    for username in updates.pop("users", []):
+    for username in project_dict.pop("users", []):
         user_to_add = User.query.filter_by(email=username).first()
         if user_to_add and user_to_add not in project.users:
             project.users.append(user_to_add)
 
+    # Make sure the project owner is in the list of users
+    if project_dict.get("owner_id"):
+        owner = User.query.get(project_dict["owner_id"])
+        if owner and owner not in project.users:
+            project.users.append(owner)
+
     # update the rest of the project info
-    project.update(updates)
+    project.update(project_dict)
     session.add(project)
     session.commit()
     return project.to_dict()

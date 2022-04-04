@@ -14,6 +14,7 @@ import { AdminHome } from './pages/admin/home';
 import { UserList } from './pages/admin/user-list';
 import { UserEdit } from './pages/admin/user-edit';
 import { ProjectList } from './pages/admin/project-list';
+import { ProjectEdit } from './pages/admin/project-edit';
 import { AuthService } from './services/auth';
 import './app.css';
 
@@ -33,11 +34,6 @@ export class Admin extends React.Component {
   }
 
   render() {
-    /* Saved for later
-          <li className="pf-c-nav__item">
-            <NavLink to="/admin/projects" className="pf-c-nav__link" activeClassName="pf-m-active">Projects</NavLink>
-          </li>
-    */
     const navigation = (
       <Nav onSelect={this.onNavSelect} theme="dark" aria-label="Nav">
         <NavList>
@@ -46,6 +42,9 @@ export class Admin extends React.Component {
           </li>
           <li className="pf-c-nav__item">
             <NavLink to="/admin/users" className="pf-c-nav__link" activeClassName="pf-m-active">Users</NavLink>
+          </li>
+          <li className="pf-c-nav__item">
+            <NavLink to="/admin/projects" className="pf-c-nav__link" activeClassName="pf-m-active">Projects</NavLink>
           </li>
         </NavList>
       </Nav>
@@ -59,6 +58,7 @@ export class Admin extends React.Component {
             <Route path="/admin/users" component={UserList} exact />
             <Route path="/admin/users/:id" component={UserEdit} />
             <Route path="/admin/projects" component={ProjectList} exact />
+            <Route path="/admin/projects/:id" component={ProjectEdit} exact />
           </Switch>
         </IbutsuPage>
       </React.Fragment>
