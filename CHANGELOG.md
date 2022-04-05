@@ -1,3 +1,14 @@
+Version 2.1.0
+=============
+
+* Add project management for administrators
+* Ignore persistent data
+* Update the Getting Started documentation
+* Add data persistence to ibutsu-pod.sh script
+* Bump minimist from 1.2.5 to 1.2.6 in /frontend
+* Add basic user management
+* Add a development Docker Compose file
+
 Version 2.0.3
 =============
 
