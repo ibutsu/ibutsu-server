@@ -44,7 +44,12 @@ function dashboardToSelect(dashboard) {
       return this.dashboard.title;
     },
     compareTo: function (value) {
-      return this.dashboard.title.toLowerCase().includes(value.dashboard.title.toLowerCase());
+      if (value.dashboard) {
+        return this.dashboard.id == value.dashboard.id;
+      }
+      else {
+        return this.dashboard.title.toLowerCase().includes(value.toLowerCase());
+      }
     }
   };
 }
@@ -65,6 +70,7 @@ export class Dashboard extends React.Component {
       isDashboardSelectorOpen: false,
       isNewDashboardOpen: false,
       isWidgetWizardOpen: false,
+      dashboardFilter: ''
     };
     props.eventEmitter.on('projectChange', () => {
       this.getDashboards();
@@ -83,7 +89,10 @@ export class Dashboard extends React.Component {
       return;
     }
     params['project_id'] = project.id;
-    params['pageSize'] = 100;
+    params['pageSize'] = 10;
+    if (this.state.dashboardFilter) {
+      params['filter'] = ['title%' + this.state.dashboardFilter];
+    }
     HttpClient.get([Settings.serverUrl, 'dashboard'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
@@ -152,6 +161,10 @@ export class Dashboard extends React.Component {
       selectedDashboard: null,
       isDashboardSelectorOpen: false
     }, this.getWidgets);
+  }
+
+  onDashboardChanged = (value) => {
+    this.setState({dashboardFilter: value}, this.getDashboards);
   }
 
   onNewDashboardClick = () => {
@@ -263,6 +276,8 @@ export class Dashboard extends React.Component {
                   onToggle={this.onDashboardToggle}
                   onSelect={this.onDashboardSelect}
                   onClear={this.onDashboardClear}
+                  onTypeaheadInputChanged={this.onDashboardChanged}
+                  footer={this.state.dashboards.length == 10 && "Search for more..."}
                   isPlain
                 >
                   {this.state.dashboards.map(dash => (

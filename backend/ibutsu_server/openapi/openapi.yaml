@@ -585,6 +585,16 @@ paths:
     get:
       operationId: get_project_list
       parameters:
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
         - description: Filter projects by owner ID
           explode: true
           in: query
@@ -797,6 +807,16 @@ paths:
     get:
       operationId: get_dashboard_list
       parameters:
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
         - description: Filter dashboards by project ID
           explode: true
           in: query
@@ -1478,7 +1498,7 @@ paths:
           description: The task either doesn't exist or hasn't finished
         203:
           content:
-            text/plain:
+            application/json:
               schema:
                 type: object
           description: Error occurred in the task

@@ -44,7 +44,7 @@ export class Profile extends React.Component {
               path="/profile/tokens"
               exact
               render={routerProps => (
-                <UserTokens parent={this} {...routerProps} />
+                <UserTokens eventEmitter={this.eventEmitter} {...routerProps} />
               )}
             />
           </Switch>

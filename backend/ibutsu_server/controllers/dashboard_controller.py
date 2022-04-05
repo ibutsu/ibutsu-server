@@ -3,6 +3,7 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Dashboard
 from ibutsu_server.db.models import Project
 from ibutsu_server.db.models import WidgetConfig
+from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.uuid import validate_uuid
 
@@ -42,7 +43,9 @@ def get_dashboard(id_, token_info=None, user=None):
     return dashboard.to_dict()
 
 
-def get_dashboard_list(project_id=None, page=1, page_size=25, token_info=None, user=None):
+def get_dashboard_list(
+    filter_=None, project_id=None, page=1, page_size=25, token_info=None, user=None
+):
     """Get a list of dashboards
 
     :param project_id: Filter dashboards by project ID
@@ -64,6 +67,14 @@ def get_dashboard_list(project_id=None, page=1, page_size=25, token_info=None, u
         if not project_has_user(project, user):
             return "Forbidden", 403
         query = query.filter(Dashboard.project_id == project_id)
+
+    if filter_:
+        for filter_string in filter_:
+            filter_clause = convert_filter(filter_string, Dashboard)
+            if filter_clause is not None:
+                query = query.filter(filter_clause)
+
+    query = query.order_by(Dashboard.title.asc())
     offset = (page * page_size) - page_size
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
