@@ -29,6 +29,19 @@ def get_user(token_info=None, user=None):
     return _hide_sensitive_fields(user.to_dict())
 
 
+def update_user(token_info=None, user=None):
+    """Return the current user"""
+    user = User.query.get(user)
+    if not user:
+        return "Not authorized", 401
+    user_dict = connexion.request.get_json()
+    user_dict.pop("is_superadmin", None)
+    user.update(user_dict)
+    session.add(user)
+    session.commit()
+    return _hide_sensitive_fields(user.to_dict())
+
+
 def get_token_list(page=1, page_size=25, token_info=None, user=None):
     """Get a list of tokens
 

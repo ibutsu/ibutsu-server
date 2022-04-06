@@ -208,7 +208,7 @@ export class IbutsuHeader extends React.Component {
             <a href={apiUiUrl} className="pf-c-button pf-m-plain" target="_blank" rel="noopener noreferrer"><ServerIcon/> API</a>
           </PageHeaderToolsItem>
           <PageHeaderToolsItem id="user-dropdown">
-            <UserDropdown />
+            <UserDropdown eventEmitter={this.eventEmitter}/>
           </PageHeaderToolsItem>
         </PageHeaderToolsGroup>
       </PageHeaderTools>

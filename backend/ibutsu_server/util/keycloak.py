@@ -47,7 +47,11 @@ def get_user_from_keycloak(auth_data):
         user = User.query.filter(User.email == user_json["email"]).first()
         if not user:
             user = User(
-                email=user_json["email"], name=user_json["name"], _password=user_json["sub"]
+                email=user_json["email"],
+                name=user_json["name"],
+                _password=user_json["sub"],
+                is_active=True,
+                is_superadmin=False,
             )
             session.add(user)
             session.commit()

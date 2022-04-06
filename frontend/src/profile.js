@@ -9,8 +9,8 @@ import {
 import { NavLink, Route, Switch } from 'react-router-dom';
 import EventEmitter from 'wolfy87-eventemitter';
 
-import { UserProfile } from './user-profile';
-import { UserTokens } from './user-tokens';
+import { UserProfile } from './pages/profile/user';
+import { UserTokens } from './pages/profile/tokens';
 import { IbutsuPage } from './components';
 import './app.css';
 
@@ -39,7 +39,11 @@ export class Profile extends React.Component {
       <React.Fragment>
         <IbutsuPage eventEmitter={this.eventEmitter} navigation={navigation} title="Profile | Ibutsu">
           <Switch>
-            <Route path="/profile" component={UserProfile} exact />
+            <Route
+              path="/profile"
+              exact
+              render={routerProps => <UserProfile eventEmitter={this.eventEmitter} {...routerProps} />}
+            />
             <Route
               path="/profile/tokens"
               exact
