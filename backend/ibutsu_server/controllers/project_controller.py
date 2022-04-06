@@ -49,7 +49,7 @@ def get_project(id_, token_info=None, user=None):
 
 
 def get_project_list(
-    owner_id=None, group_id=None, page=1, page_size=25, token_info=None, user=None
+    filter_=None, owner_id=None, group_id=None, page=1, page_size=25, token_info=None, user=None
 ):
     """Get a list of projects
 

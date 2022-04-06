@@ -50,6 +50,7 @@ export class IbutsuHeader extends React.Component {
       selectedProject: projectToOption(project),
       searchValue: '',
       projects: [],
+      projectsFilter: ''
     };
   }
 
@@ -68,7 +69,11 @@ export class IbutsuHeader extends React.Component {
   }
 
   getProjects() {
-    HttpClient.get([Settings.serverUrl, 'project'])
+    const params = {pageSize: 10};
+    if (this.state.projectsFilter) {
+      params['filter'] = ['title%' + this.state.projectsFilter];
+    }
+    HttpClient.get([Settings.serverUrl, 'project'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({projects: data['projects']}));
   }
@@ -143,6 +148,10 @@ export class IbutsuHeader extends React.Component {
     this.emitProjectChange();
   }
 
+  onProjectsChanged = (value) => {
+    this.setState({projectsFilter: value}, this.getProjects);
+  }
+
   toggleAbout = () => {
     this.setState({isAboutOpen: !this.state.isAboutOpen});
   };
@@ -176,6 +185,8 @@ export class IbutsuHeader extends React.Component {
             onToggle={this.onProjectToggle}
             onSelect={this.onProjectSelect}
             onClear={this.onProjectClear}
+            onTypeaheadInputChanged={this.onProjectsChanged}
+            footer={this.state.projects.length == 10 && "Search for more..."}
           >
             {this.state.projects.map(project => (
               <SelectOption key={project.id} value={projectToOption(project)} description={project.name} />

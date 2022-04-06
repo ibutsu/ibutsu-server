@@ -22,17 +22,18 @@ import { getSpinnerRow } from './utilities';
 import { FilterTable, AddTokenModal, DeleteModal } from './components';
 
 
-
 export class UserTokens extends React.Component {
 
   static propTypes = {
     location: PropTypes.object,
     history: PropTypes.object,
-    parent: PropTypes.node
+    parent: PropTypes.node,
+    eventEmitter: PropTypes.object
   }
 
   constructor(props) {
     super(props);
+    this.eventEmitter = props.eventEmitter;
     const params = new URLSearchParams(props.location.search);
     let page = 1, pageSize = 20;
     if (params.toString() !== '') {
@@ -60,9 +61,16 @@ export class UserTokens extends React.Component {
     };
   }
 
+  showNotification(type, title, message, action?, timeout?, key?) {
+    if (!this.eventEmitter) {
+      return;
+    }
+    this.eventEmitter.emit('showNotification', type, title, message, action, timeout, key);
+  }
+
   copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    this.props.parent.showNotification('info', 'Copied to clipboard', 'Your token has been copied to the clipboard');
+    this.showNotification('info', 'Copied to clipboard', 'Your token has been copied to the clipboard');
   }
 
   tokenToRow(token) {

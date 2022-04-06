@@ -54,6 +54,7 @@ export class ProjectEdit extends React.Component {
       users: [],
       owner: null,
       isOwnerOpen: false,
+      filter: ''
     };
   }
 
@@ -98,6 +99,10 @@ export class ProjectEdit extends React.Component {
     });
   }
 
+  onOwnerChanged = (value) => {
+    this.setState({filter: value}, this.getUsers);
+  }
+
   getProject(projectId) {
     HttpClient.get([Settings.serverUrl, 'admin', 'project', projectId])
       .then(response => {
@@ -111,7 +116,11 @@ export class ProjectEdit extends React.Component {
   }
 
   getUsers() {
-    HttpClient.get([Settings.serverUrl, 'admin', 'user'])
+    const params = {};
+    if (this.state.filter) {
+      params['filter'] = ['name%' + this.state.filter];
+    }
+    HttpClient.get([Settings.serverUrl, 'admin', 'user'], params)
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
         return response.json();
@@ -175,13 +184,14 @@ export class ProjectEdit extends React.Component {
                      onToggle={this.onOwnerToggle}
                      onSelect={this.onOwnerSelect}
                      onClear={this.onOwnerClear}
+                     onTypeaheadInputChanged={this.onOwnerChanged}
                      selections={owner}
                      isOpen={this.state.isOwnerOpen}
                      aria-labelledby="owner"
                      placeholderText="Select user"
                    >
                      {users.map(user => (
-                       <SelectOption key={user.id} value={userToOption(user)} description={user.name} />
+                       <SelectOption key={user.id} value={userToOption(user)} description={user.email} />
                      ))}
                    </Select>
                 </FormGroup>
