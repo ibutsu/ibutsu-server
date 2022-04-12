@@ -1,3 +1,9 @@
+Version 2.1.2
+=============
+
+* Allow user's name to be edited
+* Various bug fixes and enhancements
+
 Version 2.1.0
 =============
 
