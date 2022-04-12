@@ -1667,6 +1667,21 @@ paths:
       tags:
         - user
       x-openapi-router-controller: ibutsu_server.controllers.user_controller
+    put:
+      operationId: update_user
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: The details of the logged in user
+        401:
+          description: The user needs to be logged in
+      summary: Return the user details for the current user
+      tags:
+        - user
+      x-openapi-router-controller: ibutsu_server.controllers.user_controller
   /user/token:
     get:
       operationId: get_token_list

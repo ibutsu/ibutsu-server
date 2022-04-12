@@ -1,28 +1,53 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import {
   Alert,
+  Button,
   DataList,
   DataListCell,
   DataListItem,
   DataListItemRow,
   DataListItemCells,
+  InputGroup,
   Label,
   PageSection,
   PageSectionVariants,
+  TextInput,
   Title
 } from '@patternfly/react-core';
+import { CheckIcon, PencilAltIcon, TimesIcon } from '@patternfly/react-icons';
 
-import { HttpClient } from './services/http';
-import { Settings } from './settings';
+import { HttpClient } from '../../services/http';
+import { Settings } from '../../settings';
 
 
 export class UserProfile extends React.Component {
+  static propTypes = {
+    eventEmitter: PropTypes.object
+  }
+
   constructor(props) {
     super(props);
+    this.eventEmitter = props.eventEmitter;
     this.state = {
       user: null,
-      projects: null
+      projects: null,
+      isEditing: false
     };
+  }
+
+  showNotification(type, title, message, action?, timeout?, key?) {
+    if (!this.eventEmitter) {
+      return;
+    }
+    this.eventEmitter.emit('showNotification', type, title, message, action, timeout, key);
+  }
+
+  updateUserName(userName) {
+    if (!this.eventEmitter) {
+      return;
+    }
+    this.eventEmitter.emit('updateUserName', userName);
   }
 
   getUser() {
@@ -37,12 +62,39 @@ export class UserProfile extends React.Component {
 
   getProjects() {
     HttpClient.get([Settings.serverUrl, 'project'])
-      .then(response => {
-        response = HttpClient.handleResponse(response, 'response');
-        return response.json();
-      })
+      .then(response => HttpClient.handleResponse(response, 'response').json())
       .then(data => this.setState({projects: data.projects}))
       .catch(error => console.error(error));
+  }
+
+  saveUser(user) {
+    return HttpClient.put([Settings.serverUrl, 'user'], {}, user)
+      .then(response => HttpClient.handleResponse(response))
+      .catch(error => console.error(error));
+  }
+
+  onEditButtonClicked = () => {
+    this.setState({tempName: this.state.user.name, isEditing: true});
+  }
+
+  onCancelButtonClicked = () => {
+    this.setState({isEditing: false});
+  }
+
+  onSaveButtonClicked = () => {
+    const { user, tempName } = this.state;
+    let tempUser = Object.assign({}, user, {name: tempName});
+    this.saveUser(tempUser).then(response => {
+      if (response !== undefined) {
+        this.showNotification('success', 'Name Updated', 'Your name has been updated.');
+        this.setState({user: tempUser, isEditing: false});
+        this.updateUserName(tempName);
+      }
+      else {
+        this.showNotification('danger', 'Error Updating', 'There was an error trying to save your name');
+        this.setState({isEditing: false});
+      }
+    });
   }
 
   componentDidMount() {
@@ -82,12 +134,28 @@ export class UserProfile extends React.Component {
           <DataList selectedDataListItemId={null} aria-label="User profile">
             <DataListItem aria-labelledby="Name">
               <DataListItemRow>
-                <DataListItemCells
-                  dataListCells={[
-                    <DataListCell key={1} width={2}><strong>Name:</strong></DataListCell>,
-                    <DataListCell key={2} width={4}>{user.name}</DataListCell>
-                  ]}
-                />
+                {!this.state.isEditing &&
+                  <DataListItemCells
+                    dataListCells={[
+                      <DataListCell key={1} width={2}><strong>Name:</strong></DataListCell>,
+                      <DataListCell key={2} width={4}>{user.name} <Button variant="link" icon={<PencilAltIcon />} onClick={this.onEditButtonClicked} isInline isSmall ouiaId="edit-profile-button">Edit</Button></DataListCell>
+                    ]}
+                  />
+                }
+                {this.state.isEditing &&
+                  <DataListItemCells
+                    dataListCells={[
+                      <DataListCell key={1} width={2}><strong>Name:</strong></DataListCell>,
+                      <DataListCell key={2} width={4}>
+                        <InputGroup>
+                          <TextInput value={this.state.tempName} type="text" onChange={value => this.setState({tempName: value})} aria-label="User name" />
+                          <Button variant="control" icon={<CheckIcon />} onClick={this.onSaveButtonClicked} ouiaId="edit-save-button">Save</Button>
+                          <Button variant="control" icon={<TimesIcon />} onClick={this.onCancelButtonClicked} ouiaId="edit-cancel-button">Cancel</Button>
+                        </InputGroup>
+                      </DataListCell>
+                    ]}
+                  />
+                }
               </DataListItemRow>
             </DataListItem>
             <DataListItem aria-labelledby="E-mail">

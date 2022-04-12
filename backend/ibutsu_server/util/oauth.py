@@ -75,7 +75,13 @@ def get_user_from_provider(provider, auth_data):
             return None
     user = User.query.filter(User.email == user_dict["email"]).first()
     if not user:
-        user = User(email=user_dict["email"], name=user_dict["name"], _password=user_dict["id"])
+        user = User(
+            email=user_dict["email"],
+            name=user_dict["name"],
+            _password=user_dict["id"],
+            is_active=True,
+            is_superadmin=False,
+        )
         session.add(user)
         session.commit()
     return user

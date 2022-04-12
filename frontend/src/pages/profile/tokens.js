@@ -16,10 +16,10 @@ import {
 } from '@patternfly/react-core';
 import { CopyIcon, PlusCircleIcon } from '@patternfly/react-icons';
 
-import { HttpClient } from './services/http';
-import { Settings } from './settings';
-import { getSpinnerRow } from './utilities';
-import { FilterTable, AddTokenModal, DeleteModal } from './components';
+import { HttpClient } from '../../services/http';
+import { Settings } from '../../settings';
+import { getSpinnerRow } from '../../utilities';
+import { FilterTable, AddTokenModal, DeleteModal } from '../../components';
 
 
 export class UserTokens extends React.Component {
@@ -79,8 +79,8 @@ export class UserTokens extends React.Component {
         {title: token.name},
         {title: (
           <InputGroup>
-            <TextInput value={token.token} />
-            <Button variant="control" onClick={() => this.copyToClipboard(token.token)}><CopyIcon /></Button>
+            <TextInput value={token.token} aria-label={`token-input-${token.id}`} ouiaId={`token-input-${token.id}`} />
+            <Button variant="control" onClick={() => this.copyToClipboard(token.token)} ouiaId={`copy-button-${token.id}`}><CopyIcon /></Button>
           </InputGroup>
         )},
         {title: token.expires},
