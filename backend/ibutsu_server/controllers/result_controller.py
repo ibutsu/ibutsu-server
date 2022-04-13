@@ -167,10 +167,10 @@ def update_result(id_, result=None, token_info=None, user=None):
         merge_dicts(user_properties, result_dict["metadata"])
 
     result = Result.query.get(id_)
-    if not project_has_user(result.project, user):
-        return "Forbidden", 403
     if not result:
         return "Result not found", 404
+    if not project_has_user(result.project, user):
+        return "Forbidden", 403
     result.update(result_dict)
     result.env = result.data.get("env") if result.data else None
     result.component = result.data.get("component") if result.data else None
