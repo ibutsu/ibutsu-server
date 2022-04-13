@@ -59,7 +59,7 @@ optional arguments:
 There is a pre-created Docker Compose file for running a development environment locally:
 
 ```console
-docker-compose -f docker-compose.dev.yaml
+docker compose -f docker-compose.dev.yml up
 ```
 
 ### Without containers
