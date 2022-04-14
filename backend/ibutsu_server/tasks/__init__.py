@@ -48,15 +48,21 @@ def create_celery_app(_app=None):
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             # if the task is related to a report, set that report to failed
-            try:
-                with _app.app_context():
-                    report_id = args[0].get("id")  # get the report ID from the task
-                    report = Report.query.get(report_id)
-                    # if this is actually a report ID, set it as an error
-                    if report:
-                        self._set_report_error(report)
-            except (IndexError, TypeError):
-                pass
+            if isinstance(args[0], dict):
+                try:
+                    with _app.app_context():
+                        report_id = args[0].get("id")  # get the report ID from the task
+                        report = Report.query.get(report_id)
+                        # if this is actually a report ID, set it as an error
+                        if report:
+                            self._set_report_error(report)
+                except AttributeError as e:
+                    logging.error(f"Attribute error: {e}. Args are {args}")
+                except (IndexError, TypeError):
+                    pass
+            else:
+                # the task is not related to a report
+                logging.info(f"Task {task_id} with args {args} is not related to a report")
 
     app = Celery(
         "ibutsu_server",
