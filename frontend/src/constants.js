@@ -54,6 +54,7 @@ export const STRING_RESULT_FIELDS = [
   'metadata.params',
   'metadata.project',
   'metadata.title',
+  'metadata.endpoint',
   'params',
   'result',
   'source',
@@ -74,6 +75,7 @@ export const FILTERABLE_RESULT_FIELDS = [
   'metadata.fspath',
   'metadata.importance',
   'metadata.title',
+  'metadata.endpoint',
   // TODO support object/dict filtering
   // https://github.com/ibutsu/ibutsu-server/issues/229
   //'metadata.params',
