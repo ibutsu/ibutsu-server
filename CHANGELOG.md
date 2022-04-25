@@ -1,3 +1,12 @@
+Version 2.1.3
+=============
+
+* Check if the first argument passed to on_failure is a dict
+* new endpoint filter for frontend
+* fix AttributeError: 'NoneType' object has no attribute 'project'
+* fix docker-compose command in README
+* Update version number
+
 Version 2.1.0
 =============
 
