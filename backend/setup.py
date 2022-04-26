@@ -3,7 +3,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 NAME = "ibutsu_server"
-VERSION = "2.1.3"
+VERSION = "2.1.4"
 REQUIRES = [
     "alembic",
     # Pin Celery to be compatible with Kombu
