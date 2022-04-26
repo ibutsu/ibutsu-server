@@ -15,6 +15,7 @@ import {
   PageHeaderTools,
   PageHeaderToolsGroup,
   PageHeaderToolsItem,
+  Switch,
   TextContent,
   TextList,
   TextListItem
@@ -29,7 +30,7 @@ import { FileUpload, UserDropdown } from '../components';
 import { MONITOR_UPLOAD_TIMEOUT } from '../constants';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { getActiveProject, projectToOption } from '../utilities';
+import { getActiveProject, getTheme, projectToOption, setTheme } from '../utilities';
 
 
 export class IbutsuHeader extends React.Component {
@@ -50,7 +51,8 @@ export class IbutsuHeader extends React.Component {
       selectedProject: projectToOption(project),
       searchValue: '',
       projects: [],
-      projectsFilter: ''
+      projectsFilter: '',
+      isDarkTheme: getTheme() == 'dark'
     };
   }
 
@@ -66,6 +68,13 @@ export class IbutsuHeader extends React.Component {
       return;
     }
     this.eventEmitter.emit('projectChange');
+  }
+
+  emitThemeChange() {
+    if (!this.eventEmitter) {
+      return;
+    }
+    this.eventEmitter.emit('themeChange');
   }
 
   getProjects() {
@@ -156,6 +165,11 @@ export class IbutsuHeader extends React.Component {
     this.setState({isAboutOpen: !this.state.isAboutOpen});
   };
 
+  onThemeChanged = (isChecked) => {
+    setTheme(isChecked ? 'dark' : 'light');
+    this.setState({isDarkTheme: isChecked}, this.emitThemeChange);
+  }
+
   componentWillUnmount() {
     if (this.state.monitorUploadId) {
       clearInterval(this.state.monitorUploadId);
@@ -206,6 +220,9 @@ export class IbutsuHeader extends React.Component {
           </PageHeaderToolsItem>
           <PageHeaderToolsItem>
             <a href={apiUiUrl} className="pf-c-button pf-m-plain" target="_blank" rel="noopener noreferrer"><ServerIcon/> API</a>
+          </PageHeaderToolsItem>
+          <PageHeaderToolsItem>
+            <Switch id="dark-theme" label="Dark theme" labelOff="Dark theme" isChecked={this.state.isDarkTheme} onChange={this.onThemeChanged} />
           </PageHeaderToolsItem>
           <PageHeaderToolsItem id="user-dropdown">
             <UserDropdown eventEmitter={this.eventEmitter}/>
