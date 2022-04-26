@@ -7,6 +7,17 @@ Version 2.1.3
 * fix docker-compose command in README
 * Update version number
 
+Version 2.1.2
+=============
+
+* Re-release to try to fix previous release mess
+
+Version 2.1.1
+=============
+
+* Allow user's name to be edited
+* Various bug fixes and enhancements
+
 Version 2.1.0
 =============
 

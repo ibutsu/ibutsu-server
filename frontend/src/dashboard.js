@@ -96,27 +96,7 @@ export class Dashboard extends React.Component {
     HttpClient.get([Settings.serverUrl, 'dashboard'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
-        this.setState(
-          {dashboards: data['dashboards']},
-          () => {
-            // If the current dashboard is not in current list
-            if (this.state.selectedDashboard) {
-              let selectedId = null;
-              data['dashboards'].forEach(item => {
-                if (item.id === this.state.selectedDashboard.dashboard.id) {
-                  selectedId = item.id;
-                }
-              });
-              if (!selectedId) {
-                localStorage.removeItem('dashboard');
-                this.setState({selectedDashboard: null}, this.getWidgets);
-              }
-            }
-            else {
-              this.getWidgets();
-            }
-          }
-        );
+        this.setState({dashboards: data['dashboards']}, this.getWidgets);
       });
   }
 
