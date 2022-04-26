@@ -30,10 +30,10 @@ export class IbutsuPage extends React.Component {
 
   constructor(props) {
     super(props);
-    this.version = version;
     this.versionCheckId = '';
     this.state = {
       notifications: [],
+      version: version
     };
     this.props.eventEmitter.on('showNotification', (type, title, message, action, timeout, key) => {
       this.showNotification(type, title, message, action, timeout, key);
@@ -86,7 +86,7 @@ export class IbutsuPage extends React.Component {
     HttpClient.get([frontendUrl, 'version.json'], {'v': getDateString()})
       .then(response => HttpClient.handleResponse(response))
       .then((data) => {
-        if (data && data.version && (data.version !== this.version)) {
+        if (data && data.version && (data.version !== this.state.version)) {
           const action = <AlertActionLink onClick={() => { window.location.reload(); }}>Reload</AlertActionLink>;
           this.showNotification('info', 'Ibutsu has been updated', 'A newer version of Ibutsu is available, click reload to get it.', action, true, 'check-version');
         }
@@ -116,7 +116,7 @@ export class IbutsuPage extends React.Component {
             </Alert>
           ))}
         </AlertGroup>
-        <Page header={<IbutsuHeader eventEmitter={this.props.eventEmitter} />} sidebar={<PageSidebar nav={this.props.navigation} theme="dark" />} isManagedSidebar={true} style={{position: "relative"}}>
+        <Page header={<IbutsuHeader eventEmitter={this.props.eventEmitter} version={this.state.version} />} sidebar={<PageSidebar nav={this.props.navigation} theme="dark" />} isManagedSidebar={true} style={{position: "relative"}}>
           {this.props.children}
         </Page>
       </React.Fragment>

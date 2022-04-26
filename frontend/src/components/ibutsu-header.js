@@ -35,7 +35,8 @@ import { getActiveProject, getTheme, projectToOption, setTheme } from '../utilit
 
 export class IbutsuHeader extends React.Component {
   static propTypes = {
-    eventEmitter: PropTypes.object
+    eventEmitter: PropTypes.object,
+    version: PropTypes.string
   }
 
   constructor(props) {
@@ -52,7 +53,8 @@ export class IbutsuHeader extends React.Component {
       searchValue: '',
       projects: [],
       projectsFilter: '',
-      isDarkTheme: getTheme() == 'dark'
+      isDarkTheme: getTheme() == 'dark',
+      version: props.version
     };
   }
 
@@ -244,17 +246,16 @@ export class IbutsuHeader extends React.Component {
           <TextContent>
             <TextList component="dl">
               <TextListItem component="dt">Version</TextListItem>
-              <TextListItem component="dd">{this.version}</TextListItem>
+              <TextListItem component="dd">{this.state.version}</TextListItem>
               <TextListItem component="dt">Source code</TextListItem>
               <TextListItem component="dd"><a href="https://github.com/ibutsu/ibutsu-server" target="_blank" rel="noopener noreferrer">github.com/ibutsu/ibutsu-server</a></TextListItem>
               <TextListItem component="dt">Documentation</TextListItem>
               <TextListItem component="dd"><a href="https://docs.ibutsu-project.org/" target="_blank" rel="noopener noreferrer">docs.ibutsu-project.org</a></TextListItem>
               <TextListItem component="dt">Report bugs</TextListItem>
-              <TextListItem component="dd"><a href="https://github.com/ibutsu/ibutsu-server/issues/new" target="_blank" rel="noopener noreferrer">Submit an upstream issue</a></TextListItem>
-              <TextListItem component="dd"><a href="https://issues.redhat.com/secure/CreateIssue.jspa?pid=12324624&issuetype=1" target="_blank" rel="noopener noreferrer">Submit a JIRA issue</a></TextListItem>
+              <TextListItem component="dd"><a href="https://github.com/ibutsu/ibutsu-server/issues/new" target="_blank" rel="noopener noreferrer">Submit an issue</a></TextListItem>
             </TextList>
           </TextContent>
-          <p style={{marginTop: 260}}>* Note: artifact files (screenshots, logs) are retained for 3 months</p>
+          <p style={{marginTop: "2rem"}}>* Note: artifact files (screenshots, logs) are retained for 3 months</p>
         </AboutModal>
         <PageHeader
           logo={<Brand src="/images/ibutsu-wordart-164.png" alt="Ibutsu"/>}
