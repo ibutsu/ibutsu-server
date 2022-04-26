@@ -1,3 +1,9 @@
+Version 2.1.4
+=============
+
+* Fix a bug with the dashboard
+* Bump async from 2.6.3 to 2.6.4 in /frontend
+
 Version 2.1.3
 =============
 
