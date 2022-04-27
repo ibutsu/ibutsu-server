@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import '@patternfly/react-core/dist/styles/base.css';
+import '@patternfly/patternfly/patternfly-theme-dark.css';
 import {
   Alert,
   AlertActionLink,
@@ -14,7 +15,7 @@ import {
 import { IbutsuHeader } from '../components';
 import { ALERT_TIMEOUT, VERSION_CHECK_TIMEOUT } from '../constants';
 import { HttpClient } from '../services/http';
-import { getDateString } from '../utilities';
+import { getDateString, getTheme } from '../utilities';
 import { version } from '../../package.json'
 import '../app.css';
 
@@ -37,6 +38,7 @@ export class IbutsuPage extends React.Component {
     this.props.eventEmitter.on('showNotification', (type, title, message, action, timeout, key) => {
       this.showNotification(type, title, message, action, timeout, key);
     });
+    this.props.eventEmitter.on('themeChange', this.setTheme);
   }
 
   showNotification(type, title, message, action?, timeout?, key?) {
@@ -69,6 +71,16 @@ export class IbutsuPage extends React.Component {
     });
   }
 
+  setTheme() {
+    const isDarkTheme = getTheme() === 'dark';
+    if (isDarkTheme) {
+      document.documentElement.classList.add('pf-theme-dark');
+    }
+    else {
+      document.documentElement.classList.remove('pf-theme-dark');
+    }
+  }
+
   checkVersion() {
     const frontendUrl = window.location.origin;
     HttpClient.get([frontendUrl, 'version.json'], {'v': getDateString()})
@@ -88,6 +100,7 @@ export class IbutsuPage extends React.Component {
   }
 
   componentDidMount() {
+    this.setTheme();
     this.checkVersion();
     this.versionCheckId = setInterval(() => this.checkVersion(), VERSION_CHECK_TIMEOUT);
   }

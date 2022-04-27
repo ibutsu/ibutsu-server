@@ -453,3 +453,11 @@ export function debounce(func, timeout = 500) {
     timerId = setTimeout(() => { timerId = undefined; }, timeout);
   };
 }
+
+export function getTheme() {
+  return localStorage.getItem('theme');
+}
+
+export function setTheme(theme) {
+  localStorage.setItem('theme', theme);
+}

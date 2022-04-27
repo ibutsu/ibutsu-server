@@ -27,7 +27,7 @@ import { HttpClient } from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
 import { linkifyDecorator } from './decorators'
 import { Settings } from '../settings';
-import { getIconForResult, round } from '../utilities';
+import { getIconForResult, getTheme, round } from '../utilities';
 import { TabTitle } from './tabs';
 import { TestHistoryTable } from './test-history';
 
@@ -222,6 +222,7 @@ export class ResultView extends React.Component {
 
   render() {
     let { testResult, artifactTabs, activeTab, testHistoryTable } = this.state;
+    const jsonViewTheme = getTheme() === 'dark' ? 'tomorrow' : 'rjv-default';
     if (activeTab === null) {
       activeTab = this.getDefaultTab();
     }
@@ -517,7 +518,7 @@ export class ResultView extends React.Component {
           <Tab eventKey="test-object" title={<TabTitle icon={CodeIcon} text="Test Object" />} style={{backgroundColor: "white"}}>
             <Card>
               <CardBody>
-                <ReactJson src={testResult} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} />
+                <ReactJson src={testResult} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} theme={jsonViewTheme} />
               </CardBody>
             </Card>
           </Tab>

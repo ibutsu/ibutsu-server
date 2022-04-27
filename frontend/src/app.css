@@ -74,11 +74,6 @@ table.pf-c-table th {
   background-color: var(--pf-global--palette--purple-700);
 }
 
-button.pf-c-dropdown__toggle,
-button.pf-c-tabs__button {
-  color: #333;
-}
-
 a.typeahead-option {
   text-decoration: none;
   color: var(--pf-global--Color--100);
@@ -240,4 +235,30 @@ div[data-id=widget-param-dropdown] > div {
   text-overflow: ellipsis;
   direction: rtl;
   text-align: left;
+}
+
+/* Alerts currently have the wrong background in the PF dark stylesheet.
+ * Thanks to the PF quick start extension for this style
+ */
+.pf-theme-dark .pf-c-alert {
+  --pf-c-alert--BackgroundColor: var(--pf-global--palette--black-700);
+  --pf-c-alert--m-inline--BackgroundColor: var(--pf-global--palette--black-700);
+  --pf-c-alert--m-inline--m-success--BackgroundColor: var(--pf-global--palette--black-700);
+  --pf-c-alert--m-inline--m-danger--BackgroundColor: var(--pf-global--palette--black-700);
+  --pf-c-alert--m-inline--m-warning--BackgroundColor: var(--pf-global--palette--black-700);
+  --pf-c-alert--m-inline--m-info--BackgroundColor: var(--pf-global--palette--black-700);
+}
+
+/* Charts currently have color issues too
+ */
+.pf-theme-dark tspan {
+  fill: rgb(184, 187, 190) !important;
+}
+
+.pf-theme-dark .pf-l-grid {
+  background-color: inherit !important;
+}
+
+.pf-theme-dark .pf-c-tabs__link {
+  background-color: var(--pf-global--BackgroundColor--100) !important;
 }

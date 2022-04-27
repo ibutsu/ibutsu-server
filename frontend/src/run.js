@@ -49,6 +49,7 @@ import {
   cleanPath,
   convertDate,
   getSpinnerRow,
+  getTheme,
   processPyTestPath,
   resultToRow,
   round
@@ -487,6 +488,7 @@ export class Run extends React.Component {
     let created = 0;
     let calculatePasses = true;
     const { run, columns, rows, classificationTable, artifactTabs } = this.state;
+    const jsonViewTheme = getTheme() === 'dark' ? 'tomorrow' : 'rjv-default';
 
     if (run.start_time) {
       created = new Date(run.start_time);
@@ -823,7 +825,7 @@ export class Run extends React.Component {
               <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: "white"}}>
                 <Card>
                   <CardBody>
-                    <ReactJson src={run} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} />
+                    <ReactJson src={run} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} theme={jsonViewTheme} />
                   </CardBody>
                 </Card>
               </Tab>
