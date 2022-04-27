@@ -20,7 +20,7 @@ import {
   TextList,
   TextListItem
 } from '@patternfly/react-core';
-import { UploadIcon, ServerIcon, QuestionCircleIcon } from '@patternfly/react-icons';
+import { UploadIcon, ServerIcon, QuestionCircleIcon, MoonIcon } from '@patternfly/react-icons';
 import { css } from '@patternfly/react-styles';
 import accessibleStyles from '@patternfly/patternfly/utilities/Accessibility/accessibility.css';
 
@@ -224,7 +224,7 @@ export class IbutsuHeader extends React.Component {
             <a href={apiUiUrl} className="pf-c-button pf-m-plain" target="_blank" rel="noopener noreferrer"><ServerIcon/> API</a>
           </PageHeaderToolsItem>
           <PageHeaderToolsItem>
-            <Switch id="dark-theme" label="Dark theme" labelOff="Dark theme" isChecked={this.state.isDarkTheme} onChange={this.onThemeChanged} />
+            <Switch id="dark-theme" label={<MoonIcon />} isChecked={this.state.isDarkTheme} onChange={this.onThemeChanged} />
           </PageHeaderToolsItem>
           <PageHeaderToolsItem id="user-dropdown">
             <UserDropdown eventEmitter={this.eventEmitter}/>

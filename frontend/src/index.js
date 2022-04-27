@@ -1,11 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import '@patternfly/react-core/dist/styles/base.css';
+import '@patternfly/patternfly/patternfly.css';
 
-import './index.css';
 import { Base } from './base';
 import * as serviceWorker from './serviceWorker';
+
+import '@patternfly/patternfly/patternfly-theme-dark.css';
+import './index.css';
 
 ReactDOM.render(<Base />, document.getElementById('root'));
 

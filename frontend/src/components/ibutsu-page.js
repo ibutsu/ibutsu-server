@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-import '@patternfly/react-core/dist/styles/base.css';
-import '@patternfly/patternfly/patternfly-theme-dark.css';
 import {
   Alert,
   AlertActionLink,
@@ -17,7 +15,6 @@ import { ALERT_TIMEOUT, VERSION_CHECK_TIMEOUT } from '../constants';
 import { HttpClient } from '../services/http';
 import { getDateString, getTheme } from '../utilities';
 import { version } from '../../package.json'
-import '../app.css';
 
 
 export class IbutsuPage extends React.Component {

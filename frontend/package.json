@@ -20,7 +20,7 @@
     "@patternfly/patternfly": "^4.192.1",
     "@patternfly/react-charts": "^6.3.9",
     "@patternfly/react-core": "^4.206.2",
-    "@patternfly/react-icons": "^4.3.5",
+    "@patternfly/react-icons": "^4.57.2",
     "@patternfly/react-styles": "^4.11.0",
     "@patternfly/react-table": "^4.5.7",
     "@patternfly/react-tokens": "^4.12.0",
