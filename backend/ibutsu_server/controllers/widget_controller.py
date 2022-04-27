@@ -2,6 +2,9 @@ import connexion
 from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS
 from ibutsu_server.constants import WIDGET_TYPES
 from ibutsu_server.widgets.compare_runs_view import get_comparison_data
+from ibutsu_server.widgets.accessibility_analysis import get_accessibility_analysis_view
+from ibutsu_server.widgets.accessibility_analysis import get_accessibility_bar_chart
+from ibutsu_server.widgets.accessibility_dashboard_view import get_accessibility_dashboard_view
 from ibutsu_server.widgets.jenkins_heatmap import get_jenkins_heatmap
 from ibutsu_server.widgets.jenkins_job_analysis import get_jenkins_analysis_data
 from ibutsu_server.widgets.jenkins_job_analysis import get_jenkins_bar_chart
@@ -13,6 +16,9 @@ from ibutsu_server.widgets.run_aggregator import get_recent_run_data
 
 WIDGET_METHODS = {
     "compare-runs-view": get_comparison_data,
+    "accessibility-dashboard-view": get_accessibility_dashboard_view,
+    "accessibility-analysis-view": get_accessibility_analysis_view,
+    "accessibility-bar-chart": get_accessibility_bar_chart,
     "jenkins-analysis-view": get_jenkins_analysis_data,
     "jenkins-bar-chart": get_jenkins_bar_chart,
     "jenkins-heatmap": get_jenkins_heatmap,

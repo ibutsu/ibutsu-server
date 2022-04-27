@@ -201,6 +201,38 @@ WIDGET_TYPES = {
         ],
         "type": "widget",
     },
+    "accessibility-dashboard-view": {
+        "id": "accessibility-dashboard-view",
+        "title": "Accessibility Dashboard View",
+        "params": [],
+        "type": "view",
+    },
+    "accessibility-analysis-view": {
+        "id": "accessibility-analysis-view",
+        "title": "Accessibility Analysis View",
+        "params": [
+            {
+                "name": "run_list",
+                "description": "List of run IDs for the analysis to pull in",
+                "type": "list",
+            },
+        ],
+        "type": "view",
+    },
+    "accessibility-bar-chart": {
+        "id": "accessibility-bar-chart",
+        "title": "Accessibility Bar Chart",
+        "description": "A bar chart to display aggregate test results ",
+        "params": [
+            {
+                "name": "run_list",
+                "description": "A list of run IDs",
+                "type": "list",
+                "required": True,
+            }
+        ],
+        "type": "widget",
+    },
     "jenkins-job-view": {
         "id": "jenkins-job-view",
         "title": "Jenkins Job View",
