@@ -1,3 +1,10 @@
+Version 2.2.0
+=============
+
+* Fix version number in About dialog
+* Add support for a dark theme
+* Update PatternFly
+
 Version 2.1.4
 =============
 
