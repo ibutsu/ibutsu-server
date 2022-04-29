@@ -152,7 +152,7 @@ export class ResultView extends React.Component {
               if (contentType.includes('text')) {
                 response.text().then(text => {
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />}>
                       <Card>
                         <CardBody>
                           <Editor fontFamily="Hack, monospace" theme="vs-dark" value={text} height="40rem" options={{readOnly: true}} />
@@ -170,7 +170,7 @@ export class ResultView extends React.Component {
                 response.blob().then(blob => {
                   let imageUrl = URL.createObjectURL(blob);
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />}>
                       <Card>
                         <CardBody>
                           <img src={imageUrl} alt={artifact.filename}/>
@@ -241,7 +241,7 @@ export class ResultView extends React.Component {
         {this.state.testResult &&
         <Tabs activeKey={activeTab} onSelect={this.onTabSelect} isBox>
           {!this.props.hideSummary &&
-          <Tab eventKey="summary" title={<TabTitle icon={InfoCircleIcon} text="Summary" />} style={{backgroundColor: "white"}}>
+          <Tab eventKey="summary" title={<TabTitle icon={InfoCircleIcon} text="Summary" />}>
             <Card>
               <CardBody style={{padding: 0}}>
                 <DataList selectedDataListItemId={null} aria-label="Test Result" style={{borderBottom: "none", borderTop: "none"}}>
@@ -510,12 +510,12 @@ export class ResultView extends React.Component {
           }
           {artifactTabs}
           {!this.props.hideTestHistory &&
-          <Tab eventKey="test-history" title={<TabTitle icon={SearchIcon} text="Test History"/>} style={{backgroundColor: "white"}}>
+          <Tab eventKey="test-history" title={<TabTitle icon={SearchIcon} text="Test History"/>}>
           {testHistoryTable}
           </Tab>
           }
           {!this.props.hideTestObject &&
-          <Tab eventKey="test-object" title={<TabTitle icon={CodeIcon} text="Test Object" />} style={{backgroundColor: "white"}}>
+          <Tab eventKey="test-object" title={<TabTitle icon={CodeIcon} text="Test Object" />}>
             <Card>
               <CardBody>
                 <ReactJson src={testResult} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} theme={jsonViewTheme} />

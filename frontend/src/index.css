@@ -1,14 +1,12 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-family: Hack, source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
 input:focus,
@@ -250,30 +248,12 @@ div[data-id=widget-param-dropdown] > div {
   text-align: left;
 }
 
-/* Alerts currently have the wrong background in the PF dark stylesheet.
- * Thanks to the PF quick start extension for this style
- */
-.pf-theme-dark .pf-c-alert {
-  --pf-c-alert--BackgroundColor: var(--pf-global--palette--black-700);
-  --pf-c-alert--m-inline--BackgroundColor: var(--pf-global--palette--black-700);
-  --pf-c-alert--m-inline--m-success--BackgroundColor: var(--pf-global--palette--black-700);
-  --pf-c-alert--m-inline--m-danger--BackgroundColor: var(--pf-global--palette--black-700);
-  --pf-c-alert--m-inline--m-warning--BackgroundColor: var(--pf-global--palette--black-700);
-  --pf-c-alert--m-inline--m-info--BackgroundColor: var(--pf-global--palette--black-700);
-}
-
-/* Charts currently have color issues too
- */
-.pf-theme-dark tspan {
+:where(.pf-theme-dark) tspan {
   fill: rgb(184, 187, 190) !important;
 }
 
-.pf-theme-dark .pf-l-grid {
+:where(.pf-theme-dark) .pf-l-grid {
   background-color: inherit !important;
-}
-
-.pf-theme-dark .pf-c-tabs__link {
-  background-color: var(--pf-global--BackgroundColor--100) !important;
 }
 
 :where(.pf-theme-dark) .pf-c-about-modal-box,
@@ -296,21 +276,49 @@ div[data-id=widget-param-dropdown] > div {
 }
 
 :where(.pf-theme-dark) .pf-c-page {
-  --pf-c-page__main-section--BackgroundColor: var(--pf-global--BackgroundColor--200) !important;
   --pf-c-page__header-tools--c-button--m-selected--before--BackgroundColor: var(--pf-global--BackgroundColor--300) !important;
   --pf-c-page__sidebar--BackgroundColor: var(--pf-global--BackgroundColor--100) !important;
   --pf-c-page__header--BackgroundColor: var(--pf-global--palette--black-1000) !important;
 }
 
 :where(.pf-theme-dark) .pf-c-select {
-    --pf-c-select__toggle--disabled--BackgroundColor: var(--pf-global--palette--black-500);
-    --pf-c-select__toggle--BackgroundColor: var(--pf-global--BackgroundColor--400);
-    --pf-c-select__toggle--before--BorderTopColor: transparent;
-    --pf-c-select__toggle--before--BorderRightColor: transparent;
-    --pf-c-select__toggle--before--BorderBottomColor: var(--pf-global--BorderColor--400);
-    --pf-c-select__toggle--before--BorderLeftColor: transparent;
-    --pf-c-select__menu--Top: 100%;
-    --pf-c-select__menu--m-top--TranslateY: -100%;
-    --pf-c-select__menu-item--hover--BackgroundColor: var(--pf-global--BackgroundColor--400);
-    --pf-c-select__menu--BackgroundColor: var(--pf-global--BackgroundColor--300);
+    --pf-c-select__toggle--disabled--BackgroundColor: var(--pf-global--palette--black-500) !important;
+    --pf-c-select__toggle--BackgroundColor: var(--pf-global--BackgroundColor--dark-100) !important;
+    --pf-c-select__toggle--before--BorderTopColor: transparent !important;
+    --pf-c-select__toggle--before--BorderRightColor: transparent !important;
+    --pf-c-select__toggle--before--BorderBottomColor: var(--pf-global--BorderColor--400) !important;
+    --pf-c-select__toggle--before--BorderLeftColor: transparent !important;
+    --pf-c-select__menu--Top: 100% !important;
+    --pf-c-select__menu--m-top--TranslateY: -100% !important;
+    --pf-c-select__menu-item--hover--BackgroundColor: var(--pf-global--BackgroundColor--400) !important;
+    --pf-c-select__menu--BackgroundColor: var(--pf-global--BackgroundColor--300) !important;
+}
+
+:where(.pf-theme-dark) .pf-c-dropdown {
+  --pf-c-dropdown__toggle--disabled--BackgroundColor: var(--pf-global--palette--black-500) !important;
+}
+
+:where(.pf-theme-dark) .pf-c-form-control:disabled {
+  --pf-c-form-control--BackgroundColor: var(--pf-global--palette--black-500) !important;
+}
+
+.pf-c-chip {
+  --pf-c-chip--BackgroundColor: var(--pf-global--BackgroundColor--100) !important;
+}
+
+:not(.pf-theme-dark) .pf-c-tabs__link {
+  --pf-c-tabs__link--BackgroundColor: var(--pf-global--BackgroundColor--100) !important;
+}
+
+.pf-c-alert__title {
+  color: inherit !important;
+}
+
+:where(.pf-theme-dark) .pf-c-alert {
+    --pf-c-alert--BackgroundColor: var(--pf-global--palette--black-600) !important;
+    --pf-c-alert--m-inline--BackgroundColor: var(--pf-global--palette--black-600) !important;
+    --pf-c-alert--m-inline--m-success--BackgroundColor: var(--pf-global--palette--black-600) !important;
+    --pf-c-alert--m-inline--m-danger--BackgroundColor: var(--pf-global--palette--black-600) !important;
+    --pf-c-alert--m-inline--m-warning--BackgroundColor: var(--pf-global--palette--black-600) !important;
+    --pf-c-alert--m-inline--m-info--BackgroundColor: var(--pf-global--palette--black-600) !important;
 }

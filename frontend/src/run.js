@@ -289,7 +289,7 @@ export class Run extends React.Component {
               if (contentType.includes('text')) {
                 response.text().then(text => {
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />}>
                       <Card>
                         <CardBody>
                           <Editor fontFamily="Hack, monospace" theme="dark" value={text} height="40rem" options={{readOnly: true}} />
@@ -307,7 +307,7 @@ export class Run extends React.Component {
                 response.blob().then(blob => {
                   let imageUrl = URL.createObjectURL(blob);
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />}>
                       <Card>
                         <CardBody>
                           <img src={imageUrl} alt={artifact.filename}/>
@@ -549,7 +549,7 @@ export class Run extends React.Component {
           }
           {this.state.isRunValid &&
             <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-              <Tab eventKey={'summary'} title={<TabTitle icon={InfoCircleIcon} text="Summary" />} style={{backgroundColor: 'white'}}>
+              <Tab eventKey={'summary'} title={<TabTitle icon={InfoCircleIcon} text="Summary" />}>
                 <Card>
                   <CardBody style={{padding: 0}} id="run-detail">
                     <Grid style={{backgroundColor: '#fff'}}>
@@ -743,7 +743,7 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey={'results-list'} title={<TabTitle icon={CatalogIcon} text="Results List" />} style={{backgroundColor: 'white'}}>
+              <Tab eventKey={'results-list'} title={<TabTitle icon={CatalogIcon} text="Results List" />}>
                 <Card className="pf-u-mt-lg">
                   <CardHeader>
                     <Flex style={{ width: '100%' }}>
@@ -773,7 +773,7 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey={'results-tree'} title={<TabTitle icon={RepositoryIcon} text="Results Tree" />} style={{backgroundColor: "white"}}>
+              <Tab eventKey={'results-tree'} title={<TabTitle icon={RepositoryIcon} text="Results Tree" />}>
                 <Card className="pf-u-mt-lg">
                   <CardBody>
                     <Grid gutter="sm">
@@ -818,11 +818,11 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey={'classify-failures'} title={<TabTitle icon={MessagesIcon} text="Classify Failures" />} style={{backgroundColor: "white"}}>
+              <Tab eventKey={'classify-failures'} title={<TabTitle icon={MessagesIcon} text="Classify Failures" />}>
                 {classificationTable}
               </Tab>
               {artifactTabs}
-              <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: "white"}}>
+              <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />}>
                 <Card>
                   <CardBody>
                     <ReactJson src={run} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} theme={jsonViewTheme} />
