@@ -108,7 +108,7 @@ export class IbutsuPage extends React.Component {
       <React.Fragment>
         <AlertGroup isToast>
           {this.state.notifications.map((notification) => (
-            <Alert key={notification.key} variant={notification.type} title={notification.title} action={notification.action} isLiveRegion>
+            <Alert key={notification.key} variant={notification.type} title={notification.title} actionLinks={notification.action} isLiveRegion>
               {notification.message}
             </Alert>
           ))}

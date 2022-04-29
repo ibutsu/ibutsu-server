@@ -26,7 +26,7 @@ export class EmptyObject extends React.Component {
       <React.Fragment>
         <EmptyState>
           <EmptyStateIcon icon={SearchIcon} />
-          <Text headingLevel="h1" size="lg">
+          <Text component="h1" size="lg">
             {this.props.headingText ? this.props.headingText : "This object couldn't be found."}
           </Text>
           <EmptyStateBody>

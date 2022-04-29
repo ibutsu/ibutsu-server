@@ -207,11 +207,11 @@ export class JenkinsJobAnalysisView extends React.Component {
 
     return (
       <React.Fragment>
-        <div style={{backgroundColor: 'white', float: 'right', clear: 'right', marginBottom: '-2em', padding: '0.2em 1em', width: '20em'}}>
+        <div style={{backgroundColor: 'var(--pf-global--BackgroundColor--100)', float: 'right', clear: 'right', marginBottom: '-2em', padding: '0.2em 1em', width: '20em'}}>
           {this.getBuildsDropdown()}
         </div>
         {activeTab === 'heatmap' &&
-        <div style={{backgroundColor: 'white', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em', width: '30em'}}>
+        <div style={{backgroundColor: 'var(--pf-global--BackgroundColor--100)', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
           <ParamDropdown
             dropdownItems={['Yes', 'No']}
             defaultValue={this.state.countSkips}
@@ -222,17 +222,17 @@ export class JenkinsJobAnalysisView extends React.Component {
         </div>
         }
         {activeTab === 'overall-health' &&
-        <div style={{backgroundColor: 'white', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em', width: '15em'}}>
+        <div style={{backgroundColor: 'var(--pf-global--BackgroundColor--100)', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em', width: '15em'}}>
           {this.getSwitch()}
         </div>
         }
       <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-        <Tab eventKey='heatmap' title={'Heatmap'} style={{backgroundColor: 'white'}}>
+        <Tab eventKey='heatmap' title={'Heatmap'}>
           {!isLoading && activeTab === "heatmap" &&
           <JenkinsHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true} labelWidth={400}/>
           }
         </Tab>
-        <Tab eventKey='overall-health' title={'Overall Health'} style={{backgroundColor: 'white'}}>
+        <Tab eventKey='overall-health' title={'Overall Health'}>
           {!isLoading && !isAreaChart && activeTab === "overall-health" &&
           <GenericBarWidget
             title={"Test counts for " + barchartParams.job_name}
@@ -283,7 +283,7 @@ export class JenkinsJobAnalysisView extends React.Component {
           />
           }
         </Tab>
-        <Tab eventKey='build-durations' title={'Build Duration'} style={{backgroundColor: 'white'}}>
+        <Tab eventKey='build-durations' title={'Build Duration'}>
           {!isLoading && activeTab === 'build-durations' &&
           <GenericAreaWidget
             title={"Durations for " + linechartParams.job_name}

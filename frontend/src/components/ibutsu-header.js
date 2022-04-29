@@ -119,15 +119,16 @@ export class IbutsuHeader extends React.Component {
           clearInterval(this.state.monitorUploadId);
           this.setState({monitorUploadId: null});
           let action = null;
-          if (data.run_id) {
+          if (data.metadata.run_id) {
             const RunButton = withRouter(({history}) => (
-              <AlertActionLink onClick={() => {history.push('/runs/' + data.run_id)}}>
+              <AlertActionLink onClick={() => {history.push('/runs/' + data.metadata.run_id)}}>
                 Go to Run
               </AlertActionLink>
             ));
             action = <RunButton />;
           }
-          this.showNotification('success', 'Import Complete', `${data.filename} has been successfully imported as run ${data.run_id}`, action);
+          console.log(action);
+          this.showNotification('success', 'Import Complete', `${data.filename} has been successfully imported as run ${data.metadata.run_id}`, action);
         }
       });
   }

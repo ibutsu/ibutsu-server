@@ -169,14 +169,17 @@ export class FilterTable extends React.Component {
 }
 
 
+// TODO Extend this to contain the filter handling functions, and better integrate filter state
+// with FilterTable. See https://github.com/ibutsu/ibutsu-server/issues/230
 export class MetaFilter extends React.Component {
-  // TODO Extend this to contain the filter handling functions, and better integrate filter state with FilterTable
-  // https://github.com/ibutsu/ibutsu-server/issues/230
   static propTypes = {
-    fieldOptions: PropTypes.array,  // could reference constants directly
-    runId: PropTypes.string,  // make optional?
+    // could reference constants directly
+    fieldOptions: PropTypes.array,
+    // make optional?
+    runId: PropTypes.string,
     setFilter: PropTypes.func,
-    customFilters: PropTypes.array, // more advanced handling of filter objects? the results-aggregator endpoint takes a string filter
+    // more advanced handling of filter objects? the results-aggregator endpoint takes a string filter
+    customFilters: PropTypes.object,
   };
 
   constructor(props) {
@@ -199,71 +202,77 @@ export class MetaFilter extends React.Component {
   };
 
   onFieldSelect = (event, selection) => {
+    // clear value state too, otherwise the old selection remains selected but is no longer visible
     this.setState(
-      // clear value state too, otherwise the old selection remains selected but is no longer visible
-      {fieldSelection: selection, isFieldOpen: false, valueSelections: [], valueOptions: [], isValueOpen: false},
+      {
+        fieldSelection: selection,
+        isFieldOpen: false,
+        valueSelections: [],
+        valueOptions: [],
+        isValueOpen: false
+      },
       this.updateValueOptions
-    )
-
+    );
   };
 
   onValueSelect = (event, selection) => {
     // update state and call setFilter
     const valueSelections = this.state.valueSelections;
-    let updated_values = (valueSelections.includes(selection))
+    let updatedValues = (valueSelections.includes(selection))
       ? valueSelections.filter(item => item !== selection)
-      : [...valueSelections, selection]
-
-    this.setState(
-      {valueSelections: updated_values},
-      () => this.props.setFilter(this.state.fieldSelection, this.state.valueSelections.join(';'))
-    )
+      : [...valueSelections, selection];
+    this.setState({valueSelections: updatedValues}, () => {
+      this.props.setFilter(this.state.fieldSelection, this.state.valueSelections.join(';'));
+    });
   };
 
   onFieldClear = () => {
-    this.setState(
-      {fieldSelection: null, valueSelections: [], isFieldOpen: false, isValueOpen: false},
-    )
+    this.setState({
+      fieldSelection: null,
+      valueSelections: [],
+      isFieldOpen: false,
+      isValueOpen: false
+    });
   };
 
   onValueClear = () => {
-    this.setState(
-      {valueSelections: [], isValueOpen: false},
-      () => this.props.setFilter(this.state.fieldSelection, this.state.valueSelections)
-    )
+    this.setState({valueSelections: [], isValueOpen: false}, () => {
+      this.props.setFilter(this.state.fieldSelection, this.state.valueSelections);
+    });
   }
 
   updateValueOptions = () => {
-    const {fieldSelection} = this.state
-    const {customFilters} = this.props
+    const { fieldSelection } = this.state;
+    const { customFilters } = this.props;
+    console.debug('CUSTOMFILTER: ' + customFilters);
 
-    console.log('CUSTOMFILTER: '+customFilters)
     if (fieldSelection !== null) {
-      let api_filter = toAPIFilter(customFilters).join()
-      console.log('APIFILTER: '+customFilters)
+      let api_filter = toAPIFilter(customFilters).join();
+      console.debug('APIFILTER: ' + customFilters);
 
-      HttpClient.get(
-        [Settings.serverUrl, 'widget', 'result-aggregator'],
-        {
-          group_field: fieldSelection,
-          run_id: this.props.runId,
-          additional_filters: api_filter,
-        }
-      )
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
-        this.setState({valueOptions: data})
+      HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], {
+        group_field: fieldSelection,
+        run_id: this.props.runId,
+        additional_filters: api_filter,
       })
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          this.setState({valueOptions: data});
+        });
     }
   }
 
   render () {
-    const {isFieldOpen, fieldSelection, isValueOpen, valueOptions, valueSelections} = this.state;
+    const { isFieldOpen, fieldSelection, isValueOpen, valueOptions, valueSelections } = this.state;
     let field_selected = this.state.fieldSelection !== null;
     let values_available = valueOptions.length > 0;
     let value_placeholder = "Select a field first" ; // default instead of an else block
-    if (field_selected && values_available){ value_placeholder = "Select value(s)";}
-    else if (field_selected && !values_available) { value_placeholder = "No values for selected field";}
+    if (field_selected && values_available) {
+      value_placeholder = "Select value(s)";
+    }
+    else if (field_selected && !values_available) {
+      value_placeholder = "No values for selected field";
+    }
     return (
       <React.Fragment>
         <Select key="metafield_select"
@@ -298,7 +307,6 @@ export class MetaFilter extends React.Component {
           ))}
         </Select>
       </React.Fragment>
-
-    )
+    );
   }
 }
