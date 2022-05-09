@@ -123,10 +123,12 @@ def lock(name, timeout=LOCK_EXPIRE, app=None):
     redis_client = Redis.from_url(app.config["CELERY_BROKER_URL"])
     try:
         # Get a lock so that we don't run this task concurrently
+        logging.info(f"Trying to get a lock for {name}")
         with redis_client.lock(name, blocking_timeout=timeout):
             yield
     except LockError:
         # If this task is locked, discard it so that it doesn't clog up the system
+        logging.info(f"Task {name} is already locked, discarding")
         pass
 
 
