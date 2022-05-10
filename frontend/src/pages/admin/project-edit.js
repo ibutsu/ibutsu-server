@@ -17,6 +17,7 @@ import {
   TextInput,
   Title
 } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
@@ -74,7 +75,7 @@ export class ProjectEdit extends React.Component {
     const { project, owner } = this.state;
     project.owner_id = owner && owner.user ? owner.user.id : null;
     delete project.owner;
-    this.saveProject(project.id, project)
+    this.saveProject(project.id | null, project)
       .then(() => this.props.history.goBack())
       .catch((error) => console.error(error));
   };
@@ -130,13 +131,24 @@ export class ProjectEdit extends React.Component {
   }
 
   saveProject(projectId, project) {
-    return HttpClient.put([Settings.serverUrl, 'admin', 'project', projectId], {}, project)
-      .then(response => HttpClient.handleResponse(response, 'response'))
+    let request = null;
+    if (!projectId) {
+      request = HttpClient.post([Settings.serverUrl, 'admin', 'project'], project);
+    }
+    else {
+      request = HttpClient.put([Settings.serverUrl, 'admin', 'project', projectId], {}, project);
+    }
+    return request.then(response => HttpClient.handleResponse(response, 'response'))
       .then(response => response.json());
   }
 
   componentDidMount() {
-    this.getProject(this.state.id);
+    if (this.state.id === 'new') {
+      this.setState({project: {title: 'New project', name: 'new-project'}});
+    }
+    else {
+      this.getProject(this.state.id);
+    }
     this.getUsers();
   }
 
@@ -196,8 +208,20 @@ export class ProjectEdit extends React.Component {
                    </Select>
                 </FormGroup>
                 <ActionGroup>
-                  <Button variant="primary" onClick={this.onSubmitClick}>Submit</Button>
-                  <Button variant="secondary" onClick={this.props.history.goBack}>Cancel</Button>
+                  <Button
+                    variant="primary"
+                    ouiaId="admin-project-edit-save"
+                    onClick={this.onSubmitClick}
+                  >
+                    Submit
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    ouiaId="admin-project-edit-cancel"
+                    component={(props: any) => <Link {...props} to="/admin/projects" />}
+                  >
+                    Cancel
+                  </Button>
                 </ActionGroup>
               </Form>
             </CardBody>

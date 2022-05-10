@@ -5,6 +5,8 @@ import {
   Button,
   Card,
   CardBody,
+  Flex,
+  FlexItem,
   Modal,
   PageSection,
   PageSectionVariants,
@@ -12,6 +14,7 @@ import {
   TextContent,
   TextInput
 } from '@patternfly/react-core';
+import { PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
@@ -21,16 +24,30 @@ import { FilterTable } from '../../components';
 
 function projectToRow(project, onDeleteClick) {
   return {
-    "cells": [
+    cells: [
       {title: project.title},
       {title: project.name},
       {title: project.owner && project.owner.name},
       {
         title: (
           <div style={{textAlign: "right"}}>
-            <Link to={`/admin/projects/${project.id}`} className="pf-c-button pf-m-primary">Edit</Link>
+            <Button
+              variant="primary"
+              ouiaId={`admin-projects-edit-${project.id}`}
+              component={(props: any) => <Link {...props} to={`/admin/projects/${project.id}`} />}
+              isSmall
+            >
+              <PencilAltIcon />
+            </Button>
             &nbsp;
-            <Button variant="danger" onClick={() => onDeleteClick(project.id)}>Delete</Button>
+            <Button
+              variant="danger"
+              ouiaId={`admin-projects-delete-${project.id}`}
+              onClick={() => onDeleteClick(project.id)}
+              isSmall
+            >
+              <TrashIcon />
+            </Button>
           </div>
         )
       }
@@ -170,9 +187,28 @@ export class ProjectList extends React.Component {
     return (
       <React.Fragment>
         <PageSection id="page" variant={PageSectionVariants.light}>
-          <TextContent>
-            <Text className="title" component="h1" ouiaId="projects">Projects</Text>
-          </TextContent>
+          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+            <Flex>
+              <FlexItem spacer={{ default: 'spacerLg' }}>
+                <TextContent>
+                  <Text className="title" component="h1" ouiaId="admin-projects">Projects</Text>
+                </TextContent>
+              </FlexItem>
+            </Flex>
+            <Flex>
+              <FlexItem>
+                <Button
+                  aria-label="Add project"
+                  variant="secondary"
+                  title="Add project"
+                  ouiaId="admin-projects-add"
+                  component={(props: any) => <Link {...props} to="/admin/projects/new" />}
+                >
+                  <PlusCircleIcon /> Add Project
+                </Button>
+              </FlexItem>
+            </Flex>
+          </Flex>
         </PageSection>
         <PageSection className="pf-u-pb-0">
           <Card>
@@ -196,10 +232,23 @@ export class ProjectList extends React.Component {
           isOpen={this.state.isDeleteModalOpen}
           onClose={this.onDeleteModalClose}
           actions={[
-            <Button key="delete" variant="danger" isLoading={this.state.isDeleting} isDisabled={this.state.isDeleting} onClick={this.onModalDeleteClick}>
+            <Button
+              key="delete"
+              variant="danger"
+              ouiaId="admin-projects-modal-delete"
+              isLoading={this.state.isDeleting}
+              isDisabled={this.state.isDeleting}
+              onClick={this.onModalDeleteClick}
+            >
               {this.state.isDeleting ? 'Deleting...' : 'Delete'}
             </Button>,
-            <Button key="cancel" variant="secondary" isDisabled={this.state.isDeleting} onClick={this.onDeleteModalClose}>
+            <Button
+              key="cancel"
+              variant="secondary"
+              ouiaId="admin-projects-modal-cancel"
+              isDisabled={this.state.isDeleting}
+              onClick={this.onDeleteModalClose}
+            >
               Cancel
             </Button>
           ]}

@@ -13,6 +13,7 @@ import {
   TextContent,
   TextInput
 } from '@patternfly/react-core';
+import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
@@ -38,9 +39,23 @@ function userToRow(user, onDeleteClick) {
       {
         title: (
           <div style={{textAlign: "right"}}>
-            <Link to={`/admin/users/${user.id}`} className="pf-c-button pf-m-primary">Edit</Link>
+            <Button
+              variant="primary"
+              ouiaId={`admin-users-edit-${user.id}`}
+              component={(props: any) => <Link {...props} to={`/admin/users/${user.id}`} />}
+              isSmall
+            >
+              <PencilAltIcon />
+            </Button>
             &nbsp;
-            <Button variant="danger" onClick={() => onDeleteClick(user.id)}>Delete</Button>
+            <Button
+              variant="danger"
+              ouiaId={`admin-users-delete-${user.id}`}
+              onClick={() => onDeleteClick(user.id)}
+              isSmall
+            >
+              <TrashIcon />
+            </Button>
           </div>
         )
       }
