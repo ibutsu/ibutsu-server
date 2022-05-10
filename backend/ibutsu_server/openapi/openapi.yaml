@@ -1413,6 +1413,9 @@ paths:
                 metadata:
                   description: Additional metadata about imported run
                   type: object
+                source:
+                  description: The source of this import
+                  type: string
               required:
                 - importFile
               type: object
@@ -1422,6 +1425,8 @@ paths:
               metadata:
                 contentType: application/json
               project:
+                contentType: text/plain
+              source:
                 contentType: text/plain
       responses:
         201:
