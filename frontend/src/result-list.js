@@ -229,7 +229,7 @@ export class ResultList extends React.Component {
     const operator = this.state.operationSelection;
     const filterMode = getFilterMode(field);
     const operationMode = getOperationMode(operator);
-    let value = this.state.textFilter;
+    let value = this.state.textFilter.trim();
     if (filterMode === 'result' && operationMode !== 'bool') {
       value = (operationMode === 'multi') ? this.state.resultSelection.join(';') : this.state.resultSelection;
     }
@@ -237,7 +237,8 @@ export class ResultList extends React.Component {
       value = (operationMode === 'multi') ? this.state.runSelection.join(';') : this.state.runSelection;
     }
     else if (operationMode === 'multi') {
-      value = this.state.inValues.join(";");  // translate list to ;-separated string for BE
+      // translate list to ;-separated string for BE
+      value = this.state.inValues.map(item => item.trim()).join(";");
     }
     else if (operationMode === 'bool') {
       value = this.state.boolSelection;
