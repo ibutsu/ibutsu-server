@@ -19,7 +19,13 @@ import {
   Text,
   Title,
 } from '@patternfly/react-core';
-import { ArchiveIcon, CubesIcon, PlusCircleIcon, TachometerAltIcon, TimesCircleIcon } from '@patternfly/react-icons';
+import {
+  ArchiveIcon,
+  CubesIcon,
+  PlusCircleIcon,
+  TachometerAltIcon,
+  TimesCircleIcon
+} from '@patternfly/react-icons';
 
 import { HttpClient } from './services/http';
 import { KNOWN_WIDGETS } from './constants';
@@ -73,23 +79,25 @@ export class Dashboard extends React.Component {
       dashboardFilter: ''
     };
     props.eventEmitter.on('projectChange', () => {
+      this.clearDashboards();
       this.getDashboards();
     });
   }
 
+  clearDashboards() {
+    localStorage.removeItem('dashboard');
+    this.setState({selectedDashboard: null, dashboards: []});
+  }
+
   getDashboards() {
-    let params = {};
     let project = getActiveProject();
     if (!project) {
-      localStorage.removeItem('dashboard');
-      this.setState({
-        dashboards: [],
-        selectedDashboard: null
-      });
       return;
     }
-    params['project_id'] = project.id;
-    params['pageSize'] = 10;
+    let params = {
+      'project_id': project.id,
+      'pageSize': 10
+    };
     if (this.state.dashboardFilter) {
       params['filter'] = ['title%' + this.state.dashboardFilter];
     }

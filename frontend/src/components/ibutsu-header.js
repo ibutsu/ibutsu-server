@@ -142,6 +142,11 @@ export class IbutsuHeader extends React.Component {
       this.onProjectClear();
       return;
     }
+    const activeProject = getActiveProject();
+    if (activeProject && activeProject.id === value.project.id) {
+      this.setState({isProjectSelectorOpen: false});
+      return;
+    }
     const project = JSON.stringify(value.project);
     localStorage.setItem('project', project);
     this.setState({
