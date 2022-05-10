@@ -204,9 +204,10 @@ export class RunList extends React.Component {
     const field = this.state.fieldSelection;
     const operator = this.state.operationSelection;
     const operationMode = getOperationMode(operator);
-    let value = this.state.textFilter;
+    let value = this.state.textFilter.trim();
     if (operationMode === 'multi') {
-      value = this.state.inValues.join(";");  // translate list to ;-separated string for BE
+      // translate list to ;-separated string for BE
+      value = this.state.inValues.map(item => item.trim()).join(";");
     }
     else if (operationMode === 'bool') {
       value = this.state.boolSelection;
