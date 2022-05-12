@@ -1658,7 +1658,7 @@ paths:
       x-openapi-router-controller: ibutsu_server.controllers.login_controller
   /user:
     get:
-      operationId: get_user
+      operationId: get_current_user
       responses:
         200:
           content:
@@ -1673,7 +1673,7 @@ paths:
         - user
       x-openapi-router-controller: ibutsu_server.controllers.user_controller
     put:
-      operationId: update_user
+      operationId: update_current_user
       responses:
         200:
           content:
@@ -1770,7 +1770,7 @@ paths:
       x-openapi-router-controller: ibutsu_server.controllers.user_controller
   /admin/user:
     get:
-      operationId: get_user_list
+      operationId: admin_get_user_list
       parameters:
         - description: Fields to filter by
           explode: true
@@ -1800,7 +1800,7 @@ paths:
       summary: Administration endpoint to return a list of users. Only accessible to superadmins.
       x-openapi-router-controller: ibutsu_server.controllers.admin.user_controller
     post:
-      operationId: add_user
+      operationId: admin_add_user
       requestBody:
         content:
           application/json:
@@ -1826,7 +1826,7 @@ paths:
       x-openapi-router-controller: ibutsu_server.controllers.admin.user_controller
   /admin/user/{id}:
     get:
-      operationId: get_user
+      operationId: admin_get_user
       parameters:
         - description: The id of a user
           explode: false
@@ -1854,7 +1854,7 @@ paths:
       summary: Administration endpoint to return a user. Only accessible to superadmins.
       x-openapi-router-controller: ibutsu_server.controllers.admin.user_controller
     put:
-      operationId: update_user
+      operationId: admin_update_user
       parameters:
         - description: The ID of the user to update
           explode: false
@@ -1887,7 +1887,7 @@ paths:
         - admin/user management
       x-openapi-router-controller: ibutsu_server.controllers.admin.user_controller
     delete:
-      operationId: delete_user
+      operationId: admin_delete_user
       parameters:
         - description: The ID of the user to delete
           explode: false
@@ -1913,7 +1913,7 @@ paths:
       x-openapi-router-controller: ibutsu_server.controllers.admin.user_controller
   /admin/project:
     get:
-      operationId: get_project_list
+      operationId: admin_get_project_list
       parameters:
         - description: Fields to filter by
           explode: true
@@ -1943,7 +1943,7 @@ paths:
       summary: Administration endpoint to return a list of projects. Only accessible to superadmins.
       x-openapi-router-controller: ibutsu_server.controllers.admin.project_controller
     post:
-      operationId: add_project
+      operationId: admin_add_project
       requestBody:
         content:
           application/json:
@@ -1969,7 +1969,7 @@ paths:
       x-openapi-router-controller: ibutsu_server.controllers.admin.project_controller
   /admin/project/{id}:
     get:
-      operationId: get_project
+      operationId: admin_get_project
       parameters:
         - description: The id of a project
           explode: false
@@ -1997,7 +1997,7 @@ paths:
       summary: Administration endpoint to return a project. Only accessible to superadmins.
       x-openapi-router-controller: ibutsu_server.controllers.admin.project_controller
     put:
-      operationId: update_project
+      operationId: admin_update_project
       parameters:
         - description: The ID of the project to update
           explode: false
@@ -2030,7 +2030,7 @@ paths:
         - admin/project management
       x-openapi-router-controller: ibutsu_server.controllers.admin.project_controller
     delete:
-      operationId: delete_project
+      operationId: admin_delete_project
       parameters:
         - description: The ID of the project to delete
           explode: false

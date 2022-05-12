@@ -75,7 +75,7 @@ export class ProjectEdit extends React.Component {
     const { project, owner } = this.state;
     project.owner_id = owner && owner.user ? owner.user.id : null;
     delete project.owner;
-    this.saveProject(project.id | null, project)
+    this.saveProject(project.id || null, project)
       .then(() => this.props.history.goBack())
       .catch((error) => console.error(error));
   };

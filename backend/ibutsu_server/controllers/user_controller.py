@@ -20,7 +20,7 @@ def _hide_sensitive_fields(user_dict):
     return user_dict
 
 
-def get_user(token_info=None, user=None):
+def get_current_user(token_info=None, user=None):
     """Return the current user"""
     user = User.query.get(user)
     if not user:
@@ -29,7 +29,7 @@ def get_user(token_info=None, user=None):
     return _hide_sensitive_fields(user.to_dict())
 
 
-def update_user(token_info=None, user=None):
+def update_current_user(token_info=None, user=None):
     """Return the current user"""
     user = User.query.get(user)
     if not user:

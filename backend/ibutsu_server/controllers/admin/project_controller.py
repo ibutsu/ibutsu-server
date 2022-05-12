@@ -9,7 +9,7 @@ from ibutsu_server.util.uuid import convert_objectid_to_uuid
 from ibutsu_server.util.uuid import is_uuid
 
 
-def add_project(project=None, token_info=None, user=None):
+def admin_add_project(project=None, token_info=None, user=None):
     """Create a project
 
     :param body: Project
@@ -30,7 +30,7 @@ def add_project(project=None, token_info=None, user=None):
     return project.to_dict(), 201
 
 
-def get_project(id_, token_info=None, user=None):
+def admin_get_project(id_, token_info=None, user=None):
     """Get a single project by ID
 
     :param id: ID of test project
@@ -47,7 +47,7 @@ def get_project(id_, token_info=None, user=None):
     return project.to_dict(with_owner=True)
 
 
-def get_project_list(
+def admin_get_project_list(
     filter_=None, owner_id=None, group_id=None, page=1, page_size=25, token_info=None, user=None
 ):
     """Get a list of projects
@@ -91,7 +91,7 @@ def get_project_list(
     }
 
 
-def update_project(id_, project=None, token_info=None, user=None):
+def admin_update_project(id_, project=None, token_info=None, user=None):
     """Update a project
 
     :param id: ID of test project
@@ -136,7 +136,7 @@ def update_project(id_, project=None, token_info=None, user=None):
     return project.to_dict()
 
 
-def delete_project(id_, token_info=None, user=None):
+def admin_delete_project(id_, token_info=None, user=None):
     """Delete a single project"""
     check_user_is_admin(user)
     project = Project.query.get(id_)
