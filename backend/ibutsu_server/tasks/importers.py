@@ -227,6 +227,7 @@ def run_junit_import(import_):
     session.add(run)
     session.commit()
     run_dict = run.to_dict()
+    import_record.run_id = run.id
     import_record.data["run_id"].append(run.id)
 
     # If the top level "testsuites" element doesn't have these, we'll need to build them manually
@@ -405,6 +406,7 @@ def run_archive_import(import_):
             run = Run.from_dict(**run_dict)
         session.add(run)
         session.commit()
+        import_record.run_id = run.id
         import_record.data["run_id"] = [run.id]
         # Now loop through all the results, and create or update them
         for result in results:

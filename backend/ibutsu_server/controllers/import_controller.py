@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 import connexion
 from ibutsu_server.db.base import session
@@ -9,6 +10,7 @@ from ibutsu_server.tasks.importers import run_junit_import
 from ibutsu_server.util.projects import get_project
 from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.uuid import validate_uuid
+from werkzeug.datastructures import FileStorage
 
 
 @validate_uuid
@@ -30,11 +32,24 @@ def get_import(id_, token_info=None, user=None):
     return import_.to_dict()
 
 
-def add_import(import_file=None, project=None, metadata=None, token_info=None, user=None):
+def add_import(
+    import_file: Optional[FileStorage] = None,
+    project: Optional[str] = None,
+    metadata: Optional[str] = None,
+    source: Optional[str] = None,
+    token_info: Optional[str] = None,
+    user: Optional[str] = None,
+):
     """Imports a JUnit XML file and creates a test run and results from it.
 
     :param import_file: file to upload
     :type import_file: werkzeug.datastructures.FileStorage
+    :param project: the project to add this test run to
+    :type project: str
+    :param metadata: extra metadata to add to the run and the results, in a JSON string
+    :type metadata: str
+    :param source: the source of the test run
+    :type source: str
 
     :rtype: Import
     """
@@ -53,6 +68,8 @@ def add_import(import_file=None, project=None, metadata=None, token_info=None, u
     if connexion.request.form.get("metadata"):
         metadata = json.loads(connexion.request.form.get("metadata"))
     data["metadata"] = metadata
+    if connexion.request.form.get("source"):
+        data["source"] = connexion.request.form["source"]
     new_import = Import.from_dict(
         **{"status": "pending", "filename": import_file.filename, "format": "", "data": data}
     )
