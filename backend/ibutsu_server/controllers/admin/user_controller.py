@@ -21,7 +21,7 @@ def _hide_sensitive_fields(user_dict):
 
 
 @validate_uuid
-def get_user(id_, token_info=None, user=None):
+def admin_get_user(id_, token_info=None, user=None):
     """Return the current user"""
     check_user_is_admin(user)
     requested_user = User.query.get(id_)
@@ -30,7 +30,7 @@ def get_user(id_, token_info=None, user=None):
     return _hide_sensitive_fields(requested_user.to_dict(with_projects=True))
 
 
-def get_user_list(filter_=None, page=1, page_size=25, token_info=None, user=None):
+def admin_get_user_list(filter_=None, page=1, page_size=25, token_info=None, user=None):
     """
     Return a list of users (only superadmins can run this function)
     """
@@ -58,7 +58,7 @@ def get_user_list(filter_=None, page=1, page_size=25, token_info=None, user=None
     }
 
 
-def add_user(new_user=None, token_info=None, user=None):
+def admin_add_user(new_user=None, token_info=None, user=None):
     """Create a new user in the system"""
     check_user_is_admin(user)
     if not connexion.request.is_json:
@@ -69,7 +69,7 @@ def add_user(new_user=None, token_info=None, user=None):
     return _hide_sensitive_fields(new_user.to_dict()), 201
 
 
-def update_user(id_, user_info=None, token_info=None, user=None):
+def admin_update_user(id_, user_info=None, token_info=None, user=None):
     """Update a single user in the system"""
     check_user_is_admin(user)
     if not connexion.request.is_json:
@@ -86,7 +86,7 @@ def update_user(id_, user_info=None, token_info=None, user=None):
     return _hide_sensitive_fields(requested_user.to_dict())
 
 
-def delete_user(id_, token_info=None, user=None):
+def admin_delete_user(id_, token_info=None, user=None):
     """Delete a single user"""
     check_user_is_admin(user)
     requested_user = User.query.get(id_)
