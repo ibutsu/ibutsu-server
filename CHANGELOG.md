@@ -1,3 +1,12 @@
+Version 2.2.1
+=============
+
+* Rename some methods to ensure unique operationIds
+* Fix some issues in the import API
+* Trim whitespace from filters (closes #342)
+* Add the ability to add new projects
+* add logging for lock
+
 Version 2.2.0
 =============
 
