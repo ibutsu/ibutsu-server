@@ -1866,7 +1866,10 @@ paths:
             format: uuid
           style: simple
       requestBody:
-        $ref: '#/components/requestBodies/User'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/requestBodies/User'
       responses:
         200:
           content:
