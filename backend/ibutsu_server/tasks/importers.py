@@ -155,6 +155,8 @@ def _populate_metadata(run_dict, import_record):
         run_dict["component"] = run_dict["metadata"]["component"]
     if run_dict.get("metadata", {}).get("env"):
         run_dict["env"] = run_dict["metadata"]["env"]
+    if import_record.data.get("source"):
+        run_dict["source"] = import_record.data["source"]
 
 
 def _populate_result_metadata(run_dict, result_dict, import_record, has_metadata):
@@ -166,6 +168,8 @@ def _populate_result_metadata(run_dict, result_dict, import_record, has_metadata
         result_dict["component"] = run_dict.get("component")
     if import_record.data.get("project_id"):
         result_dict["project_id"] = import_record.data["project_id"]
+    if import_record.data.get("source"):
+        result_dict["source"] = import_record.data["source"]
 
 
 def _get_test_name_path(testcase):
@@ -212,6 +216,8 @@ def run_junit_import(import_):
 
     if import_record.data.get("project_id"):
         run_dict["project_id"] = import_record.data["project_id"]
+    if import_record.data.get("source"):
+        run_dict["source"] = import_record.data["source"]
 
     metadata = None
     if import_record.data.get("metadata"):
