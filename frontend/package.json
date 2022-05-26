@@ -1,6 +1,6 @@
 {
   "name": "ibutsu-frontend",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "private": true,
   "dependencies": {
     "@babel/core": "^7.15.8",

@@ -1,3 +1,9 @@
+Version 2.2.2
+=============
+
+* Actually copy the source in the importers
+* Fix the requestBody of the User endpoint in the OpenAPI spec
+
 Version 2.2.1
 =============
 
