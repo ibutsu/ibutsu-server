@@ -154,4 +154,4 @@ def get_app(**extra_config):
         task.delay(**task_params)
         return "Accepted", 202
 
-    return app
+    return app.app
