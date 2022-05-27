@@ -31,7 +31,7 @@ def _status_to_summary(status):
         "xfailed": "xfailures",
         "xpassed": "xpasses",
         "tests": "tests",
-    }.get(status)
+    }.get(status, status)
 
 
 @task(max_retries=1000)
@@ -71,7 +71,7 @@ def update_run(run_id):
 
             key = _status_to_summary(result.result)
             if key in summary:
-                summary[key] += 1
+                summary[key] = summary.get(key, 0) + 1
             # update the number of tests that actually ran
             summary["tests"] += 1
             if result.duration:
