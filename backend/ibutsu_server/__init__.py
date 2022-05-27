@@ -1,7 +1,11 @@
 import os
 from importlib import import_module
 from pathlib import Path
+from typing import Any
+from typing import Dict
+from typing import Optional
 
+import flask
 from connexion import App
 from flask import redirect
 from flask import request
@@ -17,83 +21,79 @@ from ibutsu_server.db.util import add_superadmin
 from ibutsu_server.encoder import JSONEncoder
 from ibutsu_server.tasks import create_celery_app
 from ibutsu_server.util.jwt import decode_token
+from sqlalchemy import create_engine
+from sqlalchemy.engine.url import URL as SQLA_URL
 from yaml import full_load as yaml_load
 
 FRONTEND_PATH = Path("/app/frontend")
 
 
-def _make_sql_url(hostname, database, **kwargs):
-    """Build a URL for SQLAlchemy"""
-    url = hostname
-    if kwargs.get("port"):
-        url = "{}:{}".format(url, kwargs["port"])
-    if kwargs.get("user"):
-        credentials = kwargs["user"]
-        if kwargs.get("password"):
-            credentials = "{}:{}".format(credentials, kwargs["password"])
-        url = "{}@{}".format(credentials, url)
-    return "postgresql://{}/{}".format(url, database)
+def maybe_sql_url(conf: Dict[str, Any]) -> Optional[SQLA_URL]:
+    host = conf.get("host") or conf.get("hostname")
+    database = conf.get("db") or conf.get("database")
+    if host and database:
+        return SQLA_URL(
+            drivername="postgresql",
+            host=host,
+            database=database,
+            port=conf.get("port"),
+            username=conf.get("user"),
+            password=conf.get("password"),
+        )
 
 
-def _make_broker_url(env_var_value, hostname, password, port):
-    if env_var_value:
-        return env_var_value
-    user_pass_str = f":{password}@" if password else ""
-    return f"redis://{user_pass_str}{hostname}:{port}"
+def make_celery_redis_url(config: flask.Config, *, envvar: str) -> str:
+    if var := config.get(envvar):
+        return var
+    redis = config.get_namespace("REDIS_")
+    assert "hostname" in redis and "port" in redis, redis
+    if "password" in redis:
+        return "redis://:{password}@{hostname}:{port}".format_map(redis)
+    else:
+        return "redis://{hostname}:{port}".format_map(redis)
 
 
 def get_app(**extra_config):
     """Create the WSGI application"""
 
     app = App(__name__, specification_dir="./openapi/")
+
     app.app.json_encoder = JSONEncoder
 
     # Shortcut
-    config = app.app.config
+    config: flask.Config = app.app.config
     config.setdefault("BCRYPT_LOG_ROUNDS", 12)
     config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", True)
-    if hasattr(config, "from_file"):
-        config.from_file(str(Path("./settings.yaml").resolve()), yaml_load, silent=True)
-    else:
-        settings_path = Path("./settings.yaml").resolve()
-        if settings_path.exists():
-            # If there's a config file, load it
-            config.from_mapping(yaml_load(settings_path.open()))
+
+    config.from_file(str(Path("./settings.yaml").resolve()), yaml_load, silent=True)
     # Now load config from environment variables
     config.from_mapping(os.environ)
     # convert str to bool for USER_LOGIN_ENABLED
     if isinstance(config.get("USER_LOGIN_ENABLED", True), str):
         config["USER_LOGIN_ENABLED"] = config["USER_LOGIN_ENABLED"].lower()[0] in ["y", "t", "1"]
-    if config.get("POSTGRESQL_HOST") and config.get("POSTGRESQL_DATABASE"):
-        # If you have environment variables, like when running on OpenShift, create the db url
-        config.update(
-            {
-                "SQLALCHEMY_DATABASE_URI": _make_sql_url(
-                    config["POSTGRESQL_HOST"],
-                    config["POSTGRESQL_DATABASE"],
-                    port=config.get("POSTGRESQL_PORT"),
-                    user=config.get("POSTGRESQL_USER"),
-                    password=config.get("POSTGRESQL_PASSWORD"),
-                ),
-            }
-        )
+
+    # If you have environment variables, like when running on OpenShift, create the db url
+    maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
+        config.get_namespace("POSTGRES_")
+    )
+    assert maybe_db_uri is not None
+
+    # wait for db to appear in case of pod usage
+    config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
+    engine = create_engine(maybe_db_uri)
+    for _ in range(10):
+        try:
+            c = engine.connect()
+        except ConnectionError:
+            pass
+        else:
+            c.close()
+    engine.dispose()
 
     # Set celery broker URL
     config.update(
-        {
-            "CELERY_BROKER_URL": _make_broker_url(
-                config.get("CELERY_BROKER_URL"),
-                config.get("REDIS_HOSTNAME"),
-                config.get("REDIS_PASSWORD"),
-                config.get("REDIS_PORT"),
-            ),
-            "CELERY_RESULT_BACKEND": _make_broker_url(
-                config.get("CELERY_RESULT_BACKEND"),
-                config.get("REDIS_HOSTNAME"),
-                config.get("REDIS_PASSWORD"),
-                config.get("REDIS_PORT"),
-            ),
-        }
+        CELERY_BROKER_URL=make_celery_redis_url(config, envvar="CELERY_BROKER_URL"),
+        CELERY_RESULT_BACKEND=make_celery_redis_url(config, envvar="CELERY_RESULT_BACKEND"),
     )
 
     # Load any extra config
@@ -110,18 +110,13 @@ def get_app(**extra_config):
     Mail(app.app)
 
     with app.app.app_context():
+
         db.create_all()
         upgrade_db(session, upgrades)
         # add a superadmin user
-        if config.get("IBUTSU_SUPERADMIN_EMAIL") and config.get("IBUTSU_SUPERADMIN_PASSWORD"):
-            add_superadmin(
-                session,
-                admin_user={
-                    "email": config["IBUTSU_SUPERADMIN_EMAIL"],
-                    "password": config["IBUTSU_SUPERADMIN_PASSWORD"],
-                    "name": config.get("IBUTSU_SUPERADMIN_NAME"),
-                },
-            )
+        db.session.commit()
+        if superadmin_data := config.get_namespace("IBUTSU_SUPERADMIN_"):
+            add_superadmin(session, **superadmin_data)
 
     @app.route("/")
     def index():
