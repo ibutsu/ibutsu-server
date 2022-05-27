@@ -12,6 +12,7 @@ REQUIRES = [
     "flask_bcrypt",
     "flask_cors",
     "flask_mail",
+    "Flask>=2",
     "Flask-SQLAlchemy",
     "google-api-python-client",
     "google-auth",
