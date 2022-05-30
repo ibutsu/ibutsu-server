@@ -59,7 +59,7 @@
     "yarn": "^1.22.0"
   },
   "scripts": {
-    "start": "serve -s build -l tcp://0.0.0.0:3000",
+    "start": "serve -s build -l tcp://0.0.0.0:8080",
     "build": "./bin/write-version-file.js && react-scripts build",
     "test": "./bin/write-version-file.js && react-scripts test",
     "eject": "react-scripts eject",
