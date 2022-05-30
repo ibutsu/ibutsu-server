@@ -6,11 +6,11 @@ metadata:
   labels:
     app: ibutsu
   name: ibutsu-db-config
-data:
-  DB: ibutsu
-  USER: ibutsu
-  PASSWORD: ibutsu # todo: move to a secret once podman supports those
-  HOSTNAME: ibutsu
+data: # todo: remove prefixes once podman supports prefixes natively
+  POSTGRES_DB: ibutsu
+  POSTGRES_USER: ibutsu
+  POSTGRES_PASSWORD: ibutsu # todo: move to a secret once podman supports those
+  POSTGRES_HOSTNAME: ibutsu
 
 ---
 
@@ -20,10 +20,10 @@ metadata:
   labels:
     app: ibutsu
   name: ibutsu-superuser-config
-data:
-  SUPERADMIN_EMAIL: ibutsu@example.com
-  SUPERADMIN_PASSWORD: abc123
-  SUPERADMIN_OWN_PROJECT: test
+data: # todo: remove prefixes once podman supports prefixes natively
+  IBUTSU_SUPERADMIN_EMAIL: ibutsu@example.com
+  IBUTSU_SUPERADMIN_PASSWORD: abc123
+  IBUTSU_SUPERADMIN_OWN_PROJECT: test
 
 ---
 
@@ -50,8 +50,6 @@ spec:
     envFrom:
     - configMapRef:
         name: ibutsu-db-config
-      prefix: POSTGRES_
-
   - name: redis
     image: docker.io/library/redis:latest
     resources: *resources-small
@@ -62,6 +60,8 @@ spec:
     image: backend
     args: [ devserver]
     env:
+    - name: JWT_SECRET
+      value: insecure-devserver-value
     - name: CELERY_BROKER_URL
       value: redis://ibutsu
     - name: CELERY_RESULT_BACKEND
@@ -72,7 +72,6 @@ spec:
       prefix: POSTGRESQL_
     - configMapRef:
         name: ibutsu-superuser-config
-      prefix: IBUTSU_
     resources: *resources-small
     securityContext: &security-context
       readOnlyRootFilesystem: false
@@ -101,7 +100,6 @@ spec:
     envFrom:
     - configMapRef:
         name: ibutsu-db-config
-      prefix: POSTGRESQL_
     resources: *resources-small
     securityContext: *security-context
     volumeMounts:
