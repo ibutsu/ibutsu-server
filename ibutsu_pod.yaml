@@ -1,5 +1,32 @@
-# use with podman play cube
+# for use with podman play
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: ibutsu
+  name: ibutsu-db-config
+data:
+  DB: ibutsu
+  USER: ibutsu
+  PASSWORD: ibutsu # todo: move to a secret once podman supports those
+  HOSTNAME: ibutsu
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: ibutsu
+  name: ibutsu-superuser-config
+data:
+  SUPERADMIN_EMAIL: ibutsu@example.com
+  SUPERADMIN_PASSWORD: abc123
+  SUPERADMIN_OWN_PROJECT: test
+
+---
+
 apiVersion: v1
 kind: Pod
 metadata:
@@ -20,36 +47,32 @@ spec:
     volumeMounts:
     - name: ibutsu-database
       mountPath: /var/lib/postgresql/data
-    env: &all-env
-      - name: POSTGRES_DB
-        value: ibutsu
-      - name: POSTGRES_USER
-        value: ibutsu
-      - name: POSTGRES_PASSWORD
-        value: ibutsu
-      - name: POSTGRES_HOSTNAME
-        value: ibutsu
-      # for the backend conainers
-      - name: CELERY_BROKER_URL
-        value: redis://ibutsu
-      - name: CELERY_RESULT_BACKEND
-        value: redis://ibutsu
-      - name: IBUTSU_SUPERADMIN_EMAIL
-        value: ibutsu@ronnypfannschmidt.de
-      - name: IBUTSU_SUPERADMIN_PASSWORD
-        value: abc123
-      - name: IBUTSU_SUPERADMIN_OWN_PROJECT
-        value: test
-      - name: JWT_SECRET
-        value: xkcd-random-4
+    envFrom:
+    - configMapRef:
+        name: ibutsu-db-config
+      prefix: POSTGRES_
 
   - name: redis
     image: docker.io/library/redis:latest
     resources: *resources-small
+    volumeMounts:
+    - name: ibutsu-redis
+      mountPath: /data
   - name: backend
     image: backend
     args: [ devserver]
-    env: *all-env
+    env:
+    - name: CELERY_BROKER_URL
+      value: redis://ibutsu
+    - name: CELERY_RESULT_BACKEND
+      value: redis://ibutsu
+    envFrom:
+    - configMapRef:
+        name: ibutsu-db-config
+      prefix: POSTGRESQL_
+    - configMapRef:
+        name: ibutsu-superuser-config
+      prefix: IBUTSU_
     resources: *resources-small
     securityContext: &security-context
       readOnlyRootFilesystem: false
@@ -70,7 +93,15 @@ spec:
     image: backend
     args:
     - worker
-    env: *all-env
+    env:
+    - name: CELERY_BROKER_URL
+      value: redis://ibutsu
+    - name: CELERY_RESULT_BACKEND
+      value: redis://ibutsu
+    envFrom:
+    - configMapRef:
+        name: ibutsu-db-config
+      prefix: POSTGRESQL_
     resources: *resources-small
     securityContext: *security-context
     volumeMounts:
@@ -119,3 +150,6 @@ spec:
   - name: ibutsu-database
     persistentVolumeClaim:
       claimName: ibutsu-database
+  - name: ibutsu-redis
+    persistentVolumeClaim:
+      claimName: ibutsu-redis
