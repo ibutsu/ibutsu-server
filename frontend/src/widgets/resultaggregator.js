@@ -124,10 +124,9 @@ export class ResultAggregatorWidget extends React.Component {
           }
           {(!this.state.resultAggregatorError && !this.state.isLoading && this.params.chart_type === "pie" && this.state.total !== 0) &&
             <ChartPie
-              ariaDesc="Results categorized"
-              ariaTitle="pie-chart"
               constrainToVisibleArea={true}
               data={this.state.chartData}
+              legendData={this.state.legendData}
               labels={({datum}) => `${toTitleCase(datum.x)}: ${datum.y}`}
               labelComponent={
                 <ChartTooltip
@@ -148,10 +147,9 @@ export class ResultAggregatorWidget extends React.Component {
           }
           {(!this.state.resultAggregatorError && !this.state.isLoading && this.params.chart_type === "donut" && this.state.total !== 0) &&
             <ChartDonut
-              ariaDesc="Results categorized"
-              ariaTitle="donut-chart"
               constrainToVisibleArea
               data={this.state.chartData}
+              legendData={this.state.legendData}
               labels={({datum}) => `${toTitleCase(datum.x || '')}: ${datum.y}`}
               height={200}
               title={this.state.total}
