@@ -15,8 +15,7 @@ Running in Containers
 ---------------------
 
 The easiest way to run Ibutsu is via containers with either `Docker <https://docker.io>`_ or
-`Podman <https://podman.io>`_. Ibutsu images are available on `Docker Hub <https://hub.docker.com/u/ibutsu>`_
-and `Quay.io <https://quay.io/organization/ibutsu>`_.
+`Podman <https://podman.io>`_. Ibutsu images are available on `Quay.io <https://quay.io/organization/ibutsu>`_.
 
 Using `Docker Compose <https://docs.docker.com/compose/>`_ or `Podman Compose <https://github.com/containers/podman-compose>`_
 can make deploying containers much easier, and we have included a :ref:`examples/compose` example.
