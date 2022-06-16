@@ -13,14 +13,14 @@ which is browseable from `/api/ui/`
 
 ## Running locally
 
-To run the server locally for development, you can use `podman` or Docker Compose.
+To run the server locally for development, you can use `podman` or docker/podman-Compose.
 
 ### `podman`
 
 To run Ibutsu using `podman`, use the `ibutsu-pod.sh` utility script:
 
 ```console
-./script/ibutsu-pod.sh --create-admin --create-project
+./scripts/ibutsu-pod.sh --create-admin --create-project
 ```
 
 This will start up the containers and create an administrator and a project.
@@ -59,7 +59,7 @@ optional arguments:
 There is a pre-created Docker Compose file for running a development environment locally:
 
 ```console
-docker compose -f docker-compose.dev.yml up
+docker-compose -f docker-compose.dev.yml up
 ```
 
 ### Without containers
