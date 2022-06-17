@@ -17,7 +17,7 @@ MOCK_RUN = MockRun(
     id=MOCK_ID,
     summary={"errors": 1, "failures": 3, "skips": 0, "tests": 548},
     duration=540.05433,
-    data={"component": "test-component", "env": "local"},
+    data={"component": "test-component", "env": "local", "project": "test-project"},
     env="local",
     component="test-component",
     start_time=str(START_TIME),
@@ -30,7 +30,7 @@ class TestRunController(BaseTestCase):
     """RunController integration test stubs"""
 
     def setUp(self):
-        """Set up a fake MongoDB object"""
+        """Set up test data and mocks"""
         self.mock_limit = MagicMock()
         self.mock_limit.return_value.offset.return_value.all.return_value = [MOCK_RUN]
         self.session_patcher = patch("ibutsu_server.controllers.run_controller.session")
@@ -69,7 +69,7 @@ class TestRunController(BaseTestCase):
         run_dict = {
             "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
             "duration": 540.05433,
-            "metadata": {"component": "test-component", "env": "local"},
+            "metadata": {"component": "test-component", "env": "local", "project": "test-project"},
             "start_time": START_TIME,
             "created": START_TIME,
         }
@@ -85,9 +85,9 @@ class TestRunController(BaseTestCase):
             data=json.dumps(run_dict),
             content_type="application/json",
         )
-        self.mock_update_run_task.apply_async.assert_called_once_with((MOCK_ID,), countdown=5)
         self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
         self.assert_equal(response.json, MOCK_RUN_DICT)
+        self.mock_update_run_task.apply_async.assert_called_once_with((MOCK_ID,), countdown=5)
 
     def test_get_run(self):
         """Test case for get_run

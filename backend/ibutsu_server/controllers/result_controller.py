@@ -26,7 +26,10 @@ def add_result(result=None, token_info=None, user=None):
         return "Bad request, JSON required", 400
     result = Result.from_dict(**connexion.request.get_json())
 
-    if result.data and result.data.get("project"):
+    if result.data and not (result.data.get("project") or result.project_id):
+        return "Bad request, project or project_id is required", 400
+
+    if not result.project:
         project = get_project(result.data["project"])
         if not project_has_user(project, user):
             return "Forbidden", 403
