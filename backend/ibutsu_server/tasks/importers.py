@@ -3,6 +3,7 @@ import tarfile
 from datetime import datetime
 from io import BytesIO
 
+from celery.utils.log import get_task_logger
 from dateutil import parser
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact
@@ -13,15 +14,17 @@ from ibutsu_server.db.models import Run
 from ibutsu_server.tasks import task
 from ibutsu_server.tasks.runs import update_run
 from ibutsu_server.util.projects import get_project_id
-from ibutsu_server.util.uuid import convert_objectid_to_uuid
 from ibutsu_server.util.uuid import is_uuid
 from lxml import objectify
+
+
+log = get_task_logger(__name__)
 
 
 def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
     """Create a result with artifacts, used in the archive importer"""
     old_id = None
-    result_id = convert_objectid_to_uuid(result.get("id"))
+    result_id = result.get("id")
     if is_uuid(result_id):
         result_record = session.query(Result).get(result_id)
     else:
@@ -47,7 +50,7 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
     for artifact in artifacts:
         session.add(
             Artifact(
-                filename="traceback.log",
+                filename=artifact.name.split("/")[-1],
                 result_id=result["id"],
                 data={"contentType": "text/plain", "resultId": result["id"]},
                 content=tar.extractfile(artifact).read(),
@@ -342,7 +345,7 @@ def run_archive_import(import_):
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
     import_record = Import.query.get(str(import_["id"]))
-    metadata = None
+    metadata = {}
     if import_record.data.get("metadata"):
         # metadata is expected to be a json dict
         metadata = import_record.data["metadata"]
@@ -355,34 +358,36 @@ def run_archive_import(import_):
 
     # First open the tarball and pull in the results
     run = None
+    run_artifacts = []
     results = []
     result_artifacts = {}
-    current_dir = None
-    result = None
-    artifacts = []
     start_time = None
     file_object = BytesIO(import_file.content)
     with tarfile.open(mode="r:gz", fileobj=file_object) as tar:
-        # run through the files and dirs, skipping the first one as it is the base directory
-        for member in tar.getmembers()[1:]:
-            if member.isdir() and member.name != current_dir:
-                if result:
-                    results.append(result)
-                    result_artifacts[result["id"]] = artifacts
-                artifacts = []
-                result = None
-            elif member.name.endswith("result.json"):
+        for member in tar.getmembers():
+            # We don't care about directories, skip them
+            if member.isdir():
+                continue
+            # Grab the run id
+            run_id, rest = member.name.split("/", 1)
+            if "/" not in rest:
+                if member.name.endswith("run.json"):
+                    run = json.loads(tar.extractfile(member).read())
+                else:
+                    run_artifacts.append(member)
+                continue
+            result_id, file_name = rest.split("/")
+            if member.name.endswith("result.json"):
                 result = json.loads(tar.extractfile(member).read())
                 result_start_time = result.get("start_time")
                 if not start_time or start_time > result_start_time:
                     start_time = result_start_time
-            elif member.name.endswith("run.json"):
-                run = json.loads(tar.extractfile(member).read())
-            elif member.isfile():
-                artifacts.append(member)
-        if result:
-            results.append(result)
-            result_artifacts[result["id"]] = artifacts
+                results.append(result)
+            else:
+                try:
+                    result_artifacts[result_id].append(member)
+                except KeyError:
+                    result_artifacts[result_id] = [member]
         run_dict = run or {
             "duration": 0,
             "summary": {
@@ -395,13 +400,10 @@ def run_archive_import(import_):
             },
         }
         # patch things up a bit, if necessary
-        if metadata:
-            run_dict["metadata"] = run_dict.get("metadata", {})
-            run_dict["metadata"].update(metadata)
-        if run_dict.get("id"):
-            run_dict["id"] = convert_objectid_to_uuid(run_dict["id"])
-        _populate_created_times(run_dict, start_time)
+        run_dict["metadata"] = run_dict.get("metadata", {})
+        run_dict["metadata"].update(metadata)
         _populate_metadata(run_dict, import_record)
+        _populate_created_times(run_dict, start_time)
 
         # If this run has a valid ID, check if this run exists
         if is_uuid(run_dict.get("id")):
@@ -414,6 +416,17 @@ def run_archive_import(import_):
         session.commit()
         import_record.run_id = run.id
         import_record.data["run_id"] = [run.id]
+        # Loop through any artifacts associated with the run and upload them
+        for artifact in run_artifacts:
+
+            session.add(
+                Artifact(
+                    filename=artifact.name.split("/")[-1],
+                    run_id=run.id,
+                    data={"contentType": "text/plain", "runId": run.id},
+                    content=tar.extractfile(artifact).read(),
+                )
+            )
         # Now loop through all the results, and create or update them
         for result in results:
             artifacts = result_artifacts.get(result["id"], [])
