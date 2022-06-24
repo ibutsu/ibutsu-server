@@ -35,7 +35,9 @@ def view_artifact(id_, token_info=None, user=None):
     :rtype: file
     """
     artifact, response = _build_artifact_response(id_)
-    if not project_has_user(artifact.result.project, user):
+    if artifact.result and not project_has_user(artifact.result.project, user):
+        return "Forbidden", 403
+    elif artifact.run and not project_has_user(artifact.run.project, user):
         return "Forbidden", 403
     return response
 

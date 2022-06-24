@@ -188,6 +188,7 @@ class Run(Model, ModelMixin):
     source = Column(Text, index=True)
     start_time = Column(DateTime, default=datetime.utcnow, index=True)
     summary = Column(mutable_json_type(dbtype=PortableJSON()))
+    artifacts = relationship("Artifact", backref="run")
 
 
 class WidgetConfig(Model, ModelMixin):

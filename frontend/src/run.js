@@ -283,7 +283,7 @@ export class Run extends React.Component {
       .then(data => {
         let artifactTabs = [];
         data.artifacts.forEach((artifact) => {
-          fetch(Settings.serverUrl + `/artifact/${artifact.id}/view`)
+          HttpClient.get([Settings.serverUrl, 'artifact', artifact.id, 'view'])
             .then(response => {
               let contentType = response.headers.get('Content-Type');
               if (contentType.includes('text')) {
