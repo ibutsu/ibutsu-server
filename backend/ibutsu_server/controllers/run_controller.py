@@ -101,9 +101,11 @@ def get_run(id_, token_info=None, user=None):
     :rtype: Run
     """
     run = Run.query.get(id_)
+    if not run:
+        return "Run not found", 404
     if not project_has_user(run.project, user):
         return "Forbidden", 403
-    return run.to_dict() if run else ("Run not found", 404)
+    return run.to_dict()
 
 
 def add_run(run=None, token_info=None, user=None):

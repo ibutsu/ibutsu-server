@@ -140,9 +140,11 @@ def get_result(id_, token_info=None, user=None):
     :rtype: Result
     """
     result = Result.query.get(id_)
+    if not result:
+        return "Result not found", 404
     if not project_has_user(result.project, user):
         return "Forbidden", 403
-    return (result.to_dict(), 200) if result else ("Result not found", 404)
+    return result.to_dict()
 
 
 def update_result(id_, result=None, token_info=None, user=None):
