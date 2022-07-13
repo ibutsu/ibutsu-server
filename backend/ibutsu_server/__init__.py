@@ -73,28 +73,31 @@ def get_app(**extra_config):
         config["USER_LOGIN_ENABLED"] = config["USER_LOGIN_ENABLED"].lower()[0] in ["y", "t", "1"]
 
     # If you have environment variables, like when running on OpenShift, create the db url
-    maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
-        config.get_namespace("POSTGRES_")
-    )
-    assert maybe_db_uri is not None
+    if "SQLALCHEMY_DATABASE_URI" not in extra_config:
+        maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
+            config.get_namespace("POSTGRES_")
+        )
+        assert maybe_db_uri is not None
 
-    # wait for db to appear in case of pod usage
-    config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
-    engine = create_engine(maybe_db_uri)
-    for _ in range(10):
-        try:
-            c = engine.connect()
-        except ConnectionError:
-            pass
-        else:
-            c.close()
-    engine.dispose()
+        # wait for db to appear in case of pod usage
+        config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
 
-    # Set celery broker URL
-    config.update(
-        CELERY_BROKER_URL=make_celery_redis_url(config, envvar="CELERY_BROKER_URL"),
-        CELERY_RESULT_BACKEND=make_celery_redis_url(config, envvar="CELERY_RESULT_BACKEND"),
-    )
+        engine = create_engine(maybe_db_uri)
+        for _ in range(10):
+            try:
+                c = engine.connect()
+            except ConnectionError:
+                pass
+            else:
+                c.close()
+        engine.dispose()
+
+        # Set celery broker URL
+        # hackishly indented to only be part of the setup where extra config wont pass the db
+        config.update(
+            CELERY_BROKER_URL=make_celery_redis_url(config, envvar="CELERY_BROKER_URL"),
+            CELERY_RESULT_BACKEND=make_celery_redis_url(config, envvar="CELERY_RESULT_BACKEND"),
+        )
 
     # Load any extra config
     config.update(extra_config)
