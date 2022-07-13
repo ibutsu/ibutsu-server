@@ -50,10 +50,10 @@ class BaseTestCase(TestCase):
             "KEYCLOAK_CLIENT_ID": None,
         }
         app = get_app(**extra_config)
-        create_celery_app(app.app)
+        create_celery_app(app)
 
         # Add a test user
-        with app.app.app_context():
+        with app.app_context():
             self.test_user = User(name="Test User", email="test@example.com", is_active=True)
             session.add(self.test_user)
             session.commit()
@@ -65,7 +65,7 @@ class BaseTestCase(TestCase):
 
         if ibutsu_server.tasks.task is None:
             ibutsu_server.tasks.task = mock_task
-        return app.app
+        return app
 
     def assert_201(self, response, message=None):
         """
