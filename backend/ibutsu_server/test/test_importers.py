@@ -41,7 +41,7 @@ class TestImporterTasks(BaseTestCase):
         from ibutsu_server.tasks.importers import run_junit_import
 
         # We mocked out the @task decorator, use the _orig_func attr to get the original function
-        run_junit_import = run_junit_import.__wrapped__
+        run_junit_import = run_junit_import._orig_func
         run_junit_import(mocked_import)
 
         MockImport.query.get.assert_called_once_with("12345")

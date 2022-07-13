@@ -68,7 +68,7 @@ class TestRunTasks(BaseTestCase):
         mocked_run.query.get.return_value = MOCK_RUN
         mocked_result.query.return_value.filter.return_value.all.return_value = MOCK_RESULTS
 
-        update_run = update_run.__wrapped__
+        update_run = update_run._orig_func
         update_run(MOCK_RUN_ID)
 
         mocked_lock.assert_called_once()
