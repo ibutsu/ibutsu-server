@@ -1,0 +1,16 @@
+FROM  registry.access.redhat.com/ubi8/python-38 as base
+USER 0
+RUN mkdir /ibutsu_venv
+RUN chown -R 1001:0 /ibutsu_venv /srv
+USER 1001
+WORKDIR  /srv
+RUN python -m venv /ibutsu_venv && \
+     /ibutsu_venv/bin/pip install -U pip setuptools wheel
+
+
+FROM base as installed
+
+COPY .  /srv/
+RUN /ibutsu_venv/bin/pip install -e .
+ENTRYPOINT [ "/bin/bash", "/srv/docker/entrypoint.sh" ]
+CMD ["help"]

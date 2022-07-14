@@ -1,7 +1,9 @@
 """
 Various utility DB functions
 """
-from ibutsu_server.db.models import User
+from typing import Optional
+
+from ibutsu_server.db import models
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import _literal_as_text
 from sqlalchemy.sql.expression import ClauseElement
@@ -32,23 +34,40 @@ def pg_explain(element, compiler, **kw):
     return text
 
 
-def add_superadmin(session, admin_user):
+def add_superadmin(
+    session,
+    *,
+    name: str = "Ibutsu Admin",
+    email: str,
+    password: Optional[str] = None,
+    own_project: Optional[str] = None,
+):
     """
     Adds a superadmin user to Ibutsu.
     """
-    user = User.query.filter_by(email=admin_user["email"]).first()
+
+    user = models.User.query.filter_by(email=email).first()
     if user and user.is_superadmin:
-        return
+        return user
     elif user and not user.is_superadmin:
         user.is_superadmin = True
     else:
-        user = User(
-            email=admin_user["email"],
-            name=admin_user.get("name") or "Ibutsu Admin",
-            password=admin_user["password"],
+
+        user = models.User(
+            email=email,
+            name=name,
+            password=password,
             is_superadmin=True,
             is_active=True,
         )
 
-    session.add(user)
+        session.add(user)
+
     session.commit()
+
+    if own_project is not None:
+        project = models.Project.query.filter_by(name=own_project, owner=user).first()
+        if project is None:
+            project = models.Project(name=own_project, owner=user)
+        session.add(project)
+        session.commit()

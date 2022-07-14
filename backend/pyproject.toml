@@ -1,0 +1,63 @@
+[build-system]
+requires = [
+    "hatchling>=1.3.1",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "ibutsu-server"
+version = "2.2.2" # TODO: consider hatch-vcs
+description = "A system to store and query test results and artifacts"
+license = "MIT"
+authors = [
+    { name = "Raoul Snyman", email = "rsnyman@redhat.com" },
+]
+keywords = [
+    "Ibutsu",
+    "OpenAPI",
+]
+requires_python = ">=3.7"
+dependencies = [
+     # Pin Celery and Kombu get around celery/kombu/issues/236
+    "celery==4.3.0",
+    "kombu==4.6.3",
+
+    "alembic",
+    "connexion",
+    "Flask-SQLAlchemy",
+    "Flask>=2",
+    "flask_bcrypt",
+    "flask_cors",
+    "flask_mail",
+    "google-api-python-client",
+    "google-auth",
+    "google-auth-httplib2",
+    "google-auth-oauthlib",
+    "gunicorn",
+    "lxml",
+    "psycopg2-binary",
+    "pymongo",
+    "python-jose[cryptography]",
+    "python-magic",
+    "python_dateutil==2.6.0",
+    "PyYAML",
+    "redis",
+    "sqlalchemy-json",
+    "sqlalchemy==1.3.23",
+    "swagger-ui-bundle==0.0.2",
+    "vine<5.0.0a1",
+    "werkzeug~=2.0.0",
+]
+
+[project.optional_dependencies]
+test = [
+    "coverage>=4.0.3",
+    "flask_testing",
+    "pluggy>=0.3.1",
+    "py>=1.4.31",
+    "pytest-mock>=3.1.0",
+    "randomize>=0.13",
+]
+[project.urls]
+Homepage = "https://github.com/ibutsu/ibutsu-server"
+

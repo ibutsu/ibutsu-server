@@ -2198,6 +2198,8 @@ components:
           - skipped
           - xpassed
           - xfailed
+          - manual
+          - blocked
           type: string
         component:
           description: A component
