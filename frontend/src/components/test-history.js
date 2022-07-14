@@ -40,6 +40,7 @@ export class TestHistoryTable extends React.Component {
   static propTypes = {
     filters: PropTypes.object,
     testResult: PropTypes.object,
+    comparisonResults: PropTypes.array
   }
 
   constructor(props) {
@@ -68,6 +69,7 @@ export class TestHistoryTable extends React.Component {
         // default to filter only from 1 weeks ago to the most test's start_time.
         'start_time': {op: 'gt', val: new Date(new Date(props.testResult.start_time).getTime() - (0.25 * 30 * 86400 * 1000)).toISOString()}
         }, props.filters),
+      comparisonResults: this.props.comparisonResults
     };
     // filter on env by default
     if (props.testResult.env) {
@@ -226,30 +228,38 @@ export class TestHistoryTable extends React.Component {
   }
 
   getResultsForTable() {
-    const filters = this.state.filters;
-    this.setState({rows: [getSpinnerRow(4)], isEmpty: false, isError: false});
-    let params = buildParams(filters);
-    params['filter'] = toAPIFilter(filters);
-    params['pageSize'] = this.state.pageSize;
-    params['page'] = this.state.page;
-    params['estimate'] = 'true';
-
-    this.setState({rows: [['Loading...', '', '', '', '']]});
-    HttpClient.get([Settings.serverUrl, 'result'], params)
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => this.setState({
-          results: data.results,
-          rows: data.results.map((result, index) => resultToTestHistoryRow(result, index, this.setFilter)).flat(),
-          page: data.pagination.page,
-          pageSize: data.pagination.pageSize,
-          totalItems: data.pagination.totalItems,
-          totalPages: data.pagination.totalPages,
-          isEmpty: data.pagination.totalItems === 0,
-      }))
-      .catch((error) => {
-        console.error('Error fetching result data:', error);
-        this.setState({rows: [], isEmpty: false, isError: true});
+    if (this.state.comparisonResults !== undefined) {
+      this.setState({
+        results: this.state.comparisonResults,
+        rows: this.state.comparisonResults.map((result, index) => resultToTestHistoryRow(result, index, this.setFilter)).flat(),
       });
+    } else {
+      const filters = this.state.filters;
+      this.setState({rows: [getSpinnerRow(4)], isEmpty: false, isError: false});
+      let params = buildParams(filters);
+      params['filter'] = toAPIFilter(filters);
+      params['pageSize'] = this.state.pageSize;
+      params['page'] = this.state.page;
+      params['estimate'] = 'true';
+
+      this.setState({rows: [['Loading...', '', '', '', '']]});
+      HttpClient.get([Settings.serverUrl, 'result'], params)
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => this.setState({
+            results: data.results,
+            rows: data.results.map((result, index) => resultToTestHistoryRow(result, index, this.setFilter)).flat(),
+            page: data.pagination.page,
+            pageSize: data.pagination.pageSize,
+            totalItems: data.pagination.totalItems,
+            totalPages: data.pagination.totalPages,
+            isEmpty: data.pagination.totalItems === 0,
+        }))
+        .catch((error) => {
+          console.error('Error fetching result data:', error);
+          this.setState({rows: [], isEmpty: false, isError: true});
+        });
+    }
+
   }
 
   componentDidMount() {

@@ -10,9 +10,10 @@ import {
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { JenkinsJobView, JenkinsJobAnalysisView } from '../views';
+import { CompareRunsView, JenkinsJobView, JenkinsJobAnalysisView } from '../views';
 
 const VIEW_MAP = {
+  'compare-runs-view': CompareRunsView,
   'jenkins-job-view': JenkinsJobView,
   'jenkins-analysis-view': JenkinsJobAnalysisView
 };

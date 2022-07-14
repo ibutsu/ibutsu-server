@@ -1,6 +1,7 @@
 import connexion
 from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS
 from ibutsu_server.constants import WIDGET_TYPES
+from ibutsu_server.widgets.compare_runs_view import get_comparison_data
 from ibutsu_server.widgets.jenkins_heatmap import get_jenkins_heatmap
 from ibutsu_server.widgets.jenkins_job_analysis import get_jenkins_analysis_data
 from ibutsu_server.widgets.jenkins_job_analysis import get_jenkins_bar_chart
@@ -11,6 +12,7 @@ from ibutsu_server.widgets.result_summary import get_result_summary
 from ibutsu_server.widgets.run_aggregator import get_recent_run_data
 
 WIDGET_METHODS = {
+    "compare-runs-view": get_comparison_data,
     "jenkins-analysis-view": get_jenkins_analysis_data,
     "jenkins-bar-chart": get_jenkins_bar_chart,
     "jenkins-heatmap": get_jenkins_heatmap,
@@ -49,7 +51,11 @@ def _typecast_params(widget_id, params):
             params[param] = params[param].lower()[0] in ALLOWED_TRUE_BOOLEANS
         elif param in param_types and param_types[param] == "float":
             params[param] = float(params[param])
-        elif param in param_types and param_types[param] == "list":
+        elif (
+            param in param_types
+            and param_types[param] == "list"
+            and not isinstance(params[param], list)
+        ):
             params[param] = params[param].split(",")
     return params
 
@@ -79,6 +85,9 @@ def get_widget(id_):
     """
     if id_ not in WIDGET_TYPES.keys():
         return "Widget not found", 404
-    params = _pre_process_params(dict(connexion.request.args))
+    params = {}
+    for key in connexion.request.args.keys():
+        params[key] = connexion.request.args.getlist(key)
+    params = _pre_process_params(params)
     params = _typecast_params(id_, params)
     return WIDGET_METHODS[id_](**params)

@@ -64,7 +64,9 @@ export class ResultView extends React.Component {
     hideTestObject: PropTypes.bool,
     hideTestHistory: PropTypes.bool,
     history: PropTypes.object,
-    location: PropTypes.object
+    location: PropTypes.object,
+    comparisonResults: PropTypes.array,
+    hideArtifact: PropTypes.bool
   }
 
   constructor(props) {
@@ -76,6 +78,7 @@ export class ResultView extends React.Component {
       activeTab: this.getTabIndex(this.getDefaultTab()),
       artifactTabs: [],
       testHistoryTable: null,
+      comparisonResults: this.props.comparisonResults
     };
     if (this.props.history) {
       // Watch the history to update tabs
@@ -130,7 +133,12 @@ export class ResultView extends React.Component {
   };
 
   getTestHistoryTable = () => {
-    this.setState({testHistoryTable: <TestHistoryTable testResult={this.state.testResult}/>});
+    if (this.state.comparisonResults !== undefined) {
+      this.setState({testHistoryTable: <TestHistoryTable comparisonResults={this.state.comparisonResults} testResult={this.state.testResult}/>});
+    } else {
+      this.setState({testHistoryTable: <TestHistoryTable testResult={this.state.testResult}/>});
+    }
+
   }
 
   getTestResult(resultId) {
@@ -145,7 +153,6 @@ export class ResultView extends React.Component {
       .then(data => {
         let artifactTabs = [];
         data.artifacts.forEach((artifact) => {
-          console.log(artifact);
           HttpClient.get([Settings.serverUrl, 'artifact', artifact.id, 'view'])
             .then(response => {
               let contentType = response.headers.get('Content-Type');
@@ -508,7 +515,7 @@ export class ResultView extends React.Component {
             </Card>
           </Tab>
           }
-          {artifactTabs}
+          {!this.props.hideArtifact && artifactTabs}
           {!this.props.hideTestHistory &&
           <Tab eventKey="test-history" title={<TabTitle icon={SearchIcon} text="Test History"/>}>
           {testHistoryTable}

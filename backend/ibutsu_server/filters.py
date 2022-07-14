@@ -29,6 +29,7 @@ OPER_COMPARE = {
 }
 FILTER_RE = re.compile(r"([a-zA-Z\._]+)([" + "".join(OPERATORS.keys()) + "])(.*)")
 FLOAT_RE = re.compile(r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?")
+VERSION_RE = re.compile("([0-9].*[0-9])")
 
 
 def _to_int_or_float(value):
@@ -100,6 +101,7 @@ def convert_filter(filter_string, model):
     field = match.group(1)
     oper = match.group(2)
     value = match.group(3).strip('"')
+    is_version = True if VERSION_RE.match(value) is not None else False
     column = string_to_column(field, model)
     # determine if the field is an array field, if so it requires some additional care
     is_array_field = field in ARRAY_FIELDS
@@ -108,10 +110,9 @@ def convert_filter(filter_string, model):
         return _null_compare(column, value)
     elif oper == "*":
         value = value.split(";")
-    elif "build_number" not in field:
+    elif not is_version and "build_number" not in field:
         # This is a horrible hack, because Jenkins build numbers are strings :-(
         value = _to_int_or_float(value)
-
     if is_array_field:
         return _array_compare(oper, column, value)
     else:

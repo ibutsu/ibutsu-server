@@ -76,6 +76,9 @@ export const FILTERABLE_RESULT_FIELDS = [
   'metadata.importance',
   'metadata.title',
   'metadata.endpoint',
+  'metadata.user_properties.BaseOS',
+  'metadata.user_properties.SatelliteVersion',
+  'metadata.user_properties.SnapVersion'
   // TODO support object/dict filtering
   // https://github.com/ibutsu/ibutsu-server/issues/229
   //'metadata.params',

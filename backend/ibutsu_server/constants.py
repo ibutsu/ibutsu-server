@@ -56,6 +56,20 @@ _ADDITIONAL_FILTERS_PARAM = {
     "required": False,
 }
 WIDGET_TYPES = {
+    "compare-runs-view": {
+        "id": "compare-runs-view",
+        "title": "Compare Runs",
+        "description": "A summary of multiple ran test results filtered",
+        "params": [
+            {
+                "name": "filters",
+                "description": "List of filters used for comparison",
+                "type": "list",
+                "required": True,
+            }
+        ],
+        "type": "view",
+    },
     "jenkins-heatmap": {
         "id": "jenkins-heatmap",
         "title": "Jenkins Pipeline Heatmap",
