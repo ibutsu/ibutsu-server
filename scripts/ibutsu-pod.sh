@@ -133,7 +133,7 @@ podman run -dt \
        redis:latest > /dev/null
 echo "done."
 echo -n "Adding backend to the pod..."
-podman run -dit \
+podman run -d \
        --rm \
        --pod $POD_NAME \
        --name ibutsu-backend \
@@ -162,7 +162,7 @@ done
 echo "up."
 # Note the COLUMNS=80 env var is for https://github.com/celery/celery/issues/5761
 echo -n "Adding celery worker to the pod..."
-podman run -dit \
+podman run -d \
        --rm \
        --pod $POD_NAME \
        --name ibutsu-worker \
@@ -183,7 +183,7 @@ podman run -dit \
                      ./celery_worker.sh' > /dev/null
 echo "done."
 echo -n "Adding frontend to the pod..."
-podman run -dit \
+podman run -d \
        --rm \
        --pod $POD_NAME \
        --name ibutsu-frontend \
@@ -191,7 +191,7 @@ podman run -dit \
        -v./frontend:/mnt/:Z \
        node:14 \
        /bin/bash -c 'yarn install &&
-                     yarn run devserver' > /dev/null
+                     CI=1 yarn run devserver'
 echo "done."
 echo -n "Waiting for frontend to respond..."
 until $(curl --output /dev/null --silent --head --fail http://localhost:3000); do

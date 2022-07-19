@@ -1,0 +1,153 @@
+# for use with podman play
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: ibutsu
+  name: ibutsu-db-config
+data: # todo: remove prefixes once podman supports prefixes natively
+  POSTGRES_DB: ibutsu
+  POSTGRES_USER: ibutsu
+  POSTGRES_PASSWORD: ibutsu # todo: move to a secret once podman supports those
+  POSTGRES_HOSTNAME: ibutsu
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: ibutsu
+  name: ibutsu-superuser-config
+data: # todo: remove prefixes once podman supports prefixes natively
+  IBUTSU_SUPERADMIN_EMAIL: ibutsu@example.com
+  IBUTSU_SUPERADMIN_PASSWORD: abc123
+  IBUTSU_SUPERADMIN_OWN_PROJECT: test
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: ibutsu
+  name: ibutsu
+spec:
+  containers:
+  - name: postgres
+    image: docker.io/library/postgres:latest
+    resources: &resources-small
+      requests:
+        memory: "128Mi"
+        cpu: "250m"
+      limits:
+        memory: "512Mi"
+        cpu: "500m"
+    volumeMounts:
+    - name: ibutsu-database
+      mountPath: /var/lib/postgresql/data
+    envFrom:
+    - configMapRef:
+        name: ibutsu-db-config
+  - name: redis
+    image: docker.io/library/redis:latest
+    resources: *resources-small
+    volumeMounts:
+    - name: ibutsu-redis
+      mountPath: /data
+  - name: backend
+    image: backend
+    args: [ devserver]
+    env:
+    - name: JWT_SECRET
+      value: insecure-devserver-value
+    - name: CELERY_BROKER_URL
+      value: redis://ibutsu
+    - name: CELERY_RESULT_BACKEND
+      value: redis://ibutsu
+    envFrom:
+    - configMapRef:
+        name: ibutsu-db-config
+      prefix: POSTGRESQL_
+    - configMapRef:
+        name: ibutsu-superuser-config
+    resources: *resources-small
+    securityContext: &security-context
+      readOnlyRootFilesystem: false
+      seLinuxOptions: {}
+    volumeMounts:
+    - mountPath: /srv/:Z
+      name: ibutsu-server-backend
+    ports:
+     - containerPort: 8080
+       hostPort: 8080
+    livenessProbe:
+      httpGet:
+        path: /
+        port: 8080
+      initialDelaySeconds: 5
+      periodSeconds: 5
+  - name: worker
+    image: backend
+    args:
+    - worker
+    env:
+    - name: CELERY_BROKER_URL
+      value: redis://ibutsu
+    - name: CELERY_RESULT_BACKEND
+      value: redis://ibutsu
+    envFrom:
+    - configMapRef:
+        name: ibutsu-db-config
+    resources: *resources-small
+    securityContext: *security-context
+    volumeMounts:
+    - mountPath: /srv/:Z
+      name: ibutsu-server-backend
+  - name: frontend
+    image: docker.io/library/node:latest
+    args:
+    - /bin/bash
+    - -c
+    - |-
+      yarn install && CI=TRUE yarn run devserver
+    env:
+    - name: NODE_OPTIONS
+      value: --openssl-legacy-provider
+    - name: CI
+      value: "true"
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "250m"
+      limits:
+        memory: "768Mi"
+        cpu: "500m"
+      ulimit: 20000
+    securityContext:
+      privileged: false
+      readOnlyRootFilesystem: false
+    volumeMounts:
+    - mountPath: /src/:Z
+      name: ibutsu-server-frontend
+    ports:
+     - containerPort: 3000
+       hostPort: 3000
+    workingDir: /src/
+
+  volumes:
+  - hostPath:
+      path: ./backend
+      type: Directory
+    name: ibutsu-server-backend
+  - hostPath:
+      path: ./frontend
+      type: Directory
+    name: ibutsu-server-frontend
+  - name: ibutsu-database
+    persistentVolumeClaim:
+      claimName: ibutsu-database
+  - name: ibutsu-redis
+    persistentVolumeClaim:
+      claimName: ibutsu-redis

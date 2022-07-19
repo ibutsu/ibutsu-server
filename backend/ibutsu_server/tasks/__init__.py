@@ -129,7 +129,6 @@ def lock(name, timeout=LOCK_EXPIRE, app=None):
     except LockError:
         # If this task is locked, discard it so that it doesn't clog up the system
         logging.info(f"Task {name} is already locked, discarding")
-        pass
 
 
 __all__ = ["create_celery_app", "lock", "task"]

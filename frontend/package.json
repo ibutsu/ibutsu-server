@@ -63,7 +63,7 @@
     "build": "./bin/write-version-file.js && react-scripts build",
     "test": "./bin/write-version-file.js && react-scripts test",
     "eject": "react-scripts eject",
-    "devserver": "./bin/write-version-file.js && react-scripts start",
+    "devserver": "./bin/write-version-file.js && CI=true react-scripts start",
     "devserver-ssl": "./bin/write-version-file.js && HTTPS=true SSL_CRT_FILE=../certs/dev.ibutsu.org+2.pem SSL_KEY_FILE=../certs/dev.ibutsu.org+2-key.pem react-scripts start",
     "lint": "eslint --ext=js --ext=jsx ./src"
   },
