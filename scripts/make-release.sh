@@ -30,23 +30,41 @@ function print_usage() {
 }
 
 # Parse the arguments
-for ARG in $*; do
-    if [[ "$ARG" == "-c" ]] || [[ "$ARG" == "--commit" ]]; then
-        CAN_COMMIT=true
-    elif [[ "$ARG" == "-p" ]] || [[ "$ARG" == "--push" ]]; then
-        CAN_PUSH=true
-    elif [[ "$ARG" == "-d" ]] || [[ "$ARG" == "--delete" ]]; then
-        CAN_DELETE=true
-    elif [[ "$ARG" == "-v" ]] || [[ "$ARG" == "--version" ]]; then
-        PRINT_NEW_VERSION=true
-    elif [[ "$ARG" == "-g" ]] || [[ "$ARG" == "--changelog" ]]; then
-        GENERATE_CHANGELOG=true
-    elif [[ "$ARG" == "-h" ]] || [[ "$ARG" == "--help" ]]; then
-        print_usage
-        exit 0
-    else
-        NEW_VERSION=$ARG
-    fi
+while (( "$#" )); do
+    case "$1" in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        -c|--commit)
+            CAN_COMMIT=true
+            shift
+            ;;
+        -p|--push)
+            CAN_PUSH=true
+            shift
+            ;;
+        -d|--delete)
+            CAN_DELETE=true
+            shift
+            ;;
+        -v|--version)
+            PRINT_NEW_VERSION=true
+            shift
+            ;;
+        -g|--changelog)
+            GENERATE_CHANGELOG=true
+            shift
+            ;;
+        -*|--*)
+            echo "Error: unsupported option $1" >&2
+            exit 1
+            ;;
+        *)
+            NEW_VERSION="$1"
+            shift
+            ;;
+    esac
 done
 
 # Fetch the latest tags from upstream and set the current version
