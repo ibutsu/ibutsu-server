@@ -1,3 +1,33 @@
+Version 2.3.0
+=============
+
+* Bump terser from 4.8.0 to 4.8.1 in /frontend
+* comparison view
+* disable py3.11 for the five bugs on celery
+* restore usage of _orig_func instead of __wrapped__
+* get_app returns a flask app instead of connexion
+* ensure db url parsing handles test configuration
+* drop nose dependency
+* remove python 3.7 and add the modern ones
+* restore env var prefixes in podman pod yaml
+* split ibutsu pod config into configmaps
+* fixup! restore ports
+* black fixes
+* create flask based entrypoints and enable podman play usage
+* tox config: update for python 3.8+ and usedevelop
+* summaries computation: allow any custom summary
+* fix extraction of celery wrappers
+* steamline configuration setup
+* make flask >2 the minimum
+* default settings: use pod name instead of localhost for celery
+* use non-interactive non-terminal containers for ibutsu_pod.sh
+* fix ports in frontend json commands
+* add manual/blocked states to api spec
+* modernmize pre commit config
+* Release 2.2.3
+
+* Runs can now display artifacts - Update the archive importer code to handle run artifacts - Make archive importer less flakey - Fix fetching the artifacts from the frontend - Remove Python 3.7 from the version matrix, add 3.10 * Modified documentation and README * Make project mandatory * Remove aria attributes, and try to add the legend data back in * Bump eventsource from 1.1.0 to 1.1.1 in /frontend
+
 Version 2.2.3
 =============
 
