@@ -24,9 +24,6 @@ Version 2.3.0
 * fix ports in frontend json commands
 * add manual/blocked states to api spec
 * modernmize pre commit config
-* Release 2.2.3
-
-* Runs can now display artifacts - Update the archive importer code to handle run artifacts - Make archive importer less flakey - Fix fetching the artifacts from the frontend - Remove Python 3.7 from the version matrix, add 3.10 * Modified documentation and README * Make project mandatory * Remove aria attributes, and try to add the legend data back in * Bump eventsource from 1.1.0 to 1.1.1 in /frontend
 
 Version 2.2.3
 =============
