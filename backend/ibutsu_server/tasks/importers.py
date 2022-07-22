@@ -363,7 +363,7 @@ def run_archive_import(import_):
     result_artifacts = {}
     start_time = None
     file_object = BytesIO(import_file.content)
-    with tarfile.open(mode="r:gz", fileobj=file_object) as tar:
+    with tarfile.open(fileobj=file_object) as tar:
         for member in tar.getmembers():
             # We don't care about directories, skip them
             if member.isdir():
