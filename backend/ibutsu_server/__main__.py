@@ -26,4 +26,6 @@ if __name__ == "__main__":
             sys.exit(1)
         else:
             kwargs["ssl_context"] = (SSL_CERT, SSL_KEY)
+    if "--host" in sys.argv:
+        kwargs["host"] = sys.argv[sys.argv.index("--host") + 1]
     get_app().run(port=8080, debug=True, **kwargs)

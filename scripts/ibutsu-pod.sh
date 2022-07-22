@@ -152,7 +152,7 @@ podman run -d \
        /bin/bash -c 'python -m venv .ibutsu_env && source .ibutsu_env/bin/activate &&
                      pip install -U pip setuptools wheel &&
                      pip install -r requirements.txt &&
-                     python -m ibutsu_server' > /dev/null
+                     python -m ibutsu_server --host 0.0.0.0' > /dev/null
 echo "done."
 echo -n "Waiting for backend to respond..."
 until $(curl --output /dev/null --silent --head --fail http://localhost:8080); do
