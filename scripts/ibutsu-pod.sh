@@ -149,7 +149,7 @@ podman run -d \
        -w /mnt \
        -v./backend:/mnt/:Z \
        python:3.8.12 \
-       /bin/bash -c 'python -m venv .ibutsu_env && source .ibutsu_env/bin/activate &&
+       /bin/bash -c 'python -m venv .backend_env && source .backend_env/bin/activate &&
                      pip install -U pip setuptools wheel &&
                      pip install -r requirements.txt &&
                      python -m ibutsu_server --host 0.0.0.0' > /dev/null
@@ -177,7 +177,7 @@ podman run -d \
        -w /mnt \
        -v./backend:/mnt/:Z \
        python:3.8.12 \
-       /bin/bash -c 'python -m venv .ibutsu_env && source .ibutsu_env/bin/activate &&
+       /bin/bash -c 'python -m venv .worker_env && source .worker_env/bin/activate &&
                      pip install -U pip setuptools wheel &&
                      pip install -r requirements.txt &&
                      ./celery_worker.sh' > /dev/null

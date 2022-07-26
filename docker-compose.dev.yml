@@ -27,8 +27,9 @@ services:
       - IBUTSU_SUPERADMIN_EMAIL=admin@example.com
       - IBUTSU_SUPERADMIN_PASSWORD=admin12345
       - IBUTSU_SUPERADMIN_NAME=Administrator
+      - HOME=/mnt
     image: python:3.9
-    command: /bin/bash -c 'python -m venv .ibutsu_env && source .ibutsu_env/bin/activate && pip install -U pip setuptools wheel && pip install -r requirements.txt && python -m ibutsu_server'
+    command: /bin/bash -c 'python -m venv .backend_env && source .backend_env/bin/activate && pip install -U pip setuptools wheel && pip install -r requirements.txt && python -m ibutsu_server --host 0.0.0.0'
     working_dir: /mnt
     volumes:
       - "./backend:/mnt"
@@ -48,8 +49,9 @@ services:
       - POSTGRESQL_PASSWORD=ibutsu
       - CELERY_BROKER_URL=redis://redis:6379
       - CELERY_RESULT_BACKEND=redis://redis:6379
+      - HOME=/mnt
     image: python:3.9
-    command: /bin/bash -c 'python -m venv .ibutsu_env && source .ibutsu_env/bin/activate && pip install -U pip setuptools wheel && pip install -r requirements.txt && ./celery_worker.sh'
+    command: /bin/bash -c 'python -m venv .worker_env && source .worker_env/bin/activate && pip install -U pip setuptools wheel && pip install -r requirements.txt && ./celery_worker.sh'
     working_dir: /mnt
     volumes:
       - "./backend:/mnt"
