@@ -13,4 +13,4 @@ RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 ENTRYPOINT ["celery"]
 
 # Run application
-CMD ["beat", "-A", "ibutsu_server.tasks.queues:app", "--loglevel=info", "--pidfile=ibutsu_server/celerybeat.pid", "--schedule=ibutsu_server/celerybeat-schedule"]
+CMD ["--app", "ibutsu_server.tasks.queues:app", "beat", "--loglevel=info", "--pidfile=ibutsu_server/celerybeat.pid", "--schedule=ibutsu_server/celerybeat-schedule"]

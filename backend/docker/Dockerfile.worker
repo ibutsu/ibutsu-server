@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 ENTRYPOINT ["celery"]
 
 # Run application
-CMD ["worker", "-E", "-A", "ibutsu_server.tasks.queues:app", "--loglevel=info", "--concurrency", "1", "--hostname", "ibutsu-worker@%n"]
+CMD ["--app", "ibutsu_server.tasks.queues:app", "worker", "--events", "--loglevel=info", "--concurrency", "1", "--hostname", "ibutsu-worker@%n"]

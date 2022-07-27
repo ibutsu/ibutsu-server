@@ -6,8 +6,7 @@ NAME = "ibutsu_server"
 VERSION = "2.3.0"
 REQUIRES = [
     "alembic",
-    # Pin Celery to be compatible with Kombu
-    "celery==4.3.0",
+    "celery",
     "connexion",
     "flask_bcrypt",
     "flask_cors",
@@ -19,22 +18,21 @@ REQUIRES = [
     "google-auth-httplib2",
     "google-auth-oauthlib",
     "gunicorn",
-    # Pin Kombu to 4.6.3 to get around celery/kombu/issues/236
-    "kombu==4.6.3",
+    "kombu",
     "lxml",
     "psycopg2-binary",
     "pymongo",
     "python-jose[cryptography]",
     "python-magic",
-    "python_dateutil==2.6.0",
+    "python_dateutil",
     "PyYAML",
     "redis",
-    "setuptools >= 21.0.0",
+    "setuptools",
     "sqlalchemy-json",
     "sqlalchemy==1.3.23",
-    "swagger-ui-bundle==0.0.2",
-    "vine<5.0.0a1",
-    "werkzeug~=2.0.0",
+    "swagger-ui-bundle",
+    "vine",
+    "werkzeug",
 ]
 
 setup(

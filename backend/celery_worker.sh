@@ -1,1 +1,1 @@
-celery worker -E -A ibutsu_server.tasks.queues:app --no-color
+celery --app ibutsu_server.tasks.queues:app --no-color worker --events
