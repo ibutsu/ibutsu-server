@@ -74,6 +74,8 @@ package-lock.json
 .ibutsu-env
 .ibutsu_env
 .ibutsu
+.backend_env
+.worker_env
 
 # Frontend
 frontend/public/version.json
