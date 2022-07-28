@@ -1,0 +1,19 @@
+name: Fuzzy API testing with Schemathesis
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: ["opened", "synchronize", "reopened"]
+  create:
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run fuzzy testing
+        run: |
+          docker-compose -f docker-compose-fuzz.yml up --build --exit-code-from api-tests

@@ -1,0 +1,64 @@
+version: '3'
+services:
+  postgres:
+    environment:
+      POSTGRES_USER: ibutsu
+      POSTGRES_PASSWORD: ibutsu
+      POSTGRES_DB: ibutsu
+    image: postgres:latest
+  backend:
+    environment:
+      APP_CONFIG: config.py
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_DATABASE: ibutsu
+      POSTGRESQL_USER: ibutsu
+      POSTGRESQL_PASSWORD: ibutsu
+      IBUTSU_SUPERADMIN_EMAIL: admin@example.com
+      IBUTSU_SUPERADMIN_PASSWORD: admin12345
+      IBUTSU_SUPERADMIN_NAME: Administrator
+      JWT_SECRET: jwtsecret
+      CELERY_BROKER_URL: 'redis://redis'
+      CELERY_RESULT_BACKEND: 'redis://redis'
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile.backend
+    image: ibutsu/backend
+    command: /bin/bash -c 'sleep 30 && python -m ibutsu_server --host 0.0.0.0'
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+  worker:
+    environment:
+      APP_SCRIPT: celery_worker.sh
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_DATABASE: ibutsu
+      POSTGRESQL_USER: ibutsu
+      POSTGRESQL_PASSWORD: ibutsu
+      IBUTSU_SUPERADMIN_EMAIL: admin@example.com
+      IBUTSU_SUPERADMIN_PASSWORD: admin12345
+      IBUTSU_SUPERADMIN_NAME: Administrator
+      CELERY_BROKER_URL: 'redis://redis'
+      CELERY_RESULT_BACKEND: 'redis://redis'
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile.worker
+    image: ibutsu/worker
+    depends_on:
+      - backend
+      - postgres
+      - redis
+  redis:
+    image: redis:latest
+  api-tests:
+    environment:
+      IBUTSU_SUPERADMIN_EMAIL: admin@example.com
+      IBUTSU_SUPERADMIN_PASSWORD: admin12345
+      IBUTSU_SUPERADMIN_NAME: Administrator
+    build:
+      context: ./backend
+      dockerfile: docker/Dockerfile.fuzz_testing
+    image: ibutsu/fuzz_testing
+    depends_on:
+      - backend

@@ -1,0 +1,10 @@
+FROM python:3.9
+
+RUN apt-get update && \
+    apt-get install -y jq && \
+    pip install schemathesis
+
+
+COPY docker/start_fuzz_testing.sh .
+
+CMD ["./start_fuzz_testing.sh"]
