@@ -1,6 +1,7 @@
 import connexion
 from flask import abort
 from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Group
 from ibutsu_server.db.models import Project
 from ibutsu_server.db.models import User
 from ibutsu_server.filters import convert_filter
@@ -21,7 +22,15 @@ def admin_add_project(project=None, token_info=None, user=None):
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
     project = Project.from_dict(**connexion.request.get_json())
+    # check if project already exists
+    if project.id and Project.query.get(project.id):
+        return f"Project id {project.id} already exist", 400
     user = User.query.get(user)
+    if project.group_id:
+        # check if the group exists
+        group = Group.query.get(project.group_id)
+        if not group:
+            return f"Group id {project.group_id} doesn't exist", 400
     if user:
         project.owner = user
         project.users.append(user)
@@ -77,6 +86,7 @@ def admin_get_project_list(
         query = query.filter(Project.group_id == group_id)
 
     offset = (page * page_size) - page_size
+    offset = 0 if offset < 0 else offset
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     projects = query.offset(offset).limit(page_size).all()
@@ -139,6 +149,8 @@ def admin_update_project(id_, project=None, token_info=None, user=None):
 def admin_delete_project(id_, token_info=None, user=None):
     """Delete a single project"""
     check_user_is_admin(user)
+    if not is_uuid(id_):
+        return f"Project ID {id_} is not in UUID format", 400
     project = Project.query.get(id_)
     if not project:
         abort(404)

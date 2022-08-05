@@ -16,6 +16,7 @@ def add_group(group=None):
         return "Bad request, JSON required", 400
     group = Group.from_dict(**connexion.request.get_json())
     session.add(group)
+    session.commit()
     return group.to_dict(), 201
 
 
