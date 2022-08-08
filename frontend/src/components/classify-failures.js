@@ -213,7 +213,6 @@ export class ClassifyFailuresTable extends React.Component {
     const resultFilters = [
       <MetaFilter
         key="metafilter"
-        // user_properties fields shouldn't be injected here
         fieldOptions={FILTERABLE_RESULT_FIELDS}
         runId={run_id}
         setFilter={this.setFilter}
