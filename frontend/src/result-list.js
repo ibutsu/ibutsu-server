@@ -370,6 +370,7 @@ export class ResultList extends React.Component {
       }))
       .catch((error) => {
         console.error('Error fetching result data:', error);
+        console.info('Params for result query: ', params)
         this.setState({rows: [], isEmpty: false, isError: true});
       });
   }
