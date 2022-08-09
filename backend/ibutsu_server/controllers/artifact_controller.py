@@ -26,6 +26,7 @@ def _build_artifact_response(id_):
     return artifact, response
 
 
+@validate_uuid
 def view_artifact(id_, token_info=None, user=None):
     """Stream an artifact directly to the client/browser
 
@@ -42,6 +43,7 @@ def view_artifact(id_, token_info=None, user=None):
     return response
 
 
+@validate_uuid
 def download_artifact(id_, token_info=None, user=None):
     """Download an artifact
 
@@ -173,6 +175,7 @@ def upload_artifact(body, token_info=None, user=None):
     return artifact.to_dict(), 201
 
 
+@validate_uuid
 def delete_artifact(id_, token_info=None, user=None):
     """Deletes an artifact
 

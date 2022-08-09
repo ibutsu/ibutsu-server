@@ -75,6 +75,14 @@ class BaseTestCase(TestCase):
         """
         self.assert_status(response, 201, message)
 
+    def assert_503(self, response, message=None):
+        """
+        Checks if response status code is 503
+        :param response: Flask response
+        :param message: Message to display on test failure
+        """
+        self.assert_status(response, 503, message)
+
     def assert_equal(self, first, second, msg=None):
         """Alias"""
         return self.assertEqual(first, second, msg)

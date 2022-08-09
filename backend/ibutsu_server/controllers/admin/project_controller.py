@@ -8,6 +8,7 @@ from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.admin import check_user_is_admin
 from ibutsu_server.util.uuid import convert_objectid_to_uuid
 from ibutsu_server.util.uuid import is_uuid
+from ibutsu_server.util.uuid import validate_uuid
 
 
 def admin_add_project(project=None, token_info=None, user=None):
@@ -39,6 +40,7 @@ def admin_add_project(project=None, token_info=None, user=None):
     return project.to_dict(), 201
 
 
+@validate_uuid
 def admin_get_project(id_, token_info=None, user=None):
     """Get a single project by ID
 
@@ -101,6 +103,7 @@ def admin_get_project_list(
     }
 
 
+@validate_uuid
 def admin_update_project(id_, project=None, token_info=None, user=None):
     """Update a project
 
@@ -146,6 +149,7 @@ def admin_update_project(id_, project=None, token_info=None, user=None):
     return project.to_dict()
 
 
+@validate_uuid
 def admin_delete_project(id_, token_info=None, user=None):
     """Delete a single project"""
     check_user_is_admin(user)

@@ -61,10 +61,12 @@ def add_import(
     if connexion.request.form.get("project"):
         project = connexion.request.form["project"]
     if project:
-        project = get_project(project)
+        project_obj = get_project(project)
+        if not project_obj:
+            return f"Project {project} doesn't exist", 400
         if not project_has_user(project, user):
             return "Forbidden", 403
-        data["project_id"] = project.id
+        data["project_id"] = project_obj.id
     if connexion.request.form.get("metadata"):
         metadata = json.loads(connexion.request.form.get("metadata"))
     data["metadata"] = metadata

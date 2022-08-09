@@ -6,6 +6,7 @@ from ibutsu_server.util.projects import add_user_filter
 from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.uuid import convert_objectid_to_uuid
 from ibutsu_server.util.uuid import is_uuid
+from ibutsu_server.util.uuid import validate_uuid
 
 
 def add_project(project=None, token_info=None, user=None):
@@ -19,6 +20,9 @@ def add_project(project=None, token_info=None, user=None):
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
     project = Project.from_dict(**connexion.request.get_json())
+    # check if project already exists
+    if project.id and Project.query.get(project.id):
+        return f"Project id {project.id} already exist", 400
     user = User.query.get(user)
     if user:
         project.owner = user
@@ -28,6 +32,7 @@ def add_project(project=None, token_info=None, user=None):
     return project.to_dict(), 201
 
 
+@validate_uuid
 def get_project(id_, token_info=None, user=None):
     """Get a single project by ID
 
@@ -84,7 +89,8 @@ def get_project_list(
     }
 
 
-def update_project(id_, project=None, token_info=None, user=None):
+@validate_uuid
+def update_project(id_, project=None, token_info=None, user=None, **kwargs):
     """Update a project
 
     :param id: ID of test project

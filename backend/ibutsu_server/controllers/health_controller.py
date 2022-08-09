@@ -27,14 +27,14 @@ def get_database_health(token_info=None, user=None):
     # Try to connect to the database, and handle various responses
     try:
         if not IS_CONNECTED:
-            response = ({"status": "Error", "message": "Incomplete database configuration"}, 500)
+            response = ({"status": "Error", "message": "Incomplete database configuration"}, 503)
         else:
             Result.query.first()
             response = ({"status": "OK", "message": "Service is running"}, 200)
     except OperationalError:
-        response = ({"status": "Error", "message": "Unable to connect to the database"}, 500)
+        response = ({"status": "Error", "message": "Unable to connect to the database"}, 503)
     except InterfaceError:
-        response = ({"status": "Error", "message": "Incorrect connection configuration"}, 500)
+        response = ({"status": "Error", "message": "Incorrect connection configuration"}, 503)
     except Exception as e:
         response = ({"status": "Error", "message": str(e)}, 500)
     return response

@@ -2,6 +2,7 @@ import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Dashboard
 from ibutsu_server.db.models import Project
+from ibutsu_server.db.models import User
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import project_has_user
@@ -21,6 +22,8 @@ def add_dashboard(dashboard=None, token_info=None, user=None):
     dashboard = Dashboard.from_dict(**connexion.request.get_json())
     if dashboard.project_id and not project_has_user(dashboard.project_id, user):
         return "Forbidden", 403
+    if dashboard.user_id and not User.query.get(dashboard.user_id):
+        return f"User with ID {dashboard.user_id} doesn't exist", 400
     session.add(dashboard)
     session.commit()
     return dashboard.to_dict(), 201
@@ -90,6 +93,7 @@ def get_dashboard_list(
     }
 
 
+@validate_uuid
 def update_dashboard(id_, dashboard=None, token_info=None, user=None):
     """Update a dashboard
 
@@ -118,6 +122,7 @@ def update_dashboard(id_, dashboard=None, token_info=None, user=None):
     return dashboard.to_dict()
 
 
+@validate_uuid
 def delete_dashboard(id_, token_info=None, user=None):
     """Deletes a dashboard
 

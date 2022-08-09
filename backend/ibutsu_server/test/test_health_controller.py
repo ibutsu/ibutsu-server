@@ -19,7 +19,7 @@ class TestHealthController(BaseTestCase):
             "Authorization": f"Bearer {self.jwt_token}",
         }
         response = self.client.open("/api/health/database", method="GET", headers=headers)
-        self.assert_500(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_503(response, "Response body is : " + response.data.decode("utf-8"))
 
     def test_get_health(self):
         """Test case for get_health

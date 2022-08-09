@@ -45,6 +45,7 @@ class TestGroupController(BaseTestCase):
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.jwt_token}",
         }
+        self.mock_group.query.get.return_value = None
         response = self.client.open(
             "/api/group",
             method="POST",
