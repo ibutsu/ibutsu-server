@@ -76,6 +76,8 @@ export const FILTERABLE_RESULT_FIELDS = [
   'metadata.importance',
   'metadata.title',
   'metadata.endpoint',
+  // TODO generic metadata.user_properties filter acceptance
+  // These are way too project specific
   'metadata.user_properties.BaseOS',
   'metadata.user_properties.SatelliteVersion',
   'metadata.user_properties.SnapVersion'

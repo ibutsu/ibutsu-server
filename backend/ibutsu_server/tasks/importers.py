@@ -41,6 +41,10 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         if metadata:
             result["metadata"] = result.get("metadata", {})
             result["metadata"].update(metadata)
+        # promote user_properties to the level of metadata
+        if "user_properties" in result.get("metadata", {}):
+            user_properties = result["metadata"].pop("user_properties")
+            result["metadata"].update(user_properties)
         result["env"] = result.get("metadata", {}).get("env")
         result["component"] = result.get("metadata", {}).get("component")
         result_record = Result.from_dict(**result)
