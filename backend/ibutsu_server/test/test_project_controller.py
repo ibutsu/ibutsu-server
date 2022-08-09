@@ -67,6 +67,7 @@ class TestProjectController(BaseTestCase):
         self.user_patcher = patch("ibutsu_server.controllers.project_controller.User")
         self.mock_user = self.user_patcher.start()
         self.mock_user.query.get.return_value = MOCK_USER
+        self.mock_project.query.get.return_value = None
 
         headers = {
             "Accept": "application/json",
@@ -109,7 +110,7 @@ class TestProjectController(BaseTestCase):
         self.mock_project.query.filter.return_value.first.return_value = MOCK_PROJECT
         headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
         response = self.client.open(
-            "/api/project/{id}".format(id=MOCK_NAME), method="GET", headers=headers
+            "/api/project/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         self.assert_equal(response.json, MOCK_PROJECT_DICT)

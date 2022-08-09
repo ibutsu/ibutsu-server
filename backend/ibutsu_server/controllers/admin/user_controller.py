@@ -64,11 +64,15 @@ def admin_add_user(new_user=None, token_info=None, user=None):
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
     new_user = User.from_dict(**connexion.request.get_json())
+    user_exists = User.query.filter_by(email=new_user.email)
+    if user_exists:
+        return f"The user with email {new_user.email} already exists", 400
     session.add(new_user)
     session.commit()
     return _hide_sensitive_fields(new_user.to_dict()), 201
 
 
+@validate_uuid
 def admin_update_user(id_, user_info=None, token_info=None, user=None):
     """Update a single user in the system"""
     check_user_is_admin(user)
@@ -86,6 +90,7 @@ def admin_update_user(id_, user_info=None, token_info=None, user=None):
     return _hide_sensitive_fields(requested_user.to_dict())
 
 
+@validate_uuid
 def admin_delete_user(id_, token_info=None, user=None):
     """Delete a single user"""
     check_user_is_admin(user)

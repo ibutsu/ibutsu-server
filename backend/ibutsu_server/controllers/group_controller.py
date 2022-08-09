@@ -15,6 +15,8 @@ def add_group(group=None):
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
     group = Group.from_dict(**connexion.request.get_json())
+    if group.id and Group.query.get(group.id):
+        return f"The group with ID {group.id} already exists", 400
     session.add(group)
     session.commit()
     return group.to_dict(), 201
@@ -64,7 +66,8 @@ def get_group_list(page=1, page_size=25, token_info=None, user=None):
     }
 
 
-def update_group(id_, group=None):
+@validate_uuid
+def update_group(id_, group=None, **kwargs):
     """Update a group
 
 

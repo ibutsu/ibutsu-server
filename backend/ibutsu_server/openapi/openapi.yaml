@@ -221,11 +221,13 @@ paths:
                 resultId:
                   description: ID of result to attach artifact to
                   type: string
+                  format: uuid
                 runId:
                   description: ID of run to attach artifact to
                   type: string
+                  format: uuid
                 filename:
-                  description: ID of pet to update
+                  description: name of the file
                   type: string
                 file:
                   description: file to upload
@@ -1981,6 +1983,7 @@ paths:
           required: true
           schema:
             type: string
+            format: uuid
           style: simple
       responses:
         200:

@@ -16,6 +16,7 @@ from ibutsu_server.db.models import User
 from ibutsu_server.util.jwt import generate_token
 from ibutsu_server.util.keycloak import get_keycloak_config
 from ibutsu_server.util.keycloak import get_user_from_keycloak
+from ibutsu_server.util.login import validate_activation_code
 from ibutsu_server.util.oauth import get_provider_config
 from ibutsu_server.util.oauth import get_user_from_provider
 from ibutsu_server.util.urls import build_url
@@ -210,6 +211,9 @@ def register(email=None, password=None):
     user = User(
         email=details["email"], password=details["password"], activation_code=activation_code
     )
+    user_exists = User.query.filter_by(email=user.email)
+    if user_exists:
+        return f"The user with email {user.email} already exists", 400
     session.add(user)
     session.commit()
 
@@ -263,6 +267,8 @@ def reset_password(activation_code=None, password=None):
     if not connexion.request.is_json:
         return "Bad request, JSON is required", 400
     login = connexion.request.get_json()
+    if result := validate_activation_code(login.get("activation_code")):
+        return result
     if not login.get("activation_code") or not login.get("password"):
         return "Bad request", 400
     user = User.query.filter(User.activation_code == login["activation_code"]).first()
@@ -280,8 +286,8 @@ def activate(activation_code=None):
 
     :param activation_code: The activation code
     """
-    if not activation_code:
-        return "Not Found", 404
+    if result := validate_activation_code(activation_code):
+        return result
     user = User.query.filter(User.activation_code == activation_code).first()
     login_url = build_url(current_app.config.get("FRONTEND_URL", "http://localhost:3000"), "login")
     if user:
