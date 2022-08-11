@@ -9,14 +9,12 @@ import {
   SelectVariant,
   TextInput,
 } from '@patternfly/react-core';
-//import { ChevronRightIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   buildBadge,
-  //round,
   buildParams,
   getActiveProject,
   getFilterMode,
@@ -67,7 +65,6 @@ function runToRow(run, filterFunc, analysisViewId) {
       {title: <RunSummary summary={run.summary} />},
       {title: run.source},
       {title: run.env},
-      //{title: <Link to={`/results?run_id=${run.id}`}>See results <ChevronRightIcon /></Link>}
       {title: created.toLocaleString()}
     ]
   };
@@ -290,20 +287,7 @@ export class AccessibilityDashboardView extends React.Component {
       }).catch(error => {
         console.log(error)
       });
-    // get the widget ID for the analysis view
-    /*
-    fetch(buildUrl(Settings.serverUrl + '/widget-config', {"filter": "widget=accessibility-analysis-view"}))
-      .then(response => response.json())
-      .then(data => {
-          analysisViewId = data.widgets[0].id
-      }).catch(error => {
-        console.log(error);
-      });
-    */
     params.filter.push("metadata.accessibility@t")
-    //params['estimate'] = true;
-    //params['pageSize'] = this.state.pagination.pageSize;
-    //params['page'] = this.state.pagination.page;
     // Convert UI filters to API filters
     for (let key in filters) {
       if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key]) {
@@ -329,21 +313,6 @@ export class AccessibilityDashboardView extends React.Component {
         console.error('Error fetching accessibility run data:', error);
         this.setState({rows: [], isEmpty: false, isError: true});
       });
-    /*
-    fetch(buildUrl(Settings.serverUrl + '/run', params))
-      .then(response => response.json())
-      .then(data => this.setState({
-        rows: data.runs.map((run) => runToRow(run, this.setFilter, analysisViewId)),
-        pagination: data.pagination,
-        totalItems: data.pagination.totalItems,
-        totalPages: data.pagination.totalPages,
-        isEmpty: data.pagination.totalItems === 0
-      }))
-      .catch((error) => {
-        console.error('Error fetching accessibility run data:', error);
-        this.setState({rows: [], isEmpty: false, isError: true});
-      });
-      */
   }
 
   componentDidUpdate(prevProps) {
