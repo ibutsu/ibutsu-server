@@ -105,6 +105,7 @@ class TestResultController(BaseTestCase):
         Create a test result
         """
         result = ADDED_RESULT.to_dict()
+        self.mock_result.query.get.return_value = None
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",

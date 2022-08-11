@@ -110,6 +110,7 @@ def get_report_list(page=1, page_size=25, project=None, token_info=None, user=No
     }
 
 
+@validate_uuid
 def delete_report(id_):
     """Deletes a report
 
@@ -127,6 +128,7 @@ def delete_report(id_):
         return "Not Found", 404
 
 
+@validate_uuid
 def view_report(id_, filename, token_info=None, user=None):
     """View the report file
 
@@ -138,6 +140,7 @@ def view_report(id_, filename, token_info=None, user=None):
     return _build_report_response(id_)[1]
 
 
+@validate_uuid
 def download_report(id_, filename, token_info=None, user=None):
     """Download the report file
 

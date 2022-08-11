@@ -2465,6 +2465,8 @@ components:
           description: The source of the test results
           example: iqe-jenkins
           type: string
+      required:
+        - type
       type: object
     Report:
       example:
