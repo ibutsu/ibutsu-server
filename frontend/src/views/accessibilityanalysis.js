@@ -181,12 +181,12 @@ export class AccessibilityAnalysisView extends React.Component {
   }
 
   getRunArtifacts() {
-    HttpClient.get([Settings.serverUrl + '/artifact'], {runId: this.state.id})
+    HttpClient.get([Settings.serverUrl, 'artifact'], {runId: this.state.id})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         let artifactTabs = [];
         data.artifacts.forEach((artifact) => {
-          fetch(Settings.serverUrl + `/artifact/${artifact.id}/view`)
+          HttpClient.get([Settings.serverUrl, 'artifact', artifact.id, 'view'])
             .then(response => {
               let contentType = response.headers.get('Content-Type');
               if (contentType.includes('text')) {
