@@ -9,6 +9,7 @@ from unittest.mock import patch
 from flask import json
 from ibutsu_server.test import BaseTestCase
 from ibutsu_server.test import MockRun
+from ibutsu_server.test.test_project_controller import MOCK_PROJECT
 from six import BytesIO
 
 MOCK_ID = "6b26876f-bcd9-49f3-b5bd-35f895a345d1"
@@ -17,7 +18,7 @@ MOCK_RUN = MockRun(
     id=MOCK_ID,
     summary={"errors": 1, "failures": 3, "skips": 0, "tests": 548},
     duration=540.05433,
-    data={"component": "test-component", "env": "local", "project": "test-project"},
+    data={"component": "test-component", "env": "local", "project": MOCK_PROJECT.id},
     env="local",
     component="test-component",
     start_time=str(START_TIME),
@@ -66,10 +67,14 @@ class TestRunController(BaseTestCase):
 
         Create a run
         """
+        self.project_patcher = patch("ibutsu_server.util.projects.Project")
+        self.mock_project = self.project_patcher.start()
+        self.mock_project.query.get.return_value = MOCK_PROJECT
+        self.mock_project.from_dict.return_value = MOCK_PROJECT
         run_dict = {
             "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
             "duration": 540.05433,
-            "metadata": {"component": "test-component", "env": "local", "project": "test-project"},
+            "metadata": {"component": "test-component", "env": "local", "project": MOCK_PROJECT.id},
             "start_time": START_TIME,
             "created": START_TIME,
         }
@@ -85,8 +90,11 @@ class TestRunController(BaseTestCase):
             data=json.dumps(run_dict),
             content_type="application/json",
         )
+        self.project_patcher.stop()
         self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
-        self.assert_equal(response.json, MOCK_RUN_DICT)
+        resp = response.json.copy()
+        resp["project"] = None
+        self.assert_equal(resp, MOCK_RUN_DICT)
         self.mock_update_run_task.apply_async.assert_called_once_with((MOCK_ID,), countdown=5)
 
     def test_get_run(self):
@@ -99,7 +107,9 @@ class TestRunController(BaseTestCase):
             "/api/run/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
-        self.assert_equal(response.json, MOCK_RUN_DICT)
+        resp = response.json.copy()
+        resp["project"] = None
+        self.assert_equal(resp, MOCK_RUN_DICT)
 
     def test_get_run_list(self):
         """Test case for get_run_list
@@ -157,4 +167,6 @@ class TestRunController(BaseTestCase):
         )
         self.mock_update_run_task.apply_async.assert_called_once_with((MOCK_ID,), countdown=5)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
-        self.assert_equal(response.json, MOCK_RUN_DICT)
+        resp = response.json.copy()
+        resp["project"] = None
+        self.assert_equal(resp, MOCK_RUN_DICT)

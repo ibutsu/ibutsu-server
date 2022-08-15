@@ -26,6 +26,9 @@ def add_result(result=None, token_info=None, user=None):
         return "Bad request, JSON required", 400
     result = Result.from_dict(**connexion.request.get_json())
 
+    if result.id and Result.query.get(result.id):
+        return f"Result id {result.id} already exist", 400
+
     if result.data and not (result.data.get("project") or result.project_id):
         return "Bad request, project or project_id is required", 400
 
@@ -147,7 +150,8 @@ def get_result(id_, token_info=None, user=None):
     return result.to_dict()
 
 
-def update_result(id_, result=None, token_info=None, user=None):
+@validate_uuid
+def update_result(id_, result=None, token_info=None, user=None, **kwargs):
     """Updates a single result
 
     :param id: ID of result to update
@@ -164,7 +168,8 @@ def update_result(id_, result=None, token_info=None, user=None):
         project = get_project(result_dict["metadata"]["project"])
         if not project_has_user(project, user):
             return "Forbidden", 403
-        result_dict["project_id"] = project.id
+        if project:
+            result_dict["project_id"] = project.id
 
     # promote user_properties to the level of metadata
     if result_dict.get("metadata", {}).get("user_properties"):

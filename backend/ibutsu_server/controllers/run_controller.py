@@ -120,10 +120,15 @@ def add_run(run=None, token_info=None, user=None):
         return "Bad request, JSON is required", 400
     run = Run.from_dict(**connexion.request.get_json())
 
+    if not run.data:
+        return "Bad request, no data supplied", 400
+
     if run.data and not (run.data.get("project") or run.project_id):
         return "Bad request, project or project_id is required", 400
 
     project = get_project(run.data["project"])
+    if not project:
+        return "Invalid project", 400
     if not project_has_user(project, user):
         return "Forbidden", 403
     run.project = project
