@@ -107,6 +107,16 @@ export const STRING_RUN_FIELDS = [
   'source'
 ];
 export const RUN_FIELDS = [...NUMERIC_RUN_FIELDS, ...STRING_RUN_FIELDS, ...ARRAY_RUN_FIELDS];
+export const STRING_ACCESSIBILITY_FIELDS = [
+  'run_id',
+  'summary',
+  'source',
+  'env'
+];
+export const NUMERIC_ACCESSIBILITY_FIELDS = [
+  'start_time',
+];
+export const ACCESSIBILITY_FIELDS = [...STRING_ACCESSIBILITY_FIELDS, ...NUMERIC_ACCESSIBILITY_FIELDS];
 export const STRING_JJV_FIELDS = [
   'job_name',
   'source',
