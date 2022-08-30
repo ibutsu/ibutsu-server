@@ -94,7 +94,10 @@ class TestProjectController(BaseTestCase):
         Get a single project by ID
         """
         self.mock_project.query.filter.return_value.first.return_value = None
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/project/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
@@ -108,7 +111,10 @@ class TestProjectController(BaseTestCase):
         Get a single project by name
         """
         self.mock_project.query.filter.return_value.first.return_value = MOCK_PROJECT
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/project/{id}".format(id=MOCK_ID), method="GET", headers=headers
         )
@@ -124,13 +130,21 @@ class TestProjectController(BaseTestCase):
             ("page", 56),
             ("pageSize", 56),
         ]
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/project", method="GET", headers=headers, query_string=query_string
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         expected_response = {
-            "pagination": {"page": 56, "pageSize": 56, "totalItems": 1, "totalPages": 1},
+            "pagination": {
+                "page": 56,
+                "pageSize": 56,
+                "totalItems": 1,
+                "totalPages": 1,
+            },
             "projects": [MOCK_PROJECT_DICT],
         }
         assert response.json == expected_response

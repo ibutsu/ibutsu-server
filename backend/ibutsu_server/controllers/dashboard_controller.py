@@ -6,6 +6,7 @@ from ibutsu_server.db.models import User
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import project_has_user
+from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
 
@@ -78,7 +79,7 @@ def get_dashboard_list(
                 query = query.filter(filter_clause)
 
     query = query.order_by(Dashboard.title.asc())
-    offset = (page * page_size) - page_size
+    offset = get_offset(page, page_size)
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     dashboards = query.offset(offset).limit(page_size).all()

@@ -10,6 +10,8 @@ from ibutsu_server.db.models import Result
 from ibutsu_server.db.models import User
 from ibutsu_server.util.projects import add_user_filter
 from ibutsu_server.util.projects import project_has_user
+from ibutsu_server.util.query import get_offset
+from ibutsu_server.util.uuid import is_uuid
 from ibutsu_server.util.uuid import validate_uuid
 
 
@@ -97,7 +99,7 @@ def get_artifact_list(
     if user:
         query = add_user_filter(query, user)
     total_items = query.count()
-    offset = (page * page_size) - page_size
+    offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     artifacts = query.limit(page_size).offset(offset).all()
     return {
@@ -129,6 +131,10 @@ def upload_artifact(body, token_info=None, user=None):
     """
     result_id = body.get("result_id") or body.get("resultId")
     run_id = body.get("run_id") or body.get("runId")
+    if result_id and not is_uuid(result_id):
+        return f"Result ID {result_id} is not in UUID format", 400
+    if run_id and not is_uuid(run_id):
+        return f"Run ID {run_id} is not in UUID format", 400
     result = Result.query.get(result_id)
     if result and not project_has_user(result.project, user):
         return "Forbidden", 403

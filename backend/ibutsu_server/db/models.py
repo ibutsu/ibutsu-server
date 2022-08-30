@@ -50,6 +50,11 @@ class ModelMixin(object):
         # because metadata is a reserved attr name, translate it to data
         if "metadata" in record_dict:
             record_dict["data"] = record_dict.pop("metadata") or {}
+
+        # remove empty keys
+        for key in list(record_dict.keys()):
+            if not key:
+                del record_dict[key]
         return cls(**record_dict)
 
     def update(self, record_dict):
