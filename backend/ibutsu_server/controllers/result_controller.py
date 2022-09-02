@@ -10,6 +10,7 @@ from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import add_user_filter
 from ibutsu_server.util.projects import get_project
 from ibutsu_server.util.projects import project_has_user
+from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.query import query_as_task
 from ibutsu_server.util.uuid import validate_uuid
 
@@ -118,7 +119,7 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
     else:
         total_items = query.count()
 
-    offset = (page * page_size) - page_size
+    offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
 
     results = query.order_by(Result.start_time.desc()).offset(offset).limit(page_size).all()

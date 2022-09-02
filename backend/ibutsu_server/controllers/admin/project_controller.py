@@ -6,6 +6,7 @@ from ibutsu_server.db.models import Project
 from ibutsu_server.db.models import User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.admin import check_user_is_admin
+from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import convert_objectid_to_uuid
 from ibutsu_server.util.uuid import is_uuid
 from ibutsu_server.util.uuid import validate_uuid
@@ -87,10 +88,11 @@ def admin_get_project_list(
     if group_id:
         query = query.filter(Project.group_id == group_id)
 
-    offset = (page * page_size) - page_size
-    offset = 0 if offset < 0 else offset
+    offset = get_offset(page, page_size)
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
+    if offset > 9223372036854775807:  # max value of bigint
+        return "The page number is too big.", 400
     projects = query.offset(offset).limit(page_size).all()
     return {
         "projects": [project.to_dict(with_owner=True) for project in projects],

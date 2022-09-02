@@ -1,6 +1,8 @@
 import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Group
+from ibutsu_server.util.query import get_offset
+from ibutsu_server.util.uuid import is_uuid
 from ibutsu_server.util.uuid import validate_uuid
 
 
@@ -17,6 +19,8 @@ def add_group(group=None):
     group = Group.from_dict(**connexion.request.get_json())
     if group.id and Group.query.get(group.id):
         return f"The group with ID {group.id} already exists", 400
+    if not is_uuid(group.id):
+        return f"Group ID {group.id} is not in UUID format", 400
     session.add(group)
     session.commit()
     return group.to_dict(), 201
@@ -50,7 +54,7 @@ def get_group_list(page=1, page_size=25, token_info=None, user=None):
 
     :rtype: List[Group]
     """
-    offset = (page * page_size) - page_size
+    offset = get_offset(page, page_size)
     query = Group.query
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)

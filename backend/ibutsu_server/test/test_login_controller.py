@@ -56,7 +56,12 @@ class TestLoginController(BaseTestCase):
         Log in to the API
         """
         login_details = {"email": "", "password": ""}
-        expected_response = {"code": "EMPTY", "message": "Username and/or password are empty"}
+        expected_response = {
+            "detail": "'' is not a 'email' - 'email'",
+            "status": 400,
+            "title": "Bad Request",
+            "type": "about:blank",
+        }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/login",
@@ -65,7 +70,7 @@ class TestLoginController(BaseTestCase):
             data=json.dumps(login_details),
             content_type="application/json",
         )
-        self.assert_401(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_400(response, "Response body is : " + response.data.decode("utf-8"))
         assert response.json == expected_response
 
     def test_login_no_user(self):

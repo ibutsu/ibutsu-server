@@ -7,6 +7,7 @@ from ibutsu_server.db.models import Report
 from ibutsu_server.db.models import ReportFile
 from ibutsu_server.tasks.reports import REPORTS
 from ibutsu_server.util.projects import get_project_id
+from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
 
@@ -95,7 +96,7 @@ def get_report_list(page=1, page_size=25, project=None, token_info=None, user=No
     if project:
         project_id = get_project_id(project)
         query = query.filter(Report.project_id == project_id)
-    offset = (page * page_size) - page_size
+    offset = get_offset(page, page_size)
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     reports = query.order_by(Report.created.desc()).offset(offset).limit(page_size).all()

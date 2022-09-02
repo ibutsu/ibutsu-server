@@ -6,6 +6,7 @@ from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import get_project
 from ibutsu_server.util.projects import project_has_user
+from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 from sqlalchemy import or_
 
@@ -80,7 +81,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
                 filter_clause = convert_filter(filter_string, WidgetConfig)
             if filter_clause is not None:
                 query = query.filter(filter_clause)
-    offset = (page * page_size) - page_size
+    offset = get_offset(page, page_size)
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     widgets = query.order_by(WidgetConfig.weight.asc()).offset(offset).limit(page_size)

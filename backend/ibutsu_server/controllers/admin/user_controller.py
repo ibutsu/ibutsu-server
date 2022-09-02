@@ -5,7 +5,9 @@ from ibutsu_server.db.models import Project
 from ibutsu_server.db.models import User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.admin import check_user_is_admin
+from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
+
 
 HIDDEN_FIELDS = ["_password", "password", "activation_code"]
 
@@ -43,7 +45,7 @@ def admin_get_user_list(filter_=None, page=1, page_size=25, token_info=None, use
             if filter_clause is not None:
                 query = query.filter(filter_clause)
 
-    offset = (page * page_size) - page_size
+    offset = get_offset(page, page_size)
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     users = query.order_by(User.email.asc()).offset(offset).limit(page_size).all()

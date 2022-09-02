@@ -5,6 +5,7 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token
 from ibutsu_server.db.models import User
 from ibutsu_server.util.jwt import generate_token
+from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
 HIDDEN_FIELDS = ["_password", "password", "activation_code"]
@@ -57,7 +58,7 @@ def get_token_list(page=1, page_size=25, token_info=None, user=None):
 
     query = Token.query.filter(Token.user == user, Token.name != "login-token")
     total_items = query.count()
-    offset = (page * page_size) - page_size
+    offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     tokens = query.offset(offset).limit(page_size).all()
     return {

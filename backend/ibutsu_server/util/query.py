@@ -5,6 +5,15 @@ from ibutsu_server.constants import MAX_PAGE_SIZE
 from ibutsu_server.tasks.query import query_task
 
 
+def get_offset(page, page_size):
+    """
+    Get the offset for the query
+    """
+    offset = (page * page_size) - page_size
+    offset = 0 if offset < 0 else offset
+    return offset
+
+
 def query_as_task(function):
     """
     Depending on page_size, runs a query as a task.
