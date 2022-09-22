@@ -25,6 +25,7 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
+  getActiveProject,
   toAPIFilter,
   getSpinnerRow,
   resultToComparisonRow
@@ -132,6 +133,13 @@ export class CompareRunsView extends React.Component {
     })
 
     if (isNew === true) {
+      // Add project id to params
+      let project = getActiveProject();
+      let projectId = project ? project.id : ''
+      filter.forEach(filter => {
+        filter['project_id'] = {op: 'in', val: projectId};
+      });
+
       // Build params and filters for each MetaFilter
       let apiFilters = [];
       filter.forEach(filter => {
