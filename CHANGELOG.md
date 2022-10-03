@@ -1,3 +1,21 @@
+Version 2.4.0
+=============
+
+* fix api errors found in fuzzy testing, part 4
+* linting
+* fix api, part 3
+* cleaned up and removed unnecessary comments
+* Changed fetches to HttpClient.gets in accessibilityanalysis view
+* Fixing up axe data summary display
+* fix api errors found in fuzzy testing, part 2
+* Promote user_properties on archive import
+* fix api errors found in fuzzy testing, part 1
+* add schemathesis to actions
+* Upgrade Celery to the latest version
+* Update podman and Docker Compose configurations
+* Flask listens on 127.0.0.1 by default, add the ability to specify it for podman
+* Drop the tarfile open mode to autodetect compression
+
 Version 2.3.0
 =============
 
