@@ -424,7 +424,7 @@ export function projectToOption(project) {
     },
     compareTo: function (value) {
       if (value.project) {
-        return this.project.id == value.project.id;
+        return this.project.id === value.project.id;
       }
       else {
         return this.project.name.toLowerCase().includes(value.toLowerCase()) ||

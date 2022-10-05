@@ -142,7 +142,7 @@ export class ProjectList extends React.Component {
   }
 
   onDeleteClick = (projectId) => {
-    const selectedProject = this.state.projects.find((project) => project.id == projectId);
+    const selectedProject = this.state.projects.find((project) => project.id === projectId);
     this.setState({selectedProject: selectedProject, isDeleteModalOpen: true});
   };
 
@@ -162,7 +162,7 @@ export class ProjectList extends React.Component {
 
   onTextChanged = (newValue) => {
     this.setState({textFilter: newValue}, debounce(() => {
-      if (newValue.length >= 3 || newValue.length == 0) {
+      if (newValue.length >= 3 || newValue.length === 0) {
         this.updateUrl();
         this.getProjects();
       }

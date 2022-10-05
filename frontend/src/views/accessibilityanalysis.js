@@ -415,7 +415,7 @@ export class AccessibilityAnalysisView extends React.Component {
                     constrainToVisibleArea={true}
                     data={this.state.pieData}
                     labels={({ datum }) => `${datum.x}: ${datum.ratio}%`}
-                    legendData={[{ name: 'Passes', color: "red" }, { name: 'Violations: ${datum.y}' }]}
+                    legendData={[{name: 'Passes', color: 'red'}, {name: 'Violations'}]}
                     legendOrientation="vertical"
                     legendPosition="right"
                     legendComponent = {

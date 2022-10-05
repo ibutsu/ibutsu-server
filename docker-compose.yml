@@ -17,6 +17,8 @@ services:
       APP_CONFIG: config.py
       POSTGRESQL_HOST: postgres
       POSTGRESQL_DATABASE: ibutsu
+      POSTGRESQL_USER: ibutsu
+      POSTGRESQL_PASSWORD: ibutsu
       CELERY_BROKER_URL: 'redis://redis'
       CELERY_RESULT_BACKEND: 'redis://redis'
     build:
@@ -29,6 +31,8 @@ services:
       - postgres
       - redis
   postgres:
+    container_name: postgres
+    hostname: postgres
     environment:
       POSTGRES_USER: ibutsu
       POSTGRES_PASSWORD: ibutsu

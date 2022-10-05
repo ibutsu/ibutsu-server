@@ -32,7 +32,7 @@ function userToOption(user) {
     toString: function () { return this.user.name; },
     compareTo: function (value) {
       if (value.user) {
-        return this.user.id == value.user.id;
+        return this.user.id === value.user.id;
       }
       return this.user.name.toLowerCase().includes(value.toLowerCase()) ||
         this.user.email.includes(value.toLowerCase());

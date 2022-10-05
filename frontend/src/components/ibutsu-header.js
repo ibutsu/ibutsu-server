@@ -53,7 +53,7 @@ export class IbutsuHeader extends React.Component {
       searchValue: '',
       projects: [],
       projectsFilter: '',
-      isDarkTheme: getTheme() == 'dark',
+      isDarkTheme: getTheme() === 'dark',
       version: props.version
     };
   }
@@ -127,7 +127,6 @@ export class IbutsuHeader extends React.Component {
             ));
             action = <RunButton />;
           }
-          console.log(action);
           this.showNotification('success', 'Import Complete', `${data.filename} has been successfully imported as run ${data.metadata.run_id}`, action);
         }
       });
@@ -208,7 +207,7 @@ export class IbutsuHeader extends React.Component {
             onSelect={this.onProjectSelect}
             onClear={this.onProjectClear}
             onTypeaheadInputChanged={this.onProjectsChanged}
-            footer={this.state.projects.length == 10 && "Search for more..."}
+            footer={this.state.projects.length === 10 && "Search for more..."}
           >
             {this.state.projects.map(project => (
               <SelectOption key={project.id} value={projectToOption(project)} description={project.name} />

@@ -156,7 +156,6 @@ export class NewWidgetWizard extends React.Component {
     }
     this.setState({params: params});
     this.state.selectedType.params.forEach(widgetParam => {
-        console.log(widgetParam);
         if ((widgetParam.required) && (!params[widgetParam.name])) {
           areParamsFilled = false;
         }

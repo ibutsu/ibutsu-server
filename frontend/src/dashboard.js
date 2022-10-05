@@ -51,7 +51,7 @@ function dashboardToSelect(dashboard) {
     },
     compareTo: function (value) {
       if (value.dashboard) {
-        return this.dashboard.id == value.dashboard.id;
+        return this.dashboard.id === value.dashboard.id;
       }
       else {
         return this.dashboard.title.toLowerCase().includes(value.toLowerCase());
@@ -265,7 +265,7 @@ export class Dashboard extends React.Component {
                   onSelect={this.onDashboardSelect}
                   onClear={this.onDashboardClear}
                   onTypeaheadInputChanged={this.onDashboardChanged}
-                  footer={this.state.dashboards.length == 10 && "Search for more..."}
+                  footer={this.state.dashboards.length === 10 && "Search for more..."}
                   isPlain
                 >
                   {this.state.dashboards.map(dash => (

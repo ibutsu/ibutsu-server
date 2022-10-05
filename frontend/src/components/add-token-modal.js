@@ -48,7 +48,6 @@ export class AddTokenModal extends React.Component {
       return;
     }
     const expiry = new Date(this.state.expiryDate);
-    console.log(expiry);
     expiry.setHours(23, 59, 59, 999);
     const now = new Date();
     if (expiry.getTime() <= now.getTime()) {

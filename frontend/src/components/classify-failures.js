@@ -158,7 +158,7 @@ export class ClassifyFailuresTable extends React.Component {
     const { results, rows } = this.state;
     let selectedResults = [];
     for (const [index, row] of rows.entries()) {
-      if (row.selected && row.parent == null) {  // rows with a parent attr are the child rows
+      if (row.selected && row.parent === null) {  // rows with a parent attr are the child rows
         selectedResults.push(results[index / 2]);  // divide by 2 to convert row index to result index
       }
     }

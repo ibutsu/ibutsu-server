@@ -159,7 +159,7 @@ export class TestHistoryTable extends React.Component {
 
   getHistorySummary() {
     // get the passed/failed/etc test summary
-    let filters = {... this.state.filters};
+    let filters = {...this.state.filters};
     // disregard result filter (we want all results)
     delete filters["result"];
     let api_filter = toAPIFilter(filters).join()
@@ -198,7 +198,7 @@ export class TestHistoryTable extends React.Component {
 
   getLastPassed(){
     // get the passed/failed/etc test summary
-    let filters = {... this.state.filters};
+    let filters = {...this.state.filters};
     // disregard result filter so we can filter on last passed
     delete filters["result"];
     delete filters["start_time"];

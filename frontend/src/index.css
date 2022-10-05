@@ -248,6 +248,7 @@ div[data-id=widget-param-dropdown] > div {
   text-align: left;
 }
 
+/*
 :where(.pf-theme-dark) tspan {
   fill: rgb(184, 187, 190) !important;
 }
@@ -322,3 +323,4 @@ div[data-id=widget-param-dropdown] > div {
     --pf-c-alert--m-inline--m-warning--BackgroundColor: var(--pf-global--palette--black-600) !important;
     --pf-c-alert--m-inline--m-info--BackgroundColor: var(--pf-global--palette--black-600) !important;
 }
+*/

@@ -1,5 +1,4 @@
-# s2i image script from https://github.com/sclorg/s2i-nodejs-container/tree/master/14
-FROM registry.access.redhat.com/ubi8/nodejs-14
+FROM registry.access.redhat.com/ubi8/nodejs-16
 
 # Add application sources to a directory that the assemble script expects them
 # and set permissions so that the container runs without root access
@@ -15,4 +14,4 @@ USER 1001
 RUN /usr/libexec/s2i/assemble
 
 # Set the default command for the resulting image
-ENTRYPOINT [ "start-frontend.sh" ]
+CMD ["/usr/bin/start-frontend.sh"]

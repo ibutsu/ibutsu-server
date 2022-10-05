@@ -8,10 +8,6 @@ import {
 } from '@patternfly/react-core';
 
 export class AdminHome extends React.Component {
-  constructor(props) {
-    super(props)
-  }
-
   render() {
     return (
       <React.Fragment>
