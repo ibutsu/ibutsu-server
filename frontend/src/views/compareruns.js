@@ -131,7 +131,7 @@ export class CompareRunsView extends React.Component {
       isLoading: true
     })
 
-    if (isNew == true) {
+    if (isNew === true) {
       // Build params and filters for each MetaFilter
       let apiFilters = [];
       filter.forEach(filter => {

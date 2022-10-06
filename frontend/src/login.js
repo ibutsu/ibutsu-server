@@ -146,7 +146,7 @@ export class Login extends React.Component {
 
   onEnterKeyPress = (target) => {
     // allow login by pressing the enter key
-    if (target.charCode == 13) {
+    if (target.charCode === 13) {
       this.onLoginButtonClick();
     }
   }
@@ -182,9 +182,7 @@ export class Login extends React.Component {
     });
   }
 
-  onFacebookLogin = (response) => {
-    console.log(response);
-  }
+  onFacebookLogin = () => {}
 
   componentDidMount() {
     HttpClient.get([Settings.serverUrl, 'login', 'support'])

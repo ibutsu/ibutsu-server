@@ -189,9 +189,9 @@ podman run -d \
        --name ibutsu-frontend \
        -w /mnt \
        -v./frontend:/mnt/:Z \
-       node:14 \
-       /bin/bash -c 'yarn install &&
-                     CI=1 yarn run devserver'
+       node:16 \
+       /bin/bash -c 'npm install &&
+                     CI=1 npm run devserver'
 echo "done."
 echo -n "Waiting for frontend to respond..."
 until $(curl --output /dev/null --silent --head --fail http://localhost:3000); do

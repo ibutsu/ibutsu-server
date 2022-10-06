@@ -149,7 +149,7 @@ export class UserList extends React.Component {
   }
 
   onDeleteClick = (userId) => {
-    const selectedUser = this.state.users.find((user) => user.id == userId);
+    const selectedUser = this.state.users.find((user) => user.id === userId);
     this.setState({selectedUser: selectedUser, isDeleteModalOpen: true});
   };
 
@@ -169,7 +169,7 @@ export class UserList extends React.Component {
 
   onTextChanged = (newValue) => {
     this.setState({textFilter: newValue}, debounce(() => {
-      if (newValue.length >= 3 || newValue.length == 0) {
+      if (newValue.length >= 3 || newValue.length === 0) {
         this.updateUrl();
         this.getUsers();
       }
