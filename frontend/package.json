@@ -13,7 +13,7 @@
     "@emotion/core": "^10.0.10",
     "@emotion/styled": "^10.0.10",
     "@greatsumini/react-facebook-login": "^2.1.5",
-    "@hapi/hoek": "^6.2.4",
+    "@hapi/hoek": "^9.0.4",
     "@hapi/joi": "^15.0.0",
     "@hapi/topo": "^3.1.0",
     "@monaco-editor/react": "3.2.1",
