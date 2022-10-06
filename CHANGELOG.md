@@ -1,3 +1,8 @@
+Version 2.4.1
+=============
+
+* Fix styling issues, plus minor cleanup
+
 Version 2.4.0
 =============
 

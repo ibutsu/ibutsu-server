@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@patternfly/react-charts": "^6.3.9",
+    "@patternfly/react-table": "^4.5.7",
+    "@patternfly/react-tokens": "^4.12.0",
+    "@react-keycloak/web": "^3.4.0"
+  },
+  "maybe": {
+    "keycloak-js": "^14.0.0"
+  }
+}
