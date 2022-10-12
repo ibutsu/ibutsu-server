@@ -75,7 +75,7 @@ def admin_add_user(new_user=None, token_info=None, user=None):
 
 
 @validate_uuid
-def admin_update_user(id_, user_info=None, token_info=None, user=None):
+def admin_update_user(id_, body=None, user_info=None, token_info=None, user=None):
     """Update a single user in the system"""
     check_user_is_admin(user)
     if not connexion.request.is_json:
