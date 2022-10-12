@@ -1,3 +1,8 @@
+Version 2.4.2
+=============
+
+* Fix some issues in the admin controllers
+
 Version 2.4.1
 =============
 
