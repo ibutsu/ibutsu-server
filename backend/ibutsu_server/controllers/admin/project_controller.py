@@ -106,7 +106,7 @@ def admin_get_project_list(
 
 
 @validate_uuid
-def admin_update_project(id_, project=None, token_info=None, user=None):
+def admin_update_project(id_, project=None, body=None, token_info=None, user=None):
     """Update a project
 
     :param id: ID of test project
