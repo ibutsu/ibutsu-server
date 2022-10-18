@@ -22,7 +22,7 @@ import {
 
 import { Settings } from '../settings';
 import { HttpClient } from '../services/http';
-import { toAPIFilter } from '../utilities';
+import { getActiveProject, toAPIFilter } from '../utilities';
 
 import { TableEmptyState, TableErrorState } from './tablestates';
 
@@ -256,6 +256,9 @@ export class MetaFilter extends React.Component {
       let api_filter = toAPIFilter(customFilters).join();
       console.debug('APIFILTER: ' + customFilters);
 
+      let project = getActiveProject();
+      let projectId = project ? project.id : ''
+
       // make runId optional
       let params = {}
       if (this.props.runId) {
@@ -263,9 +266,12 @@ export class MetaFilter extends React.Component {
           group_field: fieldSelection,
           run_id: this.props.runId,
           additional_filters: api_filter,
+          project: projectId
         }
       } else {
         params = {
+          days: 30,
+          project: projectId,
           group_field: fieldSelection,
           additional_filters: api_filter,
         }

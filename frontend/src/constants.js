@@ -78,9 +78,9 @@ export const FILTERABLE_RESULT_FIELDS = [
   'metadata.endpoint',
   // TODO generic metadata.user_properties filter acceptance
   // These are way too project specific
-  'metadata.user_properties.BaseOS',
-  'metadata.user_properties.SatelliteVersion',
-  'metadata.user_properties.SnapVersion'
+  'metadata.BaseOS',
+  'metadata.SatelliteVersion',
+  'metadata.SnapVersion'
   // TODO support object/dict filtering
   // https://github.com/ibutsu/ibutsu-server/issues/229
   //'metadata.params',
