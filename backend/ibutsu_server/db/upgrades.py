@@ -152,3 +152,22 @@ def upgrade_4(session):
         op.add_column("users", Column("is_superadmin", Boolean, default=False))
         op.add_column("users", Column("is_active", Boolean, default=False))
         op.add_column("users", Column("activation_code", Text, default=None))
+
+
+def upgrade_5(session):
+    """Version 5 upgrade
+
+    This upgrade adds a default dashboard to a project
+    """
+    engine = session.get_bind()
+    op = get_upgrade_op(session)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    projects = metadata.tables.get("projects")
+
+    if (
+        "projects" in metadata.tables
+        and projects is not None
+        and "default_dashboard_id" not in [col.name for col in projects.columns]
+    ):
+        op.alter_column()
