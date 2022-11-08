@@ -6,7 +6,9 @@ export const KNOWN_WIDGETS = [
   'jenkins-heatmap',
   'run-aggregator',
   'result-summary',
-  'result-aggregator'
+  'result-aggregator',
+  'jenkins-bar-chart',
+  'jenkins-line-chart'
 ];
 export const STRING_OPERATIONS = {
   'eq': '=',

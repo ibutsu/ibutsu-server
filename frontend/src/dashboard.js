@@ -32,6 +32,7 @@ import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
 import { DeleteModal, NewDashboardModal, NewWidgetWizard } from './components';
 import {
+  GenericAreaWidget,
   GenericBarWidget,
   JenkinsHeatmapWidget,
   ResultAggregatorWidget,
@@ -347,6 +348,26 @@ export class Dashboard extends React.Component {
                       <ResultAggregatorWidget
                         title={widget.title}
                         params={widget.params}
+                        onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                      />
+                    }
+                    {(widget.type === "widget" && widget.widget === "jenkins-line-chart") &&
+                      <GenericAreaWidget
+                        title={widget.title}
+                        params={widget.params}
+                        yLabel="Execution time"
+                        widgetEndpoint="jenkins-line-chart"
+                        onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                      />
+                    }
+                    {(widget.type === "widget" && widget.widget === "jenkins-bar-chart") &&
+                      <GenericBarWidget
+                        title={widget.title}
+                        params={widget.params}
+                        barWidth={20}
+                        horizontal={true}
+                        hideDropdown={true}
+                        widgetEndpoint="jenkins-bar-chart"
                         onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
                       />
                     }
