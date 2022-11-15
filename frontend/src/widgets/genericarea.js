@@ -98,6 +98,7 @@ export class GenericAreaWidget extends React.Component {
 
   getAreaCharts() {
     let areaCharts = [];
+    let index = 0
     for (const key of Object.keys(this.state.data)) {
       let chartData = [];
       if (key !== "filter") {
@@ -108,12 +109,14 @@ export class GenericAreaWidget extends React.Component {
           areaCharts.push(
             <ChartArea
               data={chartData}
+              key={index}
               sortKey={(datum) => `${datum.x}`}
               sortOrder={this.props.sortOrder || "ascending"}
               interpolation={this.props.interpolation || "monotoneX"}
               style={this.props.getColors ? {data: { fill: this.props.getColors(key)}}: {}}
             />
           );
+          index++
         }
       }
     }
