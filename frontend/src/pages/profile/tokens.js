@@ -5,16 +5,15 @@ import {
   Button,
   Card,
   CardBody,
+  ClipboardCopy,
   Flex,
   FlexItem,
-  InputGroup,
   PageSection,
   PageSectionVariants,
   Text,
   TextContent,
-  TextInput,
 } from '@patternfly/react-core';
-import { CopyIcon, PlusCircleIcon } from '@patternfly/react-icons';
+import { PlusCircleIcon } from '@patternfly/react-icons';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
@@ -78,10 +77,9 @@ export class UserTokens extends React.Component {
       "cells": [
         {title: token.name},
         {title: (
-          <InputGroup>
-            <TextInput value={token.token} aria-label={`token-input-${token.id}`} ouiaId={`token-input-${token.id}`} />
-            <Button variant="control" onClick={() => this.copyToClipboard(token.token)} ouiaId={`copy-button-${token.id}`}><CopyIcon /></Button>
-          </InputGroup>
+          <ClipboardCopy isReadOnly hoverTip="Copy to clipboard" clickTip="Copied!">
+            {token.token}
+          </ClipboardCopy>
         )},
         {title: token.expires},
         {title: <Button variant="danger" onClick={() => this.onDeleteTokenClick(token)}>Delete</Button>}
