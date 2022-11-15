@@ -16,7 +16,7 @@ repos:
   - id: check-yaml
     args: [ --allow-multiple-documents ]
   - id: debug-statements
-- repo: https://gitlab.com/pycqa/flake8
+- repo: https://github.com/pycqa/flake8
   rev: 3.9.2
   hooks:
   - id: flake8
