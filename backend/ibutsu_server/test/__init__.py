@@ -92,7 +92,7 @@ class BaseTestCase(TestCase):
         return self.assertNotEqual(first, second, msg)
 
 
-class MockModel(object):
+class MockModel:
     """Mock model object"""
 
     COLUMNS = ["id"]

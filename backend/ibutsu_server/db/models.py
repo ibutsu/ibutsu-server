@@ -35,7 +35,7 @@ users_projects = Table(
 )
 
 
-class ModelMixin(object):
+class ModelMixin:
     id = Column(PortableUUID(), primary_key=True, default=_gen_uuid, unique=True, nullable=False)
 
     def to_dict(self):

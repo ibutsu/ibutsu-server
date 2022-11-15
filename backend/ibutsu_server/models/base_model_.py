@@ -1,13 +1,12 @@
 import pprint
 import typing
 
-import six
 from ibutsu_server import util
 
 T = typing.TypeVar("T")
 
 
-class Model(object):
+class Model:
     # openapiTypes: The key is attribute name and the
     # value is attribute type.
     openapi_types = {}
@@ -28,7 +27,7 @@ class Model(object):
         """
         result = {}
 
-        for attr, _ in six.iteritems(self.openapi_types):
+        for attr, _ in self.openapi_types.items():
             value = getattr(self, attr)
             if isinstance(value, list):
                 result[attr] = list(
