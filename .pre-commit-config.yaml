@@ -31,6 +31,7 @@ repos:
   - id: eslint
     additional_dependencies:
     - eslint@7
+    - eslint-plugin-cypress
     - eslint-plugin-react
     - eslint-plugin-import
     - "@babel/eslint-parser"
