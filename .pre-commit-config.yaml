@@ -16,7 +16,7 @@ repos:
   - id: check-yaml
     args: [ --allow-multiple-documents ]
   - id: debug-statements
-- repo: https://gitlab.com/pycqa/flake8
+- repo: https://github.com/pycqa/flake8
   rev: 3.9.2
   hooks:
   - id: flake8
@@ -31,6 +31,7 @@ repos:
   - id: eslint
     additional_dependencies:
     - eslint@7
+    - eslint-plugin-cypress
     - eslint-plugin-react
     - eslint-plugin-import
     - "@babel/eslint-parser"

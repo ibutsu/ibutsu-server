@@ -21,8 +21,10 @@
     "@patternfly/react-table": "^4.108.0",
     "@react-keycloak/web": "^3.4.0",
     "@wojtekmaj/enzyme-adapter-react-17": "^0.6.7",
+    "cypress": "^10.11.0",
     "enzyme": "^3.11.0",
     "eslint": "^7.30.0",
+    "eslint-plugin-cypress": "^2.12.1",
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-react": "^7.19.0",
     "keycloak-js": "^19.0.3",
@@ -45,7 +47,7 @@
   "scripts": {
     "start": "serve -s build -l tcp://0.0.0.0:8080",
     "build": "./bin/write-version-file.js && react-scripts build",
-    "test": "./bin/write-version-file.js && react-scripts test",
+    "test": "./bin/write-version-file.js && react-scripts test && cypress run --component",
     "eject": "react-scripts eject",
     "devserver": "./bin/write-version-file.js && CI=true react-scripts start",
     "lint": "eslint --ext=js --ext=jsx ./src"
@@ -59,6 +61,7 @@
     },
     "extends": [
       "eslint:recommended",
+      "plugin:cypress/recommended",
       "plugin:react/recommended"
     ],
     "parser": "@babel/eslint-parser",
