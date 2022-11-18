@@ -39,6 +39,7 @@ export class GenericBarWidget extends React.Component {
     xLabelTooltip: PropTypes.string,
     yLabel: PropTypes.string,
     onDeleteClick: PropTypes.func,
+    onEditClick: PropTypes.func
   }
 
   constructor(props) {
@@ -202,7 +203,7 @@ export class GenericBarWidget extends React.Component {
   render() {
     return (
       <Card>
-        <WidgetHeader title={this.title} getDataFunc={this.getData} onDeleteClick={this.props.onDeleteClick}/>
+        <WidgetHeader title={this.title} getDataFunc={this.getData} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
         <CardBody data-id="recent-runs">
           {this.state.genericBarError &&
             <p>Error fetching data</p>
