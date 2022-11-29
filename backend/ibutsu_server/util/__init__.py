@@ -12,7 +12,7 @@ def _deserialize(data, klass):
     if data is None:
         return None
 
-    if klass in (int,) or klass in (float, str, bool):
+    if klass in (int, float, str, bool):
         return _deserialize_primitive(data, klass)
     elif klass == object:
         return _deserialize_object(data)
