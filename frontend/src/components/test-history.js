@@ -66,6 +66,7 @@ export class TestHistoryTable extends React.Component {
       filters: Object.assign({
         'result': {op: 'in', val: "passed;skipped;failed;error;xpassed;xfailed"},
         'test_id': {op: 'eq', val: props.testResult.test_id},
+        'component': {op: 'eq', val: props.testResult.component},
         // default to filter only from 1 weeks ago to the most test's start_time.
         'start_time': {op: 'gt', val: new Date(new Date(props.testResult.start_time).getTime() - (0.25 * 30 * 86400 * 1000)).toISOString()}
         }, props.filters),
@@ -349,7 +350,7 @@ export class TestHistoryTable extends React.Component {
               <Text key="last-passed" component="h4">Last passed:&nbsp;{this.state.lastPassedDate}</Text>,
             ]}
             onRemoveFilter={this.removeFilter}
-            hideFilters={["project_id", "result", "test_id"]}
+            hideFilters={["project_id", "result", "test_id", "component"]}
           />
         </CardBody>
       </Card>
