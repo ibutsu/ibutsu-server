@@ -12,4 +12,4 @@ response=$(curl -s -X POST http://backend:8080/api/login \
 token=$(jq -r '.token' <<< "${response}")
 
 # ignore the health endpoint, because it does return 5xx
-st run -E ^\(?\!/api/health\).* http://backend:8080/api/openapi.json -H "Authorization: Bearer ${token}"
+st run -E ^\(?\!/api/health\).* http://backend:8080/api/openapi.json -H "Authorization: Bearer ${token}" --report /reports/api-tests.tar.gz --exitfirst

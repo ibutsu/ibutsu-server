@@ -146,7 +146,8 @@ def add_run(run=None, token_info=None, user=None):
     return run.to_dict(), 201
 
 
-def update_run(id_, run=None, token_info=None, user=None):
+@validate_uuid
+def update_run(id_, run=None, body=None, token_info=None, user=None):
     """Updates a single run
 
     :param id: ID of run to update

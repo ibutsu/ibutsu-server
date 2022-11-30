@@ -1,6 +1,4 @@
-# coding: utf-8
-from __future__ import absolute_import
-
+from io import BytesIO
 from unittest import skip
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -8,7 +6,6 @@ from unittest.mock import patch
 from ibutsu_server.test import BaseTestCase
 from ibutsu_server.test import MockArtifact
 from ibutsu_server.test import MockResult
-from six import BytesIO
 
 
 MOCK_ID = "70202589-4781-4eb9-bcfc-685b1d2c583a"

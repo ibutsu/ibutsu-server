@@ -1,7 +1,5 @@
-# coding: utf-8
-from __future__ import absolute_import
-
 from datetime import datetime
+from io import BytesIO
 from unittest import skip
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -10,7 +8,6 @@ from flask import json
 from ibutsu_server.test import BaseTestCase
 from ibutsu_server.test import MockRun
 from ibutsu_server.test.test_project_controller import MOCK_PROJECT
-from six import BytesIO
 
 MOCK_ID = "6b26876f-bcd9-49f3-b5bd-35f895a345d1"
 START_TIME = datetime.utcnow()

@@ -96,6 +96,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
     }
 
 
+@validate_uuid
 def update_widget_config(id_, token_info=None, user=None):
     """Updates a single widget config
 
@@ -132,6 +133,7 @@ def update_widget_config(id_, token_info=None, user=None):
     return widget_config.to_dict()
 
 
+@validate_uuid
 def delete_widget_config(id_):
     """Deletes a widget
 

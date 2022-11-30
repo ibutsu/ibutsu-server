@@ -1,7 +1,5 @@
 import datetime
 
-import six
-
 
 def _deserialize(data, klass):
     """Deserializes dict, list, str into an object.
@@ -14,7 +12,7 @@ def _deserialize(data, klass):
     if data is None:
         return None
 
-    if klass in six.integer_types or klass in (float, str, bool):
+    if klass in (int, float, str, bool):
         return _deserialize_primitive(data, klass)
     elif klass == object:
         return _deserialize_object(data)
@@ -42,7 +40,7 @@ def _deserialize_primitive(data, klass):
     try:
         value = klass(data)
     except UnicodeEncodeError:
-        value = six.u(data)
+        value = data
     except TypeError:
         value = data
     return value
@@ -103,7 +101,7 @@ def deserialize_model(data, klass):
     if not instance.openapi_types:
         return data
 
-    for attr, attr_type in six.iteritems(instance.openapi_types):
+    for attr, attr_type in instance.openapi_types.items():
         if (
             data is not None
             and instance.attribute_map[attr] in data
@@ -138,7 +136,7 @@ def _deserialize_dict(data, boxed_type):
     :return: deserialized dict.
     :rtype: dict
     """
-    return {k: _deserialize(v, boxed_type) for k, v in six.iteritems(data)}
+    return {k: _deserialize(v, boxed_type) for k, v in data.items()}
 
 
 def safe_string(o):
