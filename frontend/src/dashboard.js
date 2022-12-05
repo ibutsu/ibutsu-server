@@ -30,7 +30,7 @@ import {
 import { HttpClient } from './services/http';
 import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
-import { DeleteModal, NewDashboardModal, NewWidgetWizard } from './components';
+import { DeleteModal, NewDashboardModal, NewWidgetWizard, EditWidgetModal } from './components';
 import {
   GenericAreaWidget,
   GenericBarWidget,
@@ -77,6 +77,8 @@ export class Dashboard extends React.Component {
       isDashboardSelectorOpen: false,
       isNewDashboardOpen: false,
       isWidgetWizardOpen: false,
+      isEditModalOpen: false,
+      editWidgetData: {},
       dashboardFilter: ''
     };
     props.eventEmitter.on('projectChange', () => {
@@ -209,6 +211,37 @@ export class Dashboard extends React.Component {
         });
   }
 
+  onEditWidgetSave = (editWidget) => {
+    const project = getActiveProject();
+    if (!editWidget.project_id && project) {
+      editWidget.project_id = project.id;
+    }
+    this.setState({isEditModalOpen: false});
+    editWidget.id = this.state.currentWidgetId
+    HttpClient.put([Settings.serverUrl, 'widget-config', this.state.currentWidgetId], "", editWidget)
+        .then(response => HttpClient.handleResponse(response))
+        .then(() => {
+          this.getWidgets();
+        });
+  }
+
+  onEditWidgetClose = () => {
+    this.setState({isEditModalOpen: false});
+  }
+
+  onEditWidgetClick = (id) => {
+    HttpClient.get([Settings.serverUrl, 'widget-config', id])
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          this.setState({isEditModalOpen: true, currentWidgetId: id, editWidgetData: data});
+        });
+
+  }
+
+  onEditWidgetClose = () => {
+    this.setState({isEditModalOpen: false});
+  }
+
   onDeleteWidgetClick = (id) => {
     this.setState({isDeleteWidgetOpen: true, currentWidgetId: id});
   }
@@ -325,6 +358,7 @@ export class Dashboard extends React.Component {
                         params={widget.params}
                         includeAnalysisLink={true}
                         onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                        onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
                     {(widget.type === "widget" && widget.widget === "run-aggregator") &&
@@ -335,6 +369,7 @@ export class Dashboard extends React.Component {
                         percentData={true}
                         barWidth={20}
                         onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                        onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
                     {(widget.type === "widget" && widget.widget === "result-summary") &&
@@ -342,6 +377,7 @@ export class Dashboard extends React.Component {
                         title={widget.title}
                         params={widget.params}
                         onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                        onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
                     {(widget.type === "widget" && widget.widget === "result-aggregator") &&
@@ -349,6 +385,7 @@ export class Dashboard extends React.Component {
                         title={widget.title}
                         params={widget.params}
                         onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                        onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
                     {(widget.type === "widget" && widget.widget === "jenkins-line-chart") &&
@@ -358,6 +395,7 @@ export class Dashboard extends React.Component {
                         yLabel="Execution time"
                         widgetEndpoint="jenkins-line-chart"
                         onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                        onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
                     {(widget.type === "widget" && widget.widget === "jenkins-bar-chart") &&
@@ -369,6 +407,7 @@ export class Dashboard extends React.Component {
                         hideDropdown={true}
                         widgetEndpoint="jenkins-bar-chart"
                         onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                        onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
                   </GridItem>
@@ -445,6 +484,14 @@ export class Dashboard extends React.Component {
           onDelete={this.onDeleteWidget}
           onClose={this.onDeleteWidgetClose}
         />
+        {this.state.isEditModalOpen ?
+          <EditWidgetModal
+            isOpen={this.state.isEditModalOpen}
+            onSave={this.onEditWidgetSave}
+            onClose={this.onEditWidgetClose}
+            data={this.state.editWidgetData}
+          />
+        : ''}
       </React.Fragment>
     );
   }

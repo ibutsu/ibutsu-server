@@ -22,6 +22,7 @@ export class ResultSummaryWidget extends React.Component {
     title: PropTypes.string,
     params: PropTypes.object,
     onDeleteClick: PropTypes.func,
+    onEditClick: PropTypes.func
   }
 
   constructor(props) {
@@ -86,7 +87,7 @@ export class ResultSummaryWidget extends React.Component {
                 ];
     return (
       <Card>
-        <WidgetHeader title={this.title} getDataFunc={this.getResultSummary} onDeleteClick={this.props.onDeleteClick}/>
+        <WidgetHeader title={this.title} getDataFunc={this.getResultSummary} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
         <CardBody>
           <div>
             {!this.state.isLoading &&

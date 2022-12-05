@@ -30,7 +30,8 @@ export class JenkinsHeatmapWidget extends React.Component {
     hideDropdown: PropTypes.bool,
     dropdownItems: PropTypes.array,
     includeAnalysisLink: PropTypes.bool,
-    onDeleteClick: PropTypes.func
+    onDeleteClick: PropTypes.func,
+    onEditClick: PropTypes.func
   }
 
   constructor(props) {
@@ -207,7 +208,7 @@ export class JenkinsHeatmapWidget extends React.Component {
     const actions = this.getJenkinsAnalysisLink() || {};
     return (
       <Card>
-        <WidgetHeader title={this.title} actions={actions} getDataFunc={this.getHeatmap} onDeleteClick={this.props.onDeleteClick}/>
+        <WidgetHeader title={this.title} actions={actions} getDataFunc={this.getHeatmap} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
         <CardBody data-id="heatmap" style={{paddingTop: '0.5rem'}}>
           {(!this.state.heatmapError && this.state.isLoading) &&
           <Text component="h2">Loading ...</Text>

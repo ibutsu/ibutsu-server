@@ -27,6 +27,7 @@ export class ResultAggregatorWidget extends React.Component {
     params: PropTypes.object,
     dropdownItems: PropTypes.array,
     onDeleteClick: PropTypes.func,
+    onEditClick: PropTypes.func
   }
 
   constructor(props) {
@@ -111,7 +112,7 @@ export class ResultAggregatorWidget extends React.Component {
     ];
     return (
       <Card>
-        <WidgetHeader title={this.title} getDataFunc={this.getResultData} onDeleteClick={this.props.onDeleteClick}/>
+        <WidgetHeader title={this.title} getDataFunc={this.getResultData} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
         <CardBody data-id="recent-result-data">
           {this.state.resultAggregatorError &&
             <p>Error fetching data</p>
