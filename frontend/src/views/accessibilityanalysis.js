@@ -323,7 +323,7 @@ export class AccessibilityAnalysisView extends React.Component {
 
   getResultsForTable() {
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
-    let params = {filter: 'run_id=' + this.state.id};
+    let params = {filter: ['run_id=' + this.state.id, 'metadata.markers*accessibility']};
     params['pageSize'] = this.state.pageSize;
     params['page'] = this.state.page;
     this.setState({rows: [['Loading...', '', '', '']]});
