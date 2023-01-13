@@ -1,3 +1,19 @@
+Version 2.4.3
+=============
+
+* Added accessibility marker filter to remove irrelevant results
+* Adding ability to edit dashboard widgets
+* Update backend/ibutsu_server/util/__init__.py
+* Fixing test history bug
+* Add more UUID validation
+* Updated precommit
+* Migration to component testing using Cypress
+* Fixed url for flake8 hook
+* Fixing Jenkins Bar and Line charts
+* Change the homemade copy-paste component to the one from PatternFly
+* Add instructions for how to download an artifact
+* Adding days and project_id to compare-runs-data calls
+
 Version 2.4.2
 =============
 
