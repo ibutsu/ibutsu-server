@@ -48,6 +48,7 @@ export const STRING_RESULT_FIELDS = [
   'run_id',
   'project_id',
   'metadata.assignee',
+  'metadata.team',
   'metadata.caseautomation',
   'metadata.fspath',
   'metadata.jenkins.job_name',
@@ -67,6 +68,7 @@ export const FILTERABLE_RESULT_FIELDS = [
   'env',
   'component',
   'metadata.assignee',
+  'metadata.team',
   // TODO support array filtering
   // https://github.com/ibutsu/ibutsu-server/issues/228
   //'metadata.statuses.call',
