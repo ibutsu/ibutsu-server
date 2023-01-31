@@ -205,6 +205,26 @@ class MockRun(MockModel):
     ]
 
 
+class MockDashboard(MockModel):
+    COLUMNS = []
+
+
+class MockWidgetConfig(MockModel):
+    COLUMNS = [
+        "id",
+        "navigable",
+        "params",
+        "project_id",
+        "dashboard_id",
+        "title",
+        "type",
+        "weight",
+        "widget",
+        "project",
+        "dashboard",
+    ]
+
+
 class MockUser(MockModel):
     COLUMNS = ["id", "email", "password", "name", "group_id", "is_superadmin"]
 

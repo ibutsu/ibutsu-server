@@ -54,6 +54,8 @@ def get_widget_config(id_, token_info=None, user=None):
     :rtype: Report
     """
     widget_config = WidgetConfig.query.get(id_)
+    if not widget_config:
+        return "Widget config not found", 404
     return widget_config.to_dict()
 
 
@@ -84,7 +86,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
     offset = get_offset(page, page_size)
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    widgets = query.order_by(WidgetConfig.weight.asc()).offset(offset).limit(page_size)
+    widgets = query.order_by(WidgetConfig.weight.asc()).offset(offset).limit(page_size).all()
     return {
         "widgets": [widget.to_dict() for widget in widgets],
         "pagination": {
@@ -97,7 +99,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
 
 
 @validate_uuid
-def update_widget_config(id_, token_info=None, user=None):
+def update_widget_config(id_, body=None, widget_config=None, token_info=None, user=None):
     """Updates a single widget config
 
     :param id: ID of widget to update
@@ -119,6 +121,8 @@ def update_widget_config(id_, token_info=None, user=None):
             return "Forbidden", 403
         data["project_id"] = project.id
     widget_config = WidgetConfig.query.get(id_)
+    if not widget_config:
+        return "Widget config not found", 404
     # add default weight of 10
     if not widget_config.weight:
         widget_config.weight = 10
@@ -134,7 +138,7 @@ def update_widget_config(id_, token_info=None, user=None):
 
 
 @validate_uuid
-def delete_widget_config(id_):
+def delete_widget_config(id_, token_info=None, user=None):
     """Deletes a widget
 
     :param id: ID of the widget to delete
@@ -146,6 +150,8 @@ def delete_widget_config(id_):
     if not widget_config:
         return "Not Found", 404
     else:
+        if widget_config.project and not project_has_user(widget_config.project, user):
+            return "Forbidden", 403
         session.delete(widget_config)
         session.commit()
         return "OK", 200

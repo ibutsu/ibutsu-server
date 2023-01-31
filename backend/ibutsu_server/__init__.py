@@ -18,7 +18,7 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import upgrade_db
 from ibutsu_server.db.models import User
 from ibutsu_server.db.util import add_superadmin
-from ibutsu_server.encoder import JSONEncoder
+from ibutsu_server.encoder import IbutsuJSONProvider
 from ibutsu_server.tasks import create_celery_app
 from ibutsu_server.util.jwt import decode_token
 from sqlalchemy import create_engine
@@ -58,7 +58,7 @@ def get_app(**extra_config):
 
     app = App(__name__, specification_dir="./openapi/")
 
-    app.app.json_encoder = JSONEncoder
+    app.app.json_provider_class = IbutsuJSONProvider
 
     # Shortcut
     config: flask.Config = app.app.config
