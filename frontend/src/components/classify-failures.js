@@ -25,7 +25,6 @@ import {
   getSpinnerRow,
   resultToClassificationRow,
 } from '../utilities';
-import { FILTERABLE_RESULT_FIELDS } from '../constants';
 import {
   FilterTable,
   MultiClassificationDropdown,
@@ -213,7 +212,6 @@ export class ClassifyFailuresTable extends React.Component {
     const resultFilters = [
       <MetaFilter
         key="metafilter"
-        fieldOptions={FILTERABLE_RESULT_FIELDS}
         runId={run_id}
         setFilter={this.setFilter}
         customFilters={{'result': filters['result']}}

@@ -12,6 +12,7 @@ REQUIRES = [
     "flask_mail",
     "Flask>=2",
     "Flask-SQLAlchemy",
+    "flatdict",
     "google-api-python-client",
     "google-auth",
     "google-auth-httplib2",

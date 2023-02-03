@@ -173,7 +173,6 @@ export class FilterTable extends React.Component {
 // with FilterTable. See https://github.com/ibutsu/ibutsu-server/issues/230
 export class MetaFilter extends React.Component {
   static propTypes = {
-    fieldOptions: PropTypes.array,  // could reference constants directly
     runId: PropTypes.string,
     setFilter: PropTypes.func,
     customFilters: PropTypes.object, // more advanced handling of filter objects? the results-aggregator endpoint takes a string filter
@@ -192,6 +191,7 @@ export class MetaFilter extends React.Component {
       isValueOpen: false,
       valueOptions: [],
       valueSelections: [],
+      fieldOptions: []
     };
   }
 
@@ -288,6 +288,19 @@ export class MetaFilter extends React.Component {
     }
   }
 
+  getProjectFilterParams() {
+    let project = getActiveProject();
+    HttpClient.get([Settings.serverUrl, 'project', 'filter-params', project.id])
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => {
+        this.setState({fieldOptions: data});
+      });
+  }
+
+  componentDidMount() {
+    this.getProjectFilterParams();
+  }
+
   render () {
     const {
       isFieldOpen,
@@ -328,7 +341,7 @@ export class MetaFilter extends React.Component {
               onClear={this.onFieldClear}
               isCreatable={true}
             >
-              {this.props.fieldOptions.map((option, index) => (
+              {this.state.fieldOptions.map((option, index) => (
                 <SelectOption key={index} value={option}/>
               ))}
             </Select>
