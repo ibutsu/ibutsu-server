@@ -1,10 +1,10 @@
-# Template for Ibutsu backend in AppInterface
+# Template for Ibutsu scheduler in AppInterface
 kind: Template
 apiVersion: template.openshift.io/v1
 metadata:
-  name: ibutsu-backend-template
+  name: ibutsu-scheduler-template
 # ===============================================
-# Backend
+# Scheduler
 # ===============================================
 objects:
 - kind: DeploymentConfig
@@ -12,29 +12,21 @@ objects:
   metadata:
     labels:
       app: ${APP_NAME}
-    name: ibutsu-backend
+    name: ibutsu-scheduler
   spec:
     replicas: 1
     selector:
-      deploymentConfig: ibutsu-backend
+      deploymentConfig: ibutsu-scheduler
     strategy:
       type: Rolling
     template:
       metadata:
         labels:
           app: ${APP_NAME}
-          deploymentConfig: ibutsu-backend
+          deploymentConfig: ibutsu-scheduler
       spec:
         containers:
         - env:
-          - name: GUNICORN_PROCESSES
-            value: "1"
-          - name: PORT
-            value: "8080"
-          - name: APP_CONFIG
-            value: config.py
-          - name: HAS_FRONTEND
-            value: "false"
           - name: POSTGRESQL_HOST
             valueFrom:
               secretKeyRef:
@@ -76,21 +68,6 @@ objects:
               secretKeyRef:
                 key: db.port
                 name: redis
-          - name: JWT_SECRET
-            valueFrom:
-              secretKeyRef:
-                key: value
-                name: jwt-secret
-          - name: IBUTSU_SUPERADMIN_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: password
-                name: ibutsu-superadmin
-          - name: IBUTSU_SUPERADMIN_NAME
-            valueFrom:
-              secretKeyRef:
-                key: name
-                name: ibutsu-superadmin
           - name: CELERY_BROKER_URL
             valueFrom:
               secretKeyRef:
@@ -105,32 +82,9 @@ objects:
             value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
             value: https://${BACKEND_ROUTE}
-          image: quay.io/ibutsu/backend:${IMAGE_TAG}
+          image: quay.io/ibutsu/scheduler:${IMAGE_TAG}
           imagePullPolicy: IfNotPresent
-          livenessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /
-              port: 8080
-              scheme: HTTP
-            initialDelaySeconds: 0
-            periodSeconds: 30
-            successThreshold: 1
-            timeoutSeconds: 20
-          name: ibutsu-backend
-          ports:
-          - containerPort: 8080
-            protocol: TCP
-          readinessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /
-              port: 8080
-              scheme: HTTP
-            initialDelaySeconds: 5
-            periodSeconds: 30
-            successThreshold: 1
-            timeoutSeconds: 20
+          name: ibutsu-scheduler
           resources: {}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
@@ -144,30 +98,14 @@ objects:
   metadata:
     labels:
       app: ${APP_NAME}
-    name: ibutsu-backend
+    name: ibutsu-scheduler
+    namespace: ${NAMESPACE}
   spec:
     ports:
     - port: 8080
       targetPort: 8080
     selector:
-      deploymentConfig: ibutsu-backend
-# -----------------------------------------------
-- kind: Route
-  apiVersion: v1
-  metadata:
-    labels:
-      app: ${APP_NAME}
-    name: ibutsu-backend
-    annotations:
-      description: "A route to the backend"
-  spec:
-    host: ${BACKEND_ROUTE}
-    to:
-      kind: Service
-      name: ibutsu-backend
-    tls:
-      insecureEdgeTerminationPolicy: Redirect
-      termination: edge
+      deploymentConfig: ibutsu-scheduler
 # ===============================================
 # Parameters
 # ===============================================

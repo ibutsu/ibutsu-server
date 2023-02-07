@@ -1,4 +1,4 @@
-# Template for ibutsu prod server
+# Template for Ibutsu frontend in AppInterface
 kind: Template
 apiVersion: template.openshift.io/v1
 metadata:
@@ -31,7 +31,7 @@ objects:
               value: https://${BACKEND_ROUTE}/api
             - name: NODE_ENV
               value: production
-          image: quay.io/cloudservices/ibutsu-frontend:${IMAGE_TAG}
+          image: quay.io/ibutsu/frontend:${IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
@@ -77,6 +77,24 @@ objects:
       targetPort: 8080
     selector:
       deploymentConfig: ibutsu-frontend
+# -----------------------------------------------
+- kind: Route
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-frontend
+    annotations:
+      description: "A route to the frontend"
+  spec:
+    host: ${FRONTEND_ROUTE}
+    to:
+      kind: Service
+      name: ibutsu-frontend
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
+    wildcardPolicy: None
 # ===============================================
 # Parameters
 # ===============================================
@@ -85,9 +103,15 @@ parameters:
   displayName: App Name
   description: The name of the application
   value: ibutsu-server
+- name: FRONTEND_ROUTE
+  displayName: Frontend Route
+  description: The URL of the frontend of the Ibutsu server
+  value: ibutsu.example.com
 - name: BACKEND_ROUTE
   displayName: Backend Route
   description: The URL of the backend of the Ibutsu server
   value: ibutsu-api.example.com
 - name: IMAGE_TAG
+  displayName: Image Tag
+  description: The tag of the container image to pull
   value: latest
