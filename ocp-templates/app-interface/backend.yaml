@@ -91,6 +91,11 @@ objects:
               secretKeyRef:
                 key: name
                 name: ibutsu-superadmin
+          - name: IBUTSU_SUPERADMIN_EMAIL
+            valueFrom:
+              secretKeyRef:
+                key: email
+                name: ibutsu-superadmin
           - name: CELERY_BROKER_URL
             valueFrom:
               secretKeyRef:
