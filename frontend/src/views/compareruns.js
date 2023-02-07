@@ -16,7 +16,6 @@ import {
   TableVariant,
   expandable
 } from '@patternfly/react-table';
-import { FILTERABLE_RESULT_FIELDS } from '../constants';
 import {
   FilterTable,
   MetaFilter,
@@ -249,7 +248,6 @@ export class CompareRunsView extends React.Component {
             Run 1:
           </TextContent>
           <MetaFilter
-            fieldOptions={FILTERABLE_RESULT_FIELDS}
             setFilter={this.setFilter}
             customFilters={{'result': filters['result']}}
             activeFilters={this.state.filters[0]}
@@ -263,7 +261,6 @@ export class CompareRunsView extends React.Component {
             Run 2:
           </TextContent>
           <MetaFilter
-            fieldOptions={FILTERABLE_RESULT_FIELDS}
             setFilter={this.setFilter}
             customFilters={{'result': filters['result']}}
             activeFilters={this.state.filters[1]}

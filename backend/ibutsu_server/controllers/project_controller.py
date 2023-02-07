@@ -1,6 +1,8 @@
 import connexion
+import flatdict
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project
+from ibutsu_server.db.models import Result
 from ibutsu_server.db.models import User
 from ibutsu_server.util.projects import add_user_filter
 from ibutsu_server.util.projects import project_has_user
@@ -126,3 +128,32 @@ def update_project(id_, project=None, token_info=None, user=None, **kwargs):
     session.add(project)
     session.commit()
     return project.to_dict()
+
+
+@validate_uuid
+def get_filter_params(id_, user=None, token_info=None):
+    """Get a list of filter parameters for a project
+
+    :param id_: ID of project
+    :type id_: str
+
+    :rtype: List
+    """
+    project = Project.query.get(id_)
+
+    if not project:
+        return "Project not found", 404
+    if project and not project_has_user(project, user):
+        return "Unauthorized", 401
+
+    result = (
+        session.query(Result)
+        .filter(Result.project_id == id_)
+        .order_by(Result.start_time.desc())
+        .first()
+    )
+
+    fields = flatdict.FlatDict(result.__dict__, delimiter=".").keys()
+    fields.remove("_sa_instance_state")
+
+    return fields

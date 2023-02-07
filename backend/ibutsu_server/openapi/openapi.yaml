@@ -706,6 +706,31 @@ paths:
       tags:
         - project
       x-openapi-router-controller: ibutsu_server.controllers.project_controller
+  /project/filter-params/{id}:
+    get:
+      operationId: get_filter_params
+      parameters:
+        - description: ID of test project
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                type: array
+          description: List of a result's parameters
+        404:
+          description: Project not found
+      summary: Get a project's filterable parameters
+      tags:
+        - project
+      x-openapi-router-controller: ibutsu_server.controllers.project_controller
   /group:
     get:
       operationId: get_group_list
