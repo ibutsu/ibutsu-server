@@ -95,6 +95,8 @@ objects:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
     wildcardPolicy: None
+    port:
+      targetPort: 8080
 # ===============================================
 # Parameters
 # ===============================================
