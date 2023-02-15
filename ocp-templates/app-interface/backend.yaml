@@ -173,6 +173,8 @@ objects:
     tls:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
+    port:
+      targetPort: 8080
 # ===============================================
 # Parameters
 # ===============================================
