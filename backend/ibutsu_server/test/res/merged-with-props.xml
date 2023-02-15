@@ -1,0 +1,247 @@
+<testsuites tests="162" failures="0" errors="0" skipped="0">
+    <properties>
+        <property key="project" value="insights-qe"/>
+        <property key="component" value="frontend-components"/>
+        <property key="source" value="pr_check-400-1"/>
+    </properties>
+    <testsuite name="DownloadButton component" tests="3" file="src/DownloadButton/DownloadButton.spec.ct.js" timestamp="2023-01-27T11:27:37" failures="0" time="0.483">
+        <testcase name="renders the dropdown" time="0.024" failure="false" error="false" success="true"/>
+        <testcase name="on download CSV callback fired" time="0.219" failure="false" error="false" success="true"/>
+        <testcase name="on download JSON callback fired" time="0.24" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Breadcrumbs component" tests="3" file="src/Breadcrumbs/Breadcrumbs.spec.ct.js" timestamp="2023-01-27T12:19:02" failures="0" time="0.215">
+        <testcase name="renders without any items" time="0.048" failure="false" error="false" success="true"/>
+        <testcase name="renders multiple items correctly" time="0.042" failure="false" error="false" success="true"/>
+        <testcase name="fires callback when an item is clicked" time="0.125" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="TextFilter component" tests="3" file="src/ConditionalFilter/TextFilter.spec.ct.js" timestamp="2023-01-27T11:27:36" failures="0" time="0.25">
+        <testcase name="renders empty" time="0.022" failure="false" error="false" success="true"/>
+        <testcase name="renders disabled with placeholder" time="0.023" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.205" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="CheckboxFilter component" tests="4" file="src/ConditionalFilter/CheckboxFilter.spec.ct.js" timestamp="2023-01-27T12:19:04" failures="0" time="0.46199999999999997">
+        <testcase name="renders empty" time="0.02" failure="false" error="false" success="true"/>
+        <testcase name="renders with correct attributes" time="0.026" failure="false" error="false" success="true"/>
+        <testcase name="default value is set" time="0.188" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.228" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="GroupFilter component" tests="4" file="src/ConditionalFilter/GroupFilter.spec.ct.js" timestamp="2023-01-27T11:27:34" failures="0" time="0.445">
+        <testcase name="renders empty" time="0.021" failure="false" error="false" success="true"/>
+        <testcase name="renders with placeholder" time="0.02" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.166" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.238" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="ConditionalFilter component" tests="5" file="src/ConditionalFilter/ConditionalFilter.spec.ct.js" timestamp="2023-01-27T12:19:05" failures="0" time="0.856">
+        <testcase name="renders empty" time="0.035" failure="false" error="false" success="true"/>
+        <testcase name="renders disabled" time="0.082" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.13" failure="false" error="false" success="true"/>
+        <testcase name="filter changes on click" time="0.378" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.231" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Actions component" tests="3" file="src/PrimaryToolbar/Actions.spec.ct.js" timestamp="2023-01-27T11:27:40" failures="0" time="0.734">
+        <testcase name="empty component is not rendered" time="0.015" failure="false" error="false" success="true"/>
+        <testcase name="renders component with data" time="0.123" failure="false" error="false" success="true"/>
+        <testcase name="functions called on click" time="0.596" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Actions component" tests="3" file="src/PrimaryToolbar/Actions.spec.ct.js" timestamp="2023-01-27T13:35:30" failures="0" time="0.679">
+        <testcase name="empty component is not rendered" time="0.015" failure="false" error="false" success="true"/>
+        <testcase name="renders component with data" time="0.123" failure="false" error="false" success="true"/>
+        <testcase name="functions called on click" time="0.541" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="RadioFilter component" tests="5" file="src/ConditionalFilter/RadioFilter.spec.ct.js" timestamp="2023-01-27T11:27:35" failures="0" time="0.518">
+        <testcase name="renders empty" time="0.019" failure="false" error="false" success="true"/>
+        <testcase name="renders disabled" time="0.022" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.117" failure="false" error="false" success="true"/>
+        <testcase name="renders with default value and placeholder" time="0.134" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.226" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Pagination component" tests="5" file="src/Pagination/Pagination.spec.ct.js" timestamp="2023-01-27T13:35:28" failures="0" time="1.2610000000000001">
+        <testcase name="renders with default values" time="0.037" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.153" failure="false" error="false" success="true"/>
+        <testcase name="no items" time="0.034" failure="false" error="false" success="true"/>
+        <testcase name="onPerPageSelect should be called" time="0.392" failure="false" error="false" success="true"/>
+        <testcase name="onSetPage should be called" time="0.645" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Input component" tests="6" file="src/Input/Input.spec.ct.js" timestamp="2023-01-27T12:19:08" failures="0" time="0.7869999999999999">
+        <testcase name="renders the checkbox input" time="0.021" failure="false" error="false" success="true"/>
+        <testcase name="renders the radio input" time="0.014" failure="false" error="false" success="true"/>
+        <testcase name="renders the text input" time="0.016" failure="false" error="false" success="true"/>
+        <testcase name="checks the radio functionality" time="0.109" failure="false" error="false" success="true"/>
+        <testcase name="checks the checkbox functionality" time="0.318" failure="false" error="false" success="true"/>
+        <testcase name="checks the text input functionality" time="0.309" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="ConditionalFilter component" tests="5" file="src/ConditionalFilter/ConditionalFilter.spec.ct.js" timestamp="2023-01-27T13:35:23" failures="0" time="0.859">
+        <testcase name="renders empty" time="0.023" failure="false" error="false" success="true"/>
+        <testcase name="renders disabled" time="0.082" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.129" failure="false" error="false" success="true"/>
+        <testcase name="filter changes on click" time="0.371" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.254" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="SortBy component" tests="3" file="src/PrimaryToolbar/SortBy.spec.ct.js" timestamp="2023-01-27T11:27:42" failures="0" time="0.139">
+        <testcase name="renders empty component" time="0.021" failure="false" error="false" success="true"/>
+        <testcase name="renders with direction set" time="0.016" failure="false" error="false" success="true"/>
+        <testcase name="onSortChange is called" time="0.102" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Input component" tests="6" file="src/Input/Input.spec.ct.js" timestamp="2023-01-27T11:27:37" failures="0" time="0.804">
+        <testcase name="renders the checkbox input" time="0.017" failure="false" error="false" success="true"/>
+        <testcase name="renders the radio input" time="0.015" failure="false" error="false" success="true"/>
+        <testcase name="renders the text input" time="0.032" failure="false" error="false" success="true"/>
+        <testcase name="checks the radio functionality" time="0.116" failure="false" error="false" success="true"/>
+        <testcase name="checks the checkbox functionality" time="0.317" failure="false" error="false" success="true"/>
+        <testcase name="checks the text input functionality" time="0.307" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="PrimaryToolbar component" tests="6" file="src/PrimaryToolbar/PrimaryToolbar.spec.ct.js" timestamp="2023-01-27T13:35:31" failures="0" time="0.7290000000000001">
+        <testcase name="renders empty toolbar with class and id" time="0.026" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - only one item" time="0.026" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - only group" time="0.034" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - only items outside of the group" time="0.05" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - everything" time="0.055" failure="false" error="false" success="true"/>
+        <testcase name="responds to interaction with individual items" time="0.538" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="BulkSelect component" tests="4" file="src/BulkSelect/BulkSelect.spec.ct.js" timestamp="2023-01-27T12:19:02" failures="0" time="0.869">
+        <testcase name="renders checked component without data" time="0.035" failure="false" error="false" success="true"/>
+        <testcase name="renders component with data" time="0.138" failure="false" error="false" success="true"/>
+        <testcase name="cannot be expanded or checked when disabled" time="0.166" failure="false" error="false" success="true"/>
+        <testcase name="buttons (do not) respond to being clicked" time="0.53" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="ConditionalFilter component" tests="5" file="src/ConditionalFilter/ConditionalFilter.spec.ct.js" timestamp="2023-01-27T11:27:32" failures="0" time="0.8270000000000001">
+        <testcase name="renders empty" time="0.021" failure="false" error="false" success="true"/>
+        <testcase name="renders disabled" time="0.082" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.141" failure="false" error="false" success="true"/>
+        <testcase name="filter changes on click" time="0.338" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.245" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="TextFilter component" tests="3" file="src/ConditionalFilter/TextFilter.spec.ct.js" timestamp="2023-01-27T13:35:26" failures="0" time="0.28300000000000003">
+        <testcase name="renders empty" time="0.034" failure="false" error="false" success="true"/>
+        <testcase name="renders disabled with placeholder" time="0.041" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.208" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Breadcrumbs component" tests="3" file="src/Breadcrumbs/Breadcrumbs.spec.ct.js" timestamp="2023-01-27T13:35:20" failures="0" time="0.22">
+        <testcase name="renders without any items" time="0.053" failure="false" error="false" success="true"/>
+        <testcase name="renders multiple items correctly" time="0.041" failure="false" error="false" success="true"/>
+        <testcase name="fires callback when an item is clicked" time="0.126" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Pagination component" tests="5" file="src/Pagination/Pagination.spec.ct.js" timestamp="2023-01-27T11:27:38" failures="0" time="1.279">
+        <testcase name="renders with default values" time="0.037" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.148" failure="false" error="false" success="true"/>
+        <testcase name="no items" time="0.032" failure="false" error="false" success="true"/>
+        <testcase name="onPerPageSelect should be called" time="0.399" failure="false" error="false" success="true"/>
+        <testcase name="onSetPage should be called" time="0.663" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="PrimaryToolbar component" tests="6" file="src/PrimaryToolbar/PrimaryToolbar.spec.ct.js" timestamp="2023-01-27T12:19:12" failures="0" time="0.7250000000000001">
+        <testcase name="renders empty toolbar with class and id" time="0.023" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - only one item" time="0.028" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - only group" time="0.033" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - only items outside of the group" time="0.043" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - everything" time="0.055" failure="false" error="false" success="true"/>
+        <testcase name="responds to interaction with individual items" time="0.543" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="DownloadButton component" tests="3" file="src/DownloadButton/DownloadButton.spec.ct.js" timestamp="2023-01-27T12:19:08" failures="0" time="0.45499999999999996">
+        <testcase name="renders the dropdown" time="0.022" failure="false" error="false" success="true"/>
+        <testcase name="on download CSV callback fired" time="0.218" failure="false" error="false" success="true"/>
+        <testcase name="on download JSON callback fired" time="0.215" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="DownloadButton component" tests="3" file="src/DownloadButton/DownloadButton.spec.ct.js" timestamp="2023-01-27T13:35:26" failures="0" time="0.488">
+        <testcase name="renders the dropdown" time="0.024" failure="false" error="false" success="true"/>
+        <testcase name="on download CSV callback fired" time="0.231" failure="false" error="false" success="true"/>
+        <testcase name="on download JSON callback fired" time="0.233" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="CheckboxFilter component" tests="4" file="src/ConditionalFilter/CheckboxFilter.spec.ct.js" timestamp="2023-01-27T11:27:31" failures="0" time="0.431">
+        <testcase name="renders empty" time="0.021" failure="false" error="false" success="true"/>
+        <testcase name="renders with correct attributes" time="0.026" failure="false" error="false" success="true"/>
+        <testcase name="default value is set" time="0.142" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.242" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Breadcrumbs component" tests="3" file="src/Breadcrumbs/Breadcrumbs.spec.ct.js" timestamp="2023-01-27T11:27:29" failures="0" time="0.228">
+        <testcase name="renders without any items" time="0.052" failure="false" error="false" success="true"/>
+        <testcase name="renders multiple items correctly" time="0.045" failure="false" error="false" success="true"/>
+        <testcase name="fires callback when an item is clicked" time="0.131" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="CheckboxFilter component" tests="4" file="src/ConditionalFilter/CheckboxFilter.spec.ct.js" timestamp="2023-01-27T13:35:22" failures="0" time="0.41100000000000003">
+        <testcase name="renders empty" time="0.02" failure="false" error="false" success="true"/>
+        <testcase name="renders with correct attributes" time="0.027" failure="false" error="false" success="true"/>
+        <testcase name="default value is set" time="0.151" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.213" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="BulkSelect component" tests="4" file="src/BulkSelect/BulkSelect.spec.ct.js" timestamp="2023-01-27T13:35:21" failures="0" time="0.8460000000000001">
+        <testcase name="renders checked component without data" time="0.034" failure="false" error="false" success="true"/>
+        <testcase name="renders component with data" time="0.133" failure="false" error="false" success="true"/>
+        <testcase name="cannot be expanded or checked when disabled" time="0.159" failure="false" error="false" success="true"/>
+        <testcase name="buttons (do not) respond to being clicked" time="0.52" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="BulkSelect component" tests="4" file="src/BulkSelect/BulkSelect.spec.ct.js" timestamp="2023-01-27T11:27:30" failures="0" time="0.875">
+        <testcase name="renders checked component without data" time="0.036" failure="false" error="false" success="true"/>
+        <testcase name="renders component with data" time="0.145" failure="false" error="false" success="true"/>
+        <testcase name="cannot be expanded or checked when disabled" time="0.162" failure="false" error="false" success="true"/>
+        <testcase name="buttons (do not) respond to being clicked" time="0.532" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Pagination component" tests="5" file="src/Pagination/Pagination.spec.ct.js" timestamp="2023-01-27T12:19:10" failures="0" time="1.308">
+        <testcase name="renders with default values" time="0.045" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.163" failure="false" error="false" success="true"/>
+        <testcase name="no items" time="0.029" failure="false" error="false" success="true"/>
+        <testcase name="onPerPageSelect should be called" time="0.407" failure="false" error="false" success="true"/>
+        <testcase name="onSetPage should be called" time="0.664" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="PrimaryToolbar component" tests="6" file="src/PrimaryToolbar/PrimaryToolbar.spec.ct.js" timestamp="2023-01-27T11:27:41" failures="0" time="0.767">
+        <testcase name="renders empty toolbar with class and id" time="0.038" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - only one item" time="0.029" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - only group" time="0.045" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - only items outside of the group" time="0.05" failure="false" error="false" success="true"/>
+        <testcase name="renders items correctly - everything" time="0.054" failure="false" error="false" success="true"/>
+        <testcase name="responds to interaction with individual items" time="0.551" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="GroupFilter component" tests="4" file="src/ConditionalFilter/GroupFilter.spec.ct.js" timestamp="2023-01-27T13:35:24" failures="0" time="0.45299999999999996">
+        <testcase name="renders empty" time="0.021" failure="false" error="false" success="true"/>
+        <testcase name="renders with placeholder" time="0.022" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.174" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.236" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="SortBy component" tests="3" file="src/PrimaryToolbar/SortBy.spec.ct.js" timestamp="2023-01-27T13:35:32" failures="0" time="0.14">
+        <testcase name="renders empty component" time="0.019" failure="false" error="false" success="true"/>
+        <testcase name="renders with direction set" time="0.017" failure="false" error="false" success="true"/>
+        <testcase name="onSortChange is called" time="0.104" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="RadioFilter component" tests="5" file="src/ConditionalFilter/RadioFilter.spec.ct.js" timestamp="2023-01-27T13:35:25" failures="0" time="0.494">
+        <testcase name="renders empty" time="0.019" failure="false" error="false" success="true"/>
+        <testcase name="renders disabled" time="0.025" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.111" failure="false" error="false" success="true"/>
+        <testcase name="renders with default value and placeholder" time="0.128" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.211" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="TextFilter component" tests="3" file="src/ConditionalFilter/TextFilter.spec.ct.js" timestamp="2023-01-27T12:19:07" failures="0" time="0.255">
+        <testcase name="renders empty" time="0.018" failure="false" error="false" success="true"/>
+        <testcase name="renders disabled with placeholder" time="0.023" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.214" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="RadioFilter component" tests="5" file="src/ConditionalFilter/RadioFilter.spec.ct.js" timestamp="2023-01-27T12:19:06" failures="0" time="0.482">
+        <testcase name="renders empty" time="0.019" failure="false" error="false" success="true"/>
+        <testcase name="renders disabled" time="0.027" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.119" failure="false" error="false" success="true"/>
+        <testcase name="renders with default value and placeholder" time="0.124" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.193" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="GroupFilter component" tests="4" file="src/ConditionalFilter/GroupFilter.spec.ct.js" timestamp="2023-01-27T12:19:06" failures="0" time="0.45799999999999996">
+        <testcase name="renders empty" time="0.022" failure="false" error="false" success="true"/>
+        <testcase name="renders with placeholder" time="0.02" failure="false" error="false" success="true"/>
+        <testcase name="renders with data" time="0.173" failure="false" error="false" success="true"/>
+        <testcase name="onChange called" time="0.243" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Actions component" tests="3" file="src/PrimaryToolbar/Actions.spec.ct.js" timestamp="2023-01-27T12:19:11" failures="0" time="0.718">
+        <testcase name="empty component is not rendered" time="0.014" failure="false" error="false" success="true"/>
+        <testcase name="renders component with data" time="0.124" failure="false" error="false" success="true"/>
+        <testcase name="functions called on click" time="0.58" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="Input component" tests="6" file="src/Input/Input.spec.ct.js" timestamp="2023-01-27T13:35:27" failures="0" time="0.7689999999999999">
+        <testcase name="renders the checkbox input" time="0.021" failure="false" error="false" success="true"/>
+        <testcase name="renders the radio input" time="0.016" failure="false" error="false" success="true"/>
+        <testcase name="renders the text input" time="0.016" failure="false" error="false" success="true"/>
+        <testcase name="checks the radio functionality" time="0.107" failure="false" error="false" success="true"/>
+        <testcase name="checks the checkbox functionality" time="0.311" failure="false" error="false" success="true"/>
+        <testcase name="checks the text input functionality" time="0.298" failure="false" error="false" success="true"/>
+    </testsuite>
+    <testsuite name="SortBy component" tests="3" file="src/PrimaryToolbar/SortBy.spec.ct.js" timestamp="2023-01-27T12:19:14" failures="0" time="0.14100000000000001">
+        <testcase name="renders empty component" time="0.018" failure="false" error="false" success="true"/>
+        <testcase name="renders with direction set" time="0.017" failure="false" error="false" success="true"/>
+        <testcase name="onSortChange is called" time="0.106" failure="false" error="false" success="true"/>
+    </testsuite>
+</testsuites>

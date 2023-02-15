@@ -2,6 +2,7 @@ import json
 import tarfile
 from datetime import datetime
 from io import BytesIO
+from typing import Dict
 
 from celery.utils.log import get_task_logger
 from dateutil import parser
@@ -141,6 +142,18 @@ def _add_artifacts(result, testcase, traceback, session):
     session.commit()
 
 
+def _get_properties(xml_element: objectify.Element) -> Dict:
+    """Get the properties from an XML element"""
+    if not hasattr(xml_element, "properties"):
+        return {}
+    properties = {}
+    for prop in xml_element.properties.iterchildren(tag="property"):
+        if not prop.get("key"):
+            continue
+        properties[prop.get("key")] = prop.get("value")
+    return properties
+
+
 def _populate_created_times(run_dict, start_time):
     """To reduce cognitive complexity"""
     if run_dict.get("start_time") and not run_dict.get("created"):
@@ -166,17 +179,17 @@ def _populate_metadata(run_dict, import_record):
         run_dict["source"] = import_record.data["source"]
 
 
-def _populate_result_metadata(run_dict, result_dict, import_record, has_metadata):
+def _populate_result_metadata(run_dict, result_dict, metadata):
     """To reduce cognitive complexity"""
     # Extend the result metadata with import metadata, and add env and component
-    if has_metadata:
-        result_dict["metadata"].update(run_dict["metadata"])
+    if metadata:
+        result_dict["metadata"].update(metadata)
         result_dict["env"] = run_dict.get("env")
         result_dict["component"] = run_dict.get("component")
-    if import_record.data.get("project_id"):
-        result_dict["project_id"] = import_record.data["project_id"]
-    if import_record.data.get("source"):
-        result_dict["source"] = import_record.data["source"]
+    if metadata.get("project_id"):
+        result_dict["project_id"] = metadata["project_id"]
+    if metadata.get("source"):
+        result_dict["source"] = metadata["source"]
 
 
 def _get_test_name_path(testcase):
@@ -221,19 +234,29 @@ def run_junit_import(import_):
         },
     }
 
+    # Get metadata from the XML file
+    metadata = _get_properties(tree)
+
+    # Update metadata from import data
+    if import_record.data.get("metadata"):
+        metadata.update(import_record.data["metadata"])
+
+    # Populate metadata
+    run_dict["data"] = metadata
+    # add env and component directly to the run dict if it exists in the metadata
+    run_dict["env"] = metadata.get("env")
+    run_dict["component"] = metadata.get("component")
+    run_dict["source"] = metadata.get("source")
+
+    # Set the project if it exists
+    if metadata.get("project"):
+        run_dict["project_id"] = get_project_id(metadata["project"])
+
+    # If there are any properties set by the importer, overwrite with those
     if import_record.data.get("project_id"):
         run_dict["project_id"] = import_record.data["project_id"]
     if import_record.data.get("source"):
         run_dict["source"] = import_record.data["source"]
-
-    metadata = None
-    if import_record.data.get("metadata"):
-        # metadata is expected to be a json dict
-        metadata = import_record.data["metadata"]
-        run_dict["data"] = metadata
-        # add env and component directly to the run dict if it exists in the metadata
-        run_dict["env"] = metadata.get("env")
-        run_dict["component"] = metadata.get("component")
 
     # Insert the run, and then update the import with the run id
     run = Run.from_dict(**run_dict)
@@ -266,6 +289,8 @@ def run_junit_import(import_):
         run_data["xfailures"] += int(ts.get("xfailures", 0))
         run_data["xpasses"] += int(ts.get("xpasses", 0))
         run_data["tests"] += int(ts.get("tests", 0))
+        fspath = ts.get("file")
+        run_properties = _get_properties(ts)
 
         for testcase in ts.iterchildren(tag="testcase"):
             test_name, backup_fspath = _get_test_name_path(testcase)
@@ -276,14 +301,19 @@ def run_junit_import(import_):
                 "run_id": run.id,
                 "metadata": {
                     "run": run.id,
-                    "fspath": testcase.get("file") or backup_fspath,
+                    "fspath": fspath or testcase.get("file") or backup_fspath,
                     "line": testcase.get("line"),
                 },
                 "params": {},
                 "source": ts.get("name"),
             }
+            # If the JUnit XML has a properties object, add those properties in
+            result_properties = {}
+            result_properties.update(metadata)
+            result_properties.update(run_properties)
+            result_properties.update(_get_properties(testcase))
 
-            _populate_result_metadata(run_dict, result_dict, import_record, metadata is not None)
+            _populate_result_metadata(run_dict, result_dict, result_properties)
             result_dict, traceback = _process_result(result_dict, testcase)
 
             result = Result.from_dict(**result_dict)
