@@ -1,9 +1,9 @@
-# s2i image from https://github.com/sclorg/s2i-python-container/tree/master/3.8
 FROM registry.access.redhat.com/ubi8/python-38
 
 # Add application sources to a directory that the assemble script expects them
 # and set permissions so that the container runs without root access
 USER 0
+RUN dnf install -y libpq-devel python38-devel gcc
 ADD . /tmp/src
 RUN /usr/bin/fix-permissions /tmp/src
 USER 1001

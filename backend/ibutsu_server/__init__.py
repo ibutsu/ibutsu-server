@@ -32,6 +32,9 @@ def maybe_sql_url(conf: Dict[str, Any]) -> Optional[SQLA_URL]:
     host = conf.get("host") or conf.get("hostname")
     database = conf.get("db") or conf.get("database")
     if host and database:
+        query = None
+        if sslmode := conf.get("sslmode"):
+            query = {"sslmode": sslmode}
         return SQLA_URL(
             drivername="postgresql",
             host=host,
@@ -39,7 +42,9 @@ def maybe_sql_url(conf: Dict[str, Any]) -> Optional[SQLA_URL]:
             port=conf.get("port"),
             username=conf.get("user"),
             password=conf.get("password"),
+            query=query,
         )
+    return None
 
 
 def make_celery_redis_url(config: flask.Config, *, envvar: str) -> str:
