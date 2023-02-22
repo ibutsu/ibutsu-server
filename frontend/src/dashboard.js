@@ -34,7 +34,7 @@ import { DeleteModal, NewDashboardModal, NewWidgetWizard, EditWidgetModal } from
 import {
   GenericAreaWidget,
   GenericBarWidget,
-  JenkinsHeatmapWidget,
+  FilterHeatmapWidget,
   ResultAggregatorWidget,
   ResultSummaryWidget
 } from './widgets';
@@ -353,7 +353,17 @@ export class Dashboard extends React.Component {
                 return (
                   <GridItem xl={4} lg={6} md={12} key={widget.id}>
                     {(widget.type === "widget" && widget.widget === "jenkins-heatmap") &&
-                      <JenkinsHeatmapWidget
+                      <FilterHeatmapWidget
+                        title={widget.title}
+                        params={widget.params}
+                        includeAnalysisLink={true}
+                        type='jenkins'
+                        onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                        onEditClick={() => this.onEditWidgetClick(widget.id)}
+                      />
+                    }
+                    {(widget.type === "widget" && widget.widget === "filter-heatmap") &&
+                      <FilterHeatmapWidget
                         title={widget.title}
                         params={widget.params}
                         includeAnalysisLink={true}

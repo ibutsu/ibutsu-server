@@ -22,7 +22,7 @@ import { Settings } from '../settings';
 import { ParamDropdown, WidgetHeader } from '../components/widget-components';
 
 
-export class JenkinsHeatmapWidget extends React.Component {
+export class FilterHeatmapWidget extends React.Component {
   static propTypes = {
     title: PropTypes.string,
     params: PropTypes.object,
@@ -31,21 +31,23 @@ export class JenkinsHeatmapWidget extends React.Component {
     dropdownItems: PropTypes.array,
     includeAnalysisLink: PropTypes.bool,
     onDeleteClick: PropTypes.func,
-    onEditClick: PropTypes.func
+    onEditClick: PropTypes.func,
+    type: PropTypes.string
   }
 
   constructor(props) {
     super(props);
-    this.title = props.title || 'Jenkins Heatmap';
+    this.title = props.title || 'Filter Heatmap';
     this.params = props.params || {};
     this.labelWidth = props.labelWidth || 200;
     this.getHeatmap = this.getHeatmap.bind(this);
     this.onBuildSelect = this.onBuildSelect.bind(this);
+    this.type = props.type || 'filter';
     this.state = {
       data: {heatmap: {}},
       isLoading: true,
       analysisViewId: null,
-      countSkips: 'Yes',
+      countSkips: 'No',
     };
   }
 
@@ -72,8 +74,9 @@ export class JenkinsHeatmapWidget extends React.Component {
 
   getHeatmap() {
     this.setState({isLoading: true})
-    this.getJenkinsAnalysisViewId();
-    HttpClient.get([Settings.serverUrl, 'widget', 'jenkins-heatmap'], this.params)
+    if (this.type === 'jenkins') {
+      this.getJenkinsAnalysisViewId();
+      HttpClient.get([Settings.serverUrl, 'widget', 'jenkins-heatmap'], this.params)
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
         if (!response.ok) {
@@ -86,6 +89,22 @@ export class JenkinsHeatmapWidget extends React.Component {
         this.setState({heatmapError: true});
         console.log(error);
       });
+    } else {
+      HttpClient.get([Settings.serverUrl, 'widget', 'filter-heatmap'], this.params)
+      .then(response => {
+        response = HttpClient.handleResponse(response, 'response');
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response.json();
+      })
+      .then(data => this.setState({data: data, isLoading: false}))
+      .catch(error => {
+        this.setState({heatmapError: true});
+        console.log(error);
+      });
+    }
+
   }
 
   getCellStyle = (background, value, min, max, data, x) => {
@@ -180,7 +199,9 @@ export class JenkinsHeatmapWidget extends React.Component {
 
   onSkipSelect = (value) => {
     this.setState({countSkips: value}, () => {
-      this.props.params.count_skips = (value === 'Yes');
+      if (this.props.type === 'jenkins') {
+        this.props.params.count_skips = (value === 'Yes');
+      }
       this.getHeatmap();
     });
   }
@@ -238,12 +259,14 @@ export class JenkinsHeatmapWidget extends React.Component {
             defaultValue={this.params.builds}
             tooltip={"Set no. of builds to:"}
           />
+          {this.props.type === 'jenkins' &&
           <ParamDropdown
             dropdownItems={['Yes', 'No']}
             handleSelect={this.onSkipSelect}
             defaultValue={this.state.countSkips}
             tooltip="Count skips as failure:"
           />
+          }
         </CardFooter>
         }
       </Card>
