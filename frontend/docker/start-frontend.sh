@@ -16,4 +16,4 @@ else
   echo "window.settings.environment='development';" >> build/settings.js
 fi
 
-/usr/libexec/s2i/run
+npm run -d start
