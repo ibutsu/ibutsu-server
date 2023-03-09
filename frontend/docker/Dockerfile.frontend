@@ -1,11 +1,10 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+# Build the image first
+FROM registry.access.redhat.com/ubi8/ubi-minimal AS builder
 
 ARG NODEJS_VERSION=18
 ENV NODE_ENV=production
 
 WORKDIR /app
-
-USER 0
 
 RUN INSTALL_PKGS="nodejs nodejs-nodemon npm findutils tar" && \
     microdnf module disable nodejs && \
@@ -15,13 +14,28 @@ RUN INSTALL_PKGS="nodejs nodejs-nodemon npm findutils tar" && \
     microdnf clean all && \
     rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
 COPY . /app
-COPY ./docker/start-frontend.sh /usr/bin/start-frontend.sh
-RUN chmod +x /usr/bin/start-frontend.sh
 RUN npm install
 RUN npm run build
-RUN mkdir -p /app/.npm && mkdir -p /.npm && chown -R 1001:0 /app && chown -R 1001:0 /.npm
 
-USER 1001
+# Deploy it using nginx
+FROM registry.access.redhat.com/ubi8/ubi-minimal
+
+ARG NGINX_VERSION=1.20
+
+# rpm -V $INSTALL_PKGS && \
+RUN INSTALL_PKGS="nss_wrapper bind-utils gettext hostname nginx nginx-mod-stream nginx-mod-http-perl" && \
+    microdnf -y module enable nginx:$NGINX_VERSION && \
+    microdnf install -y --nodocs --disableplugin=subscription-manager $INSTALL_PKGS && \
+    nginx -v 2>&1 | grep -qe "nginx/$NGINX_VERSION\." && echo "Found VERSION $NGINX_VERSION" && \
+    microdnf clean all && \
+    rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
+
+WORKDIR /app
+COPY --from=builder /app/build /app
+COPY ./docker/nginx.conf /etc/nginx/nginx.conf
+COPY ./docker/docker-entrypoint.sh /usr/bin/docker-entrypoint.sh
+RUN chmod +x /usr/bin/docker-entrypoint.sh
 
 EXPOSE 8080
-CMD ["/usr/bin/start-frontend.sh"]
+ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]

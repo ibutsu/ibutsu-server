@@ -4,16 +4,16 @@
 # https://levelup.gitconnected.com/handling-multiple-environments-in-react-with-docker-543762989783
 # We do this so that we can have runtime env vars for our REACT application.
 # Build the public/settings.js file with ENV variables
-echo "window.settings = {};" > build/settings.js
+echo "window.settings = {};" > settings.js
 if [[ ! -z "${REACT_APP_SERVER_URL}" ]]; then
-  echo "window.settings.serverUrl='${REACT_APP_SERVER_URL}';" >> build/settings.js
+  echo "window.settings.serverUrl='${REACT_APP_SERVER_URL}';" >> settings.js
 else
-  echo "window.settings.serverUrl='http://localhost:8080/api}';}" >> build/settings.js
+  echo "window.settings.serverUrl='http://localhost:8080/api';" >> settings.js
 fi
 if [[ ! -z "${NODE_ENV}" ]]; then
-  echo "window.settings.environment='${NODE_ENV}';" >> build/settings.js
+  echo "window.settings.environment='${NODE_ENV}';" >> settings.js
 else
-  echo "window.settings.environment='development';" >> build/settings.js
+  echo "window.settings.environment='development';" >> settings.js
 fi
 
-npm run -d start
+exec "$@"
