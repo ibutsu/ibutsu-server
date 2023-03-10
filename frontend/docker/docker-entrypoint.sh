@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+/bin/ln -sf /dev/stdout /var/log/nginx/access.log
+/bin/ln -sf /dev/stderr /var/log/nginx/error.log
+
 # For the frontend container we follow a similar approach to option 4 in:
 # https://levelup.gitconnected.com/handling-multiple-environments-in-react-with-docker-543762989783
 # We do this so that we can have runtime env vars for our REACT application.
