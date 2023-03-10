@@ -4,6 +4,7 @@ export const MONITOR_UPLOAD_TIMEOUT = 1 * 1000;  // 1 second
 export const ALERT_TIMEOUT = 5 * 1000;  // 5 seconds
 export const KNOWN_WIDGETS = [
   'jenkins-heatmap',
+  'filter-heatmap',
   'run-aggregator',
   'result-summary',
   'result-aggregator',
