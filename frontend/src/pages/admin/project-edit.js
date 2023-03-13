@@ -21,6 +21,7 @@ import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
+import { dashboardToOption } from '../../utilities.js';
 
 
 function userToOption(user) {
@@ -55,7 +56,11 @@ export class ProjectEdit extends React.Component {
       users: [],
       owner: null,
       isOwnerOpen: false,
-      filter: ''
+      userFilter: '',
+      dashboards: [],
+      isDashboardOpen: false,
+      selectedDashboard: null,
+      dashboardFilter: ''
     };
   }
 
@@ -72,9 +77,12 @@ export class ProjectEdit extends React.Component {
   }
 
   onSubmitClick = () => {
-    const { project, owner } = this.state;
+    const { project, owner, selectedDashboard } = this.state;
     project.owner_id = owner && owner.user ? owner.user.id : null;
+    project.default_dashboard_id = selectedDashboard && selectedDashboard.dashboard ?
+      selectedDashboard.dashboard.id : null;
     delete project.owner;
+    // delete project.defaultDashboard;
     this.saveProject(project.id || null, project)
       .then(() => this.props.history.goBack())
       .catch((error) => console.error(error));
@@ -101,7 +109,7 @@ export class ProjectEdit extends React.Component {
   }
 
   onOwnerChanged = (value) => {
-    this.setState({filter: value}, this.getUsers);
+    this.setState({userFilter: value}, this.getUsers);
   }
 
   getProject(projectId) {
@@ -111,15 +119,55 @@ export class ProjectEdit extends React.Component {
         return response.json();
       })
       .then(project => {
-        this.setState({project: project, owner: userToOption(project.owner)})
+        this.setState({project: project, owner: userToOption(project.owner),
+                       selectedDashboard: dashboardToOption(project.defaultDashboard)});
       })
       .catch(error => console.error(error));
   }
 
+  onDashboardToggle = (isOpen) => {
+    this.setState({isDashboardOpen: isOpen});
+  };
+
+  onDashboardSelect = (event, value, isPlaceholder) => {
+    if (isPlaceholder) {
+      this.onDashboardClear();
+      return;
+    }
+    this.setState({
+      selectedDashboard: value,
+      isDashboardOpen: false
+    });
+  };
+
+  onDashboardClear = () => {
+    this.setState({
+      selectedDashboard: null,
+      isDashboardOpen: false
+    });
+  }
+
+  onDashboardChanged = (value) => {
+    this.setState({dashboardFilter: value}, this.getDashboards);
+  }
+
+  getDashboards() {
+    let params = {
+      'project_id': this.state.id,
+      'pageSize': 10
+    };
+    if (this.state.dashboardFilter) {
+      params['filter'] = ['title%' + this.state.dashboardFilter];
+    }
+    HttpClient.get([Settings.serverUrl, 'dashboard'], params)
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => this.setState({dashboards: data['dashboards']}));
+  }
+
   getUsers() {
     const params = {};
-    if (this.state.filter) {
-      params['filter'] = ['name%' + this.state.filter];
+    if (this.state.userFilter) {
+      params['filter'] = ['name%' + this.state.userFilter];
     }
     HttpClient.get([Settings.serverUrl, 'admin', 'user'], params)
       .then(response => {
@@ -149,11 +197,12 @@ export class ProjectEdit extends React.Component {
     else {
       this.getProject(this.state.id);
     }
+    this.getDashboards();
     this.getUsers();
   }
 
   render() {
-    const { project, users, owner } = this.state;
+    const { project, users, owner, dashboards, selectedDashboard } = this.state;
     return (
       <React.Fragment>
         <PageSection variant={PageSectionVariants.light}>
@@ -204,6 +253,24 @@ export class ProjectEdit extends React.Component {
                    >
                      {users.map(user => (
                        <SelectOption key={user.id} value={userToOption(user)} description={user.email} />
+                     ))}
+                   </Select>
+                </FormGroup>
+                <FormGroup fieldId="default-dashboard" label="Default dashboard" helperText="The default dashboard for the project">
+                   <Select
+                     variant={SelectVariant.typeahead}
+                     typeAheadAriaLabel="Select dashboard"
+                     onToggle={this.onDashboardToggle}
+                     onSelect={this.onDashboardSelect}
+                     onClear={this.onDashboardClear}
+                     onTypeaheadInputChanged={this.onDashboardChanged}
+                     selections={selectedDashboard}
+                     isOpen={this.state.isDashboardOpen}
+                     aria-labelledby="default-dashboard"
+                     placeholderText="Select dashboard"
+                   >
+                     {dashboards.map(dashboard => (
+                       <SelectOption key={dashboard.id} value={dashboardToOption(dashboard)} description={dashboard.description} />
                      ))}
                    </Select>
                 </FormGroup>

@@ -170,4 +170,4 @@ def upgrade_5(session):
         and projects is not None
         and "default_dashboard_id" not in [col.name for col in projects.columns]
     ):
-        op.alter_column()
+        op.add_column("projects", Column(PortableUUID(), ForeignKey("dashboards.id")))
