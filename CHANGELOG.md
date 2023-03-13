@@ -1,3 +1,25 @@
+Version 2.5.0
+=============
+
+* Add a default dashboard to a project, so that it appears when you select the project
+* Making a start
+* Try to direct the log files to stdout/stderr
+* Try to fix some permissions issues in the container, and send the logs to stdout
+* Use a multi-stage build and use nginx to just serve the static files
+* In OpenShift, /.npm is used
+* Expose the port and build the files at build time
+* New filter-heatmap widget for making flexible heatmaps
+* Hotfix: Frontend container used non-existent script
+* Migrate container images to use UBI8 minimal
+* Adjust container images so that they manually build psycopg2
+* Add target ports to Routes
+* Import the properties if set in JUnit XML
+* Add missing email for superadmin
+* Add OCP templates for AppInterface
+* Auto select fields for MetaFilter
+* metadata.team filter in frontend
+* Fix some issues in the widget config controller
+
 Version 2.4.3
 =============
 
