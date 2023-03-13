@@ -9,7 +9,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
-__version__ = 4
+__version__ = 5
 
 
 def get_upgrade_op(session):
