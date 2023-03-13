@@ -434,6 +434,26 @@ export function projectToOption(project) {
   };
 }
 
+export function dashboardToOption(dashboard) {
+  if (!dashboard) {
+    return '';
+  }
+  return {
+    dashboard: dashboard,
+    toString: function() {
+      return this.dashboard.title;
+    },
+    compareTo: function (value) {
+      if (value.dashboard) {
+        return this.dashboard.id === value.dashboard.id;
+      }
+      else {
+        return this.dashboard.title.toLowerCase().includes(value.toLowerCase());
+      }
+    }
+  };
+}
+
 export function processPyTestPath(path) {
   if (path && path.indexOf('/') === 0) {
     path = path.substring(1);

@@ -96,6 +96,7 @@ class Dashboard(Model, ModelMixin):
     project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True)
     user_id = Column(PortableUUID(), ForeignKey("users.id"), index=True)
     widgets = relationship("WidgetConfig")
+    project = relationship("Project", back_populates="dashboards", foreign_keys=[project_id])
 
 
 class Group(Model, ModelMixin):
@@ -125,17 +126,23 @@ class Project(Model, ModelMixin):
     title = Column(Text, index=True)
     owner_id = Column(PortableUUID(), ForeignKey("users.id"), index=True)
     group_id = Column(PortableUUID(), ForeignKey("groups.id"), index=True)
+    default_dashboard_id = Column(PortableUUID(), ForeignKey("dashboards.id"))
     reports = relationship("Report")
     results = relationship("Result", backref="project")
     runs = relationship("Run", backref="project")
-    dashboards = relationship("Dashboard", backref="project")
-    widget_configs = relationship("WidgetConfig", backref="project")
+    default_dashboard = relationship("Dashboard", foreign_keys=[default_dashboard_id])
+    dashboards = relationship(
+        "Dashboard", back_populates="project", foreign_keys=[Dashboard.project_id]
+    )
+    widget_configs = relationship("WidgetConfig", back_populates="project")
 
     def to_dict(self, with_owner=False):
         """An overridden method to include the owner"""
         project_dict = super().to_dict()
         if with_owner and self.owner:
             project_dict["owner"] = self.owner.to_dict()
+        if self.default_dashboard:
+            project_dict["defaultDashboard"] = self.default_dashboard.to_dict()
         return project_dict
 
 
@@ -207,6 +214,8 @@ class WidgetConfig(Model, ModelMixin):
     weight = Column(Integer, index=True)
     widget = Column(Text, index=True)
 
+    project = relationship("Project", back_populates="widget_configs")
+
 
 class User(Model, ModelMixin):
     __tablename__ = "users"
@@ -229,7 +238,7 @@ class User(Model, ModelMixin):
         return self._password
 
     @password.setter
-    def password(self, value):
+    def password_set(self, value):
         self._password = bcrypt.generate_password_hash(value).decode("utf8")
 
     def check_password(self, plaintext):

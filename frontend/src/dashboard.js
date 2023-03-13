@@ -38,28 +38,7 @@ import {
   ResultAggregatorWidget,
   ResultSummaryWidget
 } from './widgets';
-import { getActiveProject, getActiveDashboard } from './utilities.js';
-
-
-function dashboardToSelect(dashboard) {
-  if (!dashboard) {
-    return '';
-  }
-  return {
-    dashboard: dashboard,
-    toString: function() {
-      return this.dashboard.title;
-    },
-    compareTo: function (value) {
-      if (value.dashboard) {
-        return this.dashboard.id === value.dashboard.id;
-      }
-      else {
-        return this.dashboard.title.toLowerCase().includes(value.toLowerCase());
-      }
-    }
-  };
-}
+import { getActiveProject, getActiveDashboard, dashboardToOption } from './utilities.js';
 
 
 export class Dashboard extends React.Component {
@@ -69,11 +48,11 @@ export class Dashboard extends React.Component {
 
   constructor(props) {
     super(props);
-    let dashboard = getActiveDashboard();
+    let dashboard = getActiveDashboard() || this.getDefaultDashboard();
     this.state = {
       widgets: [],
       dashboards: [],
-      selectedDashboard: dashboardToSelect(dashboard),
+      selectedDashboard: dashboardToOption(dashboard),
       isDashboardSelectorOpen: false,
       isNewDashboardOpen: false,
       isWidgetWizardOpen: false,
@@ -85,6 +64,16 @@ export class Dashboard extends React.Component {
       this.clearDashboards();
       this.getDashboards();
     });
+  }
+
+  getDefaultDashboard() {
+    let project = getActiveProject();
+    if (project && project.defaultDashboard) {
+      return project.defaultDashboard;
+    }
+    else {
+      return null;
+    }
   }
 
   clearDashboards() {
@@ -174,7 +163,7 @@ export class Dashboard extends React.Component {
         this.getDashboards();
         this.setState({
           isNewDashboardOpen: false,
-          selectedDashboard: dashboardToSelect(data)
+          selectedDashboard: dashboardToOption(data)
         }, this.getWidgets);
       });
   }
@@ -276,7 +265,7 @@ export class Dashboard extends React.Component {
     document.title = 'Dashboard | Ibutsu';
     const { widgets } = this.state;
     const project = getActiveProject();
-    const dashboard = getActiveDashboard();
+    const dashboard = getActiveDashboard() || this.getDefaultDashboard();
     return (
       <React.Fragment>
         <PageSection variant={PageSectionVariants.light}>
@@ -303,7 +292,7 @@ export class Dashboard extends React.Component {
                   isPlain
                 >
                   {this.state.dashboards.map(dash => (
-                    <SelectOption key={dash.id} value={dashboardToSelect(dash)} />
+                    <SelectOption key={dash.id} value={dashboardToOption(dash)} />
                   ))}
                 </Select>
               </FlexItem>
