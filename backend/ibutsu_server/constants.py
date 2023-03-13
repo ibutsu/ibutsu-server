@@ -107,6 +107,34 @@ WIDGET_TYPES = {
         ],
         "type": "widget",
     },
+    "filter-heatmap": {
+        "id": "filter-heatmap",
+        "title": "Filtered Heatmap",
+        "description": "A heatmap of filtered test runs.",
+        "params": [
+            {
+                "name": "filters",
+                "description": "The filters for the runs to be included" " in the query.",
+                "type": "string",
+                "required": True,
+            },
+            {
+                "name": "builds",
+                "description": "The number of builds to analyze.",
+                "type": "integer",
+                "default": 5,
+                "required": True,
+            },
+            {
+                "name": "group_field",
+                "description": "The field in a result to group by, typically 'component'",
+                "type": "string",
+                "required": True,
+                "default": "component",
+            },
+        ],
+        "type": "widget",
+    },
     "run-aggregator": {
         "id": "run-aggregator",
         "title": "Run Aggregation",

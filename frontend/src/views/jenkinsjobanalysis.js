@@ -13,7 +13,7 @@ import {
   getActiveProject,
   parseFilter,
 } from '../utilities';
-import { JenkinsHeatmapWidget, GenericAreaWidget, GenericBarWidget } from '../widgets';
+import { FilterHeatmapWidget, GenericAreaWidget, GenericBarWidget } from '../widgets';
 import { ParamDropdown } from '../components';
 import { HEATMAP_MAX_BUILDS } from '../constants'
 
@@ -229,7 +229,7 @@ export class JenkinsJobAnalysisView extends React.Component {
       <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
         <Tab eventKey='heatmap' title={'Heatmap'}>
           {!isLoading && activeTab === "heatmap" &&
-          <JenkinsHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true} labelWidth={400}/>
+          <FilterHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true} labelWidth={400} type='jenkins'/>
           }
         </Tab>
         <Tab eventKey='overall-health' title={'Overall Health'}>
