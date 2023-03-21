@@ -152,6 +152,9 @@ export class ProjectEdit extends React.Component {
   }
 
   getDashboards() {
+    if (!this.state.id || !this.state.project) {
+      return;
+    }
     let params = {
       'project_id': this.state.id,
       'pageSize': 10
