@@ -307,6 +307,13 @@ def run_junit_import(import_):
                 "params": {},
                 "source": ts.get("name"),
             }
+
+            # If there are any properties set by the importer, overwrite with those
+            if import_record.data.get("project_id"):
+                result_dict["project_id"] = import_record.data["project_id"]
+            if import_record.data.get("source"):
+                result_dict["source"] = import_record.data["source"]
+
             # If the JUnit XML has a properties object, add those properties in
             result_properties = {}
             result_properties.update(metadata)
