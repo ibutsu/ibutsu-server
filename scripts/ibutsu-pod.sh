@@ -190,8 +190,7 @@ podman run -d \
        -w /mnt \
        -v./frontend:/mnt/:Z \
        node:16 \
-       /bin/bash -c 'npm install &&
-                     CI=1 npm run devserver'
+       /bin/bash -c 'npm install && CI=1 npm run devserver' > /dev/null
 echo "done."
 echo -n "Waiting for frontend to respond..."
 until $(curl --output /dev/null --silent --head --fail http://localhost:3000); do

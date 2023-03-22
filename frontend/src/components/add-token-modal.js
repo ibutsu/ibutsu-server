@@ -76,6 +76,7 @@ export class AddTokenModal extends React.Component {
   render () {
     return (
       <Modal
+        id="add-token-modal"
         variant={ModalVariant.small}
         title="Add Token"
         isOpen={this.props.isOpen}
@@ -113,6 +114,7 @@ export class AddTokenModal extends React.Component {
             isRequired
           >
             <DatePicker
+              appendTo={() => document.getElementById('add-token-modal')}
               onChange={this.onExpiryDateChange}
               value={this.state.expiryDate}
               inputProps={{
