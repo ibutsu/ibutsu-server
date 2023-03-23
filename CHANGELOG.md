@@ -1,3 +1,9 @@
+Version 2.5.1
+=============
+
+* Fix #441 where project id was not being applied to the results
+* Some bug fixes for tokens and projects
+
 Version 2.5.0
 =============
 
