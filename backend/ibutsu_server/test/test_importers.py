@@ -35,7 +35,9 @@ class TestImporterTasks(BaseTestCase):
     def test_junit_import(self, mocked_session, mocked_update, MockImport, MockImportFile):
         """Test the junit importer"""
         mocked_import = {"id": "12345"}
-        mocked_record = MagicMock(data={})
+        mocked_record = MagicMock(
+            data={}, filename="run-f56b3831-0813-484a-809f-53d4c36a10a5.ibutsu.xml"
+        )
         MockImport.query.get.return_value = mocked_record
         mocked_file = MagicMock(content=XML_FILE.open().read().encode("utf8"))
         MockImportFile.query.filter.return_value.first.return_value = mocked_file
@@ -53,6 +55,9 @@ class TestImporterTasks(BaseTestCase):
         ]
         MockImportFile.query.filter.assert_called_once()
         MockImportFile.query.filter.return_value.first.assert_called_once()
+        assert (
+            mocked_session.add.call_args_list[0][0][0].id == "f56b3831-0813-484a-809f-53d4c36a10a5"
+        )
 
     @patch("ibutsu_server.tasks.importers.ImportFile")
     @patch("ibutsu_server.tasks.importers.Import")
@@ -63,7 +68,7 @@ class TestImporterTasks(BaseTestCase):
     ):
         """Test the junit importer"""
         mocked_import = {"id": "12345"}
-        mocked_record = MagicMock(data={"metadata": {"job_name": "foo"}})
+        mocked_record = MagicMock(data={"metadata": {"job_name": "foo"}}, filename="junit.xml")
         MockImport.query.get.return_value = mocked_record
         mocked_file = MagicMock(content=XML_FILE_COMBINED.open().read().encode("utf8"))
         MockImportFile.query.filter.return_value.first.return_value = mocked_file
@@ -92,7 +97,7 @@ class TestImporterTasks(BaseTestCase):
     ):
         """Test the junit importer"""
         mocked_import = {"id": "12345"}
-        mocked_record = MagicMock(data={})
+        mocked_record = MagicMock(data={}, filename="junit.xml")
         MockImport.query.get.return_value = mocked_record
         mocked_file = MagicMock(content=XML_FILE_PROPERTIES.open().read().encode("utf8"))
         MockImportFile.query.filter.return_value.first.return_value = mocked_file
@@ -121,7 +126,7 @@ class TestImporterTasks(BaseTestCase):
     ):
         """Test the junit importer"""
         mocked_import = {"id": "12345"}
-        mocked_record = MagicMock(data={"metadata": {"job_name": "foo"}})
+        mocked_record = MagicMock(data={"metadata": {"job_name": "foo"}}, filename="junit.xml")
         MockImport.query.get.return_value = mocked_record
         mocked_file = MagicMock(content=XML_FILE_COLLECTION.open().read().encode("utf8"))
         MockImportFile.query.filter.return_value.first.return_value = mocked_file

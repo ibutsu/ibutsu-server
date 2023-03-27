@@ -1,4 +1,5 @@
 import json
+import re
 import tarfile
 from datetime import datetime
 from io import BytesIO
@@ -20,6 +21,9 @@ from lxml import objectify
 
 
 log = get_task_logger(__name__)
+uuid_pattern = re.compile(
+    "([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})", re.IGNORECASE
+)
 
 
 def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
@@ -233,6 +237,10 @@ def run_junit_import(import_):
             "tests": int(tree.get("tests", 0)),
         },
     }
+
+    # If the filename contains a uuid4, let's use that for the run ID
+    if match := uuid_pattern.search(import_record.filename):
+        run_dict["id"] = match.group(1)
 
     # Get metadata from the XML file
     metadata = _get_properties(tree)
