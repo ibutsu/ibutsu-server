@@ -65,8 +65,9 @@ def add_report(report_parameters=None):
     report = Report.from_dict(**report_dict)
     session.add(report)
     session.commit()
-    REPORTS[report_parameters["type"]]["func"].delay(report.to_dict())
-    return report.to_dict(), 201
+    report_dict.update(report.to_dict())
+    REPORTS[report_parameters["type"]]["func"].delay(report_dict)
+    return report_dict, 201
 
 
 @validate_uuid

@@ -88,6 +88,8 @@ def _update_report(report):
     report_record.update(report)
     session.add(report_record)
     session.commit()
+    # Reference passing above removes the ID. Re-instate it via the to_dict() method
+    report.update(report_record.to_dict())
 
 
 def _set_report_status(report_id, status):
