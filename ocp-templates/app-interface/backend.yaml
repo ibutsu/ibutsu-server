@@ -110,6 +110,18 @@ objects:
             value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
             value: https://${BACKEND_ROUTE}
+          - name: KEYCLOAK_BASE_URL
+            value: ${KEYCLOAK_BASE_URL}
+          - name: KEYCLOAK_CLIENT_ID
+            value: ${KEYCLOAK_CLIENT_ID}
+          - name: KEYCLOAK_REALM
+            value: ${KEYCLOAK_REALM}
+          - name: KEYCLOAK_NAME
+            value: ${KEYCLOAK_NAME}
+          - name: KEYCLOAK_ICON
+            value: ${KEYCLOAK_ICON}
+          - name: USER_LOGIN_ENABLED
+            value: ${USER_LOGIN_ENABLED}
           image: quay.io/ibutsu/backend:${IMAGE_TAG}
           imagePullPolicy: IfNotPresent
           livenessProbe:
@@ -191,6 +203,30 @@ parameters:
   displayName: Frontend Route
   description: The URL of the frontend of the Ibutsu server
   value: ibutsu.example.com
+- name: USER_LOGIN_ENABLED
+  displayName: User Login Enabled
+  description: Logging in with username and password enabled
+  value: true
+- name: KEYCLOAK_BASE_URL
+  displayName: Base URL of Keycloak server
+  description: The base URL of the Keycloak server
+  value: http://keycloak.example.com
+- name: KEYCLOAK_REALM
+  displayName: Keycloak Realm
+  description: The realm of the Keycloak client
+  value: ibutsu
+- name: KEYCLOAK_CLIENT_ID
+  displayName: Keycloak Client ID
+  description: The client ID used when authenticating via Keycloak
+  value: ibutsu
+- name: KEYCLOAK_NAME
+  displayName: Name shown in UI
+  description: The SSO method name shown in the UI when logging in
+  value: Keycloak
+- name: KEYCLOAK_ICON
+  displayName: Icon shown in UI
+  description: The icon shown in the UI when logging in
+  value: keycloak
 - name: IMAGE_TAG
   displayName: Image Tag
   description: The tag for the container image
