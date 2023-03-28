@@ -206,7 +206,7 @@ parameters:
 - name: USER_LOGIN_ENABLED
   displayName: User Login Enabled
   description: Logging in with username and password enabled
-  value: true
+  value: "true"
 - name: KEYCLOAK_BASE_URL
   displayName: Base URL of Keycloak server
   description: The base URL of the Keycloak server
