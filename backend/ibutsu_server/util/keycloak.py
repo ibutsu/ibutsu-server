@@ -14,7 +14,7 @@ def get_keycloak_config(is_private=False):
     backend_url = current_app.config.get("BACKEND_URL", "http://localhost:8080/api")
     if not backend_url.endswith("/api"):
         backend_url += "/api"
-    server_url = current_app.config.get("KEYCLOAK_BASE_URL")
+    server_url = current_app.config["KEYCLOAK_BASE_URL"]
     if not server_url.endswith("auth"):
         server_url = build_url(server_url, "auth")
     realm = current_app.config.get("KEYCLOAK_REALM")
@@ -30,6 +30,12 @@ def get_keycloak_config(is_private=False):
         config["icon"] = current_app.config["KEYCLOAK_ICON"]
     if current_app.config.get("KEYCLOAK_NAME"):
         config["display_name"] = current_app.config["KEYCLOAK_NAME"]
+    if current_app.config.get("KEYCLOAK_VERIFY_SSL"):
+        config["verify_ssl"] = current_app.config["KEYCLOAK_VERIFY_SSL"].lower()[0] in [
+            "y",
+            "t",
+            "1",
+        ]
     if is_private:
         config["user_url"] = build_url(realm_base_url, "protocol/openid-connect/userinfo")
         config["token_url"] = build_url(realm_base_url, "protocol/openid-connect/token")
@@ -40,7 +46,9 @@ def get_user_from_keycloak(auth_data):
     """Get a user object from the keycloak server"""
     config = get_keycloak_config(is_private=True)
     response = requests.get(
-        config["user_url"], headers={"Authorization": "Bearer " + auth_data["access_token"]}
+        config["user_url"],
+        headers={"Authorization": "Bearer " + auth_data["access_token"]},
+        verify=config.get("verify_ssl", True),
     )
     if response.status_code == 200:
         user_json = response.json()

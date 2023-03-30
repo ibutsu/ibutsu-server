@@ -75,7 +75,10 @@ def _get_user_from_provider(provider, provider_config, code):
         if provider_config.get("client_secret"):
             payload["client_secret"] = provider_config["client_secret"]
         response = requests.post(
-            provider_config["token_url"], data=payload, headers={"Accept": "application/json"}
+            provider_config["token_url"],
+            data=payload,
+            headers={"Accept": "application/json"},
+            verify=provider_config.get("verify_ssl", True),
         )
         if response.status_code == 200:
             if provider == "keycloak":
