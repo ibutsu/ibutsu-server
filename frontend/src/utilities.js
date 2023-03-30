@@ -152,6 +152,18 @@ export function buildBadge(key, value, isRead, onClick) {
   }
 }
 
+export function generateId(length) {
+    let resultId = '';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charsLength = chars.length;
+    let counter = 0;
+    while (counter < length) {
+      resultId += chars.charAt(Math.floor(Math.random() * charsLength));
+      counter += 1;
+    }
+    return resultId;
+}
+
 export function resultToRow(result, filterFunc) {
   let resultIcon = getIconForResult(result.result);
   let markers = [];
@@ -195,7 +207,7 @@ export function resultToRow(result, filterFunc) {
   }
   return {
     "cells": [
-      {title: <React.Fragment><Link to={`/results/${result.id}`}>{result.test_id}</Link> {markers}</React.Fragment>},
+      {title: <React.Fragment><Link to={`/results/${result.id}`} key={result.id}>{result.test_id}</Link> {markers}</React.Fragment>},
       {title: runLink},
       {title: <React.Fragment><span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span> {classification}</React.Fragment>},
       {title: round(result.duration) + 's'},
@@ -210,21 +222,21 @@ export function resultToClassificationRow(result, index, filterFunc) {
   let exceptionBadge;
 
   if (filterFunc) {
-    exceptionBadge = buildBadge('exception_name', result.metadata.exception_name, false,
+    exceptionBadge = buildBadge(`exception_name-${result.id}`, result.metadata.exception_name, false,
       () => filterFunc('metadata.exception_name', result.metadata.exception_name));
   }
   else {
-    exceptionBadge = buildBadge('exception_name', result.metadata.exception_name, false);
+    exceptionBadge = buildBadge(`exception_name-${result.id}`, result.metadata.exception_name, false);
   }
 
   if (result.metadata && result.metadata.component) {
-    markers.push(<Badge key="component">{result.metadata.component}</Badge>);
+    markers.push(<Badge key={`component-${result.id}`}>{result.metadata.component}</Badge>);
   }
   if (result.metadata && result.metadata.markers) {
     for (const marker of result.metadata.markers) {
       // Don't add duplicate markers
       if (markers.filter(m => m.key === marker.name).length === 0) {
-        markers.push(<Badge isRead key={marker.name}>{marker.name}</Badge>);
+        markers.push(<Badge isRead key={`${marker.name}-${generateId(5)}`}>{marker.name}</Badge>);
       }
     }
   }

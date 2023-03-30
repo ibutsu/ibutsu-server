@@ -28,39 +28,32 @@ import {
   toTitleCase,
   parseFilter,
   getSpinnerRow,
-  getActiveProject
+  getActiveProject,
 } from './utilities';
-import { FilterTable } from './components';
+import { DownloadButton, FilterTable } from './components';
 import { OPERATIONS } from './constants';
 
 
 function reportToRow(report) {
   let reportStatus = 'pending';
-  let reportLink = '(no filename yet)';
-  let actions = [];
+  let reportName = report.filename ? report.filename : '(report pending)';
+  let actions = '';
   if (report.status !== undefined && !!report.status) {
     reportStatus = report.status;
   }
   let statusIcon = getIconForStatus(reportStatus);
-  if (report.status === "empty") {
-    actions.push("Filter(s) returned no data");
+  if (report.status === 'empty') {
+    actions = 'Filter(s) returned no data';
   }
-  if (reportStatus !== 'done') {
-    reportLink = report.filename;
+  if (reportStatus === 'done' && report.url) {
+    actions = <DownloadButton url={report.url} key={report.url}>Download</DownloadButton>;
   }
-  else if (report.view_url !== undefined && !!report.view_url) {
-    reportLink = <a href={report.view_url} target="_blank" rel="noopener noreferrer">{report.filename}</a>;
-    actions.push(<Button component="a" href={report.view_url} target="_blank" rel="noopener noreferrer" key={report.view_url}>View</Button>);
-    actions.push(" ");
-    actions.push(<Button component="a" href={report.download_url} key={report.download_url}>Download</Button>);
-  }
-  else if (report.url !== undefined && !!report.url) {
-    reportLink = <a href={report.url}>{report.filename}</a>;
-    actions.push(<Button component="a" href={report.url} key={report.url}>Download</Button>);
+  else if (reportStatus === 'done' && report.download_url) {
+    actions = <DownloadButton url={report.download_url} key={report.download_url}>Download</DownloadButton>;
   }
   return {
     cells: [
-      {title: reportLink, data: report},
+      {title: reportName, data: report},
       {title: <span className={reportStatus}>{statusIcon} {toTitleCase(reportStatus)}</span>},
       {title: actions}
     ]
