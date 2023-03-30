@@ -120,6 +120,8 @@ objects:
             value: ${KEYCLOAK_NAME}
           - name: KEYCLOAK_ICON
             value: ${KEYCLOAK_ICON}
+          - name: KEYCLOAK_VERIFY_SSL
+            value: ${KEYCLOAK_VERIFY_SSL}
           - name: USER_LOGIN_ENABLED
             value: ${USER_LOGIN_ENABLED}
           image: quay.io/ibutsu/backend:${IMAGE_TAG}
@@ -227,6 +229,10 @@ parameters:
   displayName: Icon shown in UI
   description: The icon shown in the UI when logging in
   value: keycloak
+- name: KEYCLOAK_VERIFY_SSL
+  displayName: Verify SSL
+  description: "Whether to verify the SSL certificate. WARNING: setting this to false is insecure!"
+  value: "true"
 - name: IMAGE_TAG
   displayName: Image Tag
   description: The tag for the container image
