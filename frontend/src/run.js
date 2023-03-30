@@ -9,8 +9,6 @@ import {
   CardHeader,
   CardBody,
   CardFooter,
-  ClipboardCopy,
-  ClipboardCopyVariant,
   DataList,
   DataListCell,
   DataListItem,
@@ -21,7 +19,6 @@ import {
   Grid,
   GridItem,
   Label,
-  Modal,
   PageSection,
   PageSectionVariants,
   Spinner,
@@ -46,7 +43,6 @@ import { Link } from 'react-router-dom';
 import ReactJson from 'react-json-view';
 import Editor from '@monaco-editor/react';
 
-import { AuthService } from './services/auth';
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
@@ -59,6 +55,7 @@ import {
   round
 } from './utilities';
 import {
+  DownloadButton,
   EmptyObject,
   FilterTable,
   ClassifyFailuresTable,
@@ -149,9 +146,7 @@ export class Run extends React.Component {
       resultsTree: {core: {data: []}},
       treeData: [],
       artifacts: [],
-      artifactTabs: [],
-      currentArtifactId: '',
-      isDownloadModalOpen: false
+      artifactTabs: []
     };
     // Watch the history to update tabs
     this.unlisten = this.props.history.listen(() => {
@@ -289,6 +284,7 @@ export class Run extends React.Component {
       .then(data => {
         let artifactTabs = [];
         data.artifacts.forEach((artifact) => {
+          let downloadUrl = `${Settings.serverUrl}/artifact/${artifact.id}/download`;
           HttpClient.get([Settings.serverUrl, 'artifact', artifact.id, 'view'])
             .then(response => {
               let contentType = response.headers.get('Content-Type');
@@ -301,7 +297,7 @@ export class Run extends React.Component {
                           <Editor fontFamily="Noto Sans Mono, Hack, monospace" theme="vs-dark" value={text} height="40rem" options={{readOnly: true}} />
                         </CardBody>
                         <CardFooter>
-                          <Button onClick={() => this.onDownloadClick(artifact.id)}>Download {artifact.filename}</Button>
+                          <DownloadButton url={downloadUrl} filename={artifact.filename}>Download {artifact.filename}</DownloadButton>
                         </CardFooter>
                       </Card>
                     </Tab>
@@ -319,7 +315,7 @@ export class Run extends React.Component {
                           <img src={imageUrl} alt={artifact.filename}/>
                         </CardBody>
                         <CardFooter>
-                          <Button onClick={() => this.onDownloadClick(artifact.id)}>Download {artifact.filename}</Button>
+                          <DownloadButton url={downloadUrl} filename={artifact.filename}>Download {artifact.filename}</DownloadButton>
                         </CardFooter>
                       </Card>
                     </Tab>
@@ -471,14 +467,6 @@ export class Run extends React.Component {
         console.error('Error fetching result data:', error);
       });
   }
-
-  onDownloadModalClose = () => {
-    this.setState({isDownloadModalOpen: false});
-  };
-
-  onDownloadClick = (artifactId) => {
-    this.setState({currentArtifactId: artifactId, isDownloadModalOpen: true});
-  };
 
   componentDidMount() {
     this.getRun();
@@ -846,29 +834,6 @@ export class Run extends React.Component {
             </Tabs>
           }
         </PageSection>
-        <Modal
-          title="Download Artifact"
-          variant="medium"
-          isOpen={this.state.isDownloadModalOpen}
-          onClose={this.onDownloadModalClose}
-          actions={[
-            <Button
-              key="ok"
-              variant="primary"
-              ouiaId="artifacts-download-modal-ok"
-              onClick={this.onDownloadModalClose}
-            >
-              OK
-            </Button>
-          ]}
-        >
-          <Text variant="p">In order to download an artifact, you will need to install the
-            <a href="https://pypi.org/project/ibutsu-utils"><code>ibutsu-utils</code></a> package from
-            PyPI, and the run the following command:</Text>
-            <ClipboardCopy isCode isExpanded hoverTip="Copy" clickTip="Copied!" variant={ClipboardCopyVariant.expansion} style={{backgroundColor: "rgba(0, 0, 0, 0.2)"}}>
-              ibutsu-download -H {Settings.serverUrl} -t {AuthService.getToken()} {this.state.currentArtifactId}
-            </ClipboardCopy>
-        </Modal>
       </React.Fragment>
     );
   }

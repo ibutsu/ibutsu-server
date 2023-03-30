@@ -50,7 +50,12 @@ export function buildUrl(url, params) {
       query.push(esc(key) + '=' + esc(value));
     }
   }
-  return url + '?' + query.join('&');
+  if (query.length > 0) {
+    return url + '?' + query.join('&');
+  }
+  else {
+    return url;
+  }
 }
 
 export class HttpClient {
