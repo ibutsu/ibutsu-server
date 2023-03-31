@@ -26,17 +26,25 @@ import {
   Tabs,
   TextContent,
   Text,
-  TextInput
+  TextInput,
+  TreeView
 } from '@patternfly/react-core';
 import {
   CatalogIcon,
   ChevronRightIcon,
+  CheckCircleIcon,
   CodeIcon,
+  ExclamationCircleIcon,
+  FileIcon,
   FileAltIcon,
   FileImageIcon,
+  FolderIcon,
+  FolderOpenIcon,
   InfoCircleIcon,
   MessagesIcon,
-  RepositoryIcon
+  QuestionCircleIcon,
+  RepositoryIcon,
+  TimesCircleIcon
 } from '@patternfly/react-icons';
 
 import { Link } from 'react-router-dom';
@@ -47,7 +55,6 @@ import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
   cleanPath,
-  convertDate,
   getSpinnerRow,
   getTheme,
   processPyTestPath,
@@ -62,7 +69,6 @@ import {
   ResultView,
   TabTitle
 } from './components';
-import TreeView from 'react-simple-jstree';
 
 const MockRun = {
   id: null,
@@ -75,24 +81,6 @@ const MockRun = {
     xpasses: 0,
     tests: 0
   }
-};
-
-const colors = {
-  'failed': 'rgb(201, 8, 19)',
-  'error': 'rgb(223, 169, 78)',
-  'passed': 'rgb(92, 183, 92)',
-  'skipped': 'rgb(28, 172, 233)',
-  'xfailed': 'rgb(132, 118, 209)',
-  'xpassed': 'rgb(31, 0, 102)',
-};
-
-const icons = {
-  'failed': 'pf-icon-error-circle-o',
-  'error': 'pf-icon-warning-triangle',
-  'passed': 'pf-icon-ok',
-  'skipped': 'pf-icon-off',
-  'xfailed': 'pf-icon-ok',
-  'xpassed': 'pf-icon-error-circle-o',
 };
 
 const match = (node, text) => {
@@ -143,8 +131,9 @@ export class Run extends React.Component {
       isRunValid: false,
       isEmpty: false,
       isError: false,
-      resultsTree: {core: {data: []}},
+      resultsTree: [],
       treeData: [],
+      activeItems: [],
       artifacts: [],
       artifactTabs: []
     };
@@ -162,120 +151,95 @@ export class Run extends React.Component {
     return this.props.location.hash !== '' ? this.props.location.hash.substring(1) : defaultValue;
   }
 
+  onTreeItemSelect = (event, treeItem) => {
+    if (treeItem && ! treeItem.children) {
+      this.setState({activeItems: [treeItem], testResult: treeItem._testResult});
+    }
+  }
+
   buildTree(results) {
-    let tests = {
-      '_sub': {
-      },
-      '_stats': {
-        'count': 0,
-        'passed': 0,
-        'failed': 0,
-        'skipped': 0,
-        'error': 0,
-        'xpassed': 0,
-        'xfailed': 0
-      },
-      '_duration': 0.0
-    };
-    results.forEach((testResult) => {
-      this.buildTreeObject(cleanPath(testResult.metadata.fspath) + '/' + testResult.test_id, tests, testResult);
-    });
-    let cloud = [];
-    this.buildJSTreeStructure(tests, cloud);
-    return {core: {data: cloud}};
-  }
+    function getPassPercent(stats) {
+      let percent = 'N/A';
+      if (stats.count > 0) {
+        percent = Math.round(((stats.passed + stats.xfailed) / stats.count * 100));
+      }
+      return percent;
+    }
 
-  buildTreeObject(path, container, data) {
-    let segs;
-    if (!Array.isArray(path)) {
-      segs = processPyTestPath(path);
+    function getBadgeClass(passPercent) {
+      let className = 'failed';
+      if (passPercent > 75) {
+        className = 'error';
+      }
+      if (passPercent > 90) {
+        className = 'passed';
+      }
+      return className;
     }
-    else {
-      segs = path;
-    }
-    let head = segs[0];
-    let end = segs.slice(1);
-    if (end.length === 0) {
-      container['_sub'][head] = data;
-      if (Object.prototype.hasOwnProperty.call(container['_stats'], data['result'])) {
-        container['_stats'][data['result']] += 1;
-      }
-      else {
-        container['_stats']['failed'] += 1;
-      }
-      container['_stats']['count'] += 1;
-      container['_duration'] += data['duration'] || 0.0;
-      container['_test_result'] = data;
-    }
-    else {
-      if (Object.prototype.hasOwnProperty.call(container['_sub'], head) === false) {
-        container['_sub'][head] = {
-          '_sub': {},
-          '_stats': {
-            'count': 0,
-            'passed': 0,
-            'failed': 0,
-            'skipped': 0,
-            'error': 0,
-            'xpassed': 0,
-            'xfailed': 0
-          },
-          '_duration': 0.0
-        };
-      }
-      this.buildTreeObject(end, container['_sub'][head], data);
-      if (Object.prototype.hasOwnProperty.call(container['_stats'], data['result'])) {
-        container['_stats'][data['result']] += 1;
-      }
-      else {
-        container['_stats']['failed'] += 1;
-      }
-      container['_stats']['count'] += 1;
-      container['_duration'] += data['duration'] || 0.0;
-    }
-  }
 
-  buildJSTreeStructure(container, dest){
-    Object.keys(container['_sub']).forEach(key => {
-      let testResult = container['_sub'][key];
-      if (Object.prototype.hasOwnProperty.call(testResult, '_sub')) {
-        let children = [];
-        let percent = '';
-        if (testResult['_stats']['count'] !== 0) {
-          percent = Math.round(((testResult['_stats']['passed'] + testResult['_stats']['xfailed']) / testResult['_stats']['count']) * 100);
+    let treeStructure = [];
+    results.forEach(testResult => {
+      const pathParts = processPyTestPath(cleanPath(testResult.metadata.fspath));
+      let children = treeStructure;
+      pathParts.forEach(dirName => {
+        let child = children.find(item => item.name == dirName);
+        if (!child) {
+          child = {
+            name: dirName,
+            id: dirName,
+            children: [],
+            hasBadge: true,
+            _stats: {
+              count: 0,
+              passed: 0,
+              failed: 0,
+              skipped: 0,
+              error: 0,
+              xpassed: 0,
+              xfailed: 0
+            },
+          };
+          if (dirName.endsWith('.py')) {
+            child.icon = <FileIcon />;
+            child.expandedIcon = <FileIcon />;
+          }
+          children.push(child);
         }
-        else {
-          percent = 'N/A';
-        }
-        let status = 'failed';
-        if (percent > 75) {
-          status = 'error';
-        }
-        if (percent > 90) {
-          status = 'passed';
-        }
-        let percentString = '<span name="mod_lev" class="pf-c-label pf-m-compact" style="padding: 3px; margin:2px; background-color:' + colors[status] + '">' + percent + '%</span>';
-        let durationString = '<span style="color:#aaa"><em>' + convertDate(testResult['_duration']) + '</em></span>';
-        dest.push({
-          text: key + ' ' + percentString + durationString,
-          children: children,
-          state: {"opened": key.includes(".py") ? false : true}  // expand to the level of the test file
-        });
-        this.buildJSTreeStructure(testResult, children)
+        child._stats[testResult.result] += 1;
+        child._stats.count += 1;
+        const passPercent = getPassPercent(child._stats);
+        const className = getBadgeClass(passPercent);
+        child.customBadgeContent = `${passPercent}%`;
+        child.badgeProps = {className: className};
+        children = child.children;
+      });
+      let icon = <QuestionCircleIcon />;
+      if (testResult.result === 'passed') {
+        icon = <CheckCircleIcon />;
       }
-      else if (Object.prototype.hasOwnProperty.call(testResult, 'test_id')) {
-        let color = colors[testResult['result']];
-        let durationString = '<span style="color:#aaa"><em>' + convertDate(testResult['duration'] || 0) + '</em></span>';
-        let icon = '<span style="color:' + color + '";"><i class="pf-icon ' + icons[testResult['result']] + '"></i></span>&nbsp;';
-        dest.push({
-          text: icon + testResult['test_id'] + durationString,
-          data: testResult,
-          id: testResult['id'],
-          icon: false,
-          testResult: testResult
-        });
+      else if (testResult.result === 'failed') {
+        icon = <TimesCircleIcon />;
       }
+      else if (testResult.result === 'error') {
+        icon = <ExclamationCircleIcon />;
+      }
+      else if (testResult.result === 'skipped') {
+        icon = <ChevronRightIcon />;
+      }
+      else if (testResult.result === 'xfailed') {
+        icon = <CheckCircleIcon />;
+      }
+      else if (testResult.result === 'xpassed') {
+        icon = <TimesCircleIcon />;
+      }
+      children.push({
+        id: testResult.id,
+        name: testResult.test_id,
+        icon: <span className={testResult.result}>{icon}</span>,
+        _testResult: testResult
+      });
     });
+    return treeStructure;
   }
 
   getRunArtifacts() {
@@ -475,15 +439,6 @@ export class Run extends React.Component {
   componentWillUnmount() {
     this.unlisten();
   }
-
-  handleJSTreeChange(event, treeEvent) {
-    if (treeEvent.action === 'select_node' && treeEvent.selected) {
-      this.setState({
-        testResult: treeEvent.node.data
-      });
-    }
-  }
-
 
   render() {
     let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0, not_run = 0;
@@ -785,15 +740,15 @@ export class Run extends React.Component {
                         </div>
                       </GridItem>
                       }
-                      {this.state.resultsTree.core.data.length === 0 &&
+                      {this.state.resultsTree.length === 0 &&
                         <GridItem span={12}>
                           <Bullseye><center><Spinner size="xl"/></center></Bullseye>
                         </GridItem>
                       }
-                      {this.state.resultsTree.core.data !== 0 &&
+                      {this.state.resultsTree.length !== 0 &&
                         <React.Fragment>
                           <GridItem span={5}>
-                            <TreeView treeData={this.state.resultsTree} onChange={(e, data) => this.handleJSTreeChange(e, data)}/>
+                            <TreeView data={this.state.resultsTree} activeItems={this.state.activeItem} onSelect={this.onTreeItemSelect} icon={<FolderIcon/>} expandedIcon={<FolderOpenIcon />} />
                           </GridItem>
                           <GridItem span={7}>
                             {this.state.testResult &&
