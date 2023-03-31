@@ -77,14 +77,14 @@ export class ResultSummaryWidget extends React.Component {
 
   render() {
     const themeColors = [
-                  'var(--pf-global--success-color--100)',
-                  'var(--pf-global--danger-color--100)',
-                  'var(--pf-global--info-color--100)',
-                  'var(--pf-global--warning-color--100)',
-                  'var(--pf-global--palette--purple-400)',
-                  'var(--pf-global--palette--purple-700)',
-                  'var(--pf-global--primary-color--100)'
-                ];
+      'var(--pf-global--success-color--100)',
+      'var(--pf-global--danger-color--100)',
+      'var(--pf-global--info-color--100)',
+      'var(--pf-global--warning-color--100)',
+      'var(--pf-global--palette--purple-400)',
+      'var(--pf-global--palette--purple-700)',
+      'var(--pf-global--primary-color--100)'
+    ];
     return (
       <Card>
         <WidgetHeader title={this.title} getDataFunc={this.getResultSummary} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
