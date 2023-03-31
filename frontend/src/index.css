@@ -43,11 +43,11 @@ span.skipped, span.pending {
   color: var(--pf-global--active-color--100);
 }
 
-span.xfailed{
+span.xfailed {
   color: var(--pf-global--palette--purple-400);
 }
 
-span.xpassed{
+span.xpassed {
   color: var(--pf-global--palette--purple-700);
 }
 
