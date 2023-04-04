@@ -1,3 +1,14 @@
+Version 2.5.2
+=============
+
+* Fix up the colours of the fonts of various charts/widgets
+* Migrate to use the built-in TreeView component from PatternFly
+* Check if values are None and default to 0 if they are (fix #418)
+* Add the ability to disable SSL verification
+* Fix the download buttons so that they actually download the artifact or report
+* Parameter should be a string, force the value to be a string
+* Expose the Keycloak login environment in App Interface
+
 Version 2.5.1
 =============
 
