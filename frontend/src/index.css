@@ -251,3 +251,9 @@ div[data-id=widget-param-dropdown] > div {
 :where(.pf-theme-dark) .pf-c-clipboard-copy .pf-c-form-control[readonly] {
   border-bottom-color: var(--pf-global--BorderColor--400) !important;
 }
+
+:where(.pf-theme-dark) {
+  --pf-chart-global--label--Fill: var(--pf-global--Color--100);
+  --pf-chart-axis--tick-label--Fill: var(--pf-global--Color--200);
+  --pf-chart-donut--label--title--Fill: var(--pf-global--Color--100);
+}
