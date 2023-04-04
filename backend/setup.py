@@ -2,7 +2,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 NAME = "ibutsu_server"
-VERSION = "2.5.1"
+VERSION = "2.5.2"
 REQUIRES = [
     "alembic",
     "celery",
