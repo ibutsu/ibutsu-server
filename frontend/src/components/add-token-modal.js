@@ -14,6 +14,15 @@ import {
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
 
+function getToday() {
+  const now = new Date();
+  return now.toISOString().split('T')[0];
+}
+
+function dateParse(val) {
+  return val && val.split('-').length === 3 && new Date(`${val}T00:00:00`);
+}
+
 export class AddTokenModal extends React.Component {
   static propTypes = {
     onSave: PropTypes.func,
@@ -25,7 +34,7 @@ export class AddTokenModal extends React.Component {
     super(props);
     this.state = {
       name: '',
-      expiryDate: '',
+      expiryDate: getToday(),
       isNameValid: true,
       isExpiryValid: true
     };
@@ -115,11 +124,16 @@ export class AddTokenModal extends React.Component {
           >
             <DatePicker
               appendTo={() => document.getElementById('add-token-modal')}
+              dateParse={dateParse}
               onChange={this.onExpiryDateChange}
               value={this.state.expiryDate}
               inputProps={{
                 id: "token-expiry-date",
                 validated: this.state.isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error
+              }}
+              popoverProps={{
+                enableFlip: false,
+                position: 'bottom'
               }}
             />
           </FormGroup>
