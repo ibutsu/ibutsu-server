@@ -104,7 +104,7 @@ if [[ "$CAN_COMMIT" = true ]]; then
     git add . > /dev/null 2>&1
     COMMIT_MSG="Release $NEW_VERSION"
     if [[ $GENERATE_CHANGELOG = true ]]; then
-        COMMIT_MSG="$COMMIT_MSG\n\n$CHANGELOG"
+        COMMIT_MSG="$COMMIT_MSG"$'\n\n'"$CHANGELOG"
     fi
     git commit -q -m "$COMMIT_MSG"
     echo "done, new branch created: $BRANCH_NAME"

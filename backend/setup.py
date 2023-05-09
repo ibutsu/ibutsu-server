@@ -10,7 +10,7 @@ REQUIRES = [
     "flask_bcrypt",
     "flask_cors",
     "flask_mail",
-    "Flask>=2",
+    "Flask>=2,<2.3.0",
     "Flask-SQLAlchemy<3.0",
     "flatdict",
     "google-api-python-client",
