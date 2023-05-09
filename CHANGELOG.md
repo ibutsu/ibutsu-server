@@ -1,3 +1,8 @@
+Version 2.5.3
+=============
+
+* Fix some DatePicker issues
+
 Version 2.5.2
 =============
 
