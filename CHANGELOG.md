@@ -1,3 +1,8 @@
+Version 2.5.4
+=============
+
+* Fix expiry date validation by updating onChange handler
+
 Version 2.5.3
 =============
 
