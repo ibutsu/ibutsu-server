@@ -80,6 +80,9 @@ def create_celery_app(_app=None):
             "ibutsu_server.tasks.runs",
         ],
     )
+    app.conf.redis_socket_timeout = SOCKET_TIMEOUT
+    app.conf.redis_socket_connect_timeout = SOCKET_CONNECT_TIMEOUT
+    app.conf.redis_retry_on_timeout = True
     app.conf.broker_transport_options = app.conf.result_backend_transport_options = {
         "socket_timeout": SOCKET_TIMEOUT,
         "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
