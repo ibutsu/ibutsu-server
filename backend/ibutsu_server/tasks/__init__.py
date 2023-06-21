@@ -16,6 +16,10 @@ task = None
 _celery_app = None
 
 
+SOCKET_TIMEOUT = 5
+SOCKET_CONNECT_TIMEOUT = 5
+
+
 def create_celery_app(_app=None):
     """Create the Celery app, using the Flask app in _app"""
     global task, _celery_app
@@ -67,6 +71,9 @@ def create_celery_app(_app=None):
     app = Celery(
         "ibutsu_server",
         broker=_app.config.get("CELERY_BROKER_URL"),
+        broker_connection_retry=True,
+        broker_connection_retry_on_startup=True,
+        worker_cancel_long_running_tasks_on_connection_loss=True,
         include=[
             "ibutsu_server.tasks.db",
             "ibutsu_server.tasks.importers",
@@ -76,6 +83,13 @@ def create_celery_app(_app=None):
             "ibutsu_server.tasks.runs",
         ],
     )
+    app.conf.redis_socket_timeout = SOCKET_TIMEOUT
+    app.conf.redis_socket_connect_timeout = SOCKET_CONNECT_TIMEOUT
+    app.conf.redis_retry_on_timeout = True
+    app.conf.broker_transport_options = app.conf.result_backend_transport_options = {
+        "socket_timeout": SOCKET_TIMEOUT,
+        "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
+    }
     app.conf.result_backend = _app.config.get("CELERY_RESULT_BACKEND")
     app.Task = IbutsuTask
     # Shortcut for the decorator
@@ -120,7 +134,11 @@ def create_celery_app(_app=None):
 def lock(name, timeout=LOCK_EXPIRE, app=None):
     if not app:
         app = current_app
-    redis_client = Redis.from_url(app.config["CELERY_BROKER_URL"])
+    redis_client = Redis.from_url(
+        app.config["CELERY_BROKER_URL"],
+        socket_timeout=SOCKET_TIMEOUT,
+        socket_connect_timeout=SOCKET_CONNECT_TIMEOUT,
+    )
     try:
         # Get a lock so that we don't run this task concurrently
         logging.info(f"Trying to get a lock for {name}")
