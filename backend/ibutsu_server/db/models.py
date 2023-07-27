@@ -238,11 +238,18 @@ class User(Model, ModelMixin):
         return self._password
 
     @password.setter
-    def password_set(self, value):
+    def password_set(self, value: str):
         self._password = bcrypt.generate_password_hash(value).decode("utf8")
 
     def check_password(self, plaintext):
         return bcrypt.check_password_hash(self.password, plaintext)
+
+    def set_password(self, value: str):
+        """
+        The password setter breaks with an AttributeError, so this is a temporary work-around
+        until that can be resolved.
+        """
+        self._password = bcrypt.generate_password_hash(value).decode("utf8")
 
     def to_dict(self, with_projects=False):
         """An overridden method to include projects"""

@@ -52,15 +52,13 @@ def add_superadmin(
     elif user and not user.is_superadmin:
         user.is_superadmin = True
     else:
-
         user = models.User(
             email=email,
             name=name,
-            password=password,
             is_superadmin=True,
             is_active=True,
         )
-
+        user.set_password(password)
         session.add(user)
 
     session.commit()
