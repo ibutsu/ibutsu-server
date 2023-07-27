@@ -20,7 +20,7 @@ REQUIRES = [
     "gunicorn",
     "kombu",
     "lxml",
-    "psycopg2",
+    "psycopg2-binary",
     "pymongo",
     "python-jose[cryptography]",
     "python-magic",
