@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from datetime import timedelta
 
@@ -7,6 +8,7 @@ from ibutsu_server.db.models import Result
 from ibutsu_server.db.models import Run
 from ibutsu_server.tasks import lock
 from ibutsu_server.tasks import task
+from redis.exceptions import LockError
 
 
 METADATA_TO_COPY = ["jenkins", "tags"]
@@ -37,60 +39,64 @@ def _status_to_summary(status):
 @task(max_retries=1000)
 def update_run(run_id):
     """Update the run summary from the results, this task will retry 1000 times"""
-    with lock(f"update-run-lock-{run_id}"):
-        run = Run.query.get(run_id)
-        if not run:
-            return
+    try:
+        task_name = f"update-run-lock-{run_id}"
+        with lock(task_name):
+            run = Run.query.get(run_id)
+            if not run:
+                return
 
-        # initialize some necessary variables
-        summary = {
-            "errors": 0,
-            "failures": 0,
-            "skips": 0,
-            "tests": 0,
-            "xpasses": 0,
-            "xfailures": 0,
-            "collected": run.summary.get("collected", 0),
-        }
-        run.duration = 0.0
-        metadata = run.data or {}
+            # initialize some necessary variables
+            summary = {
+                "errors": 0,
+                "failures": 0,
+                "skips": 0,
+                "tests": 0,
+                "xpasses": 0,
+                "xfailures": 0,
+                "collected": run.summary.get("collected", 0),
+            }
+            run.duration = 0.0
+            metadata = run.data or {}
 
-        # Fetch all the results for the runs and calculate the summary
-        results = (
-            Result.query.filter(Result.run_id == run_id).order_by(Result.start_time.asc()).all()
-        )
+            # Fetch all the results for the runs and calculate the summary
+            results = (
+                Result.query.filter(Result.run_id == run_id).order_by(Result.start_time.asc()).all()
+            )
 
-        for i, result in enumerate(results):
-            if i == 0:
-                # on the first result, copy over some metadata
-                for column in COLUMNS_TO_COPY:
-                    _copy_column(result, run, column)
+            for i, result in enumerate(results):
+                if i == 0:
+                    # on the first result, copy over some metadata
+                    for column in COLUMNS_TO_COPY:
+                        _copy_column(result, run, column)
 
-                for key in METADATA_TO_COPY:
-                    _copy_result_metadata(result, metadata, key)
+                    for key in METADATA_TO_COPY:
+                        _copy_result_metadata(result, metadata, key)
 
-            key = _status_to_summary(result.result)
-            if key in summary:
-                summary[key] = summary.get(key, 0) + 1
-            # update the number of tests that actually ran
-            summary["tests"] += 1
-            if result.duration:
-                run.duration += result.duration
+                key = _status_to_summary(result.result)
+                if key in summary:
+                    summary[key] = summary.get(key, 0) + 1
+                # update the number of tests that actually ran
+                summary["tests"] += 1
+                if result.duration:
+                    run.duration += result.duration
 
-        # determine the number of passes
-        summary["passes"] = summary["tests"] - (
-            summary["errors"]
-            + summary["xpasses"]
-            + summary["xfailures"]
-            + summary["failures"]
-            + summary["skips"]
-        )
-        # determine the number of tests that didn't run
-        summary["not_run"] = max(summary["collected"] - summary["tests"], 0)
+            # determine the number of passes
+            summary["passes"] = summary["tests"] - (
+                summary["errors"]
+                + summary["xpasses"]
+                + summary["xfailures"]
+                + summary["failures"]
+                + summary["skips"]
+            )
+            # determine the number of tests that didn't run
+            summary["not_run"] = max(summary["collected"] - summary["tests"], 0)
 
-        run.update({"summary": summary, "data": metadata})
-        session.add(run)
-        session.commit()
+            run.update({"summary": summary, "data": metadata})
+            session.add(run)
+            session.commit()
+    except LockError:
+        logging.warning(f"Task {task_name} is already locked, discarding")
 
 
 @task(max_retries=1)

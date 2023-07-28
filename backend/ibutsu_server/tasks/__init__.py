@@ -9,7 +9,6 @@ from flask import current_app
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Report
 from redis import Redis
-from redis.exceptions import LockError
 
 LOCK_EXPIRE = 1
 task = None
@@ -139,14 +138,10 @@ def lock(name, timeout=LOCK_EXPIRE, app=None):
         socket_timeout=SOCKET_TIMEOUT,
         socket_connect_timeout=SOCKET_CONNECT_TIMEOUT,
     )
-    try:
-        # Get a lock so that we don't run this task concurrently
-        logging.info(f"Trying to get a lock for {name}")
-        with redis_client.lock(name, blocking_timeout=timeout):
-            yield
-    except LockError:
-        # If this task is locked, discard it so that it doesn't clog up the system
-        logging.info(f"Task {name} is already locked, discarding")
+    # Get a lock so that we don't run this task concurrently
+    logging.info(f"Trying to get a lock for {name}")
+    with redis_client.lock(name, blocking_timeout=timeout):
+        yield
 
 
 __all__ = ["create_celery_app", "lock", "task"]
