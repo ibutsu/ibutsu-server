@@ -31,6 +31,18 @@ FILTER_RE = re.compile(r"([a-zA-Z\._]+)([" + "".join(OPERATORS.keys()) + "])(.*)
 FLOAT_RE = re.compile(r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?")
 VERSION_RE = re.compile("([0-9].*[0-9])")
 
+def check_job_exclusion(filter_string):
+    """Check for exclude jenkins job name filters"""
+    match = FILTER_RE.match(filter_string)
+    if not match:
+        return False
+    field = match.group(1)
+    oper = match.group(2)
+    if field == "metadata.jenkins.job_name" and oper == "!":
+        return True
+    else: 
+        return False
+
 
 def _to_int_or_float(value):
     """To reduce cognitive complexity"""

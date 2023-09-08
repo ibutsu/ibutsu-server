@@ -1,10 +1,12 @@
 from datetime import datetime
+from sqlalchemy import or_
 
 import connexion
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result
 from ibutsu_server.db.models import User
 from ibutsu_server.filters import convert_filter
+from ibutsu_server.filters import check_job_exclusion
 from ibutsu_server.util import merge_dicts
 from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import add_user_filter
@@ -111,7 +113,10 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Result)
-            if filter_clause is not None:
+            if check_job_exclusion(filter_string):
+                null_clause = convert_filter("metadata.jenkins@False", Result)
+                query = query.filter(or_(filter_clause, null_clause))
+            elif filter_clause is not None:
                 query = query.filter(filter_clause)
 
     if estimate:
