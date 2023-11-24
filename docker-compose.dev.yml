@@ -9,11 +9,12 @@ services:
     working_dir: /mnt
     user: ${UID:-1000}
     volumes:
-      - "./frontend:/mnt"
+      - "./frontend:/mnt:z"
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
   backend:
     environment:
       - JWT_SECRET=jwtsecret
@@ -32,13 +33,20 @@ services:
     command: /bin/bash -c 'python -m venv .backend_env && source .backend_env/bin/activate && pip install -U pip setuptools wheel && pip install -r requirements.txt && python -m ibutsu_server --host 0.0.0.0'
     working_dir: /mnt
     volumes:
-      - "./backend:/mnt"
+      - "./backend:/mnt:z"
     user: ${UID:-1000}
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: curl --output /dev/null --silent --head --fail http://localhost:8080/api/health
+      interval: 10s
+      timeout: 10s
+      retries: 5
   worker:
     environment:
       - COLUMNS=80
@@ -54,17 +62,25 @@ services:
     command: /bin/bash -c 'python -m venv .worker_env && source .worker_env/bin/activate && pip install -U pip setuptools wheel && pip install -r requirements.txt && ./celery_worker.sh'
     working_dir: /mnt
     volumes:
-      - "./backend:/mnt"
+      - "./backend:/mnt:z"
     user: ${UID:-1000}
     depends_on:
-      - backend
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      backend:
+        condition: service_healthy
   postgres:
     environment:
       POSTGRES_USER: ibutsu
       POSTGRES_PASSWORD: ibutsu
       POSTGRES_DB: ibutsu
-    image: postgres:14
+    image: postgres:15
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ibutsu" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   redis:
     image: redis:latest
