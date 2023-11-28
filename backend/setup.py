@@ -6,7 +6,7 @@ VERSION = "2.5.4"
 REQUIRES = [
     "alembic",
     "celery",
-    "connexion",
+    "connexion[swagger-ui]==2.14.2",
     "flask_bcrypt",
     "flask_cors",
     "flask_mail",

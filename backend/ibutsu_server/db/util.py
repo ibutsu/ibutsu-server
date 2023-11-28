@@ -56,10 +56,10 @@ def add_superadmin(
         user = models.User(
             email=email,
             name=name,
-            password=password,
             is_superadmin=True,
             is_active=True,
         )
+        user.password = password
 
         session.add(user)
 

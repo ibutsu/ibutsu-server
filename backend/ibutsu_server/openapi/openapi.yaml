@@ -1387,6 +1387,7 @@ paths:
       summary: Get a general health report
       tags:
         - health
+      security: []
       x-openapi-router-controller: ibutsu_server.controllers.health_controller
   /health/database:
     get:

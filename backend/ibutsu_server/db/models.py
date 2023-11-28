@@ -238,7 +238,7 @@ class User(Model, ModelMixin):
         return self._password
 
     @password.setter
-    def password_set(self, value):
+    def password(self, value):
         self._password = bcrypt.generate_password_hash(value).decode("utf8")
 
     def check_password(self, plaintext):

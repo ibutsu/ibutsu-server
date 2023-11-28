@@ -17,7 +17,7 @@ repos:
     args: [ --allow-multiple-documents ]
   - id: debug-statements
 - repo: https://github.com/pycqa/flake8
-  rev: 5.0.4
+  rev: 6.1.0
   hooks:
   - id: flake8
     args: [--max-line-length, "100", --ignore, "E203, W503"]
