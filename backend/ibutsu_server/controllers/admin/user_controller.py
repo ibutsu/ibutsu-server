@@ -66,7 +66,7 @@ def admin_add_user(new_user=None, token_info=None, user=None):
     if not connexion.request.is_json:
         return "Bad request, JSON required", 400
     new_user = User.from_dict(**connexion.request.get_json())
-    user_exists = User.query.filter_by(email=new_user.email)
+    user_exists = User.query.filter_by(email=new_user.email).first()
     if user_exists:
         return f"The user with email {new_user.email} already exists", 400
     session.add(new_user)
