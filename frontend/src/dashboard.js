@@ -69,6 +69,8 @@ export class Dashboard extends React.Component {
   getDefaultDashboard() {
     let project = getActiveProject();
     if (project && project.defaultDashboard) {
+      const dashboard = JSON.stringify(project.defaultDashboard)
+      localStorage.setItem('dashboard', dashboard);
       return project.defaultDashboard;
     }
     else {
@@ -102,7 +104,7 @@ export class Dashboard extends React.Component {
 
   getWidgets() {
     let params = {'type': 'widget'};
-    let dashboard = getActiveDashboard();
+    let dashboard = getActiveDashboard() || this.getDefaultDashboard();
     if (!dashboard) {
       return;
     }
@@ -263,7 +265,7 @@ export class Dashboard extends React.Component {
 
   render() {
     document.title = 'Dashboard | Ibutsu';
-    const { widgets } = this.state;
+    const { widgets } = this.state || this.getWidgets();
     const project = getActiveProject();
     const dashboard = getActiveDashboard() || this.getDefaultDashboard();
     return (
@@ -278,8 +280,8 @@ export class Dashboard extends React.Component {
               </FlexItem>
               <FlexItem id="dashboard-selector" spacer={{ default: 'spacerNone' }}>
                 <Select
-                  ariaLabelTypeAhead="Select a dashboard"
-                  placeholderText="No active dashboard"
+                  typeAheadAriaLabel="Select a dashboard"
+                  placeholderText={dashboard ? dashboard.title : "No active dashboard"}
                   variant={SelectVariant.typeahead}
                   isOpen={this.state.isDashboardSelectorOpen}
                   isDisabled={!project}
