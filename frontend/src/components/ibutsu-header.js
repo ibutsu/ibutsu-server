@@ -198,7 +198,7 @@ export class IbutsuHeader extends React.Component {
       <Flex>
         <FlexItem id="project-selector">
           <Select
-            ariaLabelTypeAhead="Select a project"
+            typeAheadAriaLabel="Select a project"
             placeholderText="No active project"
             variant={SelectVariant.typeahead}
             isOpen={this.state.isProjectSelectorOpen}
