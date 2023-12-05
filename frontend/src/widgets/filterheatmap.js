@@ -6,7 +6,10 @@ import {
   Card,
   CardBody,
   CardFooter,
-  Text
+  EmptyState,
+  EmptyStateBody,
+  Text,
+  Title
 } from '@patternfly/react-core';
 import {
   ArrowDownIcon,
@@ -227,6 +230,7 @@ export class FilterHeatmapWidget extends React.Component {
     }
     labels.forEach((item) => xLabels.push(item));
     const actions = this.getJenkinsAnalysisLink() || {};
+
     return (
       <Card>
         <WidgetHeader title={this.title} actions={actions} getDataFunc={this.getHeatmap} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
@@ -234,7 +238,7 @@ export class FilterHeatmapWidget extends React.Component {
           {(!this.state.heatmapError && this.state.isLoading) &&
           <Text component="h2">Loading ...</Text>
           }
-          {(!this.state.heatmapError && !this.state.isLoading) &&
+          {(!this.state.heatmapError && !this.state.isLoading && data.length !== 0) &&
           <HeatMap
             xLabels={xLabels}
             yLabels={yLabels}
@@ -246,6 +250,16 @@ export class FilterHeatmapWidget extends React.Component {
             cellRender={this.renderCell}
             title={(value) => value ? `${value[0]}` : ''}
           />
+          }
+          {(!this.state.heatmapError && !this.state.isLoading && data.length === 0) &&
+          <EmptyState>
+          <Title headingLevel="h3" size="md" style={{ fontFamily: 'sans-serif' }}>
+            No data found for heatmap
+          </Title>
+          <EmptyStateBody style={{ fontSize: "15px" , fontFamily: 'sans-serif'}}>
+            Ensure that you have correct job name and addition filters set
+          </EmptyStateBody>
+        </EmptyState>
           }
           {this.state.heatmapError &&
           <p>Error fetching data</p>
