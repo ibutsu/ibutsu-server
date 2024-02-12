@@ -105,7 +105,7 @@ objects:
       protocol: TCP
       targetPort: 5432
     selector:
-      deploymentConfig: postgresql
+      app: postgresql
 # -----------------------------------------------
 - kind: PersistentVolumeClaim
   apiVersion: v1

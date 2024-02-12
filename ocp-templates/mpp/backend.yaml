@@ -151,7 +151,7 @@ objects:
     - port: 8080
       targetPort: 8080
     selector:
-      deploymentConfig: ibutsu-backend
+      app: ibutsu-backend
 - apiVersion: v1
   kind: Route
   metadata:

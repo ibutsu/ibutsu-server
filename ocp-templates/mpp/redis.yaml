@@ -103,7 +103,7 @@ objects:
       - port: 6379
         targetPort: 6379
     selector:
-      deploymentConfig: redis
+      app: redis
 # -----------------------------------------------
 - kind: PersistentVolumeClaim
   apiVersion: v1
