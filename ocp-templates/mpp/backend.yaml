@@ -69,17 +69,30 @@ objects:
           - name: BACKEND_URL
             value: ${BACKEND_ROUTE}
           - name: KEYCLOAK_BASE_URL
-            value: ${KEYCLOAK_BASE_URL}
-          - name: KEYCLOAK_CLIENT_ID
-            value: ${KEYCLOAK_CLIENT_ID}
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-auth
+                key: base_url
           - name: KEYCLOAK_REALM
-            value: ${KEYCLOAK_REALM}
-          - name: KEYCLOAK_NAME
-            value: ${KEYCLOAK_NAME}
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-auth
+                key: realm
+          - name: KEYCLOAK_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-auth
+                key: client_id
           - name: KEYCLOAK_ICON
-            value: ${KEYCLOAK_ICON}
-          - name: KEYCLOAK_VERIFY_SSL
-            value: ${KEYCLOAK_VERIFY_SSL}
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-auth
+                key: icon
+          - name: KEYCLOAK_NAME
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-auth
+                key: name
           - name: USER_LOGIN_ENABLED
             value: ${USER_LOGIN_ENABLED}
           - name: IBUTSU_SUPERADMIN_EMAIL
