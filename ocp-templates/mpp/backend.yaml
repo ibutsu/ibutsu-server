@@ -1,0 +1,290 @@
+# Template for Ibutsu backend in Cluster
+kind: Template
+apiVersion: template.openshift.io/v1
+metadata:
+  name: ibutsu-backend-template
+# ===============================================
+# Backend
+# ===============================================
+objects:
+- kind: Deployment
+  apiVersion: apps/v1
+  metadata:
+    name: ibutsu-backend
+    namespace: ${NAMESPACE}
+    annotations:
+      [{"from":{"kind":"ImageStreamTag","name":"ibutsu-backend:latest","namespace":"${NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"false"}]
+  spec:
+    replicas: 1
+    selector:
+      matchLabels: 
+        app: ibutsu-backend
+    strategy:
+      type: RollingUpdate
+    template:
+      metadata:
+        labels:
+          app: ibutsu-backend
+      spec:
+        containers:
+        - env:
+          - name: GUNICORN_PROCESSES
+            value: "1"
+          - name: PORT
+            value: "8080"
+          - name: APP_CONFIG
+            value: config.py
+          - name: HAS_FRONTEND
+            value: "false"
+          - name: POSTGRESQL_HOST
+            value: postgresql.${NAMESPACE}.svc
+          - name: POSTGRESQL_PORT
+            value: "5432"
+          - name: POSTGRESQL_USER
+            valueFrom:
+              secretKeyRef:
+                key: database-user
+                name: postgresql
+          - name: POSTGRESQL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: postgresql
+          - name: POSTGRESQL_DATABASE
+            valueFrom:
+              secretKeyRef:
+                key: database-name
+                name: postgresql
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: database-password
+                name: redis
+          - name: CELERY_BROKER_URL
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: CELERY_RESULT_BACKEND
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: FRONTEND_URL
+            value: ${FRONTEND_ROUTE}
+          - name: BACKEND_URL
+            value: ${BACKEND_ROUTE}
+          - name: KEYCLOAK_BASE_URL
+            value: ${KEYCLOAK_BASE_URL}
+          - name: KEYCLOAK_CLIENT_ID
+            value: ${KEYCLOAK_CLIENT_ID}
+          - name: KEYCLOAK_REALM
+            value: ${KEYCLOAK_REALM}
+          - name: KEYCLOAK_NAME
+            value: ${KEYCLOAK_NAME}
+          - name: KEYCLOAK_ICON
+            value: ${KEYCLOAK_ICON}
+          - name: KEYCLOAK_VERIFY_SSL
+            value: ${KEYCLOAK_VERIFY_SSL}
+          - name: USER_LOGIN_ENABLED
+            value: ${USER_LOGIN_ENABLED}
+          - name: IBUTSU_SUPERADMIN_EMAIL
+            valueFrom:
+              secretKeyRef:
+                key: email
+                name: ibutsu-superadmin
+          - name: IBUTSU_SUPERADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: password
+                name: ibutsu-superadmin
+          - name: IBUTSU_SUPERADMIN_NAME
+            valueFrom:
+              secretKeyRef:
+                key: name
+                name: ibutsu-superadmin
+          imagePullPolicy: Always
+          image: ibutsu-backend:latest
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: ibutsu-backend
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ibutsu-backend
+        from:
+          kind: ImageStreamTag
+          name: ibutsu-backend:latest
+          namespace: ${NAMESPACE}
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-backend
+    namespace: ${NAMESPACE}
+  spec:
+    ports:
+    - port: 8080
+      targetPort: 8080
+    selector:
+      deploymentConfig: ibutsu-backend
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      description: A route to the backend
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-backend
+    namespace: ${NAMESPACE}
+  spec:
+    host: ${BACKEND_ROUTE}
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
+    to:
+      kind: Service
+      name: ibutsu-backend
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: jwt-secret
+    namespace: ${NAMESPACE}
+  type: opaque
+  stringData:
+    value: ${JWT_SECRET}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      description: The backend of Ibutsu server
+      openshift.io/image.insecureRepository: "true"
+    name: ibutsu-backend
+    namespace: ${NAMESPACE}
+  spec:
+    lookupPolicy:
+      local: true
+    tags:
+    - from:
+        kind: DockerImage
+        name: quay.io/ibutsu/backend:latest
+      importPolicy:
+        scheduled: true
+      name: latest
+    - from:
+        kind: DockerImage
+        name: quay.io/ibutsu/backend:master
+      importPolicy:
+        scheduled: true
+      name: master
+
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: ibutsu-superadmin
+    namespace: ${NAMESPACE}
+  type: opaque
+  stringData:
+    email: ${IBUTSU_SUPERADMIN_EMAIL}
+    password: ${IBUTSU_SUPERADMIN_PASSWORD}
+    name: ${IBUTSU_SUPERADMIN_NAME}
+
+# ===============================================
+# Parameters
+# ===============================================
+parameters:
+- name: APP_NAME
+  displayName: App Name
+  description: The name of the application
+  value: ibutsu-server
+- name: BACKEND_ROUTE
+  displayName: Backend Route
+  description: The URL of the backend of the Ibutsu server
+  value: ibutsu-api.example.com
+- name: FRONTEND_ROUTE
+  displayName: Frontend Route
+  description: The URL of the frontend of the Ibutsu server
+  value: ibutsu.example.com
+- name: USER_LOGIN_ENABLED
+  displayName: User Login Enabled
+  description: Logging in with username and password enabled
+  value: "true"
+- name: KEYCLOAK_BASE_URL
+  displayName: Base URL of Keycloak server
+  description: The base URL of the Keycloak server
+  value: http://keycloak.example.com
+- name: KEYCLOAK_REALM
+  displayName: Keycloak Realm
+  description: The realm of the Keycloak client
+  value: ibutsu
+- name: KEYCLOAK_CLIENT_ID
+  displayName: Keycloak Client ID
+  description: The client ID used when authenticating via Keycloak
+  value: ibutsu
+- name: KEYCLOAK_NAME
+  displayName: Name shown in UI
+  description: The SSO method name shown in the UI when logging in
+  value: Keycloak
+- name: KEYCLOAK_ICON
+  displayName: Icon shown in UI
+  description: The icon shown in the UI when logging in
+  value: keycloak
+- name: KEYCLOAK_VERIFY_SSL
+  displayName: Verify SSL
+  description: "Whether to verify the SSL certificate. WARNING: setting this to false is insecure!"
+  value: "true"
+- name: IMAGE_TAG
+  displayName: Image Tag
+  description: The tag for the container image
+- name: REDIS_PASSWORD
+  displayName: Redis password
+  description: The Redis instance's password
+  required: true
+- name: NAMESPACE
+  displayName: Namespace
+  description: The namespace for all of the images, applications, etc.
+  required: true
+- name: JWT_SECRET
+  displayName: Secret for generating jwt tokens
+  description: Random secret for generating jwt tokens
+  generate: expression
+  from: '[\w]{16}'
+- name: IBUTSU_SUPERADMIN_EMAIL
+  displayName: Superadmin Email
+  description: The email for the superadmin of Ibutsu
+  generate: expression
+  from: 'admin-[\a\d]{8}@ibutsu.com'
+- name: IBUTSU_SUPERADMIN_PASSWORD
+  displayName: Superadmin Password
+  description: The password for the superadmin of Ibutsu
+  generate: expression
+  from: '[\w]{16}'
+- name: IBUTSU_SUPERADMIN_NAME
+  displayName: Superadmin Name
+  description: The name superadmin of Ibutsu
+  value: Ibutsu Admin
+  
