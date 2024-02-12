@@ -17,7 +17,7 @@ objects:
   spec:
     replicas: 1
     selector:
-      matchLabels: 
+      matchLabels:
         app: ibutsu-backend
     strategy:
       type: RollingUpdate
@@ -95,21 +95,22 @@ objects:
                 key: name
           - name: USER_LOGIN_ENABLED
             value: ${USER_LOGIN_ENABLED}
-          - name: IBUTSU_SUPERADMIN_EMAIL
-            valueFrom:
-              secretKeyRef:
-                key: email
-                name: ibutsu-superadmin
-          - name: IBUTSU_SUPERADMIN_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: password
-                name: ibutsu-superadmin
-          - name: IBUTSU_SUPERADMIN_NAME
-            valueFrom:
-              secretKeyRef:
-                key: name
-                name: ibutsu-superadmin
+# Consider if to remove, the bootstrap sequence can't create the superuser for some reason (Perhaps when hooked up to keycloak)
+#          - name: IBUTSU_SUPERADMIN_EMAIL
+#            valueFrom:
+#              secretKeyRef:
+#                key: email
+#                name: ibutsu-superadmin
+#          - name: IBUTSU_SUPERADMIN_PASSWORD
+#            valueFrom:
+#              secretKeyRef:
+#                key: password
+#                name: ibutsu-superadmin
+#          - name: IBUTSU_SUPERADMIN_NAME
+#            valueFrom:
+#              secretKeyRef:
+#                key: name
+#                name: ibutsu-superadmin
           imagePullPolicy: Always
           image: ibutsu-backend:latest
           livenessProbe:
@@ -300,4 +301,4 @@ parameters:
   displayName: Superadmin Name
   description: The name superadmin of Ibutsu
   value: Ibutsu Admin
-  
+
