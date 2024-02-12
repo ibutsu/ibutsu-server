@@ -7,26 +7,25 @@ metadata:
 # PostgreSQL
 # ===============================================
 objects:
-- kind: DeploymentConfig
-  apiVersion: v1
+- kind: Deployment
+  apiVersion: apps/v1
   metadata:
     labels:
-      app: ${APP_NAME}
+      app: postgresql
       template: postgresql-persistent-template
     name: postgresql
     namespace: ${NAMESPACE}
   spec:
     replicas: 1
     selector:
-      deploymentConfig: postgresql
+      matchLabels:
+        app: postgresql
     strategy:
-      resources: {}
       type: Recreate
     template:
       metadata:
         labels:
-          app: ${APP_NAME}
-          deploymentConfig: postgresql
+          app: postgresql
       spec:
         containers:
         - env:
@@ -45,7 +44,7 @@ objects:
               secretKeyRef:
                 key: database-user
                 name: postgresql
-          image: postgresql:12
+          image: openshift/postgresql:12
           imagePullPolicy: IfNotPresent
           livenessProbe:
             exec:
