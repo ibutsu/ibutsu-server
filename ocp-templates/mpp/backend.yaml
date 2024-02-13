@@ -95,22 +95,6 @@ objects:
                 key: name
           - name: USER_LOGIN_ENABLED
             value: ${USER_LOGIN_ENABLED}
-# Consider if to remove, the bootstrap sequence can't create the superuser for some reason (Perhaps when hooked up to keycloak)
-#          - name: IBUTSU_SUPERADMIN_EMAIL
-#            valueFrom:
-#              secretKeyRef:
-#                key: email
-#                name: ibutsu-superadmin
-#          - name: IBUTSU_SUPERADMIN_PASSWORD
-#            valueFrom:
-#              secretKeyRef:
-#                key: password
-#                name: ibutsu-superadmin
-#          - name: IBUTSU_SUPERADMIN_NAME
-#            valueFrom:
-#              secretKeyRef:
-#                key: name
-#                name: ibutsu-superadmin
           imagePullPolicy: Always
           image: ibutsu-backend:latest
           livenessProbe:
@@ -217,17 +201,6 @@ objects:
         scheduled: true
       name: master
 
-- kind: Secret
-  apiVersion: v1
-  metadata:
-    name: ibutsu-superadmin
-    namespace: ${NAMESPACE}
-  type: opaque
-  stringData:
-    email: ${IBUTSU_SUPERADMIN_EMAIL}
-    password: ${IBUTSU_SUPERADMIN_PASSWORD}
-    name: ${IBUTSU_SUPERADMIN_NAME}
-
 # ===============================================
 # Parameters
 # ===============================================
@@ -288,18 +261,3 @@ parameters:
   description: Random secret for generating jwt tokens
   generate: expression
   from: '[\w]{16}'
-- name: IBUTSU_SUPERADMIN_EMAIL
-  displayName: Superadmin Email
-  description: The email for the superadmin of Ibutsu
-  generate: expression
-  from: 'admin-[\a\d]{8}@ibutsu.com'
-- name: IBUTSU_SUPERADMIN_PASSWORD
-  displayName: Superadmin Password
-  description: The password for the superadmin of Ibutsu
-  generate: expression
-  from: '[\w]{16}'
-- name: IBUTSU_SUPERADMIN_NAME
-  displayName: Superadmin Name
-  description: The name superadmin of Ibutsu
-  value: Ibutsu Admin
-
