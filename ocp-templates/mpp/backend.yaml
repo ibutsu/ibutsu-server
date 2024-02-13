@@ -1,4 +1,4 @@
-# Template for Ibutsu backend in Cluster
+# Template for Ibutsu backend
 kind: Template
 apiVersion: template.openshift.io/v1
 metadata:
@@ -176,6 +176,18 @@ objects:
   type: opaque
   stringData:
     value: ${JWT_SECRET}
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: keycloak-auth
+    namespace: ${NAMESPACE}
+  type: opaque
+  stringData:
+    base_url: ${KEYCLOAK_BASE_URL}
+    client_id: ${KEYCLOAK_CLIENT_ID}
+    icon: ${KEYCLOAK_ICON}
+    name: ${KEYCLOAK_NAME}
+    realm: ${KEYCLOAK_REALM}
 - apiVersion: v1
   kind: ImageStream
   metadata:
@@ -241,13 +253,6 @@ parameters:
   displayName: Icon shown in UI
   description: The icon shown in the UI when logging in
   value: keycloak
-- name: KEYCLOAK_VERIFY_SSL
-  displayName: Verify SSL
-  description: "Whether to verify the SSL certificate. WARNING: setting this to false is insecure!"
-  value: "true"
-- name: IMAGE_TAG
-  displayName: Image Tag
-  description: The tag for the container image
 - name: REDIS_PASSWORD
   displayName: Redis password
   description: The Redis instance's password
