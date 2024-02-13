@@ -173,6 +173,7 @@ objects:
       description: A route to the backend
     labels:
       app: ${APP_NAME}
+      shard: internal
     name: ibutsu-backend
     namespace: ${NAMESPACE}
   spec:

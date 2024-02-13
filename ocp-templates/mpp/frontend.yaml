@@ -111,6 +111,7 @@ objects:
   metadata:
     labels:
       app: ${APP_NAME}
+      shard: internal
     name: ibutsu-frontend
     namespace: ${NAMESPACE}
     annotations:
