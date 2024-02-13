@@ -135,7 +135,7 @@ objects:
 # Database Backup Cronjob
 # ===============================================
 - kind: CronJob
-  apiVersion: v1
+  apiVersion: batch/v1
   metadata:
     labels:
       app: ${APP_NAME}
@@ -222,7 +222,7 @@ objects:
 # Database Vacuum Cronjob
 # ===============================================
 - kind: CronJob
-  apiVersion: batch/v1beta1
+  apiVersion: batch/v1
   metadata:
     name: database-vacuum
     namespace: ${NAMESPACE}
