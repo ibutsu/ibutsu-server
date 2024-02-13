@@ -4,7 +4,9 @@ OpenShift templates are provided for each microservice that makes up ibutsu-serv
 parameters are the same from template-to-template, they are kept separate for maintainability and
 readability.
 
-There are two sets of templates for the microservices: ``stage`` and ``prod``.
+There are three sets of templates for the microservices: ``stage`` and ``prod`` and ``mpp``.
+
+The supported template set is ``mpp``, it has been updated to support Deployment objects (compared to the deprecated DeploymentConfigs used in the other sets).
 
 ## Stage
 The stage templates are set up to use the images at [quay.io/organization/ibutsu](https://quay.io/organization/ibutsu) that are tagged with
@@ -15,6 +17,9 @@ These are meant to deploy the "staging" or "unstable" instance of Ibutsu.
 The prod templates are set up to use the images at [quay.io/organization/ibutsu](https://quay.io/organization/ibutsu) that are tagged with
 ``latest``. These images are built and tagged as ``latest`` on every release of Ibutsu. These are meant to deploy the production instance of Ibutsu. The templates include some extra things like database
 backups and vacuums.
+
+## Prod
+The MPP templates are meant to be used on an OCPv4 Openshift cluster with multi-tennant support. 
 
 Note: the ``jobs`` directory contains cronjobs and jobs to vacuum and backup the database. Both of these
 are included in the `prod/postgres.yaml` template.
