@@ -207,12 +207,6 @@ objects:
       importPolicy:
         scheduled: true
       name: latest
-    - from:
-        kind: DockerImage
-        name: quay.io/ibutsu/backend:master
-      importPolicy:
-        scheduled: true
-      name: master
 
 # ===============================================
 # Parameters
