@@ -15,6 +15,10 @@ objects:
       template: postgresql-persistent-template
     name: postgresql
     namespace: ${NAMESPACE}
+    annotations:
+      alpha.image.policy.openshift.io/resolve-names: '*'
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"postgresql:12","namespace":"openshift"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"true"}]
   spec:
     replicas: 1
     selector:
@@ -44,7 +48,7 @@ objects:
               secretKeyRef:
                 key: database-user
                 name: postgresql
-          image: openshift/postgresql:12
+          image: postgresql:12
           imagePullPolicy: IfNotPresent
           livenessProbe:
             exec:
