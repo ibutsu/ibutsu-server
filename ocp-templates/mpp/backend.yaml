@@ -66,9 +66,9 @@ objects:
           - name: CELERY_RESULT_BACKEND
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: FRONTEND_URL
-            value: ${FRONTEND_ROUTE}
+            value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
-            value: ${BACKEND_ROUTE}
+            value: https://${BACKEND_ROUTE}
           - name: KEYCLOAK_BASE_URL
             valueFrom:
               secretKeyRef:
@@ -94,6 +94,11 @@ objects:
               secretKeyRef:
                 name: keycloak-auth
                 key: name
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: jwt-secret
+                key: value
           - name: USER_LOGIN_ENABLED
             value: ${USER_LOGIN_ENABLED}
           imagePullPolicy: Always
