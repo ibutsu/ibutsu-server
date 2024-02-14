@@ -1,4 +1,4 @@
-# Template for ibutsu prod server
+# Template for Ibutsu Frontend
 kind: Template
 apiVersion: template.openshift.io/v1
 metadata:
