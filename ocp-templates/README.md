@@ -18,8 +18,8 @@ The prod templates are set up to use the images at [quay.io/organization/ibutsu]
 ``latest``. These images are built and tagged as ``latest`` on every release of Ibutsu. These are meant to deploy the production instance of Ibutsu. The templates include some extra things like database
 backups and vacuums.
 
-## Prod
-The MPP templates are meant to be used on an OCPv4 Openshift cluster with multi-tennant support. 
+## Mpp
+The MPP templates are meant to be used on an v4 Openshift cluster
 
 Note: the ``jobs`` directory contains cronjobs and jobs to vacuum and backup the database. Both of these
 are included in the `prod/postgres.yaml` template.
