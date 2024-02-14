@@ -94,6 +94,11 @@ objects:
               secretKeyRef:
                 name: keycloak-auth
                 key: name
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: jwt-secret
+                key: value
           - name: USER_LOGIN_ENABLED
             value: ${USER_LOGIN_ENABLED}
           imagePullPolicy: Always
