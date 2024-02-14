@@ -1,4 +1,4 @@
-# Template for Ibutsu scheduler in AppInterface
+# Template for ibutsu prod server
 kind: Template
 apiVersion: template.openshift.io/v1
 metadata:
@@ -7,83 +7,64 @@ metadata:
 # Scheduler
 # ===============================================
 objects:
-- kind: DeploymentConfig
-  apiVersion: v1
+- kind: Deployment
+  apiVersion: apps/v1
   metadata:
     labels:
-      app: ${APP_NAME}
+      app: ibutsu-scheduler
     name: ibutsu-scheduler
+    namespace: ${NAMESPACE}
+    annotations:
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"scheduler:latest","namespace":"${NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"true"}]
   spec:
     replicas: 1
     selector:
-      deploymentConfig: ibutsu-scheduler
+      matchLabels:
+        app: ibutsu-scheduler
     strategy:
-      type: Rolling
+      type: RollingUpdate
     template:
       metadata:
         labels:
-          app: ${APP_NAME}
-          deploymentConfig: ibutsu-scheduler
+          app: ibutsu-scheduler
       spec:
         containers:
         - env:
           - name: POSTGRESQL_HOST
-            valueFrom:
-              secretKeyRef:
-                key: db.host
-                name: ibutsu-db
+            value: postgresql.${NAMESPACE}.svc
           - name: POSTGRESQL_PORT
-            valueFrom:
-              secretKeyRef:
-                key: db.port
-                name: ibutsu-db
+            value: "5432"
           - name: POSTGRESQL_USER
             valueFrom:
               secretKeyRef:
-                key: db.user
-                name: ibutsu-db
+                key: database-user
+                name: postgresql
           - name: POSTGRESQL_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: db.password
-                name: ibutsu-db
+                key: database-password
+                name: postgresql
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
-                key: db.name
-                name: ibutsu-db
+                key: database-name
+                name: postgresql
           - name: REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: db.password
-                name: redis
-                optional: true
-          - name: REDIS_HOSTNAME
-            valueFrom:
-              secretKeyRef:
-                key: db.endpoint
-                name: redis
-          - name: REDIS_PORT
-            valueFrom:
-              secretKeyRef:
-                key: db.port
+                key: database-password
                 name: redis
           - name: CELERY_BROKER_URL
-            valueFrom:
-              secretKeyRef:
-                key: broker-url
-                name: ibutsu-celery
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: CELERY_RESULT_BACKEND
-            valueFrom:
-              secretKeyRef:
-                key: result-backend
-                name: ibutsu-celery
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: FRONTEND_URL
             value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
             value: https://${BACKEND_ROUTE}
-          image: quay.io/ibutsu/scheduler:${IMAGE_TAG}
-          imagePullPolicy: IfNotPresent
+          image: scheduler
+          imagePullPolicy: Always
           name: ibutsu-scheduler
           resources: {}
           terminationMessagePath: /dev/termination-log
@@ -91,7 +72,33 @@ objects:
         dnsPolicy: ClusterFirst
         restartPolicy: Always
     triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ibutsu-scheduler
+        from:
+          kind: ImageStreamTag
+          name: scheduler:latest
+          namespace: ${NAMESPACE}
+      type: ImageChange
     - type: ConfigChange
+# -----------------------------------------------
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: scheduler
+    annotations:
+      description: "Celery beat scheduler for periodic tasks in Ibutsu Server"
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - from:
+        kind: DockerImage
+        name: quay.io/ibutsu/scheduler:latest
+      importPolicy:
+        scheduled: true
+      name: latest
 # -----------------------------------------------
 - kind: Service
   apiVersion: v1
@@ -105,7 +112,7 @@ objects:
     - port: 8080
       targetPort: 8080
     selector:
-      deploymentConfig: ibutsu-scheduler
+      app: ibutsu-scheduler
 # ===============================================
 # Parameters
 # ===============================================
@@ -114,6 +121,10 @@ parameters:
   displayName: App Name
   description: The name of the application
   value: ibutsu-server
+- name: NAMESPACE
+  displayName: Namespace
+  description: The namespace for all of the images, applications, etc.
+  value: iqe-ibutsu-server
 - name: BACKEND_ROUTE
   displayName: Backend Route
   description: The URL of the backend of the Ibutsu server
@@ -122,6 +133,8 @@ parameters:
   displayName: Frontend Route
   description: The URL of the frontend of the Ibutsu server
   value: ibutsu.example.com
-- name: IMAGE_TAG
-  displayName: Image Tag
-  description: The tag for the container image
+- name: REDIS_PASSWORD
+  displayName: Redis Password
+  description: The password for Redis
+  generate: expression
+  from: '[\w]{16}'

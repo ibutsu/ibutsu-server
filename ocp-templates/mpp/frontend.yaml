@@ -1,4 +1,4 @@
-# Template for Ibutsu frontend in AppInterface
+# Template for Ibutsu Frontend
 kind: Template
 apiVersion: template.openshift.io/v1
 metadata:
@@ -7,23 +7,27 @@ metadata:
 # Frontend
 # ===============================================
 objects:
-- kind: DeploymentConfig
-  apiVersion: v1
+- kind: Deployment
+  apiVersion: apps/v1
   metadata:
     labels:
-      app: ${APP_NAME}
+      app: ibutsu-frontend
     name: ibutsu-frontend
+    namespace: ${NAMESPACE}
+    annotations:
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"ibutsu-frontend:latest","namespace":"${NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"true"}]
   spec:
     replicas: 1
     selector:
-      deploymentConfig: ibutsu-frontend
+      matchLabels:
+        app: ibutsu-frontend
     strategy:
-      type: Rolling
+      type: RollingUpdate
     template:
       metadata:
         labels:
-          app: ${APP_NAME}
-          deploymentConfig: ibutsu-frontend
+          app: ibutsu-frontend
       spec:
         containers:
         - env:
@@ -31,8 +35,8 @@ objects:
               value: https://${BACKEND_ROUTE}/api
             - name: NODE_ENV
               value: production
-          image: quay.io/ibutsu/frontend:${IMAGE_TAG}
-          imagePullPolicy: IfNotPresent
+          image: ibutsu-frontend
+          imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
             httpGet:
@@ -63,7 +67,33 @@ objects:
         dnsPolicy: ClusterFirst
         restartPolicy: Always
     triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ibutsu-frontend
+        from:
+          kind: ImageStreamTag
+          name: ibutsu-frontend:latest
+          namespace: ${NAMESPACE}
+      type: ImageChange
     - type: ConfigChange
+# -----------------------------------------------
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: ibutsu-frontend
+    annotations:
+      description: "The frontend of Ibutsu server"
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - from:
+        kind: DockerImage
+        name: quay.io/ibutsu/frontend:latest
+      importPolicy:
+        scheduled: true
+      name: latest
 # -----------------------------------------------
 - kind: Service
   apiVersion: v1
@@ -71,19 +101,22 @@ objects:
     labels:
       app: ${APP_NAME}
     name: ibutsu-frontend
+    namespace: ${NAMESPACE}
   spec:
     ports:
     - port: 8080
       targetPort: 8080
     selector:
-      deploymentConfig: ibutsu-frontend
+      app: ibutsu-frontend
 # -----------------------------------------------
 - kind: Route
   apiVersion: v1
   metadata:
     labels:
       app: ${APP_NAME}
+      shard: internal
     name: ibutsu-frontend
+    namespace: ${NAMESPACE}
     annotations:
       description: "A route to the frontend"
   spec:
@@ -95,8 +128,6 @@ objects:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
     wildcardPolicy: None
-    port:
-      targetPort: 8080
 # ===============================================
 # Parameters
 # ===============================================
@@ -105,6 +136,10 @@ parameters:
   displayName: App Name
   description: The name of the application
   value: ibutsu-server
+- name: NAMESPACE
+  displayName: Namespace
+  description: The namespace for all of the images, applications, etc.
+  value: iqe-ibutsu-server
 - name: FRONTEND_ROUTE
   displayName: Frontend Route
   description: The URL of the frontend of the Ibutsu server
@@ -113,7 +148,3 @@ parameters:
   displayName: Backend Route
   description: The URL of the backend of the Ibutsu server
   value: ibutsu-api.example.com
-- name: IMAGE_TAG
-  displayName: Image Tag
-  description: The tag of the container image to pull
-  value: latest

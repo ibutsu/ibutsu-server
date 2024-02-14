@@ -1,4 +1,4 @@
-# Template for Ibutsu worker in AppInterface
+# Template for ibutsu prod server
 kind: Template
 apiVersion: template.openshift.io/v1
 metadata:
@@ -7,85 +7,66 @@ metadata:
 # Worker
 # ===============================================
 objects:
-- kind: DeploymentConfig
-  apiVersion: v1
+- kind: Deployment
+  apiVersion: apps/v1
   metadata:
     labels:
-      app: ${APP_NAME}
+      app: ibutsu-worker
     name: ibutsu-worker
+    namespace: ${NAMESPACE}
+    annotations:
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"worker:latest","namespace":"${NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"true"}]
   spec:
     replicas: 1
     selector:
-      deploymentConfig: ibutsu-worker
+      matchLabels:
+        app: ibutsu-worker
     strategy:
-      type: Rolling
+      type: RollingUpdate
     template:
       metadata:
         labels:
-          app: ${APP_NAME}
-          deploymentConfig: ibutsu-worker
+          app: ibutsu-worker
       spec:
         containers:
         - env:
           - name: APP_SCRIPT
             value: celery_worker.sh
           - name: POSTGRESQL_HOST
-            valueFrom:
-              secretKeyRef:
-                key: db.host
-                name: ibutsu-db
+            value: postgresql.${NAMESPACE}.svc
           - name: POSTGRESQL_PORT
-            valueFrom:
-              secretKeyRef:
-                key: db.port
-                name: ibutsu-db
+            value: "5432"
           - name: POSTGRESQL_USER
             valueFrom:
               secretKeyRef:
-                key: db.user
-                name: ibutsu-db
+                key: database-user
+                name: postgresql
           - name: POSTGRESQL_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: db.password
-                name: ibutsu-db
+                key: database-password
+                name: postgresql
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
-                key: db.name
-                name: ibutsu-db
+                key: database-name
+                name: postgresql
           - name: REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: db.password
-                name: redis
-                optional: true
-          - name: REDIS_HOSTNAME
-            valueFrom:
-              secretKeyRef:
-                key: db.endpoint
-                name: redis
-          - name: REDIS_PORT
-            valueFrom:
-              secretKeyRef:
-                key: db.port
+                key: database-password
                 name: redis
           - name: CELERY_BROKER_URL
-            valueFrom:
-              secretKeyRef:
-                key: broker-url
-                name: ibutsu-celery
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: CELERY_RESULT_BACKEND
-            valueFrom:
-              secretKeyRef:
-                key: result-backend
-                name: ibutsu-celery
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: FRONTEND_URL
             value: https://${FRONTEND_ROUTE}
           - name: BACKEND_URL
             value: https://${BACKEND_ROUTE}
-          image: quay.io/ibutsu/worker:${IMAGE_TAG}
-          imagePullPolicy: IfNotPresent
+          image: worker
+          imagePullPolicy: Always
           name: ibutsu-worker
           resources: {}
           terminationMessagePath: /dev/termination-log
@@ -93,7 +74,33 @@ objects:
         dnsPolicy: ClusterFirst
         restartPolicy: Always
     triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ibutsu-worker
+        from:
+          kind: ImageStreamTag
+          name: worker:latest
+          namespace: ${NAMESPACE}
+      type: ImageChange
     - type: ConfigChange
+# -----------------------------------------------
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: worker
+    annotations:
+      description: "The celery worker of Ibutsu server"
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - from:
+        kind: DockerImage
+        name: quay.io/ibutsu/worker:latest
+      importPolicy:
+        scheduled: true
+      name: latest
 # -----------------------------------------------
 - kind: Service
   apiVersion: v1
@@ -101,12 +108,13 @@ objects:
     labels:
       app: ${APP_NAME}
     name: ibutsu-worker
+    namespace: ${NAMESPACE}
   spec:
     ports:
     - port: 8080
       targetPort: 8080
     selector:
-      deploymentConfig: ibutsu-worker
+      app: ibutsu-worker
 # ===============================================
 # Parameters
 # ===============================================
@@ -115,6 +123,10 @@ parameters:
   displayName: App Name
   description: The name of the application
   value: ibutsu-server
+- name: NAMESPACE
+  displayName: Namespace
+  description: The namespace for all of the images, applications, etc.
+  value: iqe-ibutsu-server
 - name: BACKEND_ROUTE
   displayName: Backend Route
   description: The URL of the backend of the Ibutsu server
@@ -123,6 +135,8 @@ parameters:
   displayName: Frontend Route
   description: The URL of the frontend of the Ibutsu server
   value: ibutsu.example.com
-- name: IMAGE_TAG
-  displayName: Image Tag
-  description: The tag for the container image
+- name: REDIS_PASSWORD
+  displayName: Redis Password
+  description: The password for Redis
+  generate: expression
+  from: '[\w]{16}'

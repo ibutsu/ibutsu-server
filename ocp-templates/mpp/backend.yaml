@@ -1,4 +1,4 @@
-# Template for Ibutsu backend in AppInterface
+# Template for Ibutsu backend
 kind: Template
 apiVersion: template.openshift.io/v1
 metadata:
@@ -7,23 +7,25 @@ metadata:
 # Backend
 # ===============================================
 objects:
-- kind: DeploymentConfig
-  apiVersion: v1
+- kind: Deployment
+  apiVersion: apps/v1
   metadata:
-    labels:
-      app: ${APP_NAME}
     name: ibutsu-backend
+    namespace: ${NAMESPACE}
+    annotations:
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"ibutsu-backend:latest","namespace":"${NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"true"}]
   spec:
     replicas: 1
     selector:
-      deploymentConfig: ibutsu-backend
+      matchLabels:
+        app: ibutsu-backend
     strategy:
-      type: Rolling
+      type: RollingUpdate
     template:
       metadata:
         labels:
-          app: ${APP_NAME}
-          deploymentConfig: ibutsu-backend
+          app: ibutsu-backend
       spec:
         containers:
         - env:
@@ -36,96 +38,66 @@ objects:
           - name: HAS_FRONTEND
             value: "false"
           - name: POSTGRESQL_HOST
-            valueFrom:
-              secretKeyRef:
-                key: db.host
-                name: ibutsu-db
+            value: postgresql.${NAMESPACE}.svc
           - name: POSTGRESQL_PORT
-            valueFrom:
-              secretKeyRef:
-                key: db.port
-                name: ibutsu-db
+            value: "5432"
           - name: POSTGRESQL_USER
             valueFrom:
               secretKeyRef:
-                key: db.user
-                name: ibutsu-db
+                key: database-user
+                name: postgresql
           - name: POSTGRESQL_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: db.password
-                name: ibutsu-db
+                key: database-password
+                name: postgresql
           - name: POSTGRESQL_DATABASE
             valueFrom:
               secretKeyRef:
-                key: db.name
-                name: ibutsu-db
+                key: database-name
+                name: postgresql
           - name: REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: db.password
+                key: database-password
                 name: redis
-                optional: true
-          - name: REDIS_HOSTNAME
-            valueFrom:
-              secretKeyRef:
-                key: db.endpoint
-                name: redis
-          - name: REDIS_PORT
-            valueFrom:
-              secretKeyRef:
-                key: db.port
-                name: redis
-          - name: JWT_SECRET
-            valueFrom:
-              secretKeyRef:
-                key: value
-                name: jwt-secret
-          - name: IBUTSU_SUPERADMIN_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: password
-                name: ibutsu-superadmin
-          - name: IBUTSU_SUPERADMIN_NAME
-            valueFrom:
-              secretKeyRef:
-                key: name
-                name: ibutsu-superadmin
-          - name: IBUTSU_SUPERADMIN_EMAIL
-            valueFrom:
-              secretKeyRef:
-                key: email
-                name: ibutsu-superadmin
           - name: CELERY_BROKER_URL
-            valueFrom:
-              secretKeyRef:
-                key: broker-url
-                name: ibutsu-celery
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
           - name: CELERY_RESULT_BACKEND
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: FRONTEND_URL
+            value: ${FRONTEND_ROUTE}
+          - name: BACKEND_URL
+            value: ${BACKEND_ROUTE}
+          - name: KEYCLOAK_BASE_URL
             valueFrom:
               secretKeyRef:
-                key: result-backend
-                name: ibutsu-celery
-          - name: FRONTEND_URL
-            value: https://${FRONTEND_ROUTE}
-          - name: BACKEND_URL
-            value: https://${BACKEND_ROUTE}
-          - name: KEYCLOAK_BASE_URL
-            value: ${KEYCLOAK_BASE_URL}
-          - name: KEYCLOAK_CLIENT_ID
-            value: ${KEYCLOAK_CLIENT_ID}
+                name: keycloak-auth
+                key: base_url
           - name: KEYCLOAK_REALM
-            value: ${KEYCLOAK_REALM}
-          - name: KEYCLOAK_NAME
-            value: ${KEYCLOAK_NAME}
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-auth
+                key: realm
+          - name: KEYCLOAK_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-auth
+                key: client_id
           - name: KEYCLOAK_ICON
-            value: ${KEYCLOAK_ICON}
-          - name: KEYCLOAK_VERIFY_SSL
-            value: ${KEYCLOAK_VERIFY_SSL}
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-auth
+                key: icon
+          - name: KEYCLOAK_NAME
+            valueFrom:
+              secretKeyRef:
+                name: keycloak-auth
+                key: name
           - name: USER_LOGIN_ENABLED
             value: ${USER_LOGIN_ENABLED}
-          image: quay.io/ibutsu/backend:${IMAGE_TAG}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
+          image: ibutsu-backend:latest
           livenessProbe:
             failureThreshold: 3
             httpGet:
@@ -133,9 +105,9 @@ objects:
               port: 8080
               scheme: HTTP
             initialDelaySeconds: 0
-            periodSeconds: 30
+            periodSeconds: 10
             successThreshold: 1
-            timeoutSeconds: 20
+            timeoutSeconds: 1
           name: ibutsu-backend
           ports:
           - containerPort: 8080
@@ -147,48 +119,95 @@ objects:
               port: 8080
               scheme: HTTP
             initialDelaySeconds: 5
-            periodSeconds: 30
+            periodSeconds: 10
             successThreshold: 1
-            timeoutSeconds: 20
+            timeoutSeconds: 1
           resources: {}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
         dnsPolicy: ClusterFirst
         restartPolicy: Always
     triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ibutsu-backend
+        from:
+          kind: ImageStreamTag
+          name: ibutsu-backend:latest
+          namespace: ${NAMESPACE}
+      type: ImageChange
     - type: ConfigChange
-# -----------------------------------------------
-- kind: Service
-  apiVersion: v1
+- apiVersion: v1
+  kind: Service
   metadata:
     labels:
       app: ${APP_NAME}
     name: ibutsu-backend
+    namespace: ${NAMESPACE}
   spec:
     ports:
     - port: 8080
       targetPort: 8080
     selector:
-      deploymentConfig: ibutsu-backend
-# -----------------------------------------------
-- kind: Route
-  apiVersion: v1
+      app: ibutsu-backend
+- apiVersion: v1
+  kind: Route
   metadata:
+    annotations:
+      description: A route to the backend
     labels:
       app: ${APP_NAME}
+      shard: internal
     name: ibutsu-backend
-    annotations:
-      description: "A route to the backend"
+    namespace: ${NAMESPACE}
   spec:
     host: ${BACKEND_ROUTE}
-    to:
-      kind: Service
-      name: ibutsu-backend
     tls:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
-    port:
-      targetPort: 8080
+    to:
+      kind: Service
+      name: ibutsu-backend
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: jwt-secret
+    namespace: ${NAMESPACE}
+  type: opaque
+  stringData:
+    value: ${JWT_SECRET}
+- kind: Secret
+  apiVersion: v1
+  metadata:
+    name: keycloak-auth
+    namespace: ${NAMESPACE}
+  type: opaque
+  stringData:
+    base_url: ${KEYCLOAK_BASE_URL}
+    client_id: ${KEYCLOAK_CLIENT_ID}
+    icon: ${KEYCLOAK_ICON}
+    name: ${KEYCLOAK_NAME}
+    realm: ${KEYCLOAK_REALM}
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      description: The backend of Ibutsu server
+      openshift.io/image.insecureRepository: "true"
+    name: ibutsu-backend
+    namespace: ${NAMESPACE}
+  spec:
+    lookupPolicy:
+      local: true
+    tags:
+    - from:
+        kind: DockerImage
+        name: quay.io/ibutsu/backend:latest
+      importPolicy:
+        scheduled: true
+      name: latest
+
 # ===============================================
 # Parameters
 # ===============================================
@@ -229,10 +248,16 @@ parameters:
   displayName: Icon shown in UI
   description: The icon shown in the UI when logging in
   value: keycloak
-- name: KEYCLOAK_VERIFY_SSL
-  displayName: Verify SSL
-  description: "Whether to verify the SSL certificate. WARNING: setting this to false is insecure!"
-  value: "true"
-- name: IMAGE_TAG
-  displayName: Image Tag
-  description: The tag for the container image
+- name: REDIS_PASSWORD
+  displayName: Redis password
+  description: The Redis instance's password
+  required: true
+- name: NAMESPACE
+  displayName: Namespace
+  description: The namespace for all of the images, applications, etc.
+  required: true
+- name: JWT_SECRET
+  displayName: Secret for generating jwt tokens
+  description: Random secret for generating jwt tokens
+  generate: expression
+  from: '[\w]{16}'
