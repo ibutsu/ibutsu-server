@@ -14,6 +14,9 @@ objects:
       app: ibutsu-frontend
     name: ibutsu-frontend
     namespace: ${NAMESPACE}
+    annotations:
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"ibutsu-frontend:latest","namespace":"${NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"true"}]
   spec:
     replicas: 1
     selector:
@@ -32,7 +35,7 @@ objects:
               value: https://${BACKEND_ROUTE}/api
             - name: NODE_ENV
               value: production
-          image: frontend
+          image: ibutsu-frontend
           imagePullPolicy: Always
           livenessProbe:
             failureThreshold: 3
@@ -70,7 +73,7 @@ objects:
         - ibutsu-frontend
         from:
           kind: ImageStreamTag
-          name: frontend:latest
+          name: ibutsu-frontend:latest
           namespace: ${NAMESPACE}
       type: ImageChange
     - type: ConfigChange
@@ -78,7 +81,7 @@ objects:
 - kind: ImageStream
   apiVersion: v1
   metadata:
-    name: frontend
+    name: ibutsu-frontend
     annotations:
       description: "The frontend of Ibutsu server"
   spec:
