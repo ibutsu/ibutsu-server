@@ -15,6 +15,9 @@ objects:
       template: redis-persistent-template
     name: redis
     namespace: ${NAMESPACE}
+    annotations:
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"redis:latest","namespace":"openshift"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"true"}]
   spec:
     replicas: 1
     selector:
