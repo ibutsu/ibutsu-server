@@ -13,7 +13,8 @@ objects:
     name: ibutsu-backend
     namespace: ${NAMESPACE}
     annotations:
-      [{"from":{"kind":"ImageStreamTag","name":"ibutsu-backend:latest","namespace":"${NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"false"}]
+      image.openshift.io/triggers: >-
+        [{"from":{"kind":"ImageStreamTag","name":"ibutsu-backend:latest","namespace":"${NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"true"}]
   spec:
     replicas: 1
     selector:
