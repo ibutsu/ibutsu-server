@@ -158,7 +158,7 @@ objects:
                   claimName: ${BACKUP_VOLUME_CLAIM}
             containers:
               - name: postgresql-backup
-                image: postgresql:12
+                image: image-registry.openshift-image-registry.svc:5000/openshift/postgresql:12
                 command:
                   - 'bash'
                   - '-eo'
@@ -239,7 +239,7 @@ objects:
           spec:
             containers:
               - name: postgresql-vacuum
-                image: postgresql:12
+                image: image-registry.openshift-image-registry.svc:5000/openshift/postgresql:12
                 command:
                   - 'bash'
                   - '-eo'
