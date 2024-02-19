@@ -128,6 +128,25 @@ objects:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
     wildcardPolicy: None
+- kind: Route
+  apiVersion: route.openshift.io/v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+      shard: internal
+    name: ibutsu-frontend-cname
+    namespace: ${NAMESPACE}
+    annotations:
+      description: "A route to the frontend"
+  spec:
+    host: ${FRONTEND_ROUTE_CNAME}
+    to:
+      kind: Service
+      name: ibutsu-frontend
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
+    wildcardPolicy: None
 # ===============================================
 # Parameters
 # ===============================================
@@ -144,6 +163,10 @@ parameters:
   displayName: Frontend Route
   description: The URL of the frontend of the Ibutsu server
   value: ibutsu.example.com
+- name: FRONTEND_ROUTE_CNAME
+  displayName: Frontend Route
+  description: The CNAME URL of the frontend of the Ibutsu server
+  value: ibutsu.prod.com
 - name: BACKEND_ROUTE
   displayName: Backend Route
   description: The URL of the backend of the Ibutsu server
