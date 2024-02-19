@@ -300,7 +300,7 @@ parameters:
 - name: POSTGRESQL_STORAGE
   displayName: PostgreSQL Storage
   description: The amount of storage space for the database to use
-  value: 100Gi
+  value: 300Gi
 - name: APP_NAME
   displayName: App Name
   description: The name of the application
@@ -316,7 +316,7 @@ parameters:
 - name: BACKUP_STORAGE
   displayName: Backup storage
   description: The amount of storage for the DB backup volume claim
-  value: 30Gi
+  value: 120Gi
 - name: BACKUP_KEEP
   displayName: Number of backups to keep
   description: The number of backups to keep in the DB backup volume claim
