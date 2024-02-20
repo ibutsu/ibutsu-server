@@ -69,7 +69,11 @@ objects:
             timeoutSeconds: 10
           resources:
             limits:
-              memory: 512Mi
+              memory: 6Gi
+              cpu: '1'
+            requests:
+              memory: 4Gi
+              cpu: '1'
           securityContext:
             capabilities: {}
             privileged: false
