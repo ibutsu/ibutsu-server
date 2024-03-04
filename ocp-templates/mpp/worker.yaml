@@ -68,7 +68,13 @@ objects:
           image: worker
           imagePullPolicy: Always
           name: ibutsu-worker
-          resources: {}
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 500m
+              memory: 512Mi
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
         dnsPolicy: ClusterFirst
