@@ -229,6 +229,42 @@ WIDGET_TYPES = {
         ],
         "type": "widget",
     },
+    "importance-component": {
+        "id": "importance-component",
+        "title": "Importance by component",
+        "description": "Test results filtered by component and broken down by importance",
+        "params": [
+            {
+                "name": "job_name",
+                "description": "The name of the jenkins job to pull from",
+                "type": "string",
+                "required": True,
+                "default": "",
+            },
+            {
+                "name": "group_field",
+                "description": "the field in a result to group by, typically 'component'",
+                "type": "string",
+                "required": True,
+                "default": "component",
+            },
+            {
+                "name": "env",
+                "description": "The environment to filter by",
+                "type": "string",
+                "required": False,
+                "default": "",
+            },
+            {
+                "name": "components",
+                "description": "The component(s) to filter by",
+                "type": "string",
+                "required": False,
+                "default": "",
+            },
+        ],
+        "type": "widget",
+    },
     "accessibility-dashboard-view": {
         "id": "accessibility-dashboard-view",
         "title": "Accessibility Dashboard View",

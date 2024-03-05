@@ -61,6 +61,7 @@ def add_superadmin(
         )
         user.password = password
 
+        user.set_password(password)
         session.add(user)
 
     session.commit()
