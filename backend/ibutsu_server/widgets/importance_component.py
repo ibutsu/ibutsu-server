@@ -161,15 +161,13 @@ def get_importance_component(env="prod",
 
     # Need this broken down more for the table
     sdatret = []
+    table_data = []
     for key in sdatdict.keys():
-        sdatret.append({"component": key,
+        table_data.append({"component": key,
                         "bnums": sorted(list(bnums)),
                         "importances": importances,
                         "data": sdatdict[key]})
 
     # return data, for sanity
-    data = {"testa": group_field,
-            "testb": components,
-            "testc": project,
-            "sdatnew": sdatret}
+    data = {"table_data": table_data}
     return data

@@ -36,10 +36,7 @@ export class ImportanceComponentWidget extends React.Component {
     this.params = props.params || {};
     this.state = {
       data: {
-        testa: "",
-        testb: "",
-        testc: "",
-        sdatnew: []
+        table_data: []
       },
       isLoading: true,
     };
@@ -84,23 +81,23 @@ export class ImportanceComponentWidget extends React.Component {
         }
         {(!this.state.dataError && !this.state.isLoading) &&
         <CardBody>
-          {this.state.data.sdatnew.map((sdat) => (
+          {this.state.data.table_data.map((tdat) => (
             <>
-              <Text key={sdat.component} component="h2">{sdat.component}</Text>
+              <Text key={tdat.component} component="h2">{tdat.component}</Text>
               <Table aria-label="tttable" variant="compact">
                 <Thead>
                   <Tr>
-                    {["-", ...sdat.bnums].map((bnum) => (
-                      <Th key={bnum}>{bnum}</Th>
+                    {["-", ...tdat.bnums].map((buildnum) => (
+                      <Th key={buildnum}>{buildnum}</Th>
                     ))}
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {sdat.importances.map((importance) => (
+                  {tdat.importances.map((importance) => (
                   <Tr key={importance}>
                     <Text component="h2">{importance}</Text>
-                    {sdat.bnums.map((bnum) => (
-                      <Td key={bnum}><Link to={`/results?id[in]=${sdat.data[bnum][importance]["result_list"].join(";")}`}>{sdat.data[bnum][importance]["percentage"]}</Link></Td>
+                    {tdat.bnums.map((buildnum) => (
+                      <Td key={buildnum}><Link to={`/results?id[in]=${tdat.data[buildnum][importance]["result_list"].join(";")}`}>{tdat.data[buildnum][importance]["percentage"]}</Link></Td>
                     ))}  
                   </Tr>
                   ))}
