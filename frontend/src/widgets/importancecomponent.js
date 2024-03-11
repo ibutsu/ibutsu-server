@@ -39,8 +39,7 @@ export class ImportanceComponentWidget extends React.Component {
         testa: "",
         testb: "",
         testc: "",
-        sdatnew: [],
-        tmpdat: []
+        sdatnew: []
       },
       isLoading: true,
     };
@@ -75,14 +74,9 @@ export class ImportanceComponentWidget extends React.Component {
   }
 
   render() {
-
-    const Console = prop => (console[Object.keys(prop)[0]](...Object.values(prop))
-    ,null // ➜ React components must return something
-    )
     return (
       <Card>
         <WidgetHeader title={this.title} getDataFunc={this.getData} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
-        <Console log={"LOL"} />
         {(!this.state.dataError && this.state.isLoading) &&
         <CardBody>
           <Text component="h2">Loading ...</Text>
@@ -114,7 +108,6 @@ export class ImportanceComponentWidget extends React.Component {
               </Table>
             </>
           ))}
-          {/*<Text component="h2">{this.state.data.tmpdat}</Text>*/}
         </CardBody>
         }
       </Card>

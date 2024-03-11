@@ -171,7 +171,5 @@ def get_importance_component(env="prod",
     data = {"testa": group_field,
             "testb": components,
             "testc": project,
-            "sdatnew": sdatret,
-            #TODO: remove tmpdat here and in frontend, just used for troubleshooting
-            "tmpdat": sorted(["lol"])}
+            "sdatnew": sdatret}
     return data
