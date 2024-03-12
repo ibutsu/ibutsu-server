@@ -160,7 +160,6 @@ def get_importance_component(env="prod",
                     sdatdict[component][bnum][importance] = {"percentage": "NA", "result_list": []}
 
     # Need this broken down more for the table
-    sdatret = []
     table_data = []
     for key in sdatdict.keys():
         table_data.append({"component": key,
