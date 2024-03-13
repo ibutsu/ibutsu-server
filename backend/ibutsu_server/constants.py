@@ -262,6 +262,13 @@ WIDGET_TYPES = {
                 "required": False,
                 "default": "",
             },
+            {
+                "name": "builds",
+                "description": "The number of Jenkins builds to analyze.",
+                "type": "integer",
+                "default": 5,
+                "required": False,
+            },
         ],
         "type": "widget",
     },

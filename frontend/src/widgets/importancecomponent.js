@@ -84,7 +84,7 @@ export class ImportanceComponentWidget extends React.Component {
           {this.state.data.table_data.map((tdat) => (
             <>
               <Text key={tdat.component} component="h2">{tdat.component}</Text>
-              <Table aria-label="tttable" variant="compact">
+              <Table aria-label="importance-component-table" variant="compact">
                 <Thead>
                   <Tr>
                     {["-", ...tdat.bnums].map((buildnum) => (
@@ -98,7 +98,7 @@ export class ImportanceComponentWidget extends React.Component {
                     <Text component="h2">{importance}</Text>
                     {tdat.bnums.map((buildnum) => (
                       <Td key={buildnum}><Link to={`/results?id[in]=${tdat.data[buildnum][importance]["result_list"].join(";")}`}>{tdat.data[buildnum][importance]["percentage"]}</Link></Td>
-                    ))}  
+                    ))}
                   </Tr>
                   ))}
                 </Tbody>
