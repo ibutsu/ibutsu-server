@@ -7,7 +7,7 @@ from ibutsu_server.widgets.jenkins_job_view import get_jenkins_job_view
 
 
 def get_importance_component(
-    env="prod", group_field="component", job_name="", builds=5, components=None, project=None
+    env="prod", group_field="component", job_name="", builds=5, components="", project=None
 ):
     # taken from get_jenkins_line_chart in jenkins_job_analysis.py
     run_limit = int((JJV_RUN_LIMIT / BARCHART_MAX_BUILDS) * builds)
