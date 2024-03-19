@@ -9,7 +9,8 @@ export const KNOWN_WIDGETS = [
   'result-summary',
   'result-aggregator',
   'jenkins-bar-chart',
-  'jenkins-line-chart'
+  'jenkins-line-chart',
+  'importance-component'
 ];
 export const STRING_OPERATIONS = {
   'eq': '=',

@@ -35,6 +35,7 @@ import {
   GenericAreaWidget,
   GenericBarWidget,
   FilterHeatmapWidget,
+  ImportanceComponentWidget,
   ResultAggregatorWidget,
   ResultSummaryWidget
 } from './widgets';
@@ -407,6 +408,18 @@ export class Dashboard extends React.Component {
                         horizontal={true}
                         hideDropdown={true}
                         widgetEndpoint="jenkins-bar-chart"
+                        onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
+                        onEditClick={() => this.onEditWidgetClick(widget.id)}
+                      />
+                    }
+                    {(widget.type === "widget" && widget.widget === "importance-component") &&
+                      <ImportanceComponentWidget
+                        title={widget.title}
+                        params={widget.params}
+                        barWidth={20}
+                        horizontal={true}
+                        hideDropdown={true}
+                        widgetEndpoint="importance-component"
                         onDeleteClick={() => this.onDeleteWidgetClick(widget.id)}
                         onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />

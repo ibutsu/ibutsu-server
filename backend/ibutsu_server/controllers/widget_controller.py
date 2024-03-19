@@ -6,6 +6,7 @@ from ibutsu_server.widgets.accessibility_analysis import get_accessibility_bar_c
 from ibutsu_server.widgets.accessibility_dashboard_view import get_accessibility_dashboard_view
 from ibutsu_server.widgets.compare_runs_view import get_comparison_data
 from ibutsu_server.widgets.filter_heatmap import get_filter_heatmap
+from ibutsu_server.widgets.importance_component import get_importance_component
 from ibutsu_server.widgets.jenkins_heatmap import get_jenkins_heatmap
 from ibutsu_server.widgets.jenkins_job_analysis import get_jenkins_analysis_data
 from ibutsu_server.widgets.jenkins_job_analysis import get_jenkins_bar_chart
@@ -24,6 +25,7 @@ WIDGET_METHODS = {
     "jenkins-bar-chart": get_jenkins_bar_chart,
     "jenkins-heatmap": get_jenkins_heatmap,
     "filter-heatmap": get_filter_heatmap,
+    "importance-component": get_importance_component,
     "jenkins-job-view": get_jenkins_job_view,
     "jenkins-line-chart": get_jenkins_line_chart,
     "run-aggregator": get_recent_run_data,
