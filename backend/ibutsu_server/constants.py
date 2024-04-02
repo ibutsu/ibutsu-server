@@ -259,7 +259,7 @@ WIDGET_TYPES = {
                 "name": "components",
                 "description": "The component(s) to filter by",
                 "type": "string",
-                "required": False,
+                "required": True,
                 "default": "",
             },
             {
