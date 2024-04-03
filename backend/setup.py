@@ -30,7 +30,7 @@ REQUIRES = [
     "setuptools",
     "sqlalchemy-json",
     "sqlalchemy<1.4",
-    "swagger-ui-bundle",
+    "swagger-ui-bundle==0.0.9",
     "vine",
     "werkzeug",
 ]
