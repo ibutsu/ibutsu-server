@@ -26,6 +26,8 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
 
     # generate the group field
     group_field = string_to_column(group_field, Run)
+    if not group_field:
+        return data
 
     # create the query
     query = session.query(

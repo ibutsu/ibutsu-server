@@ -43,6 +43,8 @@ def _get_heatmap(filters, builds, group_field, project=None):
 
     # generate the group_field
     group_field = string_to_column(group_field, Run)
+    if not group_field:
+        return {}
 
     # get the runs on which to run the aggregation, we select from a subset of runs to improve
     # performance, otherwise we'd be aggregating over ALL runs
