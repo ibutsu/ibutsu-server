@@ -113,7 +113,7 @@ def get_report_list(page=1, page_size=25, project=None, token_info=None, user=No
 
 
 @validate_uuid
-def delete_report(id_):
+def delete_report(id_, user=None, token_info=None):
     """Deletes a report
 
     :param id: ID of the report to delete
@@ -121,13 +121,16 @@ def delete_report(id_):
 
     :rtype: tuple
     """
-    try:
-        report = Report.query.get(id_)
-        session.delete(report)
-        session.commit()
-        return "OK", 200
-    except Exception:
+    report = Report.query.get(id_)
+    if not report:
         return "Not Found", 404
+
+    report_file = ReportFile.query.filter(ReportFile.report_id == report.id).first()
+    session.delete(report_file)
+
+    session.delete(report)
+    session.commit()
+    return "OK", 200
 
 
 @validate_uuid
