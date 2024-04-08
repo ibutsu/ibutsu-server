@@ -1,3 +1,28 @@
+Version 2.5.7
+=============
+
+* Pin swagger-ui-bundle
+* Pin victory packages to prevent frontend failures
+* Control widget sensitive fields better on backend
+
+Version 2.5.6
+=============
+
+* Fix local dev setup
+* Fix creation user by admin
+* Make default dashboard work
+* Update .readthedocs.yml
+* Add empty state for filter heatmap
+* Add mpp cluster templates
+* Resolve dependency issue for react-chart package
+* Add importance widget component
+* Add codeowners
+
+Version 2.5.5
+=============
+
+* Tweak celery options to better handle redis timeouts/reconnects
+
 Version 2.5.4
 =============
 
