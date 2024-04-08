@@ -36,7 +36,7 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
 
     # generate the group field
     group_field = string_to_column(group_field, Result)
-    if not group_field:
+    if group_field is None:
         return []
 
     # create the query
