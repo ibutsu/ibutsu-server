@@ -81,7 +81,10 @@ def string_to_column(field, model):
         if field not in ARRAY_FIELDS and field not in NUMERIC_FIELDS:
             column = column.as_string()
     else:
-        column = getattr(model, field)
+        try:
+            column = getattr(model, field)
+        except AttributeError:
+            return None
     return column
 
 
