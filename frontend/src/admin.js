@@ -5,8 +5,9 @@ import {
   NavList
 } from '@patternfly/react-core';
 
-import { NavLink, Route, Switch } from 'react-router-dom';
+import { NavLink, Route, Routes } from 'react-router-dom';
 import EventEmitter from 'wolfy87-eventemitter';
+import ElementWrapper from './components/elementWrapper';
 
 import { IbutsuPage } from './components';
 import { AdminHome } from './pages/admin/home';
@@ -36,14 +37,14 @@ export class Admin extends React.Component {
     const navigation = (
       <Nav onSelect={this.onNavSelect} theme="dark" aria-label="Nav">
         <NavList>
-          <li className="pf-c-nav__item">
-            <NavLink to="/admin" className="pf-c-nav__link" activeClassName="pf-m-active" exact>Admin Home</NavLink>
+          <li className="pf-v5-c-nav__item">
+            <NavLink to="/admin" className="pf-v5-c-nav__link">Admin Home</NavLink>
           </li>
-          <li className="pf-c-nav__item">
-            <NavLink to="/admin/users" className="pf-c-nav__link" activeClassName="pf-m-active">Users</NavLink>
+          <li className="pf-v5-c-nav__item">
+            <NavLink to="/admin/users" className="pf-v5-c-nav__link">Users</NavLink>
           </li>
-          <li className="pf-c-nav__item">
-            <NavLink to="/admin/projects" className="pf-c-nav__link" activeClassName="pf-m-active">Projects</NavLink>
+          <li className="pf-v5-c-nav__item">
+            <NavLink to="/admin/projects" className="pf-v5-c-nav__link">Projects</NavLink>
           </li>
         </NavList>
       </Nav>
@@ -52,13 +53,13 @@ export class Admin extends React.Component {
     return (
       <React.Fragment>
         <IbutsuPage eventEmitter={this.eventEmitter} navigation={navigation} title="Administration | Ibutsu">
-          <Switch>
-            <Route path="/admin" component={AdminHome} exact />
-            <Route path="/admin/users" component={UserList} exact />
-            <Route path="/admin/users/:id" component={UserEdit} />
-            <Route path="/admin/projects" component={ProjectList} exact />
-            <Route path="/admin/projects/:id" component={ProjectEdit} exact />
-          </Switch>
+          <Routes>
+            <Route path="*" element={<AdminHome />}/>
+            <Route path="/users" element={<ElementWrapper routeElement={UserList} />} />
+            <Route path="/users/:id" element={<ElementWrapper routeElement={UserEdit} />} />
+            <Route path="/projects" element={<ElementWrapper routeElement={ProjectList} />} />
+            <Route path="/projects/:id" element={<ElementWrapper routeElement={ProjectEdit} />} />
+          </Routes>
         </IbutsuPage>
       </React.Fragment>
     );

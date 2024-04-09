@@ -6,36 +6,44 @@ import {
   AlertActionLink,
   Brand,
   Button,
+  ButtonVariant,
   Flex,
   FlexItem,
-  PageHeader,
+  Masthead,
+  MastheadMain,
+  MastheadBrand,
+  MastheadToggle,
+  MastheadContent,
+  PageToggleButton,
+  MenuToggle,
   Select,
+  SelectList,
   SelectOption,
-  SelectVariant,
-  PageHeaderTools,
-  PageHeaderToolsGroup,
-  PageHeaderToolsItem,
   Switch,
   TextContent,
+  Toolbar,
+  ToolbarContent,
+  ToolbarGroup,
+  ToolbarItem,
   TextList,
-  TextListItem
+  TextListItem,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
 } from '@patternfly/react-core';
-import { UploadIcon, ServerIcon, QuestionCircleIcon, MoonIcon } from '@patternfly/react-icons';
-import { css } from '@patternfly/react-styles';
-import accessibleStyles from '@patternfly/patternfly/utilities/Accessibility/accessibility.css';
-
-import { Link, withRouter } from 'react-router-dom';
+import { BarsIcon, MoonIcon, ServerIcon, TimesIcon, QuestionCircleIcon, UploadIcon } from '@patternfly/react-icons';
 
 import { FileUpload, UserDropdown } from '../components';
 import { MONITOR_UPLOAD_TIMEOUT } from '../constants';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { getActiveProject, getTheme, projectToOption, setTheme } from '../utilities';
+import { getActiveProject, getTheme, setTheme } from '../utilities';
 
 
 export class IbutsuHeader extends React.Component {
   static propTypes = {
     eventEmitter: PropTypes.object,
+    navigate: PropTypes.func,
     version: PropTypes.string
   }
 
@@ -43,22 +51,24 @@ export class IbutsuHeader extends React.Component {
     super(props);
     let project = getActiveProject();
     this.eventEmitter = props.eventEmitter;
+
     this.state = {
       uploadFileName: '',
       importId: '',
       monitorUploadId: null,
       isAboutOpen: false,
       isProjectSelectorOpen: false,
-      selectedProject: projectToOption(project),
-      searchValue: '',
+      selectedProject: project || '',
+      inputValue: project?.title || '',
+      filterValue: '',
       projects: [],
-      projectsFilter: '',
+      filteredProjects: [],
       isDarkTheme: getTheme() === 'dark',
       version: props.version
     };
   }
 
-  showNotification(type, title, message, action?, timeout?, key?) {
+  showNotification(type, title, message, action = null, timeout = null, key = null) {
     if (!this.eventEmitter) {
       return;
     }
@@ -81,12 +91,12 @@ export class IbutsuHeader extends React.Component {
 
   getProjects() {
     const params = {pageSize: 10};
-    if (this.state.projectsFilter) {
-      params['filter'] = ['title%' + this.state.projectsFilter];
+    if (this.state.filterValue) {
+      params['filter'] = ['title%' + this.state.filterValue];
     }
     HttpClient.get([Settings.serverUrl, 'project'], params)
       .then(response => HttpClient.handleResponse(response))
-      .then(data => this.setState({projects: data['projects']}));
+      .then(data => this.setState({projects: data['projects'], filteredProjects: data['projects']}));
   }
 
   onBeforeUpload = (files) => {
@@ -120,11 +130,11 @@ export class IbutsuHeader extends React.Component {
           this.setState({monitorUploadId: null});
           let action = null;
           if (data.metadata.run_id) {
-            const RunButton = withRouter(({history}) => (
-              <AlertActionLink onClick={() => {history.push('/runs/' + data.metadata.run_id)}}>
+            const RunButton = () => (
+              <AlertActionLink onClick={() => {this.props.navigate('/runs/' + data.metadata.run_id)}}>
                 Go to Run
               </AlertActionLink>
-            ));
+            )
             action = <RunButton />;
           }
           this.showNotification('success', 'Import Complete', `${data.filename} has been successfully imported as run ${data.metadata.run_id}`, action);
@@ -132,25 +142,28 @@ export class IbutsuHeader extends React.Component {
       });
   }
 
-  onProjectToggle = (isOpen) => {
-    this.setState({isProjectSelectorOpen: isOpen});
+  onProjectToggle = () => {
+    this.setState({isProjectSelectorOpen: !this.state.isProjectSelectorOpen});
   };
 
-  onProjectSelect = (event, value, isPlaceholder) => {
-    if (isPlaceholder) {
-      this.onProjectClear();
-      return;
-    }
+  onProjectSelect = (_event, value) => {
     const activeProject = getActiveProject();
-    if (activeProject && activeProject.id === value.project.id) {
-      this.setState({isProjectSelectorOpen: false});
+    if (activeProject && activeProject.id === value.id) {
+      this.setState({
+        isProjectSelectorOpen: false,
+        inputValue: value.title,
+        filterValue: ''
+      });
       return;
     }
-    const project = JSON.stringify(value.project);
+
+    const project = JSON.stringify(value);
     localStorage.setItem('project', project);
     this.setState({
       selectedProject: value,
-      isProjectSelectorOpen: false
+      isProjectSelectorOpen: false,
+      inputValue: value.title,
+      filterValue: ''
     });
     this.emitProjectChange();
   };
@@ -158,15 +171,20 @@ export class IbutsuHeader extends React.Component {
   onProjectClear = () => {
     localStorage.removeItem('project');
     this.setState({
-      selectedProject: null,
-      isProjectSelectorOpen: false
-    });
+      selectedProject: '',
+      isProjectSelectorOpen: false,
+      inputValue: '',
+      filterValue: ''
+    }, this.getProjects);
     this.emitProjectChange();
   }
 
-  onProjectsChanged = (value) => {
-    this.setState({projectsFilter: value}, this.getProjects);
-  }
+  onTextInputChange = (_event, value) => {
+    this.setState({
+      inputValue: value,
+      filterValue: value
+    }, this.getProjects);
+  };
 
   toggleAbout = () => {
     this.setState({isAboutOpen: !this.state.isAboutOpen});
@@ -187,55 +205,154 @@ export class IbutsuHeader extends React.Component {
     this.getProjects();
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.filterValue !== this.state.filterValue
+    ) {
+      let newSelectOptionsProject = this.state.projects;
+      if (this.state.inputValue) {
+        newSelectOptionsProject = this.state.projects.filter(menuItem =>
+          String(menuItem.title).toLowerCase().includes(this.state.filterValue.toLowerCase())
+        );
+
+        if (!this.state.isProjectSelectorOpen) {
+          this.setState({ isProjectSelectorOpen: true });
+        }
+      }
+
+      this.setState({
+        filteredProjects: newSelectOptionsProject,
+      });
+    }
+  }
+
+  toggle = toggleRef => (
+    <MenuToggle
+      variant="typeahead"
+      onClick={this.onProjectToggle}
+      isExpanded={this.state.isProjectSelectorOpen}
+      isFullWidth
+      innerRef={toggleRef}
+    >
+      <TextInputGroup isPlain>
+        <TextInputGroupMain
+          value={this.state.inputValue}
+          onClick={this.onProjectToggle}
+          onChange={this.onTextInputChange}
+          id="typeahead-select-input"
+          autoComplete="off"
+          placeholder="No active project"
+          role="combobox"
+          isExpanded={this.state.isProjectSelectorOpen}
+          aria-controls="select-typeahead-listbox"
+        />
+        <TextInputGroupUtilities>
+          {!!this.state.inputValue && (
+            <Button variant="plain" onClick={() => {
+              this.onProjectClear()
+            }} aria-label="Clear input value">
+              <TimesIcon aria-hidden />
+            </Button>
+          )}
+        </TextInputGroupUtilities>
+      </TextInputGroup>
+    </MenuToggle>
+  );
+
   render() {
     document.title = 'Ibutsu';
     const apiUiUrl = Settings.serverUrl + '/ui/';
     const uploadParams = {};
-    if (this.state.selectedProject && this.state.selectedProject.project) {
-      uploadParams['project'] = this.state.selectedProject.project.id;
+    const {
+      selectedProject,
+      projects,
+      filteredProjects,
+      filterValue,
+    } = this.state;
+
+    if (selectedProject) {
+      uploadParams['project'] = selectedProject.id;
     }
     const topNav = (
       <Flex>
         <FlexItem id="project-selector">
           <Select
-            typeAheadAriaLabel="Select a project"
-            placeholderText="No active project"
-            variant={SelectVariant.typeahead}
+            id="typeahead-select"
             isOpen={this.state.isProjectSelectorOpen}
-            selections={this.state.selectedProject}
-            onToggle={this.onProjectToggle}
+            selected={selectedProject}
             onSelect={this.onProjectSelect}
-            onClear={this.onProjectClear}
-            onTypeaheadInputChanged={this.onProjectsChanged}
-            footer={this.state.projects.length === 10 && "Search for more..."}
+            onOpenChange={() => {
+              this.setState({isProjectSelectorOpen: false});
+            }}
+            toggle={this.toggle}
           >
-            {this.state.projects.map(project => (
-              <SelectOption key={project.id} value={projectToOption(project)} description={project.name} />
-            ))}
+            <SelectList id="select-typeahead-listbox">
+              {(projects.length === 0 && !filterValue) && (
+                <SelectOption
+                  isDisabled={true}
+                  description={"Ask Ibutsu admins to add you to a project"}>
+                  No projects available
+                </SelectOption>
+              )}
+              {(projects.length === 0 && !!filterValue) && (
+                <SelectOption isDisabled={true}>
+                  {`No results found for "${filterValue}"`}
+                </SelectOption>
+              )}
+              {filteredProjects.map((project, index) => (
+                <SelectOption
+                  key={project.id || index}
+                  onClick={() => this.setState({selectedProject: project})}
+                  value={project}
+                  description={project.name}
+                  isDisabled={project.isDisabled}>
+                  {project.title}
+                </SelectOption>
+              ))}
+              {projects.length === 10 && (
+                <SelectOption isDisabled>Search for more...</SelectOption>
+              )}
+            </SelectList>
           </Select>
         </FlexItem>
       </Flex>
     );
     const headerTools = (
-      <PageHeaderTools>
-        <PageHeaderToolsGroup className={css(accessibleStyles.srOnly, accessibleStyles.visibleOnLg)}>
-          <PageHeaderToolsItem>
-            <Button variant="plain" onClick={this.toggleAbout}><QuestionCircleIcon /></Button>
-          </PageHeaderToolsItem>
-          <PageHeaderToolsItem>
-            <FileUpload component="button" className="pf-c-button pf-m-plain" isUnstyled name="importFile" url={`${Settings.serverUrl}/import`} params={uploadParams} multiple={false} beforeUpload={this.onBeforeUpload} afterUpload={this.onAfterUpload} title="Import xUnit XML or Ibutsu Archive"><UploadIcon /> Import</FileUpload>
-          </PageHeaderToolsItem>
-          <PageHeaderToolsItem>
-            <a href={apiUiUrl} className="pf-c-button pf-m-plain" target="_blank" rel="noopener noreferrer"><ServerIcon/> API</a>
-          </PageHeaderToolsItem>
-          <PageHeaderToolsItem>
-            <Switch id="dark-theme" label={<MoonIcon />} isChecked={this.state.isDarkTheme} onChange={this.onThemeChanged} />
-          </PageHeaderToolsItem>
-          <PageHeaderToolsItem id="user-dropdown">
-            <UserDropdown eventEmitter={this.eventEmitter}/>
-          </PageHeaderToolsItem>
-        </PageHeaderToolsGroup>
-      </PageHeaderTools>
+      <Toolbar id="toolbar" isFullHeight isStatic style={{paddingLeft: "30px"}}>
+        <ToolbarContent>
+          <ToolbarGroup variant="filter-group">
+            <ToolbarItem>
+              {topNav}
+            </ToolbarItem>
+          </ToolbarGroup>
+          <ToolbarGroup
+            variant="icon-button-group"
+            align={{
+              default: 'alignRight'
+            }}
+            spacer={{
+              default: 'spacerNone',
+              md: 'spacerMd'
+            }}
+          >
+            <ToolbarItem>
+              <Button aria-label="About" onClick={this.toggleAbout} variant={ButtonVariant.plain} icon={<QuestionCircleIcon />} />
+            </ToolbarItem>
+            <ToolbarItem>
+              <FileUpload component="button" className="pf-v5-c-button pf-m-plain" isUnstyled name="importFile" url={`${Settings.serverUrl}/import`} params={uploadParams} multiple={false} beforeUpload={this.onBeforeUpload} afterUpload={this.onAfterUpload} title="Import xUnit XML or Ibutsu Archive"><UploadIcon /> Import</FileUpload>
+            </ToolbarItem>
+            <ToolbarItem>
+              <a href={apiUiUrl} className="pf-v5-c-button pf-m-plain" target="_blank" rel="noopener noreferrer"><ServerIcon/> API</a>
+            </ToolbarItem>
+            <ToolbarItem>
+              <Switch id="dark-theme" label={<MoonIcon />} isChecked={this.state.isDarkTheme} onChange={(_event, isChecked) => this.onThemeChanged(isChecked)} />
+            </ToolbarItem>
+            <ToolbarItem id="user-dropdown">
+              <UserDropdown eventEmitter={this.eventEmitter}/>
+            </ToolbarItem>
+          </ToolbarGroup>
+      </ToolbarContent>
+    </Toolbar>
     );
     return (
       <React.Fragment>
@@ -262,14 +379,25 @@ export class IbutsuHeader extends React.Component {
           </TextContent>
           <p style={{marginTop: "2rem"}}>* Note: artifact files (screenshots, logs) are retained for 3 months</p>
         </AboutModal>
-        <PageHeader
-          logo={<Brand src="/images/ibutsu-wordart-164.png" alt="Ibutsu"/>}
-          logoComponent={Link}
-          logoProps={{to: '/'}}
-          headerTools={headerTools}
-          showNavToggle={true}
-          topNav={topNav}
-        />
+        <Masthead>
+          <MastheadToggle>
+            <PageToggleButton
+              variant="plain"
+              aria-label="Global navigation"
+              id="vertical-nav-toggle"
+            >
+              <BarsIcon />
+            </PageToggleButton>
+          </MastheadToggle>
+          <MastheadMain>
+            <MastheadBrand href={'/'}>
+              <Brand src="/images/ibutsu-wordart-164.png" alt="Ibutsu"/>
+            </MastheadBrand>
+          </MastheadMain>
+          <MastheadContent>
+            {headerTools}
+          </MastheadContent>
+        </Masthead>
       </React.Fragment>
     );
   }

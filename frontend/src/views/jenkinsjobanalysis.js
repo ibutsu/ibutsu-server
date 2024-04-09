@@ -1,10 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
-  DropdownDirection,
   Switch,
   Tab,
-  Tabs,
+  Tabs
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
@@ -21,7 +20,7 @@ import { HEATMAP_MAX_BUILDS } from '../constants'
 export class JenkinsJobAnalysisView extends React.Component {
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object,
+    navigate: PropTypes.func,
     view: PropTypes.object
   };
 
@@ -52,11 +51,6 @@ export class JenkinsJobAnalysisView extends React.Component {
       linechartParams: {},
       countSkips: 'Yes'
     };
-    // Watch the history to update tabs
-    this.unlisten = this.props.history.listen(() => {
-      const tabIndex = this.getTabIndex('heatmap');
-      this.setState({activeTab: tabIndex});
-    });
   }
 
   getTabIndex(defaultValue) {
@@ -122,7 +116,6 @@ export class JenkinsJobAnalysisView extends React.Component {
     return (<ParamDropdown
         dropdownItems={dropdownItems}
         defaultValue={defaultValue}
-        direction={DropdownDirection.down}
         handleSelect={this.onBuildSelect}
         tooltip={"Set builds to:"}
       />);
@@ -130,42 +123,40 @@ export class JenkinsJobAnalysisView extends React.Component {
 
   getSwitch() {
     const { isAreaChart } = this.state;
-    return (<Switch
-      id="bar-chart-switch"
-      labelOff="Change to Area Chart"
-      label="Change to Bar Chart"
-      isChecked={isAreaChart}
-      onChange={this.handleSwitch}
-    />);
+    return (
+      <Switch
+        id="bar-chart-switch"
+        labelOff="Change to Area Chart"
+        label="Change to Bar Chart"
+        isChecked={isAreaChart}
+        onChange={this.handleSwitch}
+      />
+    );
   }
 
   getColors = (key) => {
-    let color = 'var(--pf-global--success-color--100)';
+    let color = 'var(--pf-v5-global--success-color--100)';
     if (key === 'failed') {
-      color = 'var(--pf-global--danger-color--100)';
+      color = 'var(--pf-v5-global--danger-color--100)';
     }
     else if (key === 'skipped') {
-      color = 'var(--pf-global--info-color--100)';
+      color = 'var(--pf-v5-global--info-color--100)';
     }
     else if (key === 'error') {
-      color = 'var(--pf-global--warning-color--100)';
+      color = 'var(--pf-v5-global--warning-color--100)';
     }
     else if (key === 'xfailed') {
-      color = 'var(--pf-global--palette--purple-400)';
+      color = 'var(--pf-v5-global--palette--purple-400)';
     }
     else if (key === 'xpassed') {
-      color = 'var(--pf-global--palette--purple-700)';
+      color = 'var(--pf-v5-global--palette--purple-700)';
     }
     return color;
   }
 
-  onTabSelect = (event, tabIndex) => {
-    const loc = this.props.history.location;
-    this.props.history.push({
-      pathname: loc.pathname,
-      search: loc.search,
-      hash: '#' + tabIndex
-    });
+  onTabSelect = (_event, tabIndex) => {
+    const loc = this.props.location;
+    this.props.navigate(`${loc.pathname}${loc.search}#${tabIndex}`)
     this.setState({activeTab: tabIndex});
   }
 
@@ -182,17 +173,26 @@ export class JenkinsJobAnalysisView extends React.Component {
     });
   }
 
-  handleSwitch = isChecked => {
+  handleSwitch = (_event, isChecked) => {
     this.setState({isAreaChart: isChecked});
   }
 
   componentDidMount() {
     this.getWidgetParams();
+    window.addEventListener('popstate', this.handlePopState);
   }
 
-  componentDidUnmount() {
-    this.unlisten();
+  componentWillUnmount() {
+    window.removeEventListener('popstate', this.handlePopState);
   }
+
+  handlePopState = () => {
+    // Handle browser navigation buttons click
+    const tabIndex = this.getTabIndex('summary');
+    this.setState({activeTab: tabIndex}, () => {
+      this.updateTab(tabIndex);
+    });
+  };
 
   render() {
     const {
@@ -207,22 +207,21 @@ export class JenkinsJobAnalysisView extends React.Component {
 
     return (
       <React.Fragment>
-        <div style={{backgroundColor: 'var(--pf-global--BackgroundColor--100)', float: 'right', clear: 'right', marginBottom: '-2em', padding: '0.2em 1em', width: '20em'}}>
+        <div style={{backgroundColor: 'var(--pf-v5-global--BackgroundColor--100)', float: 'right', clear: 'right', marginBottom: '-2em', padding: '0.2em 1em', width: '20em'}}>
           {this.getBuildsDropdown()}
         </div>
         {activeTab === 'heatmap' &&
-        <div style={{backgroundColor: 'var(--pf-global--BackgroundColor--100)', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
+        <div style={{backgroundColor: 'var(--pf-v5-global--BackgroundColor--100)', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
           <ParamDropdown
             dropdownItems={['Yes', 'No']}
             defaultValue={this.state.countSkips}
-            direction={DropdownDirection.down}
             handleSelect={this.onSkipSelect}
             tooltip="Count skips as failure:"
           />
         </div>
         }
         {activeTab === 'overall-health' &&
-        <div style={{backgroundColor: 'var(--pf-global--BackgroundColor--100)', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em', width: '15em'}}>
+        <div style={{backgroundColor: 'var(--pf-v5-global--BackgroundColor--100)', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em'}}>
           {this.getSwitch()}
         </div>
         }
@@ -268,10 +267,10 @@ export class JenkinsJobAnalysisView extends React.Component {
             sortOrder="ascending"
             showTooltip={false}
             colorScale={[
-              'var(--pf-global--warning-color--100)',
-              'var(--pf-global--danger-color--100)',
-              'var(--pf-global--success-color--100)',
-              'var(--pf-global--info-color--100)',
+              'var(--pf-v5-global--warning-color--100)',
+              'var(--pf-v5-global--danger-color--100)',
+              'var(--pf-v5-global--success-color--100)',
+              'var(--pf-v5-global--info-color--100)',
             ]}
             padding={{
               bottom: 50,

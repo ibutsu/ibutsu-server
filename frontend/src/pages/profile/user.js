@@ -9,6 +9,7 @@ import {
   DataListItemRow,
   DataListItemCells,
   InputGroup,
+  InputGroupItem,
   Label,
   PageSection,
   PageSectionVariants,
@@ -119,7 +120,7 @@ export class UserProfile extends React.Component {
     return (
       <React.Fragment>
         <PageSection variant={PageSectionVariants.light}>
-          <Title headingLevel="h1" size='2xl' className="pf-c-title">
+          <Title headingLevel="h1" size='2xl' className="pf-v5-c-title">
             <React.Fragment>
               <span> Profile </span>
               {user && user.is_superadmin &&
@@ -138,7 +139,7 @@ export class UserProfile extends React.Component {
                   <DataListItemCells
                     dataListCells={[
                       <DataListCell key={1} width={2}><strong>Name:</strong></DataListCell>,
-                      <DataListCell key={2} width={4}>{user.name} <Button variant="link" icon={<PencilAltIcon />} onClick={this.onEditButtonClicked} isInline isSmall ouiaId="edit-profile-button">Edit</Button></DataListCell>
+                      <DataListCell key={2} width={4}>{user.name} <Button variant="link" icon={<PencilAltIcon />} onClick={this.onEditButtonClicked} isInline size="sm" ouiaId="edit-profile-button">Edit</Button></DataListCell>
                     ]}
                   />
                 }
@@ -148,9 +149,17 @@ export class UserProfile extends React.Component {
                       <DataListCell key={1} width={2}><strong>Name:</strong></DataListCell>,
                       <DataListCell key={2} width={4}>
                         <InputGroup>
-                          <TextInput value={this.state.tempName} type="text" onChange={value => this.setState({tempName: value})} aria-label="User name" />
-                          <Button variant="control" icon={<CheckIcon />} onClick={this.onSaveButtonClicked} ouiaId="edit-save-button">Save</Button>
-                          <Button variant="control" icon={<TimesIcon />} onClick={this.onCancelButtonClicked} ouiaId="edit-cancel-button">Cancel</Button>
+                          <InputGroupItem isFill ><TextInput value={this.state.tempName} type="text" onChange={(_event, value) => this.setState({tempName: value})} aria-label="User name" /></InputGroupItem>
+                          <InputGroupItem>
+                            <Button variant="control" icon={<CheckIcon />} onClick={this.onSaveButtonClicked} ouiaId="edit-save-button">
+                              Save
+                            </Button>
+                          </InputGroupItem>
+                          <InputGroupItem>
+                            <Button variant="control" icon={<TimesIcon />} onClick={this.onCancelButtonClicked} ouiaId="edit-cancel-button">
+                              Cancel
+                            </Button>
+                          </InputGroupItem>
                         </InputGroup>
                       </DataListCell>
                     ]}

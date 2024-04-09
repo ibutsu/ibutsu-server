@@ -35,7 +35,7 @@ function projectToRow(project, onDeleteClick) {
               variant="primary"
               ouiaId={`admin-projects-edit-${project.id}`}
               component={(props: any) => <Link {...props} to={`/admin/projects/${project.id}`} />}
-              isSmall
+              size="sm"
             >
               <PencilAltIcon />
             </Button>
@@ -44,7 +44,7 @@ function projectToRow(project, onDeleteClick) {
               variant="danger"
               ouiaId={`admin-projects-delete-${project.id}`}
               onClick={() => onDeleteClick(project.id)}
-              isSmall
+              size="sm"
             >
               <TrashIcon />
             </Button>
@@ -58,7 +58,7 @@ function projectToRow(project, onDeleteClick) {
 export class ProjectList extends React.Component {
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object,
+    navigate: PropTypes.func,
   }
 
   constructor(props) {
@@ -79,7 +79,6 @@ export class ProjectList extends React.Component {
       columns: ['Title', 'Name', 'Owner', ''],
       rows: [getSpinnerRow(4)],
       projects: [],
-      users: [],
       page: page,
       pageSize: pageSize,
       totalItems: 0,
@@ -97,20 +96,18 @@ export class ProjectList extends React.Component {
     let params = [];
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.history.replace('/admin/projects?' + params.join('&'));
+    this.props.navigate('/admin/projects?' + params.join('&'));
   }
 
   setPage = (_event, pageNumber) => {
     this.setState({page: pageNumber}, () => {
       this.updateUrl();
-      this.getUsers();
     });
   }
 
   setPageSize = (_event, perPage) => {
     this.setState({pageSize: perPage}, () => {
       this.updateUrl();
-      this.getUsers();
     });
   }
 
@@ -182,7 +179,7 @@ export class ProjectList extends React.Component {
       totalItems: this.state.totalItems
     };
     const filters = [
-      <TextInput type="text" id="filter" placeholder="Search for project..." value={textFilter || ''} onChange={this.onTextChanged} style={{height: "inherit"}} key="textFilter"/>
+      <TextInput type="text" id="filter" placeholder="Search for project..." value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: "inherit"}} key="textFilter"/>
     ];
     return (
       <React.Fragment>

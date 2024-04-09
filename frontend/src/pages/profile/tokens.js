@@ -25,8 +25,7 @@ export class UserTokens extends React.Component {
 
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object,
-    parent: PropTypes.node,
+    navigate: PropTypes.func,
     eventEmitter: PropTypes.object
   }
 
@@ -91,7 +90,7 @@ export class UserTokens extends React.Component {
     let params = [];
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.history.replace('/runs?' + params.join('&'));
+    this.props.navigate('/profile/tokens?' + params.join('&'));
   }
 
   setPage = (_event, pageNumber) => {

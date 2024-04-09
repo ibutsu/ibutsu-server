@@ -65,10 +65,12 @@ target/
 
 # Editors
 .vscode
+.idea/
 
 # NodeJS stuff
 node_modules
 package-lock.json
+yarn.lock
 
 # Virtual environment
 .ibutsu-env

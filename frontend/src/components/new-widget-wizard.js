@@ -5,8 +5,11 @@ import {
   Checkbox,
   Form,
   FormGroup,
+  FormHelperText,
   Grid,
   GridItem,
+  HelperText,
+  HelperTextItem,
   Modal,
   ModalVariant,
   Radio,
@@ -17,18 +20,23 @@ import {
   TextContent,
   TextInput,
   Title,
-  Wizard
+  Wizard,
+  WizardHeader,
+  WizardStep,
 } from '@patternfly/react-core';
+
 import {
+  Tbody,
   Table,
-  TableHeader,
-  TableBody,
-} from '@patternfly/react-table';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
+  Td,
+  Th,
+  Thead,
+  Tr,
+} from '@patternfly/react-table'
 import Linkify from 'react-linkify';
+import { linkifyDecorator } from './decorators';
 
 import { HttpClient } from '../services/http';
-import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
 
 export class NewWidgetWizard extends React.Component {
@@ -163,12 +171,22 @@ export class NewWidgetWizard extends React.Component {
     this.setState({areParamsFilled: areParamsFilled});
   }
 
-  onNext = ({id}) => {
-    if (id === 3) {
+  handleRequiredParam = (param) => {
+    if (param.required) {
+      if (this.state.params[param.name] === "") {
+        return "error"
+      }
+    }
+    // TODO: Handle parameter types
+    return "default"
+  }
+
+  onNext = (_event, currentStep) => {
+    if (currentStep.id === 3) {
       this.onParamChange('', null);
     }
     this.setState({
-      stepIdReached: this.state.stepIdReached < id ? id : this.state.stepIdReached
+      stepIdReached: this.state.stepIdReached < currentStep.id ? currentStep.id : this.state.stepIdReached
     });
   }
 
@@ -193,7 +211,7 @@ export class NewWidgetWizard extends React.Component {
             {widgetTypes.map(widgetType => {
               return (
                 <div key={widgetType.id}>
-                  <Radio id={widgetType.id} value={widgetType.id} label={widgetType.title} description={widgetType.description} isChecked={selectedTypeId === widgetType.id} onChange={this.onSelectType}/>
+                  <Radio id={widgetType.id} value={widgetType.id} label={widgetType.title} description={widgetType.description} isChecked={selectedTypeId === widgetType.id} onChange={(event, _) => this.onSelectType(_, event)}/>
                 </div>
               );
             })}
@@ -208,11 +226,27 @@ export class NewWidgetWizard extends React.Component {
         component: (
           <Form isHorizontal>
             <Title headingLevel="h1" size="xl">Set widget information</Title>
-            <FormGroup label="Title" fieldId="widget-title" helperText="A title for the widget" validated={this.isTitleValid} helperTextInvalid="Please enter a title for this widget" helperTextInvalidIcon={<ExclamationCircleIcon/>} isRequired>
-              <TextInput type="text" id="widget-title" name="widget-title" value={this.state.title} onChange={this.onTitleChange} validated={this.state.isTitleValid} isRequired />
+            <FormGroup label="Title" fieldId="widget-title" isRequired>
+              <TextInput type="text" id="widget-title" name="widget-title" value={this.state.title} onChange={(_event, value) => this.onTitleChange(value)} validated={this.state.isTitleValid ? 'default' : 'error'} isRequired />
+              {this.state.isTitleValid !== true && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="error">
+                    Please enter a title for this widget
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+              )}
             </FormGroup>
-            <FormGroup label="Weight" fieldId="widget-weight" helperText="How widgets are ordered on the dashboard">
-              <TextInput type="number" id="widget-weight" name="widget-weight" value={this.state.weight} onChange={this.onWeightChange} />
+            <FormGroup label="Weight" fieldId="widget-weight">
+              <TextInput type="number" id="widget-weight" name="widget-weight" value={this.state.weight} onChange={(_event, value) => this.onWeightChange(value)} />
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="default">
+                    How widgets are ordered on the dashboard
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
             </FormGroup>
           </Form>
         )
@@ -232,7 +266,6 @@ export class NewWidgetWizard extends React.Component {
                   <FormGroup
                     label={param.name}
                     fieldId={param.name}
-                    helperText={<Linkify componentDecorator={linkifyDecorator}>{param.description}</Linkify>}
                     isRequired={param.required}>
                     <TextInput
                       value={this.state.params[param.name]}
@@ -240,9 +273,19 @@ export class NewWidgetWizard extends React.Component {
                       id={param.name}
                       aria-describedby={`${param.name}-helper`}
                       name={param.name}
-                      onChange={this.onParamChange}
+                      onChange={(event, value) => this.onParamChange(value, event)}
                       isRequired={param.required}
+                      validated={this.handleRequiredParam(param)}
                     />
+                    <FormHelperText>
+                      <HelperText>
+                        <HelperTextItem variant="default">
+                          <Linkify componentDecorator={linkifyDecorator}>
+                            {param.description}
+                          </Linkify>
+                        </HelperTextItem>
+                      </HelperText>
+                    </FormHelperText>
                   </FormGroup>
                 }
                 {param.type === 'boolean' &&
@@ -253,7 +296,7 @@ export class NewWidgetWizard extends React.Component {
                     hasNoPaddingTop>
                     <Checkbox
                       isChecked={this.state.params[param.name]}
-                      onChange={this.onParamChange}
+                      onChange={(event, value) => this.onParamChange(value, event)}
                       id={param.name}
                       name={param.name}
                       label={param.description} />
@@ -270,7 +313,7 @@ export class NewWidgetWizard extends React.Component {
                       name={param.name}
                       isRequired={param.required}
                       value={this.state.params[param.name]}
-                      onChange={this.onParamChange}
+                      onChange={(event, value) => this.onParamChange(value, event)}
                       resizeOrientation='vertical' />
                   </FormGroup>
                 }
@@ -284,6 +327,7 @@ export class NewWidgetWizard extends React.Component {
         id: 4,
         name: 'Review details',
         canJumpTo: stepIdReached >= 4,
+        enableNext: true,
         nextButtonText: 'Finish',
         component: (
           <Stack hasGutter>
@@ -309,13 +353,23 @@ export class NewWidgetWizard extends React.Component {
                 </GridItem>
                 <GridItem span="10">
                   <Table
-                    cells={["Name", "Value"]}
                     variant="compact"
-                    borders="compactBorderless"
-                    rows={Object.entries(this.state.params).map(param => { return [param[0], param[1].toString()]; })}
+                    borders={true}
                     aria-label="Parameters">
-                    <TableHeader />
-                    <TableBody />
+                    <Thead>
+                      <Tr>
+                        <Th>Name</Th>
+                        <Th>Value</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {Object.entries(this.state.params).map(param => (
+                        <Tr key={param[0]}>
+                          <Td>{param[0]}</Td>
+                          <Td>{param[1].toString()}</Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
                   </Table>
                 </GridItem>
               </Grid>
@@ -331,20 +385,32 @@ export class NewWidgetWizard extends React.Component {
         showClose={false}
         onClose={this.onClose}
         hasNoBodyWrapper
-        aria-describedby="add-widget-description"
-        aria-labelledby="add-widget-title"
+        aria-label='Add widget modal'
       >
         <Wizard
-          titleId="add-widget-title"
-          descriptionId="add-widget-description"
-          title="Add Widget"
-          description="Add a widget to the current dashboard"
-          steps={steps}
-          onNext={this.onNext}
+          height={400}
+          header={
+            <WizardHeader
+              onClose={this.onClose}
+              title="Add Widget"
+              description="Add a widget to the current dashboard"
+            />
+          }
+          onStepChange={this.onNext}
           onSave={this.onSave}
           onClose={this.onClose}
-          height={400}
-        />
+        >
+          {steps.map(step => (
+            <WizardStep
+              key={step.id}
+              name={step.name}
+              id={step.id}
+              footer={{ isNextDisabled: !step.enableNext, nextButtonText: step.nextButtonText? step.nextButtonText : 'Next' }}
+            >
+              {step.component}
+            </WizardStep>
+          ))}
+        </Wizard>
       </Modal>
     );
   }

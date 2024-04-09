@@ -6,13 +6,14 @@ import {
   DatePicker,
   Form,
   FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
   Modal,
   ModalVariant,
   TextInput,
   ValidatedOptions,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
-
 
 export class AddTokenModal extends React.Component {
   static propTypes = {
@@ -90,9 +91,6 @@ export class AddTokenModal extends React.Component {
           <FormGroup
             label="Name"
             fieldId="token-name"
-            helperTextInvalid="A token name is required"
-            helperTextInvalidIcon={<ExclamationCircleIcon />}
-            validated={this.state.isNameValid ? ValidatedOptions.default : ValidatedOptions.error}
             isRequired
           >
             <TextInput
@@ -100,16 +98,23 @@ export class AddTokenModal extends React.Component {
               id="token-name"
               name="token-name"
               value={this.state.name}
-              onChange={this.onNameChange}
+              onChange={(_event, name) => this.onNameChange(name)}
               validated={this.state.isNameValid ? ValidatedOptions.default : ValidatedOptions.error}
               isRequired
             />
+            {this.state.isNameValid !== true && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="error">
+                    A token name is required
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+              )}
           </FormGroup>
           <FormGroup
             label="Expiry"
             fieldId="token-expiry-date"
-            helperTextInvalid="A valid epiry date is required"
-            helperTextInvalidIcon={<ExclamationCircleIcon />}
             validated={this.state.isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error}
             isRequired
           >
@@ -126,6 +131,15 @@ export class AddTokenModal extends React.Component {
                 position: 'bottom'
               }}
             />
+            {this.state.isExpiryValid !== true && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="error">
+                    A valid epiry date is required
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+            )}
           </FormGroup>
         </Form>
       </Modal>

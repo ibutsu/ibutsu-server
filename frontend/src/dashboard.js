@@ -13,18 +13,25 @@ import {
   PageSection,
   PageSectionVariants,
   Select,
-  SelectOption,
-  SelectVariant,
   TextContent,
   Text,
-  Title,
+  EmptyStateHeader,
+  EmptyStateFooter,
+  MenuToggle,
+  SelectList,
+  SelectOption,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
 } from '@patternfly/react-core';
+
 import {
   ArchiveIcon,
   CubesIcon,
   PlusCircleIcon,
   TachometerAltIcon,
-  TimesCircleIcon
+  TimesCircleIcon,
+  TimesIcon
 } from '@patternfly/react-icons';
 
 import { HttpClient } from './services/http';
@@ -39,7 +46,7 @@ import {
   ResultAggregatorWidget,
   ResultSummaryWidget
 } from './widgets';
-import { getActiveProject, getActiveDashboard, dashboardToOption } from './utilities.js';
+import { getActiveProject, getActiveDashboard } from './utilities.js';
 
 
 export class Dashboard extends React.Component {
@@ -52,14 +59,16 @@ export class Dashboard extends React.Component {
     let dashboard = getActiveDashboard() || this.getDefaultDashboard();
     this.state = {
       widgets: [],
+      filteredDashboards: [],
       dashboards: [],
-      selectedDashboard: dashboardToOption(dashboard),
+      selectedDashboard: dashboard,
       isDashboardSelectorOpen: false,
       isNewDashboardOpen: false,
       isWidgetWizardOpen: false,
       isEditModalOpen: false,
       editWidgetData: {},
-      dashboardFilter: ''
+      dashboardInputValue: dashboard?.title || '',
+      filterValueDashboard: ''
     };
     props.eventEmitter.on('projectChange', () => {
       this.clearDashboards();
@@ -70,6 +79,7 @@ export class Dashboard extends React.Component {
   getDefaultDashboard() {
     let project = getActiveProject();
     if (project && project.defaultDashboard) {
+      console
       const dashboard = JSON.stringify(project.defaultDashboard)
       localStorage.setItem('dashboard', dashboard);
       return project.defaultDashboard;
@@ -81,25 +91,32 @@ export class Dashboard extends React.Component {
 
   clearDashboards() {
     localStorage.removeItem('dashboard');
-    this.setState({selectedDashboard: null, dashboards: []});
+    this.setState({
+      selectedDashboard: null,
+      filteredDashboards: [],
+      dashboardInputValue: '',
+      filterValueDashboard: ''
+    });
   }
 
   getDashboards() {
     let project = getActiveProject();
     if (!project) {
+      this.setState({dashboardInputValue: ''})
       return;
     }
     let params = {
       'project_id': project.id,
       'pageSize': 10
     };
-    if (this.state.dashboardFilter) {
-      params['filter'] = ['title%' + this.state.dashboardFilter];
+
+    if (this.state.filterValueDashboard) {
+      params['filter'] = ['title%' + this.state.filterValueDashboard];
     }
     HttpClient.get([Settings.serverUrl, 'dashboard'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
-        this.setState({dashboards: data['dashboards']}, this.getWidgets);
+        this.setState({dashboards: data['dashboards'], filteredDashboards: data['dashboards']}, this.getWidgets);
       });
   }
 
@@ -121,20 +138,18 @@ export class Dashboard extends React.Component {
       });
   }
 
-  onDashboardToggle = (isOpen) => {
-    this.setState({isDashboardSelectorOpen: isOpen});
+  onDashboardToggle = () => {
+    this.setState({isDashboardSelectorOpen: !this.state.isDashboardSelectorOpen});
   };
 
-  onDashboardSelect = (event, value, isPlaceholder) => {
-    if (isPlaceholder) {
-      this.onDashboardClear();
-      return;
-    }
-    const dashboard = JSON.stringify(value.dashboard);
+  onDashboardSelect = (_event, value) => {
+    const dashboard = JSON.stringify(value);
     localStorage.setItem('dashboard', dashboard);
     this.setState({
       selectedDashboard: value,
-      isDashboardSelectorOpen: false
+      isDashboardSelectorOpen: false,
+      filterValueDashboard: '',
+      dashboardInputValue: value.title,
     }, this.getWidgets);
   };
 
@@ -142,13 +157,17 @@ export class Dashboard extends React.Component {
     localStorage.removeItem('dashboard');
     this.setState({
       selectedDashboard: null,
-      isDashboardSelectorOpen: false
-    }, this.getWidgets);
+      dashboardInputValue: '',
+      filterValueDashboard: ''
+    }, this.getDashboards, this.getWidgets);
   }
 
-  onDashboardChanged = (value) => {
-    this.setState({dashboardFilter: value}, this.getDashboards);
-  }
+  onTextInputChange = (_event, value) => {
+    this.setState({
+      dashboardInputValue: value,
+      filterValueDashboard: value
+    }, this.getDashboards);
+  };
 
   onNewDashboardClick = () => {
     this.setState({isNewDashboardOpen: true});
@@ -166,7 +185,8 @@ export class Dashboard extends React.Component {
         this.getDashboards();
         this.setState({
           isNewDashboardOpen: false,
-          selectedDashboard: dashboardToOption(data)
+          selectedDashboard: data,
+          dashboardInputValue: data.title,
         }, this.getWidgets);
       });
   }
@@ -264,11 +284,72 @@ export class Dashboard extends React.Component {
     this.getWidgets();
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.filterValueDashboard !== this.state.filterValueDashboard
+    ) {
+      let newSelectOptionsDashboard = this.state.dashboards;
+      if (this.state.dashboardInputValue) {
+        newSelectOptionsDashboard = this.state.dashboards.filter(menuItem =>
+          String(menuItem.title).toLowerCase().includes(this.state.filterValueDashboard.toLowerCase())
+        );
+
+        if (!this.state.isDashboardSelectorOpen) {
+          this.setState({ isDashboardSelectorOpen: true });
+        }
+      }
+
+      this.setState({
+        filteredDashboards: newSelectOptionsDashboard,
+      });
+    }
+  }
+
   render() {
     document.title = 'Dashboard | Ibutsu';
     const { widgets } = this.state || this.getWidgets();
     const project = getActiveProject();
     const dashboard = getActiveDashboard() || this.getDefaultDashboard();
+
+    const toggle = toggleRef => (
+      <MenuToggle
+        ref={toggleRef}
+        variant="typeahead"
+        aria-label="Typeahead menu toggle"
+        onClick={this.onDashboardToggle}
+        isExpanded={this.state.isDashboardSelectorOpen}
+        isFullWidth
+        isDisabled={!project}
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={this.state.dashboardInputValue}
+            onClick={this.onDashboardToggle}
+            onChange={this.onTextInputChange}
+            id="typeahead-select-input"
+            autoComplete="off"
+            placeholder={dashboard ? dashboard.title : "No active dashboard"}
+            role="combobox"
+            isExpanded={this.state.isDashboardSelectorOpen}
+            aria-controls="select-typeahead-listbox"
+          />
+          <TextInputGroupUtilities>
+            {!!this.state.dashboardInputValue && (
+              <Button
+                variant="plain"
+                onClick={() => {
+                  this.onDashboardClear();
+                }}
+                aria-label="Clear input value"
+              >
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    )
+
     return (
       <React.Fragment>
         <PageSection variant={PageSectionVariants.light}>
@@ -281,22 +362,37 @@ export class Dashboard extends React.Component {
               </FlexItem>
               <FlexItem id="dashboard-selector" spacer={{ default: 'spacerNone' }}>
                 <Select
-                  typeAheadAriaLabel="Select a dashboard"
-                  placeholderText={dashboard ? dashboard.title : "No active dashboard"}
-                  variant={SelectVariant.typeahead}
+                  id="typeahead-select"
                   isOpen={this.state.isDashboardSelectorOpen}
-                  isDisabled={!project}
-                  selections={this.state.selectedDashboard}
-                  onToggle={this.onDashboardToggle}
+                  selected={this.state.selectedDashboard}
                   onSelect={this.onDashboardSelect}
-                  onClear={this.onDashboardClear}
-                  onTypeaheadInputChanged={this.onDashboardChanged}
-                  footer={this.state.dashboards.length === 10 && "Search for more..."}
-                  isPlain
+                  onOpenChange={() => {
+                    this.setState({isDashboardSelectorOpen: false});
+                  }}
+                  toggle={toggle}
                 >
-                  {this.state.dashboards.map(dash => (
-                    <SelectOption key={dash.id} value={dashboardToOption(dash)} />
-                  ))}
+                  <SelectList id="select-typeahead-listbox">
+                    {(this.state.dashboards.length === 0 && !this.state.filterValueDashboard) && (
+                      <SelectOption isDisabled={true}>
+                        No dashboards found
+                      </SelectOption>
+                    )}
+                    {(this.state.dashboards.length === 0 && !!this.state.filterValueDashboard) && (
+                      <SelectOption isDisabled={true}>
+                        {`No results found for "${this.state.filterValueDashboard}"`}
+                      </SelectOption>
+                    )}
+                    {this.state.filteredDashboards.map((dash, index) => (
+                      <SelectOption
+                        key={dash.id || index}
+                        onClick={() => this.setState({selectedDashboard: dash})}
+                        value={dash}
+                        {...dash}
+                      >
+                        {dash.title}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
                 </Select>
               </FlexItem>
               <FlexItem spacer={{ default: 'spacerNone' }}>
@@ -435,10 +531,7 @@ export class Dashboard extends React.Component {
           }
           {!project &&
           <EmptyState>
-            <EmptyStateIcon icon={ArchiveIcon} />
-            <Title headingLevel="h4" size="lg">
-              No Project Selected
-            </Title>
+            <EmptyStateHeader titleText="No Project Selected" icon={<EmptyStateIcon icon={ArchiveIcon} />} headingLevel="h4" />
             <EmptyStateBody>
               There is currently no project selected. Please select a project from the dropdown in
               order to view the dashboard.
@@ -447,28 +540,26 @@ export class Dashboard extends React.Component {
           }
           {!!project && !dashboard &&
           <EmptyState>
-            <EmptyStateIcon icon={TachometerAltIcon} />
-            <Title headingLevel="h4" size="lg">
-              No Dashboard Selected
-            </Title>
+            <EmptyStateHeader titleText="No Dashboard Selected" icon={<EmptyStateIcon icon={TachometerAltIcon} />} headingLevel="h4" />
             <EmptyStateBody>
               There is currently no dashboard selected. Please select a dashboard from the dropdown
               in order to view widgets, or create a new dashboard.
             </EmptyStateBody>
-            <Button variant="primary" onClick={this.onNewDashboardClick}>New Dashboard</Button>
+            <EmptyStateFooter>
+              <Button variant="primary" onClick={this.onNewDashboardClick}>New Dashboard</Button>
+            </EmptyStateFooter>
           </EmptyState>
           }
           {(!!project && !!dashboard && widgets.length === 0) &&
           <EmptyState>
-            <EmptyStateIcon icon={CubesIcon} />
-            <Title headingLevel="h4" size="lg">
-              No Widgets
-            </Title>
+            <EmptyStateHeader titleText="No Widgets" icon={<EmptyStateIcon icon={CubesIcon} />} headingLevel="h4" />
             <EmptyStateBody>
               This dashboard currently has no widgets defined.<br />Click on the &quot;Add Widget&quot; button
               below to add a widget to this dashboard.
             </EmptyStateBody>
-            <Button variant="primary" onClick={this.onAddWidgetClick}>Add Widget</Button>
+            <EmptyStateFooter>
+              <Button variant="primary" onClick={this.onAddWidgetClick}>Add Widget</Button>
+            </EmptyStateFooter>
           </EmptyState>
           }
         </PageSection>

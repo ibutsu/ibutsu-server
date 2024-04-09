@@ -4,6 +4,8 @@ import React from 'react';
 import {
   Button,
   EmptyState,
+  EmptyStateFooter,
+  EmptyStateHeader,
   EmptyStateIcon,
   EmptyStateBody,
   Text
@@ -25,18 +27,20 @@ export class EmptyObject extends React.Component {
     return (
       <React.Fragment>
         <EmptyState>
-          <EmptyStateIcon icon={SearchIcon} />
-          <Text component="h1" size="lg">
-            {this.props.headingText ? this.props.headingText : "This object couldn't be found."}
-          </Text>
+          <EmptyStateHeader icon={<EmptyStateIcon icon={SearchIcon} />} />
+            <Text component="h1" size="lg">
+              {this.props.headingText ? this.props.headingText : "This object couldn't be found."}
+            </Text>
           <EmptyStateBody>
             {this.props.bodyText ? this.props.bodyText : "Either the object doesn't exist or the ID is invalid."}
           </EmptyStateBody>
-          <NavLink style={{ color: 'white' }} to={!this.props.returnLink ?  '' : this.props.returnLink}>
-            <Button variant="primary" style = {{ margin: '25px' }}>
-              {this.props.returnLinkText ? this.props.returnLinkText : "Return to dashboard"}
-            </Button>
-          </NavLink>
+          <EmptyStateFooter>
+            <NavLink style={{ color: 'white' }} to={!this.props.returnLink ?  '' : this.props.returnLink}>
+              <Button variant="primary" style = {{ margin: '25px' }}>
+                {this.props.returnLinkText ? this.props.returnLinkText : "Return to dashboard"}
+              </Button>
+            </NavLink>
+          </EmptyStateFooter>
         </EmptyState>
       </React.Fragment>
     );

@@ -35,8 +35,8 @@ repos:
     - eslint-plugin-react
     - eslint-plugin-import
     - "@babel/eslint-parser"
-    - "@babel/plugin-proposal-class-properties"
-    - "@babel/plugin-proposal-private-methods"
+    - "@babel/plugin-transform-class-properties"
+    - "@babel/plugin-transform-private-methods"
     - "@babel/plugin-syntax-jsx"
     - "@babel/preset-flow"
     - "@babel/core"

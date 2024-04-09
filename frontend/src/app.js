@@ -5,8 +5,9 @@ import {
   NavList
 } from '@patternfly/react-core';
 import EventEmitter from 'wolfy87-eventemitter';
+import ElementWrapper from './components/elementWrapper';
 
-import { NavLink, Route, Switch } from 'react-router-dom';
+import { NavLink, Route, Routes } from 'react-router-dom';
 
 import { Dashboard } from './dashboard';
 import { ReportBuilder } from './report-builder';
@@ -68,22 +69,24 @@ export class App extends React.Component {
     const navigation = (
       <Nav onSelect={this.onNavSelect} theme="dark" aria-label="Nav">
         <NavList>
-          <li className="pf-c-nav__item">
-            <NavLink to="/" className="pf-c-nav__link" activeClassName="pf-m-active" exact>Dashboard</NavLink>
+          <li className="pf-v5-c-nav__item">
+            <NavLink to="/" className="pf-v5-c-nav__link">Dashboard</NavLink>
           </li>
-          <li className="pf-c-nav__item">
-            <NavLink to="/runs" className="pf-c-nav__link" activeClassName="pf-m-active">Runs</NavLink>
+          <li className="pf-v5-c-nav__item">
+            <NavLink to="/runs" className="pf-v5-c-nav__link">Runs</NavLink>
           </li>
-          <li className="pf-c-nav__item">
-            <NavLink to="/results" className="pf-c-nav__link" activeClassName="pf-m-active">Test Results</NavLink>
+          <li className="pf-v5-c-nav__item">
+            <NavLink to="/results" className="pf-v5-c-nav__link">Test Results</NavLink>
           </li>
-          <li className="pf-c-nav__item">
-            <NavLink to="/reports" className="pf-c-nav__link" activeClassName="pf-m-active">Report Builder</NavLink>
+          <li className="pf-v5-c-nav__item">
+            <NavLink to="/reports" className="pf-v5-c-nav__link">Report Builder</NavLink>
           </li>
           {views && views.map(view => (
-            <li className="pf-c-nav__item" key={view.id}>
-              <NavLink to={`/view/${view.id}`} className="pf-c-nav__link" activeClassName="pf-m-active">{view.title}</NavLink>
+            view.widget !== "jenkins-analysis-view" && (
+            <li className="pf-v5-c-nav__item" key={view.id}>
+              <NavLink to={`/view/${view.id}`} className="pf-v5-c-nav__link">{view.title}</NavLink>
             </li>
+            )
           ))}
         </NavList>
       </Nav>
@@ -92,39 +95,15 @@ export class App extends React.Component {
     return (
       <React.Fragment>
         <IbutsuPage eventEmitter={this.eventEmitter} navigation={navigation}>
-          <Switch>
-            <Route
-              path="/"
-              exact
-              render={routerProps => (
-                <Dashboard eventEmitter={this.eventEmitter} {...routerProps} />
-              )}
-            />
-            <Route
-              path="/runs"
-              exact
-              render={routerProps => (
-                <RunList eventEmitter={this.eventEmitter} {...routerProps} />
-              )}
-            />
-            <Route
-              path="/results"
-              exact
-              render={routerProps => (
-                <ResultList eventEmitter={this.eventEmitter} {...routerProps} />
-              )}
-            />
-            <Route
-              path="/reports"
-              exact
-              render={routerProps => (
-                <ReportBuilder eventEmitter={this.eventEmitter} {...routerProps} />
-              )}
-            />
-            <Route path="/runs/:id" component={Run} />
-            <Route path="/results/:id" component={Result} />
-            <Route path="/view/:id" component={View} />
-          </Switch>
+          <Routes>
+            <Route path="*" element={<Dashboard eventEmitter={this.eventEmitter} />} />
+            <Route path="/runs" element={<ElementWrapper routeElement={RunList} eventEmitter={this.eventEmitter} />} />
+            <Route path="/results" element={<ElementWrapper routeElement={ResultList} eventEmitter={this.eventEmitter} />} />
+            <Route path="/reports" element={<ElementWrapper routeElement={ReportBuilder} eventEmitter={this.eventEmitter} />} />
+            <Route path="/runs/:id" element={<ElementWrapper routeElement={Run} />} />
+            <Route path="/results/:id" element={<ElementWrapper routeElement={Result} />} />
+            <Route path="/view/:id" element={<ElementWrapper routeElement={View} />} />
+          </Routes>
         </IbutsuPage>
       </React.Fragment>
     );

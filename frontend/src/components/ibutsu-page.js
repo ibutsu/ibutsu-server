@@ -8,13 +8,16 @@ import {
   AlertVariant,
   Page,
   PageSidebar,
+  PageSidebarBody
 } from '@patternfly/react-core';
+
+import ElementWrapper from './elementWrapper';
 
 import { IbutsuHeader } from '../components';
 import { ALERT_TIMEOUT, VERSION_CHECK_TIMEOUT } from '../constants';
 import { HttpClient } from '../services/http';
 import { getDateString, getTheme } from '../utilities';
-import { version } from '../../package.json'
+import  packageJson from '../../package.json'
 
 
 export class IbutsuPage extends React.Component {
@@ -30,7 +33,7 @@ export class IbutsuPage extends React.Component {
     this.versionCheckId = '';
     this.state = {
       notifications: [],
-      version: version
+      version: packageJson.version
     };
     this.props.eventEmitter.on('showNotification', (type, title, message, action, timeout, key) => {
       this.showNotification(type, title, message, action, timeout, key);
@@ -38,7 +41,7 @@ export class IbutsuPage extends React.Component {
     this.props.eventEmitter.on('themeChange', this.setTheme);
   }
 
-  showNotification(type, title, message, action?, timeout?, key?) {
+  showNotification(type, title, message, action, timeout, key) {
     let notifications = this.state.notifications;
     let alertKey = key || getDateString();
     timeout = timeout !== undefined ? timeout : true
@@ -71,10 +74,10 @@ export class IbutsuPage extends React.Component {
   setTheme() {
     const isDarkTheme = getTheme() === 'dark';
     if (isDarkTheme) {
-      document.documentElement.classList.add('pf-theme-dark');
+      document.documentElement.classList.add('pf-v5-theme-dark');
     }
     else {
-      document.documentElement.classList.remove('pf-theme-dark');
+      document.documentElement.classList.remove('pf-v5-theme-dark');
     }
   }
 
@@ -108,12 +111,22 @@ export class IbutsuPage extends React.Component {
       <React.Fragment>
         <AlertGroup isToast>
           {this.state.notifications.map((notification) => (
-            <Alert key={notification.key} variant={notification.type} title={notification.title} actionLinks={notification.action} isLiveRegion>
+            <Alert key={notification.key} variant={notification.type} title={notification.title} actionLinks={notification.action} timeout={ALERT_TIMEOUT} isLiveRegion>
               {notification.message}
             </Alert>
           ))}
         </AlertGroup>
-        <Page header={<IbutsuHeader eventEmitter={this.props.eventEmitter} version={this.state.version} />} sidebar={<PageSidebar nav={this.props.navigation} theme="dark" />} isManagedSidebar={true} style={{position: "relative"}}>
+        <Page
+          header={<ElementWrapper routeElement={IbutsuHeader} eventEmitter={this.props.eventEmitter} version={this.state.version} />}
+          sidebar={
+            <PageSidebar theme="dark" >
+              <PageSidebarBody>
+                {this.props.navigation}
+              </PageSidebarBody>
+            </PageSidebar>}
+          isManagedSidebar={true}
+          style={{position: "relative"}}
+        >
           {this.props.children}
         </Page>
       </React.Fragment>

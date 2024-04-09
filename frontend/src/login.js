@@ -8,6 +8,7 @@ import {
   FormAlert,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   LoginMainFooterBandItem,
   LoginMainFooterLinksItem,
   LoginPage,
@@ -15,7 +16,7 @@ import {
 } from '@patternfly/react-core';
 import { EyeIcon, EyeSlashIcon, GoogleIcon, FacebookIcon, GithubIcon, GitlabIcon, RedhatIcon, KeyIcon } from '@patternfly/react-icons';
 import { NavLink } from 'react-router-dom';
-import { GoogleLogin } from 'react-google-login';
+import { GoogleLogin } from '@react-oauth/google';
 import OAuth2Login from 'react-simple-oauth2-login';
 import FacebookLogin from '@greatsumini/react-facebook-login';
 
@@ -63,8 +64,7 @@ function getUser(location) {
 
 export class Login extends React.Component {
   static propTypes = {
-    location: PropTypes.object,
-    history: PropTypes.object
+    location: PropTypes.object
   };
 
   constructor(props) {
@@ -325,7 +325,6 @@ export class Login extends React.Component {
         brandImgSrc="/images/ibutsu-wordart-164.png"
         brandImgAlt="Ibutsu"
         backgroundImgSrc={backgroundImages}
-        backgroundImgAlt="Background image"
         textContent="Ibutsu is an open source test result aggregation tool. Collect and display your test results, view artifacts, and monitor tests."
         loginTitle="Log in to your account"
         loginSubtitle={this.state.loginSupport.user ? loginWithUserDescription : loginWithoutUserDescription}
@@ -359,7 +358,7 @@ export class Login extends React.Component {
               validated={this.state.isValidEmail ? 'default' : 'error'}
               aria-describedby="email-helper"
               value={this.state.emailValue}
-              onChange={this.onEmailChange}
+              onChange={(_event, emailValue) => this.onEmailChange(emailValue)}
               onKeyPress={this.onEnterKeyPress}
             />
           </FormGroup>
@@ -379,7 +378,7 @@ export class Login extends React.Component {
                 validated={this.state.isValidPassword ? 'default' : 'error'}
                 aria-describedby="password-helper"
                 value={this.state.passwordValue}
-                onChange={this.onPasswordChange}
+                onChange={(_event, passwordValue) => this.onPasswordChange(passwordValue)}
                 onKeyPress={this.onEnterKeyPress} />
               }
               {this.state.isPasswordVisible &&
@@ -391,13 +390,13 @@ export class Login extends React.Component {
                 validated={this.state.isValidPassword ? 'default' : 'error'}
                 aria-describedby="password-helper"
                 value={this.state.passwordValue}
-                onChange={this.onPasswordChange}
+                onChange={(_event, passwordValue) => this.onPasswordChange(passwordValue)}
                 onKeyPress={this.onEnterKeyPress} />
               }
-              <Button variant="control" aria-label="Show password" onClick={this.onPasswordVisibleClick}>
+              <InputGroupItem><Button variant="control" aria-label="Show password" onClick={this.onPasswordVisibleClick}>
                 {!this.state.isPasswordVisible && <EyeIcon/>}
                 {this.state.isPasswordVisible && <EyeSlashIcon/>}
-              </Button>
+              </Button></InputGroupItem>
             </InputGroup>
           </FormGroup>
           <ActionGroup>

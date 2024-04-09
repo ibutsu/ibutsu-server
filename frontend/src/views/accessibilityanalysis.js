@@ -29,7 +29,7 @@ import {
 import { Link } from 'react-router-dom';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import ReactJson from 'react-json-view';
+import { JSONTree } from 'react-json-tree';
 import Editor from '@monaco-editor/react';
 import {
   getActiveProject,
@@ -55,9 +55,8 @@ const MockRun = {
 
 export class AccessibilityAnalysisView extends React.Component {
   static propTypes = {
-    match: PropTypes.object,
     location: PropTypes.object,
-    history: PropTypes.object,
+    navigate: PropTypes.func,
     view: PropTypes.object
   };
 
@@ -88,7 +87,7 @@ export class AccessibilityAnalysisView extends React.Component {
       isEmpty: true,
       isError: false,
       filters: filters,
-      id: filters.run_list.val,
+      id: filters.run_list?.val,
       activeTab: this.getTabIndex('overview'),
       barWidth: 8,
       builds: 20,
@@ -106,13 +105,6 @@ export class AccessibilityAnalysisView extends React.Component {
       chartParams: {},
       pieData: [{x: '', y: 0}, {x: '', y: 0}, {total: 0}],
     };
-    // Watch the history to update tabs
-    this.unlisten = this.props.history.listen(() => {
-      const tabIndex = this.getTabIndex('overview');
-      this.setState({activeTab: tabIndex}, () => {
-        this.updateTab(tabIndex);
-      });
-    });
   }
 
   getTabIndex(defaultValue) {
@@ -135,7 +127,7 @@ export class AccessibilityAnalysisView extends React.Component {
       delete params['project'];
     }
     // probably don't need this, but maybe something similar
-    params["run_list"] = this.state.filters.run_list.val;
+    params["run_list"] = this.state.filters.run_list?.val;
     HttpClient.get([Settings.serverUrl + '/widget/' + this.props.view.widget], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
@@ -154,28 +146,28 @@ export class AccessibilityAnalysisView extends React.Component {
       labelOff="Change to Area Chart"
       label="Change to Bar Chart"
       isChecked={isAreaChart}
-      onChange={this.handleSwitch}
+      onChange={(_event, isChecked) => this.handleSwitch(isChecked)}
     />);
   }
 
 
 
   getColors = (key) => {
-    let color = 'var(--pf-global--success-color--100)';
+    let color = 'var(--pf-v5-global--success-color--100)';
     if (key === 'violations') {
-      color = 'var(--pf-global--danger-color--100)';
+      color = 'var(--pf-v5-global--danger-color--100)';
     }
     else if (key === 'skipped') {
-      color = 'var(--pf-global--info-color--100)';
+      color = 'var(--pf-v5-global--info-color--100)';
     }
     else if (key === 'error') {
-      color = 'var(--pf-global--warning-color--100)';
+      color = 'var(--pf-v5-global--warning-color--100)';
     }
     else if (key === 'xfailed') {
-      color = 'var(--pf-global--palette--purple-400)';
+      color = 'var(--pf-v5-global--palette--purple-400)';
     }
     else if (key === 'xpassed') {
-      color = 'var(--pf-global--palette--purple-700)';
+      color = 'var(--pf-v5-global--palette--purple-700)';
     }
     return color;
   }
@@ -195,7 +187,7 @@ export class AccessibilityAnalysisView extends React.Component {
                     <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
                       <Card>
                         <CardBody>
-                          <Editor fontFamily="Hack, monospace" theme="dark" value={text} height="40rem" options={{readOnly: true}} />
+                          <Editor fontFamily="Hack, monospace" theme="vs-dark" value={text} height="40rem" options={{readOnly: true}} />
                         </CardBody>
                         <CardFooter>
                           <Button component="a" href={`${Settings.serverUrl}/artifact/${artifact.id}/download`}>Download {artifact.filename}</Button>
@@ -242,13 +234,9 @@ export class AccessibilityAnalysisView extends React.Component {
     this.setState({treeSearch: value}, this.setFilteredTree);
   }
 
-  onTabSelect = (event, tabIndex) => {
-    const loc = this.props.history.location;
-    this.props.history.push({
-      pathname: loc.pathname,
-      search: loc.search,
-      hash: '#' + tabIndex
-    });
+  onTabSelect = (_event, tabIndex) => {
+    const loc = this.props.location;
+    this.props.navigate(`${loc.pathname}${loc.search}#${tabIndex}`)
     this.setState({activeTab: tabIndex});
     this.updateTab(tabIndex);
   }
@@ -382,11 +370,20 @@ export class AccessibilityAnalysisView extends React.Component {
   componentDidMount() {
     this.getRun();
     this.getWidgetParams();
+    window.addEventListener('popstate', this.handlePopState);
   }
 
-  componentDidUnmount() {
-    this.unlisten();
+  componentWillUnmount() {
+    window.removeEventListener('popstate', this.handlePopState);
   }
+
+  handlePopState = () => {
+    // Handle browser navigation buttons click
+    const tabIndex = this.getTabIndex('summary');
+    this.setState({activeTab: tabIndex}, () => {
+      this.updateTab(tabIndex);
+    });
+  };
 
   render() {
     const {
@@ -400,6 +397,26 @@ export class AccessibilityAnalysisView extends React.Component {
       page: this.state.page,
       totalItems: this.state.totalItems
     }
+    const jsonViewTheme = {
+      scheme: 'monokai',
+      author: 'wimer hazenberg (http://www.monokai.nl)',
+      base00: '#272822',
+      base01: '#383830',
+      base02: '#49483e',
+      base03: '#75715e',
+      base04: '#a59f85',
+      base05: '#f8f8f2',
+      base06: '#f5f4f1',
+      base07: '#f9f8f5',
+      base08: '#f92672',
+      base09: '#fd971f',
+      base0A: '#f4bf75',
+      base0B: '#a6e22e',
+      base0C: '#a1efe4',
+      base0D: '#66d9ef',
+      base0E: '#ae81ff',
+      base0F: '#cc6633',
+    };
     return (
       <React.Fragment>
         <PageSection>
@@ -423,11 +440,11 @@ export class AccessibilityAnalysisView extends React.Component {
                         data={[
                           {
                             name: 'Passes: ' + this.state.pieData[0].y,
-                              symbol: { fill: 'var(--pf-global--success-color--100)'}
+                              symbol: { fill: 'var(--pf-v5-global--success-color--100)'}
                           },
                           {
                             name: 'Violations: ' + this.state.pieData[1].y,
-                            symbol: { fill: 'var(--pf-global--danger-color--100)'}
+                            symbol: { fill: 'var(--pf-v5-global--danger-color--100)'}
                           }
                         ]}
                       />
@@ -439,10 +456,10 @@ export class AccessibilityAnalysisView extends React.Component {
                       top: 0
                     }}
                     colorScale={[
-                      'var(--pf-global--success-color--100)',
-                      'var(--pf-global--danger-color--100)',
-                      'var(--pf-global--warning-color--100)',
-                      'var(--pf-global--info-color--100)',
+                      'var(--pf-v5-global--success-color--100)',
+                      'var(--pf-v5-global--danger-color--100)',
+                      'var(--pf-v5-global--warning-color--100)',
+                      'var(--pf-v5-global--info-color--100)',
                     ]}
                     width={300}
                   />
@@ -462,10 +479,10 @@ export class AccessibilityAnalysisView extends React.Component {
                 sortOrder="ascending"
                 showTooltip={false}
                 colorScale={[
-                  'var(--pf-global--success-color--100)',
-                  'var(--pf-global--danger-color--100)',
-                  'var(--pf-global--warning-color--100)',
-                  'var(--pf-global--info-color--100)',
+                  'var(--pf-v5-global--success-color--100)',
+                  'var(--pf-v5-global--danger-color--100)',
+                  'var(--pf-v5-global--warning-color--100)',
+                  'var(--pf-v5-global--info-color--100)',
                 ]}
                 padding={{
                   bottom: 50,
@@ -480,7 +497,7 @@ export class AccessibilityAnalysisView extends React.Component {
             <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: "white"}}>
               <Card>
                 <CardBody>
-                  <ReactJson src={run} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} />
+                  <JSONTree data={run} theme={jsonViewTheme} invertTheme hideRoot shouldExpandNodeInitially={() => true}/>
                 </CardBody>
               </Card>
             </Tab>
@@ -490,14 +507,14 @@ export class AccessibilityAnalysisView extends React.Component {
                   <Flex style={{ width: '100%' }}>
                     <FlexItem grow={{ default: 'grow' }}>
                       <TextContent>
-                        <Text component="h2" className="pf-c-title pf-m-xl">Test Results</Text>
+                        <Text component="h2" className="pf-v5-c-title pf-m-xl">Test Results</Text>
                       </TextContent>
                     </FlexItem>
                     <FlexItem>
                       <Button variant="secondary" onClick={this.refreshResults}>Refresh results</Button>
                     </FlexItem>
                     <FlexItem>
-                      <Link to={`/results?run_id[eq]=${run.id}`} className="pf-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
+                      <Link to={`/results?run_id[eq]=${run.id}`} className="pf-v5-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
                     </FlexItem>
                   </Flex>
                 </CardHeader>

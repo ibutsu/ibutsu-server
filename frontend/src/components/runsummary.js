@@ -39,12 +39,12 @@ export class RunSummary extends React.Component {
     }
     return (
       <React.Fragment>
-        {passed > 0 && <span className="pf-c-badge passed" title="Passed">{passed}</span>}
-        {failed > 0 && <span className="pf-c-badge failed" title="Failed">{failed}</span>}
-        {errors > 0 && <span className="pf-c-badge error" title="Error">{errors}</span>}
-        {skipped > 0 && <span className="pf-c-badge skipped" title="Skipped">{skipped}</span>}
-        {xfailed > 0 && <span className="pf-c-badge xfailed" title="Xfailed">{xfailed}</span>}
-        {xpassed > 0 && <span className="pf-c-badge xpassed" title="Xpassed">{xpassed}</span>}
+        {passed > 0 && <span className="pf-v5-c-badge passed" title="Passed">{passed}</span>}
+        {failed > 0 && <span className="pf-v5-c-badge failed" title="Failed">{failed}</span>}
+        {errors > 0 && <span className="pf-v5-c-badge error" title="Error">{errors}</span>}
+        {skipped > 0 && <span className="pf-v5-c-badge skipped" title="Skipped">{skipped}</span>}
+        {xfailed > 0 && <span className="pf-v5-c-badge xfailed" title="Xfailed">{xfailed}</span>}
+        {xpassed > 0 && <span className="pf-v5-c-badge xpassed" title="Xpassed">{xpassed}</span>}
       </React.Fragment>
     );
   }

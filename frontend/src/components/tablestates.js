@@ -4,10 +4,11 @@ import {
   Bullseye,
   Button,
   EmptyState,
+  EmptyStateActions,
   EmptyStateBody,
-  EmptyStateIcon,
-  EmptyStateSecondaryActions,
-  Title
+  EmptyStateFooter,
+  EmptyStateHeader,
+  EmptyStateIcon
 } from '@patternfly/react-core';
 import {
   ErrorCircleOIcon,
@@ -23,18 +24,19 @@ export class TableEmptyState extends React.Component {
     return (
       <Bullseye>
         <EmptyState>
-          <EmptyStateIcon icon={SearchIcon} />
-          <Title headingLevel="h5" size="lg">No results found</Title>
-          {!!this.props.onClearFilters &&
-          <React.Fragment>
-            <EmptyStateBody>
-              No results match this filter criteria. Clear all filters to show results.
-            </EmptyStateBody>
-            <EmptyStateSecondaryActions>
-              <Button variant="link" onClick={this.props.onClearFilters}>Clear all filters</Button>
-            </EmptyStateSecondaryActions>
-          </React.Fragment>
-          }
+          <EmptyStateHeader titleText="No results found" icon={<EmptyStateIcon icon={SearchIcon} />} headingLevel="h5" />
+          <EmptyStateFooter>
+            {!!this.props.onClearFilters &&
+            <React.Fragment>
+              <EmptyStateBody>
+                No results match this filter criteria. Clear all filters to show results.
+              </EmptyStateBody>
+              <EmptyStateActions>
+                <Button variant="link" onClick={this.props.onClearFilters}>Clear all filters</Button>
+              </EmptyStateActions>
+            </React.Fragment>
+            }
+          </EmptyStateFooter>
         </EmptyState>
       </Bullseye>
     );
@@ -50,18 +52,19 @@ export class TableErrorState extends React.Component {
     return (
       <Bullseye>
         <EmptyState>
-          <EmptyStateIcon icon={ErrorCircleOIcon} />
-          <Title headingLevel="h5" size="lg">Error occurred fetching results</Title>
-          {!!this.props.onClearFilters &&
-          <React.Fragment>
-            <EmptyStateBody>
-              An error occurred while fetching results. Try a different set of filters.
-            </EmptyStateBody>
-            <EmptyStateSecondaryActions>
-              <Button variant="link" onClick={this.props.onClearFilters}>Clear all filters</Button>
-            </EmptyStateSecondaryActions>
-          </React.Fragment>
-          }
+          <EmptyStateHeader titleText="Error occurred fetching results" icon={<EmptyStateIcon icon={ErrorCircleOIcon} />} headingLevel="h5" />
+          <EmptyStateFooter>
+            {!!this.props.onClearFilters &&
+            <React.Fragment>
+              <EmptyStateBody>
+                An error occurred while fetching results. Try a different set of filters.
+              </EmptyStateBody>
+              <EmptyStateActions>
+                <Button variant="link" onClick={this.props.onClearFilters}>Clear all filters</Button>
+              </EmptyStateActions>
+            </React.Fragment>
+            }
+          </EmptyStateFooter>
         </EmptyState>
       </Bullseye>
     );

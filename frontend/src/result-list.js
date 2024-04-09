@@ -2,18 +2,27 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
+  Button,
   Card,
   CardBody,
   CardFooter,
+  Chip,
+  ChipGroup,
   PageSection,
   PageSectionVariants,
   Select,
+  SelectList,
   SelectOption,
-  SelectVariant,
+  MenuToggle,
   Text,
   TextContent,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
   TextInput
 } from '@patternfly/react-core';
+
+import { TimesIcon } from '@patternfly/react-icons';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
@@ -27,13 +36,13 @@ import {
   parseFilter,
   resultToRow
 } from './utilities';
-import { MultiValueInput, FilterTable } from './components';
-import { DEFAULT_RUNS, OPERATIONS, RESULT_FIELDS } from './constants';
+import { FilterTable, MultiValueInput } from './components';
+import { OPERATIONS, RESULT_FIELDS } from './constants';
 
 export class ResultList extends React.Component {
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object,
+    navigate: PropTypes.func,
     eventEmitter: PropTypes.object
   }
 
@@ -62,20 +71,25 @@ export class ResultList extends React.Component {
       columns: ['Test', 'Run', 'Result', 'Duration', 'Started'],
       rows: [getSpinnerRow(5)],
       runs: [],
-      filteredRuns: DEFAULT_RUNS,
+      filteredRuns: [],
       page: page,
       pageSize: pageSize,
       totalItems: 0,
       totalPages: 0,
       filters: filters,
       fieldSelection: null,
+      filteredfieldOptions: RESULT_FIELDS,
       fieldOptions: RESULT_FIELDS,
       isFieldOpen: false,
+      fieldInputValue: '',
+      fieldFilterValue: '',
       operationSelection: 'eq',
       isOperationOpen: false,
       textFilter: '',
       runSelection: null,
       isRunOpen: false,
+      runInputValue: '',
+      runFilterValue: '',
       resultSelection: null,
       isResultOpen: false,
       boolSelection: null,
@@ -89,31 +103,49 @@ export class ResultList extends React.Component {
     });
   }
 
-  onFieldToggle = isExpanded => {
-    this.setState({isFieldOpen: isExpanded});
+  onFieldToggle = () => {
+    this.setState({isFieldOpen: !this.state.isFieldOpen});
   };
 
-  onFieldSelect = (event, selection) => {
-    this.setState({
-      fieldSelection: selection,
-      isFieldOpen: false,
-      operationSelection: 'eq',
-    });
+  onFieldSelect = (_event, selection) => {
+    const fieldFilterValue = this.state.fieldFilterValue;
+    if (selection == `Create "${fieldFilterValue}"`) {
+      this.setState({
+        filteredfieldOptions: [...this.state.fieldOptions, fieldFilterValue],
+        fieldSelection: fieldFilterValue,
+        fieldInputValue: fieldFilterValue,
+        operationSelection: 'eq',
+      })
+    }
+    else {
+      this.setState({
+        fieldSelection: selection,
+        fieldInputValue: selection,
+        isFieldOpen: false,
+        operationSelection: 'eq',
+      });
+    }
+  };
+
+  onFieldTextInputChange = (_event, value) => {
+    this.setState({fieldInputValue: value});
+    this.setState({fieldFilterValue: value});
   };
 
   onFieldClear = () => {
     this.setState({
       fieldSelection: null,
-      isFieldOpen: false
+      fieldInputValue: '',
+      fieldFilterValue: ''
     });
   };
 
   onFieldCreate = newValue => {
-    this.setState({fieldOptions: [...this.state.fieldOptions, newValue]});
+    this.setState({filteredfieldOptions: [...this.state.filteredfieldOptions, newValue]});
   };
 
-  onOperationToggle = isExpanded => {
-    this.setState({isOperationOpen: isExpanded});
+  onOperationToggle = () => {
+    this.setState({isOperationOpen: !this.state.isOperationOpen});
   };
 
   onOperationSelect = (event, selection) => {
@@ -137,15 +169,17 @@ export class ResultList extends React.Component {
     this.setState({textFilter: newValue});
   };
 
-  onRunToggle = isExpanded => {
-    this.setState({isRunOpen: isExpanded});
+  onRunToggle = () => {
+    this.setState({isRunOpen: !this.state.isRunOpen});
   };
 
-  onRunSelect = (event, selection) => {
+  onRunSelect = (_event, selection) => {
     const operationMode = getOperationMode(this.state.operationSelection);
     if (operationMode !== 'multi') {
       this.setState({
         runSelection: selection,
+        runInputValue: selection,
+        runFilterValue: '',
         isRunOpen: false
       });
     }
@@ -160,27 +194,28 @@ export class ResultList extends React.Component {
     }
   };
 
+  onRunTextInputChange = (_event, value) => {
+    this.setState({runInputValue: value});
+    this.setState({runFilterValue: value});
+  };
+
   onRunClear = () => {
     this.setState({
       runSelection: null,
-      isRunOpen: false
+      runInputValue: '',
+      runFilterValue: ''
     });
   };
 
-  onRunFilter = (event) => {
-    const filteredRuns = this.state.runs.filter((run) => run.startsWith(event.target.value));
-    this.setState({filteredRuns});
-  };
-
-  onBoolSelect = (event, selection) => {
+  onBoolSelect = (_event, selection) => {
     this.setState({
       boolSelection: selection,
       isBoolOpen: false
     });
   };
 
-  onBoolToggle = isExpanded => {
-    this.setState({isBoolOpen: isExpanded});
+  onBoolToggle = () => {
+    this.setState({isBoolOpen: !this.state.isBoolOpen});
   };
 
   onBoolClear = () => {
@@ -190,11 +225,11 @@ export class ResultList extends React.Component {
     });
   };
 
-  onResultToggle = isExpanded => {
-    this.setState({isResultOpen: isExpanded});
+  onResultToggle = () => {
+    this.setState({isResultOpen: !this.state.isResultOpen});
   };
 
-  onResultSelect = (event, selection) => {
+  onResultSelect = (_event, selection) => {
     const operationMode = getOperationMode(this.state.operationSelection);
     if (operationMode !== 'multi') {
       this.setState({
@@ -231,10 +266,10 @@ export class ResultList extends React.Component {
     const operationMode = getOperationMode(operator);
     let value = this.state.textFilter.trim();
     if (filterMode === 'result' && operationMode !== 'bool') {
-      value = (operationMode === 'multi') ? this.state.resultSelection.join(';') : this.state.resultSelection;
+      value = (operationMode === 'multi') ? this.state.resultSelection?.join(';') : this.state.resultSelection;
     }
     else if (filterMode === 'run' && operationMode !== 'bool') {
-      value = (operationMode === 'multi') ? this.state.runSelection.join(';') : this.state.runSelection;
+      value = (operationMode === 'multi') ? this.state.runSelection?.join(';') : this.state.runSelection;
     }
     else if (operationMode === 'multi') {
       // translate list to ;-separated string for BE
@@ -248,6 +283,9 @@ export class ResultList extends React.Component {
       this.getResults();
       this.setState({
         fieldSelection: null,
+        fieldInputValue: '',
+        fieldFilterValue: '',
+        runInputValue: '',
         operationSelection: 'eq',
         textFilter: '',
         resultSelection: null,
@@ -259,7 +297,7 @@ export class ResultList extends React.Component {
   };
 
   applyReport = () => {
-    this.props.history.replace('/reports?' + buildParams(this.state.filters).join('&'));
+    this.props.navigate('/reports?' + buildParams(this.state.filters).join('&'))
   };
 
   updateFilters(name, operator, value, callback) {
@@ -318,7 +356,7 @@ export class ResultList extends React.Component {
     let params = buildParams(this.state.filters);
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.history.replace('/results?' + params.join('&'));
+    this.props.navigate('/results?' + params.join('&'))
   }
 
   setPage = (_event, pageNumber) => {
@@ -388,6 +426,49 @@ export class ResultList extends React.Component {
     this.getRuns();
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.fieldFilterValue !== this.state.fieldFilterValue
+    ) {
+      let newSelectOptionsField = this.state.fieldOptions;
+      if (this.state.fieldInputValue) {
+        newSelectOptionsField = this.state.fieldOptions.filter(menuItem =>
+          menuItem.toLowerCase().includes(this.state.fieldFilterValue.toLowerCase())
+        );
+        if (newSelectOptionsField.length !== 1 && !newSelectOptionsField.includes(this.state.fieldFilterValue) ) {
+          newSelectOptionsField.push(`Create "${this.state.fieldFilterValue}"`);
+        }
+
+        if (!this.state.isFieldOpen) {
+          this.setState({ isFieldOpen: true });
+        }
+      }
+
+      this.setState({
+        filteredfieldOptions: newSelectOptionsField,
+      });
+    }
+
+    if (
+      prevState.runFilterValue !== this.state.runFilterValue
+    ) {
+      let newSelectOptionsRun = this.state.runs;
+      if (this.state.runInputValue) {
+        newSelectOptionsRun = this.state.runs.filter(menuItem =>
+          menuItem.toLowerCase().includes(this.state.runFilterValue.toLowerCase())
+        );
+
+        if (!this.state.isRunOpen) {
+          this.setState({ isRunOpen: true });
+        }
+      }
+
+      this.setState({
+        filteredRuns: newSelectOptionsRun,
+      });
+    }
+  }
+
   render() {
     document.title = 'Test Results | Ibutsu';
     const {
@@ -396,12 +477,14 @@ export class ResultList extends React.Component {
       filteredRuns,
       fieldSelection,
       isFieldOpen,
-      fieldOptions,
+      filteredfieldOptions,
+      fieldInputValue,
       operationSelection,
       isOperationOpen,
       textFilter,
       runSelection,
       isRunOpen,
+      runInputValue,
       resultSelection,
       isResultOpen,
       boolSelection,
@@ -410,89 +493,309 @@ export class ResultList extends React.Component {
     const filterMode = getFilterMode(fieldSelection);
     const operationMode = getOperationMode(operationSelection);
     const operations = getOperationsFromField(fieldSelection);
+
+    const fieldToggle = toggleRef => (
+      <MenuToggle
+        variant="typeahead"
+        aria-label="Typeahead creatable menu toggle"
+        onClick={this.onFieldToggle}
+        isExpanded={this.state.isFieldOpen}
+        isFullWidth
+        innerRef={toggleRef}
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={fieldInputValue}
+            onClick={this.onFieldToggle}
+            onChange={this.onFieldTextInputChange}
+            id="create-typeahead-select-input"
+            autoComplete="off"
+            placeholder="Select a field"
+            role="combobox"
+            isExpanded={this.state.isFieldOpen}
+            aria-controls="select-create-typeahead-listbox"
+          />
+          <TextInputGroupUtilities>
+            {!!fieldInputValue && (
+              <Button
+                variant="plain"
+                onClick={() => {this.onFieldClear()}}
+                aria-label="Clear input value"
+              >
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    )
+    const operationToggle = toggleRef => (
+      <MenuToggle
+        onClick={this.onOperationToggle}
+        isExpanded={isOperationOpen}
+        isFullWidth
+        ref={toggleRef}
+      >
+        {this.state.operationSelection}
+      </MenuToggle>
+    )
+    const boolToggle = toggleRef => (
+      <MenuToggle
+        onClick={this.onBoolToggle}
+        isExpanded={this.state.isBoolOpen}
+        isFullWidth
+        ref={toggleRef}
+        style={{maxHeight: '36px'}}
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={boolSelection}
+            onClick={this.onBoolToggle}
+            autoComplete="off"
+            placeholder="Select True/False"
+            role="combobox"
+            isExpanded={this.state.isBoolOpen}
+          />
+          <TextInputGroupUtilities>
+            {!!boolSelection && (
+              <Button variant="plain" onClick={() => {
+                this.onBoolClear();
+              }} aria-label="Clear input value">
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    )
+    const resultToggle = toggleRef => (
+      <MenuToggle
+        onClick={this.onResultToggle}
+        isExpanded={this.state.isResultOpen}
+        isFullWidth
+        placeholder="Select a result"
+        ref={toggleRef}
+      >
+        {resultSelection ? resultSelection : "Select a result"}
+      </MenuToggle>
+    )
+    const resultMultiToggle = toggleRef => (
+      <MenuToggle
+        variant="typeahead"
+        onClick={this.onResultToggle}
+        isExpanded={this.state.isResultOpen}
+        isFullWidth
+        placeholder="Select a result"
+        ref={toggleRef}
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            onClick={this.onResultToggle}
+            isExpanded={this.state.isResultOpen}
+            placeholder="Select 1 or multiple results"
+          >
+            <ChipGroup aria-label="Current selections">
+              {resultSelection?.map((selection, index) => (
+                <Chip
+                  key={index}
+                  onClick={ev => {
+                    ev.stopPropagation();
+                    this.onResultSelect(ev, selection);
+                  }}
+                >
+                  {selection}
+                </Chip>
+              ))}
+            </ChipGroup>
+          </TextInputGroupMain>
+          <TextInputGroupUtilities>
+            {!!resultSelection && (
+              <Button
+                variant="plain"
+                onClick={() => {this.onResultClear()}}
+                aria-label="Clear input value"
+              >
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    )
+    const runToggle = toggleRef => (
+      <MenuToggle
+        variant="typeahead"
+        onClick={this.onRunToggle}
+        isExpanded={isRunOpen}
+        isFullWidth
+        innerRef={toggleRef}
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={runInputValue}
+            onClick={this.onRunToggle}
+            onChange={this.onRunTextInputChange}
+            autoComplete="off"
+            placeholder="Select a run"
+            role="combobox"
+            isExpanded={isRunOpen}
+          />
+          <TextInputGroupUtilities>
+            {!!runInputValue && (
+              <Button variant="plain" onClick={() => {
+                this.onRunClear();
+              }} aria-label="Clear input value">
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    )
+    const runMultiToggle = toggleRef => (
+      <MenuToggle
+        variant="typeahead"
+        onClick={this.onRunToggle}
+        isExpanded={isRunOpen}
+        isFullWidth
+        innerRef={toggleRef}
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={runInputValue}
+            onClick={this.onRunToggle}
+            onChange={this.onRunTextInputChange}
+            autoComplete="off"
+            placeholder="Select 1 or multiple runs"
+            role="combobox"
+            isExpanded={isRunOpen}
+          >
+            <ChipGroup aria-label="Current selections">
+              {runSelection?.map((selection, index) => (
+                <Chip
+                  key={index}
+                  onClick={ev => {
+                    ev.stopPropagation();
+                    this.onRunSelect(ev, selection);
+                  }}
+                >
+                  {selection}
+                </Chip>
+              ))}
+            </ChipGroup>
+          </TextInputGroupMain>
+          <TextInputGroupUtilities>
+            {runSelection?.length > 0 && (
+              <Button variant="plain" onClick={() => {
+                this.onRunClear();
+              }} aria-label="Clear input value">
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    )
     const filters = [
       <Select
-        aria-label="Select a field"
-        placeholderText="Select a field"
-        selections={fieldSelection}
+        id="typeahead-select"
+        selected={fieldSelection}
         isOpen={isFieldOpen}
-        isCreatable={true}
-        variant={SelectVariant.typeahead}
-        maxHeight={"1140%"}
-        onToggle={this.onFieldToggle}
         onSelect={this.onFieldSelect}
-        onCreateOption={this.onFieldCreate}
-        onClear={this.onFieldClear}
         key="field"
+        onOpenChange={() => this.setState({isFieldOpen: false})}
+        toggle={fieldToggle}
       >
-        {fieldOptions.map((option, index) => (
-          <SelectOption key={index} value={option} />
-        ))}
+        <SelectList  id="select-typeahead-listbox">
+          {filteredfieldOptions.map((option, index) => (
+            <SelectOption key={index} value={option}>
+              {option}
+            </SelectOption>
+          ))}
+        </SelectList>
       </Select>,
       <Select
-        variant={SelectVariant.single}
-        onToggle={this.onOperationToggle}
-        onSelect={this.onOperationSelect}
+        id="single-select"
         isOpen={isOperationOpen}
-        selections={operationSelection}
+        selected={operationSelection}
+        onSelect={this.onOperationSelect}
+        onOpenChange={() => this.setState({isOperationOpen: false})}
         key="operation"
+        toggle={operationToggle}
       >
-        {Object.keys(operations).map((option, index) => <SelectOption key={index} value={option}/>)}
+        <SelectList>
+          {Object.keys(operations).map((option, index) => (
+            <SelectOption key={index} value={option}>
+              {option}
+            </SelectOption>
+          ))}
+        </SelectList>
       </Select>,
       <React.Fragment key="value">
         {(operationMode === 'bool') &&
         <Select
-          aria-label="Select True/False"
-          placeholderText="Select True/False"
-          variant={SelectVariant.single}
+          id="single-select"
           isOpen={isBoolOpen}
-          selections={boolSelection}
-          onToggle={this.onBoolToggle}
+          selected={boolSelection}
           onSelect={this.onBoolSelect}
-          onClear={this.onBoolClear}
+          onOpenChange={() => this.setState({isBoolOpen: false})}
+          toggle={boolToggle}
         >
-          {["True", "False"].map((option, index) => (
-            <SelectOption key={index} value={option} />
-          ))}
+          <SelectList>
+            {["True", "False"].map((option, index) => (
+              <SelectOption key={index} value={option}>
+                {option}
+              </SelectOption>
+            ))}
+          </SelectList>
         </Select>
         }
         {(filterMode === 'text' && operationMode === 'single') &&
-          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={this.onTextChanged} style={{height: "inherit"}}/>
+          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: "inherit"}}/>
         }
         {(filterMode === 'text' && operationMode === 'multi') &&
           <MultiValueInput onValuesChange={this.onInValuesChange} style={{height: "inherit"}}/>
         }
         {(filterMode === 'run' && operationMode !== 'bool') &&
           <Select
-            aria-label="Select a run"
-            placeholderText="Select a run"
-            variant={operationMode === 'multi' ? SelectVariant.typeaheadMulti : SelectVariant.typeahead}
+            id="typeahead-select"
             isOpen={isRunOpen}
-            selections={runSelection}
-            maxHeight={"1140%"}
-            onToggle={this.onRunToggle}
+            selected={runSelection}
             onSelect={this.onRunSelect}
-            onClear={this.onRunClear}
-            onFilter={this.onRunFilter}
+            onOpenChange={() => this.setState({isRun: false})}
+            toggle={operationMode === 'multi' ? runMultiToggle : runToggle}
           >
-            {filteredRuns.map((option, index) => (
-              <SelectOption key={index} value={option} isDisabled={option === DEFAULT_RUNS[0]} />
-            ))}
+            <SelectList>
+              {filteredRuns.length === 0 && (
+                <SelectOption isDisabled={true}>
+                  {`No runs found for "${this.state.runFilterValue}"`}
+                </SelectOption>
+              )}
+              {filteredRuns.map((option, index) => (
+                <SelectOption key={index} value={option}>
+                  {option}
+                </SelectOption>
+              ))}
+            </SelectList>
           </Select>
         }
         {(filterMode === 'result' && operationMode !== 'bool') &&
           <Select
-            aria-label="Select a result"
-            placeholderText="Select a result"
-            variant={operationMode === 'multi' ? SelectVariant.typeaheadMulti : SelectVariant.single}
+            id="single-select"
             isOpen={isResultOpen}
-            selections={resultSelection}
-            onToggle={this.onResultToggle}
+            selected={resultSelection}
             onSelect={this.onResultSelect}
+            onOpenChange={() => this.setState({isResultOpen: false})}
+            toggle={operationMode === 'multi' ? resultMultiToggle : resultToggle}
           >
-            {["passed", "xpassed", "failed", "xfailed", "skipped", "error"].map((option, index) => (
-              <SelectOption key={index} value={option} />
-            ))}
+            <SelectList>
+              {["passed", "xpassed", "failed", "xfailed", "skipped", "error"].map((option, index) => (
+                <SelectOption key={index} value={option}>
+                  {option}
+                </SelectOption>
+              ))}
+            </SelectList>
+
           </Select>
         }
       </React.Fragment>

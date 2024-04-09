@@ -4,9 +4,9 @@ import {
   Button,
   CardHeader,
   Dropdown,
-  DropdownDirection,
-  DropdownToggle,
   DropdownItem,
+  DropdownList,
+  MenuToggle,
   Text,
   Tooltip
 } from '@patternfly/react-core';
@@ -19,15 +19,15 @@ export class WidgetHeader extends React.Component {
     getDataFunc: PropTypes.func,
     onDeleteClick: PropTypes.func,
     title: PropTypes.string,
-    actions: PropTypes.array,
+    actions: PropTypes.object,
     onEditClick: PropTypes.func
   }
 
+
   render () {
     const { title, getDataFunc, actions, onDeleteClick, onEditClick } = this.props;
-    return (
-      <CardHeader data-id="widget-header">
-        <Text component="h2" style={{ fontSize: 20 }}>{title}</Text>
+    const headerActions = (
+      <>
         {actions}
         {getDataFunc &&
         <Button variant="plain" onClick={getDataFunc} title="Refresh" aria-label="Refresh" isInline>
@@ -44,6 +44,12 @@ export class WidgetHeader extends React.Component {
           <TimesIcon />
         </Button>
         }
+      </>
+    );
+
+    return (
+      <CardHeader data-id="widget-header" actions={{ actions: headerActions }}>
+        <Text component="h2" style={{ fontSize: 20 }}>{title}</Text>
       </CardHeader>
     );
   }
@@ -55,7 +61,6 @@ export class ParamDropdown extends React.Component {
   static propTypes = {
     defaultValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     description: PropTypes.string,
-    direction: PropTypes.string,
     dropdownItems: PropTypes.array,
     handleSelect: PropTypes.func,
     showDescription: PropTypes.bool,
@@ -66,7 +71,6 @@ export class ParamDropdown extends React.Component {
     super(props);
     this.onSelect = this.onSelect.bind(this);
     this.onToggle = this.onToggle.bind(this);
-    this.direction = this.props.direction || DropdownDirection.up;
     this.state = {
       isOpen: false,
       value: props.defaultValue || "Group data by?",
@@ -74,9 +78,10 @@ export class ParamDropdown extends React.Component {
     };
   }
 
-  onToggle = isOpen => {
-    this.setState({isOpen});
+  onToggle = () => {
+    this.setState({isOpen: !this.state.isOpen});
   }
+
 
   onSelect = (event) => {
     this.setState({
@@ -99,10 +104,7 @@ export class ParamDropdown extends React.Component {
   render() {
     const { isOpen } = this.state;
     const { showDescription } = this.state;
-    let dropdownItems = [];
-    this.props.dropdownItems.forEach( (item) => {
-      dropdownItems.push(<DropdownItem onClick={this.onSelect} key={item}> {item} </DropdownItem>)
-    });
+
     return (
       <div data-id='widget-param-dropdown'>
         {showDescription &&
@@ -110,15 +112,30 @@ export class ParamDropdown extends React.Component {
         }
         <Tooltip content={this.props.tooltip}>
           <Dropdown
-            direction={this.direction}
             isOpen={isOpen}
-            dropdownItems={dropdownItems}
-            toggle={
-              <DropdownToggle id="toggle-dropdown" onToggle={this.onToggle}>
+            onSelect={this.onSelect}
+            onOpenChange={() => this.setState({isOpen: false})}
+            toggle={toggleRef => (
+              <MenuToggle
+                id="toggle-dropdown"
+                ref={toggleRef}
+                onClick={this.onToggle}
+                isExpanded={isOpen}
+              >
                 {this.state.value}
-              </DropdownToggle>
-            }
-          />
+              </MenuToggle>
+            )}
+            ouiaId="BasicDropdown"
+            shouldFocusToggleOnSelect
+          >
+            <DropdownList>
+              {this.props.dropdownItems.map((item) => (
+                <DropdownItem onClick={this.onSelect} key={item}>
+                  {item}
+                </DropdownItem>
+              ))}
+            </DropdownList>
+          </Dropdown>
         </Tooltip>
       </div>
     );

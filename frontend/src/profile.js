@@ -5,13 +5,14 @@ import {
   NavList
 } from '@patternfly/react-core';
 
-import { NavLink, Route, Switch } from 'react-router-dom';
+import { NavLink, Route, Routes } from 'react-router-dom';
 import EventEmitter from 'wolfy87-eventemitter';
 
 import { UserProfile } from './pages/profile/user';
 import { UserTokens } from './pages/profile/tokens';
 import { IbutsuPage } from './components';
 import './app.css';
+import ElementWrapper from './components/elementWrapper';
 
 
 export class Profile extends React.Component {
@@ -24,11 +25,11 @@ export class Profile extends React.Component {
     const navigation = (
       <Nav onSelect={this.onNavSelect} theme="dark" aria-label="Nav">
         <NavList>
-          <li className="pf-c-nav__item">
-            <NavLink to="/profile" className="pf-c-nav__link" activeClassName="pf-m-active" exact>Profile</NavLink>
+          <li className="pf-v5-c-nav__item">
+            <NavLink to="/profile" className="pf-v5-c-nav__link">Profile</NavLink>
           </li>
-          <li className="pf-c-nav__item">
-            <NavLink to="/profile/tokens" className="pf-c-nav__link" activeClassName="pf-m-active">Tokens</NavLink>
+          <li className="pf-v5-c-nav__item">
+            <NavLink to="/profile/tokens" className="pf-v5-c-nav__link">Tokens</NavLink>
           </li>
         </NavList>
       </Nav>
@@ -37,20 +38,10 @@ export class Profile extends React.Component {
     return (
       <React.Fragment>
         <IbutsuPage eventEmitter={this.eventEmitter} navigation={navigation} title="Profile | Ibutsu">
-          <Switch>
-            <Route
-              path="/profile"
-              exact
-              render={routerProps => <UserProfile eventEmitter={this.eventEmitter} {...routerProps} />}
-            />
-            <Route
-              path="/profile/tokens"
-              exact
-              render={routerProps => (
-                <UserTokens eventEmitter={this.eventEmitter} {...routerProps} />
-              )}
-            />
-          </Switch>
+          <Routes>
+            <Route path="*" element={<ElementWrapper routeElement={UserProfile} eventEmitter={this.eventEmitter} />} />
+            <Route path="/tokens" element={<ElementWrapper routeElement={UserTokens} eventEmitter={this.eventEmitter} />} />
+          </Routes>
         </IbutsuPage>
       </React.Fragment>
     );

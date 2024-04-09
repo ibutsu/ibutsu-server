@@ -4,6 +4,7 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project
 from ibutsu_server.db.models import Result
 from ibutsu_server.db.models import User
+from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import add_user_filter
 from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.query import get_offset
@@ -77,6 +78,13 @@ def get_project_list(
         query = query.filter(Project.owner_id == owner_id)
     if group_id:
         query = query.filter(Project.group_id == group_id)
+
+    if filter_:
+        for filter_string in filter_:
+            filter_clause = convert_filter(filter_string, Project)
+            if filter_clause is not None:
+                query = query.filter(filter_clause)
+
     offset = get_offset(page, page_size)
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)

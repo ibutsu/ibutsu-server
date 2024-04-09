@@ -23,14 +23,14 @@ const VIEW_MAP = {
 export class View extends React.Component {
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object,
-    match: PropTypes.object
+    navigate: PropTypes.func,
+    params: PropTypes.object,
   };
 
   constructor(props) {
     super(props);
     this.state = {
-      id: props.match.params.id,
+      id: props.params.id,
       view: null,
     };
   }
@@ -43,7 +43,7 @@ export class View extends React.Component {
 
   componentDidUpdate(prevProps){
     if (prevProps !== this.props) {
-      this.setState({id: this.props.match.params.id}, this.getView);
+      this.setState({id: this.props.params.id}, this.getView);
     }
   }
 
@@ -53,9 +53,9 @@ export class View extends React.Component {
 
   render() {
     const { view } = this.state;
-    const { location, history } = this.props;
+    const { location, navigate } = this.props;
     document.title = view ? view.title + ' | Ibutsu' : document.title;
-    const ViewComponent = view ? VIEW_MAP[view.widget] : 'div';
+    const ViewComponent = view ? VIEW_MAP[view.widget] : null;
     return (
       <React.Fragment>
         <PageSection id="page" variant={PageSectionVariants.light}>
@@ -64,7 +64,9 @@ export class View extends React.Component {
           </TextContent>
         </PageSection>
         <PageSection className="pf-u-pb-0">
-          <ViewComponent view={view} location={location} history={history}/>
+          {!!ViewComponent &&
+            <ViewComponent view={view} location={location} navigate={navigate}/>
+          }
         </PageSection>
       </React.Fragment>
     );

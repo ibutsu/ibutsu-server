@@ -4,9 +4,10 @@ import PropTypes from 'prop-types';
 import {
   Dropdown,
   DropdownItem,
-  DropdownToggle
+  DropdownList,
+  MenuToggle
 } from '@patternfly/react-core';
-import { CaretDownIcon, UserIcon } from '@patternfly/react-icons';
+import { UserIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
 import { AuthService } from '../services/auth';
@@ -38,8 +39,8 @@ export class UserDropdown extends React.Component {
     this.setState({displayName: userName});
   }
 
-  onDropdownToggle = (isOpen) => {
-    this.setState({isDropdownOpen: isOpen});
+  onDropdownToggle = () => {
+    this.setState({isDropdownOpen: !this.state.isDropdownOpen});
   };
 
   onDropdownSelect = () => {
@@ -61,30 +62,36 @@ export class UserDropdown extends React.Component {
   }
 
   render() {
-    const dropdownItems = [
-      <DropdownItem key="profile" component={<Link to="/profile">Profile</Link>} />,
-      <DropdownItem key="logout" component="button" onClick={this.logout}>Logout</DropdownItem>
-    ];
-    if (this.state.isSuperAdmin) {
-      dropdownItems.splice(1, 0, <DropdownItem key="admin" component={<Link to="/admin">Administration</Link>} />);
-    }
     return (
       <Dropdown
+        isOpen={this.state.isDropdownOpen}
         onSelect={this.onDropdownSelect}
-        toggle={
-          <DropdownToggle
-            id="user-dropdown-toggle"
-            onToggle={this.onDropdownToggle}
-            toggleIndicator={CaretDownIcon}
+        onOpenChange={() => this.setState({isDropdownOpen: false})}
+        toggle={toggleRef => (
+          <MenuToggle
+            ref={toggleRef}
+            onClick={this.onDropdownToggle}
+            isExpanded={this.state.isDropdownOpen}
             icon={<UserIcon />}
-            isPlain={true}
           >
             {this.state.displayName}
-          </DropdownToggle>
-        }
-        isOpen={this.state.isDropdownOpen}
-        dropdownItems={dropdownItems}
-      />
+          </MenuToggle>
+        )}
+      >
+        <DropdownList>
+          <DropdownItem key="profile">
+            <Link to="/profile" className="pf-v5-c-menu__list-item">Profile</Link>
+          </DropdownItem>
+          {!!this.state.isSuperAdmin &&
+            <DropdownItem key="admin">
+              <Link to="/admin" className="pf-v5-c-menu__list-item">Administration</Link>
+            </DropdownItem>
+          }
+          <DropdownItem key="logout" onClick={this.logout}>
+            Logout
+          </DropdownItem>
+        </DropdownList>
+      </Dropdown>
     );
   }
 }
