@@ -1,3 +1,9 @@
+Version 2.5.8
+=============
+
+* Correct check condition on group field
+* Fix report deletion through API
+
 Version 2.5.7
 =============
 
