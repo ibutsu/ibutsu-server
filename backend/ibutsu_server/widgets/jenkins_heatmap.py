@@ -101,7 +101,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
 
     # generate the group_fields
     group_field = string_to_column(group_field, Run)
-    if not group_field:
+    if group_field is None:
         return {}, builds
 
     job_name = string_to_column("metadata.jenkins.job_name", Run)
