@@ -70,6 +70,13 @@ export class ImportanceComponentWidget extends React.Component {
     }
   }
 
+  toPercent(num) {
+    if (typeof(num) === 'number') {
+      return Math.round(num * 100)
+    }
+    return num
+  }
+
   render() {
     return (
       <Card>
@@ -97,7 +104,7 @@ export class ImportanceComponentWidget extends React.Component {
                   <Tr key={importance}>
                     <Text component="h2">{importance}</Text>
                     {tdat.bnums.map((buildnum) => (
-                      <Td key={buildnum}><Link to={`/results?id[in]=${tdat.data[buildnum][importance]["result_list"].join(";")}`}>{tdat.data[buildnum][importance]["percentage"]}</Link></Td>
+                      <Td key={buildnum}><Link to={`/results?id[in]=${tdat.data[buildnum][importance]["result_list"].join(";")}`}>{this.toPercent(tdat.data[buildnum][importance]["percentage"])}</Link></Td>
                     ))}
                   </Tr>
                   ))}
