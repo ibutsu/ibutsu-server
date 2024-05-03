@@ -31,7 +31,7 @@ To run Ibutsu using ``podman``, use the ``ibutsu-pod.sh`` utility script:
 
 .. code-block:: shell
 
-   $ ./script/ibutsu-pod.sh --create-admin --create-project
+   $ ./scripts/ibutsu-pod.sh --create-admin --create-project
 
 This will start up the containers and create an administrator and a project.
 
@@ -39,7 +39,7 @@ If you want to persistent the data in the containers, use the ``--persistent`` o
 
 .. code-block:: shell
 
-   $ ./script/ibutsu-pod.sh --persistent
+   $ ./scripts/ibutsu-pod.sh --persistent
 
 By default the script stores persistent data in two directories, ``.postgres-data`` and ``.redis-data``.
 If you would prefer to use ``podman`` volumes, specify the ``--use-volumes`` option:
