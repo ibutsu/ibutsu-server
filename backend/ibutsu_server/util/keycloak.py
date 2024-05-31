@@ -1,5 +1,6 @@
 import requests
 from flask import current_app
+from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import User
 from ibutsu_server.util.urls import build_url
@@ -11,7 +12,7 @@ def get_keycloak_config(is_private=False):
         "KEYCLOAK_BASE_URL"
     ):
         return {}
-    backend_url = current_app.config.get("BACKEND_URL", "http://localhost:8080/api")
+    backend_url = current_app.config.get("BACKEND_URL", f"http://{LOCALHOST}:8080/api")
     if not backend_url.endswith("/api"):
         backend_url += "/api"
     server_url = current_app.config["KEYCLOAK_BASE_URL"]

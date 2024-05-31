@@ -155,7 +155,7 @@ podman run -d \
                      python -m ibutsu_server --host 0.0.0.0' > /dev/null
 echo "done."
 echo -n "Waiting for backend to respond..."
-until $(curl --output /dev/null --silent --head --fail http://localhost:8080); do
+until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); do
   echo -n '.'
   sleep 5
 done
@@ -193,7 +193,7 @@ podman run -d \
        /bin/bash -c 'npm install && CI=1 npm run devserver' > /dev/null
 echo "done."
 echo -n "Waiting for frontend to respond..."
-until $(curl --output /dev/null --silent --head --fail http://localhost:3000); do
+until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:3000); do
   printf '.'
   sleep 5
 done
@@ -201,8 +201,8 @@ echo "done."
 
 if [[ $CREATE_PROJECT = true ]]; then
     echo -n "Creating default project..."
-    LOGIN_TOKEN=`curl --no-progress-meter --header "Content-Type: application/json" --request POST --data '{"email": "admin@example.com", "password": "admin12345"}' http://localhost:8080/api/login | grep 'token' | cut -d\" -f 4`
-    PROJECT_ID=`curl --no-progress-meter --header "Content-Type: application/json" --header "Authorization: Bearer ${LOGIN_TOKEN}" --request POST --data '{"name": "my-project", "title": "My Project"}' http://localhost:8080/api/project | grep '"id"' | cut -d\" -f 4`
+    LOGIN_TOKEN=`curl --no-progress-meter --header "Content-Type: application/json" --request POST --data '{"email": "admin@example.com", "password": "admin12345"}' http://127.0.0.1:8080/api/login | grep 'token' | cut -d\" -f 4`
+    PROJECT_ID=`curl --no-progress-meter --header "Content-Type: application/json" --header "Authorization: Bearer ${LOGIN_TOKEN}" --request POST --data '{"name": "my-project", "title": "My Project"}' http://127.0.0.1:8080/api/project | grep '"id"' | cut -d\" -f 4`
     echo "done."
 fi
 echo ""

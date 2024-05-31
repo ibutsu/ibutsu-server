@@ -1,4 +1,5 @@
 """ Utility functions for counting rows in large tables"""
+
 from contextlib import contextmanager
 
 from ibutsu_server.constants import COUNT_ESTIMATE_LIMIT

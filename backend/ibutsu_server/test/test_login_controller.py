@@ -4,6 +4,7 @@ from flask import json
 from ibutsu_server.test import BaseTestCase
 from ibutsu_server.test import MockUser
 from ibutsu_server.util.jwt import generate_token
+from ibutsu_server.constants import LOCALHOST
 
 MOCK_ID = "6f7c2d52-54dc-4309-8e2e-c74515d39455"
 MOCK_EMAIL = "test@example.com"
@@ -132,7 +133,7 @@ class TestLoginController(BaseTestCase):
         expected_response = {
             "authorization_url": "https://gitlab.com/oauth/authorize",
             "client_id": "dfgfdgh4563453456dsfgdsfg456",
-            "redirect_uri": "http://localhost:8080/api/login/auth/gitlab",
+            "redirect_uri": f"http://{LOCALHOST}:8080/api/login/auth/gitlab",
             "scope": "read_user",
         }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}

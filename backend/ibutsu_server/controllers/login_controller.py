@@ -10,6 +10,7 @@ from flask import make_response
 from flask import redirect
 from google.auth.transport.requests import Request
 from google.oauth2 import id_token
+from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token
 from ibutsu_server.db.models import User
@@ -170,7 +171,7 @@ def auth(provider):
         return "Bad request", 400
     code = connexion.request.args["code"]
     frontend_url = build_url(
-        current_app.config.get("FRONTEND_URL", "http://localhost:3000"), "login"
+        current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login"
     )
     provider_config = _get_provider_config(provider)
     user = _get_user_from_provider(provider, provider_config, code)
@@ -222,7 +223,7 @@ def register(email=None, password=None):
 
     # Send an activation e-mail
     activation_url = build_url(
-        current_app.config.get("BACKEND_URL", "http://localhost:8080/"),
+        current_app.config.get("BACKEND_URL", f"http://{LOCALHOST}:8080"),
         "api",
         "login",
         "activate",
@@ -292,7 +293,9 @@ def activate(activation_code=None):
     if result := validate_activation_code(activation_code):
         return result
     user = User.query.filter(User.activation_code == activation_code).first()
-    login_url = build_url(current_app.config.get("FRONTEND_URL", "http://localhost:3000"), "login")
+    login_url = build_url(
+        current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login"
+    )
     if user:
         user.is_active = True
         user.activation_code = None
