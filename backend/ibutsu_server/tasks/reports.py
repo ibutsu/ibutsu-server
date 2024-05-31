@@ -6,21 +6,26 @@ from datetime import datetime
 from io import StringIO
 
 from flask import current_app
+from sqlalchemy.exc import OperationalError
+
 from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Report
-from ibutsu_server.db.models import ReportFile
-from ibutsu_server.db.models import Result
+from ibutsu_server.db.models import Report, ReportFile, Result
 from ibutsu_server.filters import apply_filters
 from ibutsu_server.tasks import task
 from ibutsu_server.templating import render_template
 from ibutsu_server.util.projects import get_project_id
-from sqlalchemy.exc import OperationalError
-
 
 TREE_ROOT = {
     "items": {},
-    "stats": {"passed": 0, "failed": 0, "skipped": 0, "error": 0, "xpassed": 0, "xfailed": 0},
+    "stats": {
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "error": 0,
+        "xpassed": 0,
+        "xfailed": 0,
+    },
     "duration": 0.0,
 }
 
@@ -153,7 +158,7 @@ def _make_result_path(result):
             fspath = fspath[3:]
         if fspath.startswith("./"):
             fspath = fspath[2:]
-        result_path = "{}::".format(fspath)
+        result_path = f"{fspath}::"
     result_path += result["test_id"]
     return result_path
 
@@ -198,7 +203,7 @@ def _make_row(old, parent_key=None):
     """
     new = {}
     for key, value in old.items():
-        new_key = "{}.{}".format(parent_key, str(key)) if parent_key else str(key)
+        new_key = f"{parent_key}.{str(key)}" if parent_key else str(key)
         if isinstance(value, dict):
             new.update(_make_row(value, new_key))
         elif isinstance(value, list):
@@ -398,7 +403,7 @@ def generate_text_report(report):
             summary[result["result"]] += 1
         else:
             summary["other"] += 1
-    text_file.writelines(["{}: {}\n".format(key, value) for key, value in summary.items()])
+    text_file.writelines([f"{key}: {value}\n" for key, value in summary.items()])
     text_file.write("\n")
     for result in results:
         result_path = _make_result_path(result)

@@ -1,9 +1,13 @@
+# hadolint global ignore=DL3008,DL3013,DL3041
 FROM python:3.9
 
 RUN apt-get update && \
-    apt-get install -y jq && \
-    pip install schemathesis
+    apt-get install -y --no-install-recommends jq && \
+    rm -rf /var/lib/apt/lists/* && \
+    pip install --no-cache-dir  schemathesis
 
+
+WORKDIR /
 
 COPY docker/start_fuzz_testing.sh .
 

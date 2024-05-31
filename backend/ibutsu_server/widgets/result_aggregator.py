@@ -1,13 +1,11 @@
 import time
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
+
+from sqlalchemy import desc, func
 
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result
-from ibutsu_server.filters import apply_filters
-from ibutsu_server.filters import string_to_column
-from sqlalchemy import desc
-from sqlalchemy import func
+from ibutsu_server.filters import apply_filters, string_to_column
 
 
 def _get_min_count(days):
@@ -56,7 +54,12 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
 
 
 def get_recent_result_data(
-    group_field, days=None, project=None, chart_type="pie", run_id=None, additional_filters=None
+    group_field,
+    days=None,
+    project=None,
+    chart_type="pie",
+    run_id=None,
+    additional_filters=None,
 ):
     data = _get_recent_result_data(
         group_field,

@@ -1,9 +1,8 @@
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from flask import json
-from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockWidgetConfig
+
+from ibutsu_server.test import BaseTestCase, MockWidgetConfig
 
 # from ibutsu_server.test import MockDashboard
 # from ibutsu_server.test import MockProject
@@ -101,10 +100,11 @@ class TestWidgetConfigController(BaseTestCase):
 
         Get a single widget_config
         """
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
-        response = self.client.open(
-            "/api/widget-config/{id}".format(id=MOCK_ID), method="GET", headers=headers
-        )
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        response = self.client.open(f"/api/widget-config/{MOCK_ID}", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         assert response.json == MOCK_WIDGET_CONFIG_DICT
 
@@ -114,10 +114,11 @@ class TestWidgetConfigController(BaseTestCase):
         Return a 404 when no widget config is found
         """
         self.mock_widget_config.query.get.return_value = None
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
-        response = self.client.open(
-            "/api/widget-config/{id}".format(id=MOCK_ID), method="GET", headers=headers
-        )
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        response = self.client.open(f"/api/widget-config/{MOCK_ID}", method="GET", headers=headers)
         self.assert_404(response, "Response body is : " + response.data.decode("utf-8"))
 
     def test_get_widget_config_list(self):
@@ -129,7 +130,10 @@ class TestWidgetConfigController(BaseTestCase):
         mock_query = self.mock_widget_config.query
         mock_query.order_by.return_value.offset.return_value.limit.return_value.all = mock_all
         mock_query.count.return_value = 1
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open("/api/widget-config", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         expected_response = {
@@ -154,7 +158,7 @@ class TestWidgetConfigController(BaseTestCase):
             "Authorization": f"Bearer {self.jwt_token}",
         }
         response = self.client.open(
-            "/api/widget-config/{id}".format(id=MOCK_ID),
+            f"/api/widget-config/{MOCK_ID}",
             method="PUT",
             headers=headers,
             data=json.dumps(widget_config),
@@ -171,7 +175,7 @@ class TestWidgetConfigController(BaseTestCase):
             "Authorization": f"Bearer {self.jwt_token}",
         }
         response = self.client.open(
-            "/api/widget-config/{id}".format(id=MOCK_ID),
+            f"/api/widget-config/{MOCK_ID}",
             method="DELETE",
             headers=headers,
         )

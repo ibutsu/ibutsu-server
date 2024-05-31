@@ -1,11 +1,9 @@
 from datetime import datetime
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from flask import json
-from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockProject
-from ibutsu_server.test import MockResult
+
+from ibutsu_server.test import BaseTestCase, MockProject, MockResult
 
 MOCK_ID = "99fba7d2-4d32-4b9b-b07f-4200c9717661"
 START_TIME = datetime.utcnow()
@@ -123,10 +121,11 @@ class TestResultController(BaseTestCase):
 
         Get a single result
         """
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
-        response = self.client.open(
-            "/api/result/{id}".format(id=MOCK_ID), method="GET", headers=headers
-        )
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        response = self.client.open(f"/api/result/{MOCK_ID}", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         assert response.json == MOCK_RESULT_DICT
 
@@ -140,14 +139,26 @@ class TestResultController(BaseTestCase):
         mock_filter.order_by.return_value.offset.return_value.limit.return_value.all = mock_all
         mock_filter.count.return_value = 1
         self.mock_add_user_filter.return_value.filter.return_value = mock_filter
-        query_string = [("filter", "metadata.component=frontend"), ("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        query_string = [
+            ("filter", "metadata.component=frontend"),
+            ("page", 56),
+            ("pageSize", 56),
+        ]
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/result", method="GET", headers=headers, query_string=query_string
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         expected_response = {
-            "pagination": {"page": 56, "pageSize": 56, "totalItems": 1, "totalPages": 1},
+            "pagination": {
+                "page": 56,
+                "pageSize": 56,
+                "totalItems": 1,
+                "totalPages": 1,
+            },
             "results": [MOCK_RESULT_DICT],
         }
         assert response.json == expected_response
@@ -173,7 +184,7 @@ class TestResultController(BaseTestCase):
             "Authorization": f"Bearer {self.jwt_token}",
         }
         response = self.client.open(
-            "/api/result/{id}".format(id=MOCK_ID),
+            f"/api/result/{MOCK_ID}",
             method="PUT",
             headers=headers,
             data=json.dumps(result),

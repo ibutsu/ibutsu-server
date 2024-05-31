@@ -1,12 +1,9 @@
+from sqlalchemy import desc, func
+
 from ibutsu_server.constants import JJV_RUN_LIMIT
-from ibutsu_server.db.base import Integer
-from ibutsu_server.db.base import session
-from ibutsu_server.db.base import Text
+from ibutsu_server.db.base import Integer, Text, session
 from ibutsu_server.db.models import Run
-from ibutsu_server.filters import apply_filters
-from ibutsu_server.filters import string_to_column
-from sqlalchemy import desc
-from sqlalchemy import func
+from ibutsu_server.filters import apply_filters, string_to_column
 
 
 def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, run_limit=None):

@@ -1,4 +1,5 @@
 import yaml
+
 from ibutsu_server.db.models import Artifact
 
 

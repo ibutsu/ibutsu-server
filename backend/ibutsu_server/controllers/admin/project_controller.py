@@ -1,15 +1,12 @@
 import connexion
 from flask import abort
+
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Group
-from ibutsu_server.db.models import Project
-from ibutsu_server.db.models import User
+from ibutsu_server.db.models import Group, Project, User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.admin import check_user_is_admin
 from ibutsu_server.util.query import get_offset
-from ibutsu_server.util.uuid import convert_objectid_to_uuid
-from ibutsu_server.util.uuid import is_uuid
-from ibutsu_server.util.uuid import validate_uuid
+from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
 
 
 def admin_add_project(project=None, token_info=None, user=None):
@@ -60,7 +57,13 @@ def admin_get_project(id_, token_info=None, user=None):
 
 
 def admin_get_project_list(
-    filter_=None, owner_id=None, group_id=None, page=1, page_size=25, token_info=None, user=None
+    filter_=None,
+    owner_id=None,
+    group_id=None,
+    page=1,
+    page_size=25,
+    token_info=None,
+    user=None,
 ):
     """Get a list of projects
 

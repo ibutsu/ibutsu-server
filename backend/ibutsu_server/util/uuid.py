@@ -1,9 +1,7 @@
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from uuid import UUID
 
 from bson import ObjectId
-
 
 UUID_1_EPOCH = datetime(1582, 10, 15, tzinfo=timezone.utc)
 UUID_TICKS = 10000000
@@ -40,13 +38,9 @@ def convert_objectid_to_uuid(object_id):
     hex_string = str(object_id)
     counter = int(hex_string[18:], 16)
 
-    uuid_time = "1{:015x}".format(
-        int((unix_time + (unix_time - UUID_1_EPOCH)).timestamp() * UUID_TICKS)
-    )
-    uuid_clock = "{:04x}".format(UUID_VARIANT_1 | (counter & 0x3FFF))
+    uuid_time = f"1{int((unix_time + (unix_time - UUID_1_EPOCH)).timestamp() * UUID_TICKS):015x}"
+    uuid_clock = f"{UUID_VARIANT_1 | (counter & 0x3FFF):04x}"
     uuid_node = "1" + hex_string[8:18].rjust(11, "0")
-    string_uuid = "{}-{}-{}-{}-{}".format(
-        uuid_time[-8:], uuid_time[4:8], uuid_time[:4], uuid_clock, uuid_node
-    )
+    string_uuid = f"{uuid_time[-8:]}-{uuid_time[4:8]}-{uuid_time[:4]}-{uuid_clock}-{uuid_node}"
     converted_uuid = UUID(string_uuid)
     return str(converted_uuid)

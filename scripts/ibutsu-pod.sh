@@ -148,10 +148,10 @@ podman run -d \
        $BACKEND_EXTRA_ARGS \
        -w /mnt \
        -v./backend:/mnt/:Z \
-       python:3.8.12 \
-       /bin/bash -c 'python -m venv .backend_env && source .backend_env/bin/activate &&
-                     pip install -U pip setuptools wheel &&
-                     pip install -r requirements.txt &&
+       python:3.11 \
+       /bin/bash -c 'python3 -m venv .backend_env && source .backend_env/bin/activate &&
+                     pip3 install -U pip setuptools wheel &&
+                     pip3 install -r requirements.txt &&
                      python -m ibutsu_server --host 0.0.0.0' > /dev/null
 echo "done."
 echo -n "Waiting for backend to respond..."
@@ -176,10 +176,10 @@ podman run -d \
        -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
        -w /mnt \
        -v./backend:/mnt/:Z \
-       python:3.8.12 \
-       /bin/bash -c 'python -m venv .worker_env && source .worker_env/bin/activate &&
-                     pip install -U pip setuptools wheel &&
-                     pip install -r requirements.txt &&
+       python:3.11 \
+       /bin/bash -c 'python3 -m venv .worker_env && source .worker_env/bin/activate &&
+                     pip3 install -U pip setuptools wheel &&
+                     pip3 install -r requirements.txt &&
                      ./celery_worker.sh' > /dev/null
 echo "done."
 echo -n "Adding frontend to the pod..."

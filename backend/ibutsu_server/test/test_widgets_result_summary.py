@@ -1,6 +1,4 @@
-from unittest.mock import MagicMock
-from unittest.mock import Mock
-from unittest.mock import patch
+from unittest.mock import MagicMock, Mock, patch
 
 from ibutsu_server.db.models import Run
 from ibutsu_server.widgets.result_summary import get_result_summary

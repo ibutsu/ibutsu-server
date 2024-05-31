@@ -1,32 +1,36 @@
+# hadolint global ignore=DL3041,DL4006
 # Build the image first
-FROM registry.access.redhat.com/ubi8/ubi-minimal AS builder
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10 AS builder
 
-ARG NODEJS_VERSION=18
+ARG NODEJS_VERSION=16
 ENV NODE_ENV=production
 
 WORKDIR /app
 
-RUN INSTALL_PKGS="nodejs nodejs-nodemon npm findutils tar" && \
-    microdnf module disable nodejs && \
+RUN microdnf module disable nodejs && \
     microdnf module enable nodejs:$NODEJS_VERSION && \
-    microdnf install --nodocs -y --disableplugin=subscription-manager $INSTALL_PKGS && \
-    node -v | grep -qe "^v$NODEJS_VERSION\." && echo "Found VERSION $NODEJS_VERSION" && \
+    microdnf install --nodocs -y --disableplugin=subscription-manager \
+        nodejs nodejs-nodemon npm findutils tar && \
+    node -v | grep -qe "^v$NODEJS_VERSION\." && \
+    echo "Found VERSION $NODEJS_VERSION" && \
     microdnf clean all && \
     rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
+
 COPY . /app
-RUN npm install
-RUN npm run build
+RUN npm install && \
+    npm run build
 
 # Deploy it using nginx
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10
 
 ARG NGINX_VERSION=1.20
 
 # rpm -V $INSTALL_PKGS && \
-RUN INSTALL_PKGS="nss_wrapper bind-utils gettext hostname nginx nginx-mod-stream nginx-mod-http-perl" && \
-    microdnf -y module enable nginx:$NGINX_VERSION && \
-    microdnf install -y --nodocs --disableplugin=subscription-manager $INSTALL_PKGS && \
-    nginx -v 2>&1 | grep -qe "nginx/$NGINX_VERSION\." && echo "Found VERSION $NGINX_VERSION" && \
+RUN microdnf -y module enable nginx:$NGINX_VERSION && \
+    microdnf install -y --nodocs --disableplugin=subscription-manager \
+        nss_wrapper bind-utils gettext hostname nginx nginx-mod-stream nginx-mod-http-perl && \
+    nginx -v 2>&1 | grep -qe "nginx/$NGINX_VERSION\." && \
+    echo "Found VERSION $NGINX_VERSION" && \
     microdnf clean all && \
     rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
 

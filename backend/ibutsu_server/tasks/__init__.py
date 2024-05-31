@@ -1,15 +1,14 @@
 import logging
 from contextlib import contextmanager
 
-from celery import Celery
-from celery import signals
-from celery import Task
+from celery import Celery, Task, signals
 from celery.schedules import crontab
 from flask import current_app
-from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Report
 from redis import Redis
 from redis.exceptions import LockError
+
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Report
 
 LOCK_EXPIRE = 1
 task = None

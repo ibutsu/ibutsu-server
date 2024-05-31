@@ -1,10 +1,8 @@
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from flask import json
-from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockProject
-from ibutsu_server.test import MockUser
+
+from ibutsu_server.test import BaseTestCase, MockProject, MockUser
 
 MOCK_ID = "5ac7d645-45a3-4cbe-acb2-c8d6f7e05468"
 MOCK_NAME = "my-project"
@@ -95,9 +93,7 @@ class TestProjectController(BaseTestCase):
             "Accept": "application/json",
             "Authorization": f"Bearer {self.jwt_token}",
         }
-        response = self.client.open(
-            "/api/project/{id}".format(id=MOCK_ID), method="GET", headers=headers
-        )
+        response = self.client.open(f"/api/project/{MOCK_ID}", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         self.assert_equal(response.json, MOCK_PROJECT_DICT)
         self.mock_project.query.get.assert_called_once_with(MOCK_ID)
@@ -112,9 +108,7 @@ class TestProjectController(BaseTestCase):
             "Accept": "application/json",
             "Authorization": f"Bearer {self.jwt_token}",
         }
-        response = self.client.open(
-            "/api/project/{id}".format(id=MOCK_ID), method="GET", headers=headers
-        )
+        response = self.client.open(f"/api/project/{MOCK_ID}", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         self.assert_equal(response.json, MOCK_PROJECT_DICT)
 
@@ -163,7 +157,7 @@ class TestProjectController(BaseTestCase):
             "Authorization": f"Bearer {self.jwt_token}",
         }
         response = self.client.open(
-            "/api/project/{id}".format(id=MOCK_ID),
+            f"/api/project/{MOCK_ID}",
             method="PUT",
             headers=headers,
             data=json.dumps(updates),

@@ -1,13 +1,9 @@
-from ibutsu_server.constants import HEATMAP_MAX_BUILDS
-from ibutsu_server.constants import HEATMAP_RUN_LIMIT
-from ibutsu_server.db.base import Float
-from ibutsu_server.db.base import session
+from sqlalchemy import case, desc, func
+
+from ibutsu_server.constants import HEATMAP_MAX_BUILDS, HEATMAP_RUN_LIMIT
+from ibutsu_server.db.base import Float, session
 from ibutsu_server.db.models import Run
-from ibutsu_server.filters import apply_filters
-from ibutsu_server.filters import string_to_column
-from sqlalchemy import case
-from sqlalchemy import desc
-from sqlalchemy import func
+from ibutsu_server.filters import apply_filters, string_to_column
 
 NO_RUN_TEXT = "None"
 NO_PASS_RATE_TEXT = "Build failed"

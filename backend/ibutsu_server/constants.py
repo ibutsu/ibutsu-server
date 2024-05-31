@@ -310,8 +310,16 @@ WIDGET_TYPES = {
         "id": "jenkins-job-view",
         "title": "Jenkins Job View",
         "params": [
-            {"name": "filter", "description": "Filters for the Jenkins Jobs", "type": "list"},
-            {"name": "page", "description": "Desired page of builds to return.", "type": "integer"},
+            {
+                "name": "filter",
+                "description": "Filters for the Jenkins Jobs",
+                "type": "list",
+            },
+            {
+                "name": "page",
+                "description": "Desired page of builds to return.",
+                "type": "integer",
+            },
             {
                 "name": "page_size",
                 "description": "Number of builds on each page",
@@ -329,8 +337,16 @@ WIDGET_TYPES = {
         "id": "jenkins-analysis-view",
         "title": "Jenkins Job Analysis",
         "params": [
-            {"name": "job_name", "description": "The name of the Jenkins Job", "type": "string"},
-            {"name": "builds", "description": "The number of builds to fetch", "type": "integer"},
+            {
+                "name": "job_name",
+                "description": "The name of the Jenkins Job",
+                "type": "string",
+            },
+            {
+                "name": "builds",
+                "description": "The number of builds to fetch",
+                "type": "integer",
+            },
         ],
         "type": "view",
     },

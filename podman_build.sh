@@ -1,19 +1,19 @@
 #!/bin/bash
 
 if [[ "$1" == "" ]]; then
-    IMAGES_TO_BUILD=("backend", "scheduler", "worker", "flower", "frontend")
+    IMAGES_TO_BUILD=("backend" "scheduler" "worker" "flower" "frontend")
 else
     IMAGES_TO_BUILD=("$1")
 fi
 
 # Image info
 IMAGE_TAG=$(git rev-parse --short=7 HEAD)
-IMAGE_PREFIX="quay.io/cloudservices/ibutsu-"
+IMAGE_PREFIX="quay.io/ibutsu/"
 
 # Build images
 for IMAGE in "${IMAGES_TO_BUILD[@]}"; do
-    echo "---- BUILDING: $IMAGE ----"
-    if [[ "$IMAGE" == "frontend" ]]; then
+    echo "---- BUILDING: ${IMAGE} ----"
+    if [[ "${IMAGE}" == "frontend" ]]; then
         BASE_DIR=frontend
     else
         BASE_DIR=backend

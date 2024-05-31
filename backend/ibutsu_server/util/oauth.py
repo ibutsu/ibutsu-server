@@ -1,7 +1,7 @@
 import requests
 from flask import current_app
-from ibutsu_server.constants import LOCALHOST
-from ibutsu_server.constants import OAUTH_CONFIG
+
+from ibutsu_server.constants import LOCALHOST, OAUTH_CONFIG
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import User
 from ibutsu_server.util.urls import build_url
@@ -45,7 +45,11 @@ def get_user_from_provider(provider, auth_data):
     """Get a user object from the ``provider``, using the ``auth_data``"""
     provider_config = get_provider_config(provider, is_private=True)
     if provider == "google":
-        user_dict = {"id": auth_data["iat"], "email": auth_data["email"], "name": auth_data["name"]}
+        user_dict = {
+            "id": auth_data["iat"],
+            "email": auth_data["email"],
+            "name": auth_data["name"],
+        }
     else:
         access_token = auth_data.get("accessToken", auth_data.get("access_token"))
         response = requests.get(
@@ -62,7 +66,8 @@ def get_user_from_provider(provider, auth_data):
             # to make another request to get the e-mail address, see the this answer for more info:
             # https://stackoverflow.com/a/35387123
             response = requests.get(
-                provider_config["email_url"], headers={"Authorization": f"Bearer {access_token}"}
+                provider_config["email_url"],
+                headers={"Authorization": f"Bearer {access_token}"},
             )
             if response.status_code == 200:
                 emails = response.json()

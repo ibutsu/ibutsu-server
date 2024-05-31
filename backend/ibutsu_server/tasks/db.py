@@ -1,14 +1,9 @@
-""" Tasks for DB related things"""
+"""Tasks for DB related things"""
 
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Artifact
-from ibutsu_server.db.models import Project
-from ibutsu_server.db.models import Result
-from ibutsu_server.db.models import Run
-from ibutsu_server.db.models import User
+from ibutsu_server.db.models import Artifact, Project, Result, Run, User
 from ibutsu_server.tasks import task
 
 DAYS_IN_MONTH = 30

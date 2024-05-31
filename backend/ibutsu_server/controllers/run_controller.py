@@ -1,19 +1,20 @@
 from datetime import datetime
 
 import connexion
+
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Run
-from ibutsu_server.db.models import User
+from ibutsu_server.db.models import Run, User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks.runs import update_run as update_run_task
 from ibutsu_server.util import merge_dicts
 from ibutsu_server.util.count import get_count_estimate
-from ibutsu_server.util.projects import add_user_filter
-from ibutsu_server.util.projects import get_project
-from ibutsu_server.util.projects import get_project_id
-from ibutsu_server.util.projects import project_has_user
-from ibutsu_server.util.query import get_offset
-from ibutsu_server.util.query import query_as_task
+from ibutsu_server.util.projects import (
+    add_user_filter,
+    get_project,
+    get_project_id,
+    project_has_user,
+)
+from ibutsu_server.util.query import get_offset, query_as_task
 from ibutsu_server.util.uuid import validate_uuid
 
 

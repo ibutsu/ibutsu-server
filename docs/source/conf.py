@@ -64,7 +64,10 @@ html_theme_options = {
         "font-stack": "'Red Hat Text', 'Lato', 'proxima-nova', 'Helvetica Neue', Arial, sans-serif",
         "font-stack-monospace": "'Hack', monospace",
     },
-    "dark_css_variables": {"color-brand-primary": "#3f9c35", "color-brand-content": "#3f9c35"},
+    "dark_css_variables": {
+        "color-brand-primary": "#3f9c35",
+        "color-brand-content": "#3f9c35",
+    },
 }
 pygments_style = "gruvbox-light"
 pygments_dark_style = "gruvbox-dark"

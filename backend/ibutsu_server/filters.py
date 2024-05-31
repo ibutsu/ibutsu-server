@@ -1,8 +1,8 @@
 import re
 
-from ibutsu_server.constants import ARRAY_FIELDS
-from ibutsu_server.constants import NUMERIC_FIELDS
 from sqlalchemy.dialects.postgresql import array
+
+from ibutsu_server.constants import ARRAY_FIELDS, NUMERIC_FIELDS
 
 OPERATORS = {
     "=": "$eq",

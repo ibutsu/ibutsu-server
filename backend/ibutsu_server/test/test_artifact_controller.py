@@ -1,12 +1,8 @@
 from io import BytesIO
 from unittest import skip
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockArtifact
-from ibutsu_server.test import MockResult
-
+from ibutsu_server.test import BaseTestCase, MockArtifact, MockResult
 
 MOCK_ID = "70202589-4781-4eb9-bcfc-685b1d2c583a"
 MOCK_RESULT_ID = "23cd86d5-a27e-45a4-83a3-12c74d219709"
@@ -64,9 +60,7 @@ class TestArtifactController(BaseTestCase):
         Delete an artifact
         """
         headers = {"Authorization": f"Bearer {self.jwt_token}"}
-        response = self.client.open(
-            "/api/artifact/{id}".format(id=MOCK_ID), method="DELETE", headers=headers
-        )
+        response = self.client.open(f"/api/artifact/{MOCK_ID}", method="DELETE", headers=headers)
         self.mock_artifact.query.get.assert_called_once_with(MOCK_ID)
         self.mock_session.delete.assert_called_once_with(MOCK_ARTIFACT)
         self.mock_session.commit.assert_called_once()
@@ -82,7 +76,7 @@ class TestArtifactController(BaseTestCase):
             "Authorization": f"Bearer {self.jwt_token}",
         }
         response = self.client.open(
-            "/api/artifact/{id}/download".format(id=MOCK_ID),
+            f"/api/artifact/{MOCK_ID}/download",
             method="GET",
             headers=headers,
         )
@@ -94,9 +88,12 @@ class TestArtifactController(BaseTestCase):
 
         Get a single artifact
         """
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
-            "/api/artifact/{id}".format(id=MOCK_ID),
+            f"/api/artifact/{MOCK_ID}",
             method="GET",
             headers=headers,
         )
@@ -109,7 +106,10 @@ class TestArtifactController(BaseTestCase):
         Get a (filtered) list of artifacts
         """
         query_string = [("resultId", MOCK_RESULT_ID), ("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/artifact", method="GET", headers=headers, query_string=query_string
         )
