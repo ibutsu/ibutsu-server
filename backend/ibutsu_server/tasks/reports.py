@@ -6,6 +6,7 @@ from datetime import datetime
 from io import StringIO
 
 from flask import current_app
+from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Report
 from ibutsu_server.db.models import ReportFile
@@ -15,7 +16,6 @@ from ibutsu_server.tasks import task
 from ibutsu_server.templating import render_template
 from ibutsu_server.util.projects import get_project_id
 from sqlalchemy.exc import OperationalError
-from ibutsu_server.constants import LOCALHOST
 
 
 TREE_ROOT = {
@@ -214,7 +214,8 @@ def _get_files(result):
         {
             "filename": report_file.filename,
             "url": "{}/api/artifact/{}/download".format(
-                current_app.config.get("BACKEND_URL", f"http://{LOCALHOST}:8080"), str(report_file.id)
+                current_app.config.get("BACKEND_URL", f"http://{LOCALHOST}:8080"),
+                str(report_file.id),
             ),
         }
         for report_file in ReportFile.query.filter(

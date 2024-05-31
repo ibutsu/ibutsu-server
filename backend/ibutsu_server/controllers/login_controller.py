@@ -10,6 +10,7 @@ from flask import make_response
 from flask import redirect
 from google.auth.transport.requests import Request
 from google.oauth2 import id_token
+from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token
 from ibutsu_server.db.models import User
@@ -20,7 +21,6 @@ from ibutsu_server.util.login import validate_activation_code
 from ibutsu_server.util.oauth import get_provider_config
 from ibutsu_server.util.oauth import get_user_from_provider
 from ibutsu_server.util.urls import build_url
-from ibutsu_server.constants import LOCALHOST
 
 AUTH_WINDOW = """<html>
 <head></head>
@@ -293,7 +293,9 @@ def activate(activation_code=None):
     if result := validate_activation_code(activation_code):
         return result
     user = User.query.filter(User.activation_code == activation_code).first()
-    login_url = build_url(current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login")
+    login_url = build_url(
+        current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login"
+    )
     if user:
         user.is_active = True
         user.activation_code = None

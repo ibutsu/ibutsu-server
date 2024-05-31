@@ -1,11 +1,10 @@
 import requests
 from flask import current_app
+from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.constants import OAUTH_CONFIG
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import User
 from ibutsu_server.util.urls import build_url
-
-from ibutsu_server.constants import LOCALHOST
 
 
 def get_provider_config(provider, is_private=False):

@@ -9,8 +9,6 @@ try:
 except ImportError:
     IS_CONNECTED = False
 
-from ibutsu_server.constants import LOCALHOST
-
 
 def get_health(token_info=None, user=None):
     """Get a health report
