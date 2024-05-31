@@ -1,4 +1,5 @@
 from flask import abort
+
 from ibutsu_server.db.models import User
 
 

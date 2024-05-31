@@ -1,13 +1,11 @@
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from ibutsu_server.db.base import Boolean
-from ibutsu_server.db.base import Column
-from ibutsu_server.db.base import ForeignKey
-from ibutsu_server.db.base import Text
-from ibutsu_server.db.types import PortableUUID
 from sqlalchemy import MetaData
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
+
+from ibutsu_server.db.base import Boolean, Column, ForeignKey, Text
+from ibutsu_server.db.types import PortableUUID
 
 __version__ = 5
 
@@ -37,7 +35,10 @@ def upgrade_1(session):
         and widget_configs is not None
         and "dashboard_id" not in [col.name for col in widget_configs.columns]
     ):
-        op.add_column("widget_configs", Column("dashboard_id", PortableUUID, server_default=null()))
+        op.add_column(
+            "widget_configs",
+            Column("dashboard_id", PortableUUID, server_default=null()),
+        )
         if engine.url.get_dialect().name != "sqlite":
             # SQLite doesn't support ALTER TABLE ADD CONSTRAINT
             op.create_foreign_key(
@@ -171,5 +172,6 @@ def upgrade_5(session):
         and "default_dashboard_id" not in [col.name for col in projects.columns]
     ):
         op.add_column(
-            "projects", Column("default_dashboard_id", PortableUUID(), ForeignKey("dashboards.id"))
+            "projects",
+            Column("default_dashboard_id", PortableUUID(), ForeignKey("dashboards.id")),
         )

@@ -2,9 +2,9 @@ from datetime import datetime
 
 import connexion
 from flask import make_response
+
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Report
-from ibutsu_server.db.models import ReportFile
+from ibutsu_server.db.models import Report, ReportFile
 from ibutsu_server.tasks.reports import REPORTS
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.query import get_offset
@@ -155,5 +155,5 @@ def download_report(id_, filename, token_info=None, user=None):
     :rtype: file
     """
     report, response = _build_report_response(id_)
-    response.headers["Content-Disposition"] = "attachment; filename={}".format(report.filename)
+    response.headers["Content-Disposition"] = f"attachment; filename={report.filename}"
     return response

@@ -10,6 +10,7 @@ CREATE_PROJECT=false
 POSTGRES_EXTRA_ARGS=
 REDIS_EXTRA_ARGS=
 BACKEND_EXTRA_ARGS=
+PYTHON_IMAGE=python:3.9
 
 function print_usage() {
     echo "Usage: ibutsu-pod.sh [-h|--help] [-p|--persistent] [-V|--use-volumes] [-A|--create-admin] [-P|--create-project] [POD_NAME]"
@@ -148,10 +149,10 @@ podman run -d \
        $BACKEND_EXTRA_ARGS \
        -w /mnt \
        -v./backend:/mnt/:Z \
-       python:3.8.12 \
-       /bin/bash -c 'python -m venv .backend_env && source .backend_env/bin/activate &&
-                     pip install -U pip setuptools wheel &&
-                     pip install -r requirements.txt &&
+       $PYTHON_IMAGE \
+       /bin/bash -c 'python3 -m venv .backend_env && source .backend_env/bin/activate &&
+                     pip3 install -U pip setuptools wheel &&
+                     pip3 install -r requirements.txt &&
                      python -m ibutsu_server --host 0.0.0.0' > /dev/null
 echo "done."
 echo -n "Waiting for backend to respond..."
@@ -176,10 +177,9 @@ podman run -d \
        -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
        -w /mnt \
        -v./backend:/mnt/:Z \
-       python:3.8.12 \
-       /bin/bash -c 'python -m venv .worker_env && source .worker_env/bin/activate &&
-                     pip install -U pip setuptools wheel &&
-                     pip install -r requirements.txt &&
+       $PYTHON_IMAGE \
+       /bin/bash -c 'pip3 install -U pip setuptools wheel &&
+                     pip3 install -r requirements.txt &&
                      ./celery_worker.sh' > /dev/null
 echo "done."
 echo -n "Adding frontend to the pod..."
@@ -189,8 +189,8 @@ podman run -d \
        --name ibutsu-frontend \
        -w /mnt \
        -v./frontend:/mnt/:Z \
-       node:16 \
-       /bin/bash -c 'npm install && CI=1 npm run devserver' > /dev/null
+       node:18 \
+       /bin/bash -c 'npm install yarn && yarn install && CI=1 yarn devserver' > /dev/null
 echo "done."
 echo -n "Waiting for frontend to respond..."
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:3000); do

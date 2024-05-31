@@ -1,12 +1,12 @@
 import logging
 from inspect import isfunction
 
-import ibutsu_server.tasks
 from flask_testing import TestCase
+
+import ibutsu_server.tasks
 from ibutsu_server import get_app
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Token
-from ibutsu_server.db.models import User
+from ibutsu_server.db.models import Token, User
 from ibutsu_server.tasks import create_celery_app
 from ibutsu_server.util import merge_dicts
 from ibutsu_server.util.jwt import generate_token

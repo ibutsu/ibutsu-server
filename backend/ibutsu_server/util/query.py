@@ -1,4 +1,4 @@
-""" Query utilities"""
+"""Query utilities"""
 
 import re
 

@@ -1,29 +1,25 @@
 import os
 from importlib import import_module
 from pathlib import Path
-from typing import Any
-from typing import Dict
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import flask
 from connexion import App
-from flask import redirect
-from flask import request
+from flask import redirect, request
 from flask_cors import CORS
 from flask_mail import Mail
+from sqlalchemy import create_engine
+from sqlalchemy.engine.url import URL as SQLA_URL
+from yaml import full_load as yaml_load
+
 from ibutsu_server.auth import bcrypt
 from ibutsu_server.db import upgrades
-from ibutsu_server.db.base import db
-from ibutsu_server.db.base import session
-from ibutsu_server.db.models import upgrade_db
-from ibutsu_server.db.models import User
+from ibutsu_server.db.base import db, session
+from ibutsu_server.db.models import User, upgrade_db
 from ibutsu_server.db.util import add_superadmin
 from ibutsu_server.encoder import IbutsuJSONProvider
 from ibutsu_server.tasks import create_celery_app
 from ibutsu_server.util.jwt import decode_token
-from sqlalchemy import create_engine
-from sqlalchemy.engine.url import URL as SQLA_URL
-from yaml import full_load as yaml_load
 
 FRONTEND_PATH = Path("/app/frontend")
 
@@ -75,7 +71,11 @@ def get_app(**extra_config):
     config.from_mapping(os.environ)
     # convert str to bool for USER_LOGIN_ENABLED
     if isinstance(config.get("USER_LOGIN_ENABLED", True), str):
-        config["USER_LOGIN_ENABLED"] = config["USER_LOGIN_ENABLED"].lower()[0] in ["y", "t", "1"]
+        config["USER_LOGIN_ENABLED"] = config["USER_LOGIN_ENABLED"].lower()[0] in [
+            "y",
+            "t",
+            "1",
+        ]
 
     # If you have environment variables, like when running on OpenShift, create the db url
     if "SQLALCHEMY_DATABASE_URI" not in extra_config:
@@ -109,7 +109,10 @@ def get_app(**extra_config):
 
     create_celery_app(app.app)
     app.add_api(
-        "openapi.yaml", arguments={"title": "Ibutsu"}, base_path="/api", pythonic_params=True
+        "openapi.yaml",
+        arguments={"title": "Ibutsu"},
+        base_path="/api",
+        pythonic_params=True,
     )
 
     CORS(app.app, resources={r"/*": {"origins": "*", "send_wildcard": False}})
@@ -118,7 +121,6 @@ def get_app(**extra_config):
     Mail(app.app)
 
     with app.app.app_context():
-
         db.create_all()
         upgrade_db(session, upgrades)
         # add a superadmin user

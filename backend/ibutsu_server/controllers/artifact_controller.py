@@ -4,15 +4,12 @@ from datetime import datetime
 import connexion
 import magic
 from flask import make_response
+
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Artifact
-from ibutsu_server.db.models import Result
-from ibutsu_server.db.models import User
-from ibutsu_server.util.projects import add_user_filter
-from ibutsu_server.util.projects import project_has_user
+from ibutsu_server.db.models import Artifact, Result, User
+from ibutsu_server.util.projects import add_user_filter, project_has_user
 from ibutsu_server.util.query import get_offset
-from ibutsu_server.util.uuid import is_uuid
-from ibutsu_server.util.uuid import validate_uuid
+from ibutsu_server.util.uuid import is_uuid, validate_uuid
 
 
 def _build_artifact_response(id_):
@@ -57,7 +54,7 @@ def download_artifact(id_, token_info=None, user=None):
     artifact, response = _build_artifact_response(id_)
     if not project_has_user(artifact.result.project, user):
         return "Forbidden", 403
-    response.headers["Content-Disposition"] = "attachment; filename={}".format(artifact.filename)
+    response.headers["Content-Disposition"] = f"attachment; filename={artifact.filename}"
     return response
 
 

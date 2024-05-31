@@ -1,22 +1,30 @@
 #!/bin/bash
 
 if [[ "$1" == "" ]]; then
-    IMAGES_TO_BUILD=("backend", "scheduler", "worker", "flower", "frontend")
+    IMAGES_TO_BUILD=("backend" "scheduler" "worker" "flower" "frontend")
 else
     IMAGES_TO_BUILD=("$1")
 fi
 
 # Image info
 IMAGE_TAG=$(git rev-parse --short=7 HEAD)
-IMAGE_PREFIX="quay.io/cloudservices/ibutsu-"
+IMAGE_PREFIX="ibutsu/"
+
+declare -A RESULTS
 
 # Build images
 for IMAGE in "${IMAGES_TO_BUILD[@]}"; do
-    echo "---- BUILDING: $IMAGE ----"
-    if [[ "$IMAGE" == "frontend" ]]; then
+    printf -- "\n--------------------- BUILDING: %s ---------------------\n" ${IMAGE}
+    if [[ "${IMAGE}" == "frontend" ]]; then
         BASE_DIR=frontend
     else
         BASE_DIR=backend
     fi
     podman build -t "${IMAGE_PREFIX}${IMAGE}:${IMAGE_TAG}" -f $BASE_DIR/docker/Dockerfile.$IMAGE ./$BASE_DIR/
+    RESULTS[${IMAGE}]=$?
+done
+
+echo "BUILD RESULTS:"
+for IMAGE in "${!RESULTS[@]}"; do
+    printf "%s: %d\n" $IMAGE ${RESULTS[${IMAGE}]}
 done

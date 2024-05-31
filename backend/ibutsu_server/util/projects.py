@@ -1,5 +1,4 @@
-from ibutsu_server.db.models import Project
-from ibutsu_server.db.models import User
+from ibutsu_server.db.models import Project, User
 from ibutsu_server.util.uuid import is_uuid
 
 

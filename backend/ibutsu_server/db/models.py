@@ -1,26 +1,27 @@
 from datetime import datetime
 from uuid import uuid4
 
-from ibutsu_server.auth import bcrypt
-from ibutsu_server.db.base import Boolean
-from ibutsu_server.db.base import Column
-from ibutsu_server.db.base import DateTime
-from ibutsu_server.db.base import Float
-from ibutsu_server.db.base import ForeignKey
-from ibutsu_server.db.base import inspect
-from ibutsu_server.db.base import Integer
-from ibutsu_server.db.base import LargeBinary
-from ibutsu_server.db.base import Model
-from ibutsu_server.db.base import relationship
-from ibutsu_server.db.base import Table
-from ibutsu_server.db.base import Text
-from ibutsu_server.db.types import PortableJSON
-from ibutsu_server.db.types import PortableUUID
-from sqlalchemy.exc import DBAPIError
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 from sqlalchemy_json import mutable_json_type
+
+from ibutsu_server.auth import bcrypt
+from ibutsu_server.db.base import (
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    Model,
+    Table,
+    Text,
+    inspect,
+    relationship,
+)
+from ibutsu_server.db.types import PortableJSON, PortableUUID
 
 
 def _gen_uuid():

@@ -5,21 +5,17 @@ from uuid import uuid4
 
 import connexion
 import requests
-from flask import current_app
-from flask import make_response
-from flask import redirect
+from flask import current_app, make_response, redirect
 from google.auth.transport.requests import Request
 from google.oauth2 import id_token
+
 from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Token
-from ibutsu_server.db.models import User
+from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
-from ibutsu_server.util.keycloak import get_keycloak_config
-from ibutsu_server.util.keycloak import get_user_from_keycloak
+from ibutsu_server.util.keycloak import get_keycloak_config, get_user_from_keycloak
 from ibutsu_server.util.login import validate_activation_code
-from ibutsu_server.util.oauth import get_provider_config
-from ibutsu_server.util.oauth import get_user_from_provider
+from ibutsu_server.util.oauth import get_provider_config, get_user_from_provider
 from ibutsu_server.util.urls import build_url
 
 AUTH_WINDOW = """<html>
@@ -134,15 +130,17 @@ def login(email=None, password=None):
         session.add(token)
         session.commit()
         return {"name": user.name, "email": user.email, "token": login_token}
+    elif not current_app.config.get("USER_LOGIN_ENABLED", True):
+        return {
+            "code": "INVALID",
+            "message": "Username/password auth is disabled. "
+            "Please login via one of the links below.",
+        }, 401
     else:
-        if not current_app.config.get("USER_LOGIN_ENABLED", True):
-            return {
-                "code": "INVALID",
-                "message": "Username/password auth is disabled. "
-                "Please login via one of the links below.",
-            }, 401
-        else:
-            return {"code": "INVALID", "message": "Username and/or password are invalid"}, 401
+        return {
+            "code": "INVALID",
+            "message": "Username and/or password are invalid",
+        }, 401
 
 
 def support():
@@ -213,7 +211,9 @@ def register(email=None, password=None):
     activation_code = urlsafe_b64encode(str(uuid4()).encode("utf8")).strip(b"=").decode()
     # Create a user
     user = User(
-        email=details["email"], password=details["password"], activation_code=activation_code
+        email=details["email"],
+        password=details["password"],
+        activation_code=activation_code,
     )
     user_exists = User.query.filter_by(email=user.email).first()
     if user_exists:

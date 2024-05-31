@@ -1,5 +1,6 @@
 import requests
 from flask import current_app
+
 from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import User
