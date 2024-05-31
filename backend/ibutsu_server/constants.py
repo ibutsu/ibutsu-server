@@ -1,3 +1,5 @@
+LOCALHOST = "127.0.0.1"
+
 OAUTH_CONFIG = {
     "google": {
         "scope": ["https://www.googleapis.com/auth/userinfo.profile"],

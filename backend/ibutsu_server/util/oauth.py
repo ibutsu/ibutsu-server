@@ -5,10 +5,12 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import User
 from ibutsu_server.util.urls import build_url
 
+from ibutsu_server.constants import LOCALHOST
+
 
 def get_provider_config(provider, is_private=False):
     """Return the customised config for a provider"""
-    backend_url = current_app.config.get("BACKEND_URL", "http://localhost:8080/api")
+    backend_url = current_app.config.get("BACKEND_URL", f"http://{LOCALHOST}:8080/api")
     provider_upper = provider.upper()
     server_url = current_app.config.get(f"{provider_upper}_BASE_URL")
     provider_config = OAUTH_CONFIG.get(provider, {})

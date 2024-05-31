@@ -15,6 +15,7 @@ from ibutsu_server.tasks import task
 from ibutsu_server.templating import render_template
 from ibutsu_server.util.projects import get_project_id
 from sqlalchemy.exc import OperationalError
+from ibutsu_server.constants import LOCALHOST
 
 
 TREE_ROOT = {
@@ -67,17 +68,17 @@ def _update_report(report):
             "filename": report_filename,
             "mimetype": REPORTS[report_type]["mimetype"],
             "url": "{}/api/report/{}/download/{}".format(
-                current_app.config.get("BACKEND_URL", "http://localhost:8080"),
+                current_app.config.get("BACKEND_URL", f"http://{LOCALHOST}:8080"),
                 report["id"],
                 report_filename,
             ),
             "download_url": "{}/api/report/{}/download/{}".format(
-                current_app.config.get("BACKEND_URL", "http://localhost:8080"),
+                current_app.config.get("BACKEND_URL", f"http://{LOCALHOST}:8080"),
                 report["id"],
                 report_filename,
             ),
             "view_url": "{}/api/report/{}/view/{}".format(
-                current_app.config.get("BACKEND_URL", "http://localhost:8080"),
+                current_app.config.get("BACKEND_URL", f"http://{LOCALHOST}:8080"),
                 report["id"],
                 report_filename,
             ),
@@ -213,7 +214,7 @@ def _get_files(result):
         {
             "filename": report_file.filename,
             "url": "{}/api/artifact/{}/download".format(
-                current_app.config.get("BACKEND_URL", "http://localhost:8080"), str(report_file.id)
+                current_app.config.get("BACKEND_URL", f"http://{LOCALHOST}:8080"), str(report_file.id)
             ),
         }
         for report_file in ReportFile.query.filter(

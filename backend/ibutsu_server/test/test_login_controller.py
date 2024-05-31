@@ -11,6 +11,7 @@ MOCK_PASSWORD = "my super secret password"
 MOCK_USER = MockUser(
     id=MOCK_ID, email=MOCK_EMAIL, password=MOCK_PASSWORD, name="Test User", is_superadmin=False
 )
+from ibutsu_server.constants import LOCALHOST
 
 
 class TestLoginController(BaseTestCase):
@@ -132,7 +133,7 @@ class TestLoginController(BaseTestCase):
         expected_response = {
             "authorization_url": "https://gitlab.com/oauth/authorize",
             "client_id": "dfgfdgh4563453456dsfgdsfg456",
-            "redirect_uri": "http://localhost:8080/api/login/auth/gitlab",
+            "redirect_uri": f"http://{LOCALHOST}:8080/api/login/auth/gitlab",
             "scope": "read_user",
         }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}

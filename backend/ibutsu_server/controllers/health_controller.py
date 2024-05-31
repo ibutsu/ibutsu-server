@@ -9,6 +9,8 @@ try:
 except ImportError:
     IS_CONNECTED = False
 
+from ibutsu_server.constants import LOCALHOST
+
 
 def get_health(token_info=None, user=None):
     """Get a health report
@@ -46,7 +48,7 @@ def get_health_info(token_info=None, user=None):
     :rtype: HealthInfo
     """
     return {
-        "frontend": current_app.config.get("FRONTEND_URL", "http://localhost:3000"),
-        "backend": current_app.config.get("BACKEND_URL", "http://localhost:8080"),
-        "api_ui": current_app.config.get("BACKEND_URL", "http://localhost:8080") + "/api/ui/",
+        "frontend": current_app.config.get("FRONTEND_URL", "http://127.0.01:3000"),
+        "backend": current_app.config.get("BACKEND_URL", "http://127.0.0.1:8080"),
+        "api_ui": current_app.config.get("BACKEND_URL", "http://127.0.0.1:8080") + "/api/ui/",
     }
