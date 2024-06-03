@@ -1,13 +1,15 @@
+from http import HTTPStatus
+
 import connexion
 from flask import abort
 
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Group, Project, User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.admin import check_user_is_admin
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
-from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 
 def admin_add_project(project=None, token_info=None, user=None):
@@ -24,19 +26,19 @@ def admin_add_project(project=None, token_info=None, user=None):
     project = Project.from_dict(**connexion.request.get_json())
     # check if project already exists
     if project.id and Project.query.get(project.id):
-        return f"Project id {project.id} already exist", 400
+        return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
     user = User.query.get(user)
     if project.group_id:
         # check if the group exists
         group = Group.query.get(project.group_id)
         if not group:
-            return f"Group id {project.group_id} doesn't exist", 400
+            return f"Group id {project.group_id} doesn't exist", HTTPStatus.BAD_REQUEST
     if user:
         project.owner = user
         project.users.append(user)
     session.add(project)
     session.commit()
-    return project.to_dict(), 201
+    return project.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
@@ -53,7 +55,7 @@ def admin_get_project(id_, token_info=None, user=None):
     if not project:
         project = Project.query.filter(Project.name == id_).first()
     if not project:
-        abort(404)
+        abort(HTTPStatus.NOT_FOUND)
     return project.to_dict(with_owner=True)
 
 
@@ -96,7 +98,7 @@ def admin_get_project_list(
     total_items = query.count()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     if offset > 9223372036854775807:  # max value of bigint
-        return "The page number is too big.", 400
+        return "The page number is too big.", HTTPStatus.BAD_REQUEST
     projects = query.offset(offset).limit(page_size).all()
     return {
         "projects": [project.to_dict(with_owner=True) for project in projects],
@@ -128,7 +130,7 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
     project = Project.query.get(id_)
 
     if not project:
-        abort(404)
+        abort(HTTPStatus.NOT_FOUND)
 
     # Grab the fields from the request
     project_dict = connexion.request.get_json()
@@ -160,10 +162,10 @@ def admin_delete_project(id_, token_info=None, user=None):
     """Delete a single project"""
     check_user_is_admin(user)
     if not is_uuid(id_):
-        return f"Project ID {id_} is not in UUID format", 400
+        return f"Project ID {id_} is not in UUID format", HTTPStatus.BAD_REQUEST
     project = Project.query.get(id_)
     if not project:
-        abort(404)
+        abort(HTTPStatus.NOT_FOUND)
     session.delete(project)
     session.commit()
-    return "OK", 200
+    return HTTPStatus.OK.phrase, HTTPStatus.OK

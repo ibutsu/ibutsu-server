@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 import connexion
 
 from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, WIDGET_TYPES
@@ -105,7 +107,7 @@ def get_widget(id_):
     :rtype: object
     """
     if id_ not in WIDGET_TYPES.keys():
-        return "Widget not found", 404
+        return "Widget not found", HTTPStatus.NOT_FOUND
     params = {}
     for key in connexion.request.args.keys():
         params[key] = connexion.request.args.getlist(key)

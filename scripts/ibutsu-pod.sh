@@ -190,8 +190,8 @@ podman run -d \
        -w /mnt \
        -v./frontend:/mnt/:Z \
        node:18 \
-       /bin/bash -c "npm install --no-save --no-package-lock yarn && 
-         yarn install && 
+       /bin/bash -c "npm install --no-save --no-package-lock yarn &&
+         yarn install &&
          CI=1 yarn devserver"
 echo "done."
 echo -n "Waiting for frontend to respond: "

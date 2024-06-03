@@ -1,4 +1,5 @@
 import logging
+from http import HTTPStatus
 from inspect import isfunction
 
 from flask_testing import TestCase
@@ -73,7 +74,7 @@ class BaseTestCase(TestCase):
         :param response: Flask response
         :param message: Message to display on test failure
         """
-        self.assert_status(response, 201, message)
+        self.assert_status(response, HTTPStatus.CREATED, message)
 
     def assert_503(self, response, message=None):
         """
@@ -81,7 +82,7 @@ class BaseTestCase(TestCase):
         :param response: Flask response
         :param message: Message to display on test failure
         """
-        self.assert_status(response, 503, message)
+        self.assert_status(response, HTTPStatus.SERVICE_UNAVAILABLE, message)
 
     def assert_equal(self, first, second, msg=None):
         """Alias"""

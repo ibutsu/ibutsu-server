@@ -1,4 +1,5 @@
 import json
+from http import HTTPStatus
 from typing import Optional
 
 import connexion
@@ -24,9 +25,9 @@ def get_import(id_, token_info=None, user=None):
     if import_ and import_.data.get("project_id"):
         project = get_project(import_.data["project_id"])
         if project and not project_has_user(project, user):
-            return "Forbidden", 403
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     if not import_:
-        return "Not Found", 404
+        return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     return import_.to_dict()
 
 
@@ -54,16 +55,16 @@ def add_import(
     if "importFile" in connexion.request.files:
         import_file = connexion.request.files["importFile"]
     if not import_file:
-        return "Bad request, no file uploaded", 400
+        return "Bad request, no file uploaded", HTTPStatus.BAD_REQUEST
     data = {}
     if connexion.request.form.get("project"):
         project = connexion.request.form["project"]
     if project:
         project_obj = get_project(project)
         if not project_obj:
-            return f"Project {project} doesn't exist", 400
+            return f"Project {project} doesn't exist", HTTPStatus.BAD_REQUEST
         if not project_has_user(project, user):
-            return "Forbidden", 403
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         data["project_id"] = project_obj.id
     if connexion.request.form.get("metadata"):
         metadata = json.loads(connexion.request.form.get("metadata"))
@@ -89,4 +90,4 @@ def add_import(
         run_archive_import.delay(new_import.to_dict())
     else:
         return "Unsupported Media Type", 415
-    return new_import.to_dict(), 202
+    return new_import.to_dict(), 2

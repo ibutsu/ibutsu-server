@@ -1,8 +1,9 @@
-import connexion
-from sqlalchemy import or_
 from http import HTTPStatus
 
-from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, WIDGET_TYPES, RESPONSE_JSON_REQ
+import connexion
+from sqlalchemy import or_
+
+from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, RESPONSE_JSON_REQ, WIDGET_TYPES
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.filters import convert_filter
@@ -31,7 +32,7 @@ def add_widget_config(widget_config=None, token_info=None, user=None):
     if data.get("project"):
         project = get_project(data.pop("project"))
         if not project_has_user(project, user):
-            return "Forbidden", 403
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         data["project_id"] = project.id
     # default to make views navigable
     if data.get("navigable") and isinstance(data["navigable"], str):
@@ -41,7 +42,7 @@ def add_widget_config(widget_config=None, token_info=None, user=None):
     widget_config = WidgetConfig.from_dict(**data)
     session.add(widget_config)
     session.commit()
-    return widget_config.to_dict(), 201
+    return widget_config.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
@@ -55,7 +56,7 @@ def get_widget_config(id_, token_info=None, user=None):
     """
     widget_config = WidgetConfig.query.get(id_)
     if not widget_config:
-        return "Widget config not found", 404
+        return "Widget config not found", HTTPStatus.NOT_FOUND
     return widget_config.to_dict()
 
 
@@ -118,11 +119,11 @@ def update_widget_config(id_, body=None, widget_config=None, token_info=None, us
     if data.get("project"):
         project = get_project(data.pop("project"))
         if not project_has_user(project, user):
-            return "Forbidden", 403
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         data["project_id"] = project.id
     widget_config = WidgetConfig.query.get(id_)
     if not widget_config:
-        return "Widget config not found", 404
+        return "Widget config not found", HTTPStatus.NOT_FOUND
     # add default weight of 10
     if not widget_config.weight:
         widget_config.weight = 10
@@ -148,10 +149,10 @@ def delete_widget_config(id_, token_info=None, user=None):
     """
     widget_config = WidgetConfig.query.get(id_)
     if not widget_config:
-        return "Not Found", 404
+        return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     else:
         if widget_config.project and not project_has_user(widget_config.project, user):
-            return "Forbidden", 403
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         session.delete(widget_config)
         session.commit()
-        return "OK", 200
+        return HTTPStatus.OK.phrase, HTTPStatus.OK

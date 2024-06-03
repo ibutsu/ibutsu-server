@@ -1,4 +1,5 @@
 from http import HTTPStatus
+
 LOCALHOST = "127.0.0.1"
 
 OAUTH_CONFIG = {

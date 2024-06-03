@@ -1,7 +1,9 @@
 from datetime import datetime
+from http import HTTPStatus
 
 import connexion
 
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
@@ -25,7 +27,7 @@ def get_current_user(token_info=None, user=None):
     """Return the current user"""
     user = User.query.get(user)
     if not user:
-        return "Not authorized", 401
+        return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
     return _hide_sensitive_fields(user.to_dict())
 
@@ -34,7 +36,7 @@ def update_current_user(token_info=None, user=None):
     """Return the current user"""
     user = User.query.get(user)
     if not user:
-        return "Not authorized", 401
+        return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
     user_dict = connexion.request.get_json()
     user_dict.pop("is_superadmin", None)
     user.update(user_dict)
@@ -54,7 +56,7 @@ def get_token_list(page=1, page_size=25, token_info=None, user=None):
     """
     user = User.query.get(user)
     if not user:
-        return "Not authorized", 401
+        return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
     query = Token.query.filter(Token.user == user, Token.name != "login-token")
     total_items = query.count()
@@ -84,8 +86,8 @@ def get_token(id_, token_info=None, user=None):
     user = User.query.get(user)
     token = Token.query.get(id_)
     if token.user != user:
-        return "Forbidden", 403
-    return token.to_dict() if token else ("Token not found", 404)
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+    return token.to_dict() if token else ("Token not found", HTTPStatus.NOT_FOUND)
 
 
 @validate_uuid
@@ -100,10 +102,10 @@ def delete_token(id_, token_info=None, user=None):
     user = User.query.get(user)
     token = Token.query.get(id_)
     if token.user != user:
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     session.delete(token)
     session.commit()
-    return "OK", 200
+    return HTTPStatus.OK.phrase, HTTPStatus.OK
 
 
 def add_token(token=None, token_info=None, user=None):
@@ -115,10 +117,10 @@ def add_token(token=None, token_info=None, user=None):
     :rtype: Token
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON is required", 400
+        return RESPONSE_JSON_REQ
     user = User.query.get(user)
     if not user:
-        return "Not authorized", 401
+        return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
     token = Token.from_dict(**connexion.request.get_json())
     token.user = user
     token.expires = datetime.fromisoformat(token.expires.replace("Z", "+00:00"))
@@ -126,4 +128,4 @@ def add_token(token=None, token_info=None, user=None):
 
     session.add(token)
     session.commit()
-    return token.to_dict(), 201
+    return token.to_dict(), HTTPStatus.CREATED

@@ -1,5 +1,6 @@
 import json
 from base64 import urlsafe_b64encode
+from http import HTTPStatus
 from urllib.parse import urlencode
 from uuid import uuid4
 
@@ -9,7 +10,7 @@ from flask import current_app, make_response, redirect
 from google.auth.transport.requests import Request
 from google.oauth2 import id_token
 
-from ibutsu_server.constants import LOCALHOST
+from ibutsu_server.constants import LOCALHOST, RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
@@ -60,7 +61,7 @@ def _get_user_from_provider(provider, provider_config, code):
             user = get_user_from_provider(provider, id_info)
         except ValueError:
             # Invalid token
-            return "Unauthorized", 401
+            return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
     else:
         # For everyone else
         payload = {
@@ -106,11 +107,14 @@ def login(email=None, password=None):
     :rtype: LoginToken
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON is required", 400
+        return RESPONSE_JSON_REQ
     login = connexion.request.get_json()
 
     if not login.get("email") or not login.get("password"):
-        return {"code": "EMPTY", "message": "Username and/or password are empty"}, 401
+        return {
+            "code": "EMPTY",
+            "message": "Username and/or password are empty",
+        }, HTTPStatus.UNAUTHORIZED
     user = User.query.filter_by(email=login["email"]).first()
 
     # superadmins can login even if local login is disabled
@@ -119,7 +123,7 @@ def login(email=None, password=None):
             "code": "INVALID",
             "message": "Username/password auth is disabled. "
             "Please login via one of the links below.",
-        }, 401
+        }, HTTPStatus.UNAUTHORIZED
 
     if user and user.check_password(login["password"]):
         login_token = generate_token(user.id)
@@ -135,12 +139,12 @@ def login(email=None, password=None):
             "code": "INVALID",
             "message": "Username/password auth is disabled. "
             "Please login via one of the links below.",
-        }, 401
+        }, HTTPStatus.UNAUTHORIZED
     else:
         return {
             "code": "INVALID",
             "message": "Username and/or password are invalid",
-        }, 401
+        }, HTTPStatus.UNAUTHORIZED
 
 
 def support():
@@ -166,7 +170,7 @@ def config(provider):
 def auth(provider):
     """Auth redirect URL"""
     if not connexion.request.args.get("code"):
-        return "Bad request", 400
+        return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
     code = connexion.request.args["code"]
     frontend_url = build_url(
         current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login"
@@ -174,7 +178,7 @@ def auth(provider):
     provider_config = _get_provider_config(provider)
     user = _get_user_from_provider(provider, provider_config, code)
     if not user:
-        return "Unauthorized", 401
+        return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
     jwt_token = generate_token(user.id)
     token = _find_or_create_token("login-token", user)
     token.token = jwt_token
@@ -202,10 +206,13 @@ def register(email=None, password=None):
     :type password: str
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON is required", 400
+        return RESPONSE_JSON_REQ
     details = connexion.request.get_json()
     if not details.get("email") or not details.get("password"):
-        return {"code": "EMPTY", "message": "Username and/or password are empty"}, 401
+        return {
+            "code": "EMPTY",
+            "message": "Username and/or password are empty",
+        }, HTTPStatus.UNAUTHORIZED
 
     # Create a random activation code. Base64 just for funsies
     activation_code = urlsafe_b64encode(str(uuid4()).encode("utf8")).strip(b"=").decode()
@@ -217,7 +224,7 @@ def register(email=None, password=None):
     )
     user_exists = User.query.filter_by(email=user.email).first()
     if user_exists:
-        return f"The user with email {user.email} already exists", 400
+        return f"The user with email {user.email} already exists", HTTPStatus.BAD_REQUEST
     session.add(user)
     session.commit()
 
@@ -238,7 +245,7 @@ def register(email=None, password=None):
         )
     else:
         print(f"No e-mail configuration. Email: {email} - activation URL: {activation_url}")
-    return {}, 201
+    return {}, HTTPStatus.CREATED
 
 
 def recover(email=None):
@@ -247,18 +254,18 @@ def recover(email=None):
     :param email: The e-mail address of the user
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON is required", 400
+        return RESPONSE_JSON_REQ
     login = connexion.request.get_json()
     if not login.get("email"):
-        return "Bad request", 400
+        return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
     user = User.query.filter(User.email == login["email"]).first()
     if not user:
-        return "Bad request", 400
+        return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
     # Create a random activation code. Base64 just for funsies
     user.activation_code = urlsafe_b64encode(str(uuid4()).encode("utf8")).strip(b"=")
     session.add(user)
     session.commit()
-    return {}, 201
+    return {}, HTTPStatus.CREATED
 
 
 def reset_password(activation_code=None, password=None):
@@ -269,20 +276,20 @@ def reset_password(activation_code=None, password=None):
     :param password: The new password for the user
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON is required", 400
+        return RESPONSE_JSON_REQ
     login = connexion.request.get_json()
     if result := validate_activation_code(login.get("activation_code")):
         return result
     if not login.get("activation_code") or not login.get("password"):
-        return "Bad request", 400
+        return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
     user = User.query.filter(User.activation_code == login["activation_code"]).first()
     if not user:
-        return "Invalid activation code", 400
+        return "Invalid activation code", HTTPStatus.BAD_REQUEST
     user.password = login["password"]
     user.activation_code = None
     session.add(user)
     session.commit()
-    return {}, 201
+    return {}, HTTPStatus.CREATED
 
 
 def activate(activation_code=None):
