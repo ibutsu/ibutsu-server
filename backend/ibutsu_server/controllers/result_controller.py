@@ -1,7 +1,9 @@
 from datetime import datetime
+from http import HTTPStatus
 
 import connexion
 
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, User
 from ibutsu_server.filters import convert_filter
@@ -10,7 +12,6 @@ from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import add_user_filter, get_project, project_has_user
 from ibutsu_server.util.query import get_offset, query_as_task
 from ibutsu_server.util.uuid import validate_uuid
-from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 
 def add_result(result=None, token_info=None, user=None):
@@ -26,15 +27,15 @@ def add_result(result=None, token_info=None, user=None):
     result = Result.from_dict(**connexion.request.get_json())
 
     if result.id and Result.query.get(result.id):
-        return f"Result id {result.id} already exist", 400
+        return f"Result id {result.id} already exist", HTTPStatus.BAD_REQUEST
 
     if result.data and not (result.data.get("project") or result.project_id):
-        return "Bad request, project or project_id is required", 400
+        return "Bad request, project or project_id is required", HTTPStatus.BAD_REQUEST
 
     if not result.project:
         project = get_project(result.data["project"])
         if not project_has_user(project, user):
-            return "Forbidden", 403
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         result.project = project
 
     # promote user_properties to the level of metadata
@@ -50,7 +51,7 @@ def add_result(result=None, token_info=None, user=None):
 
     session.add(result)
     session.commit()
-    return result.to_dict(), 201
+    return result.to_dict(), HTTPStatus.CREATED
 
 
 @query_as_task
@@ -143,9 +144,9 @@ def get_result(id_, token_info=None, user=None):
     """
     result = Result.query.get(id_)
     if not result:
-        return "Result not found", 404
+        return "Result not found", HTTPStatus.NOT_FOUND
     if not project_has_user(result.project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     return result.to_dict()
 
 
@@ -166,7 +167,7 @@ def update_result(id_, result=None, token_info=None, user=None, **kwargs):
     if result_dict.get("metadata", {}).get("project"):
         project = get_project(result_dict["metadata"]["project"])
         if not project_has_user(project, user):
-            return "Forbidden", 403
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         if project:
             result_dict["project_id"] = project.id
 
@@ -177,9 +178,9 @@ def update_result(id_, result=None, token_info=None, user=None, **kwargs):
 
     result = Result.query.get(id_)
     if not result:
-        return "Result not found", 404
+        return "Result not found", HTTPStatus.NOT_FOUND
     if not project_has_user(result.project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     result.update(result_dict)
     result.env = result.data.get("env") if result.data else None
     result.component = result.data.get("component") if result.data else None

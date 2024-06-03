@@ -1,7 +1,9 @@
 from datetime import datetime
+from http import HTTPStatus
 
 import connexion
 
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run, User
 from ibutsu_server.filters import convert_filter
@@ -16,7 +18,7 @@ from ibutsu_server.util.projects import (
 )
 from ibutsu_server.util.query import get_offset, query_as_task
 from ibutsu_server.util.uuid import validate_uuid
-from ibutsu_server.constants import RESPONSE_JSON_REQ
+
 
 @query_as_task
 def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=None, user=None):
@@ -104,9 +106,9 @@ def get_run(id_, token_info=None, user=None):
     """
     run = Run.query.get(id_)
     if not run:
-        return "Run not found", 404
+        return "Run not found", HTTPStatus.NOT_FOUND
     if not project_has_user(run.project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     return run.to_dict()
 
 
@@ -119,20 +121,20 @@ def add_run(run=None, token_info=None, user=None):
     :rtype: Run
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON is required", 400
+        return RESPONSE_JSON_REQ
     run = Run.from_dict(**connexion.request.get_json())
 
     if not run.data:
-        return "Bad request, no data supplied", 400
+        return "Bad request, no data supplied", HTTPStatus.BAD_REQUEST
 
     if run.data and not (run.data.get("project") or run.project_id):
-        return "Bad request, project or project_id is required", 400
+        return "Bad request, project or project_id is required", HTTPStatus.BAD_REQUEST
 
     project = get_project(run.data["project"])
     if not project:
-        return "Invalid project", 400
+        return "Invalid project", HTTPStatus.BAD_REQUEST
     if not project_has_user(project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     run.project = project
     run.env = run.data.get("env") if run.data else None
     run.component = run.data.get("component") if run.data else None
@@ -144,7 +146,7 @@ def add_run(run=None, token_info=None, user=None):
     session.add(run)
     session.commit()
     update_run_task.apply_async((run.id,), countdown=5)
-    return run.to_dict(), 201
+    return run.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
@@ -164,12 +166,12 @@ def update_run(id_, run=None, body=None, token_info=None, user=None):
     if run_dict.get("metadata", {}).get("project"):
         run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
         if not project_has_user(run_dict["project_id"], user):
-            return "Forbidden", 403
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     run = Run.query.get(id_)
     if run and not project_has_user(run.project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     if not run:
-        return "Run not found", 404
+        return "Run not found", HTTPStatus.NOT_FOUND
     run.update(run_dict)
     session.add(run)
     session.commit()
@@ -193,24 +195,27 @@ def bulk_update(filter_=None, page_size=1, token_info=None, user=None):
     run_dict = connexion.request.get_json()
 
     if not run_dict.get("metadata"):
-        return "Bad request, can only update metadata", 401
+        return "Bad request, can only update metadata", HTTPStatus.UNAUTHORIZED
 
     # ensure only metadata is updated
     run_dict = {"metadata": run_dict.pop("metadata")}
 
     if page_size > 25:
-        return "Bad request, cannot update more than 25 runs at a time", 405
+        return (
+            "Bad request, cannot update more than 25 runs at a time",
+            HTTPStatus.METHOD_NOT_ALLOWED,
+        )
 
     if run_dict.get("metadata", {}).get("project"):
         project = get_project(run_dict["metadata"]["project"])
         if not project_has_user(project, user):
-            return "Forbidden", 403
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         run_dict["project_id"] = project.id
 
     runs = get_run_list(filter_=filter_, page_size=page_size, estimate=True).get("runs")
 
     if not runs:
-        return f"No runs found with {filter_}", 404
+        return f"No runs found with {filter_}", HTTPStatus.NOT_FOUND
 
     model_runs = []
     for run_json in runs:

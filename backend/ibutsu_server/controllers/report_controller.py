@@ -1,15 +1,16 @@
 from datetime import datetime
+from http import HTTPStatus
 
 import connexion
 from flask import make_response
 
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Report, ReportFile
 from ibutsu_server.tasks.reports import REPORTS
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
-from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 
 def _build_report_response(id_):
@@ -19,11 +20,11 @@ def _build_report_response(id_):
     """
     report = Report.query.get(id_)
     if not report:
-        return "Report not found", 404
+        return "Report not found", HTTPStatus.NOT_FOUND
     report_file = ReportFile.query.filter(ReportFile.report_id == id_).first()
     if not report_file:
-        return "File not found", 404
-    response = make_response(report_file.content, 200)
+        return "File not found", HTTPStatus.NOT_FOUND
+    response = make_response(report_file.content, HTTPStatus.OK)
     response.headers["Content-Type"] = report.mimetype
     return report, response
 
@@ -48,7 +49,7 @@ def add_report(report_parameters=None):
         return RESPONSE_JSON_REQ
     report_parameters = connexion.request.json
     if report_parameters["type"] not in REPORTS:
-        return "Bad request, report type does not exist", 400
+        return "Bad request, report type does not exist", HTTPStatus.BAD_REQUEST
 
     report_dict = {
         "filename": "",
@@ -68,7 +69,7 @@ def add_report(report_parameters=None):
     session.commit()
     report_dict.update(report.to_dict())
     REPORTS[report_parameters["type"]]["func"].delay(report_dict)
-    return report_dict, 201
+    return report_dict, HTTPStatus.CREATED
 
 
 @validate_uuid
@@ -124,14 +125,14 @@ def delete_report(id_, user=None, token_info=None):
     """
     report = Report.query.get(id_)
     if not report:
-        return "Not Found", 404
+        return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
 
     report_file = ReportFile.query.filter(ReportFile.report_id == report.id).first()
     session.delete(report_file)
 
     session.delete(report)
     session.commit()
-    return "OK", 200
+    return HTTPStatus.OK.phrase, HTTPStatus.OK
 
 
 @validate_uuid

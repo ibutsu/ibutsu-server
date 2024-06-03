@@ -1,13 +1,15 @@
+from http import HTTPStatus
+
 import connexion
 import flatdict
 
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project, Result, User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import add_user_filter, project_has_user
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
-from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 
 def add_project(project=None, token_info=None, user=None):
@@ -23,14 +25,14 @@ def add_project(project=None, token_info=None, user=None):
     project = Project.from_dict(**connexion.request.get_json())
     # check if project already exists
     if project.id and Project.query.get(project.id):
-        return f"Project id {project.id} already exist", 400
+        return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
     user = User.query.get(user)
     if user:
         project.owner = user
         project.users.append(user)
     session.add(project)
     session.commit()
-    return project.to_dict(), 201
+    return project.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
@@ -48,9 +50,9 @@ def get_project(id_, token_info=None, user=None):
     if not project:
         project = Project.query.get(id_)
     if project and not project_has_user(project, user):
-        return "Unauthorized", 401
+        return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
     if not project:
-        return "Project not found", 404
+        return "Project not found", HTTPStatus.NOT_FOUND
     return project.to_dict()
 
 
@@ -121,11 +123,11 @@ def update_project(id_, project=None, token_info=None, user=None, **kwargs):
     project = Project.query.get(id_)
 
     if not project:
-        return "Project not found", 404
+        return "Project not found", HTTPStatus.NOT_FOUND
 
     user = User.query.get(user)
     if not user.is_superadmin and (not project.owner or project.owner.id != user.id):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
 
     # handle updating users separately
     updates = connexion.request.get_json()
@@ -153,9 +155,9 @@ def get_filter_params(id_, user=None, token_info=None):
     project = Project.query.get(id_)
 
     if not project:
-        return "Project not found", 404
+        return "Project not found", HTTPStatus.NOT_FOUND
     if project and not project_has_user(project, user):
-        return "Unauthorized", 401
+        return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
     result = (
         session.query(Result)

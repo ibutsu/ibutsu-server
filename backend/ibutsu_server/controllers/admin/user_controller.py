@@ -1,13 +1,15 @@
+from http import HTTPStatus
+
 import connexion
 from flask import abort
 
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project, User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.admin import check_user_is_admin
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
-from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 HIDDEN_FIELDS = ["_password", "password", "activation_code"]
 
@@ -28,7 +30,7 @@ def admin_get_user(id_, token_info=None, user=None):
     check_user_is_admin(user)
     requested_user = User.query.get(id_)
     if not requested_user:
-        abort(404)
+        abort(HTTPStatus.NOT_FOUND)
     return _hide_sensitive_fields(requested_user.to_dict(with_projects=True))
 
 
@@ -68,10 +70,10 @@ def admin_add_user(new_user=None, token_info=None, user=None):
     new_user = User.from_dict(**connexion.request.get_json())
     user_exists = User.query.filter_by(email=new_user.email).first()
     if user_exists:
-        return f"The user with email {new_user.email} already exists", 400
+        return f"The user with email {new_user.email} already exists", HTTPStatus.BAD_REQUEST
     session.add(new_user)
     session.commit()
-    return _hide_sensitive_fields(new_user.to_dict()), 201
+    return _hide_sensitive_fields(new_user.to_dict()), HTTPStatus.CREATED
 
 
 @validate_uuid
@@ -84,7 +86,7 @@ def admin_update_user(id_, body=None, user_info=None, token_info=None, user=None
     projects = user_dict.pop("projects", [])
     requested_user = User.query.get(id_)
     if not requested_user:
-        abort(404)
+        abort(HTTPStatus.NOT_FOUND)
     requested_user.update(user_dict)
     requested_user.projects = [Project.query.get(project["id"]) for project in projects]
     session.add(requested_user)
@@ -98,7 +100,7 @@ def admin_delete_user(id_, token_info=None, user=None):
     check_user_is_admin(user)
     requested_user = User.query.get(id_)
     if not requested_user:
-        abort(404)
+        abort(HTTPStatus.NOT_FOUND)
     session.delete(requested_user)
     session.commit()
-    return "OK", 200
+    return HTTPStatus.OK.phrase, HTTPStatus.OK

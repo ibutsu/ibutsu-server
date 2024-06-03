@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from http import HTTPStatus
 from uuid import UUID
 
 from bson import ObjectId
@@ -21,7 +22,7 @@ def validate_uuid(function):
     def validate(**kwargs):
         candidate = kwargs.get("id_")
         if not is_uuid(candidate):
-            return f"ID: {candidate} is not a valid UUID", 400
+            return f"ID: {candidate} is not a valid UUID", HTTPStatus.BAD_REQUEST
         else:
             return function(**kwargs)
 

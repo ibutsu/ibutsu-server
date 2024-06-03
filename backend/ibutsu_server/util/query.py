@@ -1,6 +1,7 @@
 """Query utilities"""
 
 import re
+from http import HTTPStatus
 
 from ibutsu_server.constants import MAX_PAGE_SIZE
 from ibutsu_server.tasks.query import query_task
@@ -46,7 +47,7 @@ def query_as_task(function):
                 f"/task/{async_result.id}",
                 "query_endpoint": f"/task/{async_result.id}",
             }
-            return response, 201
+            return response, HTTPStatus.CREATED
         else:
             return function(**kwargs)
 

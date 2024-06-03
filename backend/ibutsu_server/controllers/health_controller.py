@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from flask import current_app
 from sqlalchemy.exc import InterfaceError, OperationalError
 
@@ -24,29 +26,29 @@ def get_database_health(token_info=None, user=None):
 
     :rtype: Health
     """
-    response = ({"status": "Pending", "message": "Fetching service status"}, 200)
+    response = ({"status": "Pending", "message": "Fetching service status"}, HTTPStatus.OK)
     # Try to connect to the database, and handle various responses
     try:
         if not IS_CONNECTED:
             response = (
                 {"status": "Error", "message": "Incomplete database configuration"},
-                503,
+                HTTPStatus.SERVICE_UNAVAILABLE,
             )
         else:
             Result.query.first()
-            response = ({"status": "OK", "message": "Service is running"}, 200)
+            response = ({"status": "OK", "message": "Service is running"}, HTTPStatus.OK)
     except OperationalError:
         response = (
             {"status": "Error", "message": "Unable to connect to the database"},
-            503,
+            HTTPStatus.SERVICE_UNAVAILABLE,
         )
     except InterfaceError:
         response = (
             {"status": "Error", "message": "Incorrect connection configuration"},
-            503,
+            HTTPStatus.SERVICE_UNAVAILABLE,
         )
     except Exception as e:
-        response = ({"status": "Error", "message": str(e)}, 500)
+        response = ({"status": "Error", "message": str(e)}, HTTPStatus.INTERNAL_SERVER_ERROR)
     return response
 
 

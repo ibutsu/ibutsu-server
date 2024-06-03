@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from http import HTTPStatus
 
 import connexion
 import magic
@@ -16,9 +17,9 @@ def _build_artifact_response(id_):
     """Build a response for the artifact"""
     artifact = Artifact.query.get(id_)
     if not artifact:
-        return "Not Found", 404
+        return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     # Create a response with the contents of this file
-    response = make_response(artifact.content, 200)
+    response = make_response(artifact.content, HTTPStatus.OK)
     # Set the content type and the file name
     file_type = magic.from_buffer(artifact.content, mime=True)
     response.headers["Content-Type"] = file_type
@@ -36,9 +37,9 @@ def view_artifact(id_, token_info=None, user=None):
     """
     artifact, response = _build_artifact_response(id_)
     if artifact.result and not project_has_user(artifact.result.project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     elif artifact.run and not project_has_user(artifact.run.project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     return response
 
 
@@ -53,7 +54,7 @@ def download_artifact(id_, token_info=None, user=None):
     """
     artifact, response = _build_artifact_response(id_)
     if not project_has_user(artifact.result.project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     response.headers["Content-Disposition"] = f"attachment; filename={artifact.filename}"
     return response
 
@@ -69,9 +70,9 @@ def get_artifact(id_, token_info=None, user=None):
     """
     artifact = Artifact.query.get(id_)
     if not artifact:
-        return "Not Found", 404
+        return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     if not project_has_user(artifact.result.project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     return artifact.to_dict()
 
 
@@ -129,12 +130,12 @@ def upload_artifact(body, token_info=None, user=None):
     result_id = body.get("result_id") or body.get("resultId")
     run_id = body.get("run_id") or body.get("runId")
     if result_id and not is_uuid(result_id):
-        return f"Result ID {result_id} is not in UUID format", 400
+        return f"Result ID {result_id} is not in UUID format", HTTPStatus.BAD_REQUEST
     if run_id and not is_uuid(run_id):
-        return f"Run ID {run_id} is not in UUID format", 400
+        return f"Run ID {run_id} is not in UUID format", HTTPStatus.BAD_REQUEST
     result = Result.query.get(result_id)
     if result and not project_has_user(result.project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     filename = body.get("filename")
     additional_metadata = body.get("additional_metadata", {})
     file_ = connexion.request.files["file"]
@@ -150,9 +151,9 @@ def upload_artifact(body, token_info=None, user=None):
             try:
                 additional_metadata = json.loads(additional_metadata)
             except (ValueError, TypeError):
-                return "Bad request, additionalMetadata is not valid JSON", 400
+                return "Bad request, additionalMetadata is not valid JSON", HTTPStatus.BAD_REQUEST
         if not isinstance(additional_metadata, dict):
-            return "Bad request, additionalMetadata is not a JSON object", 400
+            return "Bad request, additionalMetadata is not a JSON object", HTTPStatus.BAD_REQUEST
         data["additionalMetadata"] = additional_metadata
     # Reset the file pointer
     file_.seek(0)
@@ -175,7 +176,7 @@ def upload_artifact(body, token_info=None, user=None):
 
     session.add(artifact)
     session.commit()
-    return artifact.to_dict(), 201
+    return artifact.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
@@ -189,9 +190,9 @@ def delete_artifact(id_, token_info=None, user=None):
     """
     artifact = Artifact.query.get(id_)
     if not artifact:
-        return "Not Found", 404
+        return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     if not project_has_user(artifact.result.project, user):
-        return "Forbidden", 403
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     session.delete(artifact)
     session.commit()
-    return "OK", 200
+    return HTTPStatus.OK.phrase, HTTPStatus.OK

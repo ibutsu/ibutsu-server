@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from unittest.mock import patch
 
 from flask import json
@@ -64,8 +65,8 @@ class TestLoginController(BaseTestCase):
         login_details = {"email": "", "password": ""}
         expected_response = {
             "detail": "'' is not a 'email' - 'email'",
-            "status": 400,
-            "title": "Bad Request",
+            "status": HTTPStatus.BAD_REQUEST,
+            "title": HTTPStatus.BAD_REQUEST.phrase,
             "type": "about:blank",
         }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}

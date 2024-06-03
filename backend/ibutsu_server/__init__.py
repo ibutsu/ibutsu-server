@@ -1,4 +1,5 @@
 import os
+from http import HTTPStatus
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Optional
@@ -130,38 +131,38 @@ def get_app(**extra_config):
 
     @app.route("/")
     def index():
-        return redirect("/api/ui/", code=302)
+        return redirect("/api/ui/", code=HTTPStatus.FOUND)
 
     @app.route("/admin/run-task", methods=["POST"])
     def run_task():
         # get params
         params = request.get_json(force=True, silent=True)
         if not params:
-            return "Bad request", 400
+            return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
         # get user info
         token = params.get("token")
         if not token:
-            return "Unauthorized", 401
+            return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
         user_id = decode_token(token).get("sub")
         if not user_id:
-            return "Unauthorized", 401
+            return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
         user = User.query.get(user_id)
         if not user or not user.is_superadmin:
-            return "Forbidden", 403
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         # get task info
         task_path = params.get("task")
         task_params = params.get("params", {})
         if not task_path:
-            return "Bad request", 400
+            return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
         task_module, task_name = task_path.split(".", 2)
         try:
             mod = import_module(f"ibutsu_server.tasks.{task_module}")
         except ImportError:
-            return "Not found", 404
+            return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
         if not hasattr(mod, task_name):
-            return "Not found", 404
+            return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
         task = getattr(mod, task_name)
         task.delay(**task_params)
-        return "Accepted", 202
+        return HTTPStatus.ACCEPTED.phrase, HTTPStatus.ACCEPTED
 
     return app.app

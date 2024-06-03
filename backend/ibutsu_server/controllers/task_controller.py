@@ -1,13 +1,15 @@
+from http import HTTPStatus
+
 from celery.result import AsyncResult
 
 from ibutsu_server.util.uuid import validate_uuid
 
 _STATE_TO_CODE = {
-    "SUCCESS": 200,
-    "PENDING": 206,
-    "STARTED": 206,
-    "RETRY": 206,
-    "FAILURE": 203,
+    "SUCCESS": HTTPStatus.OK,
+    "PENDING": HTTPStatus.PARTIAL_CONTENT,
+    "STARTED": HTTPStatus.PARTIAL_CONTENT,
+    "RETRY": HTTPStatus.PARTIAL_CONTENT,
+    "FAILURE": HTTPStatus.NON_AUTHORITATIVE_INFORMATION,
 }
 
 
