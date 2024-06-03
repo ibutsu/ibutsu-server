@@ -30,7 +30,7 @@ import { FileUpload, UserDropdown } from '../components';
 import { MONITOR_UPLOAD_TIMEOUT } from '../constants';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { getActiveProject, getTheme, projectToOption, setTheme } from '../utilities';
+import { getActiveProject, getTheme, portalToOption, projectToOption, setTheme } from '../utilities';
 
 
 export class IbutsuHeader extends React.Component {
@@ -53,6 +53,8 @@ export class IbutsuHeader extends React.Component {
       searchValue: '',
       projects: [],
       projectsFilter: '',
+      portals: [],
+      isPortalSelectorOpen: false,
       isDarkTheme: getTheme() === 'dark',
       version: props.version
     };
@@ -87,6 +89,11 @@ export class IbutsuHeader extends React.Component {
     HttpClient.get([Settings.serverUrl, 'project'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({projects: data['projects']}));
+  }
+
+  getPortals() {
+    // TODO: backend record with request, maybe
+    this.setState({portals: [{id: '1234-abcd', title: 'Insights and Satellite', }]})
   }
 
   onBeforeUpload = (files) => {
@@ -130,6 +137,23 @@ export class IbutsuHeader extends React.Component {
           this.showNotification('success', 'Import Complete', `${data.filename} has been successfully imported as run ${data.metadata.run_id}`, action);
         }
       });
+  }
+
+  onPortalToggle = (isOpen) => {
+    console.log('portal toggled');
+    this.setState({isPortalSelectorOpen: isOpen});
+  };
+
+  onPortalSelect = (event, value, isPlaceholder) => {
+    console.log('portal selected')
+
+    if (isPlaceholder) {
+      this.onPortalClear();
+    }
+    return;
+  };
+
+  onPortalClear = () => {
   }
 
   onProjectToggle = (isOpen) => {
@@ -185,6 +209,7 @@ export class IbutsuHeader extends React.Component {
 
   componentDidMount() {
     this.getProjects();
+    this.getPortals();
   }
 
   render() {
@@ -211,6 +236,19 @@ export class IbutsuHeader extends React.Component {
           >
             {this.state.projects.map(project => (
               <SelectOption key={project.id} value={projectToOption(project)} description={project.name} />
+            ))}
+          </Select>
+        </FlexItem>
+        <FlexItem id="portal-selector">
+          <Select
+            placeholderText="Select a portal dashboard"
+            isOpen={this.state.isPortalSelectorOpen}
+            onToggle={this.onPortalToggle}
+            onSelect={this.onPortalSelect}
+            onClear={this.onPortalClear}
+          >
+            {this.state.portals.map(portal => (
+              <SelectOption key={portal.id} value={portalToOption(portal)} description={portal.title} />
             ))}
           </Select>
         </FlexItem>

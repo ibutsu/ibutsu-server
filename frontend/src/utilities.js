@@ -425,6 +425,23 @@ export function clearActiveDashboard() {
   localStorage.removeItem('dashboard');
 }
 
+export function portalToOption(portal) {
+  if (!portal) {
+    return '';
+  }
+  return {
+    portal: portal,
+    toString: function() {
+      return this.portal.title;
+    },
+    compareTo: function (value) {
+      if (value.portal) {
+        return this.portal.id === value.portal.id;
+      }
+    }
+  };
+}
+
 export function projectToOption(project) {
   if (!project) {
     return '';

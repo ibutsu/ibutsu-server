@@ -1,4 +1,5 @@
 import os
+from http import HTTPStatus
 from importlib import import_module
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -11,7 +12,6 @@ from flask_mail import Mail
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL as SQLA_URL
 from yaml import full_load as yaml_load
-from http import HTTPStatus
 
 from ibutsu_server.auth import bcrypt
 from ibutsu_server.db import upgrades
@@ -142,7 +142,7 @@ def get_app(**extra_config):
         # get user info
         token = params.get("token")
         if not token:
-            return "Unauthorized", 
+            return ("Unauthorized",)
         user_id = decode_token(token).get("sub")
         if not user_id:
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
