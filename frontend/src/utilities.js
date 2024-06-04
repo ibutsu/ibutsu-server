@@ -401,8 +401,11 @@ export function getOperationsFromField(field) {
   return operations;
 }
 
+// TODO consolidate these into getActive(key) {} functions
+
 export function getActiveProject() {
   let project = localStorage.getItem('project');
+  console.log('local storage project: '+project)
   if (project) {
     project = JSON.parse(project);
   }
@@ -412,6 +415,21 @@ export function getActiveProject() {
 export function clearActiveProject() {
   localStorage.removeItem('project');
 }
+
+export function getActivePortal() {
+  let portal = localStorage.getItem('portal');
+  console.log('local storage portal: '+portal)
+
+  if (portal) {
+    portal = JSON.parse(portal);
+  }
+  return portal;
+}
+
+export function clearActivePortal() {
+  localStorage.removeItem('portal')
+}
+
 
 export function getActiveDashboard() {
   let dashboard = localStorage.getItem('dashboard');

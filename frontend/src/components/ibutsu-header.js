@@ -8,8 +8,9 @@ import {
   Button,
   Flex,
   PageHeader,
-  Dropdown,
-  DropdownItem,
+  Select,
+  SelectOption,
+  SelectVariant,
   PageHeaderTools,
   PageHeaderToolsGroup,
   PageHeaderToolsItem,
@@ -18,8 +19,7 @@ import {
   TextList,
   TextListItem,
   FlexItem,
-  MenuToggle,
-  Split,
+  Divider,
 } from '@patternfly/react-core';
 import { UploadIcon, ServerIcon, QuestionCircleIcon, MoonIcon } from '@patternfly/react-icons';
 import { css } from '@patternfly/react-styles';
@@ -31,7 +31,7 @@ import { FileUpload, UserDropdown } from '../components';
 import { MONITOR_UPLOAD_TIMEOUT } from '../constants';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { getActiveProject, getTheme, projectToOption, setTheme } from '../utilities';
+import { getActiveProject, getTheme, projectToOption, portalToOption, setTheme, getActivePortal, clearActivePortal, clearActiveProject } from '../utilities';
 
 export class IbutsuHeader extends React.Component {
   static propTypes = {
@@ -42,6 +42,9 @@ export class IbutsuHeader extends React.Component {
   constructor(props) {
     super(props);
     let project = getActiveProject();
+    console.log('active project: '+project);
+    let portal = getActivePortal();
+    console.log('active portal:'+portal);
     this.eventEmitter = props.eventEmitter;
     this.state = {
       uploadFileName: '',
@@ -57,12 +60,14 @@ export class IbutsuHeader extends React.Component {
       projects: [],
       projectsFilter: '',
       portals: [],
+      selectedPortal: portalToOption(portal),
       isPortalSelectorOpen: false,
       isDarkTheme: getTheme() === 'dark',
       version: props.version
     };
   }
 
+  // This can probably just be a constant
   getSplitMenuItems() {
     this.setState({splitMenuItems: [
       {key: 'project', label:'Select a Project'},
@@ -75,6 +80,13 @@ export class IbutsuHeader extends React.Component {
       return;
     }
     this.eventEmitter.emit('showNotification', type, title, message, action, timeout, key);
+  }
+
+  emitPortalChange() {
+    if (!this.eventEmitter) {
+      return;
+    }
+    this.eventEmitter.emit('portalChange');
   }
 
   emitProjectChange() {
@@ -156,7 +168,8 @@ export class IbutsuHeader extends React.Component {
 
   onSplitMenuSelect = (event, value, isPlaceHolder) => {
     console.log('split menu selected: ' + event + value + isPlaceHolder);
-    this.splitMenuActive = value
+    this.splitMenuActive = value;
+    this.onProjectClear();
     return;
   }
 
@@ -170,11 +183,30 @@ export class IbutsuHeader extends React.Component {
 
     if (isPlaceholder) {
       this.onPortalClear();
+      return;
     }
-    return;
+    const activePortal = getActivePortal();
+    if (activePortal && activePortal.id === value.portal.id) {
+      this.setState({isPortalSelectorOpen: false});
+      return;
+    }
+    // Handle changing portal
+    const portal = JSON.stringify(value.portal);
+    localStorage.setItem('portal', portal);
+    this.setState({
+      selectedPortal: value,
+      isPortalSelectorOpen: false
+    });
+    this.emitPortalChange();
   };
 
   onPortalClear = () => {
+    clearActivePortal();
+    this.setState({
+      selectedPortal: null,
+      isPortalSelectorOpen: false
+    })
+    this.emitPortalChange();
   }
 
   onProjectToggle = (isOpen) => {
@@ -186,6 +218,7 @@ export class IbutsuHeader extends React.Component {
       this.onProjectClear();
       return;
     }
+    this.onPortalClear();
     const activeProject = getActiveProject();
     if (activeProject && activeProject.id === value.project.id) {
       this.setState({isProjectSelectorOpen: false});
@@ -201,7 +234,7 @@ export class IbutsuHeader extends React.Component {
   };
 
   onProjectClear = () => {
-    localStorage.removeItem('project');
+    clearActiveProject();
     this.setState({
       selectedProject: null,
       isProjectSelectorOpen: false
@@ -232,7 +265,6 @@ export class IbutsuHeader extends React.Component {
     this.getProjects();
     this.getPortals();
     this.getSplitMenuItems();
-    this.splitMenuActive=this.state.splitMenuItems[0]
   }
 
   render() {
@@ -243,63 +275,65 @@ export class IbutsuHeader extends React.Component {
       uploadParams['project'] = this.state.selectedProject.project.id;
     }
     const topNav = (
-      <Flex>
-        <FlexItem>
-          <Split>
-            <Dropdown
-              id='split-menu-dropdown'
-              isOpen={this.state.isSplitMenuOpen}
-              onOpenChange={(isOpen) => this.onSplitMenuToggle(isOpen)}
-              onSelect={this.onSplitMenuSelect}
-              toggle={(toggleRef) => (
-                <MenuToggle
-                  aria-label='Project or Portal Selection'
-                  ref={toggleRef}
-                >
-                  {<span>{this.state.splitMenuActive}</span>}
-                </MenuToggle>
-              )}
-            >
-              {this.state.splitMenuItems.forEach(item => (
-                <DropdownItem key={item.key} component="button">{item.label}</DropdownItem>
-              ))}
-            </Dropdown>
-          </Split>
-        </FlexItem>
-      </Flex>
-      // <Flex spaceItems={{default: "spaceItemsXl"}} flex={{default: "flex_1"}}>
-      //   <FlexItem id="project-selector">
-      //     <Select
-      //       typeAheadAriaLabel="Select a project"
-      //       placeholderText="No active project"
-      //       variant={SelectVariant.typeahead}
-      //       isOpen={this.state.isProjectSelectorOpen}
-      //       selections={this.state.selectedProject}
-      //       onToggle={this.onProjectToggle}
-      //       onSelect={this.onProjectSelect}
-      //       onClear={this.onProjectClear}
-      //       onTypeaheadInputChanged={this.onProjectsChanged}
-      //       footer={this.state.projects.length === 10 && "Search for more..."}
-      //     >
-      //       {this.state.projects.map(project => (
-      //         <SelectOption key={project.id} value={projectToOption(project)} description={project.name} />
-      //       ))}
-      //     </Select>
-      //   </FlexItem>
+      // Not using this right, try again later
+      // <Flex>
       //   <FlexItem>
-      //     <Select
-      //       placeholderText="Select a portal dashboard"
-      //       isOpen={this.state.isPortalSelectorOpen}
-      //       onToggle={this.onPortalToggle}
-      //       onSelect={this.onPortalSelect}
-      //       onClear={this.onPortalClear}
-      //     >
-      //       {this.state.portals.map(portal => (
-      //         <SelectOption key={portal.id} value={portalToOption(portal)} description={portal.title} />
-      //       ))}
-      //     </Select>
+      //     <Split>
+      //       <Dropdown
+      //         id='split-menu-dropdown'
+      //         isOpen={this.state.isSplitMenuOpen}
+      //         onOpenChange={(isOpen) => this.onSplitMenuToggle(isOpen)}
+      //         onSelect={this.onSplitMenuSelect}
+      //         toggle={(toggleRef) => (
+      //           <MenuToggle
+      //             aria-label='Project or Portal Selection'
+      //             ref={toggleRef}
+      //           >
+      //             {<span>{this.state.splitMenuActive}</span>}
+      //           </MenuToggle>
+      //         )}
+      //       >
+      //         {this.state.splitMenuItems.forEach(item => (
+      //           <DropdownItem key={item.key} component="button">{item.label}</DropdownItem>
+      //         ))}
+      //       </Dropdown>
+      //     </Split>
       //   </FlexItem>
       // </Flex>
+      <Flex spaceItems={{default: "spaceItemsXl"}} flex={{default: "flex_1"}}>
+        <FlexItem id="project-selector">
+          <Select
+            typeAheadAriaLabel="Select a project"
+            placeholderText="No active project"
+            variant={SelectVariant.typeahead}
+            isOpen={this.state.isProjectSelectorOpen}
+            selections={this.state.selectedProject}
+            onToggle={this.onProjectToggle}
+            onSelect={this.onProjectSelect}
+            onClear={this.onProjectClear}
+            onTypeaheadInputChanged={this.onProjectsChanged}
+            footer={this.state.projects.length === 10 && "Search for more..."}
+          >
+            {this.state.projects.map(project => (
+              <SelectOption key={project.id} value={projectToOption(project)} description={project.name} />
+            ))}
+          </Select>
+        </FlexItem>
+        <Divider orientation={{default: "vertical"}}/>
+        <FlexItem>
+          <Select
+            placeholderText="Select a portal dashboard"
+            isOpen={this.state.isPortalSelectorOpen}
+            onToggle={this.onPortalToggle}
+            onSelect={this.onPortalSelect}
+            onClear={this.onPortalClear}
+          >
+            {this.state.portals.map(portal => (
+              <SelectOption key={portal.id} value={portalToOption(portal)} description={portal.title} />
+            ))}
+          </Select>
+        </FlexItem>
+      </Flex>
     );
     const headerTools = (
       <PageHeaderTools>
