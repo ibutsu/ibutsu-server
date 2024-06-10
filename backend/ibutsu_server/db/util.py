@@ -1,6 +1,7 @@
 """
 Various utility DB functions
 """
+
 from typing import Optional
 
 from ibutsu_server.db import models

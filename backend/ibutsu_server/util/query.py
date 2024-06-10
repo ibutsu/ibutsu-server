@@ -1,4 +1,5 @@
 """ Query utilities"""
+
 import re
 
 from ibutsu_server.constants import MAX_PAGE_SIZE
