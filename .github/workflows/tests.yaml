@@ -79,5 +79,3 @@ jobs:
           image: ibutsu-frontend
           dockerfiles: |
             ./frontend/docker/Dockerfile.frontend
-          extra-args: |
-            --ulimit nofile=8192:8192
