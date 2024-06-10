@@ -33,7 +33,6 @@ import {
 export class CompareRunsView extends React.Component {
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object,
     view: PropTypes.object
   };
 
@@ -271,18 +270,19 @@ export class CompareRunsView extends React.Component {
         </FlexItem>
       </Flex>
     ]
-    return (
+    // Compare runs work only when project is selected
+    return ( getActiveProject() &&
       <Card>
         <CardHeader>
           <Flex style={{ width: '100%' }}>
             <FlexItem grow={{ default: 'grow' }}>
               <TextContent>
-                <Text component="h2" className="pf-c-title pf-m-xl">Select Test Run metadata to compare</Text>
+                <Text component="h2" className="pf-v5-c-title pf-m-xl">Select Test Run metadata to compare</Text>
               </TextContent>
             </FlexItem>
             <FlexItem>
               <TextContent>
-                <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={this.onSkipCheck}/>
+                <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={(_event, checked) => this.onSkipCheck(checked)}/>
               </TextContent>
             </FlexItem>
             <FlexItem>

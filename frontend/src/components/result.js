@@ -19,10 +19,10 @@ import {
 import { FileAltIcon, FileImageIcon, InfoCircleIcon, CodeIcon, SearchIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import Linkify from 'react-linkify';
-import ReactJson from 'react-json-view';
+import { JSONTree } from 'react-json-tree';
 import Editor from '@monaco-editor/react';
 
-import { HttpClient } from '../services/http';
+import * as http from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
 import { DownloadButton } from './download-button';
 import { linkifyDecorator } from './decorators'
@@ -63,7 +63,7 @@ export class ResultView extends React.Component {
     hideSummary: PropTypes.bool,
     hideTestObject: PropTypes.bool,
     hideTestHistory: PropTypes.bool,
-    history: PropTypes.object,
+    navigate: PropTypes.func,
     location: PropTypes.object,
     comparisonResults: PropTypes.array,
     hideArtifact: PropTypes.bool
@@ -80,12 +80,6 @@ export class ResultView extends React.Component {
       testHistoryTable: null,
       comparisonResults: this.props.comparisonResults
     };
-    if (this.props.history) {
-      // Watch the history to update tabs
-      this.unlisten = this.props.history.listen(() => {
-        this.setState({activeTab: this.getTabIndex()});
-      });
-    }
   }
 
   getDefaultTab() {
@@ -119,14 +113,10 @@ export class ResultView extends React.Component {
     }
   }
 
-  onTabSelect = (event, tabIndex) => {
-    if (this.props.history) {
-      const loc = this.props.history.location;
-      this.props.history.push({
-        pathname: loc.pathname,
-        search: loc.search,
-        hash: '#' + tabIndex
-      });
+  onTabSelect = (_event, tabIndex) => {
+    const loc = this.props.location;
+    if (loc) {
+      this.props.navigate(`${loc.pathname}${loc.search}#${tabIndex}`)
     }
     this.setState({activeTab: tabIndex});
     this.updateTab(tabIndex);
@@ -142,19 +132,19 @@ export class ResultView extends React.Component {
   }
 
   getTestResult(resultId) {
-    HttpClient.get([Settings.serverUrl, 'result', resultId])
-      .then(response => HttpClient.handleResponse(response))
+    http.HttpClient.get([Settings.serverUrl, 'result', resultId])
+      .then(response => http.HttpClient.handleResponse(response))
       .then(data => this.setState({testResult: data}));
   }
 
   getTestArtifacts(resultId) {
-    HttpClient.get([Settings.serverUrl, 'artifact'], {resultId: resultId})
-      .then(response => HttpClient.handleResponse(response))
+    http.HttpClient.get([Settings.serverUrl, 'artifact'], {resultId: resultId})
+      .then(response => http.HttpClient.handleResponse(response))
       .then(data => {
         let artifactTabs = [];
         data.artifacts.forEach((artifact) => {
           let downloadUrl = `${Settings.serverUrl}/artifact/${artifact.id}/download`;
-          HttpClient.get([Settings.serverUrl, 'artifact', artifact.id, 'view'])
+          http.HttpClient.get([Settings.serverUrl, 'artifact', artifact.id, 'view'])
             .then(response => {
               let contentType = response.headers.get('Content-Type');
               if (contentType.includes('text')) {
@@ -220,17 +210,24 @@ export class ResultView extends React.Component {
     if (this.state.activeTab === "test-history") {
       this.getTestHistoryTable();
     }
+    window.addEventListener('popstate', this.handlePopState);
   }
 
   componentWillUnmount() {
-    if (this.unlisten) {
-      this.unlisten();
-    }
+    window.removeEventListener('popstate', this.handlePopState);
   }
+
+  handlePopState = () => {
+    // Handle browser navigation buttons click
+    const tabIndex = this.getTabIndex('summary');
+    this.setState({activeTab: tabIndex}, () => {
+      this.updateTab(tabIndex);
+    });
+  };
 
   render() {
     let { testResult, artifactTabs, activeTab, testHistoryTable } = this.state;
-    const jsonViewTheme = getTheme() === 'dark' ? 'tomorrow' : 'rjv-default';
+    const jsonViewLightThemeOn = getTheme() === 'dark' ? false : true ;
     if (activeTab === null) {
       activeTab = this.getDefaultTab();
     }
@@ -244,6 +241,26 @@ export class ResultView extends React.Component {
       parameters = Object.keys(testResult.params).map((key) => <div key={key}>{key} = {testResult.params[key]}</div>);
       runLink = <Link to={`/runs/${testResult.run_id}`}>{testResult.run_id}</Link>;
     }
+    const jsonViewTheme = {
+      scheme: 'monokai',
+      author: 'wimer hazenberg (http://www.monokai.nl)',
+      base00: '#272822',
+      base01: '#383830',
+      base02: '#49483e',
+      base03: '#75715e',
+      base04: '#a59f85',
+      base05: '#f8f8f2',
+      base06: '#f5f4f1',
+      base07: '#f9f8f5',
+      base08: '#f92672',
+      base09: '#fd971f',
+      base0A: '#f4bf75',
+      base0B: '#a6e22e',
+      base0C: '#a1efe4',
+      base0D: '#66d9ef',
+      base0E: '#ae81ff',
+      base0F: '#cc6633',
+    };
     return (
       <React.Fragment>
         {this.state.testResult &&
@@ -526,7 +543,7 @@ export class ResultView extends React.Component {
           <Tab eventKey="test-object" title={<TabTitle icon={CodeIcon} text="Test Object" />}>
             <Card>
               <CardBody>
-                <ReactJson src={testResult} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} theme={jsonViewTheme} />
+                <JSONTree data={testResult} theme={jsonViewTheme} invertTheme={jsonViewLightThemeOn} hideRoot shouldExpandNodeInitially={() => true}/>
               </CardBody>
             </Card>
           </Tab>

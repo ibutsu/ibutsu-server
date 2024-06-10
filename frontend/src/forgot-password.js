@@ -7,6 +7,9 @@ import {
   Form,
   FormAlert,
   FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
   LoginMainFooterBandItem,
   LoginPage,
   TextInput
@@ -18,7 +21,7 @@ import { AuthService } from './services/auth';
 export class ForgotPassword extends React.Component {
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object
+    navigate: PropTypes.func
   };
 
   constructor(props) {
@@ -57,6 +60,7 @@ export class ForgotPassword extends React.Component {
               showAlert: true,
               isValidEmail: true
             });
+            this.props.navigate('/login')
           }
           else {
             this.setState({
@@ -104,7 +108,6 @@ export class ForgotPassword extends React.Component {
         brandImgSrc="/images/ibutsu-wordart-164.png"
         brandImgAlt="Ibutsu"
         backgroundImgSrc={backgroundImages}
-        backgroundImgAlt="Background image"
         textContent="Ibutsu is an open source test result aggregation. Collect and display your test results, view artifacts, and monitor tests."
         loginTitle="Recover your account"
         loginSubtitle="Please type in your e-mail address and a reset link will be sent to it."
@@ -121,8 +124,6 @@ export class ForgotPassword extends React.Component {
             label="Email address"
             isRequired
             fieldId="email"
-            validated={this.state.isValidEmail ? 'default' : 'error'}
-            helperText="The e-mail address you signed up with"
           >
             <TextInput
               isRequired
@@ -132,8 +133,13 @@ export class ForgotPassword extends React.Component {
               validated={this.state.isValidEmail ? 'default' : 'error'}
               aria-describedby="email-helper"
               value={this.state.emailValue}
-              onChange={this.onEmailChange}
+              onChange={(_event, emailValue) => this.onEmailChange(emailValue)}
             />
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem>The e-mail address you signed up with</HelperTextItem>
+              </HelperText>
+            </FormHelperText>
           </FormGroup>
           <ActionGroup>
             <Button variant="primary" isBlock onClick={this.onRecoverAccountClick}>Recover account</Button>

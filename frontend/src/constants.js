@@ -1,4 +1,3 @@
-export const DEFAULT_RUNS = ['(start typing to find)'];
 export const VERSION_CHECK_TIMEOUT = 15 * 60 * 1000;  // 15 minutes
 export const MONITOR_UPLOAD_TIMEOUT = 1 * 1000;  // 1 second
 export const ALERT_TIMEOUT = 5 * 1000;  // 5 seconds

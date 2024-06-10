@@ -48,7 +48,7 @@ import {
 } from '@patternfly/react-icons';
 
 import { Link } from 'react-router-dom';
-import ReactJson from 'react-json-view';
+import { JSONTree } from 'react-json-tree';
 import Editor from '@monaco-editor/react';
 
 import { HttpClient } from './services/http';
@@ -105,16 +105,16 @@ const searchTree = (node, text) => {
 
 export class Run extends React.Component {
   static propTypes = {
-    match: PropTypes.object,
-    history: PropTypes.object,
-    location: PropTypes.object
+    params: PropTypes.object,
+    navigate: PropTypes.func,
+    location: PropTypes.object,
   };
 
   constructor(props) {
     super(props);
     this.state = {
       run: MockRun,
-      id: props.match.params.id,
+      id: props.params.id,
       testResult: null,
       columns: ['Test', 'Run', 'Result', 'Duration', 'Started'],
       rows: [getSpinnerRow(5)],
@@ -137,13 +137,6 @@ export class Run extends React.Component {
       artifacts: [],
       artifactTabs: []
     };
-    // Watch the history to update tabs
-    this.unlisten = this.props.history.listen(() => {
-      const tabIndex = this.getTabIndex('summary');
-      this.setState({activeTab: tabIndex}, () => {
-        this.updateTab(tabIndex);
-      });
-    });
   }
 
   getTabIndex(defaultValue) {
@@ -309,12 +302,10 @@ export class Run extends React.Component {
   }
 
   onTabSelect = (event, tabIndex) => {
-    const loc = this.props.history.location;
-    this.props.history.push({
-      pathname: loc.pathname,
-      search: loc.search,
-      hash: '#' + tabIndex
-    });
+    const loc = this.props.location;
+    if (loc) {
+      this.props.navigate(`${loc.pathname}#${tabIndex}`)
+    }
     this.setState({activeTab: tabIndex});
     this.updateTab(tabIndex);
   }
@@ -434,18 +425,47 @@ export class Run extends React.Component {
 
   componentDidMount() {
     this.getRun();
+    window.addEventListener('popstate', this.handlePopState);
   }
 
   componentWillUnmount() {
-    this.unlisten();
+    window.removeEventListener('popstate', this.handlePopState);
   }
+
+  handlePopState = () => {
+    // Handle browser navigation buttons click
+    const tabIndex = this.getTabIndex('summary');
+    this.setState({activeTab: tabIndex}, () => {
+      this.updateTab(tabIndex);
+    });
+  };
 
   render() {
     let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0, not_run = 0;
     let created = 0;
     let calculatePasses = true;
     const { run, columns, rows, classificationTable, artifactTabs } = this.state;
-    const jsonViewTheme = getTheme() === 'dark' ? 'tomorrow' : 'rjv-default';
+    const jsonViewLightThemeOn = getTheme() === 'dark' ? false : true ;
+    const jsonViewTheme = {
+      scheme: 'monokai',
+      author: 'wimer hazenberg (http://www.monokai.nl)',
+      base00: '#272822',
+      base01: '#383830',
+      base02: '#49483e',
+      base03: '#75715e',
+      base04: '#a59f85',
+      base05: '#f8f8f2',
+      base06: '#f5f4f1',
+      base07: '#f9f8f5',
+      base08: '#f92672',
+      base09: '#fd971f',
+      base0A: '#f4bf75',
+      base0B: '#a6e22e',
+      base0C: '#a1efe4',
+      base0D: '#66d9ef',
+      base0E: '#ae81ff',
+      base0F: '#cc6633',
+    };
 
     if (run.start_time) {
       created = new Date(run.start_time);
@@ -497,7 +517,7 @@ export class Run extends React.Component {
       <React.Fragment>
         <PageSection variant={PageSectionVariants.light}>
           <TextContent>
-            <Text component="h1" className="pf-c-title">Run {run.id}</Text>
+            <Text component="h1" className="pf-v5-c-title">Run {run.id}</Text>
           </TextContent>
         </PageSection>
         <PageSection>
@@ -706,14 +726,14 @@ export class Run extends React.Component {
                     <Flex style={{ width: '100%' }}>
                       <FlexItem grow={{ default: 'grow' }}>
                         <TextContent>
-                          <Text component="h2" className="pf-c-title pf-m-xl">Test Results</Text>
+                          <Text component="h2" className="pf-v5-c-title pf-m-xl">Test results</Text>
                         </TextContent>
                       </FlexItem>
                       <FlexItem>
                         <Button variant="secondary" onClick={this.refreshResults}>Refresh results</Button>
                       </FlexItem>
                       <FlexItem>
-                        <Link to={`/results?run_id[eq]=${run.id}`} className="pf-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
+                        <Link to={`/results?run_id[eq]=${run.id}`} className="pf-v5-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
                       </FlexItem>
                     </Flex>
                   </CardHeader>
@@ -736,7 +756,7 @@ export class Run extends React.Component {
                     <Grid gutter="sm">
                       {false && <GridItem span={12}>
                         <div style={{paddingTop: "1em"}}>
-                          <TextInput value={this.state.treeSearch} type="text" onChange={this.onSearch} placeholder="Search tree..." aria-label="Filter tree" />
+                          <TextInput value={this.state.treeSearch} type="text" onChange={(_event, value) => this.onSearch(value)} placeholder="Search tree..." aria-label="Filter tree" />
                         </div>
                       </GridItem>
                       }
@@ -758,12 +778,12 @@ export class Run extends React.Component {
                                 {this.state.testResult.metadata.markers &&
                                   <div style={{float: 'right'}}>
                                     {this.state.testResult.metadata.markers.map((marker) => {
-                                      return <Badge isRead key={marker.name}>{marker.name}</Badge>;
+                                      return <Badge isRead key={marker}>{marker}</Badge>;
                                     })}
                                   </div>
                                 }
                               </CardHeader>
-                              <CardBody style={{backgroundColor: "var(--pf-c-page__main-section--BackgroundColor)", paddingTop: "1.2em"}}>
+                              <CardBody style={{backgroundColor: "var(--pf-v5-c-card--BackgroundColor)", paddingTop: "1.2em"}}>
                                 <ResultView testResult={this.state.testResult}/>
                               </CardBody>
                             </Card>
@@ -782,7 +802,7 @@ export class Run extends React.Component {
               <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />}>
                 <Card>
                   <CardBody>
-                    <ReactJson src={run} name={null} iconStyle={"triangle"} collapseStringsAfterLength={120} enableClipboard={false} displayDataTypes={false} theme={jsonViewTheme} />
+                    <JSONTree data={run} theme={jsonViewTheme} invertTheme={jsonViewLightThemeOn} hideRoot shouldExpandNodeInitially={() => true}/>
                   </CardBody>
                 </Card>
               </Tab>

@@ -10,6 +10,9 @@ import {
   ExpandableSection,
   Form,
   FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
   FormSelect,
   FormSelectOption,
   PageSection,
@@ -63,7 +66,6 @@ function reportToRow(report) {
 export class ReportBuilder extends React.Component {
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object,
     eventEmitter: PropTypes.object
   }
 
@@ -207,21 +209,31 @@ export class ReportBuilder extends React.Component {
           <Card>
             <CardBody>
               <Form isHorizontal>
-                <FormGroup isRequired label="Report Type" helperText="The type of report" fieldId="report-type">
-                  <FormSelect id="report-type" value={this.state.reportType} onChange={this.onReportTypeChange}>
+                <FormGroup isRequired label="Report Type" fieldId="report-type">
+                  <FormSelect id="report-type" value={this.state.reportType} onChange={(_event, reportType) => this.onReportTypeChange(reportType)}>
                     {reportTypes}
                   </FormSelect>
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem>The type of report</HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
                 </FormGroup>
                 <FormGroup label="Filter" fieldId="report-filter">
-                  <TextInput type="text" id="report-filter" value={this.state.reportFilter} onChange={this.onReportFilterChange} />
+                  <TextInput type="text" id="report-filter" value={this.state.reportFilter} onChange={(_event, reportFilter) => this.onReportFilterChange(reportFilter)} />
                   <ExpandableSection toggleText="Filter Help" onToggle={this.onHelpToggle} isExpanded={this.state.isHelpExpanded}>
                     <TextContent>
                       <p>The filter parameter takes a comma-separated list of filters to apply. <Linkify componentDecorator={linkifyDecorator}>https://docs.ibutsu-project.org/en/latest/user-guide/filter-help.html</Linkify></p>
                     </TextContent>
                   </ExpandableSection>
                 </FormGroup>
-                <FormGroup label="Source" helperText="The source of report" fieldId="report-source">
-                  <TextInput type="text" id="report-source" value={this.state.reportSource} onChange={this.onReportSourceChange} />
+                <FormGroup label="Source" fieldId="report-source">
+                  <TextInput type="text" id="report-source" value={this.state.reportSource} onChange={(_event, reportSource) => this.onReportSourceChange(reportSource)} />
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem>The source of report</HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
                 </FormGroup>
                 <ActionGroup>
                   <Button variant="primary" onClick={this.onRunReportClick}>Run Report</Button>

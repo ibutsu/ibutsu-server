@@ -214,7 +214,7 @@ def register(email=None, password=None):
     user = User(
         email=details["email"], password=details["password"], activation_code=activation_code
     )
-    user_exists = User.query.filter_by(email=user.email)
+    user_exists = User.query.filter_by(email=user.email).first()
     if user_exists:
         return f"The user with email {user.email} already exists", 400
     session.add(user)

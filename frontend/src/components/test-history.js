@@ -9,11 +9,12 @@ import {
   Checkbox,
   Dropdown,
   DropdownItem,
-  DropdownToggle,
+  DropdownList,
   Flex,
   FlexItem,
+  MenuToggle,
   TextContent,
-  Text,
+  Text
 } from '@patternfly/react-core';
 import {
   TableVariant,
@@ -145,14 +146,12 @@ export class TestHistoryTable extends React.Component {
     this.setState({isDropdownOpen: isOpen});
   }
 
-  onDropdownSelect = event => {
+  onDropdownSelect  = (_event, selection) => {
     let { filters } = this.state;
     let { testResult } = this.props;
     let startTime = new Date(testResult.start_time);
-    let months = event.target.getAttribute('value');
-    let selection = event.target.text
-    // here a month is considered to be 30 days, and there are 86400*1000 ms in a day
-    let timeRange = new Date(startTime.getTime() - (months * 30 * 86400 * 1000));
+    // here a selection (month) is considered to be 30 days, and there are 86400*1000 ms in a day
+    let timeRange = new Date(startTime.getTime() - (selection * 30 * 86400 * 1000));
     // set the filters
     filters["start_time"] = {op: "gt", val: timeRange.toISOString()}
     this.setState({filters, isDropdownOpen: false, dropdownSelection: selection}, this.refreshResults);
@@ -274,13 +273,8 @@ export class TestHistoryTable extends React.Component {
       rows,
       onlyFailures,
       historySummary,
-      dropdownSelection
+      dropdownSelection,
     } = this.state;
-    const pagination = {
-      pageSize: this.state.pageSize,
-      page: this.state.page,
-      totalItems: this.state.totalItems
-    }
     const dropdownValues = Object.assign({
       "1 Week": 0.25,
       "2 Weeks": 0.5,
@@ -289,14 +283,11 @@ export class TestHistoryTable extends React.Component {
       "3 Months": 3.0,
       "5 Months": 5.0
     })
-    let dropdownItems = [];
-    Object.keys(dropdownValues).forEach(key => {
-      dropdownItems.push(
-        <DropdownItem key={key} value={dropdownValues[key]} autoFocus={key === dropdownSelection}>
-          {key}
-        </DropdownItem>
-      )
-    });
+    const pagination = {
+      pageSize: this.state.pageSize,
+      page: this.state.page,
+      totalItems: this.state.totalItems
+    }
 
     return (
       <Card className="pf-u-mt-lg">
@@ -304,23 +295,39 @@ export class TestHistoryTable extends React.Component {
           <Flex style={{ width: '100%' }}>
             <FlexItem grow={{ default: 'grow' }}>
               <TextContent>
-                <Text component="h2" className="pf-c-title pf-m-xl">
+                <Text component="h2" className="pf-v5-c-title pf-m-xl">
                   Test History
                 </Text>
               </TextContent>
             </FlexItem>
             <FlexItem>
               <TextContent>
-                <Checkbox id="only-failures" label="Only show failures/errors" isChecked={onlyFailures} aria-label="only-failures-checkbox" onChange={this.onFailuresCheck}/>
+                <Checkbox id="only-failures" label="Only show failures/errors" isChecked={onlyFailures} aria-label="only-failures-checkbox" onChange={(_event, checked) => this.onFailuresCheck(checked)}/>
               </TextContent>
             </FlexItem>
             <FlexItem>
               <Dropdown
-                toggle={<DropdownToggle isDisabled={false} onToggle={this.onDropdownToggle}>Time range</DropdownToggle>}
-                onSelect={this.onDropdownSelect}
                 isOpen={this.state.isDropdownOpen}
-                dropdownItems={dropdownItems}
-              />
+                onSelect={this.onDropdownSelect}
+                onOpenChange={() => this.setState({isDropdownOpen: false})}
+                toggle={toggleRef => (
+                  <MenuToggle
+                    ref={toggleRef}
+                    onClick={this.onDropdownToggle}
+                    isExpanded={this.state.isDropdownOpen}
+                  >
+                    Time range
+                  </MenuToggle>
+                )}
+              >
+                <DropdownList>
+                  {Object.keys(dropdownValues).map((key) => (
+                    <DropdownItem key={key} value={dropdownValues[key]} autoFocus={key === dropdownSelection}>
+                      {key}
+                    </DropdownItem>
+                  ))}
+                </DropdownList>
+              </Dropdown>
             </FlexItem>
             <FlexItem>
               <Button variant="secondary" onClick={this.refreshResults}>Refresh results</Button>

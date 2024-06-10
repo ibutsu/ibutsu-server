@@ -270,8 +270,8 @@ export function resultToComparisonRow(result, index) {
     if (result.metadata && result.metadata.markers) {
         for (const marker of result.metadata.markers) {
           // Don't add duplicate markers
-          if (markers.filter(m => m.key === marker.name).length === 0) {
-            markers.push(<Badge isRead key={marker.name}>{marker.name}</Badge>);
+          if (markers.filter(m => m.key === marker).length === 0) {
+            markers.push(<Badge isRead key={marker}>{marker}</Badge>);
           }
         }
       }

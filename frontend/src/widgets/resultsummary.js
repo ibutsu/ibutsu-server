@@ -77,13 +77,13 @@ export class ResultSummaryWidget extends React.Component {
 
   render() {
     const themeColors = [
-      'var(--pf-global--success-color--100)',
-      'var(--pf-global--danger-color--100)',
-      'var(--pf-global--info-color--100)',
-      'var(--pf-global--warning-color--100)',
-      'var(--pf-global--palette--purple-400)',
-      'var(--pf-global--palette--purple-700)',
-      'var(--pf-global--primary-color--100)'
+      'var(--pf-v5-global--success-color--100)',
+      'var(--pf-v5-global--danger-color--100)',
+      'var(--pf-v5-global--info-color--100)',
+      'var(--pf-v5-global--warning-color--100)',
+      'var(--pf-v5-global--palette--purple-400)',
+      'var(--pf-v5-global--palette--purple-700)',
+      'var(--pf-v5-global--primary-color--100)'
     ];
     return (
       <Card>

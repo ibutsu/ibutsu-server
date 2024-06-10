@@ -2,13 +2,21 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
+  Button,
   Card,
   CardBody,
+  MenuToggle,
   Select,
+  SelectList,
   SelectOption,
-  SelectVariant,
   TextInput,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities
 } from '@patternfly/react-core';
+
+import { TimesIcon } from '@patternfly/react-icons';
+
 import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../services/http';
@@ -84,7 +92,7 @@ function fieldToColumnName(fields) {
 export class AccessibilityDashboardView extends React.Component {
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object,
+    navigate: PropTypes.func,
     view: PropTypes.object
   };
 
@@ -117,7 +125,10 @@ export class AccessibilityDashboardView extends React.Component {
       isEmpty: true,
       isError: false,
       fieldSelection: null,
+      filteredFieldOptions: ACCESSIBILITY_FIELDS,
       fieldOptions: ACCESSIBILITY_FIELDS,
+      fieldInputValue: '',
+      fieldFilterValue: '',
       isFieldOpen: false,
       operationSelection: 'eq',
       isOperationOpen: false,
@@ -132,7 +143,7 @@ export class AccessibilityDashboardView extends React.Component {
     let params = buildParams(this.state.filters);
     params.push('page=' + this.state.pagination.page);
     params.push('pageSize=' + this.state.pagination.pageSize);
-    this.props.history.replace(this.props.location.pathname + '?' + params.join('&'));
+    this.props.navigate(this.props.location.pathname + '?' + params.join('&'));
   }
 
   setPage = (_event, pageNumber) => {
@@ -153,31 +164,49 @@ export class AccessibilityDashboardView extends React.Component {
     });
   }
 
-  onFieldToggle = isExpanded => {
-    this.setState({isFieldOpen: isExpanded});
+  onFieldToggle = () => {
+    this.setState({isFieldOpen: !this.state.isFieldOpen});
   };
 
-  onFieldSelect = (event, selection) => {
-    this.setState({
-      fieldSelection: selection,
-      isFieldOpen: false,
-      operationSelection: 'eq',
-    });
+  onFieldSelect = (_event, selection) => {
+    const fieldFilterValue = this.state.fieldFilterValue;
+    if (selection == `Create "${fieldFilterValue}"`) {
+      this.setState({
+        filteredFieldOptions: [...this.state.fieldOptions, fieldFilterValue],
+        fieldSelection: fieldFilterValue,
+        fieldInputValue: fieldFilterValue,
+        operationSelection: 'eq',
+      })
+    }
+    else {
+      this.setState({
+        fieldSelection: selection,
+        fieldInputValue: selection,
+        isFieldOpen: false,
+        operationSelection: 'eq',
+      });
+    }
+  };
+
+  onFieldTextInputChange = (_event, value) => {
+    this.setState({fieldInputValue: value});
+    this.setState({fieldFilterValue: value});
   };
 
   onFieldClear = () => {
     this.setState({
       fieldSelection: null,
-      isFieldOpen: false
+      fieldInputValue: '',
+      fieldFilterValue: ''
     });
   };
 
   onFieldCreate = newValue => {
-    this.setState({fieldOptions: [...this.state.fieldOptions, newValue]});
+    this.setState({filteredFieldOptions: [...this.state.filteredFieldOptions, newValue]});
   };
 
-  onOperationToggle = isExpanded => {
-    this.setState({isOperationOpen: isExpanded});
+  onOperationToggle = () => {
+    this.setState({isOperationOpen: !this.state.isOperationOpen});
   };
 
   onOperationSelect = (event, selection) => {
@@ -210,8 +239,8 @@ export class AccessibilityDashboardView extends React.Component {
     });
   };
 
-  onBoolToggle = isExpanded => {
-    this.setState({isBoolOpen: isExpanded});
+  onBoolToggle = () => {
+    this.setState({isBoolOpen: !this.state.isBoolOpen});
   };
 
   onBoolClear = () => {
@@ -237,6 +266,8 @@ export class AccessibilityDashboardView extends React.Component {
       this.getData();
       this.setState({
         fieldSelection: null,
+        fieldInputValue: '',
+        fieldFilterValue: '',
         operationSelection: 'eq',
         textFilter: '',
         inValues: [],
@@ -283,7 +314,7 @@ export class AccessibilityDashboardView extends React.Component {
     HttpClient.get([Settings.serverUrl + '/widget-config'], {"filter": "widget=accessibility-analysis-view"})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
-        analysisViewId = data.widgets[0].id
+        analysisViewId = data.widgets[0]?.id
       }).catch(error => {
         console.log(error)
       });
@@ -315,9 +346,31 @@ export class AccessibilityDashboardView extends React.Component {
       });
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps, prevState) {
     if (prevProps.view !== this.props.view) {
       this.getData();
+    }
+
+    if (
+      prevState.fieldFilterValue !== this.state.fieldFilterValue
+    ) {
+      let newSelectOptionsField = this.state.fieldOptions;
+      if (this.state.fieldInputValue) {
+        newSelectOptionsField = this.state.fieldOptions.filter(menuItem =>
+          menuItem.toLowerCase().includes(this.state.fieldFilterValue.toLowerCase())
+        );
+        if (newSelectOptionsField.length !== 1 && !newSelectOptionsField.includes(this.state.fieldFilterValue) ) {
+          newSelectOptionsField.push(`Create "${this.state.fieldFilterValue}"`);
+        }
+
+        if (!this.state.isFieldOpen) {
+          this.setState({ isFieldOpen: true });
+        }
+      }
+
+      this.setState({
+        filteredFieldOptions: newSelectOptionsField,
+      });
     }
   }
 
@@ -332,7 +385,8 @@ export class AccessibilityDashboardView extends React.Component {
       boolSelection,
       fieldSelection,
       isFieldOpen,
-      fieldOptions,
+      filteredFieldOptions,
+      fieldInputValue,
       isBoolOpen,
       isEmpty,
       isError,
@@ -345,54 +399,140 @@ export class AccessibilityDashboardView extends React.Component {
     const filterMode = getFilterMode(fieldSelection);
     const operationMode = getOperationMode(operationSelection);
     const operations = getOperationsFromField(fieldSelection);
+
+    const fieldToggle = toggleRef => (
+      <MenuToggle
+        variant="typeahead"
+        aria-label="Typeahead creatable menu toggle"
+        onClick={this.onFieldToggle}
+        isExpanded={this.state.isFieldOpen}
+        isFullWidth
+        innerRef={toggleRef}
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={fieldInputValue}
+            onClick={this.onFieldToggle}
+            onChange={this.onFieldTextInputChange}
+            id="create-typeahead-select-input"
+            autoComplete="off"
+            placeholder="Select a field"
+            role="combobox"
+            isExpanded={this.state.isFieldOpen}
+            aria-controls="select-create-typeahead-listbox"
+          />
+          <TextInputGroupUtilities>
+            {!!fieldInputValue && (
+              <Button
+                variant="plain"
+                onClick={() => {this.onFieldClear()}}
+                aria-label="Clear input value"
+              >
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    )
+
+    const operationToggle = toggleRef => (
+      <MenuToggle
+        onClick={this.onOperationToggle}
+        isExpanded={isOperationOpen}
+        isFullWidth
+        ref={toggleRef}
+      >
+        {this.state.operationSelection}
+      </MenuToggle>
+    )
+
+    const boolToggle = toggleRef => (
+      <MenuToggle
+        onClick={this.onBoolToggle}
+        isExpanded={this.state.isBoolOpen}
+        isFullWidth
+        ref={toggleRef}
+        style={{maxHeight: '36px'}}
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={boolSelection}
+            onClick={this.onBoolToggle}
+            autoComplete="off"
+            placeholder="Select True/False"
+            role="combobox"
+            isExpanded={this.state.isBoolOpen}
+          />
+          <TextInputGroupUtilities>
+            {!!boolSelection && (
+              <Button variant="plain" onClick={() => {
+                this.onBoolClear();
+              }} aria-label="Clear input value">
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    )
+
     const filters = [
       <Select
-        aria-label="Select a field"
-        placeholderText="Select a field"
-        selections={fieldSelection}
+        id="multi-typeahead-select"
+        selected={fieldSelection}
         isOpen={isFieldOpen}
-        isCreatable={true}
-        variant={SelectVariant.typeahead}
-        maxHeight={"1140%"}
-        onToggle={this.onFieldToggle}
         onSelect={this.onFieldSelect}
-        onCreateOption={this.onFieldCreate}
-        onClear={this.onFieldClear}
         key="field"
+        onOpenChange={() => this.setState({isFieldOpen: false})}
+        toggle={fieldToggle}
       >
-        {fieldOptions.map((option, index) => (
-          <SelectOption key={index} value={option} />
-        ))}
+        <SelectList id="select-typeahead-listbox">
+          {filteredFieldOptions.map((option, index) => (
+            <SelectOption key={index} value={option}>
+              {option}
+            </SelectOption>
+          ))}
+        </SelectList>
       </Select>,
       <Select
-        variant={SelectVariant.single}
-        onToggle={this.onOperationToggle}
-        onSelect={this.onOperationSelect}
+        id="single-select"
         isOpen={isOperationOpen}
-        selections={operationSelection}
+        selected={operationSelection}
+        onSelect={this.onOperationSelect}
+        onOpenChange={() => this.setState({isOperationOpen: false})}
         key="operation"
+        toggle={operationToggle}
       >
-        {Object.keys(operations).map((option, index) => <SelectOption key={index} value={option}/>)}
+        <SelectList>
+          {Object.keys(operations).map((option, index) => (
+            <SelectOption key={index} value={option}>
+              {option}
+            </SelectOption>
+          ))}
+        </SelectList>
       </Select>,
       <React.Fragment key="value">
         {(operationMode === 'bool') &&
-        <Select
-          aria-label="Select True/False"
-          placeholderText="Select True/False"
-          variant={SelectVariant.single}
-          isOpen={isBoolOpen}
-          selections={boolSelection}
-          onToggle={this.onBoolToggle}
-          onSelect={this.onBoolSelect}
-          onClear={this.onBoolClear}
-        >
-          {["True", "False"].map((option, index) => (
-            <SelectOption key={index} value={option} />
-          ))}
-        </Select>
+          <Select
+            id="single-select"
+            isOpen={isBoolOpen}
+            selected={boolSelection}
+            onSelect={this.onBoolSelect}
+            onOpenChange={() => this.setState({isBoolOpen: false})}
+            toggle={boolToggle}
+          >
+            <SelectList>
+              {["True", "False"].map((option, index) => (
+                <SelectOption key={index} value={option}>
+                  {option}
+                </SelectOption>
+              ))}
+            </SelectList>
+          </Select>
         }
         {(filterMode === 'text' && operationMode === 'single') &&
-          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={this.onTextChanged} style={{height: "inherit"}}/>
+          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: "inherit"}}/>
         }
         {(operationMode === 'multi') &&
           <MultiValueInput onValuesChange={this.onInValuesChange} style={{height: "inherit"}}/>

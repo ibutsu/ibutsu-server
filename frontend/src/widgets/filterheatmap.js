@@ -8,8 +8,8 @@ import {
   CardFooter,
   EmptyState,
   EmptyStateBody,
-  Text,
-  Title
+  Text, EmptyStateHeader,
+
 } from '@patternfly/react-core';
 import {
   ArrowDownIcon,
@@ -57,7 +57,7 @@ export class FilterHeatmapWidget extends React.Component {
   getJenkinsAnalysisViewId() {
     HttpClient.get([Settings.serverUrl, 'widget-config'], {"filter": "widget=jenkins-analysis-view"})
       .then(response => HttpClient.handleResponse(response))
-      .then(data => this.setState({analysisViewId: data.widgets[0].id}))
+      .then(data => this.setState({analysisViewId: data.widgets[0]?.id}))
       .catch(error => console.log(error));
   }
 
@@ -71,7 +71,7 @@ export class FilterHeatmapWidget extends React.Component {
       );
     }
     else {
-      return [];
+      return null;
     }
   }
 
@@ -114,13 +114,13 @@ export class FilterHeatmapWidget extends React.Component {
     let style = {paddingTop: '-8.10811px'};
     if ((x === 0) && !!value) {
       if (value[0] < 0) {
-        style.background = 'var(--pf-global--danger-color--100)';
+        style.background = 'var(--pf-v5-global--danger-color--100)';
       }
       else if ((value[0] <= 1) && (value[0] >= 0)) {
-        style.background = 'var(--pf-global--warning-color--100)';
+        style.background = 'var(--pf-v5-global--warning-color--100)';
       }
       else if (value[0] > 1) {
-        style.background = 'var(--pf-global--success-color--100)';
+        style.background = 'var(--pf-v5-global--success-color--100)';
       }
       else {
         style.background = 'none';
@@ -128,16 +128,16 @@ export class FilterHeatmapWidget extends React.Component {
     }
     else if (value) {
       if (value[0] < 50) {
-        style.background = 'var(--pf-global--danger-color--100)';
+        style.background = 'var(--pf-v5-global--danger-color--100)';
       }
       else if ((value[0] <= 85) && (value[0] >= 50)) {
-        style.background = 'var(--pf-global--warning-color--100)';
+        style.background = 'var(--pf-v5-global--warning-color--100)';
       }
       else if (value[0] > 85) {
-        style.background = 'var(--pf-global--success-color--100)';
+        style.background = 'var(--pf-v5-global--success-color--100)';
       }
       else if (isNaN(value[0])) {
-        style.background = 'var(--pf-global--info-color--100)';
+        style.background = 'var(--pf-v5-global--info-color--100)';
       }
       // handle annotations, add a border for cells with annotations
       if (value[2]) {
@@ -229,7 +229,7 @@ export class FilterHeatmapWidget extends React.Component {
       }
     }
     labels.forEach((item) => xLabels.push(item));
-    const actions = this.getJenkinsAnalysisLink() || {};
+    const actions = this.getJenkinsAnalysisLink() || null;
 
     return (
       <Card>
@@ -253,9 +253,7 @@ export class FilterHeatmapWidget extends React.Component {
           }
           {(!this.state.heatmapError && !this.state.isLoading && data.length === 0) &&
           <EmptyState>
-          <Title headingLevel="h3" size="md" style={{ fontFamily: 'sans-serif' }}>
-            No data found for heatmap
-          </Title>
+          <EmptyStateHeader titleText="No data found for heatmap" headingLevel="h3" />
           <EmptyStateBody style={{ fontSize: "15px" , fontFamily: 'sans-serif'}}>
             Ensure that you have correct job name and addition filters set
           </EmptyStateBody>

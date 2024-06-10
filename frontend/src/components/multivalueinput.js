@@ -1,22 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {
+  Button,
   Chip,
   ChipGroup,
-  TextInput
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities
 } from '@patternfly/react-core';
 
+import { TimesIcon } from '@patternfly/react-icons';
 
-function clone(obj) {
-  if (null === obj || "object" !== typeof obj) return obj;
-  var copy = obj.constructor();
-  for (var attr in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, attr)) {
-      copy[attr] = obj[attr];
-    }
-  }
-  return copy;
-}
 
 export class MultiValueInput extends React.Component {
   static propTypes = {
@@ -33,12 +27,24 @@ export class MultiValueInput extends React.Component {
       values: [],
       value: ''
     };
-
   }
 
-  handleTextInputChange = value => {
+  handleTextInputChange = (_event, value) => {
     this.setState({
       value: value
+    });
+  };
+
+  handleItemRemove = value => {
+    const currentValues = this.state.values;
+    const newValues = currentValues.filter(v => v !== value);
+    this.setState({values: newValues}, () => {
+      if (this.props.onRemoveValue) {
+        this.props.onRemoveValue(value);
+      }
+      if (this.props.onValuesChange){
+        this.props.onValuesChange(newValues);
+      }
     });
   };
 
@@ -59,46 +65,56 @@ export class MultiValueInput extends React.Component {
     });
   };
 
-  handleItemRemove = value => {
-    const currentValues = this.state.values;
-    const newValues = currentValues.filter(v => v !== value);
-    this.setState({values: newValues}, () => {
-      if (this.props.onRemoveValue) {
-        this.props.onRemoveValue(value);
-      }
-      if (this.props.onValuesChange){
-        this.props.onValuesChange(newValues);
-      }
-    });
+  handleEnter = () => {
+    if (this.state.value.length) {
+      this.handleItemAdd(this.state.value);
+    }
   };
 
-  handleKeyPress = e => {
-    if (e.charCode === 13) {  // 13 is the charCode for the <Enter> key
-      this.handleItemAdd(e.target.value);
+  handleKeyPress = event => {
+    switch (event.key) {
+      case 'Enter':
+        this.handleEnter();
+        break;
     }
   };
 
   render() {
-    let style = clone(this.style);
-    style["width"] = "auto";
     return (
       <React.Fragment>
-        <ChipGroup>
-          {this.state.values.map(value => (
-            <Chip key={value} onClick={() => this.handleItemRemove(value)}>
-              {value}
-            </Chip>
-          ))}
-        </ChipGroup>
-        <TextInput
-          type="text"
-          onChange={this.handleTextInputChange}
-          onKeyPress={this.handleKeyPress}
-          value={this.state.value}
-          aria-label="multi-text-input"
-          placeholder="Type any value and hit <Enter>"
-          style={style}  // necessary to get chips on same line
-        />
+        <TextInputGroup>
+          <TextInputGroupMain
+            value={this.state.value}
+            placeholder="Type any value and hit <Enter>"
+            onChange={this.handleTextInputChange}
+            onKeyDown={this.handleKeyPress}
+            style={{minWidth: "240px"}}
+            type={"text"}
+          >
+            <ChipGroup aria-label="Current selections">
+              {this.state.values.map((value, index) => (
+                <Chip
+                  key={index}
+                  onClick={() => this.handleItemRemove(value)}
+                >
+                  {value}
+                </Chip>
+              ))}
+            </ChipGroup>
+          </TextInputGroupMain>
+          <TextInputGroupUtilities>
+            {(this.state.values.length > 0 || !!this.state.value) && (
+              <Button variant="plain" onClick={() => {
+                this.setState({
+                  values: [],
+                  value: ''
+                });
+              }} aria-label="Clear input value">
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
       </React.Fragment>
     );
   }

@@ -42,8 +42,8 @@ function userToRow(user, onDeleteClick) {
             <Button
               variant="primary"
               ouiaId={`admin-users-edit-${user.id}`}
-              component={(props: any) => <Link {...props} to={`/admin/users/${user.id}`} />}
-              isSmall
+              component={(props) => <Link {...props} to={`/admin/users/${user.id}`} />}
+              size="sm"
             >
               <PencilAltIcon />
             </Button>
@@ -52,7 +52,7 @@ function userToRow(user, onDeleteClick) {
               variant="danger"
               ouiaId={`admin-users-delete-${user.id}`}
               onClick={() => onDeleteClick(user.id)}
-              isSmall
+              size="sm"
             >
               <TrashIcon />
             </Button>
@@ -66,7 +66,7 @@ function userToRow(user, onDeleteClick) {
 export class UserList extends React.Component {
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object,
+    navigate: PropTypes.func,
   }
 
   constructor(props) {
@@ -104,7 +104,7 @@ export class UserList extends React.Component {
     let params = [];
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.history.replace('/admin/users?' + params.join('&'));
+    this.props.navigate('/admin/users?' + params.join('&'))
   }
 
   setPage = (_event, pageNumber) => {
@@ -189,7 +189,7 @@ export class UserList extends React.Component {
       totalItems: this.state.totalItems
     };
     const filters = [
-      <TextInput type="text" id="filter" placeholder="Search for user..." value={textFilter || ''} onChange={this.onTextChanged} style={{height: "inherit"}} key="textFilter"/>
+      <TextInput type="text" id="filter" placeholder="Search for user..." value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: "inherit"}} key="textFilter"/>
     ];
     return (
       <React.Fragment>

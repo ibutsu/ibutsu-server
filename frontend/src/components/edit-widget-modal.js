@@ -5,6 +5,9 @@ import {
   Button,
   Form,
   FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
   Modal,
   ModalVariant,
   TextInput,
@@ -128,11 +131,27 @@ export class EditWidgetModal extends React.Component {
         ]}
       >
         <Form>
-          <FormGroup label="Title" fieldId="widget-title" helperText="A title for the widget" validated={this.isTitleValid} helperTextInvalid="Please enter a title for this widget" helperTextInvalidIcon={<ExclamationCircleIcon/>} isRequired>
-            <TextInput type="text" id="widget-title" name="widget-title" value={this.state.title} onChange={this.onTitleChange} validated={this.state.isTitleValid} isRequired />
+          <FormGroup label="Title" fieldId="widget-title" validated={this.isTitleValid} isRequired>
+            <TextInput type="text" id="widget-title" name="widget-title" value={this.state.title} onChange={(_event, value) => this.onTitleChange(value)} validated={this.state.isTitleValid} isRequired />
+            {this.state.isTitleValid !== true && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem icon={<ExclamationCircleIcon />} variant="error">
+                    Please enter a title for this widget
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+              )}
           </FormGroup>
-          <FormGroup label="Weight" fieldId="widget-weight" helperText="How widgets are ordered on the dashboard">
-            <TextInput type="number" id="widget-weight" name="widget-weight" value={this.state.weight} onChange={this.onWeightChange} />
+          <FormGroup label="Weight" fieldId="widget-weight">
+            <TextInput type="number" id="widget-weight" name="widget-weight" value={this.state.weight} onChange={(_event, value) => this.onWeightChange(value)} />
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem variant="default">
+                How widgets are ordered on the dashboard
+                </HelperTextItem>
+              </HelperText>
+            </FormHelperText>
           </FormGroup>
           {componentLoaded ? widgetType.params.map(param => {
             return (
@@ -140,7 +159,6 @@ export class EditWidgetModal extends React.Component {
                 <FormGroup
                 label={param.name}
                 fieldId={param.name}
-                helperText={<Linkify componentDecorator={linkifyDecorator}>{param.description}</Linkify>}
                 isRequired={param.required}>
                   <TextInput
                     value={this.state.params[param.name]}
@@ -148,9 +166,18 @@ export class EditWidgetModal extends React.Component {
                     id={param.name}
                     aria-describedby={`${param.name}-helper`}
                     name={param.name}
-                    onChange={this.onParamChange}
+                    onChange={(event, value) => this.onParamChange(value, event)}
                     isRequired={param.required}
                   />
+                  <FormHelperText>
+                    <HelperText>
+                      <HelperTextItem variant="default">
+                        <Linkify componentDecorator={linkifyDecorator}>
+                          {param.description}
+                        </Linkify>
+                      </HelperTextItem>
+                    </HelperText>
+                  </FormHelperText>
                 </FormGroup>
               </React.Fragment>
             )

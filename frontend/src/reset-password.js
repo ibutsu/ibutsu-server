@@ -7,7 +7,11 @@ import {
   Form,
   FormAlert,
   FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
   InputGroup,
+  InputGroupItem,
   LoginMainFooterBandItem,
   LoginPage,
   TextInput
@@ -53,14 +57,13 @@ class PasswordErrorBoundary extends React.Component {
 export class ResetPassword extends React.Component {
   static propTypes = {
     location: PropTypes.object,
-    history: PropTypes.object,
-    match: PropTypes.object
+    params: PropTypes.object
   };
 
   constructor(props) {
     super(props);
     this.state = {
-      activationCode: props.match.params.activationCode,
+      activationCode: props.params.activationCode,
       alertText: '',
       alertType: '',
       showAlert: false,
@@ -175,7 +178,6 @@ export class ResetPassword extends React.Component {
         brandImgSrc="/images/ibutsu-wordart-164.png"
         brandImgAlt="Ibutsu"
         backgroundImgSrc={backgroundImages}
-        backgroundImgAlt="Background image"
         textContent="Ibutsu is an open source test result aggregation. Collect and display your test results, view artifacts, and monitor tests."
         loginTitle="Reset your password"
         loginSubtitle="Please type in a secure password"
@@ -204,7 +206,7 @@ export class ResetPassword extends React.Component {
                 validated={this.state.isValidPassword ? 'default' : 'error'}
                 aria-describedby="password-helper"
                 value={this.state.passwordValue}
-                onChange={this.onPasswordChange} />
+                onChange={(_event, passwordValue) => this.onPasswordChange(passwordValue)} />
               }
               {this.state.isPasswordVisible &&
               <TextInput
@@ -215,11 +217,11 @@ export class ResetPassword extends React.Component {
                 validated={this.state.isValidPassword ? 'default' : 'error'}
                 aria-describedby="password-helper"
                 value={this.state.passwordValue}
-                onChange={this.onPasswordChange} />}
-              <Button variant="control" aria-label="Show password" onClick={this.onPasswordVisibleClick}>
+                onChange={(_event, passwordValue) => this.onPasswordChange(passwordValue)} />}
+              <InputGroupItem><Button variant="control" aria-label="Show password" onClick={this.onPasswordVisibleClick}>
                 {!this.state.isPasswordVisible && <EyeIcon/>}
                 {this.state.isPasswordVisible && <EyeSlashIcon/>}
-              </Button>
+              </Button></InputGroupItem>
             </InputGroup>
             <PasswordErrorBoundary>
               <Suspense fallback={""}>
@@ -231,18 +233,22 @@ export class ResetPassword extends React.Component {
             label="Confirm password"
             isRequired
             fieldId="confirm-password"
-            helperText={this.state.confirmPasswordHelpText}
-            helperTextInvalid="Passwords do not match"
-            validated={this.state.confirmPasswordValidation}
           >
             <InputGroup>
-              {!this.state.isConfirmPasswordVisible && <TextInput isRequired type="password" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={this.onConfirmPasswordChange} validated={this.state.confirmPasswordValidation} />}
-              {this.state.isConfirmPasswordVisible && <TextInput isRequired type="text" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={this.onConfirmPasswordChange} validated={this.state.confirmPasswordValidation} />}
-              <Button variant="control" aria-label="Show password" onClick={this.onConfirmPasswordVisibleClick}>
+              {!this.state.isConfirmPasswordVisible && <TextInput isRequired type="password" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={(_event, confirmPasswordValue) => this.onConfirmPasswordChange(confirmPasswordValue)} validated={this.state.confirmPasswordValidation} />}
+              {this.state.isConfirmPasswordVisible && <TextInput isRequired type="text" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={(_event, confirmPasswordValue) => this.onConfirmPasswordChange(confirmPasswordValue)} validated={this.state.confirmPasswordValidation} />}
+              <InputGroupItem>
+                <Button variant="control" aria-label="Show password" onClick={this.onConfirmPasswordVisibleClick}>
                 {!this.state.isConfirmPasswordVisible && <EyeIcon/>}
                 {this.state.isConfirmPasswordVisible && <EyeSlashIcon/>}
-              </Button>
+                </Button>
+              </InputGroupItem>
             </InputGroup>
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem variant={this.state.confirmPasswordValidation}>{this.state.confirmPasswordHelpText}</HelperTextItem>
+              </HelperText>
+            </FormHelperText>
           </FormGroup>
           <ActionGroup>
             <Button variant="primary" isBlock onClick={this.onResetButtonClick}>Reset Password</Button>

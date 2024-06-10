@@ -88,21 +88,21 @@ export class GenericBarWidget extends React.Component {
   }
 
   getBarStyle = (key) => {
-    let color = 'var(--pf-global--success-color--100)';
+    let color = 'var(--pf-v5-global--success-color--100)';
     if (key === 'failed') {
-      color = 'var(--pf-global--danger-color--100)';
+      color = 'var(--pf-v5-global--danger-color--100)';
     }
     else if (key === 'skipped') {
-      color = 'var(--pf-global--info-color--100)';
+      color = 'var(--pf-v5-global--info-color--100)';
     }
     else if (key === 'error') {
-      color = 'var(--pf-global--warning-color--100)';
+      color = 'var(--pf-v5-global--warning-color--100)';
     }
     else if (key === 'xfailed') {
-      color = 'var(--pf-global--palette--purple-400)';
+      color = 'var(--pf-v5-global--palette--purple-400)';
     }
     else if (key === 'xpassed') {
-      color = 'var(--pf-global--palette--purple-700)';
+      color = 'var(--pf-v5-global--palette--purple-700)';
     }
     return color;
   }
@@ -256,12 +256,12 @@ export class GenericBarWidget extends React.Component {
               {name: "Xpassed"}
             ]}
             colorScale={[
-              'var(--pf-global--success-color--100)',
-              'var(--pf-global--danger-color--100)',
-              'var(--pf-global--info-color--100)',
-              'var(--pf-global--warning-color--100)',
-              'var(--pf-global--palette--purple-400)',
-              'var(--pf-global--palette--purple-700)',
+              'var(--pf-v5-global--success-color--100)',
+              'var(--pf-v5-global--danger-color--100)',
+              'var(--pf-v5-global--info-color--100)',
+              'var(--pf-v5-global--warning-color--100)',
+              'var(--pf-v5-global--palette--purple-400)',
+              'var(--pf-v5-global--palette--purple-700)',
             ]}
             style={{
               labels: {fontFamily: 'RedHatText', fontSize: this.props.fontSize-2 || 14},

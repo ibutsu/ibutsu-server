@@ -15,9 +15,9 @@ import { EmptyObject, ResultView } from './components';
 
 export class Result extends React.Component {
   static propTypes = {
-    match: PropTypes.object,
-    history: PropTypes.object,
-    location: PropTypes.object
+    params: PropTypes.object,
+    location: PropTypes.object,
+    navigate: PropTypes.func,
   }
 
   constructor(props) {
@@ -25,7 +25,7 @@ export class Result extends React.Component {
     this.state = {
       isResultValid: false,
       testResult: null,
-      id: props.match.params.id
+      id: props.params.id
     };
   }
 
@@ -66,7 +66,7 @@ export class Result extends React.Component {
         </PageSection>
         <PageSection>
           {this.state.isResultValid ?
-            <ResultView testResult={testResult} history={this.props.history} location={this.props.location}/> :
+            <ResultView testResult={testResult} location={this.props.location} navigate={this.props.navigate} /> :
             <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list"/>}
         </PageSection>
       </React.Fragment>

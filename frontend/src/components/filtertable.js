@@ -9,16 +9,18 @@ import {
   Flex,
   FlexItem,
   Pagination,
-  PaginationVariant,
+  PaginationVariant
+} from '@patternfly/react-core';
+import {
   Select,
   SelectOption,
-  SelectVariant,
-} from '@patternfly/react-core';
+  SelectVariant
+} from '@patternfly/react-core/deprecated';
 import {
   Table,
   TableBody,
   TableHeader
-} from '@patternfly/react-table';
+} from '@patternfly/react-table/deprecated';
 
 import { Settings } from '../settings';
 import { HttpClient } from '../services/http';
@@ -114,10 +116,9 @@ export class FilterTable extends React.Component {
             <FlexItem spacer={{ default: 'spacerXs'}} key={key}>
               {!hideFilters.includes(key) &&
               <ChipGroup categoryName={key}>
-                <Chip onClick={() => onRemoveFilter(key)}>
+                <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={() => onRemoveFilter(key)}>
                   {(typeof activeFilters[key] === 'object') &&
                     <React.Fragment>
-                      <Badge isRead={true}>{activeFilters[key]['op']}</Badge>
                       {activeFilters[key]['val']}
                     </React.Fragment>
                   }
@@ -156,7 +157,7 @@ export class FilterTable extends React.Component {
           widgetId="pagination-options-menu-bottom"
           perPage={pagination.pageSize}
           page={pagination.page}
-          variant={PaginationVariant.bottom}
+          variant={PaginationVariant.top}
           itemCount={pagination.totalItems}
           dropDirection="up"
           onSetPage={onSetPage}
@@ -336,7 +337,7 @@ export class MetaFilter extends React.Component {
               isOpen={isFieldOpen}
               selections={fieldSelection}
               maxHeight={"1140%"}
-              onToggle={this.onFieldToggle}
+              onToggle={(_event, isExpanded) => this.onFieldToggle(isExpanded)}
               onSelect={this.onFieldSelect}
               onClear={this.onFieldClear}
               isCreatable={true}
@@ -353,7 +354,7 @@ export class MetaFilter extends React.Component {
               selections={valueSelections}
               maxHeight={"1140%"}
               isDisabled={!field_selected || (field_selected && !values_available) }
-              onToggle={this.onValueToggle}
+              onToggle={(_event, isExpanded) => this.onValueToggle(isExpanded)}
               onSelect={this.onValueSelect}
               onClear={this.onValueClear}
             >
@@ -375,10 +376,9 @@ export class MetaFilter extends React.Component {
             <FlexItem style={{marginBottom: "0.5rem"}} spacer={{ default: 'spacerXs'}} key={key}>
               {!hideFilters.includes(key) &&
               <ChipGroup categoryName={key}>
-                <Chip onClick={() => onRemoveFilter(id, key)}>
+                <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={() => onRemoveFilter(id, key)}>
                   {(typeof activeFilters[key] === 'object') &&
                     <React.Fragment>
-                      <Badge isRead={true}>{activeFilters[key]['op']}</Badge>
                       {activeFilters[key]['val']}
                     </React.Fragment>
                   }

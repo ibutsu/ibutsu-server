@@ -82,10 +82,10 @@ export class NewDashboardModal extends React.Component {
         <Form>
           <FormGroup label="Title" fieldId="dashboard-title" helperTextInvalid="A dashboard title is required" helperTextInvalidIcon={<ExclamationCircleIcon />} validated={this.state.isTitleValid} isRequired>
 
-            <TextInput type="text" id="dashboard-title" name="dashboard-title" value={this.state.title} onChange={this.onTitleChange} validated={this.state.isTitleValid} isRequired />
+            <TextInput type="text" id="dashboard-title" name="dashboard-title" value={this.state.title} onChange={(_event, title) => this.onTitleChange(title)} validated={this.state.isTitleValid} isRequired />
           </FormGroup>
           <FormGroup label="Description" fieldId="dashboard-description">
-            <TextInput type="text" id="dashboard-description" name="dashboard-description" value={this.state.description} onChange={this.onDescriptionChange} />
+            <TextInput type="text" id="dashboard-description" name="dashboard-description" value={this.state.description} onChange={(_event, description) => this.onDescriptionChange(description)} />
           </FormGroup>
         </Form>
       </Modal>

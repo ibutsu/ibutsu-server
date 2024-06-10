@@ -89,7 +89,7 @@ export class ImportanceComponentWidget extends React.Component {
         {(!this.state.dataError && !this.state.isLoading) &&
         <CardBody>
           {this.state.data.table_data.map((tdat) => (
-            <>
+            <div key={tdat.component}>
               <Text key={tdat.component} component="h2">{tdat.component}</Text>
               <Table aria-label="importance-component-table" variant="compact">
                 <Thead>
@@ -102,7 +102,7 @@ export class ImportanceComponentWidget extends React.Component {
                 <Tbody>
                   {tdat.importances.map((importance) => (
                   <Tr key={importance}>
-                    <Text component="h2">{importance}</Text>
+                    <Td>{importance}</Td>
                     {tdat.bnums.map((buildnum) => (
                       <Td key={buildnum}><Link to={`/results?id[in]=${tdat.data[buildnum][importance]["result_list"].join(";")}`}>{this.toPercent(tdat.data[buildnum][importance]["percentage"])}</Link></Td>
                     ))}
@@ -110,7 +110,7 @@ export class ImportanceComponentWidget extends React.Component {
                   ))}
                 </Tbody>
               </Table>
-            </>
+            </div>
           ))}
         </CardBody>
         }

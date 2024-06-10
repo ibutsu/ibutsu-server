@@ -227,12 +227,12 @@ export class ClassifyFailuresTable extends React.Component {
           <Flex style={{ width: '100%' }}>
             <FlexItem grow={{ default: 'grow' }}>
               <TextContent>
-                <Text component="h2" className="pf-c-title pf-m-xl">Test Failures</Text>
+                <Text component="h2" className="pf-v5-c-title pf-m-xl">Test Failures</Text>
               </TextContent>
             </FlexItem>
             <FlexItem>
               <TextContent>
-                <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={this.onSkipCheck}/>
+                <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={(_event, checked) => this.onSkipCheck(checked)}/>
               </TextContent>
             </FlexItem>
             <FlexItem>
