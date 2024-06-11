@@ -1,18 +1,24 @@
-from ibutsu_server.constants import BARCHART_MAX_BUILDS
-from ibutsu_server.constants import JJV_RUN_LIMIT
-from ibutsu_server.db.models import Result
-from ibutsu_server.db.models import Run
+from ibutsu_server.constants import BARCHART_MAX_BUILDS, JJV_RUN_LIMIT
+from ibutsu_server.db.models import Result, Run
 from ibutsu_server.filters import string_to_column
 from ibutsu_server.widgets.jenkins_job_view import get_jenkins_job_view
 
 
 def get_importance_component(
-    env="prod", group_field="component", job_name="", builds=5, components="", project=None
+    env="prod",
+    group_field="component",
+    job_name="",
+    builds=5,
+    components="",
+    project=None,
 ):
     # taken from get_jenkins_line_chart in jenkins_job_analysis.py
     run_limit = int((JJV_RUN_LIMIT / BARCHART_MAX_BUILDS) * builds)
     jobs = get_jenkins_job_view(
-        filter_=f"job_name={job_name}", page_size=builds, project=project, run_limit=run_limit
+        filter_=f"job_name={job_name}",
+        page_size=builds,
+        project=project,
+        run_limit=run_limit,
     ).get("jobs")
 
     # A list of job build numbers to filter our runs by
@@ -38,10 +44,15 @@ def get_importance_component(
     mdat = string_to_column("metadata.importance", Result)
     result_data = (
         Result.query.filter(
-            Result.run_id.in_(run_info.keys()), Result.component.in_(components.split(","))
+            Result.run_id.in_(run_info.keys()),
+            Result.component.in_(components.split(",")),
         )
         .add_columns(
-            Result.run_id, Result.component, Result.id, Result.result, mdat.label("importance")
+            Result.run_id,
+            Result.component,
+            Result.id,
+            Result.result,
+            mdat.label("importance"),
         )
         .all()
     )
@@ -108,7 +119,10 @@ def get_importance_component(
             if bnum not in sdatdict[component].keys():
                 sdatdict[component][bnum] = {}
                 for importance in importances:
-                    sdatdict[component][bnum][importance] = {"percentage": "NA", "result_list": []}
+                    sdatdict[component][bnum][importance] = {
+                        "percentage": "NA",
+                        "result_list": [],
+                    }
 
     # Need this broken down more for the table
     table_data = []

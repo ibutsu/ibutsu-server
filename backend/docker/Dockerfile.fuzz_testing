@@ -1,9 +1,14 @@
-FROM python:3.9
+FROM registry.access.redhat.com/ubi8/python-39:1-184.1716989688
 
-RUN apt-get update && \
-    apt-get install -y jq && \
-    pip install schemathesis
+USER 0
+RUN dnf install -y jq-1.6 && \
+    dnf clean all && \
+    pip install -U --no-cache-dir schemathesis~=3
 
+
+WORKDIR /
+
+USER 1001
 
 COPY docker/start_fuzz_testing.sh .
 

@@ -1,10 +1,7 @@
 from pathlib import Path
-from unittest.mock import call
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, call, patch
 
 from ibutsu_server.test import BaseTestCase
-
 
 PARENT = Path(__file__).parent
 XML_FILE = PARENT / "res" / "empty-testsuite.xml"
@@ -93,7 +90,12 @@ class TestImporterTasks(BaseTestCase):
     @patch("ibutsu_server.tasks.importers.session")
     @patch("ibutsu_server.tasks.importers.get_project_id")
     def test_junit_import_tests_with_properties(
-        self, mocked_get_project_id, mocked_session, mocked_update, MockImport, MockImportFile
+        self,
+        mocked_get_project_id,
+        mocked_session,
+        mocked_update,
+        MockImport,
+        MockImportFile,
     ):
         """Test the junit importer"""
         mocked_import = {"id": "12345"}

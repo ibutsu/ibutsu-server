@@ -1,13 +1,16 @@
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+# hadolint global ignore=DL3013,DL3041
+FROM registry.access.redhat.com/ubi8/python-39:1-184.1716989688
 
 WORKDIR /app
 
 USER 0
 
-RUN microdnf install --nodocs -y --disableplugin=subscription-manager gcc libpq-devel python39 python39-devel
+RUN dnf install --nodocs -y --disableplugin=subscription-manager gcc libpq-devel && \
+    dnf clean all
+
 COPY . /app
-RUN pip3 install --no-cache-dir -r requirements.txt
-RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
+RUN pip3 install --no-cache-dir -r requirements.txt && \
+    chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 
 USER 1001
 

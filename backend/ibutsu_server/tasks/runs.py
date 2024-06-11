@@ -1,13 +1,9 @@
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from ibutsu_server.constants import SYNC_RUN_TIME
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Result
-from ibutsu_server.db.models import Run
-from ibutsu_server.tasks import lock
-from ibutsu_server.tasks import task
-
+from ibutsu_server.db.models import Result, Run
+from ibutsu_server.tasks import lock, task
 
 METADATA_TO_COPY = ["jenkins", "tags"]
 COLUMNS_TO_COPY = ["start_time", "env", "component", "project_id", "source"]

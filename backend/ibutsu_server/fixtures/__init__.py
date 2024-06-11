@@ -2,6 +2,7 @@ import logging
 
 import connexion
 import pytest
+
 from ibutsu_server.encoder import IbutsuJSONProvider
 
 

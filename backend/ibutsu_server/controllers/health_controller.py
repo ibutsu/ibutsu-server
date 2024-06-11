@@ -1,6 +1,5 @@
 from flask import current_app
-from sqlalchemy.exc import InterfaceError
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import InterfaceError, OperationalError
 
 try:
     from ibutsu_server.db.model import Result
@@ -29,14 +28,23 @@ def get_database_health(token_info=None, user=None):
     # Try to connect to the database, and handle various responses
     try:
         if not IS_CONNECTED:
-            response = ({"status": "Error", "message": "Incomplete database configuration"}, 503)
+            response = (
+                {"status": "Error", "message": "Incomplete database configuration"},
+                503,
+            )
         else:
             Result.query.first()
             response = ({"status": "OK", "message": "Service is running"}, 200)
     except OperationalError:
-        response = ({"status": "Error", "message": "Unable to connect to the database"}, 503)
+        response = (
+            {"status": "Error", "message": "Unable to connect to the database"},
+            503,
+        )
     except InterfaceError:
-        response = ({"status": "Error", "message": "Incorrect connection configuration"}, 503)
+        response = (
+            {"status": "Error", "message": "Incorrect connection configuration"},
+            503,
+        )
     except Exception as e:
         response = ({"status": "Error", "message": str(e)}, 500)
     return response

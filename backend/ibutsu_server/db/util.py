@@ -4,11 +4,10 @@ Various utility DB functions
 
 from typing import Optional
 
-from ibutsu_server.db import models
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.sql.expression import _literal_as_text
-from sqlalchemy.sql.expression import ClauseElement
-from sqlalchemy.sql.expression import Executable
+from sqlalchemy.sql.expression import ClauseElement, Executable, _literal_as_text
+
+from ibutsu_server.db import models
 
 
 class Explain(Executable, ClauseElement):
@@ -53,7 +52,6 @@ def add_superadmin(
     elif user and not user.is_superadmin:
         user.is_superadmin = True
     else:
-
         user = models.User(
             email=email,
             name=name,

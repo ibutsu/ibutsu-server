@@ -1,9 +1,9 @@
 from datetime import datetime
 
 import connexion
+
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Token
-from ibutsu_server.db.models import User
+from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid

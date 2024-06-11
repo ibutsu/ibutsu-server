@@ -1,8 +1,8 @@
-from ibutsu_server.db.base import Integer
-from ibutsu_server.db.base import session
+from sqlalchemy import func
+
+from ibutsu_server.db.base import Integer, session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters
-from sqlalchemy import func
 
 PAGE_SIZE = 250
 

@@ -7,22 +7,19 @@ from typing import Dict
 
 from celery.utils.log import get_task_logger
 from dateutil import parser
+from lxml import objectify
+
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Artifact
-from ibutsu_server.db.models import Import
-from ibutsu_server.db.models import ImportFile
-from ibutsu_server.db.models import Result
-from ibutsu_server.db.models import Run
+from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
 from ibutsu_server.tasks import task
 from ibutsu_server.tasks.runs import update_run
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.uuid import is_uuid
-from lxml import objectify
-
 
 log = get_task_logger(__name__)
 uuid_pattern = re.compile(
-    "([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})", re.IGNORECASE
+    "([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})",
+    re.IGNORECASE,
 )
 
 
@@ -467,7 +464,6 @@ def run_archive_import(import_):
         import_record.data["run_id"] = [run.id]
         # Loop through any artifacts associated with the run and upload them
         for artifact in run_artifacts:
-
             session.add(
                 Artifact(
                     filename=artifact.name.split("/")[-1],

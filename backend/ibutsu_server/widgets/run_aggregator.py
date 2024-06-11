@@ -1,24 +1,32 @@
 import time
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
-from ibutsu_server.db.base import Float
-from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Run
-from ibutsu_server.filters import apply_filters
-from ibutsu_server.filters import string_to_column
 from sqlalchemy import func
+
+from ibutsu_server.db.base import Float, session
+from ibutsu_server.db.models import Run
+from ibutsu_server.filters import apply_filters, string_to_column
 
 
 def _get_recent_run_data(weeks, group_field, project=None, additional_filters=None):
     """Get all the data from the time period and aggregate the results"""
-    data = {"passed": {}, "skipped": {}, "error": {}, "failed": {}, "xfailed": {}, "xpassed": {}}
+    data = {
+        "passed": {},
+        "skipped": {},
+        "error": {},
+        "failed": {},
+        "xfailed": {},
+        "xpassed": {},
+    }
     delta = timedelta(weeks=weeks).total_seconds()
     current_time = time.time()
     time_period_in_sec = current_time - delta
 
     # create filters for start time and that the group_field exists
-    filters = [f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}", f"{group_field}@y"]
+    filters = [
+        f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}",
+        f"{group_field}@y",
+    ]
     if additional_filters:
         filters.extend(additional_filters.split(","))
     if project:

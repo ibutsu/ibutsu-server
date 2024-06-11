@@ -1,9 +1,7 @@
 from datetime import datetime
 from unittest.mock import patch
 
-from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockProject
-from ibutsu_server.test import MockResult
+from ibutsu_server.test import BaseTestCase, MockProject, MockResult
 
 MOCK_ID_1 = "99fba7d2-4d32-4b9b-b07f-4200c9717661"
 MOCK_ID_2 = "99fba7d2-4d32-4b9b-b07f-4200c9717662"
@@ -72,7 +70,10 @@ class TestWidgetController(BaseTestCase):
         query_string = {
             "filters": ["metadata.component=frontend", "metadata.component=frontend"],
         }
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/widget/compare-runs-view",
             method="GET",

@@ -1,0 +1,7 @@
+line-length = 100
+
+[lint]
+select = ["F", "I", "UP"]
+
+[format]
+quote-style = "double"

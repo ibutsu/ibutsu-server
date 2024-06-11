@@ -2,15 +2,13 @@ import json
 from typing import Optional
 
 import connexion
-from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Import
-from ibutsu_server.db.models import ImportFile
-from ibutsu_server.tasks.importers import run_archive_import
-from ibutsu_server.tasks.importers import run_junit_import
-from ibutsu_server.util.projects import get_project
-from ibutsu_server.util.projects import project_has_user
-from ibutsu_server.util.uuid import validate_uuid
 from werkzeug.datastructures import FileStorage
+
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Import, ImportFile
+from ibutsu_server.tasks.importers import run_archive_import, run_junit_import
+from ibutsu_server.util.projects import get_project, project_has_user
+from ibutsu_server.util.uuid import validate_uuid
 
 
 @validate_uuid
@@ -73,7 +71,12 @@ def add_import(
     if connexion.request.form.get("source"):
         data["source"] = connexion.request.form["source"]
     new_import = Import.from_dict(
-        **{"status": "pending", "filename": import_file.filename, "format": "", "data": data}
+        **{
+            "status": "pending",
+            "filename": import_file.filename,
+            "format": "",
+            "data": data,
+        }
     )
     session.add(new_import)
     session.commit()

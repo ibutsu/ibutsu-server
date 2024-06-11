@@ -1,16 +1,20 @@
 from unittest.mock import patch
 
 from flask import json
-from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockUser
-from ibutsu_server.util.jwt import generate_token
+
 from ibutsu_server.constants import LOCALHOST
+from ibutsu_server.test import BaseTestCase, MockUser
+from ibutsu_server.util.jwt import generate_token
 
 MOCK_ID = "6f7c2d52-54dc-4309-8e2e-c74515d39455"
 MOCK_EMAIL = "test@example.com"
 MOCK_PASSWORD = "my super secret password"
 MOCK_USER = MockUser(
-    id=MOCK_ID, email=MOCK_EMAIL, password=MOCK_PASSWORD, name="Test User", is_superadmin=False
+    id=MOCK_ID,
+    email=MOCK_EMAIL,
+    password=MOCK_PASSWORD,
+    name="Test User",
+    is_superadmin=False,
 )
 
 
@@ -36,7 +40,11 @@ class TestLoginController(BaseTestCase):
         login_details = {"email": MOCK_EMAIL, "password": MOCK_PASSWORD}
         expected_token = generate_token(MOCK_ID)
         mocked_generate_token.return_value = expected_token
-        expected_response = {"name": "Test User", "email": MOCK_EMAIL, "token": expected_token}
+        expected_response = {
+            "name": "Test User",
+            "email": MOCK_EMAIL,
+            "token": expected_token,
+        }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/login",
@@ -77,7 +85,10 @@ class TestLoginController(BaseTestCase):
         Log in to the API
         """
         login_details = {"email": "bad@email.com", "password": MOCK_PASSWORD}
-        expected_response = {"code": "INVALID", "message": "Username and/or password are invalid"}
+        expected_response = {
+            "code": "INVALID",
+            "message": "Username and/or password are invalid",
+        }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         self.mock_user.query.filter_by.return_value.first.return_value = None
         response = self.client.open(
@@ -96,7 +107,10 @@ class TestLoginController(BaseTestCase):
         Log in to the API
         """
         login_details = {"email": MOCK_EMAIL, "password": "bad password"}
-        expected_response = {"code": "INVALID", "message": "Username and/or password are invalid"}
+        expected_response = {
+            "code": "INVALID",
+            "message": "Username and/or password are invalid",
+        }
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/login",

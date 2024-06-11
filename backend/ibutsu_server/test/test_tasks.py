@@ -1,8 +1,7 @@
 import time
 import uuid
 from datetime import datetime
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from ibutsu_server.test import BaseTestCase
 

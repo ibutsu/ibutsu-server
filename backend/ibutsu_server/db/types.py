@@ -2,10 +2,7 @@ from uuid import UUID
 
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
-from sqlalchemy.types import CHAR
-from sqlalchemy.types import JSON
-from sqlalchemy.types import Text
-from sqlalchemy.types import TypeDecorator
+from sqlalchemy.types import CHAR, JSON, Text, TypeDecorator
 
 
 class PortableUUID(TypeDecorator):
@@ -36,11 +33,10 @@ class PortableUUID(TypeDecorator):
             return value
         elif dialect.name == "postgresql":
             return value
+        elif isinstance(value, UUID):
+            return str(value)
         else:
-            if isinstance(value, UUID):
-                return str(value)
-            else:
-                return value
+            return value
 
     def process_result_value(self, value, dialect):
         if value is None:

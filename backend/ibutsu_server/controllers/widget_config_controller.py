@@ -1,14 +1,13 @@
 import connexion
-from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS
-from ibutsu_server.constants import WIDGET_TYPES
+from sqlalchemy import or_
+
+from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, WIDGET_TYPES
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.filters import convert_filter
-from ibutsu_server.util.projects import get_project
-from ibutsu_server.util.projects import project_has_user
+from ibutsu_server.util.projects import get_project, project_has_user
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
-from sqlalchemy import or_
 
 
 def add_widget_config(widget_config=None, token_info=None, user=None):

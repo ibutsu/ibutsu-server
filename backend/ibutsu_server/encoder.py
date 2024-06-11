@@ -1,4 +1,5 @@
 from flask.json.provider import DefaultJSONProvider
+
 from ibutsu_server.models.base_model_ import Model
 
 

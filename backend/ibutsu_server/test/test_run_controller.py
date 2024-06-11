@@ -1,12 +1,11 @@
 from datetime import datetime
 from io import BytesIO
 from unittest import skip
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from flask import json
-from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockRun
+
+from ibutsu_server.test import BaseTestCase, MockRun
 from ibutsu_server.test.test_project_controller import MOCK_PROJECT
 
 MOCK_ID = "6b26876f-bcd9-49f3-b5bd-35f895a345d1"
@@ -71,7 +70,11 @@ class TestRunController(BaseTestCase):
         run_dict = {
             "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
             "duration": 540.05433,
-            "metadata": {"component": "test-component", "env": "local", "project": MOCK_PROJECT.id},
+            "metadata": {
+                "component": "test-component",
+                "env": "local",
+                "project": MOCK_PROJECT.id,
+            },
             "start_time": START_TIME,
             "created": START_TIME,
         }
@@ -99,10 +102,11 @@ class TestRunController(BaseTestCase):
 
         Get a single run by ID
         """
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
-        response = self.client.open(
-            "/api/run/{id}".format(id=MOCK_ID), method="GET", headers=headers
-        )
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        response = self.client.open(f"/api/run/{MOCK_ID}", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         resp = response.json.copy()
         resp["project"] = None
@@ -114,7 +118,10 @@ class TestRunController(BaseTestCase):
         Get a list of the test runs
         """
         query_string = [("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/run", method="GET", headers=headers, query_string=query_string
         )
@@ -156,7 +163,7 @@ class TestRunController(BaseTestCase):
             "Authorization": f"Bearer {self.jwt_token}",
         }
         response = self.client.open(
-            "/api/run/{id}".format(id=MOCK_ID),
+            f"/api/run/{MOCK_ID}",
             method="PUT",
             headers=headers,
             data=json.dumps(run_dict),

@@ -1,9 +1,7 @@
 import connexion
+
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Dashboard
-from ibutsu_server.db.models import Project
-from ibutsu_server.db.models import User
-from ibutsu_server.db.models import WidgetConfig
+from ibutsu_server.db.models import Dashboard, Project, User, WidgetConfig
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.query import get_offset

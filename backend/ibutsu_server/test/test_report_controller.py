@@ -1,9 +1,8 @@
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from flask import json
-from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockReport
+
+from ibutsu_server.test import BaseTestCase, MockReport
 
 MOCK_ID = "751162a7-b0e0-448e-9af3-676d1a48b0ca"
 MOCK_PARAMS = {"type": "csv", "source": "local"}
@@ -65,10 +64,11 @@ class TestReportController(BaseTestCase):
 
         Get a report
         """
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
-        response = self.client.open(
-            "/api/report/{id}".format(id=MOCK_ID), method="GET", headers=headers
-        )
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        response = self.client.open(f"/api/report/{MOCK_ID}", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         assert response.json == MOCK_REPORT_DICT
 
@@ -82,7 +82,10 @@ class TestReportController(BaseTestCase):
         mock_limit.return_value.all.return_value = [MOCK_REPORT]
         self.mock_report.query.order_by.return_value.offset.return_value.limit = mock_limit
         query_string = [("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         with patch(
             "ibutsu_server.controllers.report_controller.get_project_id"
         ) as mocked_get_project_id:
@@ -92,7 +95,12 @@ class TestReportController(BaseTestCase):
             )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         expected_response = {
-            "pagination": {"page": 56, "pageSize": 56, "totalItems": 1, "totalPages": 1},
+            "pagination": {
+                "page": 56,
+                "pageSize": 56,
+                "totalItems": 1,
+                "totalPages": 1,
+            },
             "reports": [MOCK_REPORT_DICT],
         }
         assert response.json == expected_response

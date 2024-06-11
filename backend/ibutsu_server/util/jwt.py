@@ -1,14 +1,14 @@
 import time
 
 from flask import current_app
-from ibutsu_server.db.models import Token
-from ibutsu_server.errors import IbutsuError
 from jose.constants import ALGORITHMS
 from jose.exceptions import JWTError
 from jose.jwt import decode as jwt_decode
 from jose.jwt import encode as jwt_encode
 from werkzeug.exceptions import Unauthorized
 
+from ibutsu_server.db.models import Token
+from ibutsu_server.errors import IbutsuError
 
 JWT_ISSUER = "org.ibutsu-project.server"
 JWT_SECRET = ""

@@ -1,9 +1,8 @@
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from flask import json
-from ibutsu_server.test import BaseTestCase
-from ibutsu_server.test import MockGroup
+
+from ibutsu_server.test import BaseTestCase, MockGroup
 
 MOCK_ID = "c68506e2-202e-4193-a47d-33f1571d4b3e"
 MOCK_GROUP = MockGroup(id=MOCK_ID, name="Example group", data={})
@@ -58,10 +57,11 @@ class TestGroupController(BaseTestCase):
 
         Get a group
         """
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
-        response = self.client.open(
-            "/api/group/{id}".format(id=MOCK_ID), method="GET", headers=headers
-        )
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        response = self.client.open(f"/api/group/{MOCK_ID}", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         self.assert_equal(response.json, MOCK_GROUP_DICT)
 
@@ -71,7 +71,10 @@ class TestGroupController(BaseTestCase):
         Get a list of groups
         """
         query_string = [("page", 56), ("pageSize", 56)]
-        headers = {"Accept": "application/json", "Authorization": f"Bearer {self.jwt_token}"}
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
         response = self.client.open(
             "/api/group", method="GET", headers=headers, query_string=query_string
         )
@@ -80,7 +83,12 @@ class TestGroupController(BaseTestCase):
             response.json,
             {
                 "groups": [MOCK_GROUP_DICT],
-                "pagination": {"page": 56, "pageSize": 56, "totalItems": 1, "totalPages": 1},
+                "pagination": {
+                    "page": 56,
+                    "pageSize": 56,
+                    "totalItems": 1,
+                    "totalPages": 1,
+                },
             },
         )
 
@@ -95,7 +103,7 @@ class TestGroupController(BaseTestCase):
             "Authorization": f"Bearer {self.jwt_token}",
         }
         response = self.client.open(
-            "/api/group/{id}".format(id=MOCK_ID),
+            f"/api/group/{MOCK_ID}",
             method="PUT",
             headers=headers,
             data=json.dumps({"name": "Changed name"}),

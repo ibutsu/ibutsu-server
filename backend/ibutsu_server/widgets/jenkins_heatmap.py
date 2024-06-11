@@ -1,14 +1,9 @@
-from ibutsu_server.constants import HEATMAP_MAX_BUILDS
-from ibutsu_server.constants import HEATMAP_RUN_LIMIT
-from ibutsu_server.db.base import Float
-from ibutsu_server.db.base import Integer
-from ibutsu_server.db.base import session
+from sqlalchemy import case, desc, func
+
+from ibutsu_server.constants import HEATMAP_MAX_BUILDS, HEATMAP_RUN_LIMIT
+from ibutsu_server.db.base import Float, Integer, session
 from ibutsu_server.db.models import Run
-from ibutsu_server.filters import apply_filters
-from ibutsu_server.filters import string_to_column
-from sqlalchemy import case
-from sqlalchemy import desc
-from sqlalchemy import func
+from ibutsu_server.filters import apply_filters, string_to_column
 
 NO_RUN_TEXT = "None"
 NO_PASS_RATE_TEXT = "Build failed"
@@ -37,7 +32,10 @@ def _calculate_slope(x_data):
 
 
 def _get_builds(job_name, builds, project=None, additional_filters=None):
-    filters = [f"metadata.jenkins.job_name={job_name}", "metadata.jenkins.build_number@y"]
+    filters = [
+        f"metadata.jenkins.job_name={job_name}",
+        "metadata.jenkins.build_number@y",
+    ]
     if additional_filters:
         filters.extend(additional_filters.split(","))
     if project:
@@ -162,7 +160,12 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
     data = {datum.group_field: [] for datum in query_data}
     for datum in query_data:
         data[datum.group_field].append(
-            [round(datum.pass_percent, 2), datum.run_id, datum.annotations, datum.build_number]
+            [
+                round(datum.pass_percent, 2),
+                datum.run_id,
+                datum.annotations,
+                datum.build_number,
+            ]
         )
     # compute the slope for each component
     data_with_slope = data.copy()
@@ -198,7 +201,12 @@ def _pad_heatmap(heatmap, builds_in_db):
 
 
 def get_jenkins_heatmap(
-    job_name, builds, group_field, count_skips=False, project=None, additional_filters=None
+    job_name,
+    builds,
+    group_field,
+    count_skips=False,
+    project=None,
+    additional_filters=None,
 ):
     """Generate JSON data for a heatmap of Jenkins runs"""
     heatmap, builds_in_db = _get_heatmap(

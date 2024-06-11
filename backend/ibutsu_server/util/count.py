@@ -1,9 +1,8 @@
-""" Utility functions for counting rows in large tables"""
+"""Utility functions for counting rows in large tables"""
 
 from contextlib import contextmanager
 
-from ibutsu_server.constants import COUNT_ESTIMATE_LIMIT
-from ibutsu_server.constants import COUNT_TIMEOUT
+from ibutsu_server.constants import COUNT_ESTIMATE_LIMIT, COUNT_TIMEOUT
 from ibutsu_server.db.base import session
 from ibutsu_server.db.util import Explain
 
