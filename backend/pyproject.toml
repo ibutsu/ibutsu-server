@@ -1,0 +1,115 @@
+[project]
+version = "2.5.8"
+name = "ibutsu_server"
+description = "A system to store and query test results and artifacts"
+authors = [
+    {name = "Raoul Snyman"},
+    {name = "John Dupuy", email = "jdupuy26@gmail.com"},
+]
+maintainers = [
+    {name = "Mike Shriver", email = "mshriver@redhat.com"},
+    {name = "Egor Shamardin", email = "eshamard@redhat.com"},
+]
+keywords = ["OpenAPI", "Ibutsu"]
+requires-python = ">=3.9"
+
+
+
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: Pytest",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Testing",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "alembic==1.13.1",
+    "celery==5.4.0",
+    "connexion[swagger-ui]==2.14.2",
+    "flask_bcrypt==1.0.1",
+    "flask_cors==4.0.0",
+    "flask_mail==0.9.1",
+    "Flask>=2,<2.3.0",
+    "Flask-SQLAlchemy<3.0",
+    "flatdict==4.0.1",
+    "google-api-python-client==2.126.0",
+    "google-auth==2.29.0",
+    "google-auth-httplib2==0.2.0",
+    "google-auth-oauthlib==1.2.0",
+    "gunicorn==22.0.0",
+    "kombu==5.3.7",
+    "lxml==5.2.1",
+    "psycopg2==2.9.9",
+    "pymongo==4.6.3",
+    "python-jose[cryptography]==3.3.0",
+    "python-magic==0.4.27",
+    "python_dateutil==2.9.0.post0",
+    "PyYAML==6.0.1",
+    "redis==5.0.3",
+    "setuptools==50.3.2",
+    "sqlalchemy-json==0.7.0",
+    "sqlalchemy<1.4",
+    "swagger-ui-bundle==0.0.9",
+    "vine==5.1.0",
+    "werkzeug==2.2.3",
+]
+
+[project.urls]
+Source = "https://github.com/ibutsu/ibutsu-server"
+
+
+[project.optional-dependencies]
+test = [
+  "hatch",
+  "pre-commit",
+  "pytest",
+  "Flask-Testing",
+  "coverage",
+  "pluggy",
+  "py",
+  "pytest-mock",
+  "randomize",
+]
+
+[project.scripts]
+ibutsu_server = "ibutsu_server.__main__:main"
+
+[project.entry-points.pytest11]
+ibutsu_server = "ibutsu_server.pytest_plugin"
+
+[build-system]
+requires = [
+    "hatchling",
+]
+build-backend = "hatchling.build"
+
+[tool.hatch.setuptools]
+raw-options.include_package_data = true
+raw-options.package_data = {"" = ["openapi/openapi.yaml"]}
+
+# move to src layout
+# don't package tests, so they can be run without editable install
+[tool.hatch.build.targets.wheel]
+packages = ["ibutsu_server"]
+exclude = ["docker/"]
+
+
+[tool.hatch.envs.default]
+python = "3.9"
+
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["F", "I", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"

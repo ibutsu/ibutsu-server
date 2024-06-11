@@ -1,7 +1,7 @@
 import os
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import flask
 from connexion import App
@@ -24,7 +24,7 @@ from ibutsu_server.util.jwt import decode_token
 FRONTEND_PATH = Path("/app/frontend")
 
 
-def maybe_sql_url(conf: Dict[str, Any]) -> Optional[SQLA_URL]:
+def maybe_sql_url(conf: dict[str, Any]) -> Optional[SQLA_URL]:
     host = conf.get("host") or conf.get("hostname")
     database = conf.get("db") or conf.get("database")
     if host and database:

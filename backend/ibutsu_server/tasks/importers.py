@@ -3,7 +3,6 @@ import re
 import tarfile
 from datetime import datetime
 from io import BytesIO
-from typing import Dict
 
 from celery.utils.log import get_task_logger
 from dateutil import parser
@@ -143,7 +142,7 @@ def _add_artifacts(result, testcase, traceback, session):
     session.commit()
 
 
-def _get_properties(xml_element: objectify.Element) -> Dict:
+def _get_properties(xml_element: objectify.Element) -> dict:
     """Get the properties from an XML element"""
     if not hasattr(xml_element, "properties"):
         return {}
