@@ -190,7 +190,7 @@ podman run -d \
        -w /mnt \
        -v./frontend:/mnt/:Z \
        node:18 \
-       /bin/bash -c 'npm install yarn && yarn install && CI=1 yarn devserver' > /dev/null
+       /bin/bash -c 'npm install --no-save --no-package-lock yarn && yarn install && CI=1 yarn devserver' > /dev/null
 echo "done."
 echo -n "Waiting for frontend to respond..."
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:3000); do
