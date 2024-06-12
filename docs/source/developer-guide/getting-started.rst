@@ -8,7 +8,7 @@ Requirements
 
 To run the server locally, you will need the following installed:
 
-- Python 3.8+
+- Python 3.9+
 - NodeJS
 - yarn
 - redis (strongly recommend a container)
@@ -19,10 +19,12 @@ To run the containers, you will need either one of the following installed:
 - Docker and Docker Compose
 - Podman
 
+Note when using Podman 5+, default networking will not resolve ``localhost``, and ``127.0.0.1`` should be used.
+
 Running Locally
 ---------------
 
-To run the server locally for development, you can use ``podman`` or Docker Compose.
+To run the server locally for development, you can use ``podman`` or ``docker-compose``.
 
 podman
 ^^^^^^
@@ -67,11 +69,17 @@ To see all the options provided by the ``ibutsu-pod.sh`` script, use the ``-h`` 
 Docker Compose
 ^^^^^^^^^^^^^^
 
-There is a pre-created Docker Compose file for running a development environment locally:
+There is a pre-created Docker Compose file for running a development environment locally.
+
+The ``docker-compose.dev.yaml`` file will run python containers and do a local install for backend and frontend.
+
+The ``docker-compose.yaml`` file will build containers using the appropriate dockerfiles and run the built images.
 
 .. code-block:: shell
 
    $ docker-compose -f docker-compose.dev.yaml
+   # OR
+   $ docker-compose -f docker-compose.yaml
 
 Without Containers
 ^^^^^^^^^^^^^^^^^^
@@ -165,8 +173,10 @@ You'll want to set up a virtual environment for the backend, and install the dep
 .. code:: shell
 
     cd ibutsu-server/backend
-    virtualenv .ibutsu-env --python python3
-    .ibutsu-env/bin/pip install -r requirements.txt
+    python3.9 -m venv .ibutsu-env
+    source .ibtusu-env/bin/activate/
+    pip install -U pip wheel
+    pip install -U .
 
 
 Run Celery Worker

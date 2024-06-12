@@ -1,9 +1,9 @@
-version: '3'
 services:
   frontend:
+    hostname: frontend
     environment:
       NODE_ENV: production
-      REACT_APP_SERVER_URL: http://localhost:8080/api
+      REACT_APP_SERVER_URL: http://127.0.0.1:8080/api
     build:
       context: ./frontend
       dockerfile: docker/Dockerfile.frontend
@@ -11,25 +11,39 @@ services:
     ports:
       - "3000:8080"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
   backend:
+    hostname: backend
     environment:
+      JWT_SECRET: jwtsecret
       APP_CONFIG: config.py
       POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
       POSTGRESQL_DATABASE: ibutsu
       POSTGRESQL_USER: ibutsu
       POSTGRESQL_PASSWORD: ibutsu
       CELERY_BROKER_URL: 'redis://redis'
       CELERY_RESULT_BACKEND: 'redis://redis'
+      IBUTSU_SUPERADMIN_EMAIL: admin@example.com
+      IBUTSU_SUPERADMIN_PASSWORD: admin12345
+      IBUTSU_SUPERADMIN_NAME: Administrator
     build:
       context: ./backend
       dockerfile: docker/Dockerfile.backend
     image: ibutsu/backend
     ports:
       - "8080:8080"
+    healthcheck:
+      test: curl --output /dev/null --silent --head --fail http://backend:8080/api/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
   postgres:
     container_name: postgres
     hostname: postgres
@@ -37,12 +51,20 @@ services:
       POSTGRES_USER: ibutsu
       POSTGRES_PASSWORD: ibutsu
       POSTGRES_DB: ibutsu
-    image: postgres:latest
+    image: postgres:15
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ibutsu" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   worker:
     environment:
       APP_SCRIPT: celery_worker.sh
       POSTGRESQL_HOST: postgres
       POSTGRESQL_DATABASE: ibutsu
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_USER: ibutsu
+      POSTGRESQL_PASSWORD: ibutsu
       CELERY_BROKER_URL: 'redis://redis'
       CELERY_RESULT_BACKEND: 'redis://redis'
     build:
@@ -50,9 +72,12 @@ services:
       dockerfile: docker/Dockerfile.worker
     image: ibutsu/worker
     depends_on:
-      - backend
-      - postgres
-      - redis
+      backend:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
   scheduler:
     build:
       context: ./backend
@@ -61,11 +86,17 @@ services:
     environment:
       POSTGRESQL_HOST: postgres
       POSTGRESQL_DATABASE: ibutsu
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_USER: ibutsu
+      POSTGRESQL_PASSWORD: ibutsu
       CELERY_BROKER_URL: 'redis://redis'
       CELERY_RESULT_BACKEND: 'redis://redis'
     depends_on:
-      - backend
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      backend:
+        condition: service_healthy
   redis:
     image: redis:latest

@@ -1,15 +1,14 @@
-FROM registry.access.redhat.com/ubi8/python-39:1-184.1716989688
+FROM registry.access.redhat.com/ubi8/python-39:1
+
+ENV UPGRADE_PIP_TO_LATEST=1
 
 USER 0
 RUN dnf install -y jq-1.6 && \
     dnf clean all && \
-    pip install -U --no-cache-dir schemathesis~=3
-
-
-WORKDIR /
+    pip install -U --no-cache-dir schemathesis~=3.29
 
 USER 1001
-
+WORKDIR ${APP_ROOT}/src
 COPY docker/start_fuzz_testing.sh .
 
 CMD ["./start_fuzz_testing.sh"]

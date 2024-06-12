@@ -123,7 +123,7 @@ podman run -dt \
        $POSTGRES_EXTRA_ARGS \
        --name ibutsu-postgres \
        --rm \
-       postgres:latest
+       postgres:15
 echo "done."
 echo -n "Adding redis to the pod:    "
 podman run -dt \
@@ -148,11 +148,11 @@ podman run -d \
        -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
        $BACKEND_EXTRA_ARGS \
        -w /mnt \
-       -v./backend:/mnt/:Z \
+       -v./backend:/mnt/:z \
        $PYTHON_IMAGE \
-       /bin/bash -c 'python3 -m venv .backend_env && source .backend_env/bin/activate &&
-                     pip3 install -U pip &&
-                     pip3 install . &&
+       /bin/bash -c 'python -m venv .backend_env && source .backend_env/bin/activate &&
+                     pip install -U pip wheel &&
+                     pip install . &&
                      python -m ibutsu_server --host 0.0.0.0'
 echo "done."
 echo -n "Waiting for backend to respond: "
@@ -176,10 +176,10 @@ podman run -d \
        -e CELERY_BROKER_URL=redis://127.0.0.1:6379 \
        -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
        -w /mnt \
-       -v./backend:/mnt/:Z \
+       -v./backend:/mnt/:z \
        $PYTHON_IMAGE \
-       /bin/bash -c 'pip3 install -U pip setuptools wheel &&
-                     pip3 install -r requirements.txt &&
+       /bin/bash -c 'pip install -U pip wheel &&
+                     pip install . &&
                      ./celery_worker.sh'
 echo "done."
 echo -n "Adding frontend to the pod:    "
