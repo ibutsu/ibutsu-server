@@ -9,7 +9,7 @@ CAN_PUSH=false
 CAN_DELETE=false
 PRINT_NEW_VERSION=false
 GENERATE_CHANGELOG=false
-VERSIONED_FILES=( "$BASE_DIR/backend/setup.py" "$BASE_DIR/backend/ibutsu_server/openapi/openapi.yaml" "$BASE_DIR/frontend/package.json" )
+VERSIONED_FILES=( "$BASE_DIR/backend/pyproject.toml" "$BASE_DIR/backend/ibutsu_server/openapi/openapi.yaml" "$BASE_DIR/frontend/package.json" )
 
 function print_usage() {
     echo "Usage: make-release.sh [-h|--help] [-c|--commit] [-p|--push] [-d|--delete] [-g|--changelog] [VERSION]"

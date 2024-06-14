@@ -1,5 +1,0 @@
-[console_scripts]
-ibutsu_server = ibutsu_server.__main__:main
-
-[pytest11]
-ibutsu_server = ibutsu_server.pytest_plugin

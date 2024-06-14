@@ -1,12 +1,20 @@
-version: '3'
 services:
   postgres:
     environment:
       POSTGRES_USER: ibutsu
       POSTGRES_PASSWORD: ibutsu
       POSTGRES_DB: ibutsu
-    image: postgres:latest
+    image: postgres:15
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ibutsu" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:latest
+
   backend:
+    hostname: backend
     environment:
       APP_CONFIG: config.py
       POSTGRESQL_HOST: postgres
@@ -23,12 +31,20 @@ services:
       context: ./backend
       dockerfile: docker/Dockerfile.backend
     image: ibutsu/backend
-    command: /bin/bash -c 'sleep 30 && python -m ibutsu_server --host 0.0.0.0'
+    command: /bin/bash -c 'python -m ibutsu_server --host 0.0.0.0'
     ports:
       - "8080:8080"
+    healthcheck:
+      test: curl --output /dev/null --silent --head --fail http://backend:8080/api/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   worker:
     environment:
       APP_SCRIPT: celery_worker.sh
@@ -46,11 +62,13 @@ services:
       dockerfile: docker/Dockerfile.worker
     image: ibutsu/worker
     depends_on:
-      - backend
-      - postgres
-      - redis
-  redis:
-    image: redis:latest
+      backend:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   api-tests:
     environment:
       IBUTSU_SUPERADMIN_EMAIL: admin@example.com
@@ -61,4 +79,5 @@ services:
       dockerfile: docker/Dockerfile.fuzz_testing
     image: ibutsu/fuzz_testing
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy

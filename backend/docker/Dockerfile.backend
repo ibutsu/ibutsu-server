@@ -1,15 +1,16 @@
 # hadolint global ignore=DL3013,DL3041
 FROM registry.access.redhat.com/ubi8/python-39:1-184.1716989688
 
-WORKDIR /app
+ENV UPGRADE_PIP_TO_LATEST=1
 
 USER 0
+COPY . /app
+RUN /usr/bin/fix-permissions /app
 
-COPY . .
+WORKDIR /app
 RUN dnf install --nodocs -y --disableplugin=subscription-manager gcc libpq-devel && \
     dnf clean all && \
-    pip3 install --no-cache-dir gunicorn && \
-    pip3 install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir . && \
     chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 
 USER 1001

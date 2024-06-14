@@ -111,10 +111,10 @@ echo "Stop the pod by running: 'podman pod rm -f ${POD_NAME}'"
 echo ""
 
 # Get the pods up and running
-echo -n "Creating ibutsu pod..."
-podman pod create -p 8080:8080 -p 3000:3000 --name $POD_NAME > /dev/null
+echo -n "Creating ibutsu pod:    "
+podman pod create -p 8080:8080 -p 3000:3000 --name $POD_NAME
 echo "done."
-echo -n "Adding postgres to the pod..."
+echo -n "Adding postgres to the pod:    "
 podman run -dt \
        --pod $POD_NAME \
        -e POSTGRES_USER=ibutsu \
@@ -123,17 +123,17 @@ podman run -dt \
        $POSTGRES_EXTRA_ARGS \
        --name ibutsu-postgres \
        --rm \
-       postgres:latest > /dev/null
+       postgres:15
 echo "done."
-echo -n "Adding redis to the pod..."
+echo -n "Adding redis to the pod:    "
 podman run -dt \
        --pod $POD_NAME \
        $REDIS_EXTRA_ARGS \
        --name ibutsu-redis \
        --rm \
-       redis:latest > /dev/null
+       redis:latest
 echo "done."
-echo -n "Adding backend to the pod..."
+echo -n "Adding backend to the pod:    "
 podman run -d \
        --rm \
        --pod $POD_NAME \
@@ -148,21 +148,21 @@ podman run -d \
        -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
        $BACKEND_EXTRA_ARGS \
        -w /mnt \
-       -v./backend:/mnt/:Z \
+       -v./backend:/mnt/:z \
        $PYTHON_IMAGE \
-       /bin/bash -c 'python3 -m venv .backend_env && source .backend_env/bin/activate &&
-                     pip3 install -U pip setuptools wheel &&
-                     pip3 install -r requirements.txt &&
-                     python -m ibutsu_server --host 0.0.0.0' > /dev/null
+       /bin/bash -c 'python -m venv .backend_env && source .backend_env/bin/activate &&
+                     pip install -U pip wheel &&
+                     pip install . &&
+                     python -m ibutsu_server --host 0.0.0.0'
 echo "done."
-echo -n "Waiting for backend to respond..."
+echo -n "Waiting for backend to respond: "
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); do
   echo -n '.'
   sleep 5
 done
-echo "up."
+echo "\nbackend up."
 # Note the COLUMNS=80 env var is for https://github.com/celery/celery/issues/5761
-echo -n "Adding celery worker to the pod..."
+echo -n "Adding celery worker to the pod:    "
 podman run -d \
        --rm \
        --pod $POD_NAME \
@@ -176,13 +176,13 @@ podman run -d \
        -e CELERY_BROKER_URL=redis://127.0.0.1:6379 \
        -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
        -w /mnt \
-       -v./backend:/mnt/:Z \
+       -v./backend:/mnt/:z \
        $PYTHON_IMAGE \
-       /bin/bash -c 'pip3 install -U pip setuptools wheel &&
-                     pip3 install -r requirements.txt &&
-                     ./celery_worker.sh' > /dev/null
+       /bin/bash -c 'pip install -U pip wheel &&
+                     pip install . &&
+                     ./celery_worker.sh'
 echo "done."
-echo -n "Adding frontend to the pod..."
+echo -n "Adding frontend to the pod:    "
 podman run -d \
        --rm \
        --pod $POD_NAME \
@@ -190,14 +190,14 @@ podman run -d \
        -w /mnt \
        -v./frontend:/mnt/:Z \
        node:18 \
-       /bin/bash -c 'npm install --no-save --no-package-lock yarn && yarn install && CI=1 yarn devserver' > /dev/null
+       /bin/bash -c 'npm install --no-save --no-package-lock yarn && yarn install && CI=1 yarn devserver'
 echo "done."
-echo -n "Waiting for frontend to respond..."
+echo -n "Waiting for frontend to respond: "
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:3000); do
   printf '.'
   sleep 5
 done
-echo "done."
+echo "\nfrontend up."
 
 if [[ $CREATE_PROJECT = true ]]; then
     echo -n "Creating default project..."

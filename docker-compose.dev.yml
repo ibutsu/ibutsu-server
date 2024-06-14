@@ -1,20 +1,18 @@
-version: '3'
 services:
-  frontend:
+  postgres:
     environment:
-      NODE_ENV: production
-      REACT_APP_SERVER_URL: http://localhost:8080/api
-    image: node:18
-    command: /bin/bash -c 'yarn install && yarn run devserver'
-    working_dir: /mnt
-    user: ${UID:-1000}
-    volumes:
-      - "./frontend:/mnt:z"
-    ports:
-      - "3000:3000"
-    depends_on:
-      backend:
-        condition: service_healthy
+      POSTGRES_USER: ibutsu
+      POSTGRES_PASSWORD: ibutsu
+      POSTGRES_DB: ibutsu
+    image: postgres:15
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ibutsu" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  redis:
+    image: redis:latest
+
   backend:
     environment:
       - JWT_SECRET=jwtsecret
@@ -29,8 +27,12 @@ services:
       - IBUTSU_SUPERADMIN_PASSWORD=admin12345
       - IBUTSU_SUPERADMIN_NAME=Administrator
       - HOME=/mnt
-    image: python:3.9
-    command: /bin/bash -c 'python -m venv .backend_env && source .backend_env/bin/activate && pip install -U pip setuptools wheel && pip install -r requirements.txt && python -m ibutsu_server --host 0.0.0.0'
+    image: registry.access.redhat.com/ubi8/python-39
+    command: >
+      /bin/bash -c
+        "pip install -U pip setuptools wheel &&
+        pip install . &&
+        python -m ibutsu_server --host 0.0.0.0"
     working_dir: /mnt
     volumes:
       - "./backend:/mnt:z"
@@ -43,10 +45,11 @@ services:
       redis:
         condition: service_started
     healthcheck:
-      test: curl --output /dev/null --silent --head --fail http://localhost:8080/api/health
+      test: curl --output /dev/null --silent --head --fail http://127.0.0.1:8080/api/health
       interval: 10s
       timeout: 10s
       retries: 5
+
   worker:
     environment:
       - COLUMNS=80
@@ -58,8 +61,12 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379
       - CELERY_RESULT_BACKEND=redis://redis:6379
       - HOME=/mnt
-    image: python:3.9
-    command: /bin/bash -c 'python -m venv .worker_env && source .worker_env/bin/activate && pip install -U pip setuptools wheel && pip install -r requirements.txt && ./celery_worker.sh'
+    image: registry.access.redhat.com/ubi8/python-39
+    command: >
+      /bin/bash -c
+        "pip install -U pip setuptools wheel &&
+        pip install . &&
+        ./celery_worker.sh"
     working_dir: /mnt
     volumes:
       - "./backend:/mnt:z"
@@ -71,16 +78,23 @@ services:
         condition: service_started
       backend:
         condition: service_healthy
-  postgres:
+
+  frontend:
     environment:
-      POSTGRES_USER: ibutsu
-      POSTGRES_PASSWORD: ibutsu
-      POSTGRES_DB: ibutsu
-    image: postgres:15
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ibutsu" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-  redis:
-    image: redis:latest
+      NODE_ENV: production
+      REACT_APP_SERVER_URL: http://127.0.0.1:8080/api
+    image: node:18
+    command: >
+      /bin/bash -c
+        "npm install --no-save --no-package-lock yarn &&
+        yarn install &&
+        yarn run devserver"
+    working_dir: /mnt
+    user: "0"
+    volumes:
+      - "./frontend:/mnt:z"
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy

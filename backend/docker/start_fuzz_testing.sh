@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/bin/bash -x
 
-# wait for the backend to start up
-timeout 120 bash -c 'until printf "" 2>>/dev/null >>/dev/tcp/backend/8080; do sleep 3; done'
+# Make sure the backend is already running. docker-compose-fuzz does this with depends_on
 
 # get the auth token
+echo "Getting fuzz token... "
 response=$(curl -s -X POST http://backend:8080/api/login \
     -H 'accept: application/json' \
     -H 'Content-Type: application/json' \
@@ -11,5 +11,12 @@ response=$(curl -s -X POST http://backend:8080/api/login \
 
 token=$(jq -r '.token' <<< "${response}")
 
+echo "Fuzz token acquired"
+
 # ignore the health endpoint, because it does return 5xx
-st run -E ^\(?\!/api/health\).* http://backend:8080/api/openapi.json -H "Authorization: Bearer ${token}" --report /reports/api-tests.tar.gz --exitfirst
+st run -E ^\(?\!/api/health\).* \
+  http://backend:8080/api/openapi.json \
+  -H "Authorization: Bearer ${token}" \
+  --report reports/api-tests.tar.gz \
+  --exitfirst \
+  --wait-for-schema 60
