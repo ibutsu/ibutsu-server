@@ -160,7 +160,7 @@ until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); d
   echo -n '.'
   sleep 5
 done
-echo "\nbackend up."
+echo "backend up."
 # Note the COLUMNS=80 env var is for https://github.com/celery/celery/issues/5761
 echo -n "Adding celery worker to the pod:    "
 podman run -d \
@@ -190,14 +190,16 @@ podman run -d \
        -w /mnt \
        -v./frontend:/mnt/:Z \
        node:18 \
-       /bin/bash -c 'npm install --no-save --no-package-lock yarn && yarn install && CI=1 yarn devserver'
+       /bin/bash -c "npm install --no-save --no-package-lock yarn && 
+         yarn install && 
+         CI=1 yarn devserver"
 echo "done."
 echo -n "Waiting for frontend to respond: "
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:3000); do
   printf '.'
   sleep 5
 done
-echo "\nfrontend up."
+echo "frontend up."
 
 if [[ $CREATE_PROJECT = true ]]; then
     echo -n "Creating default project..."
