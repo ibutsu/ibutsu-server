@@ -9,6 +9,7 @@ from ibutsu_server.tasks.reports import REPORTS
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 
 def _build_report_response(id_):
@@ -44,7 +45,7 @@ def add_report(report_parameters=None):
     :rtype: Report
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     report_parameters = connexion.request.json
     if report_parameters["type"] not in REPORTS:
         return "Bad request, report type does not exist", 400

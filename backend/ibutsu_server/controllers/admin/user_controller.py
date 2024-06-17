@@ -7,6 +7,7 @@ from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.admin import check_user_is_admin
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 HIDDEN_FIELDS = ["_password", "password", "activation_code"]
 
@@ -63,7 +64,7 @@ def admin_add_user(new_user=None, token_info=None, user=None):
     """Create a new user in the system"""
     check_user_is_admin(user)
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     new_user = User.from_dict(**connexion.request.get_json())
     user_exists = User.query.filter_by(email=new_user.email).first()
     if user_exists:
@@ -78,7 +79,7 @@ def admin_update_user(id_, body=None, user_info=None, token_info=None, user=None
     """Update a single user in the system"""
     check_user_is_admin(user)
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     user_dict = connexion.request.get_json()
     projects = user_dict.pop("projects", [])
     requested_user = User.query.get(id_)

@@ -1,3 +1,4 @@
+from http import HTTPStatus
 LOCALHOST = "127.0.0.1"
 
 OAUTH_CONFIG = {
@@ -394,3 +395,5 @@ WIDGET_TYPES = {
         "type": "widget",
     },
 }
+
+RESPONSE_JSON_REQ = f"{HTTPStatus.BAD_REQUEST.phrase} JSON required", HTTPStatus.BAD_REQUEST

@@ -7,6 +7,7 @@ from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import add_user_filter, project_has_user
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 
 def add_project(project=None, token_info=None, user=None):
@@ -18,7 +19,7 @@ def add_project(project=None, token_info=None, user=None):
     :rtype: Project
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     project = Project.from_dict(**connexion.request.get_json())
     # check if project already exists
     if project.id and Project.query.get(project.id):
@@ -114,7 +115,7 @@ def update_project(id_, project=None, token_info=None, user=None, **kwargs):
     :rtype: Project
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     if not is_uuid(id_):
         id_ = convert_objectid_to_uuid(id_)
     project = Project.query.get(id_)
