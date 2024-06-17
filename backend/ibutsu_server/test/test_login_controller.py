@@ -28,6 +28,9 @@ class TestLoginController(BaseTestCase):
         self.mock_user = self.user_patcher.start()
         self.mock_user.query.filter_by.return_value.first.return_value = MOCK_USER
 
+        self.headers_no_auth = self.headers.copy()
+        self.headers_no_auth.pop("Authorization")
+
     def tearDown(self):
         """Teardown the mocks"""
         self.user_patcher.stop()
@@ -46,15 +49,15 @@ class TestLoginController(BaseTestCase):
             "email": MOCK_EMAIL,
             "token": expected_token,
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
         response = self.client.open(
             "/api/login",
             method="POST",
-            headers=headers,
+            headers=self.headers_no_auth,
             data=json.dumps(login_details),
             content_type="application/json",
         )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
         assert response.json == expected_response
 
     def test_login_empty_request(self):
@@ -69,15 +72,14 @@ class TestLoginController(BaseTestCase):
             "title": HTTPStatus.BAD_REQUEST.phrase,
             "type": "about:blank",
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/login",
             method="POST",
-            headers=headers,
+            headers=self.headers_no_auth,
             data=json.dumps(login_details),
             content_type="application/json",
         )
-        self.assert_400(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_400(response)
         assert response.json == expected_response
 
     def test_login_no_user(self):
@@ -90,16 +92,15 @@ class TestLoginController(BaseTestCase):
             "code": "INVALID",
             "message": "Username and/or password are invalid",
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         self.mock_user.query.filter_by.return_value.first.return_value = None
         response = self.client.open(
             "/api/login",
             method="POST",
-            headers=headers,
+            headers=self.headers_no_auth,
             data=json.dumps(login_details),
             content_type="application/json",
         )
-        self.assert_401(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_401(response)
         assert response.json == expected_response
 
     def test_login_bad_password(self):
@@ -112,15 +113,14 @@ class TestLoginController(BaseTestCase):
             "code": "INVALID",
             "message": "Username and/or password are invalid",
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/login",
             method="POST",
-            headers=headers,
+            headers=self.headers_no_auth,
             data=json.dumps(login_details),
             content_type="application/json",
         )
-        self.assert_401(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_401(response)
         assert response.json == expected_response
 
     def test_support(self):
@@ -133,14 +133,13 @@ class TestLoginController(BaseTestCase):
             "facebook": False,
             "gitlab": True,
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/login/support",
             method="GET",
-            headers=headers,
+            headers=self.headers_no_auth,
             content_type="application/json",
         )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
         assert response.json == expected_response
 
     def test_config_gitlab(self):
@@ -151,12 +150,11 @@ class TestLoginController(BaseTestCase):
             "redirect_uri": f"http://{LOCALHOST}:8080/api/login/auth/gitlab",
             "scope": "read_user",
         }
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
         response = self.client.open(
             "/api/login/config/gitlab",
             method="GET",
-            headers=headers,
+            headers=self.headers_no_auth,
             content_type="application/json",
         )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
         assert response.json == expected_response

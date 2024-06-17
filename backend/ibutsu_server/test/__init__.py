@@ -34,6 +34,9 @@ def mock_task(*args, **kwargs):
         return decorate
 
 
+MESSAGE = "Response body is : %s"
+
+
 class BaseTestCase(TestCase):
     def create_app(self):
         logging.getLogger("connexion.operation").setLevel("ERROR")
@@ -58,7 +61,17 @@ class BaseTestCase(TestCase):
             self.test_user = User(name="Test User", email="test@example.com", is_active=True)
             session.add(self.test_user)
             session.commit()
+
+            # store the jwt_token and standardized headers for use in tests
             self.jwt_token = generate_token(self.test_user.id)
+            self.headers_no_content = {
+                "Accept": "application/json",
+                "Authorization": f"Bearer {self.jwt_token}",
+            }
+            self.headers = self.headers_no_content.copy()
+            self.headers.update({"Content-Type": "application/json"})
+
+            # create the login token and commit to session
             token = Token(name="login-token", user=self.test_user, token=self.jwt_token)
             session.add(token)
             session.commit()
@@ -68,13 +81,26 @@ class BaseTestCase(TestCase):
             ibutsu_server.tasks.task = mock_task
         return app
 
+    # Override these assert functions from TestCase so we can set a helpful default message
+    def assert_200(self, response, message=None):
+        """
+        Checks if response status code is 200
+        :param response: Flask response
+        :param message: Message to display on test failure
+        """
+        self.assert_status(
+            response, HTTPStatus.OK, message or MESSAGE.format(response.data.decode("utf-8"))
+        )
+
     def assert_201(self, response, message=None):
         """
         Checks if response status code is 201
         :param response: Flask response
         :param message: Message to display on test failure
         """
-        self.assert_status(response, HTTPStatus.CREATED, message)
+        self.assert_status(
+            response, HTTPStatus.CREATED, message or MESSAGE.format(response.data.decode("utf-8"))
+        )
 
     def assert_503(self, response, message=None):
         """
@@ -82,7 +108,43 @@ class BaseTestCase(TestCase):
         :param response: Flask response
         :param message: Message to display on test failure
         """
-        self.assert_status(response, HTTPStatus.SERVICE_UNAVAILABLE, message)
+        self.assert_status(
+            response,
+            HTTPStatus.SERVICE_UNAVAILABLE,
+            message or MESSAGE.format(response.data.decode("utf-8")),
+        )
+
+    def assert_400(self, response, message=None):
+        """
+        Checks if response code is 400
+        :param response: Flask response
+        :param message: message to display on test failure
+        """
+        self.assert_status(
+            response,
+            HTTPStatus.BAD_REQUEST,
+            message or MESSAGE.format(response.data.decode("utf-8")),
+        )
+
+    def assert_404(self, response, message=None):
+        """
+        Checks if response code is 404
+        :param response: Flask response
+        :param message: message to display on test failure
+        """
+        self.assert_status(
+            response, HTTPStatus.NOT_FOUND, message or MESSAGE.format(response.data.decode("utf-8"))
+        )
+
+    def assert_409(self, response, message=None):
+        """
+        Checks if response code is 409
+        :param response: Flask response
+        :param message: message to display on test failure
+        """
+        self.assert_status(
+            response, HTTPStatus.CONFLICT, message or MESSAGE.format(response.data.decode("utf-8"))
+        )
 
     def assert_equal(self, first, second, msg=None):
         """Alias"""
@@ -156,6 +218,10 @@ class MockProject(MockModel):
     COLUMNS = ["id", "name", "title", "owner_id", "group_id", "users"]
 
 
+class MockPortal(MockModel):
+    COLUMNS = ["id", "name", "title", "owner_id", "default_dashboard_id"]
+
+
 class MockResult(MockModel):
     COLUMNS = [
         "id",
@@ -207,6 +273,7 @@ class MockRun(MockModel):
 
 
 class MockDashboard(MockModel):
+    # TODO: dashboard columns and unit test coverage
     COLUMNS = []
 
 
@@ -215,12 +282,14 @@ class MockWidgetConfig(MockModel):
         "id",
         "navigable",
         "params",
+        "portal_id",
         "project_id",
         "dashboard_id",
         "title",
         "type",
         "weight",
         "widget",
+        "portal",
         "project",
         "dashboard",
     ]

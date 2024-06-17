@@ -78,20 +78,15 @@ class TestRunController(BaseTestCase):
             "start_time": START_TIME,
             "created": START_TIME,
         }
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
         response = self.client.open(
             "/api/run",
             method="POST",
-            headers=headers,
+            headers=self.headers,
             data=json.dumps(run_dict),
             content_type="application/json",
         )
         self.project_patcher.stop()
-        self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_201(response)
         resp = response.json.copy()
         resp["project"] = None
         self.assert_equal(resp, MOCK_RUN_DICT)
@@ -102,12 +97,11 @@ class TestRunController(BaseTestCase):
 
         Get a single run by ID
         """
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
-        response = self.client.open(f"/api/run/{MOCK_ID}", method="GET", headers=headers)
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+
+        response = self.client.open(
+            f"/api/run/{MOCK_ID}", method="GET", headers=self.headers_no_content
+        )
+        self.assert_200(response)
         resp = response.json.copy()
         resp["project"] = None
         self.assert_equal(resp, MOCK_RUN_DICT)
@@ -118,14 +112,11 @@ class TestRunController(BaseTestCase):
         Get a list of the test runs
         """
         query_string = [("page", 56), ("pageSize", 56)]
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         response = self.client.open(
-            "/api/run", method="GET", headers=headers, query_string=query_string
+            "/api/run", method="GET", headers=self.headers_no_content, query_string=query_string
         )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
 
     @skip("multipart/form-data not supported by Connexion")
     def test_import_run(self):
@@ -133,20 +124,16 @@ class TestRunController(BaseTestCase):
 
         Import a JUnit XML file
         """
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "multipart/form-data",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         data = dict(xml_file=(BytesIO(b"some file data"), "file.txt"))
         response = self.client.open(
             "/api/run/import",
             method="POST",
-            headers=headers,
+            headers=self.headers,
             data=data,
             content_type="multipart/form-data",
         )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
 
     def test_update_run(self):
         """Test case for update_run
@@ -157,20 +144,16 @@ class TestRunController(BaseTestCase):
             "duration": 540.05433,
             "summary": {"errors": 1, "failures": 3, "skips": 0, "tests": 548},
         }
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         response = self.client.open(
             f"/api/run/{MOCK_ID}",
             method="PUT",
-            headers=headers,
+            headers=self.headers,
             data=json.dumps(run_dict),
             content_type="application/json",
         )
         self.mock_update_run_task.apply_async.assert_called_once_with((MOCK_ID,), countdown=5)
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
         resp = response.json.copy()
         resp["project"] = None
         self.assert_equal(resp, MOCK_RUN_DICT)

@@ -101,19 +101,15 @@ class TestResultController(BaseTestCase):
         """
         result = ADDED_RESULT.to_dict()
         self.mock_result.query.get.return_value = None
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         response = self.client.open(
             "/api/result",
             method="POST",
-            headers=headers,
+            headers=self.headers,
             data=json.dumps(result),
             content_type="application/json",
         )
-        self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_201(response)
         assert response.json == MOCK_RESULT_DICT
 
     def test_get_result(self):
@@ -121,12 +117,11 @@ class TestResultController(BaseTestCase):
 
         Get a single result
         """
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
-        response = self.client.open(f"/api/result/{MOCK_ID}", method="GET", headers=headers)
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+
+        response = self.client.open(
+            f"/api/result/{MOCK_ID}", method="GET", headers=self.headers_no_content
+        )
+        self.assert_200(response)
         assert response.json == MOCK_RESULT_DICT
 
     def test_get_result_list(self):
@@ -144,14 +139,11 @@ class TestResultController(BaseTestCase):
             ("page", 56),
             ("pageSize", 56),
         ]
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         response = self.client.open(
-            "/api/result", method="GET", headers=headers, query_string=query_string
+            "/api/result", method="GET", headers=self.headers_no_content, query_string=query_string
         )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
         expected_response = {
             "pagination": {
                 "page": 56,
@@ -178,17 +170,13 @@ class TestResultController(BaseTestCase):
             "source": "source_updated",
             "test_id": "test_id_updated",
         }
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         response = self.client.open(
             f"/api/result/{MOCK_ID}",
             method="PUT",
-            headers=headers,
+            headers=self.headers,
             data=json.dumps(result),
             content_type="application/json",
         )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
         assert response.json == UPDATED_RESULT.to_dict()
