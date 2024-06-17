@@ -51,12 +51,11 @@ def admin_get_project(id_, token_info=None, user=None):
     :rtype: Project
     """
     check_user_is_admin(user)
-    project = Project.query.get(id_)
-    if not project:
-        project = Project.query.filter(Project.name == id_).first()
-    if not project:
+
+    if project := Project.query.get(id_) or Project.query.filter(Project.name == id_).first():
+        return project.to_dict(with_owner=True)
+    else:
         abort(HTTPStatus.NOT_FOUND)
-    return project.to_dict(with_owner=True)
 
 
 def admin_get_project_list(
@@ -127,34 +126,33 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
         return RESPONSE_JSON_REQ
     if not is_uuid(id_):
         id_ = convert_objectid_to_uuid(id_)
-    project = Project.query.get(id_)
 
-    if not project:
+    if project := Project.query.get(id_):
+        # Grab the fields from the request
+        project_dict = connexion.request.get_json()
+
+        # If the "owner" field is set, ignore it
+        project_dict.pop("owner", None)
+
+        # handle updating users separately
+        for username in project_dict.pop("users", []):
+            user_to_add = User.query.filter_by(email=username).first()
+            if user_to_add and user_to_add not in project.users:
+                project.users.append(user_to_add)
+
+        # Make sure the project owner is in the list of users
+        if project_dict.get("owner_id"):
+            owner = User.query.get(project_dict["owner_id"])
+            if owner and owner not in project.users:
+                project.users.append(owner)
+
+        # update the rest of the project info
+        project.update(project_dict)
+        session.add(project)
+        session.commit()
+        return project.to_dict()
+    else:
         abort(HTTPStatus.NOT_FOUND)
-
-    # Grab the fields from the request
-    project_dict = connexion.request.get_json()
-
-    # If the "owner" field is set, ignore it
-    project_dict.pop("owner", None)
-
-    # handle updating users separately
-    for username in project_dict.pop("users", []):
-        user_to_add = User.query.filter_by(email=username).first()
-        if user_to_add and user_to_add not in project.users:
-            project.users.append(user_to_add)
-
-    # Make sure the project owner is in the list of users
-    if project_dict.get("owner_id"):
-        owner = User.query.get(project_dict["owner_id"])
-        if owner and owner not in project.users:
-            project.users.append(owner)
-
-    # update the rest of the project info
-    project.update(project_dict)
-    session.add(project)
-    session.commit()
-    return project.to_dict()
 
 
 @validate_uuid
@@ -163,9 +161,12 @@ def admin_delete_project(id_, token_info=None, user=None):
     check_user_is_admin(user)
     if not is_uuid(id_):
         return f"Project ID {id_} is not in UUID format", HTTPStatus.BAD_REQUEST
-    project = Project.query.get(id_)
-    if not project:
+
+    if project := Project.query.get(id_):
         abort(HTTPStatus.NOT_FOUND)
-    session.delete(project)
-    session.commit()
-    return HTTPStatus.OK.phrase, HTTPStatus.OK
+
+        session.delete(project)
+        session.commit()
+        return HTTPStatus.OK.phrase, HTTPStatus.OK
+    else:
+        abort(HTTPStatus.NOT_FOUND)

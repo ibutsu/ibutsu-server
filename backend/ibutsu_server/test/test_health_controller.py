@@ -11,24 +11,18 @@ class TestHealthController(BaseTestCase):
 
         Get a health report for the database
         """
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
-        response = self.client.open("/api/health/database", method="GET", headers=headers)
-        self.assert_503(response, "Response body is : " + response.data.decode("utf-8"))
+        response = self.client.open(
+            "/api/health/database", method="GET", headers=self.headers_no_content
+        )
+        self.assert_503(response)
 
     def test_get_health(self):
         """Test case for get_health
 
         Get a general health report
         """
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
-        response = self.client.open("/api/health", method="GET", headers=headers)
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        response = self.client.open("/api/health", method="GET", headers=self.headers_no_content)
+        self.assert_200(response)
 
 
 if __name__ == "__main__":

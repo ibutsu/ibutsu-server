@@ -36,16 +36,11 @@ class TestGroupController(BaseTestCase):
 
         Create a new group
         """
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
         self.mock_group.query.get.return_value = None
         response = self.client.open(
             "/api/group",
             method="POST",
-            headers=headers,
+            headers=self.headers,
             data=json.dumps({"name": "Example group"}),
             content_type="application/json",
         )
@@ -57,11 +52,9 @@ class TestGroupController(BaseTestCase):
 
         Get a group
         """
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
-        response = self.client.open(f"/api/group/{MOCK_ID}", method="GET", headers=headers)
+        response = self.client.open(
+            f"/api/group/{MOCK_ID}", method="GET", headers=self.headers_no_content
+        )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         self.assert_equal(response.json, MOCK_GROUP_DICT)
 
@@ -71,12 +64,8 @@ class TestGroupController(BaseTestCase):
         Get a list of groups
         """
         query_string = [("page", 56), ("pageSize", 56)]
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
         response = self.client.open(
-            "/api/group", method="GET", headers=headers, query_string=query_string
+            "/api/group", method="GET", headers=self.headers_no_content, query_string=query_string
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         self.assert_equal(
@@ -97,15 +86,11 @@ class TestGroupController(BaseTestCase):
 
         Update a group
         """
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         response = self.client.open(
             f"/api/group/{MOCK_ID}",
             method="PUT",
-            headers=headers,
+            headers=self.headers,
             data=json.dumps({"name": "Changed name"}),
             content_type="application/json",
         )

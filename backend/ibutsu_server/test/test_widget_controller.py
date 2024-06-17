@@ -70,17 +70,14 @@ class TestWidgetController(BaseTestCase):
         query_string = {
             "filters": ["metadata.component=frontend", "metadata.component=frontend"],
         }
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         response = self.client.open(
             "/api/widget/compare-runs-view",
             method="GET",
-            headers=headers,
+            headers=self.headers_no_content,
             query_string=query_string,
         )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
         expected_response = {
             "pagination": {"totalItems": 1},
             "results": [MOCK_RESULTS_DICT],
