@@ -4,6 +4,7 @@ from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Group
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import is_uuid, validate_uuid
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 
 def add_group(group=None):
@@ -15,7 +16,7 @@ def add_group(group=None):
     :rtype: Group
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     group = Group.from_dict(**connexion.request.get_json())
     if group.id and Group.query.get(group.id):
         return f"The group with ID {group.id} already exists", 400
@@ -84,7 +85,7 @@ def update_group(id_, group=None, **kwargs):
     :rtype: Group
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     group = Group.query.get(id_)
     if not group:
         return "Group not found", 404

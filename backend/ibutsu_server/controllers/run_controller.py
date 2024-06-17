@@ -16,7 +16,7 @@ from ibutsu_server.util.projects import (
 )
 from ibutsu_server.util.query import get_offset, query_as_task
 from ibutsu_server.util.uuid import validate_uuid
-
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 @query_as_task
 def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=None, user=None):
@@ -159,7 +159,7 @@ def update_run(id_, run=None, body=None, token_info=None, user=None):
     :rtype: Run
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     run_dict = connexion.request.get_json()
     if run_dict.get("metadata", {}).get("project"):
         run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
@@ -188,7 +188,7 @@ def bulk_update(filter_=None, page_size=1, token_info=None, user=None):
     :rtype: List[Run]
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
 
     run_dict = connexion.request.get_json()
 

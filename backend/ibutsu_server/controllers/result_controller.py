@@ -10,6 +10,7 @@ from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import add_user_filter, get_project, project_has_user
 from ibutsu_server.util.query import get_offset, query_as_task
 from ibutsu_server.util.uuid import validate_uuid
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 
 def add_result(result=None, token_info=None, user=None):
@@ -21,7 +22,7 @@ def add_result(result=None, token_info=None, user=None):
     :rtype: Result
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     result = Result.from_dict(**connexion.request.get_json())
 
     if result.id and Result.query.get(result.id):
@@ -160,7 +161,7 @@ def update_result(id_, result=None, token_info=None, user=None, **kwargs):
     :rtype: Result
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     result_dict = connexion.request.get_json()
     if result_dict.get("metadata", {}).get("project"):
         project = get_project(result_dict["metadata"]["project"])

@@ -6,6 +6,7 @@ from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
+from ibutsu_server.constants import RESPONSE_JSON_REQ
 
 
 def add_dashboard(dashboard=None, token_info=None, user=None):
@@ -17,7 +18,7 @@ def add_dashboard(dashboard=None, token_info=None, user=None):
     :rtype: Dashboard
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     dashboard = Dashboard.from_dict(**connexion.request.get_json())
     if dashboard.project_id and not project_has_user(dashboard.project_id, user):
         return "Forbidden", 403
@@ -104,7 +105,7 @@ def update_dashboard(id_, dashboard=None, token_info=None, user=None):
     :rtype: Dashboard
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     dashboard_dict = connexion.request.get_json()
     if dashboard_dict.get("metadata", {}).get("project") and not project_has_user(
         dashboard_dict["metadata"]["project"], user

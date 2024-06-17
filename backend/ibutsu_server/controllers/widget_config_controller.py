@@ -1,7 +1,8 @@
 import connexion
 from sqlalchemy import or_
+from http import HTTPStatus
 
-from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, WIDGET_TYPES
+from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, WIDGET_TYPES, RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.filters import convert_filter
@@ -19,10 +20,10 @@ def add_widget_config(widget_config=None, token_info=None, user=None):
     :rtype: WidgetConfig
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     data = connexion.request.json
     if data["widget"] not in WIDGET_TYPES.keys():
-        return "Bad request, widget type does not exist", 400
+        return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
     # add default weight of 10
     if not data.get("weight"):
         data["weight"] = 10
@@ -109,10 +110,10 @@ def update_widget_config(id_, body=None, widget_config=None, token_info=None, us
     :rtype: Result
     """
     if not connexion.request.is_json:
-        return "Bad request, JSON required", 400
+        return RESPONSE_JSON_REQ
     data = connexion.request.get_json()
     if data.get("widget") and data["widget"] not in WIDGET_TYPES.keys():
-        return "Bad request, widget type does not exist", 400
+        return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
     # Look up the project id
     if data.get("project"):
         project = get_project(data.pop("project"))
