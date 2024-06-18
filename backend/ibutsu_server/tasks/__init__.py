@@ -129,15 +129,27 @@ def create_celery_app(_app=None):
     return app
 
 
-@contextmanager
-def lock(name, timeout=LOCK_EXPIRE, app=None):
+def get_redis_client(app=None):
     if not app:
         app = current_app
+
     redis_client = Redis.from_url(
         app.config["CELERY_BROKER_URL"],
         socket_timeout=SOCKET_TIMEOUT,
         socket_connect_timeout=SOCKET_CONNECT_TIMEOUT,
     )
+    return redis_client
+
+
+def is_locked(name, app=None):
+    radis_client = get_redis_client(app=app)
+    return radis_client.exists(name)
+
+
+@contextmanager
+def lock(name, timeout=LOCK_EXPIRE, app=None):
+    redis_client = get_redis_client(app=app)
+
     try:
         # Get a lock so that we don't run this task concurrently
         logging.info(f"Trying to get a lock for {name}")
