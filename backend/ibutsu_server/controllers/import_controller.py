@@ -90,4 +90,4 @@ def add_import(
         run_archive_import.delay(new_import.to_dict())
     else:
         return "Unsupported Media Type", 415
-    return new_import.to_dict(), 2
+    return new_import.to_dict(), HTTPStatus.ACCEPTED
