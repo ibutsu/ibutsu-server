@@ -59,6 +59,9 @@ export class Admin extends React.Component {
             <Route path="/users/:id" element={<ElementWrapper routeElement={UserEdit} />} />
             <Route path="/projects" element={<ElementWrapper routeElement={ProjectList} />} />
             <Route path="/projects/:id" element={<ElementWrapper routeElement={ProjectEdit} />} />
+            {/*
+            TODO: route for admin portals and portal/ID
+            */}
           </Routes>
         </IbutsuPage>
       </React.Fragment>

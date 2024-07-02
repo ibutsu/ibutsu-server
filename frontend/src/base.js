@@ -27,10 +27,15 @@ export const Base = () => {
           path="/admin/*"
           element={AuthService.isLoggedIn() ? <Admin /> : <Navigate to="/" />}
         />
+        {/* TODO: Move to projects/ path, consider renaming app->projects */}
         <Route
           path="*"
           element={AuthService.isLoggedIn() ? <App /> : <Navigate to="/login" />}
         />
+        {/*
+        TODO: route for projects and project/ID
+        TODO: route for portals and portal/ID
+        */}
       </Routes>
     </Router>
   );

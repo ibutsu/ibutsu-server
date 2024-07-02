@@ -96,6 +96,7 @@ export class App extends React.Component {
       <React.Fragment>
         <IbutsuPage eventEmitter={this.eventEmitter} navigation={navigation}>
           <Routes>
+            {/* TODO: Move to projects/ path, consider renaming file */}
             <Route path="*" element={<Dashboard eventEmitter={this.eventEmitter} />} />
             <Route path="/runs" element={<ElementWrapper routeElement={RunList} eventEmitter={this.eventEmitter} />} />
             <Route path="/results" element={<ElementWrapper routeElement={ResultList} eventEmitter={this.eventEmitter} />} />
