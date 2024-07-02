@@ -25,7 +25,7 @@ export class Result extends React.Component {
     this.state = {
       isResultValid: false,
       testResult: null,
-      id: props.params.id
+      id: props.params.result_id
     };
   }
 

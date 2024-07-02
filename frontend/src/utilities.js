@@ -32,6 +32,8 @@ import {
 import { ClassificationDropdown } from './components';
 
 
+
+
 export function getDateString() {
   return String((new Date()).getTime());
 }
@@ -200,14 +202,14 @@ export function resultToRow(result, filterFunc) {
     }
   }
   if (result.metadata && result.metadata.run) {
-    runLink = <Link to={`/runs/${result.run_id}`}>{result.run_id}</Link>;
+    runLink = <Link to={`../runs/${result.run_id}`} relative="Path">{result.run_id}</Link>;
   }
   if (result.metadata && result.metadata.classification) {
     classification = <Badge isRead>{result.metadata.classification.split('_')[0]}</Badge>;
   }
   return {
     "cells": [
-      {title: <React.Fragment><Link to={`/results/${result.id}`} key={result.id}>{result.test_id}</Link> {markers}</React.Fragment>},
+      {title: <React.Fragment><Link to={`../results/${result.id}`} relative="Path" key={result.id}>{result.test_id}</Link> {markers}</React.Fragment>},
       {title: runLink},
       {title: <React.Fragment><span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span> {classification}</React.Fragment>},
       {title: round(result.duration) + 's'},
@@ -247,7 +249,7 @@ export function resultToClassificationRow(result, index, filterFunc) {
       "isOpen": false,
       "result": result,
       "cells": [
-        {title: <React.Fragment><Link to={`/results/${result.id}`}>{result.test_id}</Link> {markers}</React.Fragment>},
+        {title: <React.Fragment><Link to={`../results/${result.id}`} relative="Path">{result.test_id}</Link> {markers}</React.Fragment>},
         {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
         {title: <React.Fragment>{exceptionBadge}</React.Fragment>},
         {title: <ClassificationDropdown testResult={result} />},
@@ -282,7 +284,7 @@ export function resultToComparisonRow(result, index) {
   }
 
   let cells = []
-  cells.push({title: <React.Fragment><Link to={`/results/${result[0].id}`}>{result[0].test_id}</Link> {markers}</React.Fragment>});
+  cells.push({title: <React.Fragment><Link to={`../results/${result[0].id}`} relative="Path">{result[0].test_id}</Link> {markers}</React.Fragment>});
   result.forEach((result, index) => {
     cells.push({title: <span className={result.result}>{resultIcons[index]} {toTitleCase(result.result)}</span>});
   });
@@ -401,17 +403,11 @@ export function getOperationsFromField(field) {
   return operations;
 }
 
-export function getActiveProject() {
-  let project = localStorage.getItem('project');
-  if (project) {
-    project = JSON.parse(project);
-  }
-  return project;
-}
-
+// TODO remove, moved to react routing params and context
 export function clearActiveProject() {
   localStorage.removeItem('project');
 }
+// TODO remove, moved to react routing params and context
 
 export function getActiveDashboard() {
   let dashboard = localStorage.getItem('dashboard');
@@ -420,6 +416,7 @@ export function getActiveDashboard() {
   }
   return dashboard;
 }
+// TODO remove, moved to react routing params and context
 
 export function clearActiveDashboard() {
   localStorage.removeItem('dashboard');
@@ -527,6 +524,7 @@ export function debounce(func, timeout = 500) {
   };
 }
 
+// TODO remove, move to AppContext
 export function getTheme() {
   return localStorage.getItem('theme');
 }

@@ -24,9 +24,10 @@ import {
 
 import { Settings } from '../settings';
 import { HttpClient } from '../services/http';
-import { getActiveProject, toAPIFilter } from '../utilities';
+import { toAPIFilter } from '../utilities';
 
 import { TableEmptyState, TableErrorState } from './tablestates';
+import { IbutsuContext } from '../services/context';
 
 export class FilterTable extends React.Component {
   static propTypes = {
@@ -173,6 +174,7 @@ export class FilterTable extends React.Component {
 // TODO Extend this to contain the filter handling functions, and better integrate filter state
 // with FilterTable. See https://github.com/ibutsu/ibutsu-server/issues/230
 export class MetaFilter extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
     runId: PropTypes.string,
     setFilter: PropTypes.func,
@@ -257,8 +259,9 @@ export class MetaFilter extends React.Component {
       let api_filter = toAPIFilter(customFilters).join();
       console.debug('APIFILTER: ' + customFilters);
 
-      let project = getActiveProject();
-      let projectId = project ? project.id : ''
+      // TODO handle portal
+      const { primaryObject } = this.context;
+      let projectId = primaryObject ? primaryObject.id : ''
 
       // make runId optional
       let params = {}
@@ -290,8 +293,8 @@ export class MetaFilter extends React.Component {
   }
 
   getProjectFilterParams() {
-    let project = getActiveProject();
-    HttpClient.get([Settings.serverUrl, 'project', 'filter-params', project.id])
+    const { primaryObject } = this.context;
+    HttpClient.get([Settings.serverUrl, 'project', 'filter-params', primaryObject.id])
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         this.setState({fieldOptions: data});
