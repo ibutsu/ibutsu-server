@@ -9,15 +9,16 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
-  getActiveProject,
   parseFilter,
 } from '../utilities';
 import { FilterHeatmapWidget, GenericAreaWidget, GenericBarWidget } from '../widgets';
 import { ParamDropdown } from '../components';
 import { HEATMAP_MAX_BUILDS } from '../constants'
+import { IbutsuContext } from '../services/context';
 
 
 export class JenkinsJobAnalysisView extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
@@ -65,9 +66,9 @@ export class JenkinsJobAnalysisView extends React.Component {
       return;
     }
     let params = this.props.view.params;
-    let project = getActiveProject();
-    if (project) {
-      params['project'] = project.id;
+    const { primaryObject } = this.context;
+    if (primaryObject) {
+      params['project'] = primaryObject.id;
     }
     else {
       delete params['project'];

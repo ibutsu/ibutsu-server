@@ -1,44 +1,51 @@
+{/* TODO: Consider renaming to projects-page, maybe updates for static routing? */}
+
 import React from 'react';
 import PropTypes from 'prop-types';
 
+import { Outlet } from 'react-router-dom';
+
 import {
   Alert,
-  AlertActionLink,
   AlertGroup,
   AlertVariant,
   Page,
-  PageSidebar,
-  PageSidebarBody
 } from '@patternfly/react-core';
 
 import ElementWrapper from './elementWrapper';
-
 import { IbutsuHeader } from '../components';
-import { ALERT_TIMEOUT, VERSION_CHECK_TIMEOUT } from '../constants';
-import { HttpClient } from '../services/http';
+import { ALERT_TIMEOUT } from '../constants';
 import { getDateString, getTheme } from '../utilities';
-import  packageJson from '../../package.json'
+import { IbutsuContext } from '../services/context';
+import IbutsuSidebar from './sidebar';
 
 
 export class IbutsuPage extends React.Component {
+  static contextType = IbutsuContext;
+
   static propTypes = {
     eventEmitter: PropTypes.object,
     navigation: PropTypes.node,
+    location: PropTypes.object,
     children: PropTypes.node,
-    title: PropTypes.string
+    title: PropTypes.string,
+    params: PropTypes.object
   }
 
   constructor(props) {
     super(props);
-    this.versionCheckId = '';
     this.state = {
       notifications: [],
-      version: packageJson.version
+      views: []
     };
     this.props.eventEmitter.on('showNotification', (type, title, message, action, timeout, key) => {
       this.showNotification(type, title, message, action, timeout, key);
     });
     this.props.eventEmitter.on('themeChange', this.setTheme);
+    this.props.eventEmitter.on('projectChange', () => {
+    });
+    // TODO: empty state props.children override
+
   }
 
   showNotification(type, title, message, action, timeout, key) {
@@ -81,32 +88,13 @@ export class IbutsuPage extends React.Component {
     }
   }
 
-  checkVersion() {
-    const frontendUrl = window.location.origin;
-    HttpClient.get([frontendUrl, 'version.json'], {'v': getDateString()})
-      .then(response => HttpClient.handleResponse(response))
-      .then((data) => {
-        if (data && data.version && (data.version !== this.state.version)) {
-          const action = <AlertActionLink onClick={() => { window.location.reload(); }}>Reload</AlertActionLink>;
-          this.showNotification('info', 'Ibutsu has been updated', 'A newer version of Ibutsu is available, click reload to get it.', action, true, 'check-version');
-        }
-      });
-  }
-
-  componentWillUnmount() {
-    if (this.versionCheckId) {
-      clearInterval(this.versionCheckId);
-    }
-  }
-
   componentDidMount() {
     this.setTheme();
-    this.checkVersion();
-    this.versionCheckId = setInterval(() => this.checkVersion(), VERSION_CHECK_TIMEOUT);
   }
 
   render() {
     document.title = this.props.title || 'Ibutsu';
+    // TODO: render project or portal depending on menutoggle + select event
     return (
       <React.Fragment>
         <AlertGroup isToast>
@@ -117,17 +105,12 @@ export class IbutsuPage extends React.Component {
           ))}
         </AlertGroup>
         <Page
-          header={<ElementWrapper routeElement={IbutsuHeader} eventEmitter={this.props.eventEmitter} version={this.state.version} />}
-          sidebar={
-            <PageSidebar theme="dark" >
-              <PageSidebarBody>
-                {this.props.navigation}
-              </PageSidebarBody>
-            </PageSidebar>}
+          header={<ElementWrapper routeElement={IbutsuHeader} eventEmitter={this.props.eventEmitter}/>}
+          sidebar={<IbutsuSidebar eventEmitter={this.props.eventEmitter} />}
           isManagedSidebar={true}
           style={{position: "relative"}}
         >
-          {this.props.children}
+          <Outlet/>
         </Page>
       </React.Fragment>
     );

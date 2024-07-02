@@ -24,7 +24,6 @@ import { Settings } from '../settings';
 import {
   buildBadge,
   buildParams,
-  getActiveProject,
   getFilterMode,
   getOperationMode,
   getOperationsFromField,
@@ -33,6 +32,7 @@ import {
 } from '../utilities';
 import { FilterTable, MultiValueInput, RunSummary } from '../components';
 import { OPERATIONS, ACCESSIBILITY_FIELDS } from '../constants';
+import { IbutsuContext } from '../services/context';
 
 function runToRow(run, filterFunc, analysisViewId) {
   let badges = [];
@@ -90,6 +90,7 @@ function fieldToColumnName(fields) {
 }
 
 export class AccessibilityDashboardView extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
@@ -303,15 +304,15 @@ export class AccessibilityDashboardView extends React.Component {
     let analysisViewId = '';
     let params = {filter: []};
     let filters = this.state.filters;
-    const project = getActiveProject();
-    if (project) {
-      filters['project_id'] = {'val': project.id, 'op': 'eq'};
+    const { primaryObject } = this.context;
+    if (primaryObject) {
+      filters['project_id'] = {'val': primaryObject.id, 'op': 'eq'};
     }
     else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
       delete filters['project_id']
     }
     // get the widget ID for the analysis view
-    HttpClient.get([Settings.serverUrl + '/widget-config'], {"filter": "widget=accessibility-analysis-view"})
+    HttpClient.get([Settings.serverUrl, 'widget-config'], {"filter": "widget=accessibility-analysis-view"})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         analysisViewId = data.widgets[0]?.id

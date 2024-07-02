@@ -32,13 +32,13 @@ import { Settings } from '../settings';
 import { JSONTree } from 'react-json-tree';
 import Editor from '@monaco-editor/react';
 import {
-  getActiveProject,
   parseFilter,
   getSpinnerRow,
   resultToRow,
 } from '../utilities';
 import { GenericAreaWidget } from '../widgets';
 import { FilterTable, TabTitle } from '../components';
+import { IbutsuContext } from '../services/context';
 const MockRun = {
   id: null,
   duration: null,
@@ -54,6 +54,7 @@ const MockRun = {
 
 
 export class AccessibilityAnalysisView extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
@@ -119,16 +120,16 @@ export class AccessibilityAnalysisView extends React.Component {
       return;
     }
     let params = this.props.view.params;
-    let project = getActiveProject();
-    if (project) {
-      params['project'] = project.id;
+    const { primaryObject } = this.context;
+    if (primaryObject) {
+      params['project'] = primaryObject.id;
     }
     else {
       delete params['project'];
     }
     // probably don't need this, but maybe something similar
     params["run_list"] = this.state.filters.run_list?.val;
-    HttpClient.get([Settings.serverUrl + '/widget/' + this.props.view.widget], params)
+    HttpClient.get([Settings.serverUrl, 'widget', this.props.view.widget], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         this.setState({
@@ -263,7 +264,7 @@ export class AccessibilityAnalysisView extends React.Component {
     if (node.result) {
       this.setState({currentTest: node.result}, () => {
         if (!this.state.currentTest.artifacts) {
-          HttpClient.get([Settings.serverUrl + '/artifact'], {resultId: this.state.currentTest.id})
+          HttpClient.get([Settings.serverUrl, 'artifact'], {resultId: this.state.currentTest.id})
             .then(response => HttpClient.handleResponse(response))
             .then(data => {
               let { currentTest } = this.state;
@@ -292,7 +293,7 @@ export class AccessibilityAnalysisView extends React.Component {
   }
 
   getRun() {
-    HttpClient.get([Settings.serverUrl + '/run/' + this.state.id])
+    HttpClient.get([Settings.serverUrl, 'run', this.state.id])
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
         if (response.ok) {
@@ -333,7 +334,7 @@ export class AccessibilityAnalysisView extends React.Component {
   }
 
   getResultsForPie_old() {
-    HttpClient.get([Settings.serverUrl + '/widget/accessibility-bar-chart'], {run_list: this.state.id})
+    HttpClient.get([Settings.serverUrl, 'widget', 'accessibility-bar-chart'], {run_list: this.state.id})
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
           pieData: data,

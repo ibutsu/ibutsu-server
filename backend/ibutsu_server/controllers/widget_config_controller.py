@@ -11,6 +11,8 @@ from ibutsu_server.util.projects import get_project, project_has_user
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
+# TODO: pydantic validation of request data structure
+
 
 def add_widget_config(widget_config=None, token_info=None, user=None):
     """Create a new widget config
@@ -25,6 +27,7 @@ def add_widget_config(widget_config=None, token_info=None, user=None):
     data = connexion.request.json
     if data["widget"] not in WIDGET_TYPES.keys():
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
+
     # add default weight of 10
     if not data.get("weight"):
         data["weight"] = 10

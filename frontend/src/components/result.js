@@ -239,7 +239,7 @@ export class ResultView extends React.Component {
       resultIcon = getIconForResult(testResult.result);
       startTime = new Date(testResult.start_time);
       parameters = Object.keys(testResult.params).map((key) => <div key={key}>{key} = {testResult.params[key]}</div>);
-      runLink = <Link to={`/runs/${testResult.run_id}`}>{testResult.run_id}</Link>;
+      runLink = <Link to={`../runs/${testResult.run_id}`} relative="Path">{testResult.run_id}</Link>;
     }
     const jsonViewTheme = {
       scheme: 'monokai',
@@ -296,7 +296,7 @@ export class ResultView extends React.Component {
                       <DataListItemCells
                         dataListCells={[
                           <DataListCell key="component-label" width={2}><strong>Component:</strong></DataListCell>,
-                          <DataListCell key="component-data" width={4}><Link to={`/results?component[eq]=${testResult.component}`}>{testResult.component}</Link></DataListCell>
+                          <DataListCell key="component-data" width={4}><Link to={`../results?component[eq]=${testResult.component}`} relative="Path">{testResult.component}</Link></DataListCell>
                         ]}
                       />
                     </DataListItemRow>
@@ -499,7 +499,7 @@ export class ResultView extends React.Component {
                       <DataListItemCells
                         dataListCells={[
                           <DataListCell key="source-label" width={2}><strong>Source:</strong></DataListCell>,
-                          <DataListCell key="source-data" width={4}><Link to={`/results?source[eq]=${testResult.source}`}>{testResult.source}</Link></DataListCell>
+                          <DataListCell key="source-data" width={4}><Link to={`../results?source[eq]=${testResult.source}`} relative="Path">{testResult.source}</Link></DataListCell>
                         ]}
                       />
                     </DataListItemRow>
