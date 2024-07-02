@@ -16,6 +16,7 @@ import { UserEdit } from './pages/admin/user-edit';
 import { ProjectList } from './pages/admin/project-list';
 import { ProjectEdit } from './pages/admin/project-edit';
 import { AuthService } from './services/auth';
+import { PortalList } from './pages/admin/portal-list';
 import './app.css';
 
 
@@ -46,6 +47,9 @@ export class Admin extends React.Component {
           <li className="pf-v5-c-nav__item">
             <NavLink to="/admin/projects" className="pf-v5-c-nav__link">Projects</NavLink>
           </li>
+          <li className="pf-v5-c-nav__item">
+            <NavLink to="/admin/portals" className="pf-v5-c-nav__link">Portals</NavLink>
+          </li>
         </NavList>
       </Nav>
     );
@@ -59,8 +63,9 @@ export class Admin extends React.Component {
             <Route path="/users/:id" element={<ElementWrapper routeElement={UserEdit} />} />
             <Route path="/projects" element={<ElementWrapper routeElement={ProjectList} />} />
             <Route path="/projects/:id" element={<ElementWrapper routeElement={ProjectEdit} />} />
+            <Route path="/portals" element={<ElementWrapper routeElement={PortalList} />} />
             {/*
-            TODO: route for admin portals and portal/ID
+            TODO: route for admin portal/ID
             */}
           </Routes>
         </IbutsuPage>
