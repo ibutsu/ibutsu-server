@@ -27,8 +27,7 @@ def admin_add_portal(portal=None, token_info=None, user=None) -> tuple[dict, int
     # check if portal already exists
     if portal.id and Portal.query.get(portal.id):
         return f"Portal id {portal.id} already exist", HTTPStatus.BAD_REQUEST
-    user = User.query.get(user)
-    if user:
+    if user := User.query.get(user):
         portal.owner = user
     session.add(portal)
     session.commit()

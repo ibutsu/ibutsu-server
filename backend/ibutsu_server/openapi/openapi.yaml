@@ -2208,6 +2208,152 @@ paths:
       tags:
         - admin/project management
       x-openapi-router-controller: ibutsu_server.controllers.admin.project_controller
+  /admin/portal:
+    get:
+      operationId: admin_get_portal_list
+      parameters:
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalList'
+          description: Returns a list of portals
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+      tags:
+        - admin/portal management
+      summary: Administration endpoint to return a list of portals. Only accessible to superadmins.
+      x-openapi-router-controller: ibutsu_server.controllers.admin.portal_controller
+    post:
+      operationId: admin_add_portal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Portal'
+        description: A portal
+      responses:
+        201:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portal'
+          description: A portal was created
+        400:
+          description: Bad request, JSON required
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+      tags:
+        - admin/portal management
+      summary: Administration endpoint to manually add a portal. Only accessible to superadmins.
+      x-openapi-router-controller: ibutsu_server.controllers.admin.portal_controller
+  /admin/portal/{id}:
+    get:
+      operationId: admin_get_portal
+      parameters:
+        - description: The id of a portal
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portal'
+          description: Returns a portal
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+        404:
+          description: The portal does not exist
+      tags:
+        - admin/portal management
+      summary: Administration endpoint to return a portal. Only accessible to superadmins.
+      x-openapi-router-controller: ibutsu_server.controllers.admin.portal_controller
+    put:
+      operationId: admin_update_portal
+      parameters:
+        - description: The ID of the portal to update
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+      requestBody:
+        $ref: '#/components/requestBodies/Portal'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Portal'
+          description: successful operation
+        400:
+          description: Bad reqest, JSON required or not enough parameters
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+        404:
+          description: Portal not found
+      summary: Administration endpoint to update a portal. Only accessible to superadmins.
+      tags:
+        - admin/portal management
+      x-openapi-router-controller: ibutsu_server.controllers.admin.portal_controller
+    delete:
+      operationId: admin_delete_portal
+      parameters:
+        - description: The ID of the portal to delete
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          style: simple
+      responses:
+        200:
+          description: The specified portal was deleted
+        401:
+          description: The user needs to be logged in
+        403:
+          description: The user needs to be a superadmin
+        404:
+          description: Portal not found
+      summary: Administration endpoint to delete a portal. Only accessible to superadmins.
+      tags:
+        - admin/portal management
+      x-openapi-router-controller: ibutsu_server.controllers.admin.portal_controller
+
+
 components:
   requestBodies:
     Result:
@@ -2307,6 +2453,11 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Project'
+    Portal:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Portal'
   schemas:
     Result:
       example:
