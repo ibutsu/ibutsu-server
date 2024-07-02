@@ -46,67 +46,85 @@ import {
   ResultAggregatorWidget,
   ResultSummaryWidget
 } from './widgets';
-import { getActiveProject, getActiveDashboard } from './utilities.js';
+import { IbutsuContext } from './services/context.js';
 
 
 export class Dashboard extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
-    eventEmitter: PropTypes.object
+    eventEmitter: PropTypes.object,
+    navigate: PropTypes.func,
+    params: PropTypes.object,
   }
 
   constructor(props) {
     super(props);
-    let dashboard = getActiveDashboard() || this.getDefaultDashboard();
     this.state = {
       widgets: [],
       filteredDashboards: [],
       dashboards: [],
-      selectedDashboard: dashboard,
+      selectedDashboard: null,
       isDashboardSelectorOpen: false,
       isNewDashboardOpen: false,
       isWidgetWizardOpen: false,
       isEditModalOpen: false,
       editWidgetData: {},
-      dashboardInputValue: dashboard?.title || '',
-      filterValueDashboard: ''
-    };
-    props.eventEmitter.on('projectChange', () => {
-      this.clearDashboards();
-      this.getDashboards();
-    });
-  }
-
-  getDefaultDashboard() {
-    let project = getActiveProject();
-    if (project && project.defaultDashboard) {
-      console
-      const dashboard = JSON.stringify(project.defaultDashboard)
-      localStorage.setItem('dashboard', dashboard);
-      return project.defaultDashboard;
-    }
-    else {
-      return null;
-    }
-  }
-
-  clearDashboards() {
-    localStorage.removeItem('dashboard');
-    this.setState({
-      selectedDashboard: null,
-      filteredDashboards: [],
       dashboardInputValue: '',
       filterValueDashboard: ''
+    };
+    props.eventEmitter.on('projectChange', (value) => {
+      this.getDashboards(value);
+      this.getDefaultDashboard(value);
     });
   }
 
-  getDashboards() {
-    let project = getActiveProject();
-    if (!project) {
+  sync_context = () => {
+    // Active dashboard
+    const { activeDashboard } = this.context;
+    const { selectedDashboard } = this.state;
+    const paramDash = this.props.params?.dashboard_id;
+    let updatedDash = undefined;
+    // API call to update context
+    if ( paramDash != null && activeDashboard?.id !== paramDash) {
+      HttpClient.get([Settings.serverUrl, 'dashboard', paramDash])
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          const { setActiveDashboard } = this.context;
+          setActiveDashboard(data);
+          updatedDash = data;
+          this.setState({
+            selectedDashboard: data,
+            isDashboardSelectorOpen: false,
+            filterValueDashboard: '',
+            dashboardInputValue: data.title,
+          });  // callback within class component  won't have updated context
+          // TODO don't pass value when converting to functional component
+          this.getWidgets(data);
+        })
+        .catch(error => console.log(error));
+    }
+
+    if (updatedDash && !selectedDashboard ) {
+      this.setState({
+        selectedDashboard: updatedDash,
+        dashboardInputValue: updatedDash.title
+      })
+    }
+  }
+
+  getDashboards = (handledOject = null) => {
+    // value is checked because of handler scope not seeing context state updates
+    // TODO: react-router loaders would be way better
+    const { primaryObject } = this.context;
+    const paramProject = this.props.params?.project_id;
+    const primaryObjectId = handledOject?.id ?? primaryObject?.id ?? paramProject;
+
+    if (!primaryObjectId) {
       this.setState({dashboardInputValue: ''})
       return;
     }
     let params = {
-      'project_id': project.id,
+      'project_id': primaryObjectId,
       'pageSize': 10
     };
 
@@ -116,26 +134,65 @@ export class Dashboard extends React.Component {
     HttpClient.get([Settings.serverUrl, 'dashboard'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
-        this.setState({dashboards: data['dashboards'], filteredDashboards: data['dashboards']}, this.getWidgets);
-      });
+        this.setState({dashboards: data['dashboards'], filteredDashboards: data['dashboards']});
+      })
+      .catch(error => console.log(error));
   }
 
-  getWidgets() {
+  getDefaultDashboard = (handledObject = null) => {
+    const { primaryObject, activeDashboard, setActiveDashboard } = this.context;
+    const paramProject = this.props.params?.project_id;
+
+    let targetObject = handledObject ?? primaryObject ?? paramProject;
+
+    if (typeof(targetObject) === 'string') {
+      HttpClient.get([Settings.serverUrl, 'project', paramProject])
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          targetObject = data;
+        })
+        .catch(error => console.log(error));
+
+    }
+
+    if ( !activeDashboard && targetObject?.defaultDashboard ){
+      setActiveDashboard(targetObject.defaultDashboard);
+      this.setState({
+        'selectedDashboard': targetObject.defaultDashboard,
+        'dashboardInputValue': targetObject.defaultDashboard?.title
+      })
+    } else {
+      this.setState({
+        'selectedDashboard': 'Select a dashboard',
+        'dashboardInputValue': 'Select a dashboard'
+      })
+    }
+  }
+
+  getWidgets = (dashboard) => {
     let params = {'type': 'widget'};
-    let dashboard = getActiveDashboard() || this.getDefaultDashboard();
-    if (!dashboard) {
+    const { activeDashboard } = this.context;
+    // TODO don't pass value when converting to functional component
+    let target_dash = null;
+    if (dashboard === undefined) {
+      target_dash = activeDashboard;
+    } else {
+      target_dash = dashboard;
+    }
+    if (!target_dash) {
       return;
     }
-    params['filter'] = 'dashboard_id=' + dashboard.id;
+    params['filter'] = 'dashboard_id=' + target_dash.id;
     HttpClient.get([Settings.serverUrl, 'widget-config'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         // set the widget project param
         data.widgets.forEach(widget => {
-          widget.params['project'] = dashboard.project_id;
+          widget.params['project'] = target_dash.project_id;
         });
         this.setState({widgets: data.widgets});
-      });
+      })
+      .catch(error => console.log(error));
   }
 
   onDashboardToggle = () => {
@@ -143,23 +200,34 @@ export class Dashboard extends React.Component {
   };
 
   onDashboardSelect = (_event, value) => {
-    const dashboard = JSON.stringify(value);
-    localStorage.setItem('dashboard', dashboard);
+    const { setActiveDashboard } = this.context;
+    setActiveDashboard(value);
     this.setState({
       selectedDashboard: value,
       isDashboardSelectorOpen: false,
       filterValueDashboard: '',
       dashboardInputValue: value.title,
-    }, this.getWidgets);
+    });  // callback within class component  won't have updated context
+    // TODO don't pass value when converting to functional component
+    this.getWidgets(value);
+
+    // does it really matter whether I read from params or the context here?
+    // they should be the same, reading from params 'feels' better
+    this.props.navigate('/project/' + this.props.params?.project_id + '/dashboard/' + value?.id)
   };
 
   onDashboardClear = () => {
-    localStorage.removeItem('dashboard');
+    const { setActiveDashboard } = this.context;
+    setActiveDashboard();
     this.setState({
-      selectedDashboard: null,
-      dashboardInputValue: '',
+      selectedDashboard: 'Select a dashboard',
+      dashboardInputValue: 'Select a dashboard',
       filterValueDashboard: ''
-    }, this.getDashboards, this.getWidgets);
+    });
+    // TODO convert to functional component and rely on context updating within callbacks
+    this.getWidgets(null);
+
+    this.props.navigate('/project/' + this.props.params?.project_id + '/dashboard/')
   }
 
   onTextInputChange = (_event, value) => {
@@ -188,7 +256,8 @@ export class Dashboard extends React.Component {
           selectedDashboard: data,
           dashboardInputValue: data.title,
         }, this.getWidgets);
-      });
+      })
+      .catch(error => console.log(error));
   }
 
   onDeleteDashboardClick = () => {
@@ -200,18 +269,19 @@ export class Dashboard extends React.Component {
   }
 
   onDeleteDashboard = () => {
-    const dashboard = getActiveDashboard();
+    const { activeDashboard, setActiveDashboard } = this.context;
 
-    HttpClient.delete([Settings.serverUrl, 'dashboard', dashboard.id])
+    HttpClient.delete([Settings.serverUrl, 'dashboard', activeDashboard.id])
         .then(response => HttpClient.handleResponse(response))
         .then(() => {
-          localStorage.removeItem('dashboard');
+          setActiveDashboard();
           this.getDashboards();
           this.setState({
             isDeleteDashboardOpen: false,
             selectedDashboard: null
           });
-        });
+        })
+        .catch(error => console.log(error));
   }
 
   onDeleteWidget = () => {
@@ -220,13 +290,14 @@ export class Dashboard extends React.Component {
         .then(() => {
           this.getWidgets();
           this.setState({isDeleteWidgetOpen: false});
-        });
+        })
+        .catch(error => console.log(error));
   }
 
   onEditWidgetSave = (editWidget) => {
-    const project = getActiveProject();
-    if (!editWidget.project_id && project) {
-      editWidget.project_id = project.id;
+    const { primaryObject } = this.context;
+    if (!editWidget.project_id && primaryObject) {
+      editWidget.project_id = primaryObject.id;
     }
     this.setState({isEditModalOpen: false});
     editWidget.id = this.state.currentWidgetId
@@ -234,7 +305,8 @@ export class Dashboard extends React.Component {
         .then(response => HttpClient.handleResponse(response))
         .then(() => {
           this.getWidgets();
-        });
+        })
+        .catch(error => console.log(error));
   }
 
   onEditWidgetClose = () => {
@@ -246,7 +318,8 @@ export class Dashboard extends React.Component {
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
           this.setState({isEditModalOpen: true, currentWidgetId: id, editWidgetData: data});
-        });
+        })
+        .catch(error => console.log(error));
 
   }
 
@@ -271,16 +344,20 @@ export class Dashboard extends React.Component {
   }
 
   onNewWidgetSave = (newWidget) => {
-    const project = getActiveProject();
-    if (!newWidget.project_id && project) {
-      newWidget.project_id = project.id;
+    const { primaryObject } = this.context;
+    if (!newWidget.project_id && primaryObject) {
+      newWidget.project_id = primaryObject.id;
     }
-    HttpClient.post([Settings.serverUrl, 'widget-config'], newWidget).then(() => { this.getWidgets() });
+    HttpClient.post([Settings.serverUrl, 'widget-config'], newWidget)
+      .then(() => { this.getWidgets() })
+      .catch(error => console.log(error));
     this.setState({isWidgetWizardOpen: false});
   }
 
   componentDidMount() {
+    this.sync_context();
     this.getDashboards();
+    this.getDefaultDashboard();
     this.getWidgets();
   }
 
@@ -307,9 +384,8 @@ export class Dashboard extends React.Component {
 
   render() {
     document.title = 'Dashboard | Ibutsu';
-    const { widgets } = this.state || this.getWidgets();
-    const project = getActiveProject();
-    const dashboard = getActiveDashboard() || this.getDefaultDashboard();
+    const { widgets } = this.state;
+    const { primaryObject, activeDashboard } = this.context;
 
     const toggle = toggleRef => (
       <MenuToggle
@@ -319,7 +395,7 @@ export class Dashboard extends React.Component {
         onClick={this.onDashboardToggle}
         isExpanded={this.state.isDashboardSelectorOpen}
         isFullWidth
-        isDisabled={!project}
+        isDisabled={!primaryObject}
       >
         <TextInputGroup isPlain>
           <TextInputGroupMain
@@ -328,7 +404,7 @@ export class Dashboard extends React.Component {
             onChange={this.onTextInputChange}
             id="typeahead-select-input"
             autoComplete="off"
-            placeholder={dashboard ? dashboard.title : "No active dashboard"}
+            placeholder={activeDashboard?.title || "No active dashboard"}
             role="combobox"
             isExpanded={this.state.isDashboardSelectorOpen}
             aria-controls="select-typeahead-listbox"
@@ -400,7 +476,7 @@ export class Dashboard extends React.Component {
                   aria-label="New dashboard"
                   variant="plain"
                   title="New dashboard"
-                  isDisabled={!project}
+                  isDisabled={!activeDashboard}
                   onClick={this.onNewDashboardClick}
                 >
                   <PlusCircleIcon />
@@ -411,7 +487,7 @@ export class Dashboard extends React.Component {
                   aria-label="Delete dashboard"
                   variant="plain"
                   title="Delete dashboard"
-                  isDisabled={!dashboard}
+                  isDisabled={!activeDashboard}
                   onClick={this.onDeleteDashboardClick}
                 >
                   <TimesCircleIcon />
@@ -434,7 +510,7 @@ export class Dashboard extends React.Component {
           </Flex>
         </PageSection>
         <PageSection>
-          {!!project && !!dashboard && !!widgets &&
+          {!!primaryObject && !!activeDashboard && !!widgets &&
           <Grid hasGutter>
             {widgets.map(widget => {
               if (KNOWN_WIDGETS.includes(widget.widget)) {
@@ -529,7 +605,7 @@ export class Dashboard extends React.Component {
             })}
           </Grid>
           }
-          {!project &&
+          {!primaryObject &&
           <EmptyState>
             <EmptyStateHeader titleText="No Project Selected" icon={<EmptyStateIcon icon={ArchiveIcon} />} headingLevel="h4" />
             <EmptyStateBody>
@@ -538,7 +614,7 @@ export class Dashboard extends React.Component {
             </EmptyStateBody>
           </EmptyState>
           }
-          {!!project && !dashboard &&
+          {!!primaryObject && !activeDashboard &&
           <EmptyState>
             <EmptyStateHeader titleText="No Dashboard Selected" icon={<EmptyStateIcon icon={TachometerAltIcon} />} headingLevel="h4" />
             <EmptyStateBody>
@@ -550,7 +626,7 @@ export class Dashboard extends React.Component {
             </EmptyStateFooter>
           </EmptyState>
           }
-          {(!!project && !!dashboard && widgets.length === 0) &&
+          {(!!primaryObject && !!activeDashboard && widgets.length === 0) &&
           <EmptyState>
             <EmptyStateHeader titleText="No Widgets" icon={<EmptyStateIcon icon={CubesIcon} />} headingLevel="h4" />
             <EmptyStateBody>
@@ -564,13 +640,13 @@ export class Dashboard extends React.Component {
           }
         </PageSection>
         <NewDashboardModal
-          project={project}
+          project={primaryObject}
           isOpen={this.state.isNewDashboardOpen}
           onSave={this.onNewDashboardSave}
           onClose={this.onNewDashboardClose}
         />
         <NewWidgetWizard
-          dashboard={dashboard}
+          dashboard={activeDashboard}
           isOpen={this.state.isWidgetWizardOpen}
           onSave={this.onNewWidgetSave}
           onClose={this.onNewWidgetClose}

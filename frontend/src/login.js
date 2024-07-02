@@ -24,7 +24,7 @@ import { HttpClient } from './services/http';
 import { AuthService } from './services/auth';
 import { KeycloakService } from './services/keycloak';
 import { Settings } from './settings';
-import { clearActiveDashboard, clearActiveProject } from './utilities';
+import { IbutsuContext } from './services/context';
 
 function getLocationFrom(location) {
   let { from } = location.state || {from: {pathname: '/'}};
@@ -63,6 +63,7 @@ function getUser(location) {
 }
 
 export class Login extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
     location: PropTypes.object
   };
@@ -113,12 +114,13 @@ export class Login extends React.Component {
       alert = {message: 'E-mail and/or password fields are blank', status: 'danger'};
     }
     this.setState({isValidEmail, isValidPassword, alert});
+    const { setPrimaryObject, setActiveDashboard } = this.context;
     if (isValidEmail && isValidPassword) {
       AuthService.login(this.state.emailValue, this.state.passwordValue)
         .then(isLoggedIn => {
           if (isLoggedIn) {
-            clearActiveDashboard();
-            clearActiveProject();
+            setPrimaryObject();
+            setActiveDashboard();
             window.location = this.state.from.pathname;
           }
           else {
@@ -153,20 +155,22 @@ export class Login extends React.Component {
 
   onOAuth2Success = (response) => {
     // Make sure there are no active projects or dashboards selected
-    clearActiveDashboard();
-    clearActiveProject();
+    const { setPrimaryObject, setActiveDashboard } = this.context;
+    setPrimaryObject();
+    setActiveDashboard();
     AuthService.setUser(response);
     window.location = this.state.from.pathname;
   }
 
   onGoogleLogin = (response) => {
     const { redirect_uri } = this.state.externalLogins.google;
+    const { setPrimaryObject, setActiveDashboard } = this.context;
     HttpClient.get([redirect_uri], {"code": response["tokenId"]})
       .then(response => response.json())
       .then(user => {
         // Make sure there are no active projects or dashboards selected
-        clearActiveDashboard();
-        clearActiveProject();
+        setPrimaryObject();
+        setActiveDashboard();
         AuthService.setUser(user);
         window.location = this.state.from.pathname;
       });
@@ -174,10 +178,12 @@ export class Login extends React.Component {
 
   onKeycloakLogin = () => {
     const { server_url, realm, client_id } = this.state.externalLogins.keycloak;
+    const { setPrimaryObject, setActiveDashboard } = this.context;
+
     this.setState({isLoggingIn: true}, () => {
       // Make sure there are no active projects or dashboards selected
-      clearActiveDashboard();
-      clearActiveProject();
+      setPrimaryObject();
+      setActiveDashboard();
       KeycloakService.login(server_url, realm, client_id);
     });
   }

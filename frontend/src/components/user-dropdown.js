@@ -11,9 +11,10 @@ import { UserIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
 import { AuthService } from '../services/auth';
-import { clearActiveProject, clearActiveDashboard } from '../utilities';
+import { IbutsuContext } from '../services/context';
 
 export class UserDropdown extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
     eventEmitter: PropTypes.object
   }
@@ -48,8 +49,9 @@ export class UserDropdown extends React.Component {
   };
 
   logout = () => {
-    clearActiveProject();
-    clearActiveDashboard();
+    const { setPrimaryObject, setActiveDashboard } = this.context;
+    setPrimaryObject();
+    setActiveDashboard();
     AuthService.logout();
     window.location = "/";
   }
@@ -80,11 +82,11 @@ export class UserDropdown extends React.Component {
       >
         <DropdownList>
           <DropdownItem key="profile">
-            <Link to="/profile" className="pf-v5-c-menu__list-item">Profile</Link>
+            <Link to="/profile/user" className="pf-v5-c-menu__list-item">Profile</Link>
           </DropdownItem>
           {!!this.state.isSuperAdmin &&
             <DropdownItem key="admin">
-              <Link to="/admin" className="pf-v5-c-menu__list-item">Administration</Link>
+              <Link to="/admin/home" className="pf-v5-c-menu__list-item">Administration</Link>
             </DropdownItem>
           }
           <DropdownItem key="logout" onClick={this.logout}>

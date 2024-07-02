@@ -190,7 +190,7 @@ podman run -d \
        -w /mnt \
        -v./frontend:/mnt/:Z \
        node:18 \
-       /bin/bash -c "npm install --no-save --no-package-lock yarn &&
+       /bin/bash -c "node --dns-result-order=ipv4first /usr/bin/npm install --no-save --no-package-lock yarn &&
          yarn install &&
          CI=1 yarn devserver"
 echo "done."

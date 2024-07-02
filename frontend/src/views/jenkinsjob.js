@@ -22,7 +22,6 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   buildParams,
-  getActiveProject,
   getFilterMode,
   getOperationMode,
   getOperationsFromField,
@@ -31,24 +30,26 @@ import {
 } from '../utilities';
 import { FilterTable, MultiValueInput, RunSummary } from '../components';
 import { OPERATIONS, JJV_FIELDS } from '../constants';
+import { IbutsuContext } from '../services/context';
 
 
 function jobToRow(job, analysisViewId) {
   let start_time = new Date(job.start_time);
   return {
     cells: [
-      analysisViewId ? {title: <Link to={`/view/${analysisViewId}?job_name=${job.job_name}`}>{job.job_name}</Link>} : job.job_name,
+      analysisViewId ? {title: <Link to={`../view/${analysisViewId}?job_name=${job.job_name}`} relative='Path'>{job.job_name}</Link>} : job.job_name,
       {title: <a href={job.build_url} target="_blank" rel="noopener noreferrer">{job.build_number}</a>},
       {title: <RunSummary summary={job.summary} />},
       job.source,
       job.env,
       start_time.toLocaleString(),
-      {title: <Link to={`/runs?metadata.jenkins.job_name[eq]=${job.job_name}&metadata.jenkins.build_number=${job.build_number}`}>See runs <ChevronRightIcon /></Link>}
+      {title: <Link to={`../runs?metadata.jenkins.job_name[eq]=${job.job_name}&metadata.jenkins.build_number=${job.build_number}`} relative='Path'>See runs <ChevronRightIcon /></Link>}
     ]
   };
 }
 
 export class JenkinsJobView extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
@@ -260,9 +261,8 @@ export class JenkinsJobView extends React.Component {
 
   getData() {
     let analysisViewId = '';
-    let filters = this.state.filters;
+    const filters = this.state.filters;
     let params = this.props.view.params;
-    let project = getActiveProject();
 
     // get the widget ID for the analysis view
     HttpClient.get([Settings.serverUrl, 'widget-config'], {"filter": "widget=jenkins-analysis-view"})
@@ -277,8 +277,10 @@ export class JenkinsJobView extends React.Component {
     if (!this.props.view) {
       return;
     }
-    if (project) {
-      params['project'] = project.id;
+
+    const { primaryObject } = this.context;
+    if (primaryObject) {
+      params['project'] = primaryObject.id;
     }
     else {
       delete params['project'];

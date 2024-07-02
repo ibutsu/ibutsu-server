@@ -28,7 +28,6 @@ import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
   buildParams,
-  getActiveProject,
   getFilterMode,
   getOperationMode,
   getOperationsFromField,
@@ -38,8 +37,11 @@ import {
 } from './utilities';
 import { FilterTable, MultiValueInput } from './components';
 import { OPERATIONS, RESULT_FIELDS } from './constants';
+import { IbutsuContext } from './services/context';
 
 export class ResultList extends React.Component {
+  static contextType = IbutsuContext;
+
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
@@ -356,7 +358,7 @@ export class ResultList extends React.Component {
     let params = buildParams(this.state.filters);
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.navigate('/results?' + params.join('&'))
+    this.props.navigate('results?' + params.join('&'))
   }
 
   setPage = (_event, pageNumber) => {
@@ -378,9 +380,9 @@ export class ResultList extends React.Component {
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
     let params = {filter: []};
     let filters = this.state.filters;
-    const project = getActiveProject();
-    if (project) {
-      filters['project_id'] = {'val': project.id, 'op': 'eq'};
+    const { primaryObject } = this.context;
+    if (primaryObject) {
+      filters['project_id'] = {'val': primaryObject.id, 'op': 'eq'};
     }
     else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
       delete filters['project_id']

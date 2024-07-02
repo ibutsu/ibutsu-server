@@ -114,7 +114,7 @@ export class Run extends React.Component {
     super(props);
     this.state = {
       run: MockRun,
-      id: props.params.id,
+      id: props.params.run_id,
       testResult: null,
       columns: ['Test', 'Run', 'Result', 'Duration', 'Started'],
       rows: [getSpinnerRow(5)],
@@ -236,6 +236,7 @@ export class Run extends React.Component {
   }
 
   getRunArtifacts() {
+    if (!this.state.id) {return;}
     HttpClient.get([Settings.serverUrl, 'artifact'], {runId: this.state.id})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
@@ -356,6 +357,7 @@ export class Run extends React.Component {
   }
 
   getRun() {
+    if (!this.state.id) {return;}
     HttpClient.get([Settings.serverUrl, 'run', this.state.id])
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
@@ -522,7 +524,7 @@ export class Run extends React.Component {
         </PageSection>
         <PageSection>
           {!this.state.isRunValid &&
-          <EmptyObject headingText="Run not found" returnLink="/runs" returnLinkText="Return to runs list" />
+          <EmptyObject headingText="Run not found" returnLink="runs" returnLinkText="Return to runs list" />
           }
           {this.state.isRunValid &&
             <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
@@ -733,7 +735,7 @@ export class Run extends React.Component {
                         <Button variant="secondary" onClick={this.refreshResults}>Refresh results</Button>
                       </FlexItem>
                       <FlexItem>
-                        <Link to={`/results?run_id[eq]=${run.id}`} className="pf-v5-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
+                        <Link to={`../results?run_id[eq]=${run.id}`} relative="Path" className="pf-v5-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
                       </FlexItem>
                     </Flex>
                   </CardHeader>

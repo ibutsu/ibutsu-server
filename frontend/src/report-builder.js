@@ -31,10 +31,10 @@ import {
   toTitleCase,
   parseFilter,
   getSpinnerRow,
-  getActiveProject,
 } from './utilities';
 import { DownloadButton, FilterTable } from './components';
 import { OPERATIONS } from './constants';
+import { IbutsuContext } from './services/context';
 
 
 function reportToRow(report) {
@@ -64,6 +64,7 @@ function reportToRow(report) {
 }
 
 export class ReportBuilder extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
     location: PropTypes.object,
     eventEmitter: PropTypes.object
@@ -139,9 +140,9 @@ export class ReportBuilder extends React.Component {
       pageSize: this.state.pageSize,
       page: this.state.page
     };
-    const project = getActiveProject();
-    if (project) {
-      params['project'] = project.id;
+    const { primaryObject } = this.context;
+    if (primaryObject) {
+      params['project'] = primaryObject.id;
     }
     HttpClient.get([Settings.serverUrl, 'report'], params)
       .then(response => HttpClient.handleResponse(response))
@@ -167,14 +168,14 @@ export class ReportBuilder extends React.Component {
   }
 
   onRunReportClick = () => {
-    const project = getActiveProject();
+    const { primaryObject } = this.context;
     let params = {
       type: this.state.reportType,
       filter: this.state.reportFilter,
       source: this.state.reportSource
     };
-    if (project) {
-      params['project'] = project.id;
+    if (primaryObject) {
+      params['project'] = primaryObject.id;
     }
     HttpClient.post([Settings.serverUrl, 'report'], params).then(() => this.getReports());
   };
