@@ -59,46 +59,38 @@ class TestArtifactController(BaseTestCase):
 
         Delete an artifact
         """
-        headers = {"Authorization": f"Bearer {self.jwt_token}"}
+        headers = {"Authorization": self.headers.get("Authorization")}
         response = self.client.open(f"/api/artifact/{MOCK_ID}", method="DELETE", headers=headers)
         self.mock_artifact.query.get.assert_called_once_with(MOCK_ID)
         self.mock_session.delete.assert_called_once_with(MOCK_ARTIFACT)
         self.mock_session.commit.assert_called_once()
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
 
     def test_download_artifact(self):
         """Test case for download_artifact
 
         Download an artifact
         """
-        headers = {
-            "Accept": "application/octet-stream",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
         response = self.client.open(
             f"/api/artifact/{MOCK_ID}/download",
             method="GET",
-            headers=headers,
+            headers=self.headers_no_content,
         )
         self.mock_artifact.query.get.assert_called_once_with(MOCK_ID)
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
 
     def test_get_artifact(self):
         """Test case for get_artifact
 
         Get a single artifact
         """
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
         response = self.client.open(
             f"/api/artifact/{MOCK_ID}",
             method="GET",
-            headers=headers,
+            headers=self.headers_no_content,
         )
         self.mock_artifact.query.get.assert_called_once_with(MOCK_ID)
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
 
     def test_get_artifact_list(self):
         """Test case for get_artifact_list
@@ -106,15 +98,15 @@ class TestArtifactController(BaseTestCase):
         Get a (filtered) list of artifacts
         """
         query_string = [("resultId", MOCK_RESULT_ID), ("page", 56), ("pageSize", 56)]
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         response = self.client.open(
-            "/api/artifact", method="GET", headers=headers, query_string=query_string
+            "/api/artifact",
+            method="GET",
+            headers=self.headers_no_content,
+            query_string=query_string,
         )
         self.mock_limit.return_value.offset.return_value.all.assert_called_once()
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
 
     @skip("Something is getting crossed in the validation layer")
     def test_upload_artifact(self):
@@ -122,11 +114,12 @@ class TestArtifactController(BaseTestCase):
 
         Uploads a test run artifact
         """
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "multipart/form-data",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+        headers = self.headers.copy()
+        headers.update(
+            {
+                "Content-Type": "multipart/form-data",
+            }
+        )
         data = {
             "resultId": MOCK_ID,
             "filename": "log.txt",
@@ -140,4 +133,4 @@ class TestArtifactController(BaseTestCase):
             data=data,
             content_type="multipart/form-data",
         )
-        self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_201(response)

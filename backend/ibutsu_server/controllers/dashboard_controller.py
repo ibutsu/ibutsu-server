@@ -11,7 +11,7 @@ from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
 
-def add_dashboard(dashboard=None, token_info=None, user=None):
+def add_dashboard(dashboard=None, token_info=None, user=None) -> tuple[dict, int]:
     """Create a dashboard
 
     :param body: Dashboard
@@ -22,17 +22,30 @@ def add_dashboard(dashboard=None, token_info=None, user=None):
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
     dashboard = Dashboard.from_dict(**connexion.request.get_json())
+
+    if dashboard.portal_id and dashboard.project_id:
+        return "Dashboard can only have one of project_id or portal_id", HTTPStatus.BAD_REQUEST
+
+    if not (dashboard.portal_id or dashboard.project_id):
+        return "Dashboard needs either project_id or portal_id", HTTPStatus.BAD_REQUEST
+
     if dashboard.project_id and not project_has_user(dashboard.project_id, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+
+    # TODO utility function to resolve all users with at least one project set
+    # compare to projects assigned to the portal? or portals are open to all projects
+    # otherwise, limit to admin users or new portal_admin permission
+
     if dashboard.user_id and not User.query.get(dashboard.user_id):
         return f"User with ID {dashboard.user_id} doesn't exist", HTTPStatus.BAD_REQUEST
+
     session.add(dashboard)
     session.commit()
     return dashboard.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
-def get_dashboard(id_, token_info=None, user=None):
+def get_dashboard(id_, token_info=None, user=None) -> dict:
     """Get a single dashboard by ID
 
     :param id: ID of test dashboard
@@ -45,16 +58,19 @@ def get_dashboard(id_, token_info=None, user=None):
         return "Dashboard not found", HTTPStatus.NOT_FOUND
     if dashboard and dashboard.project and not project_has_user(dashboard.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+    # TODO test against dashboard with only portal set
     return dashboard.to_dict()
 
 
 def get_dashboard_list(
-    filter_=None, project_id=None, page=1, page_size=25, token_info=None, user=None
-):
+    filter_=None, project_id=None, portal_id=None, page=1, page_size=25, token_info=None, user=None
+) -> dict[list[dict], dict]:
     """Get a list of dashboards
 
     :param project_id: Filter dashboards by project ID
     :type project_id: str
+    :param portal_id: Filter dashboards by portal ID
+    :type portal_id: str
     :param user_id: Filter dashboards by user ID
     :type user_id: str
     :param limit: Limit the dashboards
@@ -66,6 +82,11 @@ def get_dashboard_list(
     """
     query = Dashboard.query
     project = None
+    portal = None
+    if portal_id is not None and project_id is not None:
+        return "Dashboard list can only have one of project_id or portal_id", HTTPStatus.BAD_REQUEST
+
+    # Project filter injection
     if "project_id" in connexion.request.args:
         project = Project.query.get(connexion.request.args["project_id"])
     if project:
@@ -73,6 +94,13 @@ def get_dashboard_list(
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         query = query.filter(Dashboard.project_id == project_id)
 
+    # Portal filter injection
+    if "portal_id" in connexion.request.args:
+        portal = Project.query.get(connexion.request.args["portal_id"])
+    if portal:
+        query = query.filter(Dashboard.portal_id == portal_id)
+
+    # Other filters follow
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Dashboard)
@@ -96,10 +124,10 @@ def get_dashboard_list(
 
 
 @validate_uuid
-def update_dashboard(id_, dashboard=None, token_info=None, user=None):
+def update_dashboard(id_, dashboard=None, token_info=None, user=None) -> dict:
     """Update a dashboard
 
-    :param id: ID of test dashboard
+    :param id: ID of dashboard
     :type id: str
     :param body: Dashboard
     :type body: dict | bytes
@@ -113,11 +141,17 @@ def update_dashboard(id_, dashboard=None, token_info=None, user=None):
         dashboard_dict["metadata"]["project"], user
     ):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+
+    # TODO user/admin check for portal ref
+
     dashboard = Dashboard.query.get(id_)
     if not dashboard:
         return "Dashboard not found", HTTPStatus.NOT_FOUND
-    if project_has_user(dashboard.project, user):
+    if dashboard.project_id is not None and project_has_user(dashboard.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+
+    # TODO user/admin check for portal ref
+
     dashboard.update(connexion.request.get_json())
     session.add(dashboard)
     session.commit()
@@ -125,7 +159,7 @@ def update_dashboard(id_, dashboard=None, token_info=None, user=None):
 
 
 @validate_uuid
-def delete_dashboard(id_, token_info=None, user=None):
+def delete_dashboard(id_, token_info=None, user=None) -> tuple[str, int]:
     """Deletes a dashboard
 
     :param id: ID of the dashboard to delete
@@ -136,8 +170,9 @@ def delete_dashboard(id_, token_info=None, user=None):
     dashboard = Dashboard.query.get(id_)
     if not dashboard:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
-    if not project_has_user(dashboard.project, user):
+    if dashboard.project_id is not None and not project_has_user(dashboard.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+    # TODO user/admin check for portal ref
     widget_configs = WidgetConfig.query.filter(WidgetConfig.dashboard_id == dashboard.id).all()
     for widget_config in widget_configs:
         session.delete(widget_config)

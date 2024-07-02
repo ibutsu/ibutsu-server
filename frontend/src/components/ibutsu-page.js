@@ -1,3 +1,5 @@
+{/* TODO: Consider renaming to projects-page, maybe updates for static routing? */}
+
 import React from 'react';
 import PropTypes from 'prop-types';
 

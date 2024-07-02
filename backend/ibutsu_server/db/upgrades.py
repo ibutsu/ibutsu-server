@@ -7,7 +7,7 @@ from sqlalchemy.sql.expression import null
 from ibutsu_server.db.base import Boolean, Column, ForeignKey, Text
 from ibutsu_server.db.types import PortableUUID
 
-__version__ = 5
+__version__ = 6
 
 
 def get_upgrade_op(session):
@@ -175,3 +175,78 @@ def upgrade_5(session):
             "projects",
             Column("default_dashboard_id", PortableUUID(), ForeignKey("dashboards.id")),
         )
+
+
+def upgrade_6(session):
+    """Version 6 upgrade
+
+    This upgrade adds portals relationships
+    """
+    engine = session.get_bind()
+    op = get_upgrade_op(session)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+
+    # WidgetConfig model changes
+    wc_table = metadata.tables.get("widget_configs")
+    wc_table_present = bool("widget_configs" in metadata.tables and wc_table is not None)
+
+    # widgetconfig new column portal_id
+    if wc_table_present and "portal_id" not in [col.name for col in wc_table.columns]:
+        op.add_column(
+            "widget_configs",
+            Column(
+                "portal_id", PortableUUID(), ForeignKey("portals.id"), nullable=True, index=True
+            ),
+        )
+        if engine.url.get_dialect().name != "sqlite":
+            # SQLite doesn't support ALTER TABLE ADD CONSTRAINT
+            op.create_foreign_key(
+                "fk_widget_configs_portal_id",
+                "widget_configs",
+                "portals",
+                ["portal_id"],
+                ["id"],
+            )
+
+    # widgetconfig alter project_id -> nullable
+    # can't alter tables in unittest with sqllite
+    # TODO replace sqlite for unit tests
+    if (
+        engine.url.get_dialect().name != "sqlite"
+        and wc_table_present
+        and "project_id" in [col.name for col in wc_table.columns]
+    ):
+        op.alter_column("widget_configs", "project_id", nullable=True)
+
+    # Dashboard model changes
+    dash_table = metadata.tables.get("dashboards")
+    dash_table_present = bool("dashboards" in metadata.tables and dash_table is not None)
+
+    # dashboard alter project_id -> nullable
+    # can't alter tables in unittest with sqllite
+    # TODO replace sqlite for unit tests
+    if (
+        engine.url.get_dialect().name != "sqlite"
+        and dash_table_present
+        and "project_id" in [col.name for col in dash_table.columns]
+    ):
+        op.alter_column("dashboards", "project_id", nullable=True)
+
+    # dashboard new column portal_id
+    if dash_table_present and "portal_id" not in [col.name for col in dash_table.columns]:
+        op.add_column(
+            "dashboards",
+            Column(
+                "portal_id", PortableUUID(), ForeignKey("portals.id"), nullable=True, index=True
+            ),
+        )
+        if engine.url.get_dialect().name != "sqlite":
+            # SQLite doesn't support ALTER TABLE ADD CONSTRAINT
+            op.create_foreign_key(
+                "fk_dashboards_portal_id",
+                "dashboards",
+                "portals",
+                ["portal_id"],
+                ["id"],
+            )
