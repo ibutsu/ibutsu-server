@@ -132,7 +132,7 @@ def admin_update_portal(id_, portal=None, body=None, token_info=None, user=None)
         portal.update(portal_dict)
         session.add(portal)
         session.commit()
-        return portal.to_dict()
+        return portal.to_dict(), HTTPStatus.OK
     else:
         abort(HTTPStatus.NOT_FOUND)
 

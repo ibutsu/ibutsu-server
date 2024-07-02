@@ -34,39 +34,55 @@ import {
 import { BarsIcon, MoonIcon, ServerIcon, TimesIcon, QuestionCircleIcon, UploadIcon } from '@patternfly/react-icons';
 
 import { FileUpload, UserDropdown } from '../components';
-import { MONITOR_UPLOAD_TIMEOUT } from '../constants';
+import { MONITOR_UPLOAD_TIMEOUT, VERSION_CHECK_TIMEOUT } from '../constants';
+import  packageJson from '../../package.json'
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { getActiveProject, getTheme, setTheme } from '../utilities';
+import { getDateString, getTheme, setTheme } from '../utilities';
+import { IbutsuContext } from '../services/context';
 
 
 export class IbutsuHeader extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
     eventEmitter: PropTypes.object,
     navigate: PropTypes.func,
-    version: PropTypes.string
+    version: PropTypes.string,
+    params: PropTypes.object,
   }
 
   constructor(props) {
     super(props);
-    let project = getActiveProject();
     this.eventEmitter = props.eventEmitter;
+    this.versionCheckId = '';
 
     this.state = {
+      // version
+      version: packageJson.version,
+      // upload state
       uploadFileName: '',
       importId: '',
       monitorUploadId: null,
-      isAboutOpen: false,
+      // project state
       isProjectSelectorOpen: false,
-      selectedProject: project || '',
-      inputValue: project?.title || '',
+      selectedProject: '',
+      inputValue: '',
       filterValue: '',
       projects: [],
       filteredProjects: [],
+      // portal state
+      isPortalSelectorOpen: false,
+      selectedPortal: '',
+      portalInputValue: '',
+      portalFilterValue: '',
+      portals: [],
+      filteredPortals: [],
+      // misc
+      isAboutOpen: false,
       isDarkTheme: getTheme() === 'dark',
-      version: props.version
     };
   }
+
 
   showNotification(type, title, message, action = null, timeout = null, key = null) {
     if (!this.eventEmitter) {
@@ -75,11 +91,37 @@ export class IbutsuHeader extends React.Component {
     this.eventEmitter.emit('showNotification', type, title, message, action, timeout, key);
   }
 
-  emitProjectChange() {
+  checkVersion() {
+    const frontendUrl = window.location.origin;
+    HttpClient.get([frontendUrl, 'version.json'], {'v': getDateString()})
+      .then(response => HttpClient.handleResponse(response))
+      .then((data) => {
+        if (data && data.version && (data.version !== this.state.version)) {
+          const action = <AlertActionLink onClick={() => { window.location.reload(); }}>Reload</AlertActionLink>;
+          this.showNotification(
+            'info',
+            'Ibutsu has been updated',
+            'A newer version of Ibutsu is available, click reload to get it.',
+            action,
+            true,
+            'check-version');
+        }
+      });
+  }
+
+  emitProjectChange(value = null) {
     if (!this.eventEmitter) {
       return;
     }
-    this.eventEmitter.emit('projectChange');
+    this.eventEmitter.emit('projectChange', value);
+  }
+
+  emitPortalChange() {
+    // the portal selector doesnt even exist yet
+    if (!this.eventEmitter) {
+      return;
+    }
+    this.eventEmitter.emit('portalChange');
   }
 
   emitThemeChange() {
@@ -89,14 +131,46 @@ export class IbutsuHeader extends React.Component {
     this.eventEmitter.emit('themeChange');
   }
 
-  getProjects() {
+  getSelectorOptions = (endpoint = "project") => {
     const params = {pageSize: 10};
     if (this.state.filterValue) {
       params['filter'] = ['title%' + this.state.filterValue];
     }
-    HttpClient.get([Settings.serverUrl, 'project'], params)
+
+    const {setPrimaryObject} = this.context;
+
+    // adding s here seems dumb, but this scope is small, it's only abstracted for 2 things
+    HttpClient.get([Settings.serverUrl, endpoint], params)
       .then(response => HttpClient.handleResponse(response))
-      .then(data => this.setState({projects: data['projects'], filteredProjects: data['projects']}));
+      .then(data => {
+        // populate context and current input value if passed
+        for ( let item of data[endpoint+'s'] ) {
+          if (item.id === this.props.params?.project_id) {
+            this.setState({
+              inputValue: item.title,
+              filterValue: ''
+            });
+            setPrimaryObject(item);
+          }
+        }
+        this.setState(
+          {
+            projects: data[endpoint+'s'],
+            filteredProjects: data[endpoint+'s'],
+
+          })
+      }
+    );
+
+
+  }
+
+  findPrimary = (endpoint, name) => {
+    HttpClient.get([Settings.serverUrl, endpoint], {'name': name})
+    .then(response => HttpClient.handleResponse(response))
+    .then(data => {return( data[endpoint+'s'] )}
+    )
+
   }
 
   onBeforeUpload = (files) => {
@@ -144,11 +218,11 @@ export class IbutsuHeader extends React.Component {
 
   onProjectToggle = () => {
     this.setState({isProjectSelectorOpen: !this.state.isProjectSelectorOpen});
-  };
+  }
 
   onProjectSelect = (_event, value) => {
-    const activeProject = getActiveProject();
-    if (activeProject && activeProject.id === value.id) {
+    const { primaryObject, setPrimaryObject, setPrimaryType } = this.context;
+    if (primaryObject?.id === value?.id) {
       this.setState({
         isProjectSelectorOpen: false,
         inputValue: value.title,
@@ -156,39 +230,49 @@ export class IbutsuHeader extends React.Component {
       });
       return;
     }
-
-    const project = JSON.stringify(value);
-    localStorage.setItem('project', project);
+    // update context
+    setPrimaryObject(value)
+    setPrimaryType('project')
+    // update state
     this.setState({
       selectedProject: value,
       isProjectSelectorOpen: false,
-      inputValue: value.title,
+      inputValue: value?.title,
       filterValue: ''
     });
-    this.emitProjectChange();
-  };
+    // Consider whether the location should be changed within the emit hooks?
+    this.props.navigate('/project/' + value?.id + '/dashboard/' + value?.default_dashboard_id);
+
+    // useEffect with dependency on functional component to remove passing value, handlers don't see updated context
+    this.emitProjectChange(value);
+  }
 
   onProjectClear = () => {
-    localStorage.removeItem('project');
+    const { setPrimaryObject } = this.context;
+
     this.setState({
       selectedProject: '',
       isProjectSelectorOpen: false,
       inputValue: '',
       filterValue: ''
-    }, this.getProjects);
+    });
+    setPrimaryObject();
+
+    this.props.navigate("/project");
+
     this.emitProjectChange();
   }
 
-  onTextInputChange = (_event, value) => {
+  onProjectTextInputChange = (_event, value) => {
     this.setState({
       inputValue: value,
       filterValue: value
-    }, this.getProjects);
-  };
+    }, this.getSelectorOptions('project'));
+  }
 
   toggleAbout = () => {
     this.setState({isAboutOpen: !this.state.isAboutOpen});
-  };
+  }
 
   onThemeChanged = (isChecked) => {
     setTheme(isChecked ? 'dark' : 'light');
@@ -199,10 +283,17 @@ export class IbutsuHeader extends React.Component {
     if (this.state.monitorUploadId) {
       clearInterval(this.state.monitorUploadId);
     }
+    if (this.versionCheckId) {
+      clearInterval(this.versionCheckId);
+    }
   }
 
   componentDidMount() {
-    this.getProjects();
+    this.getSelectorOptions("project");
+    this.checkVersion();
+    this.versionCheckId = setInterval(() => this.checkVersion(), VERSION_CHECK_TIMEOUT);
+
+
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -238,7 +329,7 @@ export class IbutsuHeader extends React.Component {
         <TextInputGroupMain
           value={this.state.inputValue}
           onClick={this.onProjectToggle}
-          onChange={this.onTextInputChange}
+          onChange={this.onProjectTextInputChange}
           id="typeahead-select-input"
           autoComplete="off"
           placeholder="No active project"
@@ -259,6 +350,8 @@ export class IbutsuHeader extends React.Component {
     </MenuToggle>
   );
 
+
+
   render() {
     document.title = 'Ibutsu';
     const apiUiUrl = Settings.serverUrl + '/ui/';
@@ -270,6 +363,7 @@ export class IbutsuHeader extends React.Component {
       filterValue,
     } = this.state;
 
+    // TODO make upload read from context, or provide explicit selection
     if (selectedProject) {
       uploadParams['project'] = selectedProject.id;
     }

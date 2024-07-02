@@ -163,8 +163,6 @@ def admin_delete_project(id_, token_info=None, user=None):
         return f"Project ID {id_} is not in UUID format", HTTPStatus.BAD_REQUEST
 
     if project := Project.query.get(id_):
-        abort(HTTPStatus.NOT_FOUND)
-
         session.delete(project)
         session.commit()
         return HTTPStatus.OK.phrase, HTTPStatus.OK

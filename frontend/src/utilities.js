@@ -32,6 +32,8 @@ import {
 import { ClassificationDropdown } from './components';
 
 
+
+
 export function getDateString() {
   return String((new Date()).getTime());
 }
@@ -401,6 +403,7 @@ export function getOperationsFromField(field) {
   return operations;
 }
 
+// TODO remove, moved to react routing params and context
 export function getActiveProject() {
   let project = localStorage.getItem('project');
   if (project) {
@@ -408,10 +411,11 @@ export function getActiveProject() {
   }
   return project;
 }
-
+// TODO remove, moved to react routing params and context
 export function clearActiveProject() {
   localStorage.removeItem('project');
 }
+// TODO remove, moved to react routing params and context
 
 export function getActiveDashboard() {
   let dashboard = localStorage.getItem('dashboard');
@@ -420,6 +424,7 @@ export function getActiveDashboard() {
   }
   return dashboard;
 }
+// TODO remove, moved to react routing params and context
 
 export function clearActiveDashboard() {
   localStorage.removeItem('dashboard');
@@ -527,6 +532,7 @@ export function debounce(func, timeout = 500) {
   };
 }
 
+// TODO remove, move to AppContext
 export function getTheme() {
   return localStorage.getItem('theme');
 }

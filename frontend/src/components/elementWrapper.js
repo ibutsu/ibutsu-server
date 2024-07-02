@@ -11,7 +11,7 @@ const ElementWrapper = (props) => {
   const Element = props.routeElement;
   const eventEmitter = props.eventEmitter
 
-  return <Element eventEmitter={eventEmitter} location={location} navigate={navigate} params={params} {...props} />;
+  return <Element eventEmitter={eventEmitter} location={location} navigate={navigate} params={params} />;
 };
 
 ElementWrapper.propTypes = {

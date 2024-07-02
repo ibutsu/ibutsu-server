@@ -28,7 +28,6 @@ import { Settings } from './settings';
 import {
   buildBadge,
   buildParams,
-  getActiveProject,
   getFilterMode,
   getOperationMode,
   getOperationsFromField,
@@ -38,6 +37,7 @@ import {
 } from './utilities';
 import { MultiValueInput, FilterTable, RunSummary } from './components';
 import { OPERATIONS, RUN_FIELDS } from './constants';
+import { IbutsuContext } from './services/context';
 
 
 function runToRow(run, filterFunc) {
@@ -85,6 +85,8 @@ function runToRow(run, filterFunc) {
 }
 
 export class RunList extends React.Component {
+  static contextType = IbutsuContext;
+
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
@@ -136,8 +138,8 @@ export class RunList extends React.Component {
       isBoolOpen: false,
     };
     this.params = new URLSearchParams(props.location.search);
-    props.eventEmitter.on('projectChange', () => {
-      this.getRuns();
+    props.eventEmitter.on('projectChange', (value) => {
+      this.getRuns(value);
     });
   }
 
@@ -265,7 +267,6 @@ export class RunList extends React.Component {
     this.setState({filters: filters, page: 1}, callback);
   }
 
-
   setFilter = (field, value) => {
     this.updateFilters(field, 'eq', value, () => {
       this.updateUrl();
@@ -279,7 +280,6 @@ export class RunList extends React.Component {
       });
     });
   }
-
 
   removeFilter = id => {
     this.updateFilters(id, null, null, () => {
@@ -309,14 +309,15 @@ export class RunList extends React.Component {
     });
   }
 
-  getRuns() {
+  getRuns = (handledOject = null) => {
     // First, show a spinner
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
     let params = {filter: []};
     let filters = this.state.filters;
-    const project = getActiveProject();
-    if (project) {
-      filters['project_id'] = {'val': project.id, 'op': 'eq'};
+    const { primaryObject } = this.context;
+    const targetObject = handledOject ?? primaryObject;
+    if (targetObject) {
+      filters['project_id'] = {'val': targetObject.id, 'op': 'eq'};
     }
     else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
       delete filters['project_id']
@@ -346,7 +347,7 @@ export class RunList extends React.Component {
         console.error('Error fetching run data:', error);
         this.setState({rows: [], isEmpty: false, isError: true});
       });
-  }
+  };
 
   clearFilters = () => {
     this.setState({
@@ -358,10 +359,8 @@ export class RunList extends React.Component {
       textFilter: '',
       inValues: [],
       boolSelection: null,
-    }, function () {
-      this.updateUrl();
-      this.getRuns();
     });
+    this.updateUrl();
   };
 
   componentDidMount() {
