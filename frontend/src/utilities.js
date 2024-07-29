@@ -202,14 +202,14 @@ export function resultToRow(result, filterFunc) {
     }
   }
   if (result.metadata && result.metadata.run) {
-    runLink = <Link to={`/runs/${result.run_id}`}>{result.run_id}</Link>;
+    runLink = <Link to={`../runs/${result.run_id}`} relative="Path">{result.run_id}</Link>;
   }
   if (result.metadata && result.metadata.classification) {
     classification = <Badge isRead>{result.metadata.classification.split('_')[0]}</Badge>;
   }
   return {
     "cells": [
-      {title: <React.Fragment><Link to={`/results/${result.id}`} key={result.id}>{result.test_id}</Link> {markers}</React.Fragment>},
+      {title: <React.Fragment><Link to={`../results/${result.id}`} relative="Path" key={result.id}>{result.test_id}</Link> {markers}</React.Fragment>},
       {title: runLink},
       {title: <React.Fragment><span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span> {classification}</React.Fragment>},
       {title: round(result.duration) + 's'},

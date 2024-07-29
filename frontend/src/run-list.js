@@ -75,11 +75,11 @@ function runToRow(run, filterFunc) {
   }
   return {
     "cells": [
-      {title: <React.Fragment><Link to={`/runs/${run.id}`}>{run.id}</Link> {badges}</React.Fragment>},
+      {title: <React.Fragment><Link to={`${run.id}`}>{run.id}</Link> {badges}</React.Fragment>},
       {title: round(run.duration) + 's'},
       {title: <RunSummary summary={run.summary} />},
       {title: created.toLocaleString()},
-      {title: <Link to={`/results?run_id=${run.id}`}>See results <ChevronRightIcon /></Link>}
+      {title: <Link to={`../results?run_id=${run.id}`} relative="Path">See results <ChevronRightIcon /></Link>}
     ]
   };
 }
