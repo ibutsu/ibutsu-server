@@ -11,7 +11,7 @@ repos:
   - id: debug-statements
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.5.2
+  rev: v0.5.5
   hooks:
     - id: ruff
       args:
@@ -31,7 +31,7 @@ repos:
 
 ## ES
 - repo: https://github.com/pre-commit/mirrors-eslint
-  rev: v9.7.0
+  rev: v9.8.0
   hooks:
   - id: eslint
     additional_dependencies:
