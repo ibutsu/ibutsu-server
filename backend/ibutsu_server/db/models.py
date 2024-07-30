@@ -94,10 +94,12 @@ class Dashboard(Model, ModelMixin):
     title = Column(Text, index=True)
     description = Column(Text, default="")
     filters = Column(Text, default="")
-    project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True)
+    portal_id = Column(PortableUUID(), ForeignKey("portals.id"), index=True, nullable=True)
+    project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True, nullable=True)
     user_id = Column(PortableUUID(), ForeignKey("users.id"), index=True)
     widgets = relationship("WidgetConfig")
     project = relationship("Project", back_populates="dashboards", foreign_keys=[project_id])
+    portal = relationship("Portal", back_populates="dashboards", foreign_keys=[portal_id])
 
 
 class Group(Model, ModelMixin):
@@ -145,6 +147,30 @@ class Project(Model, ModelMixin):
         if self.default_dashboard:
             project_dict["defaultDashboard"] = self.default_dashboard.to_dict()
         return project_dict
+
+
+class Portal(Model, ModelMixin):
+    # TODO: Consider common mixin for overlap between project and portal
+    __tablename__ = "portals"
+    name = Column(Text, index=True)
+    title = Column(Text, index=True)
+    owner_id = Column(PortableUUID(), ForeignKey("users.id"), index=True)
+    # group_id = Column(PortableUUID(), ForeignKey("groups.id"), index=True)
+    default_dashboard_id = Column(PortableUUID(), ForeignKey("dashboards.id"))
+    default_dashboard = relationship("Dashboard", foreign_keys=[default_dashboard_id])
+    dashboards = relationship(
+        "Dashboard", back_populates="portal", foreign_keys=[Dashboard.portal_id]
+    )
+    widget_configs = relationship("WidgetConfig", back_populates="portal")
+
+    def to_dict(self, with_owner=False):
+        """An overridden method to include the owner"""
+        portal_dict = super().to_dict()
+        if with_owner and self.owner:
+            portal_dict["owner"] = self.owner.to_dict()
+        if self.default_dashboard:
+            portal_dict["defaultDashboard"] = self.default_dashboard.to_dict()
+        return portal_dict
 
 
 class Report(Model, ModelMixin):
@@ -208,7 +234,8 @@ class WidgetConfig(Model, ModelMixin):
     __tablename__ = "widget_configs"
     navigable = Column(Boolean, index=True)
     params = Column(mutable_json_type(dbtype=PortableJSON()))
-    project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True)
+    portal_id = Column(PortableUUID(), ForeignKey("portals.id"), index=True, nullable=True)
+    project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True, nullable=True)
     dashboard_id = Column(PortableUUID(), ForeignKey("dashboards.id"), index=True)
     title = Column(Text, index=True)
     type = Column(Text, index=True)
@@ -216,6 +243,7 @@ class WidgetConfig(Model, ModelMixin):
     widget = Column(Text, index=True)
 
     project = relationship("Project", back_populates="widget_configs")
+    portal = relationship("Portal", back_populates="widget_configs")
 
 
 class User(Model, ModelMixin):
@@ -229,6 +257,7 @@ class User(Model, ModelMixin):
     group_id = Column(PortableUUID(), ForeignKey("groups.id"), index=True)
     dashboards = relationship("Dashboard")
     owned_projects = relationship("Project", backref="owner")
+    owned_portals = relationship("Portal", backref="owner")
     tokens = relationship("Token", backref="user")
     projects = relationship(
         "Project", secondary=users_projects, backref=backref("users", lazy="subquery")

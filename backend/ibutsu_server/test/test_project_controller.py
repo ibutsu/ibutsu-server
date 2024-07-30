@@ -64,19 +64,14 @@ class TestProjectController(BaseTestCase):
         self.mock_user.query.get.return_value = MOCK_USER
         self.mock_project.query.get.return_value = None
 
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
         response = self.client.open(
             "/api/project",
             method="POST",
-            headers=headers,
+            headers=self.headers,
             data=json.dumps(MOCK_DATA),
             content_type="application/json",
         )
-        self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_201(response)
         self.assert_equal(response.json, MOCK_PROJECT_DICT)
         self.mock_session.add.assert_called_once_with(MOCK_PROJECT)
         self.mock_session.commit.assert_called_once()
@@ -89,12 +84,11 @@ class TestProjectController(BaseTestCase):
         Get a single project by ID
         """
         self.mock_project.query.filter.return_value.first.return_value = None
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
-        response = self.client.open(f"/api/project/{MOCK_ID}", method="GET", headers=headers)
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+
+        response = self.client.open(
+            f"/api/project/{MOCK_ID}", method="GET", headers=self.headers_no_content
+        )
+        self.assert_200(response)
         self.assert_equal(response.json, MOCK_PROJECT_DICT)
         self.mock_project.query.get.assert_called_once_with(MOCK_ID)
 
@@ -104,12 +98,11 @@ class TestProjectController(BaseTestCase):
         Get a single project by name
         """
         self.mock_project.query.filter.return_value.first.return_value = MOCK_PROJECT
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
-        response = self.client.open(f"/api/project/{MOCK_ID}", method="GET", headers=headers)
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+
+        response = self.client.open(
+            f"/api/project/{MOCK_ID}", method="GET", headers=self.headers_no_content
+        )
+        self.assert_200(response)
         self.assert_equal(response.json, MOCK_PROJECT_DICT)
 
     def test_get_project_list(self):
@@ -121,14 +114,10 @@ class TestProjectController(BaseTestCase):
             ("page", 56),
             ("pageSize", 56),
         ]
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
         response = self.client.open(
-            "/api/project", method="GET", headers=headers, query_string=query_string
+            "/api/project", method="GET", headers=self.headers_no_content, query_string=query_string
         )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
         expected_response = {
             "pagination": {
                 "page": 56,
@@ -151,17 +140,13 @@ class TestProjectController(BaseTestCase):
         }
         updated_dict = MOCK_PROJECT_DICT.copy()
         updated_dict.update(updates)
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         response = self.client.open(
             f"/api/project/{MOCK_ID}",
             method="PUT",
-            headers=headers,
+            headers=self.headers,
             data=json.dumps(updates),
             content_type="application/json",
         )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
         self.assert_equal(response.json, updated_dict)

@@ -43,20 +43,16 @@ class TestReportController(BaseTestCase):
         Create a new report
         """
         body = {"type": "csv", "source": "local"}
-        headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         with patch.dict("ibutsu_server.controllers.report_controller.REPORTS", {"csv": MOCK_CSV}):
             response = self.client.open(
                 "/api/report",
                 method="POST",
-                headers=headers,
+                headers=self.headers,
                 data=json.dumps(body),
                 content_type="application/json",
             )
-        self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_201(response)
         assert response.json == MOCK_REPORT_DICT
 
     def test_get_report(self):
@@ -64,12 +60,10 @@ class TestReportController(BaseTestCase):
 
         Get a report
         """
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
-        response = self.client.open(f"/api/report/{MOCK_ID}", method="GET", headers=headers)
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        response = self.client.open(
+            f"/api/report/{MOCK_ID}", method="GET", headers=self.headers_no_content
+        )
+        self.assert_200(response)
         assert response.json == MOCK_REPORT_DICT
 
     def test_get_report_list(self):
@@ -82,18 +76,18 @@ class TestReportController(BaseTestCase):
         mock_limit.return_value.all.return_value = [MOCK_REPORT]
         self.mock_report.query.order_by.return_value.offset.return_value.limit = mock_limit
         query_string = [("page", 56), ("pageSize", 56)]
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {self.jwt_token}",
-        }
+
         with patch(
             "ibutsu_server.controllers.report_controller.get_project_id"
         ) as mocked_get_project_id:
             mocked_get_project_id.return_value = None
             response = self.client.open(
-                "/api/report", method="GET", headers=headers, query_string=query_string
+                "/api/report",
+                method="GET",
+                headers=self.headers_no_content,
+                query_string=query_string,
             )
-        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        self.assert_200(response)
         expected_response = {
             "pagination": {
                 "page": 56,
