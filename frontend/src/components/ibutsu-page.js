@@ -15,11 +15,9 @@ import {
 import ElementWrapper from './elementWrapper';
 import { IbutsuHeader } from '../components';
 import { ALERT_TIMEOUT } from '../constants';
-import { HttpClient } from '../services/http';
 import { getDateString, getTheme } from '../utilities';
 import { IbutsuContext } from '../services/context';
 import IbutsuSidebar from './sidebar';
-import { Settings } from '../settings';
 
 
 export class IbutsuPage extends React.Component {
@@ -90,35 +88,6 @@ export class IbutsuPage extends React.Component {
     }
   }
 
-  sync_context() {
-    // TODO handle portal_id
-    // Primary object
-    const { primaryObject, setPrimaryType, setPrimaryObject } = this.context;
-    let param_project = this.props.params?.project_id;
-
-    if (param_project && primaryObject?.id !== param_project) {
-      HttpClient.get([Settings.serverUrl, 'project', param_project])
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          setPrimaryObject(data);
-          setPrimaryType('project')
-        });
-
-    }
-
-    // Active dashboard
-    const { activeDashboard, setActiveDashboard } = this.context;
-    let param_dash = this.props.params?.dashboard_id;
-    if ( param_dash && activeDashboard?.id !== param_dash) {
-      HttpClient.get([Settings.serverUrl, 'dashboard', param_dash])
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          setActiveDashboard(data);
-        });
-
-    }
-  }
-
   componentDidMount() {
     this.setTheme();
   }
@@ -126,7 +95,6 @@ export class IbutsuPage extends React.Component {
   render() {
     document.title = this.props.title || 'Ibutsu';
     // TODO: render project or portal depending on menutoggle + select event
-    this.sync_context();
     return (
       <React.Fragment>
         <AlertGroup isToast>

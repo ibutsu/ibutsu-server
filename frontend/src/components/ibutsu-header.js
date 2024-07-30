@@ -83,6 +83,44 @@ export class IbutsuHeader extends React.Component {
     };
   }
 
+  sync_context = () => {
+    // TODO handle portal_id
+    // Primary object
+    const { primaryObject, setPrimaryObject, setPrimaryType } = this.context;
+    const { selectedProject } = this.state;
+    const paramProject = this.props.params?.project_id;
+    let updatedPrimary = undefined;
+
+    // API fetch and set the context
+    if (paramProject && primaryObject?.id !== paramProject) {
+      HttpClient.get([Settings.serverUrl, 'project', paramProject])
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          updatedPrimary = data;
+          setPrimaryObject(data)
+          setPrimaryType('project')
+          // update state
+          this.setState({
+            selectedProject: data,
+            isProjectSelectorOpen: false,
+            inputValue: data?.title,
+            filterValue: ''
+          });
+      });
+    }
+
+    // update selector state
+    if (updatedPrimary && !selectedProject) {
+      this.setState({
+        selectedProject: updatedPrimary,
+        inputValue: updatedPrimary.title
+      })
+    }
+
+    if ( updatedPrimary ) {
+      this.emitProjectChange(updatedPrimary);
+    }
+  }
 
   showNotification(type, title, message, action = null, timeout = null, key = null) {
     if (!this.eventEmitter) {
@@ -132,45 +170,22 @@ export class IbutsuHeader extends React.Component {
   }
 
   getSelectorOptions = (endpoint = "project") => {
+    // adding s here seems dumb, but this scope is small, it's only abstracted for 2 things
+    const pluralEndpoint = endpoint+'s';
     const params = {pageSize: 10};
     if (this.state.filterValue) {
       params['filter'] = ['title%' + this.state.filterValue];
     }
-
-    const {setPrimaryObject} = this.context;
-
-    // adding s here seems dumb, but this scope is small, it's only abstracted for 2 things
     HttpClient.get([Settings.serverUrl, endpoint], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
-        // populate context and current input value if passed
-        for ( let item of data[endpoint+'s'] ) {
-          if (item.id === this.props.params?.project_id) {
-            this.setState({
-              inputValue: item.title,
-              filterValue: ''
-            });
-            setPrimaryObject(item);
-          }
+          this.setState(
+            {
+              projects: data[pluralEndpoint],
+              filteredProjects: data[pluralEndpoint],
+            })
         }
-        this.setState(
-          {
-            projects: data[endpoint+'s'],
-            filteredProjects: data[endpoint+'s'],
-
-          })
-      }
     );
-
-
-  }
-
-  findPrimary = (endpoint, name) => {
-    HttpClient.get([Settings.serverUrl, endpoint], {'name': name})
-    .then(response => HttpClient.handleResponse(response))
-    .then(data => {return( data[endpoint+'s'] )}
-    )
-
   }
 
   onBeforeUpload = (files) => {
@@ -290,10 +305,9 @@ export class IbutsuHeader extends React.Component {
 
   componentDidMount() {
     this.getSelectorOptions("project");
+    this.sync_context();
     this.checkVersion();
     this.versionCheckId = setInterval(() => this.checkVersion(), VERSION_CHECK_TIMEOUT);
-
-
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -349,8 +363,6 @@ export class IbutsuHeader extends React.Component {
       </TextInputGroup>
     </MenuToggle>
   );
-
-
 
   render() {
     document.title = 'Ibutsu';

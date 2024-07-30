@@ -74,22 +74,57 @@ export class Dashboard extends React.Component {
     };
     props.eventEmitter.on('projectChange', (value) => {
       this.getDashboards(value);
-      this.checkDefaultDashboard(value);
+      this.getDefaultDashboard(value);
     });
+  }
+
+  sync_context = () => {
+    // Active dashboard
+    const { activeDashboard } = this.context;
+    const { selectedDashboard } = this.state;
+    const paramDash = this.props.params?.dashboard_id;
+    let updatedDash = undefined;
+    // API call to update context
+    if ( paramDash && activeDashboard?.id !== paramDash) {
+      HttpClient.get([Settings.serverUrl, 'dashboard', paramDash])
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          const { setActiveDashboard } = this.context;
+          setActiveDashboard(data);
+          updatedDash = data;
+          this.setState({
+            selectedDashboard: data,
+            isDashboardSelectorOpen: false,
+            filterValueDashboard: '',
+            dashboardInputValue: data.title,
+          });  // callback within class component  won't have updated context
+          // TODO don't pass value when converting to functional component
+          this.getWidgets(data);
+        });
+    }
+
+    if (updatedDash && !selectedDashboard ) {
+      this.setState({
+        selectedDashboard: updatedDash,
+        dashboardInputValue: updatedDash.title
+      })
+    }
   }
 
   getDashboards = (handledOject = null) => {
     // value is checked because of handler scope not seeing context state updates
+    // TODO: react-router loaders would be way better
     const { primaryObject } = this.context;
-    const targetObject = handledOject ?? primaryObject;
-    console.log("getting dashboards");
-    if (!targetObject) {
+    const paramProject = this.props.params?.project_id;
+    const primaryObjectId = handledOject?.id ?? primaryObject?.id ?? paramProject;
+
+    if (!primaryObjectId) {
       this.setState({dashboardInputValue: ''})
       return;
     }
     // TODO: set based on primaryType
     let params = {
-      'project_id': targetObject.id,
+      'project_id': primaryObjectId,
       'pageSize': 10
     };
 
@@ -99,14 +134,24 @@ export class Dashboard extends React.Component {
     HttpClient.get([Settings.serverUrl, 'dashboard'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
-        this.setState({dashboards: data['dashboards'], filteredDashboards: data['dashboards']}, this.getWidgets);
+        this.setState({dashboards: data['dashboards'], filteredDashboards: data['dashboards']});
       });
   }
 
-  checkDefaultDashboard = (handledObject = null) => {
+  getDefaultDashboard = (handledObject = null) => {
     const { primaryObject, activeDashboard, setActiveDashboard } = this.context;
-    const targetObject = handledObject ?? primaryObject;
-    console.log("checking default dash");
+    const paramProject = this.props.params?.project_id;
+
+    let targetObject = handledObject ?? primaryObject ?? paramProject;
+
+    if (typeof(targetObject) === 'string') {
+      HttpClient.get([Settings.serverUrl, 'project', paramProject])
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          targetObject = data;
+        });
+
+    }
 
     if ( !activeDashboard && targetObject?.defaultDashboard ){
       setActiveDashboard(targetObject.defaultDashboard);
@@ -125,7 +170,6 @@ export class Dashboard extends React.Component {
   getWidgets = (dashboard) => {
     let params = {'type': 'widget'};
     const { activeDashboard } = this.context;
-    console.log('getting widgets');
     // TODO don't pass value when converting to functional component
     let target_dash = null;
     if (dashboard === undefined) {
@@ -305,8 +349,9 @@ export class Dashboard extends React.Component {
   }
 
   componentDidMount() {
+    this.sync_context();
     this.getDashboards();
-    this.checkDefaultDashboard();
+    this.getDefaultDashboard();
     this.getWidgets();
   }
 
