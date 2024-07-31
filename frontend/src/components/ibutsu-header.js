@@ -90,7 +90,7 @@ export class IbutsuHeader extends React.Component {
   }
 
   getProjects() {
-    const params = {pageSize: 10};
+    const params = {pageSize: 20};  // TODO this isn't a problem, until it is
     if (this.state.filterValue) {
       params['filter'] = ['title%' + this.state.filterValue];
     }
