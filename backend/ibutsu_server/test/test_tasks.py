@@ -59,10 +59,14 @@ class TestRunTasks(BaseTestCase):
     @patch("ibutsu_server.tasks.runs.Run")
     @patch("ibutsu_server.tasks.runs.session")
     @patch("ibutsu_server.tasks.runs.lock")
-    def test_update_run(self, mocked_lock, mocked_session, mocked_run, mocked_result):
+    @patch("ibutsu_server.tasks.runs.is_locked")
+    def test_update_run(
+        self, mocked_is_locked, mocked_lock, mocked_session, mocked_run, mocked_result
+    ):
         """Test updating the run"""
         from ibutsu_server.tasks.runs import update_run
 
+        mocked_is_locked.return_value = False
         mocked_lock.return_value.__enter__.return_value = None
         mocked_run.query.get.return_value = MOCK_RUN
         mocked_result.query.return_value.filter.return_value.all.return_value = MOCK_RESULTS
