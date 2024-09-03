@@ -28,6 +28,7 @@ import {
   NUMERIC_OPERATIONS,
   NUMERIC_RESULT_FIELDS,
   NUMERIC_RUN_FIELDS,
+  THEME_KEY,
 } from './constants';
 import { ClassificationDropdown } from './components';
 
@@ -502,11 +503,32 @@ export function debounce(func, timeout = 500) {
   };
 }
 
-// TODO remove, move to AppContext
 export function getTheme() {
-  return localStorage.getItem('theme');
+  // check local storage and default to browser theme
+  const local_theme = localStorage.getItem(THEME_KEY)
+  if (local_theme) {
+    return local_theme;
+  }
+  else {
+    let browser_preference = window.matchMedia('(prefers-color-scheme: dark)');
+    return browser_preference.matches ? 'dark' : 'light';
+  }
 }
 
 export function setTheme(theme) {
-  localStorage.setItem('theme', theme);
+  let target_theme = theme ? theme : getTheme();
+  if (!['dark', 'light'].includes(target_theme)) {
+    console.log('bad theme value passed, defaulting to dark');
+    target_theme = 'dark';
+  }
+
+  localStorage.setItem('theme', target_theme);
+  if (target_theme === 'dark') {
+    console.log('setting dark theme');
+    document.firstElementChild.classList.add('pf-v5-theme-dark');
+  }
+  else {
+    console.log('setting light theme');
+    document.firstElementChild.classList.remove('pf-v5-theme-dark');
+  }
 }

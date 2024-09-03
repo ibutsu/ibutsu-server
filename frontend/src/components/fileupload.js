@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 
 import { HttpClient } from '../services/http';
 import { IbutsuContext } from '../services/context';
-import { Button } from '@patternfly/react-core';
+import { Button, Tooltip } from '@patternfly/react-core';
 
 export class FileUpload extends React.Component {
   // TODO: refactor to functional
@@ -71,14 +71,15 @@ export class FileUpload extends React.Component {
 
   render() {
     const { children, className } = this.props;
-    const styles = this.props.isUnstyled ? {} : {cursor: 'pointer', display: 'inline', padding: '0', margin: '0'};
     const { primaryObject } = this.context;
     return (
       <React.Fragment>
         <input type="file" multiple={this.state.multiple} style={{display: 'none'}} onChange={this.onFileChange} ref={this.inputRef} />
-        <Button className={className} style={styles} onClick={this.onUploadClick} isDisabled={!primaryObject}>
-          {children}
-        </Button>
+        <Tooltip content="Upload a result archive to the selected project.">
+          <Button className={className} onClick={this.onUploadClick} isAriaDisabled={!primaryObject}>
+            {children}
+          </Button>
+        </Tooltip>
       </React.Fragment>
     );
   }

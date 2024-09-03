@@ -147,13 +147,6 @@ export class IbutsuHeader extends React.Component {
     this.eventEmitter.emit('projectChange', value);
   }
 
-  emitThemeChange() {
-    if (!this.eventEmitter) {
-      return;
-    }
-    this.eventEmitter.emit('themeChange');
-  }
-
   getSelectorOptions = (endpoint = "project") => {
     // adding s here seems dumb, but this scope is small, it's only abstracted for 2 things
     // TODO: iterate over pages, fix controller filtering behavior to apply pageSize AFTER filter
@@ -279,7 +272,7 @@ export class IbutsuHeader extends React.Component {
 
   onThemeChanged = (isChecked) => {
     setTheme(isChecked ? 'dark' : 'light');
-    this.setState({isDarkTheme: isChecked}, this.emitThemeChange);
+    this.setState({isDarkTheme: isChecked});
   }
 
   componentWillUnmount() {
@@ -425,16 +418,38 @@ export class IbutsuHeader extends React.Component {
             }}
           >
             <ToolbarItem>
-              <Button aria-label="About" onClick={this.toggleAbout} variant={ButtonVariant.plain} icon={<QuestionCircleIcon />} />
+              <Button
+                aria-label="About"
+                onClick={this.toggleAbout}
+                variant={ButtonVariant.plain}
+                icon={<QuestionCircleIcon />} />
             </ToolbarItem>
             <ToolbarItem>
-              <FileUpload className="pf-v5-c-button pf-m-plain" isUnstyled name="importFile" url={`${Settings.serverUrl}/import`} multiple={false} beforeUpload={this.onBeforeUpload} afterUpload={this.onAfterUpload} title="Import xUnit XML or Ibutsu Archive"><UploadIcon /> Import</FileUpload>
+              <FileUpload
+                className="pf-v5-c-button pf-m-plain"
+                isUnstyled
+                name="importFile"
+                url={`${Settings.serverUrl}/import`}
+                multiple={false}
+                beforeUpload={this.onBeforeUpload}
+                afterUpload={this.onAfterUpload}
+                title="Import xUnit XML or Ibutsu Archive"
+              ><UploadIcon /> Import</FileUpload>
             </ToolbarItem>
             <ToolbarItem>
-              <a href={apiUiUrl} className="pf-v5-c-button pf-m-plain" target="_blank" rel="noopener noreferrer"><ServerIcon/> API</a>
+              <a
+                href={apiUiUrl}
+                className="pf-v5-c-button pf-m-plain"
+                target="_blank"
+                rel="noopener noreferrer"
+              ><ServerIcon/> API</a>
             </ToolbarItem>
             <ToolbarItem>
-              <Switch id="dark-theme" label={<MoonIcon />} isChecked={this.state.isDarkTheme} onChange={(_event, isChecked) => this.onThemeChanged(isChecked)} />
+              <Switch
+              id="theme-toggle"
+              label={<MoonIcon />}
+              isChecked={this.state.isDarkTheme}
+              onChange={(_event, isChecked) => this.onThemeChanged(isChecked)} />
             </ToolbarItem>
             <ToolbarItem id="user-dropdown">
               <UserDropdown eventEmitter={this.eventEmitter}/>

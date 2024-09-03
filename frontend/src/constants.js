@@ -114,3 +114,5 @@ export const CLASSIFICATION = {
   unknown: "Unknown"
 };
 export const HEATMAP_MAX_BUILDS = 40;
+
+export const THEME_KEY = 'theme';

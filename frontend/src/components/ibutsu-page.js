@@ -15,7 +15,7 @@ import {
 import ElementWrapper from './elementWrapper';
 import { IbutsuHeader } from '../components';
 import { ALERT_TIMEOUT } from '../constants';
-import { getDateString, getTheme } from '../utilities';
+import { getDateString } from '../utilities';
 import { IbutsuContext } from '../services/context';
 import IbutsuSidebar from './sidebar';
 
@@ -41,7 +41,6 @@ export class IbutsuPage extends React.Component {
     this.props.eventEmitter.on('showNotification', (type, title, message, action, timeout, key) => {
       this.showNotification(type, title, message, action, timeout, key);
     });
-    this.props.eventEmitter.on('themeChange', this.setTheme);
     this.props.eventEmitter.on('projectChange', () => {
     });
     // TODO: empty state props.children override
@@ -76,20 +75,6 @@ export class IbutsuPage extends React.Component {
         }, ALERT_TIMEOUT);
       }
     });
-  }
-
-  setTheme() {
-    const isDarkTheme = getTheme() === 'dark';
-    if (isDarkTheme) {
-      document.documentElement.classList.add('pf-v5-theme-dark');
-    }
-    else {
-      document.documentElement.classList.remove('pf-v5-theme-dark');
-    }
-  }
-
-  componentDidMount() {
-    this.setTheme();
   }
 
   render() {
