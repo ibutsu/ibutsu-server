@@ -13,7 +13,6 @@ export class FileUpload extends React.Component {
     url: PropTypes.string.isRequired,
     name: PropTypes.string,
     multiple: PropTypes.bool,
-    onClick: PropTypes.func,
     beforeUpload: PropTypes.func,
     afterUpload: PropTypes.func,
     children: PropTypes.node,
@@ -27,17 +26,13 @@ export class FileUpload extends React.Component {
       url: props.url,
       name: props.name ? props.name : 'file',
       multiple: !!props.multiple,
-      onClick: props.onClick ? props.onClick : null,
       beforeUpload: props.beforeUpload ? props.beforeUpload : null,
       afterUpload: props.afterUpload ? props.afterUpload : null
     };
     this.inputRef = React.createRef();
   }
 
-  onUploadClick = (e) => {
-    if (this.state.onClick) {
-      this.state.onClick(e);
-    }
+  onClick = () => {
     this.inputRef.current.click();
   }
 
@@ -76,7 +71,7 @@ export class FileUpload extends React.Component {
       <React.Fragment>
         <input type="file" multiple={this.state.multiple} style={{display: 'none'}} onChange={this.onFileChange} ref={this.inputRef} />
         <Tooltip content="Upload a result archive to the selected project.">
-          <Button className={className} onClick={this.onUploadClick} isAriaDisabled={!primaryObject}>
+          <Button className={className} onClick={this.onClick} isAriaDisabled={!primaryObject}>
             {children}
           </Button>
         </Tooltip>

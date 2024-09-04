@@ -11,17 +11,6 @@ describe('FileUpload', () => {
     cy.get('button');
   });
 
-  it('should run the onClick method via onUploadClick', () => {
-    const onClick = cy.spy().as('uploadSpy');
-    mount(
-      <IbutsuContext.Provider value={{'primaryObject': {'id': '1234'}}}>
-        <FileUpload url='/upload' onClick={onClick}>Upload</FileUpload>
-      </IbutsuContext.Provider>
-    );
-    cy.get('button').click();
-    cy.get('@uploadSpy').should('have.been.calledOnce');
-  });
-
   it('should fire the beforeUpload when a file is changed', () => {
     const beforeUpload = cy.spy().as('buSpy');
     mount(

@@ -427,7 +427,6 @@ export class IbutsuHeader extends React.Component {
             <ToolbarItem>
               <FileUpload
                 className="pf-v5-c-button pf-m-plain"
-                isUnstyled
                 name="importFile"
                 url={`${Settings.serverUrl}/import`}
                 multiple={false}
