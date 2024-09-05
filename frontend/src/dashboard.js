@@ -26,7 +26,6 @@ import {
 } from '@patternfly/react-core';
 
 import {
-  ArchiveIcon,
   CubesIcon,
   PlusCircleIcon,
   TachometerAltIcon,
@@ -604,15 +603,6 @@ export class Dashboard extends React.Component {
               }
             })}
           </Grid>
-          }
-          {!primaryObject &&
-          <EmptyState>
-            <EmptyStateHeader titleText="No Project Selected" icon={<EmptyStateIcon icon={ArchiveIcon} />} headingLevel="h4" />
-            <EmptyStateBody>
-              There is currently no project selected. Please select a project from the dropdown in
-              order to view the dashboard.
-            </EmptyStateBody>
-          </EmptyState>
           }
           {!!primaryObject && !activeDashboard &&
           <EmptyState>

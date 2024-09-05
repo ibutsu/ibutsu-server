@@ -9,6 +9,10 @@ import {
   Alert,
   AlertGroup,
   AlertVariant,
+  EmptyState,
+  EmptyStateBody,
+  EmptyStateHeader,
+  EmptyStateIcon,
   Page,
 } from '@patternfly/react-core';
 
@@ -18,6 +22,7 @@ import { ALERT_TIMEOUT } from '../constants';
 import { getDateString } from '../utilities';
 import { IbutsuContext } from '../services/context';
 import IbutsuSidebar from './sidebar';
+import { ArchiveIcon } from '@patternfly/react-icons';
 
 
 export class IbutsuPage extends React.Component {
@@ -79,6 +84,7 @@ export class IbutsuPage extends React.Component {
 
   render() {
     document.title = this.props.title || 'Ibutsu';
+    const { primaryObject } = this.context;
     return (
       <React.Fragment>
         <AlertGroup isToast>
@@ -94,7 +100,16 @@ export class IbutsuPage extends React.Component {
           isManagedSidebar={true}
           style={{position: "relative"}}
         >
-          <Outlet/>
+          {primaryObject ?
+          <Outlet/> :
+          <EmptyState>
+            <EmptyStateHeader titleText="No Project Selected" icon={<EmptyStateIcon icon={ArchiveIcon} />} headingLevel="h4" />
+            <EmptyStateBody>
+              There is currently no project selected. Please select a project from the dropdown in
+              order to view the dashboard.
+            </EmptyStateBody>
+          </EmptyState>
+          }
         </Page>
       </React.Fragment>
     );
