@@ -21,6 +21,7 @@ const VIEW_MAP = {
 };
 
 export class View extends React.Component {
+  // TODO: convert to functional
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
@@ -30,7 +31,7 @@ export class View extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      id: props.params.id,
+      id: props.params.view_id,
       view: null,
     };
   }
@@ -43,7 +44,7 @@ export class View extends React.Component {
 
   componentDidUpdate(prevProps){
     if (prevProps !== this.props) {
-      this.setState({id: this.props.params.id}, this.getView);
+      this.setState({id: this.props.params.view_id}, this.getView);
     }
   }
 

@@ -104,6 +104,8 @@ export class UserProfile extends React.Component {
   }
 
   render() {
+    document.title = "Profile | Ibutsu";
+
     const { user, projects } = this.state;
     let projectInfo = [];
     // create the project rows

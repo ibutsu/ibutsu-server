@@ -214,7 +214,7 @@ export class TestHistoryTable extends React.Component {
       .then(data => this.setState({
           lastPassedDate:
             <React.Fragment>
-              <Link target="_blank" rel="noopener noreferrer" to={`/results/${data.results[0].id}`}>
+              <Link target="_blank" rel="noopener noreferrer" to={`../results/${data.results[0].id}`} relative="Path">
                 <Badge isRead>
                   {new Date(data.results[0].start_time).toLocaleString()}
                 </Badge>

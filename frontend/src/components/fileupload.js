@@ -2,19 +2,21 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 import { HttpClient } from '../services/http';
+import { IbutsuContext } from '../services/context';
+import { Button, Tooltip } from '@patternfly/react-core';
 
 export class FileUpload extends React.Component {
+  // TODO: refactor to functional
+  // TODO: Consider explicit project selection for upload instead of inferred from context
+  static contextType = IbutsuContext;
   static propTypes = {
     url: PropTypes.string.isRequired,
     name: PropTypes.string,
-    params: PropTypes.object,
     multiple: PropTypes.bool,
-    onClick: PropTypes.func,
     beforeUpload: PropTypes.func,
     afterUpload: PropTypes.func,
     children: PropTypes.node,
     className: PropTypes.node,
-    component: PropTypes.node,
     isUnstyled: PropTypes.bool,
   }
 
@@ -24,17 +26,13 @@ export class FileUpload extends React.Component {
       url: props.url,
       name: props.name ? props.name : 'file',
       multiple: !!props.multiple,
-      onClick: props.onClick ? props.onClick : null,
       beforeUpload: props.beforeUpload ? props.beforeUpload : null,
       afterUpload: props.afterUpload ? props.afterUpload : null
     };
     this.inputRef = React.createRef();
   }
 
-  onUploadClick = (e) => {
-    if (this.state.onClick) {
-      this.state.onClick(e);
-    }
+  onClick = () => {
     this.inputRef.current.click();
   }
 
@@ -52,8 +50,13 @@ export class FileUpload extends React.Component {
 
   uploadFile = (file) => {
     const files = {};
+    const { primaryObject } = this.context;
     files[this.state.name] = file;
-    HttpClient.upload(this.state.url, files, this.props.params).then((response) => {
+    HttpClient.upload(
+      this.state.url,
+      files,
+      {'project': primaryObject?.id}
+    ).then((response) => {
       response = HttpClient.handleResponse(response, 'response');
       if (this.state.afterUpload) {
         this.state.afterUpload(response);
@@ -63,14 +66,15 @@ export class FileUpload extends React.Component {
 
   render() {
     const { children, className } = this.props;
-    const Component = this.props.component || 'button';
-    const styles = this.props.isUnstyled ? {} : {cursor: 'pointer', display: 'inline', padding: '0', margin: '0'};
+    const { primaryObject } = this.context;
     return (
       <React.Fragment>
         <input type="file" multiple={this.state.multiple} style={{display: 'none'}} onChange={this.onFileChange} ref={this.inputRef} />
-        <Component className={className} style={styles} onClick={this.onUploadClick}>
-          {children}
-        </Component>
+        <Tooltip content="Upload a result archive to the selected project.">
+          <Button className={className} onClick={this.onClick} isAriaDisabled={!primaryObject}>
+            {children}
+          </Button>
+        </Tooltip>
       </React.Fragment>
     );
   }

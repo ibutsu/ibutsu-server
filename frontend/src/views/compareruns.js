@@ -24,13 +24,14 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
-  getActiveProject,
   toAPIFilter,
   getSpinnerRow,
   resultToComparisonRow
 } from '../utilities';
+import { IbutsuContext } from '../services/context';
 
 export class CompareRunsView extends React.Component {
+  static contextType = IbutsuContext;
   static propTypes = {
     location: PropTypes.object,
     view: PropTypes.object
@@ -132,8 +133,8 @@ export class CompareRunsView extends React.Component {
 
     if (isNew === true) {
       // Add project id to params
-      let project = getActiveProject();
-      let projectId = project ? project.id : ''
+      const { primaryObject } = this.context;
+      const projectId = primaryObject ? primaryObject.id : ''
       filter.forEach(filter => {
         filter['project_id'] = {op: 'in', val: projectId};
       });
@@ -270,8 +271,9 @@ export class CompareRunsView extends React.Component {
         </FlexItem>
       </Flex>
     ]
+    const { primaryObject } = this.context;
     // Compare runs work only when project is selected
-    return ( getActiveProject() &&
+    return ( primaryObject &&
       <Card>
         <CardHeader>
           <Flex style={{ width: '100%' }}>
