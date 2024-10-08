@@ -77,7 +77,7 @@ objects:
         - ibutsu-worker
         from:
           kind: ImageStreamTag
-          name: worker:master
+          name: worker:main
           namespace: ${NAMESPACE}
       type: ImageChange
     - type: ConfigChange
@@ -95,11 +95,11 @@ objects:
     - annotations: null
       from:
         kind: DockerImage
-        name: quay.io/ibutsu/worker:master
+        name: quay.io/ibutsu/worker:main
       generation: 3
       importPolicy:
         scheduled: true
-      name: master
+      name: main
       referencePolicy:
         type: Source
 # -----------------------------------------------

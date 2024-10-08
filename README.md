@@ -1,5 +1,5 @@
 # Ibutsu Server
-![tests](https://github.com/ibutsu/ibutsu-server/actions/workflows/tests.yaml/badge.svg?branch=master)
+![tests](https://github.com/ibutsu/ibutsu-server/actions/workflows/tests.yaml/badge.svg?branch=main)
 [![Documentation Status](https://readthedocs.org/projects/ibutsu/badge/?version=latest)](https://docs.ibutsu-project.org/en/latest/?badge=latest)
 
 Ibutsu is a test result reporting and artifact storage system. Ibutsu gives your team the ability to

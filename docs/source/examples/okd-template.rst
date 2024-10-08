@@ -993,8 +993,8 @@ OKD/OpenShift Template
     value: https://github.com/ibutsu/ibutsu-server.git
   - name: IBUTSU_REPO_BRANCH
     displayName: Ibutsu Repository Branch
-    description: The branch to pull the code from (defaults to master)
-    value: master
+    description: The branch to pull the code from (defaults to main)
+    value: main
   - name: APP_NAME
     displayName: App Name
     description: The name of the application

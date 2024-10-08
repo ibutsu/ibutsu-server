@@ -111,7 +111,7 @@ if [[ "$CAN_COMMIT" = true ]]; then
     if [[ "$CAN_PUSH" = true ]]; then
         echo -n "Pushing up to origin/$BRANCH_NAME..."
         git push -q origin $BRANCH_NAME
-        git checkout master
+        git checkout main
         if [[ "$CAN_DELETE" = true ]]; then
             git branch -D $BRANCH_NAME
             echo "Deleted branch $BRANCH_NAME"

@@ -86,5 +86,5 @@ of these filters include:
 * ``metadata.tags=platform-experience,source=local,summary.passes>10``
 * ``metadata.assignee=jdoe,metadata.exception_name=AssertionError,result=failed``
 
-.. _filters.py: https://github.com/ibutsu/ibutsu-server/blob/master/backend/ibutsu_server/filters.py
-.. _Runs/Results: https://github.com/ibutsu/ibutsu-server/blob/master/backend/ibutsu_server/db/models.py
+.. _filters.py: https://github.com/ibutsu/ibutsu-server/blob/main/backend/ibutsu_server/filters.py
+.. _Runs/Results: https://github.com/ibutsu/ibutsu-server/blob/main/backend/ibutsu_server/db/models.py

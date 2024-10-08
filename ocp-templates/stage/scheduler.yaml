@@ -75,7 +75,7 @@ objects:
         - ibutsu-scheduler
         from:
           kind: ImageStreamTag
-          name: scheduler:master
+          name: scheduler:main
           namespace: ${NAMESPACE}
       type: ImageChange
     - type: ConfigChange
@@ -93,11 +93,11 @@ objects:
     - annotations: null
       from:
         kind: DockerImage
-        name: quay.io/ibutsu/scheduler:master
+        name: quay.io/ibutsu/scheduler:main
       generation: 3
       importPolicy:
         scheduled: true
-      name: master
+      name: main
       referencePolicy:
         type: Source
 # -----------------------------------------------
