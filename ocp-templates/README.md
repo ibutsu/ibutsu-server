@@ -10,7 +10,7 @@ The supported template set is ``mpp``, it has been updated to support Deployment
 
 ## Stage
 The stage templates are set up to use the images at [quay.io/organization/ibutsu](https://quay.io/organization/ibutsu) that are tagged with
-``master``. These images are built and tagged as ``master`` on every merge into [github.com/ibutsu/ibutsu-server](https://github.com/ibutsu/ibutsu-server).
+``main``. These images are built and tagged as ``main`` on every merge into [github.com/ibutsu/ibutsu-server](https://github.com/ibutsu/ibutsu-server).
 These are meant to deploy the "staging" or "unstable" instance of Ibutsu.
 
 ## Prod
