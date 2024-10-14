@@ -1,6 +1,5 @@
 # hadolint global ignore=DL3013,DL3041
-FROM registry.access.redhat.com/ubi8/python-39:1-184.1716989688
-
+FROM registry.access.redhat.com/ubi9/python-39:1-197.1726664308
 USER 0
 
 RUN dnf install --nodocs -y --disableplugin=subscription-manager gcc libpq-devel && \
