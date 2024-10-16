@@ -1,14 +1,14 @@
 # hadolint global ignore=DL3041,DL4006
 # Build the image first
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10 AS builder
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.4 AS builder
 
 ARG NODEJS_VERSION=18
 ENV NODE_ENV=production
 
 WORKDIR /app
 
-RUN microdnf module disable nodejs && \
-    microdnf module enable nodejs:$NODEJS_VERSION && \
+RUN microdnf module disable nodejs -y && \
+    microdnf module enable nodejs:$NODEJS_VERSION -y && \
     microdnf install --nodocs -y --disableplugin=subscription-manager \
         nodejs nodejs-nodemon npm findutils tar && \
     node -v | grep -qe "^v$NODEJS_VERSION\." && \
