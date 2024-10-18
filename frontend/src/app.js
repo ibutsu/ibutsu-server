@@ -3,7 +3,7 @@ import React from 'react';
 import EventEmitter from 'wolfy87-eventemitter';
 import ElementWrapper from './components/elementWrapper';
 
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { Dashboard } from './dashboard';
 import { ReportBuilder } from './report-builder';
@@ -85,8 +85,8 @@ export class App extends React.Component {
             path="view/:view_id"
             element={<ElementWrapper routeElement={View} />}
           />
+        <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Route>
-
       </Routes>
     );
   }

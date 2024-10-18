@@ -237,7 +237,9 @@ export class IbutsuHeader extends React.Component {
       filterValue: ''
     });
     // Consider whether the location should be changed within the emit hooks?
-    this.props.navigate('/project/' + value?.id + '/dashboard/' + value?.default_dashboard_id);
+    let dash_path = "";
+    if (value?.default_dashboard_id != null) {dash_path = '/dashboard/' + value?.default_dashboard_id}
+    this.props.navigate('/project/' + value?.id + dash_path);
 
     // useEffect with dependency on functional component to remove passing value, handlers don't see updated context
     this.emitProjectChange(value);
