@@ -79,9 +79,13 @@ export class Dashboard extends React.Component {
 
   sync_context = () => {
     // Active dashboard
-    const { activeDashboard } = this.context;
+    const { activeDashboard, setActiveDashboard } = this.context;
     const { selectedDashboard } = this.state;
     const paramDash = this.props.params?.dashboard_id;
+    if (!paramDash) {
+      // No dashboard in the URL, clear context
+      setActiveDashboard();
+    }
     let updatedDash = undefined;
     // API call to update context
     if ( paramDash != null && activeDashboard?.id !== paramDash) {
