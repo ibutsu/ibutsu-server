@@ -1,10 +1,9 @@
 import time
 
 from flask import current_app
-from jose.constants import ALGORITHMS
-from jose.exceptions import JWTError
-from jose.jwt import decode as jwt_decode
-from jose.jwt import encode as jwt_encode
+from jwt import decode as jwt_decode
+from jwt import encode as jwt_encode
+from jwt.exceptions import InvalidTokenError
 from werkzeug.exceptions import Unauthorized
 
 from ibutsu_server.db.models import Token
@@ -31,7 +30,7 @@ def generate_token(user_id, expires=None):
     if not JWT_SECRET and not current_app.config.get("JWT_SECRET"):
         raise IbutsuError("JWT_SECRET is not defined in configuration or an environment variable")
     jwt_secret = current_app.config.get("JWT_SECRET") or JWT_SECRET
-    encoded_token = jwt_encode(claims, jwt_secret, algorithm=ALGORITHMS.HS256)
+    encoded_token = jwt_encode(claims, jwt_secret, algorithm="HS256")
     return encoded_token
 
 
@@ -39,8 +38,8 @@ def decode_token(token):
     """Decode a JWT token to check if it is valid"""
     jwt_secret = current_app.config.get("JWT_SECRET") or JWT_SECRET
     try:
-        decoded_token = jwt_decode(token, jwt_secret, algorithms=[ALGORITHMS.HS256])
-    except JWTError as error:
+        decoded_token = jwt_decode(token, jwt_secret, algorithms=["HS256"])
+    except InvalidTokenError as error:
         raise Unauthorized from error
     tokens = Token.query.filter(Token.user_id == decoded_token["sub"]).all()
     if not tokens:

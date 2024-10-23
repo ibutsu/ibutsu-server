@@ -1,7 +1,5 @@
 # hadolint global ignore=DL3013,DL3041
-FROM registry.access.redhat.com/ubi9/python-39:1-197.1726664308
-
-ENV UPGRADE_PIP_TO_LATEST=1
+FROM registry.access.redhat.com/ubi9/python-39:1
 
 USER 0
 COPY . /app
@@ -9,9 +7,12 @@ RUN /usr/bin/fix-permissions /app
 
 WORKDIR /app
 RUN dnf install --nodocs -y --disableplugin=subscription-manager gcc libpq-devel && \
-    dnf clean all && \
-    pip install --no-cache-dir . && \
-    chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
+    dnf clean all
+
+RUN pip install -U --upgrade-strategy eager --no-cache-dir setuptools pip wheel && \
+    pip install --no-cache-dir -U -r requirements-pinned.txt .
+
+RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 
 USER 1001
 

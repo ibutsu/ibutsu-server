@@ -79,5 +79,5 @@ The backend of the server is made up of 5 parts:
 * The API itself, written in Python/Flask/Connexion
 * The task worker, which runs async tasks, written with Celery
 * The task monitor, which keeps tabs on task failures
-* A `MongoDB <https://mongodb.com>`_ instance, which is the database
+* A `PostgreSQL <https://www.postgresql.org/>`_ instance, which is the database
 * A `Redis <https://redis.io>`_ instance, which is used by the task worker
