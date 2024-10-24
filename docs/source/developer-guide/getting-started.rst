@@ -165,7 +165,7 @@ This is required for ``celery``.
     podman run --name redis -d -p "6379:6379" redis
 
 
-Install Dependencies
+Handle Dependencies
 ~~~~~~~~~~~~~~~~~~~~
 
 You'll want to set up a virtual environment for the backend, and install the dependencies:
@@ -176,7 +176,14 @@ You'll want to set up a virtual environment for the backend, and install the dep
     python3.9 -m venv .ibutsu-env
     source .ibtusu-env/bin/activate/
     pip install -U pip wheel
-    pip install -U .
+    pip install -U -r requirements-pinned.txt .
+
+
+In order to update/maintain dependencies, the tool `uv` should be used.
+
+Dependencies are defined in pyproject.toml, and are pinned to specific versions in requirements-pinned.txt.
+
+In order to update pinned dependency versions, modify the hardcoded pin in pyproject.toml if applicable, and run `uv pip compile pyproject.toml -o requirements-pinned.txt` from the backend dirctory.
 
 
 Run Celery Worker
