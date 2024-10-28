@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import {
   Card,
   CardBody,
+  CardFooter,
   Text
 } from '@patternfly/react-core';
 
@@ -20,7 +21,7 @@ import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { WidgetHeader } from '../components/widget-components';
+import { ParamDropdown, WidgetHeader } from '../components/widget-components';
 
 export class ImportanceComponentWidget extends React.Component {
   static propTypes = {
@@ -39,6 +40,7 @@ export class ImportanceComponentWidget extends React.Component {
         table_data: []
       },
       isLoading: true,
+      countSkips: 'No',
     };
   }
 
@@ -68,6 +70,13 @@ export class ImportanceComponentWidget extends React.Component {
       this.params = this.props.params;
       this.getData();
     }
+  }
+
+  onSkipSelect = (value) => {
+    this.setState({countSkips: value}, () => {
+      this.props.params.count_skips = (value === 'Yes');
+      this.getData();
+    });
   }
 
   toPercent(num) {
@@ -114,6 +123,14 @@ export class ImportanceComponentWidget extends React.Component {
           ))}
         </CardBody>
         }
+        <CardFooter>
+          <ParamDropdown
+            dropdownItems={['Yes', 'No']}
+            handleSelect={this.onSkipSelect}
+            defaultValue={this.state.countSkips}
+            tooltip="Count skips as failure:"
+          />
+        </CardFooter>
       </Card>
     );
   }

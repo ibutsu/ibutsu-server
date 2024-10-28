@@ -273,6 +273,13 @@ WIDGET_TYPES = {
                 "default": 5,
                 "required": False,
             },
+            {
+                "name": "count_skips",
+                "description": "Count skips against the pass rate.",
+                "type": "boolean",
+                "required": False,
+                "default": False,
+            },
         ],
         "type": "widget",
     },

@@ -11,6 +11,7 @@ def get_importance_component(
     builds=5,
     components="",
     project=None,
+    count_skips=False,
 ):
     # taken from get_jenkins_line_chart in jenkins_job_analysis.py
     run_limit = int((JJV_RUN_LIMIT / BARCHART_MAX_BUILDS) * builds)
@@ -91,7 +92,7 @@ def get_importance_component(
                     sdatdict[component][bnum][importance] = []
 
     # this is to change result values into numbers
-    # TODO: This doesn't handle xpassed, xfailed, skipped, etc. so figure that out
+    # TODO: This now handles skipped, but not xpassed or xfailed.
     for component in sdatdict.keys():
         for bnum in sdatdict[component].keys():
             for importance in sdatdict[component][bnum].keys():
@@ -99,7 +100,8 @@ def get_importance_component(
                 passed = 0
                 res_list = []
                 for item in sdatdict[component][bnum][importance]:
-                    total += 1
+                    if count_skips or (not item["result"] == "skipped"):
+                        total += 1
                     res_list.append(item["result_id"])
                     if item["result"] == "passed":
                         passed += 1
