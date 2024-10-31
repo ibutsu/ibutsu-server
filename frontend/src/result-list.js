@@ -358,7 +358,7 @@ export class ResultList extends React.Component {
     let params = buildParams(this.state.filters);
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.navigate('results?' + params.join('&'))
+    this.props.navigate('?' + params.join('&'))
   }
 
   setPage = (_event, pageNumber) => {
