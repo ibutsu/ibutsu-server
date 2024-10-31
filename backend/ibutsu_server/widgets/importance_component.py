@@ -25,16 +25,14 @@ def get_importance_component(
     ).get("jobs")
 
     # A list of job build numbers to filter our runs by
-    job_ids = []
-    for job in jobs:
-        job_ids.append(job["build_number"])
+    job_ids = [job["source"] for job in jobs]
 
     # query for RUN ids
     # metadata has to have a string to column to work
     # because it is a sqlalchemy property otherwise (AFAIK)
     bnumdat = string_to_column("metadata.jenkins.build_number", Run)
     run_data = (
-        Run.query.filter(bnumdat.in_(job_ids), Run.component.in_(components.split(",")))
+        Run.query.filter(Run.source.in_(job_ids), Run.component.in_(components.split(",")))
         .add_columns(Run.id, bnumdat.label("build_number"))
         .all()
     )
