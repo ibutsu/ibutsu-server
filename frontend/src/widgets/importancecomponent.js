@@ -104,7 +104,7 @@ export class ImportanceComponentWidget extends React.Component {
                   <Tr key={importance}>
                     <Td>{importance}</Td>
                     {tdat.bnums.map((buildnum) => (
-                      <Td key={buildnum}><Link to={`/results?id[in]=${tdat.data[buildnum][importance]["result_list"].join(";")}`}>{this.toPercent(tdat.data[buildnum][importance]["percentage"])}</Link></Td>
+                      <Td key={buildnum}><Link to={'/project/' + this.props.params.project + `/results?id[in]=${tdat.data[buildnum][importance]["result_list"].join(";")}`}>{this.toPercent(tdat.data[buildnum][importance]["percentage"])}</Link></Td>
                     ))}
                   </Tr>
                   ))}

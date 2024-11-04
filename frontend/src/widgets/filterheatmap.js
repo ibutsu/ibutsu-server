@@ -52,6 +52,7 @@ export class FilterHeatmapWidget extends React.Component {
       analysisViewId: null,
       countSkips: 'No',
     };
+    this.renderCell = this.renderCell.bind(this);
   }
 
   getJenkinsAnalysisViewId() {
@@ -175,10 +176,10 @@ export class FilterHeatmapWidget extends React.Component {
             title += item.name + ": " + item.value + "\n";
           }
         });
-        contents = <p title={title}><Link to={`/runs/${value[1]}`}>{Math.floor(value[0])}</Link></p>;
+        contents = <p title={title}><Link to={'/project/' + this.props.params.project + `/runs/${value[1]}`}>{Math.floor(value[0])}</Link></p>;
       }
       else {
-        contents = <Link to={`/runs/${value[1]}`}>{Math.floor(value[0])}</Link>;
+        contents = <Link to={'/project/' + this.props.params.project + `/runs/${value[1]}`}>{Math.floor(value[0])}</Link>;
       }
     }
     return <div style={style}>{contents}</div>;
@@ -221,7 +222,7 @@ export class FilterHeatmapWidget extends React.Component {
       data.push(values);
       values.forEach((item) => {
         if (!!item && (item.length > 2) && !!item[3]) {
-          newLabels.push(<Link to={`/results?metadata.jenkins.build_number[eq]=${item[3]}&metadata.jenkins.job_name[eq]=` + this.params['job_name']} key={item[3]}>{item[3]}</Link>);
+          newLabels.push(<Link to={'/project/' + (this.props.params.project) +`/results?metadata.jenkins.build_number[eq]=${item[3]}&metadata.jenkins.job_name[eq]=` + this.params['job_name']} key={item[3]}>{item[3]}</Link>);
         }
       });
       if (newLabels.length > labels.length) {
