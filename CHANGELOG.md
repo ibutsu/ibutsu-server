@@ -1,3 +1,35 @@
+Version 2.5.9
+=============
+
+* removed 'results' from URL path on pagination as it is already there (#525)
+* Enable project routing in widgets URLs (#523)
+* Updated path of npm bin in node:18 image (#522)
+* split layers EVEN MORE (#520)
+* Bump http-proxy-middleware from 2.0.6 to 2.0.7 in /frontend (#519)
+* [IQE-3104] Update packages (#518)
+* Fix dashboard clearing on project change (#515)
+* Update dockerfiles to ubi9/py39 (#514)
+* Rename master branch to main (#513)
+* Bump rollup from 2.79.1 to 2.79.2 in /frontend (#512)
+* Bump express from 4.19.2 to 4.21.0 in /frontend (#511)
+* Bump micromatch from 4.0.7 to 4.0.8 in /frontend (#510)
+* React Context and Project Nested Routing (#508)
+* Bump webpack from 5.91.0 to 5.94.0 in /frontend (#509)
+* Fix: RuntimeError - generator didn't yield (#468)
+* "Fix" invisible projects
+* Bump ws from 7.5.9 to 7.5.10 in /frontend
+* Fix from Griffin-Sullivan in review
+* Use HTTPStatus enums for backend responses
+* Create constant for JSON Required response message
+* whitespace in ibutsu-pod.sh
+* Migrate to pyproject.toml (#503)
+* Move to Ruff Formatting and Linting (#498)
+* Backend: Change from localhost to 127.0.0.1 (#499)
+* Pin backend dependencies (#502)
+* Replace npm with yarn (#501)
+* React 18 & Patternfly 5 Upgrades (#494)
+* Small doc fixes and percentages for importance widget (#496)
+
 Version 2.5.8
 =============
 
