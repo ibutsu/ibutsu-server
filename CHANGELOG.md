@@ -1,3 +1,8 @@
+Version 2.5.10
+==============
+
+* Fix run filtering and apply filters to report buttons (#528)
+
 Version 2.5.9
 =============
 
