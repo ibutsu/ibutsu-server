@@ -123,7 +123,7 @@ podman run -dt \
        $POSTGRES_EXTRA_ARGS \
        --name ibutsu-postgres \
        --rm \
-       postgres:15
+       postgres:12
 echo "done."
 echo -n "Adding redis to the pod:    "
 podman run -dt \

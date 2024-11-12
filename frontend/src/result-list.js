@@ -45,11 +45,13 @@ export class ResultList extends React.Component {
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
-    eventEmitter: PropTypes.object
+    eventEmitter: PropTypes.object,
+    params: PropTypes.object,
   }
 
   constructor(props) {
     super(props);
+    // TODO just use props.params when converting to funcational component
     const params = new URLSearchParams(props.location.search);
     let page = 1, pageSize = 20, filters = {};
     if (params.toString() !== '') {
@@ -299,7 +301,7 @@ export class ResultList extends React.Component {
   };
 
   applyReport = () => {
-    this.props.navigate('/reports?' + buildParams(this.state.filters).join('&'))
+    this.props.navigate('/project/' + this.props.params.project_id + '/reports?' + buildParams(this.state.filters).join('&'))
   };
 
   updateFilters(name, operator, value, callback) {
