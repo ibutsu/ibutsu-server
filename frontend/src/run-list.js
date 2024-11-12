@@ -90,7 +90,8 @@ export class RunList extends React.Component {
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
-    eventEmitter: PropTypes.object
+    eventEmitter: PropTypes.object,
+    params: PropTypes.object,
   }
 
   constructor(props) {
@@ -142,6 +143,10 @@ export class RunList extends React.Component {
       this.getRuns(value);
     });
   }
+
+  applyReport = () => {
+    this.props.navigate('/project/' + this.props.params.project_id + '/reports?' + buildParams(this.state.filters).join('&'))
+  };
 
   onFieldToggle = () => {
     this.setState({isFieldOpen: !this.state.isFieldOpen});
@@ -292,7 +297,7 @@ export class RunList extends React.Component {
     let params = buildParams(this.state.filters);
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.navigate('/runs?' + params.join('&'))
+    this.props.navigate('?' + params.join('&'))
   }
 
   setPage = (_event, pageNumber) => {
@@ -575,6 +580,7 @@ export class RunList extends React.Component {
                 onApplyFilter={this.applyFilter}
                 onRemoveFilter={this.removeFilter}
                 onClearFilters={this.clearFilters}
+                onApplyReport={this.applyReport}
                 onSetPage={this.setPage}
                 onSetPageSize={this.setPageSize}
                 hideFilters={["project_id"]}
