@@ -66,7 +66,7 @@ export class FilterHeatmapWidget extends React.Component {
     const { analysisViewId } = this.state;
     if (this.props.includeAnalysisLink && analysisViewId !== null) {
       return (
-        <Link to={`/view/${analysisViewId}?job_name=${this.params.job_name}`}>
+        <Link to={`/project/${this.params.project}/view/${analysisViewId}?job_name=${this.params.job_name}`}>
           <Button variant="secondary" title="See analysis" aria-label="See analysis" isInline><ChartLineIcon/></Button>
         </Link>
       );
