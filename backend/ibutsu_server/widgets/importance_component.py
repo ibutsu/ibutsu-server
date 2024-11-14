@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from ibutsu_server.constants import BARCHART_MAX_BUILDS, JJV_RUN_LIMIT
 from ibutsu_server.db.models import Result, Run
 from ibutsu_server.filters import string_to_column
@@ -92,21 +94,33 @@ def get_importance_component(
                     sdatdict[component][bnum][importance] = []
 
     # this is to change result values into numbers
-    # TODO: This now handles skipped, but not xpassed or xfailed.
     for component in sdatdict.keys():
         for bnum in sdatdict[component].keys():
             for importance in sdatdict[component][bnum].keys():
+                results_dict = defaultdict(int)
                 total = 0
-                passed = 0
                 res_list = []
                 for item in sdatdict[component][bnum][importance]:
-                    if count_skips or (not item["result"] == "skipped"):
-                        total += 1
+                    total += 1
+                    results_dict[item["result"]] += 1
                     res_list.append(item["result_id"])
-                    if item["result"] == "passed":
-                        passed += 1
 
                 if total != 0:
+                    if count_skips:
+                        passed = total - (
+                            results_dict["error"]
+                            + results_dict["skipped"]
+                            + results_dict["failed"]
+                            + results_dict["xpassed"]
+                            + results_dict["xfailed"]
+                        )
+                    else:
+                        passed = total - (
+                            results_dict["error"]
+                            + results_dict["failed"]
+                            + results_dict["xpassed"]
+                            + results_dict["xfailed"]
+                        )
                     sdatdict[component][bnum][importance] = {
                         "percentage": round(passed / total, 2),
                         "result_list": res_list,
