@@ -1,3 +1,9 @@
+Version 2.5.11
+==============
+
+* Add count_skips field to Importance by Component widget (#524)
+* Fix filterheatmap URL composition for view (#530)
+
 Version 2.5.10
 ==============
 

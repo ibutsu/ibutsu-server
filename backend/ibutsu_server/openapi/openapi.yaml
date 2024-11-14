@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   description: A system to store and query test results
   title: Ibutsu API
-  version: 2.5.10
+  version: 2.5.11
 servers:
   - url: /api
 tags:
