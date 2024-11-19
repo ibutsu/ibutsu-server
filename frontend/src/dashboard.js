@@ -164,11 +164,6 @@ export class Dashboard extends React.Component {
         'selectedDashboard': targetObject.defaultDashboard,
         'dashboardInputValue': targetObject.defaultDashboard?.title
       })
-    } else {
-      this.setState({
-        'selectedDashboard': 'Select a dashboard',
-        'dashboardInputValue': 'Select a dashboard'
-      })
     }
   }
 
