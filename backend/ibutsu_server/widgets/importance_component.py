@@ -1,10 +1,10 @@
-from sqlalchemy import desc, func
 from collections import defaultdict
+
+from sqlalchemy import desc
 
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, Run
 from ibutsu_server.filters import string_to_column
-from ibutsu_server.widgets.jenkins_job_view import get_jenkins_job_view
 
 
 def get_importance_component(
