@@ -1,6 +1,7 @@
+from sqlalchemy import desc, func
 from collections import defaultdict
 
-from ibutsu_server.constants import BARCHART_MAX_BUILDS, JJV_RUN_LIMIT
+from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, Run
 from ibutsu_server.filters import string_to_column
 from ibutsu_server.widgets.jenkins_job_view import get_jenkins_job_view
@@ -15,37 +16,26 @@ def get_importance_component(
     project=None,
     count_skips=False,
 ):
-    # taken from get_jenkins_line_chart in jenkins_job_analysis.py
-    run_limit = int((JJV_RUN_LIMIT / BARCHART_MAX_BUILDS) * builds)
-    jobs = get_jenkins_job_view(
-        filter_=f"job_name={job_name}",
-        page_size=builds,
-        project=project,
-        run_limit=run_limit,
-    ).get("jobs")
 
-    # A list of job build numbers to filter our runs by
-    job_ids = [job["source"] for job in jobs]
-
-    # query for RUN ids
-    # metadata has to have a string to column to work
-    # because it is a sqlalchemy property otherwise (AFAIK)
+    # Get the last 'builds' runs from a specific Jenkins Job as a subquery
     bnumdat = string_to_column("metadata.jenkins.build_number", Run)
-    run_data = (
-        Run.query.filter(Run.source.in_(job_ids), Run.component.in_(components.split(",")))
-        .add_columns(Run.id, bnumdat.label("build_number"))
-        .all()
-    )
+    jnamedat = string_to_column("metadata.jenkins.job_name", Run)
+    sub_query = (
+            session.query(bnumdat.label("build_number"))
+            .filter(jnamedat.like(job_name))
+            .order_by(desc("start_time"))
+            .limit(builds)
+            .subquery()
+            )
 
-    # get a list of the job IDs
-    run_info = {}
-    for run in run_data:
-        run_info[run.id] = run.build_number
-
+    # Filter the results based on the jenkins job, build number and component
     mdat = string_to_column("metadata.importance", Result)
+    bnumdat = string_to_column("metadata.jenkins.build_number", Result)
+    jnamedat = string_to_column("metadata.jenkins.job_name", Result)
     result_data = (
         Result.query.filter(
-            Result.run_id.in_(run_info.keys()),
+            bnumdat.in_(sub_query),
+            jnamedat.like(job_name),
             Result.component.in_(components.split(",")),
         )
         .add_columns(
@@ -54,6 +44,7 @@ def get_importance_component(
             Result.id,
             Result.result,
             mdat.label("importance"),
+            bnumdat.label("build_number"),
         )
         .all()
     )
@@ -72,15 +63,15 @@ def get_importance_component(
             sdatdict[datum.component] = {}
 
         # getting the build numbers from the results
-        if run_info[datum.run_id] not in sdatdict[datum.component].keys():
-            bnums.add(run_info[datum.run_id])
-            sdatdict[datum.component][run_info[datum.run_id]] = {}
+        if datum.build_number not in sdatdict[datum.component].keys():
+            bnums.add(datum.build_number)
+            sdatdict[datum.component][datum.build_number] = {}
 
         # Adding all importances from our constant
-        if datum.importance not in sdatdict[datum.component][run_info[datum.run_id]].keys():
-            sdatdict[datum.component][run_info[datum.run_id]][datum.importance] = []
+        if datum.importance not in sdatdict[datum.component][datum.build_number].keys():
+            sdatdict[datum.component][datum.build_number][datum.importance] = []
         # adding the result value
-        sdatdict[datum.component][run_info[datum.run_id]][datum.importance].append(
+        sdatdict[datum.component][datum.build_number][datum.importance].append(
             {"result": datum.result, "result_id": datum.id}
         )
 
