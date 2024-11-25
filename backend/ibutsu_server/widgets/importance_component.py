@@ -16,17 +16,16 @@ def get_importance_component(
     project=None,
     count_skips=False,
 ):
-
     # Get the last 'builds' runs from a specific Jenkins Job as a subquery
     bnumdat = string_to_column("metadata.jenkins.build_number", Run)
     jnamedat = string_to_column("metadata.jenkins.job_name", Run)
     sub_query = (
-            session.query(bnumdat.label("build_number"))
-            .filter(jnamedat.like(job_name))
-            .order_by(desc("start_time"))
-            .limit(builds)
-            .subquery()
-            )
+        session.query(bnumdat.label("build_number"))
+        .filter(jnamedat.like(job_name))
+        .order_by(desc("start_time"))
+        .limit(builds)
+        .subquery()
+    )
 
     # Filter the results based on the jenkins job, build number and component
     mdat = string_to_column("metadata.importance", Result)
