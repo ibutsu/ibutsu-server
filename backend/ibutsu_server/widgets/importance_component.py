@@ -115,7 +115,7 @@ def get_importance_component(
                     }
                 else:
                     sdatdict[component][bnum][importance] = {
-                        "percentage": 0,
+                        "percentage": "-",
                         "result_list": res_list,
                     }
 
