@@ -13,8 +13,8 @@ def _get_results(job_name, builds, components, project):
     jnamedat = string_to_column("metadata.jenkins.job_name", Run)
     sub_query = (
         session.query(Run.id)
-        .filter(jnamedat==job_name)
-        .filter(Run.project_id==project)
+        .filter(jnamedat == job_name)
+        .filter(Run.project_id == project)
         .order_by(desc("start_time"))
         .limit(builds)
         .subquery()
@@ -52,7 +52,6 @@ def get_importance_component(
     project=None,
     count_skips=False,
 ):
-
     result_data = _get_results(job_name, builds, components, project)
 
     """
