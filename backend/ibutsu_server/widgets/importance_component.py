@@ -1,9 +1,44 @@
 from collections import defaultdict
 
-from ibutsu_server.constants import BARCHART_MAX_BUILDS, JJV_RUN_LIMIT
-from ibutsu_server.db.models import Result, Run
+from sqlalchemy import desc
+
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Result
 from ibutsu_server.filters import string_to_column
-from ibutsu_server.widgets.jenkins_job_view import get_jenkins_job_view
+
+
+def _get_results(job_name, builds, components, project):
+    mdat = string_to_column("metadata.importance", Result).label("importance")
+    bnumdat = string_to_column("metadata.jenkins.build_number", Result).label("build_number")
+    jnamedat = string_to_column("metadata.jenkins.job_name", Result).label("job_name")
+    # Get the last 'builds' runs from a specific Jenkins Job as a subquery
+    build_numbers_subquery = (
+        session.query(bnumdat.label("build_number"))
+        .filter(jnamedat == job_name)
+        .filter(Result.project_id == project)
+        .group_by(bnumdat)
+        .order_by(desc(bnumdat))
+        .limit(builds)
+        .subquery()
+    )
+    # Actually filter the results based on build_numbers, job_name, project_id and component.
+    result_data = (
+        Result.query.filter(
+            bnumdat.in_(build_numbers_subquery),
+            jnamedat == job_name,
+            Result.component.in_(components.split(",")),
+            Result.project_id == project,
+        )
+        .add_columns(
+            Result.component,
+            Result.id,
+            Result.result,
+            mdat,
+            bnumdat,
+        )
+        .all()
+    )
+    return result_data
 
 
 def get_importance_component(
@@ -15,50 +50,7 @@ def get_importance_component(
     project=None,
     count_skips=False,
 ):
-    # taken from get_jenkins_line_chart in jenkins_job_analysis.py
-    run_limit = int((JJV_RUN_LIMIT / BARCHART_MAX_BUILDS) * builds)
-    jobs = get_jenkins_job_view(
-        filter_=f"job_name={job_name}",
-        page_size=builds,
-        project=project,
-        run_limit=run_limit,
-    ).get("jobs")
-
-    # A list of job build numbers to filter our runs by
-    job_ids = []
-    for job in jobs:
-        job_ids.append(job["build_number"])
-
-    # query for RUN ids
-    # metadata has to have a string to column to work
-    # because it is a sqlalchemy property otherwise (AFAIK)
-    bnumdat = string_to_column("metadata.jenkins.build_number", Run)
-    run_data = (
-        Run.query.filter(bnumdat.in_(job_ids), Run.component.in_(components.split(",")))
-        .add_columns(Run.id, bnumdat.label("build_number"))
-        .all()
-    )
-
-    # get a list of the job IDs
-    run_info = {}
-    for run in run_data:
-        run_info[run.id] = run.build_number
-
-    mdat = string_to_column("metadata.importance", Result)
-    result_data = (
-        Result.query.filter(
-            Result.run_id.in_(run_info.keys()),
-            Result.component.in_(components.split(",")),
-        )
-        .add_columns(
-            Result.run_id,
-            Result.component,
-            Result.id,
-            Result.result,
-            mdat.label("importance"),
-        )
-        .all()
-    )
+    result_data = _get_results(job_name, builds, components, project)
 
     """
     This starts a (probably) over complicated bit of data maniplation
@@ -74,15 +66,15 @@ def get_importance_component(
             sdatdict[datum.component] = {}
 
         # getting the build numbers from the results
-        if run_info[datum.run_id] not in sdatdict[datum.component].keys():
-            bnums.add(run_info[datum.run_id])
-            sdatdict[datum.component][run_info[datum.run_id]] = {}
+        if datum.build_number not in sdatdict[datum.component].keys():
+            bnums.add(datum.build_number)
+            sdatdict[datum.component][datum.build_number] = {}
 
         # Adding all importances from our constant
-        if datum.importance not in sdatdict[datum.component][run_info[datum.run_id]].keys():
-            sdatdict[datum.component][run_info[datum.run_id]][datum.importance] = []
+        if datum.importance not in sdatdict[datum.component][datum.build_number].keys():
+            sdatdict[datum.component][datum.build_number][datum.importance] = []
         # adding the result value
-        sdatdict[datum.component][run_info[datum.run_id]][datum.importance].append(
+        sdatdict[datum.component][datum.build_number][datum.importance].append(
             {"result": datum.result, "result_id": datum.id}
         )
 
@@ -127,7 +119,7 @@ def get_importance_component(
                     }
                 else:
                     sdatdict[component][bnum][importance] = {
-                        "percentage": 0,
+                        "percentage": "N/A",
                         "result_list": res_list,
                     }
 
