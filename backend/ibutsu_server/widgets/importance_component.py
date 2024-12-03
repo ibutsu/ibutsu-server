@@ -3,40 +3,38 @@ from collections import defaultdict
 from sqlalchemy import desc
 
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Result, Run
+from ibutsu_server.db.models import Result
 from ibutsu_server.filters import string_to_column
 
 
 def _get_results(job_name, builds, components, project):
+    mdat = string_to_column("metadata.importance", Result).label("importance")
+    bnumdat = string_to_column("metadata.jenkins.build_number", Result).label("build_number")
+    jnamedat = string_to_column("metadata.jenkins.job_name", Result).label("job_name")
     # Get the last 'builds' runs from a specific Jenkins Job as a subquery
-    bnumdat = string_to_column("metadata.jenkins.build_number", Run)
-    jnamedat = string_to_column("metadata.jenkins.job_name", Run)
-    sub_query = (
-        session.query(Run.id)
+    build_numbers_subquery = (
+        session.query(bnumdat.label("build_number"))
         .filter(jnamedat == job_name)
-        .filter(Run.project_id == project)
-        .order_by(desc("start_time"))
+        .filter(Result.project_id == project)
+        .group_by(bnumdat)
+        .order_by(desc(bnumdat))
         .limit(builds)
         .subquery()
     )
-
-    # Filter the results based on the jenkins job, build number and component
-    mdat = string_to_column("metadata.importance", Result)
-    bnumdat = string_to_column("metadata.jenkins.build_number", Result)
-    jnamedat = string_to_column("metadata.jenkins.job_name", Result)
+    # Actually filter the results based on build_numbers, job_name, project_id and component.
     result_data = (
         Result.query.filter(
-            Result.run_id == sub_query.c.id,
+            bnumdat.in_(build_numbers_subquery),
+            jnamedat == job_name,
             Result.component.in_(components.split(",")),
             Result.project_id == project,
         )
         .add_columns(
-            Result.run_id,
             Result.component,
             Result.id,
             Result.result,
-            mdat.label("importance"),
-            bnumdat.label("build_number"),
+            mdat,
+            bnumdat,
         )
         .all()
     )
