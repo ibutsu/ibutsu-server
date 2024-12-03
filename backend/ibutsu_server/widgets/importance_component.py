@@ -7,21 +7,14 @@ from ibutsu_server.db.models import Result, Run
 from ibutsu_server.filters import string_to_column
 
 
-def get_importance_component(
-    env="prod",
-    group_field="component",
-    job_name="",
-    builds=5,
-    components="",
-    project=None,
-    count_skips=False,
-):
+def _get_results(job_name, builds, components, project):
     # Get the last 'builds' runs from a specific Jenkins Job as a subquery
     bnumdat = string_to_column("metadata.jenkins.build_number", Run)
     jnamedat = string_to_column("metadata.jenkins.job_name", Run)
     sub_query = (
-        session.query(bnumdat.label("build_number"))
-        .filter(jnamedat.like(job_name))
+        session.query(Run.id)
+        .filter(jnamedat==job_name)
+        .filter(Run.project_id==project)
         .order_by(desc("start_time"))
         .limit(builds)
         .subquery()
@@ -33,9 +26,9 @@ def get_importance_component(
     jnamedat = string_to_column("metadata.jenkins.job_name", Result)
     result_data = (
         Result.query.filter(
-            bnumdat.in_(sub_query),
-            jnamedat.like(job_name),
+            Result.run_id == sub_query.c.id,
             Result.component.in_(components.split(",")),
+            Result.project_id == project,
         )
         .add_columns(
             Result.run_id,
@@ -47,6 +40,20 @@ def get_importance_component(
         )
         .all()
     )
+    return result_data
+
+
+def get_importance_component(
+    env="prod",
+    group_field="component",
+    job_name="",
+    builds=5,
+    components="",
+    project=None,
+    count_skips=False,
+):
+
+    result_data = _get_results(job_name, builds, components, project)
 
     """
     This starts a (probably) over complicated bit of data maniplation
