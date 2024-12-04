@@ -7,7 +7,7 @@ const IbutsuContext = createContext({primaryType: 'project'});
 const IbutsuContextProvider = (props) => {
     const [primaryType, setPrimaryType] = useState();
     const [primaryObject, setPrimaryObject] = useState();
-    const [activeDashboard, setActiveDashboard] = useState();
+    const [defaultDashboard, setDefaultDashboard] = useState();
 
     return (
         <IbutsuContext.Provider
@@ -16,8 +16,8 @@ const IbutsuContextProvider = (props) => {
                 setPrimaryType: setPrimaryType,
                 primaryObject: primaryObject,
                 setPrimaryObject: setPrimaryObject,
-                activeDashboard: activeDashboard,
-                setActiveDashboard: setActiveDashboard,
+                defaultDashboard: defaultDashboard,
+                setDefaultDashboard: setDefaultDashboard,
             }}>
                 {props.children}
         </IbutsuContext.Provider>
