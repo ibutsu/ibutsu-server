@@ -5,7 +5,7 @@ import ElementWrapper from './components/elementWrapper';
 
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { Dashboard } from './dashboard';
+import Dashboard from './dashboard';
 import { ReportBuilder } from './report-builder';
 import { RunList } from './run-list';
 import { Run } from './run';
