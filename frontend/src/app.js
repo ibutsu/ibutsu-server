@@ -43,7 +43,7 @@ export class App extends React.Component {
           element={<ElementWrapper routeElement={IbutsuPage} eventEmitter={this.eventEmitter} />}
         >
 
-          {/* Nested project routes */}
+          {/* Nested project routes */}ElementWrapper
           <Route
             path="dashboard/:dashboard_id"
             element={
