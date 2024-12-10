@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { ToastContainer, toast } from 'react-toastify';
 
 import {
   Button,
@@ -19,6 +20,8 @@ import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import { getSpinnerRow } from '../../utilities';
 import { FilterTable, AddTokenModal, DeleteModal } from '../../components';
+import ToastWrapper from '../../components/toast-wrapper';
+import { ALERT_TIMEOUT } from '../../constants';
 
 
 export class UserTokens extends React.Component {
@@ -59,16 +62,16 @@ export class UserTokens extends React.Component {
     };
   }
 
-  showNotification(type, title, message, action?, timeout?, key?) {
-    if (!this.eventEmitter) {
-      return;
-    }
-    this.eventEmitter.emit('showNotification', type, title, message, action, timeout, key);
-  }
 
   copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    this.showNotification('info', 'Copied to clipboard', 'Your token has been copied to the clipboard');
+    toast(<ToastWrapper />,
+      {
+        data: {
+          type: 'info',
+          title: 'Copied to clipboard',
+          message: 'Your token has been copied to the clipboard'
+    }});
   }
 
   tokenToRow(token) {
@@ -224,6 +227,7 @@ export class UserTokens extends React.Component {
           onDelete={this.onDeleteToken}
           onClose={this.onDeleteTokenClose}
         />
+        <ToastContainer autoClose={ALERT_TIMEOUT} stacked/>
       </React.Fragment>
     );
   }

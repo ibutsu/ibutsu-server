@@ -6,7 +6,6 @@ export { DownloadButton } from './download-button';
 export { EmptyObject } from './empty-object';
 export { FileUpload } from './fileupload';
 export { FilterTable, MetaFilter } from './filtertable';
-export { IbutsuHeader } from './ibutsu-header';
 export { IbutsuPage } from './ibutsu-page';
 export { MultiValueInput } from './multivalueinput';
 export { NewDashboardModal } from './new-dashboard-modal';

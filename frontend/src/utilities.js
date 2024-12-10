@@ -503,32 +503,27 @@ export function debounce(func, timeout = 500) {
   };
 }
 
-export function getTheme() {
-  // check local storage and default to browser theme
+export function getDarkTheme() {
+  // check local storage and browser theme for a preference
   const local_theme = localStorage.getItem(THEME_KEY)
   if (local_theme) {
-    return local_theme;
+    return local_theme === 'dark';
   }
   else {
     let browser_preference = window.matchMedia('(prefers-color-scheme: dark)');
-    return browser_preference.matches ? 'dark' : 'light';
+    return Boolean(browser_preference.matches);
   }
 }
 
-export function setTheme(theme) {
-  let target_theme = theme ? theme : getTheme();
-  if (!['dark', 'light'].includes(target_theme)) {
-    console.log('bad theme value passed, defaulting to dark');
-    target_theme = 'dark';
-  }
+export function setDocumentDarkTheme(theme=null) {
+  // Sets light theme on false, dark theme on true
+  let set_dark = theme !== null ? theme : getDarkTheme();
 
-  localStorage.setItem('theme', target_theme);
-  if (target_theme === 'dark') {
-    console.log('setting dark theme');
+  localStorage.setItem('theme', set_dark ? 'dark' : 'light');
+  if (set_dark) {
     document.firstElementChild.classList.add('pf-v5-theme-dark');
   }
   else {
-    console.log('setting light theme');
     document.firstElementChild.classList.remove('pf-v5-theme-dark');
   }
 }

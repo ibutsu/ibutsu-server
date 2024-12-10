@@ -4,14 +4,15 @@ import { createRoot } from 'react-dom/client';
 
 import '@patternfly/react-core/dist/styles/base.css';
 import '@patternfly/patternfly/patternfly-theme-dark.css';
+import '@patternfly/patternfly/patternfly-charts.css';
 import './index.css';
-import { setTheme } from './utilities';
+import { setDocumentDarkTheme } from './utilities';
 
 import { Base } from './base';
 import * as serviceWorker from './serviceWorker';
 
 
-setTheme();
+setDocumentDarkTheme();
 const container = document.getElementById('root');
 const root = createRoot(container);
 root.render(<Base/>);

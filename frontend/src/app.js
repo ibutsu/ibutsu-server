@@ -25,7 +25,6 @@ export class App extends React.Component {
     this.state = {
       uploadFileName: '',
       importId: '',
-      notifications: [],
       searchValue: '',
       views: []
     };
