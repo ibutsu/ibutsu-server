@@ -16,8 +16,7 @@ import {
   Page,
 } from '@patternfly/react-core';
 
-import ElementWrapper from './elementWrapper';
-import { IbutsuHeader } from '../components';
+import IbutsuHeader from './ibutsu-header';
 import { ALERT_TIMEOUT } from '../constants';
 import { getDateString } from '../utilities';
 import { IbutsuContext } from '../services/context';
@@ -45,8 +44,6 @@ export class IbutsuPage extends React.Component {
     };
     this.props.eventEmitter.on('showNotification', (type, title, message, action, timeout, key) => {
       this.showNotification(type, title, message, action, timeout, key);
-    });
-    this.props.eventEmitter.on('projectChange', () => {
     });
     // TODO: empty state props.children override
 
@@ -95,7 +92,7 @@ export class IbutsuPage extends React.Component {
           ))}
         </AlertGroup>
         <Page
-          header={<ElementWrapper routeElement={IbutsuHeader} eventEmitter={this.props.eventEmitter}/>}
+          header={<IbutsuHeader eventEmitter={this.props.eventEmitter}/>}
           sidebar={<IbutsuSidebar eventEmitter={this.props.eventEmitter} />}
           isManagedSidebar={true}
           style={{position: "relative"}}

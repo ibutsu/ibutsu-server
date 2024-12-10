@@ -11,7 +11,7 @@ import {
 import { Link, Outlet } from 'react-router-dom';
 import ElementWrapper from './elementWrapper';
 
-import { IbutsuHeader } from './ibutsu-header';
+import IbutsuHeader from './ibutsu-header';
 import PropTypes from 'prop-types';
 
 
