@@ -73,7 +73,7 @@ export class ParamDropdown extends React.Component {
     this.onToggle = this.onToggle.bind(this);
     this.state = {
       isOpen: false,
-      value: props.defaultValue || "Group data by?",
+      value: props.defaultValue || 'Group data by?',
       showDescription: props.showDescription || true
     };
   }
@@ -108,7 +108,7 @@ export class ParamDropdown extends React.Component {
     return (
       <div data-id='widget-param-dropdown'>
         {showDescription &&
-        <Text component='h3'>{this.props.description || this.props.tooltip || ""}</Text>
+        <Text component='h3'>{this.props.description || this.props.tooltip || ''}</Text>
         }
         <Tooltip content={this.props.tooltip}>
           <Dropdown

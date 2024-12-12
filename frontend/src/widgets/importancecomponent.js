@@ -103,7 +103,7 @@ export class ImportanceComponentWidget extends React.Component {
               <Table aria-label="importance-component-table" variant="compact">
                 <Thead>
                   <Tr>
-                    {["-", ...tdat.bnums].map((buildnum) => (
+                    {['-', ...tdat.bnums].map((buildnum) => (
                       <Th key={buildnum}>{buildnum}</Th>
                     ))}
                   </Tr>
@@ -113,7 +113,7 @@ export class ImportanceComponentWidget extends React.Component {
                   <Tr key={importance}>
                     <Td>{importance}</Td>
                     {tdat.bnums.map((buildnum) => (
-                      <Td key={buildnum}><Link to={'/project/' + this.props.params.project + `/results?id[in]=${tdat.data[buildnum][importance]["result_list"].join(";")}`}>{this.toPercent(tdat.data[buildnum][importance]["percentage"])}</Link></Td>
+                      <Td key={buildnum}><Link to={'/project/' + this.props.params.project + `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`}>{this.toPercent(tdat.data[buildnum][importance]['percentage'])}</Link></Td>
                     ))}
                   </Tr>
                   ))}

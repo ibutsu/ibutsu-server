@@ -125,7 +125,7 @@ export class GenericBarWidget extends React.Component {
   getBarCharts() {
     let barCharts = [];
     for (const test_state of Object.keys(this.state.data)) {
-      if (test_state !== "filter") {
+      if (test_state !== 'filter') {
         let barData = [];
         for (const group_field of Object.keys(this.state.data[test_state])) {
           barData.push({name: toTitleCase(test_state), x: group_field, y: this.state.data[test_state][group_field]})
@@ -138,14 +138,14 @@ export class GenericBarWidget extends React.Component {
               barWidth={this.props.barWidth || 20}
               data={barData}
               sortKey={(datum) => `${datum.x}`}
-              sortOrder={this.props.sortOrder || "descending"}
+              sortOrder={this.props.sortOrder || 'descending'}
               horizontal={this.props.horizontal}
               labels={this.getLabels()}
               labelComponent={
                 <ChartTooltip
                   dx={this.props.horizontal ? -10 : 0}
                   dy={this.props.horizontal ? 0 : -10}
-                  style={{ fill: "white", fontSize: this.props.fontSize-2 || 14}}
+                  style={{ fill: 'white', fontSize: this.props.fontSize-2 || 14}}
                 />
               }
             />
@@ -184,16 +184,16 @@ export class GenericBarWidget extends React.Component {
       return (
         <div>
           <ParamDropdown
-            dropdownItems={this.props.dropdownItems || ["component", "env", "metadata.jenkins.job_name"]}
+            dropdownItems={this.props.dropdownItems || ['component', 'env', 'metadata.jenkins.job_name']}
             defaultValue={this.params.group_field}
             handleSelect={this.onGroupFieldSelect}
-            tooltip={"Group data by:"}
+            tooltip="Group data by:"
           />
           <ParamDropdown
             dropdownItems={[1, 2, 3, 4, 5, 6]}
             handleSelect={this.onWeekSelect}
             defaultValue={this.params.weeks}
-            tooltip={"Set weeks to:"}
+            tooltip="Set weeks to:"
           />
         </div>
       )
@@ -220,10 +220,10 @@ export class GenericBarWidget extends React.Component {
               right: 15,
               top: 20
             }}
-            height={this.props.height || this.getChartHeight(Object.keys(this.state.data["passed"]).length)}
+            height={this.props.height || this.getChartHeight(Object.keys(this.state.data['passed']).length)}
           >
             <ChartAxis
-              label={this.props.xLabel || ""}
+              label={this.props.xLabel || ''}
               fixLabelOverlap={!this.props.horizontal}
               style={{
                 tickLabels: {fontSize: this.props.fontSize-2 || 14},
@@ -231,7 +231,7 @@ export class GenericBarWidget extends React.Component {
               }}
             />
             <ChartAxis
-              label={this.props.yLabel || ""}
+              label={this.props.yLabel || ''}
               dependentAxis
               style={{
                 tickLabels: {fontSize: this.props.fontSize-2 || 14},
@@ -248,12 +248,12 @@ export class GenericBarWidget extends React.Component {
           <ChartLegend
             height={30}
             data={[
-              {name: "Passed"},
-              {name: "Failed"},
-              {name: "Skipped"},
-              {name: "Error"},
-              {name: "Xfailed"},
-              {name: "Xpassed"}
+              {name: 'Passed'},
+              {name: 'Failed'},
+              {name: 'Skipped'},
+              {name: 'Error'},
+              {name: 'Xfailed'},
+              {name: 'Xpassed'}
             ]}
             colorScale={[
               'var(--pf-v5-global--success-color--100)',

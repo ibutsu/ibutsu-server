@@ -68,8 +68,8 @@ function runToRow(run, filterFunc, analysisViewId) {
     badges.push(badge)
   }
   return {
-    "cells": [
-      analysisViewId ? {title: <React.Fragment><Link to={`/view/${analysisViewId}?run_list=${run.id}`}>{run.id}</Link> {badges}</React.Fragment>} : run.id,
+    'cells': [
+      analysisViewId ? {title: <React.Fragment><Link to={`../view/${analysisViewId}?run_list=${run.id}`}>{run.id}</Link> {badges}</React.Fragment>} : run.id,
       {title: <RunSummary summary={run.summary} />},
       {title: run.source},
       {title: run.env},
@@ -257,7 +257,7 @@ export class AccessibilityDashboardView extends React.Component {
     const operationMode = getOperationMode(operator);
     let value = this.state.textFilter;
     if (operationMode === 'multi') {
-      value = this.state.inValues.join(";");  // translate list to ;-separated string for BE
+      value = this.state.inValues.join(';');  // translate list to ;-separated string for BE
     }
     else if (operationMode === 'bool') {
       value = this.state.boolSelection;
@@ -312,14 +312,14 @@ export class AccessibilityDashboardView extends React.Component {
       delete filters['project_id']
     }
     // get the widget ID for the analysis view
-    HttpClient.get([Settings.serverUrl, 'widget-config'], {"filter": "widget=accessibility-analysis-view"})
+    HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=accessibility-analysis-view'})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         analysisViewId = data.widgets[0]?.id
       }).catch(error => {
         console.log(error)
       });
-    params.filter.push("metadata.accessibility@t")
+    params.filter.push('metadata.accessibility@t')
     // Convert UI filters to API filters
     for (let key in filters) {
       if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key]) {
@@ -524,7 +524,7 @@ export class AccessibilityDashboardView extends React.Component {
             toggle={boolToggle}
           >
             <SelectList>
-              {["True", "False"].map((option, index) => (
+              {['True', 'False'].map((option, index) => (
                 <SelectOption key={index} value={option}>
                   {option}
                 </SelectOption>
@@ -533,10 +533,10 @@ export class AccessibilityDashboardView extends React.Component {
           </Select>
         }
         {(filterMode === 'text' && operationMode === 'single') &&
-          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: "inherit"}}/>
+          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: 'inherit'}}/>
         }
         {(operationMode === 'multi') &&
-          <MultiValueInput onValuesChange={this.onInValuesChange} style={{height: "inherit"}}/>
+          <MultiValueInput onValuesChange={this.onInValuesChange} style={{height: 'inherit'}}/>
         }
       </React.Fragment>
     ];

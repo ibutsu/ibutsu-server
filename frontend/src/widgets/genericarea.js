@@ -102,7 +102,7 @@ export class GenericAreaWidget extends React.Component {
     let index = 0
     for (const key of Object.keys(this.state.data)) {
       let chartData = [];
-      if (key !== "filter") {
+      if (key !== 'filter') {
         for (const groupField of Object.keys(this.state.data[key])) {
           chartData.push({name: toTitleCase(key), x: groupField, y: this.state.data[key][groupField]})
         }
@@ -112,8 +112,8 @@ export class GenericAreaWidget extends React.Component {
               data={chartData}
               key={index}
               sortKey={(datum) => `${datum.x}`}
-              sortOrder={this.props.sortOrder || "ascending"}
-              interpolation={this.props.interpolation || "monotoneX"}
+              sortOrder={this.props.sortOrder || 'ascending'}
+              interpolation={this.props.interpolation || 'monotoneX'}
               style={this.props.getColors ? {data: { fill: this.props.getColors(key)}}: {}}
             />
           );
@@ -137,13 +137,13 @@ export class GenericAreaWidget extends React.Component {
 
   getTooltip() {
     const { showTooltip } = this.props;
-    const CursorVoronoiContainer = createContainer("cursor", "voronoi");
+    const CursorVoronoiContainer = createContainer('cursor', 'voronoi');
     if (showTooltip) {
       return (
         <CursorVoronoiContainer
           cursorDimension="x"
           labels={this.getLabels()}
-          labelComponent={<ChartTooltip style={{ fill: "white", fontSize: this.props.fontSize-2 || 14}}/>}
+          labelComponent={<ChartTooltip style={{ fill: 'white', fontSize: this.props.fontSize-2 || 14}}/>}
           mouseFollowTooltips
           voronoiDimension="x"
           voronoiPadding={50}
@@ -184,7 +184,7 @@ export class GenericAreaWidget extends React.Component {
               {this.state.areaCharts}
             </ChartStack>
             <ChartAxis
-              label={this.props.xLabel || "x"}
+              label={this.props.xLabel || 'x'}
               fixLabelOverlap
               style={{
                 tickLabels: {fontSize: this.props.fontSize-2 || 14},
@@ -192,7 +192,7 @@ export class GenericAreaWidget extends React.Component {
               }}
             />
             <ChartAxis
-              label={this.props.yLabel || "y"}
+              label={this.props.yLabel || 'y'}
               dependentAxis
               style={{
                 tickLabels: {fontSize: this.props.fontSize-2 || 14},

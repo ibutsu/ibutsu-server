@@ -12,8 +12,7 @@ import { AuthService } from './services/auth';
 import ElementWrapper from './components/elementWrapper';
 import { IbutsuContextProvider } from './services/context';
 
-export const Base = () => {
-  return (
+export const Base = () => (
     <IbutsuContextProvider>
       <Router>
         <Routes>
@@ -38,4 +37,3 @@ export const Base = () => {
       </Router>
     </IbutsuContextProvider>
   );
-};

@@ -189,7 +189,7 @@ podman run -d \
        --name ibutsu-frontend \
        -w /mnt \
        -v./frontend:/mnt/:Z \
-       node:18 \
+       node:$(cut -d 'v' -f 2 < './frontend/.nvmrc') \
        /bin/bash -c "node --dns-result-order=ipv4first /usr/local/bin/npm install --no-save --no-package-lock yarn &&
          yarn install &&
          CI=1 yarn devserver"

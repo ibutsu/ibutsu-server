@@ -93,8 +93,8 @@ export class ReportBuilder extends React.Component {
     }
     this.state = {
       isHelpExpanded: false,
-      reportType: "html",
-      reportSource: "",
+      reportType: 'html',
+      reportSource: '',
       reportFilter: filterString,
       reportTypes: [],
       columns: ['Report', 'Status', 'Actions'],

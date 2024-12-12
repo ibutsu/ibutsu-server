@@ -36,7 +36,6 @@ import {
   getSpinnerRow,
   resultToRow,
 } from '../utilities';
-import { GenericAreaWidget } from '../widgets';
 import { FilterTable, TabTitle } from '../components';
 import { IbutsuContext } from '../services/context';
 const MockRun = {
@@ -128,7 +127,7 @@ export class AccessibilityAnalysisView extends React.Component {
       delete params['project'];
     }
     // probably don't need this, but maybe something similar
-    params["run_list"] = this.state.filters.run_list?.val;
+    params['run_list'] = this.state.filters.run_list?.val;
     HttpClient.get([Settings.serverUrl, 'widget', this.props.view.widget], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
@@ -185,7 +184,7 @@ export class AccessibilityAnalysisView extends React.Component {
               if (contentType.includes('text')) {
                 response.text().then(text => {
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: 'white'}}>
                       <Card>
                         <CardBody>
                           <Editor fontFamily="Hack, monospace" theme="vs-dark" value={text} height="40rem" options={{readOnly: true}} />
@@ -203,7 +202,7 @@ export class AccessibilityAnalysisView extends React.Component {
                 response.blob().then(blob => {
                   let imageUrl = URL.createObjectURL(blob);
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />} style={{backgroundColor: "white"}}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />} style={{backgroundColor: 'white'}}>
                       <Card>
                         <CardBody>
                           <img src={imageUrl} alt={artifact.filename}/>
@@ -297,9 +296,9 @@ export class AccessibilityAnalysisView extends React.Component {
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
         if (response.ok) {
-          this.setState({"isRunValid": true});
+          this.setState({'isRunValid': true});
         } else {
-          throw new Error("Failed with HTTP code " + response.status);
+          throw new Error('Failed with HTTP code ' + response.status);
         }
         return response.json();
       })
@@ -351,12 +350,12 @@ export class AccessibilityAnalysisView extends React.Component {
     this.setState({
       pieData: [
         {
-          x: "passes",
+          x: 'passes',
           y: passes,
           ratio: Math.round(100 * passes/total, 2)
         },
         {
-          x: "violations",
+          x: 'violations',
           y: violations,
           ratio: Math.round(100 * violations/total, 2)
         },
@@ -422,8 +421,7 @@ export class AccessibilityAnalysisView extends React.Component {
       <React.Fragment>
         <PageSection>
           <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-            <Tab eventKey={'overview'} title={<TabTitle icon={CatalogIcon} text="Overview" />} style={{backgroundColor: 'white'}}>
-              {true &&
+            <Tab eventKey="overview" title={<TabTitle icon={CatalogIcon} text="Overview" />} style={{backgroundColor: 'white'}}>
               <div style={{ height: '1000px', width: '1250px', backgroundColor: 'white' }}>
                   <ChartDonut
                     ariaDesc="Accessibility results donut chart"
@@ -465,44 +463,15 @@ export class AccessibilityAnalysisView extends React.Component {
                     width={300}
                   />
               </div>
-
-              }
-              {false &&
-              <GenericAreaWidget
-                title={"test counts for "}
-                params={{"run_list": [this.state.id]}}
-                hideDropdown={true}
-                getColors={this.getColors}
-                widgetEndpoint={'accessibility-bar-chart'}
-                height={180}
-                yLabel="count"
-                xLabel="ID"
-                sortOrder="ascending"
-                showTooltip={false}
-                colorScale={[
-                  'var(--pf-v5-global--success-color--100)',
-                  'var(--pf-v5-global--danger-color--100)',
-                  'var(--pf-v5-global--warning-color--100)',
-                  'var(--pf-v5-global--info-color--100)',
-                ]}
-                padding={{
-                  bottom: 50,
-                  left: 50,
-                  right: 20,
-                  top: 20
-                }}
-                fontSize={9}
-              />
-              }
             </Tab>
-            <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: "white"}}>
+            <Tab eventKey="run-object" title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: 'white'}}>
               <Card>
                 <CardBody>
                   <JSONTree data={run} theme={jsonViewTheme} invertTheme hideRoot shouldExpandNodeInitially={() => true}/>
                 </CardBody>
               </Card>
             </Tab>
-            <Tab eventKey={'results-list'} title={<TabTitle icon={CatalogIcon} text="Results List" />} style={{backgroundColor: 'white'}}>
+            <Tab eventKey="results-list" title={<TabTitle icon={CatalogIcon} text="Results List" />} style={{backgroundColor: 'white'}}>
               <Card className="pf-u-mt-lg">
                 <CardHeader>
                   <Flex style={{ width: '100%' }}>

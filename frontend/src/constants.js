@@ -106,12 +106,12 @@ export const NUMERIC_JJV_FIELDS = [
 ]
 export const JJV_FIELDS = [...STRING_JJV_FIELDS, ...NUMERIC_JJV_FIELDS]
 export const CLASSIFICATION = {
-  dependency_outage: "Dependency Outage",
-  environment_failure: "Environment Failure",
-  product_failure: "Product Failure",
-  product_rfe: "Product RFE",  // sometimes tests are skipped because functionality is not yet present
-  test_failure: "Test Failure",
-  unknown: "Unknown"
+  dependency_outage: 'Dependency Outage',
+  environment_failure: 'Environment Failure',
+  product_failure: 'Product Failure',
+  product_rfe: 'Product RFE',  // sometimes tests are skipped because functionality is not yet present
+  test_failure: 'Test Failure',
+  unknown: 'Unknown'
 };
 export const HEATMAP_MAX_BUILDS = 40;
 

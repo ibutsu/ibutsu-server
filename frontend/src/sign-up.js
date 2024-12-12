@@ -41,7 +41,7 @@ class PasswordErrorBoundary extends React.Component {
   }
 
   componentDidCatch() {
-    console.error("Failed to load password strength indicator");
+    console.error('Failed to load password strength indicator');
   }
 
   render() {
@@ -252,7 +252,7 @@ export class SignUp extends React.Component {
               </InputGroupItem>
             </InputGroup>
             <PasswordErrorBoundary>
-              <Suspense fallback={""}>
+              <Suspense fallback="">
                 <PasswordStrengthBar password={this.state.passwordValue}/>
               </Suspense>
             </PasswordErrorBoundary>

@@ -26,7 +26,6 @@ import {
   Tabs,
   TextContent,
   Text,
-  TextInput,
   TreeView
 } from '@patternfly/react-core';
 import {
@@ -83,15 +82,11 @@ const MockRun = {
   }
 };
 
-const match = (node, text) => {
-  return node.name.toLowerCase().indexOf(text.toLowerCase()) !== -1;
-};
+const match = (node, text) => node.name.toLowerCase().indexOf(text.toLowerCase()) !== -1;
 
-const findNode = (node, text) => {
-  return match(node, text) || (
+const findNode = (node, text) => match(node, text) || (
     node.children && node.children.length && !!node.children.find(child => findNode(child, text))
   );
-};
 
 const searchTree = (node, text) => {
   if (match(node, text) || !node.children) {
@@ -362,9 +357,9 @@ export class Run extends React.Component {
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
         if (response.ok) {
-          this.setState({"isRunValid": true});
+          this.setState({'isRunValid': true});
         } else {
-          throw new Error("Failed with HTTP code " + response.status);
+          throw new Error('Failed with HTTP code ' + response.status);
         }
         return response.json();
       })
@@ -528,7 +523,7 @@ export class Run extends React.Component {
           }
           {this.state.isRunValid &&
             <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-              <Tab eventKey={'summary'} title={<TabTitle icon={InfoCircleIcon} text="Summary" />}>
+              <Tab eventKey="summary" title={<TabTitle icon={InfoCircleIcon} text="Summary" />}>
                 <Card>
                   <CardBody style={{padding: 0}} id="run-detail">
                     <Grid>
@@ -722,7 +717,7 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey={'results-list'} title={<TabTitle icon={CatalogIcon} text="Results List" />}>
+              <Tab eventKey="results-list" title={<TabTitle icon={CatalogIcon} text="Results List" />}>
                 <Card className="pf-u-mt-lg">
                   <CardHeader>
                     <Flex style={{ width: '100%' }}>
@@ -752,16 +747,10 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey={'results-tree'} title={<TabTitle icon={RepositoryIcon} text="Results Tree" />}>
+              <Tab eventKey="results-tree" title={<TabTitle icon={RepositoryIcon} text="Results Tree" />}>
                 <Card className="pf-u-mt-lg">
                   <CardBody>
                     <Grid gutter="sm">
-                      {false && <GridItem span={12}>
-                        <div style={{paddingTop: "1em"}}>
-                          <TextInput value={this.state.treeSearch} type="text" onChange={(_event, value) => this.onSearch(value)} placeholder="Search tree..." aria-label="Filter tree" />
-                        </div>
-                      </GridItem>
-                      }
                       {this.state.resultsTree.length === 0 &&
                         <GridItem span={12}>
                           <Bullseye><center><Spinner size="xl"/></center></Bullseye>
@@ -779,13 +768,11 @@ export class Run extends React.Component {
                                 {this.state.testResult.test_id}
                                 {this.state.testResult.metadata.markers &&
                                   <div style={{float: 'right'}}>
-                                    {this.state.testResult.metadata.markers.map((marker) => {
-                                      return <Badge isRead key={marker}>{marker}</Badge>;
-                                    })}
+                                    {this.state.testResult.metadata.markers.map((marker) => <Badge isRead key={marker}>{marker}</Badge>)}
                                   </div>
                                 }
                               </CardHeader>
-                              <CardBody style={{backgroundColor: "var(--pf-v5-c-card--BackgroundColor)", paddingTop: "1.2em"}}>
+                              <CardBody style={{backgroundColor: 'var(--pf-v5-c-card--BackgroundColor)', paddingTop: '1.2em'}}>
                                 <ResultView testResult={this.state.testResult}/>
                               </CardBody>
                             </Card>
@@ -797,11 +784,11 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey={'classify-failures'} title={<TabTitle icon={MessagesIcon} text="Classify Failures" />}>
+              <Tab eventKey="classify-failures" title={<TabTitle icon={MessagesIcon} text="Classify Failures" />}>
                 {classificationTable}
               </Tab>
               {artifactTabs}
-              <Tab eventKey={'run-object'} title={<TabTitle icon={CodeIcon} text="Run Object" />}>
+              <Tab eventKey="run-object" title={<TabTitle icon={CodeIcon} text="Run Object" />}>
                 <Card>
                   <CardBody>
                     <JSONTree data={run} theme={jsonViewTheme} invertTheme={jsonViewLightThemeOn} hideRoot shouldExpandNodeInitially={() => true}/>
