@@ -1,24 +1,21 @@
-# hadolint global ignore=DL3041,DL4006
+# hadolint global ignore=DL3041,DL4006,SC2046
 # Build the image first
 FROM registry.access.redhat.com/ubi9/ubi-minimal:9.4 AS builder
 
-ARG NODEJS_VERSION=18
 ENV NODE_ENV=production
 
 WORKDIR /app
-
-RUN microdnf module disable nodejs -y && \
-    microdnf module enable nodejs:$NODEJS_VERSION -y && \
-    microdnf install --nodocs -y --disableplugin=subscription-manager \
-        nodejs nodejs-nodemon npm findutils tar && \
-    node -v | grep -qe "^v$NODEJS_VERSION\." && \
-    echo "Found VERSION $NODEJS_VERSION" && \
-    microdnf clean all && \
-    rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
-
 COPY . /app
 
-RUN npm install --global yarn@^1.22.22 && yarn install && yarn build
+RUN microdnf module disable nodejs -y && \
+    microdnf module enable nodejs:$(cut -d "v" -f 2 < .nvmrc) -y && \
+    microdnf install --nodocs -y --disableplugin=subscription-manager \
+        nodejs nodejs-nodemon npm findutils tar && \
+    microdnf clean all && \
+    npm install --global yarn@^1.22.22 && \
+    rm -rf /mnt/rootfs/var/cache/* /mnt/rootfs/var/log/dnf* /mnt/rootfs/var/log/yum.*
+
+RUN yarn install && yarn build
 
 # Deploy it using nginx
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.10

@@ -30,7 +30,7 @@ function projectToRow(project, onDeleteClick) {
       {title: project.owner && project.owner.name},
       {
         title: (
-          <div style={{textAlign: "right"}}>
+          <div style={{textAlign: 'right'}}>
             <Button
               variant="primary"
               ouiaId={`admin-projects-edit-${project.id}`}
@@ -179,7 +179,7 @@ export class ProjectList extends React.Component {
       totalItems: this.state.totalItems
     };
     const filters = [
-      <TextInput type="text" id="filter" placeholder="Search for project..." value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: "inherit"}} key="textFilter"/>
+      <TextInput type="text" id="filter" placeholder="Search for project..." value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: 'inherit'}} key="textFilter"/>
     ];
     return (
       <React.Fragment>

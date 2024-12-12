@@ -28,6 +28,8 @@ describe('FileUpload', () => {
 
   it('should upload the file and trigger the afterUpload event', () => {
     const afterUpload = cy.spy().as('auSpy');
+
+    cy.intercept('POST', '/upload', {});
     mount(
       <IbutsuContext.Provider value={{'primaryObject': {'id': '1234'}}}>
         <FileUpload url='/upload' afterUpload={afterUpload}>Upload</FileUpload>

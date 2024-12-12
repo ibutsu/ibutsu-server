@@ -71,7 +71,7 @@ export class ResultAggregatorWidget extends React.Component {
     let total = 0;
     this.state.data.forEach( ( datum ) =>  {
       chartData.push({x: datum._id, y: datum.count})
-      legendData.push({name: toTitleCase(datum._id) + ": " + datum.count})
+      legendData.push({name: toTitleCase(datum._id) + ': ' + datum.count})
       total = total + datum.count;
     });
     this.setState({
@@ -123,7 +123,7 @@ export class ResultAggregatorWidget extends React.Component {
           {(!this.state.resultAggregatorError && this.state.isLoading) &&
           <Text component="h2">Loading ...</Text>
           }
-          {(!this.state.resultAggregatorError && !this.state.isLoading && this.params.chart_type === "pie" && this.state.total !== 0) &&
+          {(!this.state.resultAggregatorError && !this.state.isLoading && this.params.chart_type === 'pie' && this.state.total !== 0) &&
             <ChartPie
               constrainToVisibleArea={true}
               data={this.state.chartData}
@@ -133,7 +133,7 @@ export class ResultAggregatorWidget extends React.Component {
                 <ChartTooltip
                   constrainToVisibleArea
                   dx={-10}
-                  style={{ fill: "white" }}
+                  style={{ fill: 'white' }}
                 />
               }
               width={350}
@@ -146,7 +146,7 @@ export class ResultAggregatorWidget extends React.Component {
               themeColor={ChartThemeColor.multi}
             />
           }
-          {(!this.state.resultAggregatorError && !this.state.isLoading && this.params.chart_type === "donut" && this.state.total !== 0) &&
+          {(!this.state.resultAggregatorError && !this.state.isLoading && this.params.chart_type === 'donut' && this.state.total !== 0) &&
             <ChartDonut
               constrainToVisibleArea
               data={this.state.chartData}
@@ -178,16 +178,16 @@ export class ResultAggregatorWidget extends React.Component {
           />
           }
           <ParamDropdown
-            dropdownItems={this.props.dropdownItems || ["result", "metadata.exception_name", "component", "metadata.classification"]}
+            dropdownItems={this.props.dropdownItems || ['result', 'metadata.exception_name', 'component', 'metadata.classification']}
             defaultValue={this.params.group_field}
             handleSelect={this.onGroupFieldSelect}
-            tooltip={"Group data by:"}
+            tooltip="Group data by:"
           />
           <ParamDropdown
             dropdownItems={[0.1, 0.5, 1, 3, 5]}
             handleSelect={this.onDaySelect}
             defaultValue={this.params.days}
-            tooltip={"Set days to:"}
+            tooltip="Set days to:"
           />
         </CardFooter>
       </Card>

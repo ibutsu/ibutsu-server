@@ -217,7 +217,7 @@ export class JenkinsJobView extends React.Component {
     let value = this.state.textFilter.trim();
     if (operationMode === 'multi') {
       // translate list to ;-separated string for BE
-      value = this.state.inValues.map(item => item.trim()).join(";");
+      value = this.state.inValues.map(item => item.trim()).join(';');
     }
     else if (operationMode === 'bool') {
       value = this.state.boolSelection;
@@ -265,7 +265,7 @@ export class JenkinsJobView extends React.Component {
     let params = this.props.view.params;
 
     // get the widget ID for the analysis view
-    HttpClient.get([Settings.serverUrl, 'widget-config'], {"filter": "widget=jenkins-analysis-view"})
+    HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=jenkins-analysis-view'})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
           analysisViewId = data.widgets[0]?.id
@@ -489,7 +489,7 @@ export class JenkinsJobView extends React.Component {
             toggle={boolToggle}
           >
             <SelectList>
-              {["True", "False"].map((option, index) => (
+              {['True', 'False'].map((option, index) => (
                 <SelectOption key={index} value={option}>
                   {option}
                 </SelectOption>
@@ -498,10 +498,10 @@ export class JenkinsJobView extends React.Component {
           </Select>
         }
         {(filterMode === 'text' && operationMode === 'single') &&
-          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: "inherit"}}/>
+          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: 'inherit'}}/>
         }
         {(operationMode === 'multi') &&
-          <MultiValueInput onValuesChange={this.onInValuesChange} style={{height: "inherit"}}/>
+          <MultiValueInput onValuesChange={this.onInValuesChange} style={{height: 'inherit'}}/>
         }
       </React.Fragment>
     ];

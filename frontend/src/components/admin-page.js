@@ -49,7 +49,7 @@ const AdminPage = (props) => {
           header={<ElementWrapper routeElement={IbutsuHeader} eventEmitter={props.eventEmitter}/>}
           sidebar={navigation}
           isManagedSidebar={true}
-          style={{position: "relative"}}
+          style={{position: 'relative'}}
         >
           <Outlet/>
         </Page>

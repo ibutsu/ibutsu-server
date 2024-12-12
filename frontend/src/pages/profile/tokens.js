@@ -73,7 +73,7 @@ export class UserTokens extends React.Component {
 
   tokenToRow(token) {
     return {
-      "cells": [
+      'cells': [
         {title: token.name},
         {title: (
           <ClipboardCopy isReadOnly hoverTip="Copy to clipboard" clickTip="Copied!">

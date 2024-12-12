@@ -77,11 +77,11 @@ export class ClassifyFailuresTable extends React.Component {
       let result = rows[rowIndex].result;
       let hideSummary=true;
       let hideTestObject=true;
-      let defaultTab="test-history";
-      if (result.result === "skipped") {
+      let defaultTab='test-history';
+      if (result.result === 'skipped') {
         hideSummary=false;
         hideTestObject=false;
-        defaultTab="summary";
+        defaultTab='summary';
       }
       rows[rowIndex + 1].cells = [{
         title: <ResultView defaultTab={defaultTab} hideTestHistory={false} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={rows[rowIndex].result}/>
@@ -134,19 +134,19 @@ export class ClassifyFailuresTable extends React.Component {
 
   setFilter = (filterId, field, value) => {
     // maybe process values array to string format here instead of expecting caller to do it?
-    let operator = (value.includes(";")) ? 'in' : 'eq'
+    let operator = (value.includes(';')) ? 'in' : 'eq'
     this.updateFilters(filterId, field, operator, value, this.refreshResults)
   }
 
   removeFilter = (filterId, id) => {
-    if ((id !== "result") && (id !== "run_id")) {   // Don't allow removal of error/failure filter
+    if ((id !== 'result') && (id !== 'run_id')) {   // Don't allow removal of error/failure filter
       this.updateFilters(filterId, id, null, null, this.refreshResults)
     }
   }
 
   onSkipCheck = (checked) => {
     let { filters } = this.state;
-    filters["result"]["val"] = ("failed;error") + ((checked) ? ";skipped;xfailed" : "")
+    filters['result']['val'] = ('failed;error') + ((checked) ? ';skipped;xfailed' : '')
     this.setState(
       {includeSkipped: checked, filters},
       this.refreshResults
@@ -217,7 +217,7 @@ export class ClassifyFailuresTable extends React.Component {
         customFilters={{'result': filters['result']}}
         activeFilters={this.state.filters}
         onRemoveFilter={this.removeFilter}
-        hideFilters={["run_id", "project_id"]}
+        hideFilters={['run_id', 'project_id']}
         id={0}
       />,
     ]

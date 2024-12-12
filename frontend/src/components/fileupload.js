@@ -26,8 +26,8 @@ export class FileUpload extends React.Component {
       url: props.url,
       name: props.name ? props.name : 'file',
       multiple: !!props.multiple,
-      beforeUpload: props.beforeUpload ? props.beforeUpload : null,
-      afterUpload: props.afterUpload ? props.afterUpload : null
+      beforeUpload: props.beforeUpload ? props.beforeUpload : Function.prototype,
+      afterUpload: props.afterUpload ? props.afterUpload : Function.prototype
     };
     this.inputRef = React.createRef();
   }
@@ -39,12 +39,10 @@ export class FileUpload extends React.Component {
   onFileChange = (e) => {
     let files = e.target.files || e.dataTransfer.files;
     if (files.length > 0) {
-      if (this.state.beforeUpload) {
-        this.state.beforeUpload(files);
-      }
+      this.state.beforeUpload(files);
       this.uploadFile(files[0]);
       // Clear the upload field
-      this.inputRef.current.value = "";
+      this.inputRef.current.value = '';
     }
   }
 
@@ -58,9 +56,7 @@ export class FileUpload extends React.Component {
       {'project': primaryObject?.id}
     ).then((response) => {
       response = HttpClient.handleResponse(response, 'response');
-      if (this.state.afterUpload) {
-        this.state.afterUpload(response);
-      }
+      this.state.afterUpload(response);
     });
   }
 

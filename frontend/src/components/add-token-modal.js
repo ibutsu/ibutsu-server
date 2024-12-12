@@ -123,7 +123,7 @@ export class AddTokenModal extends React.Component {
               onChange={this.onExpiryDateChange}
               value={this.state.expiryDate}
               inputProps={{
-                id: "token-expiry-date",
+                id: 'token-expiry-date',
                 validated: this.state.isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error
               }}
               popoverProps={{

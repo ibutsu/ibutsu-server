@@ -88,8 +88,8 @@ export class MultiValueInput extends React.Component {
             placeholder="Type any value and hit <Enter>"
             onChange={this.handleTextInputChange}
             onKeyDown={this.handleKeyPress}
-            style={{minWidth: "240px"}}
-            type={"text"}
+            style={{minWidth: '240px'}}
+            type="text"
           >
             <ChipGroup aria-label="Current selections">
               {this.state.values.map((value, index) => (

@@ -118,7 +118,7 @@ export class JenkinsJobAnalysisView extends React.Component {
         dropdownItems={dropdownItems}
         defaultValue={defaultValue}
         handleSelect={this.onBuildSelect}
-        tooltip={"Set builds to:"}
+        tooltip="Set builds to:"
       />);
   }
 
@@ -227,18 +227,18 @@ export class JenkinsJobAnalysisView extends React.Component {
         </div>
         }
       <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-        <Tab eventKey='heatmap' title={'Heatmap'}>
-          {!isLoading && activeTab === "heatmap" &&
+        <Tab eventKey='heatmap' title="Heatmap">
+          {!isLoading && activeTab === 'heatmap' &&
           <FilterHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true} labelWidth={400} type='jenkins'/>
           }
         </Tab>
-        <Tab eventKey='overall-health' title={'Overall Health'}>
-          {!isLoading && !isAreaChart && activeTab === "overall-health" &&
+        <Tab eventKey='overall-health' title="Overall Health">
+          {!isLoading && !isAreaChart && activeTab === 'overall-health' &&
           <GenericBarWidget
-            title={"Test counts for " + barchartParams.job_name}
+            title={'Test counts for ' + barchartParams.job_name}
             params={barchartParams}
             hideDropdown={true}
-            widgetEndpoint={'jenkins-bar-chart'}
+            widgetEndpoint="jenkins-bar-chart"
             barWidth={barWidth}
             horizontal={false}
             xLabelTooltip="Build"
@@ -255,13 +255,13 @@ export class JenkinsJobAnalysisView extends React.Component {
             sortOrder="ascending"
           />
           }
-          {!isLoading && isAreaChart && activeTab === "overall-health" &&
+          {!isLoading && isAreaChart && activeTab === 'overall-health' &&
           <GenericAreaWidget
-            title={"Test counts for " + barchartParams.job_name}
+            title={'Test counts for ' + barchartParams.job_name}
             params={barchartParams}
             hideDropdown={true}
             getColors={this.getColors}
-            widgetEndpoint={'jenkins-bar-chart'}
+            widgetEndpoint="jenkins-bar-chart"
             height={180}
             yLabel="Test counts"
             xLabel="Build number"
@@ -283,10 +283,10 @@ export class JenkinsJobAnalysisView extends React.Component {
           />
           }
         </Tab>
-        <Tab eventKey='build-durations' title={'Build Duration'}>
+        <Tab eventKey='build-durations' title="Build Duration">
           {!isLoading && activeTab === 'build-durations' &&
           <GenericAreaWidget
-            title={"Durations for " + linechartParams.job_name}
+            title={'Durations for ' + linechartParams.job_name}
             params={linechartParams}
             hideDropdown={true}
             height={180}
@@ -301,9 +301,7 @@ export class JenkinsJobAnalysisView extends React.Component {
             sortOrder="ascending"
             xLabel="Build number"
             yLabel="Time [hrs]"
-            varExplanation={
-              "* Note: since for some jobs, the plugin tests execute in parallel, 'Duration' is the real time for which the build ran. 'Total Execution Time' is the sum of durations for each plugin run."
-            }
+            varExplanation="* Note: since for some jobs, the plugin tests execute in parallel, 'Duration' is the real time for which the build ran. 'Total Execution Time' is the sum of durations for each plugin run."
           />
           }
         </Tab>

@@ -206,7 +206,7 @@ export function resultToRow(result, filterFunc) {
     classification = <Badge isRead>{result.metadata.classification.split('_')[0]}</Badge>;
   }
   return {
-    "cells": [
+    'cells': [
       {title: <React.Fragment><Link to={`../results/${result.id}`} relative="Path" key={result.id}>{result.test_id}</Link> {markers}</React.Fragment>},
       {title: runLink},
       {title: <React.Fragment><span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span> {classification}</React.Fragment>},
@@ -244,9 +244,9 @@ export function resultToClassificationRow(result, index, filterFunc) {
   return [
     // parent row
     {
-      "isOpen": false,
-      "result": result,
-      "cells": [
+      'isOpen': false,
+      'result': result,
+      'cells': [
         {title: <React.Fragment><Link to={`../results/${result.id}`} relative="Path">{result.test_id}</Link> {markers}</React.Fragment>},
         {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
         {title: <React.Fragment>{exceptionBadge}</React.Fragment>},
@@ -256,8 +256,8 @@ export function resultToClassificationRow(result, index, filterFunc) {
     },
     // child row (this is set in the onCollapse function for lazy-loading)
     {
-      "parent": 2*index,
-      "cells": [{title: <div/>}]
+      'parent': 2*index,
+      'cells': [{title: <div/>}]
     }
   ];
 }
@@ -291,14 +291,14 @@ export function resultToComparisonRow(result, index) {
   return [
     // parent row
     {
-      "isOpen": false,
-      "result": result,
-      "cells": cells,
+      'isOpen': false,
+      'result': result,
+      'cells': cells,
     },
     // child row (this is set in the onCollapse function for lazy-loading)
     {
-      "parent": 2*index,
-      "cells": [{title: <div/>}]
+      'parent': 2*index,
+      'cells': [{title: <div/>}]
     }
   ];
 }
@@ -318,9 +318,9 @@ export function resultToTestHistoryRow(result, index, filterFunc) {
   return [
     // parent row
     {
-      "isOpen": false,
-      "result": result,
-      "cells": [
+      'isOpen': false,
+      'result': result,
+      'cells': [
         {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
         {title: <span className={result.source}>{result.source}</span>},
         {title: <React.Fragment>{exceptionBadge}</React.Fragment>},
@@ -330,8 +330,8 @@ export function resultToTestHistoryRow(result, index, filterFunc) {
     },
     // child row (this is set in the onCollapse function for lazy-loading)
     {
-      "parent": 2*index,
-      "cells": [{title: <div/>}]
+      'parent': 2*index,
+      'cells': [{title: <div/>}]
     }
   ];
 }
