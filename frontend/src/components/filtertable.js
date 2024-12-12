@@ -79,11 +79,9 @@ export class FilterTable extends React.Component {
         <Flex>
           {(filters || onApplyFilter) &&
           <Flex spaceItems={{default: 'spaceItemsXs'}} grow={{default: 'grow'}}>
-            {filters && filters.map((filter, index) => {
-              return (
+            {filters && filters.map((filter, index) => (
                 <FlexItem key={index}>{filter}</FlexItem>
-              );
-            })}
+              ))}
             {onApplyFilter &&
             <FlexItem>
               <Button onClick={onApplyFilter}>Apply Filter</Button>
@@ -106,7 +104,7 @@ export class FilterTable extends React.Component {
           </Flex>
         </Flex>
         {Object.keys(activeFilters).length > 0 &&
-        <Flex style={{marginTop: "1rem"}}>
+        <Flex style={{marginTop: '1rem'}}>
           <Flex>
             <FlexItem>
               Active filters
@@ -132,7 +130,7 @@ export class FilterTable extends React.Component {
           </Flex>
           {onApplyReport &&
           <Flex>
-            <FlexItem style={{marginLeft: "0.75em"}}>
+            <FlexItem style={{marginLeft: '0.75em'}}>
               <Button onClick={onApplyReport} variant="secondary">Use Active Filters in Report</Button>
             </FlexItem>
           </Flex>
@@ -163,7 +161,7 @@ export class FilterTable extends React.Component {
           dropDirection="up"
           onSetPage={onSetPage}
           onPerPageSelect={onSetPageSize}
-          style={{marginTop: "1rem"}}
+          style={{marginTop: '1rem'}}
         />
       </React.Fragment>
     );
@@ -321,12 +319,12 @@ export class MetaFilter extends React.Component {
     let activeFilters = this.props.activeFilters || {};
     let field_selected = this.state.fieldSelection !== null;
     let values_available = valueOptions.length > 0;
-    let value_placeholder = "Select a field first" ; // default instead of an else block
+    let value_placeholder = 'Select a field first' ; // default instead of an else block
     if (field_selected && values_available) {
-      value_placeholder = "Select value(s)";
+      value_placeholder = 'Select value(s)';
     }
     else if (field_selected && !values_available) {
-      value_placeholder = "No values for selected field";
+      value_placeholder = 'No values for selected field';
     }
     return (
       <React.Fragment>
@@ -338,7 +336,7 @@ export class MetaFilter extends React.Component {
               variant={SelectVariant.typeaheadMulti}
               isOpen={isFieldOpen}
               selections={fieldSelection}
-              maxHeight={"1140%"}
+              maxHeight="1140%"
               onToggle={(_event, isExpanded) => this.onFieldToggle(isExpanded)}
               onSelect={this.onFieldSelect}
               onClear={this.onFieldClear}
@@ -354,7 +352,7 @@ export class MetaFilter extends React.Component {
               variant={SelectVariant.typeaheadMulti}
               isOpen={isValueOpen}
               selections={valueSelections}
-              maxHeight={"1140%"}
+              maxHeight="1140%"
               isDisabled={!field_selected || (field_selected && !values_available) }
               onToggle={(_event, isExpanded) => this.onValueToggle(isExpanded)}
               onSelect={this.onValueSelect}
@@ -367,15 +365,15 @@ export class MetaFilter extends React.Component {
           </FlexItem>
         </Flex>
         {Object.keys(activeFilters).length > 0 &&
-        <Flex style={{marginTop: "1rem", fontWeight: 'normal'}}>
+        <Flex style={{marginTop: '1rem', fontWeight: 'normal'}}>
           <Flex>
-            <FlexItem style={{marginBottom: "0.5rem"}}>
+            <FlexItem style={{marginBottom: '0.5rem'}}>
               Active filters
             </FlexItem>
           </Flex>
           <Flex grow={{default: 'grow'}}>
             {Object.keys(activeFilters).map(key => (
-            <FlexItem style={{marginBottom: "0.5rem"}} spacer={{ default: 'spacerXs'}} key={key}>
+            <FlexItem style={{marginBottom: '0.5rem'}} spacer={{ default: 'spacerXs'}} key={key}>
               {!hideFilters.includes(key) &&
               <ChipGroup categoryName={key}>
                 <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={() => onRemoveFilter(id, key)}>
@@ -393,7 +391,7 @@ export class MetaFilter extends React.Component {
           </Flex>
           {onApplyReport &&
           <Flex>
-            <FlexItem style={{marginLeft: "0.75em"}}>
+            <FlexItem style={{marginLeft: '0.75em'}}>
               <Button onClick={onApplyReport} variant="secondary">Use Active Filters in Report</Button>
             </FlexItem>
           </Flex>

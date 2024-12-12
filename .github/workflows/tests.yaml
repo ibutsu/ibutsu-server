@@ -27,7 +27,7 @@ jobs:
           node-version-file: 'frontend/.nvmrc'
           cache: 'yarn'
           cache-dependency-path: 'frontend/yarn.lock'
-      - run: yarn install --frozen-lockfile
+      - run: yarn install
         working-directory: ./frontend
       - run: yarn lint
         working-directory: ./frontend

@@ -117,7 +117,7 @@ export class Dashboard extends React.Component {
 
   getDashboards = (handledOject = null) => {
     // value is checked because of handler scope not seeing context state updates
-    // TODO: react-router loaders would be way better
+    // TODO: react-router-dom loaders would be way better
     const { primaryObject } = this.context;
     const paramProject = this.props.params?.project_id;
     const primaryObjectId = handledOject?.id ?? primaryObject?.id ?? paramProject;
@@ -299,7 +299,7 @@ export class Dashboard extends React.Component {
     }
     this.setState({isEditModalOpen: false});
     editWidget.id = this.state.currentWidgetId
-    HttpClient.put([Settings.serverUrl, 'widget-config', this.state.currentWidgetId], "", editWidget)
+    HttpClient.put([Settings.serverUrl, 'widget-config', this.state.currentWidgetId], '', editWidget)
         .then(response => HttpClient.handleResponse(response))
         .then(() => {
           this.getWidgets();
@@ -319,10 +319,6 @@ export class Dashboard extends React.Component {
         })
         .catch(error => console.log(error));
 
-  }
-
-  onEditWidgetClose = () => {
-    this.setState({isEditModalOpen: false});
   }
 
   onDeleteWidgetClick = (id) => {
@@ -402,7 +398,7 @@ export class Dashboard extends React.Component {
             onChange={this.onTextInputChange}
             id="typeahead-select-input"
             autoComplete="off"
-            placeholder={activeDashboard?.title || "No active dashboard"}
+            placeholder={activeDashboard?.title || 'No active dashboard'}
             role="combobox"
             isExpanded={this.state.isDashboardSelectorOpen}
             aria-controls="select-typeahead-listbox"
@@ -514,7 +510,7 @@ export class Dashboard extends React.Component {
               if (KNOWN_WIDGETS.includes(widget.widget)) {
                 return (
                   <GridItem xl={4} lg={6} md={12} key={widget.id}>
-                    {(widget.type === "widget" && widget.widget === "jenkins-heatmap") &&
+                    {(widget.type === 'widget' && widget.widget === 'jenkins-heatmap') &&
                       <FilterHeatmapWidget
                         title={widget.title}
                         params={widget.params}
@@ -524,7 +520,7 @@ export class Dashboard extends React.Component {
                         onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
-                    {(widget.type === "widget" && widget.widget === "filter-heatmap") &&
+                    {(widget.type === 'widget' && widget.widget === 'filter-heatmap') &&
                       <FilterHeatmapWidget
                         title={widget.title}
                         params={widget.params}
@@ -533,7 +529,7 @@ export class Dashboard extends React.Component {
                         onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
-                    {(widget.type === "widget" && widget.widget === "run-aggregator") &&
+                    {(widget.type === 'widget' && widget.widget === 'run-aggregator') &&
                       <GenericBarWidget
                         title={widget.title}
                         params={widget.params}
@@ -544,7 +540,7 @@ export class Dashboard extends React.Component {
                         onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
-                    {(widget.type === "widget" && widget.widget === "result-summary") &&
+                    {(widget.type === 'widget' && widget.widget === 'result-summary') &&
                       <ResultSummaryWidget
                         title={widget.title}
                         params={widget.params}
@@ -552,7 +548,7 @@ export class Dashboard extends React.Component {
                         onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
-                    {(widget.type === "widget" && widget.widget === "result-aggregator") &&
+                    {(widget.type === 'widget' && widget.widget === 'result-aggregator') &&
                       <ResultAggregatorWidget
                         title={widget.title}
                         params={widget.params}
@@ -560,7 +556,7 @@ export class Dashboard extends React.Component {
                         onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
-                    {(widget.type === "widget" && widget.widget === "jenkins-line-chart") &&
+                    {(widget.type === 'widget' && widget.widget === 'jenkins-line-chart') &&
                       <GenericAreaWidget
                         title={widget.title}
                         params={widget.params}
@@ -570,7 +566,7 @@ export class Dashboard extends React.Component {
                         onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
-                    {(widget.type === "widget" && widget.widget === "jenkins-bar-chart") &&
+                    {(widget.type === 'widget' && widget.widget === 'jenkins-bar-chart') &&
                       <GenericBarWidget
                         title={widget.title}
                         params={widget.params}
@@ -582,7 +578,7 @@ export class Dashboard extends React.Component {
                         onEditClick={() => this.onEditWidgetClick(widget.id)}
                       />
                     }
-                    {(widget.type === "widget" && widget.widget === "importance-component") &&
+                    {(widget.type === 'widget' && widget.widget === 'importance-component') &&
                       <ImportanceComponentWidget
                         title={widget.title}
                         params={widget.params}

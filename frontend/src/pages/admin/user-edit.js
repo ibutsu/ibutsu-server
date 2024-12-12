@@ -316,7 +316,7 @@ export class UserEdit extends React.Component {
                     {(projects.length === 0 && inputValue === '') && (
                       <SelectOption
                         isDisabled={true}
-                        description={"To create your first project, navigate to projects and click on 'Add project'"}
+                        description="To create your first project, navigate to projects and click on 'Add project'"
                       >
                       No projects exists
                       </SelectOption>

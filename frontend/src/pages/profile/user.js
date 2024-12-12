@@ -104,7 +104,7 @@ export class UserProfile extends React.Component {
   }
 
   render() {
-    document.title = "Profile | Ibutsu";
+    document.title = 'Profile | Ibutsu';
 
     const { user, projects } = this.state;
     let projectInfo = [];
@@ -185,7 +185,7 @@ export class UserProfile extends React.Component {
                   dataListCells={[
                     <DataListCell key={1} width={2}><strong>My Projects:</strong></DataListCell>,
                     <DataListCell key={2} width={4} style={{paddingTop: 0, paddingBottom: 0}}>
-                      <DataList aria-label="projects" style={{borderTop: "none"}}>
+                      <DataList aria-label="projects" style={{borderTop: 'none'}}>
                         {projects &&
                           projectInfo
                         }

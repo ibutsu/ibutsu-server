@@ -26,19 +26,19 @@ function userToRow(user, onDeleteClick) {
   if (user.is_superadmin) {
     userName = [
       user.name,
-      " ",
+      ' ',
       <Label key="admin" className="super-admin-label" variant="filled" color="blue" isCompact>Administrator</Label>
     ];
   }
   return {
-    "cells": [
+    'cells': [
       {title: userName},
       {title: user.email},
       {title: user.projects ? user.projects.map(project => project.title).join(', ') : ''},
       {title: user.is_active ? 'Active' : 'Inactive'},
       {
         title: (
-          <div style={{textAlign: "right"}}>
+          <div style={{textAlign: 'right'}}>
             <Button
               variant="primary"
               ouiaId={`admin-users-edit-${user.id}`}
@@ -189,7 +189,7 @@ export class UserList extends React.Component {
       totalItems: this.state.totalItems
     };
     const filters = [
-      <TextInput type="text" id="filter" placeholder="Search for user..." value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: "inherit"}} key="textFilter"/>
+      <TextInput type="text" id="filter" placeholder="Search for user..." value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: 'inherit'}} key="textFilter"/>
     ];
     return (
       <React.Fragment>

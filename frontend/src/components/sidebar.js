@@ -1,16 +1,16 @@
 
-import React, { useContext, useState } from "react";
+import React, { useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { Link } from 'react-router-dom';
-import { IbutsuContext } from "../services/context";
+import { IbutsuContext } from '../services/context';
 import {  PageSidebar,
     PageSidebarBody,
     Nav,
     NavList,
     } from '@patternfly/react-core';
-import { HttpClient } from "../services/http";
-import { Settings } from "../settings";
+import { HttpClient } from '../services/http';
+import { Settings } from '../settings';
 
 
 const IbutsuSidebar = (props) => {
@@ -35,8 +35,6 @@ const IbutsuSidebar = (props) => {
         HttpClient.get([Settings.serverUrl, 'widget-config'], params)
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
-            //debugger; //eslint-disable-line no-debugger
-
             data.widgets.forEach(widget => {
             if (targetProject) {
                 widget.params['project'] = targetProject.id;
@@ -70,7 +68,7 @@ const IbutsuSidebar = (props) => {
                             <Link to="reports/" className="pf-v5-c-nav__link">Report Builder</Link>
                         </li>
                         {views && views.map(view => (
-                            view.widget !== "jenkins-analysis-view" && (
+                            view.widget !== 'jenkins-analysis-view' && (
                             <li className="pf-v5-c-nav__item" key={view.id}>
                             <Link to={`view/${view.id}`} className="pf-v5-c-nav__link">{view.title}</Link>
                             </li>

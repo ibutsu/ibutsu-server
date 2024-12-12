@@ -165,7 +165,7 @@ export class Login extends React.Component {
   onGoogleLogin = (response) => {
     const { redirect_uri } = this.state.externalLogins.google;
     const { setPrimaryObject, setActiveDashboard } = this.context;
-    HttpClient.get([redirect_uri], {"code": response["tokenId"]})
+    HttpClient.get([redirect_uri], {'code': response['tokenId']})
       .then(response => response.json())
       .then(user => {
         // Make sure there are no active projects or dashboards selected
@@ -216,7 +216,7 @@ export class Login extends React.Component {
     if (hasIcon && this.state.externalLogins.keycloak.icon.startsWith('http')) {
       return <img src={this.state.externalLogins.keycloak.icon} alt="Keycloak Icon"/>
     }
-    else if (hasIcon && this.state.externalLogins.keycloak.icon.toLowerCase() === "redhat") {
+    else if (hasIcon && this.state.externalLogins.keycloak.icon.toLowerCase() === 'redhat') {
       return <RedhatIcon size="lg" />
     }
     else {

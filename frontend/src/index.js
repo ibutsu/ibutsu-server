@@ -2,7 +2,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 
 
-// import '@patternfly/patternfly/patternfly.css';
 import '@patternfly/react-core/dist/styles/base.css';
 import '@patternfly/patternfly/patternfly-theme-dark.css';
 import './index.css';
@@ -10,7 +9,6 @@ import { setTheme } from './utilities';
 
 import { Base } from './base';
 import * as serviceWorker from './serviceWorker';
-//import { setTheme } from './utilities';
 
 
 setTheme();

@@ -70,7 +70,7 @@ export class CompareRunsView extends React.Component {
   onSkipCheck = (checked) => {
     let filters = this.state.filters;
     filters.forEach(filter => {
-      filter["result"]["val"] = ("failed;error;passed") + ((checked) ? ";skipped;xfailed" : "")
+      filter['result']['val'] = ('failed;error;passed') + ((checked) ? ';skipped;xfailed' : '')
     });
 
     this.setState(
@@ -81,7 +81,7 @@ export class CompareRunsView extends React.Component {
 
   setFilter = (filterId, field, value) => {
     // maybe process values array to string format here instead of expecting caller to do it?
-    let operator = (value.includes(";")) ? 'in' : 'eq';
+    let operator = (value.includes(';')) ? 'in' : 'eq';
     this.updateFilters(filterId, field, operator, value)
   }
 
@@ -101,7 +101,7 @@ export class CompareRunsView extends React.Component {
   }
 
   removeFilter = (filterId, id) => {
-    if ((id !== "result") && (id !== "run_id")) {   // Don't allow removal of error/failure filter
+    if ((id !== 'result') && (id !== 'run_id')) {   // Don't allow removal of error/failure filter
       this.updateFilters(filterId, id, null, null)
     }
   }
@@ -113,7 +113,7 @@ export class CompareRunsView extends React.Component {
     let isNew = false;
     filter.forEach(filter => {
       for (const prop in filter) {
-        if (prop !== "id" && prop !== "result") {
+        if (prop !== 'id' && prop !== 'result') {
           isNew = true;
         }
       }
@@ -180,8 +180,8 @@ export class CompareRunsView extends React.Component {
       let result = rows[rowIndex].result;
       let hideSummary=true;
       let hideTestObject=true;
-      let defaultTab="test-history";
-      if (result.result === "skipped") {
+      let defaultTab='test-history';
+      if (result.result === 'skipped') {
         hideSummary=false;
         hideTestObject=false;
       }
@@ -252,7 +252,7 @@ export class CompareRunsView extends React.Component {
             customFilters={{'result': filters['result']}}
             activeFilters={this.state.filters[0]}
             onRemoveFilter={this.removeFilter}
-            hideFilters={["run_id", "project_id", "id"]}
+            hideFilters={['run_id', 'project_id', 'id']}
             id={0}
           />
         </FlexItem>
@@ -265,7 +265,7 @@ export class CompareRunsView extends React.Component {
             customFilters={{'result': filters['result']}}
             activeFilters={this.state.filters[1]}
             onRemoveFilter={this.removeFilter}
-            hideFilters={["run_id", "project_id", "id"]}
+            hideFilters={['run_id', 'project_id', 'id']}
             id={1}
           />
         </FlexItem>
@@ -310,7 +310,7 @@ export class CompareRunsView extends React.Component {
             variant={TableVariant.compact}
             filters={resultFilters}
             onRemoveFilter={this.removeFilter}
-            hideFilters={["project_id"]}
+            hideFilters={['project_id']}
           />
         </CardBody>
       </Card>

@@ -74,7 +74,7 @@ function runToRow(run, filterFunc) {
     badges.push(envBadge);
   }
   return {
-    "cells": [
+    'cells': [
       {title: <React.Fragment><Link to={`${run.id}`}>{run.id}</Link> {badges}</React.Fragment>},
       {title: round(run.duration) + 's'},
       {title: <RunSummary summary={run.summary} />},
@@ -241,7 +241,7 @@ export class RunList extends React.Component {
     let value = this.state.textFilter.trim();
     if (operationMode === 'multi') {
       // translate list to ;-separated string for BE
-      value = this.state.inValues.map(item => item.trim()).join(";");
+      value = this.state.inValues.map(item => item.trim()).join(';');
     }
     else if (operationMode === 'bool') {
       value = this.state.boolSelection;
@@ -538,7 +538,7 @@ export class RunList extends React.Component {
             toggle={boolToggle}
           >
             <SelectList>
-              {["True", "False"].map((option, index) => (
+              {['True', 'False'].map((option, index) => (
                 <SelectOption key={index} value={option}>
                   {option}
                 </SelectOption>
@@ -547,10 +547,10 @@ export class RunList extends React.Component {
           </Select>
         }
         {(filterMode === 'text' && operationMode === 'single') &&
-          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: "inherit"}}/>
+          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: 'inherit'}}/>
         }
         {(operationMode === 'multi') &&
-          <MultiValueInput onValuesChange={this.onInValuesChange} style={{height: "inherit"}}/>
+          <MultiValueInput onValuesChange={this.onInValuesChange} style={{height: 'inherit'}}/>
         }
       </React.Fragment>
     ];
@@ -583,7 +583,7 @@ export class RunList extends React.Component {
                 onApplyReport={this.applyReport}
                 onSetPage={this.setPage}
                 onSetPageSize={this.setPageSize}
-                hideFilters={["project_id"]}
+                hideFilters={['project_id']}
               />
             </CardBody>
             <CardFooter>
