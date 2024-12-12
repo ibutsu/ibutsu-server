@@ -48,8 +48,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 
 function Dashboard() {
-  const context = useContext(IbutsuContext);
-  const params = useParams();
+  const {defaultDashboard, primaryObject } = useContext(IbutsuContext);
+  const { dashboard_id, project_id } = useParams();
 
   const navigate = useNavigate();
 
@@ -75,12 +75,6 @@ function Dashboard() {
 
   useEffect(() => {
     // fetch widgets with the selected dashboard changes
-
-    // TODO is sync necessary with functional component...?
-    //sync_context();
-    console.log('dashboard useEffect selectedDB');
-    //getDefaultDashboard();  // TODO: only changes on project selection, not needed on setup?
-
     getWidgets();
 
   }, [selectedDB]);
@@ -88,17 +82,13 @@ function Dashboard() {
   useEffect(() => {
     // update dashboards when the filter input changes
     getDashboards();
-    console.log('dashboard useEffect filterDBValue');
 
   }, [filterDBValue]);
-
-  const { defaultDashboard } = context;
 
   useEffect(() => {
     // if there is a defaultDashboard and it's in the current list of dashboards, apply it
     // implicit attachment to project selection within the context, as that will change defaultDashboard
     // TODO: account for 'last selected dashboard' preference
-    console.log('dashboard useEffect defaultDashboard');
 
     if (defaultDashboard ) {
       const default_db_item = dashboards.filter(dash => dash.id == defaultDashboard).pop();
@@ -109,11 +99,9 @@ function Dashboard() {
     }
   }, [defaultDashboard])
 
-  const { dashboard_id } = params;
   useEffect(() => {
     // sync the URL to the dashboard selection
     if (selectedDB?.id !== dashboard_id) {
-      console.log('dashboard useEffect dashboard_id');
       HttpClient.get([Settings.serverUrl, 'dashboard', dashboard_id])
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
@@ -129,7 +117,6 @@ function Dashboard() {
 
   function getDashboards() {
     // TODO: react-router loaders would be way better
-    const { primaryObject } = context;
 
     if (primaryObject) {
       let api_params = {
@@ -176,7 +163,7 @@ function Dashboard() {
     setFilterDBValue('');
     setSelectDBInputValue(value.title);
 
-    navigate('/project/' + params?.project_id + '/dashboard/' + value?.id)
+    navigate('/project/' + value.project_id + '/dashboard/' + value.id)
   }
 
   function onDashboardClear() {
@@ -186,7 +173,7 @@ function Dashboard() {
     setSelectDBInputValue('Select a dashboard');
     setFilterDBValue('');
 
-    navigate('/project/' + params?.project_id + '/dashboard/')
+    navigate('/project/' + project_id + '/dashboard/')
   }
 
   function handleDBFilterInput(e) {
@@ -235,7 +222,6 @@ function Dashboard() {
   }
 
   function onNewWidgetSave(widgetData) {
-    const { primaryObject } = context;
     if (!widgetData.project_id && primaryObject) {
       widgetData.project_id = primaryObject.id;
     }
@@ -246,7 +232,6 @@ function Dashboard() {
   }
 
   function onEditWidgetSave(editedData) {
-    const { primaryObject } = context;
     if (!editedData.project_id && primaryObject) {
       editedData.project_id = primaryObject.id;
     }
@@ -272,7 +257,6 @@ function Dashboard() {
   }
 
   document.title = 'Dashboard | Ibutsu';
-  const { primaryObject } = context;
 
   const toggle = toggleRef => (
     <MenuToggle
@@ -312,7 +296,7 @@ function Dashboard() {
   )
 
   return (
-    <React.Fragment>
+    <>
       <PageSection variant={PageSectionVariants.light}>
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <Flex>
@@ -561,7 +545,7 @@ function Dashboard() {
           data={editWidgetData}
         />
       : ''}
-    </React.Fragment>
+    </>
   );
 }
 

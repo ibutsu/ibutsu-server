@@ -234,7 +234,6 @@ export class IbutsuHeader extends React.Component {
     // update context
     setPrimaryObject(value);
     setPrimaryType('project');
-    console.log('project selected: ' + value.default_dashboard_id)
     setDefaultDashboard(value.default_dashboard_id);
 
     // update state
