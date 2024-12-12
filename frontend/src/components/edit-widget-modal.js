@@ -153,7 +153,7 @@ export class EditWidgetModal extends React.Component {
               </HelperText>
             </FormHelperText>
           </FormGroup>
-          {componentLoaded ? widgetType.params.map(param => {
+          {componentLoaded ? (widgetType?.params||[]).map(param => {
             return (
               <React.Fragment key={param.name}>
                 <FormGroup

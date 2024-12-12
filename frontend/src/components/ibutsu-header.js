@@ -217,7 +217,12 @@ export class IbutsuHeader extends React.Component {
   }
 
   onProjectSelect = (_event, value) => {
-    const { primaryObject, setPrimaryObject, setPrimaryType } = this.context;
+    const {
+      primaryObject,
+      setPrimaryObject,
+      setPrimaryType,
+      setDefaultDashboard,
+    } = this.context;
     if (primaryObject?.id === value?.id) {
       this.setState({
         isProjectSelectorOpen: false,
@@ -227,8 +232,10 @@ export class IbutsuHeader extends React.Component {
       return;
     }
     // update context
-    setPrimaryObject(value)
-    setPrimaryType('project')
+    setPrimaryObject(value);
+    setPrimaryType('project');
+    setDefaultDashboard(value.default_dashboard_id);
+
     // update state
     this.setState({
       selectedProject: value,

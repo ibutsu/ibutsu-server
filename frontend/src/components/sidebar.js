@@ -47,7 +47,7 @@ const IbutsuSidebar = (props) => {
             });
             setViews(data.widgets)})
         .catch(error => console.log(error));
-        }
+    }
 
     const { primaryType, primaryObject } = context;
     if ( primaryType == 'project' && primaryObject  ) {
