@@ -11,7 +11,7 @@ repos:
   - id: debug-statements
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.7.0
+  rev: v0.8.2
   hooks:
     - id: ruff
       args:
@@ -28,21 +28,3 @@ repos:
   rev: v2.12.1b3
   hooks:
     - id: hadolint
-
-## ES
-- repo: https://github.com/pre-commit/mirrors-eslint
-  rev: v9.13.0
-  hooks:
-  - id: eslint
-    additional_dependencies:
-    - eslint@7
-    - eslint-plugin-cypress
-    - eslint-plugin-react
-    - eslint-plugin-import
-    - "@babel/eslint-parser"
-    - "@babel/plugin-transform-class-properties"
-    - "@babel/plugin-transform-private-methods"
-    - "@babel/plugin-syntax-jsx"
-    - "@babel/preset-flow"
-    - "@babel/core"
-    - "react"
