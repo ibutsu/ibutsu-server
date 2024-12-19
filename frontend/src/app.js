@@ -16,6 +16,7 @@ import { IbutsuContext } from './services/context';
 
 import './app.css';
 
+
 export class App extends React.Component {
   static contextType = IbutsuContext;
   constructor(props) {

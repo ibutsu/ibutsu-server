@@ -38,7 +38,7 @@ export class AuthService {
       user.token = token;
     }
     else {
-      user = {"token": token};
+      user = {'token': token};
     }
     AuthService.setUser(user);
   }
@@ -51,9 +51,7 @@ export class AuthService {
       headers: {'Content-Type': 'application/json; charset=UTF-8'}
     })
       .then(response => response.json())
-      .then(() => {
-        return true;
-      })
+      .then(() => true)
       .catch(error => {
         console.log(error);
         AuthService.registerError = error;
@@ -147,8 +145,6 @@ export class AuthService {
       }
     })
       .then(response => response.json())
-      .then(json => {
-        return json.is_superadmin;
-      });
+      .then(json => json.is_superadmin);
   }
 }

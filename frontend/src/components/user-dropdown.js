@@ -53,7 +53,7 @@ export class UserDropdown extends React.Component {
     setPrimaryObject();
     setActiveDashboard();
     AuthService.logout();
-    window.location = "/";
+    window.location = '/';
   }
 
   componentDidMount() {

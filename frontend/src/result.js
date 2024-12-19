@@ -37,9 +37,9 @@ export class Result extends React.Component {
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
         if (response.ok) {
-          this.setState({"isResultValid": true});
+          this.setState({'isResultValid': true});
         } else {
-          throw new Error("Failed with HTTP code " + response.status);
+          throw new Error('Failed with HTTP code ' + response.status);
         }
         return response.json();
       })

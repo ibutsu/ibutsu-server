@@ -173,12 +173,12 @@ export class NewWidgetWizard extends React.Component {
 
   handleRequiredParam = (param) => {
     if (param.required) {
-      if (this.state.params[param.name] === "") {
-        return "error"
+      if (this.state.params[param.name] === '') {
+        return 'error'
       }
     }
     // TODO: Handle parameter types
-    return "default"
+    return 'default'
   }
 
   onNext = (_event, currentStep) => {
@@ -208,13 +208,11 @@ export class NewWidgetWizard extends React.Component {
         component: (
           <Form>
             <Title headingLevel="h1" size="xl">Select a widget type</Title>
-            {widgetTypes.map(widgetType => {
-              return (
+            {widgetTypes.map(widgetType => (
                 <div key={widgetType.id}>
                   <Radio id={widgetType.id} value={widgetType.id} label={widgetType.title} description={widgetType.description} isChecked={selectedTypeId === widgetType.id} onChange={(event, _) => this.onSelectType(_, event)}/>
                 </div>
-              );
-            })}
+              ))}
           </Form>
         )
       },
@@ -259,8 +257,7 @@ export class NewWidgetWizard extends React.Component {
         component: (
           <Form isHorizontal>
             <Title headingLevel="h1" size="xl">Set widget parameters</Title>
-            {!!selectedType && selectedType.params.map(param => {
-              return (
+            {!!selectedType && selectedType.params.map(param => (
                 <React.Fragment key={param.name}>
                 {(param.type === 'string' || param.type === 'integer' || param.type === 'float') &&
                   <FormGroup
@@ -318,8 +315,7 @@ export class NewWidgetWizard extends React.Component {
                   </FormGroup>
                 }
                 </React.Fragment>
-              );
-            })}
+              ))}
           </Form>
         )
       },

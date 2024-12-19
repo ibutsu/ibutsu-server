@@ -7,8 +7,7 @@ import {
   TextContent,
 } from '@patternfly/react-core';
 
-const AdminHome = () => {
-  return (
+const AdminHome = () => (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>
         <TextContent>
@@ -18,7 +17,6 @@ const AdminHome = () => {
       <PageSection />
     </React.Fragment>
   );
-};
 
 AdminHome.propTypes = {};
 
