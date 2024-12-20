@@ -80,6 +80,7 @@ package-lock.json
 
 # Frontend
 frontend/public/version.json
+frontend/cypress/screenshots/*
 
 # Settings
 backend/settings.yaml

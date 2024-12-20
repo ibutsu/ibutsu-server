@@ -44,7 +44,7 @@ export class FileUpload extends React.Component {
       }
       this.uploadFile(files[0]);
       // Clear the upload field
-      this.inputRef.current.value = "";
+      this.inputRef.current.value = '';
     }
   }
 

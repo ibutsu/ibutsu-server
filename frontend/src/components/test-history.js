@@ -65,7 +65,7 @@ export class TestHistoryTable extends React.Component {
       dropdownSelection: '1 Week',
       lastPassedDate: 'n/a',
       filters: Object.assign({
-        'result': {op: 'in', val: "passed;skipped;failed;error;xpassed;xfailed"},
+        'result': {op: 'in', val: 'passed;skipped;failed;error;xpassed;xfailed'},
         'test_id': {op: 'eq', val: props.testResult.test_id},
         'component': {op: 'eq', val: props.testResult.component},
         // default to filter only from 1 weeks ago to the most test's start_time.
@@ -75,7 +75,7 @@ export class TestHistoryTable extends React.Component {
     };
     // filter on env by default
     if (props.testResult.env) {
-      this.state.filters["env"] = {op: 'eq', val: props.testResult.env};
+      this.state.filters['env'] = {op: 'eq', val: props.testResult.env};
     }
     this.refreshResults = this.refreshResults.bind(this);
     this.onCollapse = this.onCollapse.bind(this);
@@ -123,19 +123,19 @@ export class TestHistoryTable extends React.Component {
 
   setFilter = (field, value) => {
     // maybe process values array to string format here instead of expecting caller to do it?
-    let operator = (value.includes(";")) ? 'in' : 'eq'
+    let operator = (value.includes(';')) ? 'in' : 'eq'
     this.updateFilters(field, operator, value, this.refreshResults)
   }
 
   removeFilter = id => {
-    if ((id !== "result") && (id !== "test_id")) {   // Don't allow removal of error/failure filter
+    if ((id !== 'result') && (id !== 'test_id')) {   // Don't allow removal of error/failure filter
       this.updateFilters(id, null, null, this.refreshResults)
     }
   }
 
   onFailuresCheck = (checked) => {
     let { filters } = this.state;
-    filters["result"]["val"] = ("failed;error") + ((checked) ? ";skipped;xfailed" : ";skipped;xfailed;xpassed;passed")
+    filters['result']['val'] = ('failed;error') + ((checked) ? ';skipped;xfailed' : ';skipped;xfailed;xpassed;passed')
     this.setState(
       {onlyFailures: checked, filters},
       this.refreshResults
@@ -153,7 +153,7 @@ export class TestHistoryTable extends React.Component {
     // here a selection (month) is considered to be 30 days, and there are 86400*1000 ms in a day
     let timeRange = new Date(startTime.getTime() - (selection * 30 * 86400 * 1000));
     // set the filters
-    filters["start_time"] = {op: "gt", val: timeRange.toISOString()}
+    filters['start_time'] = {op: 'gt', val: timeRange.toISOString()}
     this.setState({filters, isDropdownOpen: false, dropdownSelection: selection}, this.refreshResults);
   }
 
@@ -161,7 +161,7 @@ export class TestHistoryTable extends React.Component {
     // get the passed/failed/etc test summary
     let filters = {...this.state.filters};
     // disregard result filter (we want all results)
-    delete filters["result"];
+    delete filters['result'];
     let api_filter = toAPIFilter(filters).join()
     let dataToSummary = Object.assign({
       'passed': 'passes',
@@ -172,12 +172,12 @@ export class TestHistoryTable extends React.Component {
       'xpassed': 'xpasses'
     })
     let summary = Object.assign({
-      "passes": 0,
-      "failures": 0,
-      "errors": 0,
-      "skips": 0,
-      "xfailures": 0,
-      "xpasses": 0
+      'passes': 0,
+      'failures': 0,
+      'errors': 0,
+      'skips': 0,
+      'xfailures': 0,
+      'xpasses': 0
     });
 
     HttpClient.get(
@@ -200,9 +200,9 @@ export class TestHistoryTable extends React.Component {
     // get the passed/failed/etc test summary
     let filters = {...this.state.filters};
     // disregard result filter so we can filter on last passed
-    delete filters["result"];
-    delete filters["start_time"];
-    filters["result"] = {"op": "eq", "val": "passed"}
+    delete filters['result'];
+    delete filters['start_time'];
+    filters['result'] = {'op': 'eq', 'val': 'passed'}
     let params = buildParams(filters);
     params['filter'] = toAPIFilter(filters);
     params['pageSize'] = 1;
@@ -223,7 +223,7 @@ export class TestHistoryTable extends React.Component {
       }))
       .catch((error) => {
         console.error('Error fetching result data:', error);
-        this.setState({lastPassedDate: <Badge isRead>{'n/a'}</Badge>});
+        this.setState({lastPassedDate: <Badge isRead>n/a</Badge>});
       });
   }
 
@@ -276,12 +276,12 @@ export class TestHistoryTable extends React.Component {
       dropdownSelection,
     } = this.state;
     const dropdownValues = Object.assign({
-      "1 Week": 0.25,
-      "2 Weeks": 0.5,
-      "1 Month": 1.0,
-      "2 Months": 2.0,
-      "3 Months": 3.0,
-      "5 Months": 5.0
+      '1 Week': 0.25,
+      '2 Weeks': 0.5,
+      '1 Month': 1.0,
+      '2 Months': 2.0,
+      '3 Months': 3.0,
+      '5 Months': 5.0
     })
     const pagination = {
       pageSize: this.state.pageSize,
@@ -357,7 +357,7 @@ export class TestHistoryTable extends React.Component {
               <Text key="last-passed" component="h4">Last passed:&nbsp;{this.state.lastPassedDate}</Text>,
             ]}
             onRemoveFilter={this.removeFilter}
-            hideFilters={["project_id", "result", "test_id", "component"]}
+            hideFilters={['project_id', 'result', 'test_id', 'component']}
           />
         </CardBody>
       </Card>

@@ -153,8 +153,7 @@ export class EditWidgetModal extends React.Component {
               </HelperText>
             </FormHelperText>
           </FormGroup>
-          {componentLoaded ? widgetType.params.map(param => {
-            return (
+          {componentLoaded ? widgetType.params.map(param => (
               <React.Fragment key={param.name}>
                 <FormGroup
                 label={param.name}
@@ -180,8 +179,7 @@ export class EditWidgetModal extends React.Component {
                   </FormHelperText>
                 </FormGroup>
               </React.Fragment>
-            )
-          }): ""}
+            )): ''}
         </Form>
       </Modal>
     );

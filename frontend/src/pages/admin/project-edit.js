@@ -145,10 +145,6 @@ export class ProjectEdit extends React.Component {
       .catch(error => console.error(error));
   }
 
-  onDashboardToggle = () => {
-    this.setState({isDashboardOpen: !this.state.isDashboardOpen});
-  };
-
   onDashboardSelect = (event, value) => {
     this.setState({
       selectedDashboard: value.dashboard,
@@ -172,7 +168,7 @@ export class ProjectEdit extends React.Component {
   };
 
   getDashboards() {
-    if (!this.state.id || this.state.id == "new" || !this.state.project) {
+    if (!this.state.id || this.state.id == 'new' || !this.state.project) {
       return;
     }
     let params = {
@@ -468,7 +464,7 @@ export class ProjectEdit extends React.Component {
                   <Button
                     variant="secondary"
                     ouiaId="admin-project-edit-cancel"
-                    component={(props: any) => <Link {...props} to="/admin/projects" />}
+                    component={(props) => <Link {...props} to="/admin/projects" />}
                   >
                     Cancel
                   </Button>

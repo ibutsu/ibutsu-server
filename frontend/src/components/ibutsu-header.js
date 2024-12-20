@@ -147,7 +147,7 @@ export class IbutsuHeader extends React.Component {
     this.eventEmitter.emit('projectChange', value);
   }
 
-  getSelectorOptions = (endpoint = "project") => {
+  getSelectorOptions = (endpoint = 'project') => {
     // adding s here seems dumb, but this scope is small, it's only abstracted for 2 things
     // TODO: iterate over pages, fix controller filtering behavior to apply pageSize AFTER filter
     const pluralEndpoint = endpoint+'s';
@@ -237,7 +237,7 @@ export class IbutsuHeader extends React.Component {
       filterValue: ''
     });
     // Consider whether the location should be changed within the emit hooks?
-    let dash_path = "";
+    let dash_path = '';
     if (value?.default_dashboard_id != null) {dash_path = '/dashboard/' + value?.default_dashboard_id}
     this.props.navigate('/project/' + value?.id + dash_path);
 
@@ -256,7 +256,7 @@ export class IbutsuHeader extends React.Component {
     });
     setPrimaryObject();
 
-    this.props.navigate("/project");
+    this.props.navigate('/project');
 
     this.emitProjectChange();
   }
@@ -287,7 +287,7 @@ export class IbutsuHeader extends React.Component {
   }
 
   componentDidMount() {
-    this.getSelectorOptions("project");
+    this.getSelectorOptions('project');
     this.sync_context();
     this.checkVersion();
     this.versionCheckId = setInterval(() => this.checkVersion(), VERSION_CHECK_TIMEOUT);
@@ -374,7 +374,7 @@ export class IbutsuHeader extends React.Component {
               {(projects.length === 0 && !filterValue) && (
                 <SelectOption
                   isDisabled={true}
-                  description={"Ask Ibutsu admins to add you to a project"}>
+                  description="Ask Ibutsu admins to add you to a project">
                   No projects available
                 </SelectOption>
               )}
@@ -402,7 +402,7 @@ export class IbutsuHeader extends React.Component {
       </Flex>
     );
     const headerTools = (
-      <Toolbar id="toolbar" isFullHeight isStatic style={{paddingLeft: "30px"}}>
+      <Toolbar id="toolbar" isFullHeight isStatic style={{paddingLeft: '30px'}}>
         <ToolbarContent>
           <ToolbarGroup variant="filter-group">
             <ToolbarItem>
@@ -482,7 +482,7 @@ export class IbutsuHeader extends React.Component {
               <TextListItem component="dd"><a href="https://github.com/ibutsu/ibutsu-server/issues/new" target="_blank" rel="noopener noreferrer">Submit an issue</a></TextListItem>
             </TextList>
           </TextContent>
-          <p style={{marginTop: "2rem"}}>* Note: artifact files (screenshots, logs) are retained for 3 months</p>
+          <p style={{marginTop: '2rem'}}>* Note: artifact files (screenshots, logs) are retained for 3 months</p>
         </AboutModal>
         <Masthead>
           <MastheadToggle>
@@ -495,7 +495,7 @@ export class IbutsuHeader extends React.Component {
             </PageToggleButton>
           </MastheadToggle>
           <MastheadMain>
-            <MastheadBrand href={'/'}>
+            <MastheadBrand href="/">
               <Brand src="/images/ibutsu-wordart-164.png" alt="Ibutsu"/>
             </MastheadBrand>
           </MastheadMain>

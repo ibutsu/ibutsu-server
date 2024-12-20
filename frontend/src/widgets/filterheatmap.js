@@ -56,7 +56,7 @@ export class FilterHeatmapWidget extends React.Component {
   }
 
   getJenkinsAnalysisViewId() {
-    HttpClient.get([Settings.serverUrl, 'widget-config'], {"filter": "widget=jenkins-analysis-view"})
+    HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=jenkins-analysis-view'})
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({analysisViewId: data.widgets[0]?.id}))
       .catch(error => console.log(error));
@@ -166,14 +166,14 @@ export class FilterHeatmapWidget extends React.Component {
       }
     }
     else if (!!value && isNaN(value[0])) {
-      contents = "n/a"
+      contents = 'n/a'
     }
     else if (value) {
       if (value[2]) {
         let title = '';
         value[2].forEach((item) => {
           if (!!item.name && !!item.value) {
-            title += item.name + ": " + item.value + "\n";
+            title += item.name + ': ' + item.value + '\n';
           }
         });
         contents = <p title={title}><Link to={'/project/' + this.props.params.project + `/runs/${value[1]}`}>{Math.floor(value[0])}</Link></p>;
@@ -244,7 +244,7 @@ export class FilterHeatmapWidget extends React.Component {
             xLabels={xLabels}
             yLabels={yLabels}
             yLabelWidth={this.labelWidth}
-            yLabelTextAlign={"left"}
+            yLabelTextAlign="left"
             data={data}
             squares
             cellStyle={this.getCellStyle}
@@ -255,7 +255,7 @@ export class FilterHeatmapWidget extends React.Component {
           {(!this.state.heatmapError && !this.state.isLoading && data.length === 0) &&
           <EmptyState>
           <EmptyStateHeader titleText="No data found for heatmap" headingLevel="h3" />
-          <EmptyStateBody style={{ fontSize: "15px" , fontFamily: 'sans-serif'}}>
+          <EmptyStateBody style={{ fontSize: '15px' , fontFamily: 'sans-serif'}}>
             Ensure that you have correct job name and addition filters set
           </EmptyStateBody>
         </EmptyState>
@@ -270,7 +270,7 @@ export class FilterHeatmapWidget extends React.Component {
             dropdownItems={this.props.dropdownItems || [3, 5, 6, 7]}
             handleSelect={this.onBuildSelect}
             defaultValue={this.params.builds}
-            tooltip={"Set no. of builds to:"}
+            tooltip="Set no. of builds to:"
           />
           {this.props.type === 'jenkins' &&
           <ParamDropdown

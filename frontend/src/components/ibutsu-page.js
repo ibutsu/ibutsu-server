@@ -98,7 +98,7 @@ export class IbutsuPage extends React.Component {
           header={<ElementWrapper routeElement={IbutsuHeader} eventEmitter={this.props.eventEmitter}/>}
           sidebar={<IbutsuSidebar eventEmitter={this.props.eventEmitter} />}
           isManagedSidebar={true}
-          style={{position: "relative"}}
+          style={{position: 'relative'}}
         >
           {primaryObject ?
           <Outlet/> :

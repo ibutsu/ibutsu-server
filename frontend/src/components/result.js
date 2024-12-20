@@ -207,7 +207,7 @@ export class ResultView extends React.Component {
 
   componentDidMount() {
     this.getResult();
-    if (this.state.activeTab === "test-history") {
+    if (this.state.activeTab === 'test-history') {
       this.getTestHistoryTable();
     }
     window.addEventListener('popstate', this.handlePopState);
@@ -269,7 +269,7 @@ export class ResultView extends React.Component {
           <Tab eventKey="summary" title={<TabTitle icon={InfoCircleIcon} text="Summary" />}>
             <Card>
               <CardBody style={{padding: 0}}>
-                <DataList selectedDataListItemId={null} aria-label="Test Result" style={{borderBottom: "none", borderTop: "none"}}>
+                <DataList selectedDataListItemId={null} aria-label="Test Result" style={{borderBottom: 'none', borderTop: 'none'}}>
                   <DataListItem isExpanded={false} aria-labelledby="result-label">
                     <DataListItemRow>
                       <DataListItemCells
@@ -373,8 +373,8 @@ export class ResultView extends React.Component {
                       <DataListItemCells
                         dataListCells={[
                           <DataListCell key="duration-label" width={2}><strong>Duration:</strong></DataListCell>,
-                          <DataListCell key="duration-data" width={4} style={{paddingTop: 0, paddingBottom: 0, marginBottom: "-25px"}}>
-                            <DataList selectedDataListItemId={null} aria-label="Durations" style={{borderTop: "none"}}>
+                          <DataListCell key="duration-data" width={4} style={{paddingTop: 0, paddingBottom: 0, marginBottom: '-25px'}}>
+                            <DataList selectedDataListItemId={null} aria-label="Durations" style={{borderTop: 'none'}}>
                               {(testResult.start_time ? testResult.start_time : testResult.starttime) > 0 &&
                                 <DataListItem className="pf-u-p-0" aria-labelledby="started-label">
                                   <DataListItemRow>
@@ -449,15 +449,15 @@ export class ResultView extends React.Component {
                         <DataListItemCells
                           dataListCells={[
                             <DataListCell key="stages-label" width={2}><strong>Stages:</strong></DataListCell>,
-                            <DataListCell key="stages-data" width={4} style={{paddingBottom: 0, paddingTop: 0, marginBottom: "-25px"}}>
-                              <DataList selectedDataListItemId={null} aria-label="Stages" style={{borderTop: "none"}}>
+                            <DataListCell key="stages-data" width={4} style={{paddingBottom: 0, paddingTop: 0, marginBottom: '-25px'}}>
+                              <DataList selectedDataListItemId={null} aria-label="Stages" style={{borderTop: 'none'}}>
                                 {testResult.metadata.statuses.setup &&
                                   <DataListItem className="pf-u-p-0" aria-labelledby="setup-label">
                                     <DataListItemRow>
                                       <DataListItemCells
                                         dataListCells={[
                                           <DataListCell key="setup-label" className="pf-u-p-sm">Set up:</DataListCell>,
-                                          <DataListCell key="setup-data" className="pf-u-p-sm">{testResult.metadata.statuses.setup[0]} {testResult.metadata.statuses.setup[1] && "(xfail)"}</DataListCell>
+                                          <DataListCell key="setup-data" className="pf-u-p-sm">{testResult.metadata.statuses.setup[0]} {testResult.metadata.statuses.setup[1] && '(xfail)'}</DataListCell>
                                         ]}
                                       />
                                     </DataListItemRow>
@@ -469,7 +469,7 @@ export class ResultView extends React.Component {
                                       <DataListItemCells
                                         dataListCells={[
                                           <DataListCell key="call-label" className="pf-u-p-sm">Call:</DataListCell>,
-                                          <DataListCell key="call-data" className="pf-u-p-sm">{testResult.metadata.statuses.call[0]} {testResult.metadata.statuses.call[1] && "(xfail)"}</DataListCell>
+                                          <DataListCell key="call-data" className="pf-u-p-sm">{testResult.metadata.statuses.call[0]} {testResult.metadata.statuses.call[1] && '(xfail)'}</DataListCell>
                                         ]}
                                       />
                                     </DataListItemRow>
@@ -481,7 +481,7 @@ export class ResultView extends React.Component {
                                       <DataListItemCells
                                         dataListCells={[
                                           <DataListCell key="teardown-label" className="pf-u-p-sm">Tear down:</DataListCell>,
-                                          <DataListCell key="teardown-data" className="pf-u-p-sm">{testResult.metadata.statuses.teardown[0]} {testResult.metadata.statuses.teardown[1] && "(xfail)"}</DataListCell>
+                                          <DataListCell key="teardown-data" className="pf-u-p-sm">{testResult.metadata.statuses.teardown[0]} {testResult.metadata.statuses.teardown[1] && '(xfail)'}</DataListCell>
                                         ]}
                                       />
                                     </DataListItemRow>
@@ -522,7 +522,7 @@ export class ResultView extends React.Component {
                         <DataListItemCells
                           dataListCells={[
                               <DataListCell key="traceback-label" width={2}><strong>Traceback:</strong></DataListCell>,
-                              <DataListCell key="traceback-data" width={4}><div style={{overflow: "scroll", width: "100%"}}><pre><code>{testResult.metadata.short_tb}</code></pre></div></DataListCell>
+                              <DataListCell key="traceback-data" width={4}><div style={{overflow: 'scroll', width: '100%'}}><pre><code>{testResult.metadata.short_tb}</code></pre></div></DataListCell>
                           ]}
                         />
                       </DataListItemRow>
