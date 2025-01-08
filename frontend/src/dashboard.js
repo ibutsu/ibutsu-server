@@ -155,7 +155,7 @@ function Dashboard() {
     // state update
     setSelectedDB();
     setIsDBSelectorOpen(false);
-    setSelectDBInputValue('Select a dashboard');
+    setSelectDBInputValue('');
     setFilterDBValue('');
 
     navigate('/project/' + project_id + '/dashboard/')
@@ -218,10 +218,8 @@ function Dashboard() {
     }
     HttpClient.put([Settings.serverUrl, 'widget-config', currentWidget], '', editedData)
         .then(response => HttpClient.handleResponse(response))
-        .then(() => {
-          setIsEditModalOpen(false);
-        })
         .catch(error => console.log(error));
+    setIsEditModalOpen(false);
   }
 
   function onEditWidgetClick(id) {
