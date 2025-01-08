@@ -74,6 +74,7 @@ function Dashboard() {
   const [filterDBValue, setFilterDBValue] = useState('');
 
   useEffect(() => {
+    // update widgets
     let api_params = {'type': 'widget'};
     if (selectedDB) {
       api_params['filter'] = 'dashboard_id=' + selectedDB.id;
@@ -123,7 +124,7 @@ function Dashboard() {
     }
 
 
-  }, [filterDBValue, isDeleteDBOpen, defaultDashboard, primaryObject, navigate, selectedDB]);
+  }, [filterDBValue, defaultDashboard, primaryObject, navigate, selectedDB]);
 
   useEffect(() => {
     // sync the URL to the dashboard selection
@@ -171,22 +172,18 @@ function Dashboard() {
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         setIsNewDBOpen(false);
-        setSelectedDB(data);
-        setSelectDBInputValue(data.title);
+        onDashboardSelect(null, data);
       })
       .catch(error => console.log(error));
   }
 
   function onDeleteDashboard() {
-
     HttpClient.delete([Settings.serverUrl, 'dashboard', selectedDB.id])
         .then(response => HttpClient.handleResponse(response))
-        .then(() => {
-          setIsDeleteDBOpen(false);
-          setSelectedDB(null);
-          setSelectDBInputValue();
-        })
+        .then(() => onDashboardClear()) // only run after successful delete, otherwise it's a race to remove from the dropdown
         .catch(error => console.log(error));
+    setIsDeleteDBOpen(false);
+
   }
 
   function onDeleteWidgetClick(id) {
@@ -197,9 +194,7 @@ function Dashboard() {
   function onDeleteWidget() {
     HttpClient.delete([Settings.serverUrl, 'widget-config', currentWidget])
         .then(response => HttpClient.handleResponse(response))
-        .then(() => {
-          setIsDeleteWidgetOpen(false);
-        })
+        .then(() => setIsDeleteWidgetOpen(false))
         .catch(error => console.log(error));
   }
 
@@ -208,8 +203,9 @@ function Dashboard() {
       widgetData.project_id = primaryObject.id;
     }
     HttpClient.post([Settings.serverUrl, 'widget-config'], widgetData)
+      .then(()=> setIsNewWidgetOpen(false))  // wait to close modal until widget is saved
       .catch(error => console.log(error));
-      setIsNewWidgetOpen(false);
+
   }
 
   function onEditWidgetSave(editedData) {
@@ -223,14 +219,18 @@ function Dashboard() {
   }
 
   function onEditWidgetClick(id) {
+    setIsEditModalOpen(true);
+
     HttpClient.get([Settings.serverUrl, 'widget-config', id])
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
-          setIsEditModalOpen(true);
           setCurrentWidget(id);
           setEditWidgetData(data);
         })
-        .catch(error => console.log(error));
+        .catch(error => {
+          console.log(error);
+          setIsEditModalOpen(false);
+        });
 
   }
 
