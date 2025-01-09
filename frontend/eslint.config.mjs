@@ -21,8 +21,8 @@ const compat = new FlatCompat({
 
 export default [
     {
-        files: ['src/*', 'cypress/*'],
-        ignores: ['node_modules/*'],
+        files: ['src/*', 'cypress/*', 'bin/*'],
+        ignores: ['node_modules/*', 'build/*'],
     },
     ...compat.extends(
         'eslint:recommended',

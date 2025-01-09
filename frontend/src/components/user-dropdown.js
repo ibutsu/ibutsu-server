@@ -49,9 +49,8 @@ export class UserDropdown extends React.Component {
   };
 
   logout = () => {
-    const { setPrimaryObject, setActiveDashboard } = this.context;
+    const { setPrimaryObject } = this.context;
     setPrimaryObject();
-    setActiveDashboard();
     AuthService.logout();
     window.location = '/';
   }
