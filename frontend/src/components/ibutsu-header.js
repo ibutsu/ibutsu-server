@@ -39,7 +39,8 @@ import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import QuestionCircleIcon from '@patternfly/react-icons/dist/esm/icons/question-circle-icon';
 
 
-import { FileUpload, UserDropdown } from '../components';
+import { UserDropdown } from '../components';
+import FileUpload from './fileupload';
 import { VERSION } from '../constants';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
@@ -247,11 +248,7 @@ function IbutsuHeader (props) {
               icon={<Icon><QuestionCircleIcon /></Icon>} />
           </ToolbarItem>
           <ToolbarItem spacer={{ default: 'spacerSm' }}>
-            <FileUpload
-              name="importFile"
-              url={`${Settings.serverUrl}/import`}
-              title="Import xUnit XML or Ibutsu Archive"
-            >Import</FileUpload>
+            <FileUpload name="importFile"/>
           </ToolbarItem>
           <ToolbarItem spacer={{ default: 'spacerSm' }}>
             <Button
