@@ -7,40 +7,52 @@ import {
   ModalVariant,
   Text
 } from '@patternfly/react-core';
+import { HttpClient } from '../services/http';
+import { Settings } from '../settings';
 
+function DeleteModal (props){
+  const {
+    onDelete,
+    onClose,
+    toDeleteId,
+    toDeletePath,
+    title,
+    isOpen,
+    body,
+  } = props;
 
-export class DeleteModal extends React.Component {
-  static propTypes = {
-    id: PropTypes.object,
-    title: PropTypes.string,
-    body: PropTypes.node,
-    onDelete: PropTypes.func,
-    onClose: PropTypes.func,
-    isOpen: PropTypes.bool
-  };
-
-  onDelete = () => {
-    this.props.onDelete(this.props.id);
+  function localOnDelete() {
+    HttpClient.delete([Settings.serverUrl, ...toDeletePath, toDeleteId])
+      .then(response => HttpClient.handleResponse(response))
+      .then(onDelete?.());
+    onClose();
   }
 
-  onClose = () => {
-    this.props.onClose();
-  }
+  return (
+    <Modal
+      variant={ModalVariant.small}
+      title={title}
+      isOpen={isOpen}
+      onClose={onClose}
+      actions={[
+        <Button key="delete" variant="danger" onClick={localOnDelete}>Delete</Button>,
+        <Button key="cancel" variant="link" onClick={onClose}>Cancel</Button>
+      ]}
+    >
+    <Text>{body}</Text>
+    </Modal>
+  );
 
-  render () {
-    return (
-      <Modal
-        variant={ModalVariant.small}
-        title={this.props.title}
-        isOpen={this.props.isOpen}
-        onClose={this.onClose}
-        actions={[
-          <Button key="delete" variant="danger" onClick={this.onDelete}>Delete</Button>,
-          <Button key="cancel" variant="link" onClick={this.onClose}>Cancel</Button>
-        ]}
-      >
-      <Text>{this.props.body}</Text>
-      </Modal>
-    );
-  }
-}
+};
+
+DeleteModal.propTypes = {
+  toDeleteId: PropTypes.string,
+  title: PropTypes.string,
+  body: PropTypes.node,
+  onDelete: PropTypes.func,
+  onClose: PropTypes.func,
+  isOpen: PropTypes.bool,
+  toDeletePath: PropTypes.array
+};
+
+export default DeleteModal;
