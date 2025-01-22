@@ -1,6 +1,5 @@
 
-import React, { useContext, useState } from 'react';
-import PropTypes from 'prop-types';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 
 import { Link } from 'react-router-dom';
 import { IbutsuContext } from '../services/context';
@@ -12,32 +11,26 @@ import {  PageSidebar,
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
-
-const IbutsuSidebar = (props) => {
+function IbutsuSidebar() {
     const context = useContext(IbutsuContext);
+    const { primaryType, primaryObject } = context;
+
     const [views, setViews] = useState();
-    props.eventEmitter.on('projectChange', (project) => {
-        setProjectViews(project);
-    })
-    // TODO: useEffect for view reset on project change
 
-
-    function setProjectViews(project) {
-        const { primaryObject } = context;
-        const targetProject = project ?? primaryObject;
-        if (!targetProject) {return;}
+    const setProjectViews = useCallback(() => {
+        if (!primaryObject) {return;}
 
         let params = {'filter': ['type=view', 'navigable=true']};
 
         // read selected project from location
-        params['filter'].push('project_id=' + targetProject.id);
+        params['filter'].push('project_id=' + primaryObject.id);
 
         HttpClient.get([Settings.serverUrl, 'widget-config'], params)
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
             data.widgets.forEach(widget => {
-            if (targetProject) {
-                widget.params['project'] = targetProject.id;
+            if (primaryObject) {
+                widget.params['project'] = primaryObject.id;
             }
             else {
                 delete widget.params['project'];
@@ -45,11 +38,15 @@ const IbutsuSidebar = (props) => {
             });
             setViews(data.widgets)})
         .catch(error => console.log(error));
-    }
+    }, [primaryObject]);
 
-    const { primaryType, primaryObject } = context;
+    useEffect(() => {
+        // When the project selection changes, fetch views to include unique sidebar items.
+        setProjectViews();
+    }, [primaryObject, setProjectViews])
+
+
     if ( primaryType == 'project' && primaryObject  ) {
-        if (! views ) {setProjectViews(primaryObject);}
         return (
         <PageSidebar theme="dark" >
             <PageSidebarBody>
@@ -80,10 +77,6 @@ const IbutsuSidebar = (props) => {
         </PageSidebar>
         );
     }
-};
-
-IbutsuSidebar.propTypes = {
-    eventEmitter: PropTypes.object,
 };
 
 export default IbutsuSidebar;
