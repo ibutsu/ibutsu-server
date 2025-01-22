@@ -55,7 +55,7 @@ import { Settings } from './settings';
 import {
   cleanPath,
   getSpinnerRow,
-  getTheme,
+  getDarkTheme,
   processPyTestPath,
   resultToRow,
   round
@@ -442,7 +442,7 @@ export class Run extends React.Component {
     let created = 0;
     let calculatePasses = true;
     const { run, columns, rows, classificationTable, artifactTabs } = this.state;
-    const jsonViewLightThemeOn = getTheme() === 'dark' ? false : true ;
+    const jsonViewLightThemeOn = !getDarkTheme();
     const jsonViewTheme = {
       scheme: 'monokai',
       author: 'wimer hazenberg (http://www.monokai.nl)',

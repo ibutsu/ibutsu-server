@@ -11,14 +11,13 @@ import {
 import { Link, Outlet } from 'react-router-dom';
 import ElementWrapper from './elementWrapper';
 
-import { IbutsuHeader } from './ibutsu-header';
+import IbutsuHeader from './ibutsu-header';
 import PropTypes from 'prop-types';
 
 
 
 const AdminPage = (props) => {
     // TODO useEffect instead of eventEmitter prop
-    // TODO notifications on admin page with state and AlertGroup
     const navigation = (
       // TODO what is onNavSelect doing here ... I just carried this from a class ref
       <PageSidebar theme="dark" >
