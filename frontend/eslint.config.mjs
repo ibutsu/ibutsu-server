@@ -44,7 +44,7 @@ export default [
                 ...globals.browser,
                 ...globals.node,
                 ...globals.cypress,
-                es202: true,
+                es2020: true,
             },
             parser: pkg,
             parserOptions: {

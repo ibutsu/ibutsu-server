@@ -20,6 +20,9 @@ import { CheckIcon, PencilAltIcon, TimesIcon } from '@patternfly/react-icons';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
+import { toast } from 'react-toastify';
+import { getDarkTheme } from '../../utilities';
+import ToastWrapper from '../../components/toast-wrapper';
 
 
 export class UserProfile extends React.Component {
@@ -35,13 +38,6 @@ export class UserProfile extends React.Component {
       projects: null,
       isEditing: false
     };
-  }
-
-  showNotification(type, title, message, action?, timeout?, key?) {
-    if (!this.eventEmitter) {
-      return;
-    }
-    this.eventEmitter.emit('showNotification', type, title, message, action, timeout, key);
   }
 
   updateUserName(userName) {
@@ -87,12 +83,29 @@ export class UserProfile extends React.Component {
     let tempUser = Object.assign({}, user, {name: tempName});
     this.saveUser(tempUser).then(response => {
       if (response !== undefined) {
-        this.showNotification('success', 'Name Updated', 'Your name has been updated.');
+        toast(<ToastWrapper/>, {
+          data: {
+            type: 'success',
+            title: 'Name Updated',
+            message: 'Your name has been updated.'
+          },
+          type: 'success',
+          theme: getDarkTheme() ? 'dark' : 'light'
+        })
         this.setState({user: tempUser, isEditing: false});
         this.updateUserName(tempName);
       }
       else {
-        this.showNotification('danger', 'Error Updating', 'There was an error trying to save your name');
+        toast(ToastWrapper,
+          {
+            data: {
+              type: 'danger',
+              title: 'Error Updating',
+              message: 'Your name has NOT been updated.'
+            },
+          type: 'danger',
+          theme: getDarkTheme() ? 'dark' : 'light'
+        });
         this.setState({isEditing: false});
       }
     });

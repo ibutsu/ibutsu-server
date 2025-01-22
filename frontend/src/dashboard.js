@@ -23,13 +23,11 @@ import {
   TextInputGroupUtilities,
 } from '@patternfly/react-core';
 
-import {
-  CubesIcon,
-  PlusCircleIcon,
-  TachometerAltIcon,
-  TimesCircleIcon,
-  TimesIcon
-} from '@patternfly/react-icons';
+import CubesIcon from '@patternfly/react-icons/dist/esm/icons/cubes-icon';
+import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-icon';
+import TachometerAltIcon from '@patternfly/react-icons/dist/esm/icons/tachometer-alt-icon';
+import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
+import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle-icon';
 
 import { HttpClient } from './services/http';
 import { KNOWN_WIDGETS } from './constants';
@@ -87,7 +85,7 @@ function Dashboard() {
           });
           setWidgets(data.widgets);
         })
-        .catch(error => console.log(error));
+        .catch(error => console.error(error));
     }
   }, [selectedDB, isDeleteWidgetOpen, isEditModalOpen, isNewWidgetOpen]);
 
@@ -103,14 +101,12 @@ function Dashboard() {
         // api filter handles case, contains, and is a loose search on title
         api_params['filter'] = ['title%' + filterDBValue];
       }
-      console.log('fetching dashboards: ');
 
       HttpClient.get([Settings.serverUrl, 'dashboard'], api_params)
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
           setDashboards(data['dashboards']);
           setFilteredDBs(data['dashboards']);
-          console.log('applying default dashboard: '+defaultDashboard);
           if (defaultDashboard && !selectedDB) {
             const default_db_item = data['dashboards'].filter(dash => dash.id == defaultDashboard).pop();
             if (default_db_item) {
@@ -120,7 +116,7 @@ function Dashboard() {
             }
           }
         })
-        .catch(error => console.log(error));
+        .catch(error => console.error(error));
     }
 
 
@@ -137,7 +133,7 @@ function Dashboard() {
           setFilterDBValue();
           setSelectDBInputValue(data?.title);
         })
-        .catch(error => console.log(error));
+        .catch(error => console.error(error));
     }
   }, [dashboard_id, selectedDB])
 
@@ -174,14 +170,14 @@ function Dashboard() {
         setIsNewDBOpen(false);
         onDashboardSelect(null, data);
       })
-      .catch(error => console.log(error));
+      .catch(error => console.error(error));
   }
 
   function onDeleteDashboard() {
     HttpClient.delete([Settings.serverUrl, 'dashboard', selectedDB.id])
         .then(response => HttpClient.handleResponse(response))
         .then(() => onDashboardClear()) // only run after successful delete, otherwise it's a race to remove from the dropdown
-        .catch(error => console.log(error));
+        .catch(error => console.error(error));
     setIsDeleteDBOpen(false);
 
   }
@@ -195,7 +191,7 @@ function Dashboard() {
     HttpClient.delete([Settings.serverUrl, 'widget-config', currentWidget])
         .then(response => HttpClient.handleResponse(response))
         .then(() => setIsDeleteWidgetOpen(false))
-        .catch(error => console.log(error));
+        .catch(error => console.error(error));
   }
 
   function onNewWidgetSave(widgetData) {
@@ -204,7 +200,7 @@ function Dashboard() {
     }
     HttpClient.post([Settings.serverUrl, 'widget-config'], widgetData)
       .then(()=> setIsNewWidgetOpen(false))  // wait to close modal until widget is saved
-      .catch(error => console.log(error));
+      .catch(error => console.error(error));
 
   }
 
@@ -214,7 +210,7 @@ function Dashboard() {
     }
     HttpClient.put([Settings.serverUrl, 'widget-config', currentWidget], '', editedData)
         .then(response => HttpClient.handleResponse(response))
-        .catch(error => console.log(error));
+        .catch(error => console.error(error));
     setIsEditModalOpen(false);
   }
 
@@ -228,7 +224,7 @@ function Dashboard() {
           setEditWidgetData(data);
         })
         .catch(error => {
-          console.log(error);
+          console.error(error);
           setIsEditModalOpen(false);
         });
 
@@ -274,7 +270,7 @@ function Dashboard() {
   )
 
   return (
-    <>
+    <React.Fragment>
       <PageSection variant={PageSectionVariants.light}>
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <Flex>
@@ -524,7 +520,7 @@ function Dashboard() {
           data={editWidgetData}
         />
       : ''}
-    </>
+    </React.Fragment>
   );
 }
 
