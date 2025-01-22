@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -13,86 +13,87 @@ import { Link } from 'react-router-dom';
 import { AuthService } from '../services/auth';
 import { IbutsuContext } from '../services/context';
 
-export class UserDropdown extends React.Component {
-  static contextType = IbutsuContext;
-  static propTypes = {
-    eventEmitter: PropTypes.object
-  }
+const UserDropdown = (props) => {
+  const context = useContext(IbutsuContext);
+  // TODO:
+  // static propTypes = {
+    // eventEmitter: PropTypes.object
+  // }
 
-  constructor(props) {
-    super(props);
-    this.eventEmitter = props.eventEmitter;
-    this.state = {
-      displayName: 'User',
-      isDropdownOpen: false,
-      isSuperAdmin: false
-    };
-    this.eventEmitter.on('updateUserName', (userName) => {
-      this.updateUserName(userName);
-    });
-  }
+  // const eventEmitter = props.eventEmitter;
 
-  updateUserName(userName) {
+  const [displayName, setDisplayName] = useState('User');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+
+  // TODO:
+  // this.eventEmitter.on('updateUserName', (userName) => {
+    // this.updateUserName(userName);
+  // })
+
+  function updateUserName(userName) {
     // Update the user in the browser
     const sessionUser = AuthService.getUser();
     sessionUser.name = userName;
     AuthService.setUser(sessionUser);
-    this.setState({displayName: userName});
+    setDisplayName(userName);
   }
 
-  onDropdownToggle = () => {
-    this.setState({isDropdownOpen: !this.state.isDropdownOpen});
-  };
+  function onDropdownToggle() {
+    setIsDropdownOpen(!isDropdownOpen);
+  }
 
-  onDropdownSelect = () => {
-    this.setState({isDropdownOpen: false});
-  };
+  function onDropdownSelect() {
+    setIsDropdownOpen(false);
+  }
 
-  logout = () => {
-    const { setPrimaryObject } = this.context;
-    setPrimaryObject();
+  function logout() {
+    const { primaryObject } = context;
     AuthService.logout();
     window.location = '/';
   }
 
-  componentDidMount() {
-    AuthService.isSuperAdmin().then(isSuperAdmin => this.setState({isSuperAdmin}));
-    this.setState({
-      displayName: AuthService.getUser() && (AuthService.getUser().name || AuthService.getUser().email)
-    });
-  }
+  useEffect(() => {
+    AuthService.isSuperAdmin().then(isSuperAdmin => setIsSuperAdmin(isSuperAdmin));
+    setDisplayName(AuthService.getUser() && (AuthService.getUser().name || AuthService.getUser().email));
+  });
 
-  render() {
-    return (
-      <Dropdown
-        isOpen={this.state.isDropdownOpen}
-        onSelect={this.onDropdownSelect}
-        onOpenChange={() => this.setState({isDropdownOpen: false})}
-        toggle={toggleRef => (
-          <MenuToggle
-            ref={toggleRef}
-            onClick={this.onDropdownToggle}
-            isExpanded={this.state.isDropdownOpen}
-            icon={<UserIcon />}
-          >
-            {this.state.displayName}
-          </MenuToggle>
-        )}
-      >
-        <DropdownList>
-          <DropdownItem key="profile">
-            <Link to="/profile/user" className="pf-v5-c-menu__list-item">Profile</Link>
+  return (
+    <Dropdown
+      isOpen={isDropdownOpen}
+      onSelect={onDropdownSelect}
+      onOpenChange={() => setIsDropdownOpen(false)}
+      toggle={toggleRef => (
+        <MenuToggle
+          ref={toggleRef}
+          onClick={onDropdownToggle}
+          isExpanded={isDropdownOpen}
+          icon={<UserIcon />}
+        >
+          {displayName}
+        </MenuToggle>
+      )}
+    >
+      <DropdownList>
+        <DropdownItem key="profile">
+          <Link to="/profile/user" className="pf-v5-c-menu__list-item">Profile</Link>
+        </DropdownItem>
+        {!!isSuperAdmin &&
+          <DropdownItem key="admin">
+            <Link to="/admin/home" className="pf-v5-c-menu__list-item">Administration</Link>
           </DropdownItem>
-          {!!this.state.isSuperAdmin &&
-            <DropdownItem key="admin">
-              <Link to="/admin/home" className="pf-v5-c-menu__list-item">Administration</Link>
-            </DropdownItem>
-          }
-          <DropdownItem key="logout" onClick={this.logout}>
-            Logout
-          </DropdownItem>
-        </DropdownList>
-      </Dropdown>
-    );
-  }
+        }
+        <DropdownItem key="logout" onClick={logout}>
+          Logout
+        </DropdownItem>
+      </DropdownList>
+    </Dropdown>
+  );
 }
+
+UserDropdown.propTypes = {
+  // eventEmitter: PropTypes.object
+};
+
+export default UserDropdown;

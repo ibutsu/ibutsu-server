@@ -39,8 +39,8 @@ import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import QuestionCircleIcon from '@patternfly/react-icons/dist/esm/icons/question-circle-icon';
 
 
-import { UserDropdown } from '../components';
 import FileUpload from './fileupload';
+import UserDropdown from './user-dropdown';
 import { VERSION } from '../constants';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
