@@ -27,7 +27,7 @@ import { ClassificationDropdown } from './classification-dropdown';
 import { DownloadButton } from './download-button';
 import { linkifyDecorator } from './decorators'
 import { Settings } from '../settings';
-import { getIconForResult, getTheme, round } from '../utilities';
+import { getIconForResult, getDarkTheme, round } from '../utilities';
 import { TabTitle } from './tabs';
 import { TestHistoryTable } from './test-history';
 
@@ -227,7 +227,7 @@ export class ResultView extends React.Component {
 
   render() {
     let { testResult, artifactTabs, activeTab, testHistoryTable } = this.state;
-    const jsonViewLightThemeOn = getTheme() === 'dark' ? false : true ;
+    const jsonViewLightThemeOn = !getDarkTheme;
     if (activeTab === null) {
       activeTab = this.getDefaultTab();
     }
