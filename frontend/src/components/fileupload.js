@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import UploadIcon from '@patternfly/react-icons/dist/esm/icons/upload-icon';
 
@@ -12,93 +12,82 @@ import ToastWrapper from './toast-wrapper';
 import { Settings } from '../settings';
 import { ALERT_TIMEOUT } from '../constants';
 
-export class FileUpload extends React.Component {
-  // TODO: refactor to functional
-  // TODO: Consider explicit project selection for upload instead of inferred from context
-  // TODO: support multiple upload
-  static contextType = IbutsuContext;
-  static propTypes = {
-    url: PropTypes.string.isRequired,
-    name: PropTypes.string,
-    children: PropTypes.node,
+
+const FileUpload = (props) => {
+  const context = useContext(IbutsuContext);
+
+  const [importId, setImportId] = useState();
+
+  const inputRef = useRef();
+  const importToastRef = useRef();
+  const intervalId = useRef();
+
+  const name = props?.name ? props.name : 'file';
+
+
+  function onClick() {
+    inputRef.current.click();
   }
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      url: props.url,
-      name: props.name ? props.name : 'file',
-      importId: null,
-      intervalId: null
-    };
-    this.inputRef = React.createRef();
-    this.importToastRef = React.createRef();
-    this.intervalId = React.createRef();
-
-  }
-
-  onClick = () => {
-    this.inputRef.current.click();
-  }
-
-  onFileChange = (e) => {
+  function onFileChange(e) {
     let files = e.target.files || e.dataTransfer.files;
     if (files.length > 0) {
-      this.uploadFile(files[0]);
+      uploadFile(files[0]);
       // Clear the upload field
-      this.inputRef.current.value = '';
+      inputRef.current.value = '';
     }
   }
 
-  checkImportStatus = (importId) => {
-    const { primaryObject } = this.context;
-
-    HttpClient.get([Settings.serverUrl, 'import', importId])
-    .then(response => HttpClient.handleResponse(response))
-    .then(data => {
-      if (data['status'] === 'done') {
-        clearInterval(this.intervalId.current);
-        this.importId = null;
-        let action = null;
-        if (data.metadata.run_id) {
-          const RunButton = () => (
-            <AlertActionLink component='a' href={'/project/' + (data.metadata.project_id || primaryObject.id) + '/runs/' + data.metadata.run_id}>
-              Go to Run
-            </AlertActionLink>
-          )
-          action = <RunButton />;
-        }
-        toast.update(this.importToastRef.current,
-          {
-            data: {
-              type:'success',
-              title:'Import Complete',
-              message: `${data.filename} has been successfully imported as run ${data.metadata.run_id}`,
-              action: action
-            },
-            type: 'success',
-            autoClose: ALERT_TIMEOUT
+  function checkImportStatus() {
+    const { primaryObject } = context;
+    if(importId) {
+      HttpClient.get([Settings.serverUrl, 'import', importId])
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => {
+        if (data['status'] === 'done') {
+          clearInterval(intervalId.current);
+          setImportId();
+          let action = null;
+          if (data.metadata.run_id) {
+            const RunButton = () => (
+              <AlertActionLink component='a' href={'/project/' + (data.metadata.project_id || primaryObject.id) + '/runs/' + data.metadata.run_id}>
+                Go to Run
+              </AlertActionLink>
+            )
+            action = <RunButton />;
           }
-        )
+          toast.update(importToastRef.current,
+            {
+              data: {
+                type:'success',
+                title:'Import Complete',
+                message: `${data.filename} has been successfully imported as run ${data.metadata.run_id}`,
+                action: action
+              },
+              type: 'success',
+              autoClose: ALERT_TIMEOUT
+            }
+          )
 
-      }
-    });
+        }
+      });
+    }
   }
 
-  uploadFile = (file) => {
+  function uploadFile(file) {
     const files = {};
-    const { primaryObject } = this.context;
-    files[this.state.name] = file;
+    const { primaryObject } = context;
+    files[name] = file;
 
     HttpClient.upload(
-      this.state.url,
+      Settings.serverUrl+'/import',
       files,
       {'project': primaryObject?.id}
     )
     .then((response) => HttpClient.handleResponse(response, 'response'))
     .then(data => {
       data.json().then((importObject) => {
-        this.importToastRef.current = toast(<ToastWrapper />,
+        importToastRef.current = toast(<ToastWrapper />,
           {
             data: {
               type: 'info',
@@ -109,11 +98,12 @@ export class FileUpload extends React.Component {
             theme: getDarkTheme() ? 'dark' : 'light'
           }
         );
-        this.intervalId.current = setInterval(() => {this.checkImportStatus(importObject['id'])}, 5000);
+        setImportId(importObject['id']);
+        intervalId.current = setInterval(checkImportStatus, 5000);
         })
     })
     .catch(error => {
-      toast.update(this.importToastRef.current,
+      toast.update(importToastRef.current,
         {
           data: {
             type: 'danger',
@@ -126,18 +116,21 @@ export class FileUpload extends React.Component {
     });
   }
 
-  render() {
-    const { children } = this.props;
-    const { primaryObject } = this.context;
-    return (
-      <React.Fragment>
-        <input type="file" multiple={false} style={{display: 'none'}} onChange={this.onFileChange} ref={this.inputRef} />
-        <Tooltip content="Upload a result archive to the selected project.">
-          <Button variant={ButtonVariant.tertiary} icon={<Icon><UploadIcon/></Icon>} onClick={this.onClick} isAriaDisabled={!primaryObject}>
-            {children}
-          </Button>
-        </Tooltip>
-      </React.Fragment>
-    );
-  }
+  const {primaryObject} = context;
+  return (
+    <React.Fragment>
+      <input type="file" multiple={false} style={{display: 'none'}} onChange={onFileChange} ref={inputRef} />
+      <Tooltip content="Upload xUnit XML or Ibutsuresult archive to the selected project.">
+        <Button variant={ButtonVariant.tertiary} icon={<Icon><UploadIcon/></Icon>} onClick={onClick} isAriaDisabled={!primaryObject}>
+        Import</Button>
+      </Tooltip>
+    </React.Fragment>
+  );
+
 }
+
+FileUpload.propTypes = {
+  name: PropTypes.string,
+};
+
+export default FileUpload;

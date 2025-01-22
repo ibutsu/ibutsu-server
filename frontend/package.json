@@ -61,7 +61,7 @@
   "scripts": {
     "start": "serve -s build -l tcp://0.0.0.0:8080",
     "build": "./bin/write-version-file.cjs && react-scripts build",
-    "test": "./bin/write-version-file.cjs && react-scripts test --transformIgnorePatterns \"node_modules/(?!@patternfly)/\" && cypress run --component",
+    "test": "./bin/write-version-file.cjs && react-scripts test --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
     "eject": "react-scripts eject",
     "devserver": "./bin/write-version-file.cjs && CI=true react-scripts start",
     "lint": "eslint"

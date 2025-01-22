@@ -4,7 +4,6 @@ export { ClassifyFailuresTable } from './classify-failures';
 export { DeleteModal } from './delete-modal';
 export { DownloadButton } from './download-button';
 export { EmptyObject } from './empty-object';
-export { FileUpload } from './fileupload';
 export { FilterTable, MetaFilter } from './filtertable';
 export { IbutsuPage } from './ibutsu-page';
 export { MultiValueInput } from './multivalueinput';
