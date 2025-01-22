@@ -6,7 +6,7 @@ import ElementWrapper from './components/elementWrapper';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import Dashboard from './dashboard';
-import { ReportBuilder } from './report-builder';
+import ReportBuilder from './report-builder';
 import { RunList } from './run-list';
 import { Run } from './run';
 import { ResultList } from './result-list';
@@ -78,7 +78,7 @@ export class App extends React.Component {
 
           <Route
             path="reports"
-            element={<ElementWrapper routeElement={ReportBuilder} eventEmitter={this.eventEmitter} />}
+            element={<ReportBuilder/>}
           />
 
           <Route
