@@ -19,7 +19,9 @@ import { PlusCircleIcon } from '@patternfly/react-icons';
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import { getSpinnerRow } from '../../utilities';
-import { FilterTable, AddTokenModal, DeleteModal } from '../../components';
+import { FilterTable } from '../../components';
+import AddTokenModal from '../../components/add-token-modal';
+import DeleteModal from '../../components/delete-modal';
 import ToastWrapper from '../../components/toast-wrapper';
 import { ALERT_TIMEOUT } from '../../constants';
 
@@ -110,6 +112,7 @@ export class UserTokens extends React.Component {
     });
   }
 
+  // TODO: useEffect on add and delete modal close
   getTokens() {
     // First, show a spinner
     this.setState({rows: [getSpinnerRow(4)], isEmpty: false, isError: false});
@@ -133,30 +136,12 @@ export class UserTokens extends React.Component {
       });
   }
 
-  onAddTokenSave = (token) => {
-    HttpClient.post([Settings.serverUrl, 'user', 'token'],
-      {name: token.name, expires: token.expiry.toISOString()})
-      .then(response => HttpClient.handleResponse(response))
-      .then(() => this.getTokens());
-    this.setState({isAddTokenOpen: false});
-  }
-
   onAddTokenClick = () => {
     this.setState({isAddTokenOpen: true});
   }
 
   onAddTokenClose = () => {
     this.setState({isAddTokenOpen: false});
-  }
-
-  onDeleteToken = () => {
-    const token = this.state.tokenToDelete;
-    HttpClient.delete([Settings.serverUrl, 'user', 'token', token.id])
-      .then(response => HttpClient.handleResponse(response))
-      .then(() => {
-        this.getTokens();
-        this.onDeleteTokenClose();
-      });
   }
 
   onDeleteTokenClick = (token) => {
@@ -217,14 +202,14 @@ export class UserTokens extends React.Component {
         </PageSection>
         <AddTokenModal
           isOpen={this.state.isAddTokenOpen}
-          onSave={this.onAddTokenSave}
           onClose={this.onAddTokenClose}
         />
         <DeleteModal
           title="Delete token"
           body="Would you like to delete the selected token?"
+          toDeleteId={this.state.tokenToDelete?.id}
+          toDeletePath={['user', 'token']}
           isOpen={this.state.isDeleteTokenOpen}
-          onDelete={this.onDeleteToken}
           onClose={this.onDeleteTokenClose}
         />
         <ToastContainer autoClose={ALERT_TIMEOUT} stacked/>
