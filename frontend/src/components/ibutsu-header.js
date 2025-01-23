@@ -48,7 +48,7 @@ import { IbutsuContext } from '../services/context';
 import { useNavigate, useParams } from 'react-router-dom';
 import { setDocumentDarkTheme } from '../utilities';
 
-function IbutsuHeader (props) {
+function IbutsuHeader () {
   // hooks
   const context = useContext(IbutsuContext);
   const params = useParams();
@@ -279,7 +279,7 @@ function IbutsuHeader (props) {
             </ToggleGroup>
           </ToolbarItem>
           <ToolbarItem id="user-dropdown" >
-            <UserDropdown eventEmitter={props.eventEmitter}/>
+            <UserDropdown/>
           </ToolbarItem>
         </ToolbarGroup>
       </ToolbarContent>

@@ -1,5 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
 
 import {
   Dropdown,
@@ -11,34 +10,11 @@ import { UserIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
 import { AuthService } from '../services/auth';
-import { IbutsuContext } from '../services/context';
 
-const UserDropdown = (props) => {
-  const context = useContext(IbutsuContext);
-  // TODO:
-  // static propTypes = {
-    // eventEmitter: PropTypes.object
-  // }
-
-  // const eventEmitter = props.eventEmitter;
-
+const UserDropdown = () => {
   const [displayName, setDisplayName] = useState('User');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
-
-  // TODO:
-  // this.eventEmitter.on('updateUserName', (userName) => {
-    // this.updateUserName(userName);
-  // })
-
-  function updateUserName(userName) {
-    // Update the user in the browser
-    const sessionUser = AuthService.getUser();
-    sessionUser.name = userName;
-    AuthService.setUser(sessionUser);
-    setDisplayName(userName);
-  }
 
   function onDropdownToggle() {
     setIsDropdownOpen(!isDropdownOpen);
@@ -49,7 +25,6 @@ const UserDropdown = (props) => {
   }
 
   function logout() {
-    const { primaryObject } = context;
     AuthService.logout();
     window.location = '/';
   }
@@ -57,7 +32,7 @@ const UserDropdown = (props) => {
   useEffect(() => {
     AuthService.isSuperAdmin().then(isSuperAdmin => setIsSuperAdmin(isSuperAdmin));
     setDisplayName(AuthService.getUser() && (AuthService.getUser().name || AuthService.getUser().email));
-  });
+  }, []);
 
   return (
     <Dropdown
@@ -91,9 +66,5 @@ const UserDropdown = (props) => {
     </Dropdown>
   );
 }
-
-UserDropdown.propTypes = {
-  // eventEmitter: PropTypes.object
-};
 
 export default UserDropdown;
