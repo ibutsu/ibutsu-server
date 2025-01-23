@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -14,135 +14,136 @@ import {
   TextInput,
   ValidatedOptions,
 } from '@patternfly/react-core';
+import { HttpClient } from '../services/http';
+import { Settings } from '../settings';
 
-export class AddTokenModal extends React.Component {
-  static propTypes = {
-    onSave: PropTypes.func,
-    onClose: PropTypes.func,
-    isOpen: PropTypes.bool
+function AddTokenModal(props) {
+    const [name, setName] = useState('');
+    const [expiryDate, setExpiryDate] = useState('');
+    const [isNameValid, setIsNameValid] = useState(true);
+    const [isExpiryValid, setIsExpiryValid] = useState(true);
+
+    const {
+      isOpen,
+      onClose,
+    } = props;
+
+  function onSave() {
+    const expiry = new Date(expiryDate);
+    const now = new Date();
+
+    if (name === '' ){
+      setIsNameValid(false);
+      return;
+    }
+    else {setIsNameValid(true)}
+
+    if (expiryDate === ''){
+      setIsExpiryValid(false);
+      return;
+    }
+    else {
+      expiry.setHours(23, 59, 59, 999);
+      if (expiry.getTime() <= now.getTime()) {
+        setIsExpiryValid(false);
+        return;
+      }
+    }
+    HttpClient.post([Settings.serverUrl, 'user', 'token'],
+      {name: name, expires: expiry.toISOString()})
+      .then(response => HttpClient.handleResponse(response))
+      .catch((error) => {
+        console.error('Error posting token:', error);
+      });
+
+    onClose();
+
   };
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      name: '',
-      expiryDate: '',
-      isNameValid: true,
-      isExpiryValid: true
-    };
-  }
+  function localOnClose() {
+    // call prop function
+    onClose();
 
-  onNameChange = (name) => {
-    this.setState({name});
-  }
+    setName('');
+    setExpiryDate('');
+    setIsNameValid(true);
+    setIsExpiryValid(true);
+  };
 
-  onExpiryDateChange = (_event, expiryStr) => {
-    this.setState({expiryDate: expiryStr});
-  }
-
-  onSave = () => {
-    if (this.state.name === '' || this.state.expiryDate === '') {
-      this.setState({
-        isNameValid: this.state.name !== '',
-        isExpiryValid: this.state.expiryDate !== ''
-      });
-      return;
-    }
-    const expiry = new Date(this.state.expiryDate);
-    expiry.setHours(23, 59, 59, 999);
-    const now = new Date();
-    if (expiry.getTime() <= now.getTime()) {
-      this.setState({isExpiryValid: false});
-      return;
-    }
-    this.props.onSave({name: this.state.name, expiry: expiry});
-    this.setState({
-      name: '',
-      expiryDate: '',
-      isNameValid: true,
-      isExpiryValid: true
-    });
-  }
-
-  onClose = () => {
-    this.setState({
-      name: '',
-      expiryDate: '',
-      isNameValid: true,
-      isExpiryValid: true
-    });
-    this.props.onClose();
-  }
-
-  render () {
-    return (
-      <Modal
-        id="add-token-modal"
-        variant={ModalVariant.small}
-        title="Add Token"
-        isOpen={this.props.isOpen}
-        onClose={this.onClose}
-        actions={[
-          <Button key="save" variant="primary" onClick={this.onSave}>Save</Button>,
-          <Button key="cancel" variant="link" onClick={this.onClose}>Cancel</Button>
-        ]}
-      >
-        <Form>
-          <FormGroup
-            label="Name"
-            fieldId="token-name"
+  return (
+    <Modal
+      id="add-token-modal"
+      variant={ModalVariant.small}
+      title="Add Token"
+      isOpen={isOpen}
+      onClose={localOnClose}
+      actions={[
+        <Button key="save" variant="primary" onClick={onSave}>Save</Button>,
+        <Button key="cancel" variant="link" onClick={localOnClose}>Cancel</Button>
+      ]}
+    >
+      <Form>
+        <FormGroup
+          label="Name"
+          fieldId="token-name"
+          isRequired
+        >
+          <TextInput
+            type="text"
+            id="token-name"
+            name="token-name"
+            value={name}
+            onChange={(_event, change) => setName(change)}
+            validated={isNameValid ? ValidatedOptions.default : ValidatedOptions.error}
             isRequired
-          >
-            <TextInput
-              type="text"
-              id="token-name"
-              name="token-name"
-              value={this.state.name}
-              onChange={(_event, name) => this.onNameChange(name)}
-              validated={this.state.isNameValid ? ValidatedOptions.default : ValidatedOptions.error}
-              isRequired
-            />
-            {this.state.isNameValid !== true && (
-              <FormHelperText>
-                <HelperText>
-                  <HelperTextItem variant="error">
-                    A token name is required
-                  </HelperTextItem>
-                </HelperText>
-              </FormHelperText>
-              )}
-          </FormGroup>
-          <FormGroup
-            label="Expiry"
-            fieldId="token-expiry-date"
-            validated={this.state.isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error}
-            isRequired
-          >
-            <DatePicker
-              appendTo={() => document.getElementById('add-token-modal')}
-              onChange={this.onExpiryDateChange}
-              value={this.state.expiryDate}
-              inputProps={{
-                id: 'token-expiry-date',
-                validated: this.state.isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error
-              }}
-              popoverProps={{
-                enableFlip: false,
-                position: 'bottom'
-              }}
-            />
-            {this.state.isExpiryValid !== true && (
-              <FormHelperText>
-                <HelperText>
-                  <HelperTextItem variant="error">
-                    A valid epiry date is required
-                  </HelperTextItem>
-                </HelperText>
-              </FormHelperText>
+          />
+          {isNameValid !== true && (
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem variant="error">
+                  A token name is required
+                </HelperTextItem>
+              </HelperText>
+            </FormHelperText>
             )}
-          </FormGroup>
-        </Form>
-      </Modal>
-    );
-  }
-}
+        </FormGroup>
+        <FormGroup
+          label="Expiry"
+          fieldId="token-expiry-date"
+          validated={isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error}
+          isRequired
+        >
+          <DatePicker
+            appendTo={() => document.getElementById('add-token-modal')}
+            onChange={(_event, change) => {setExpiryDate(change)}}
+            value={expiryDate}
+            inputProps={{
+              id: 'token-expiry-date',
+              validated: isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error
+            }}
+            popoverProps={{
+              enableFlip: false,
+              position: 'bottom'
+            }}
+          />
+          {isExpiryValid !== true && (
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem variant="error">
+                  A valid epiry date is required
+                </HelperTextItem>
+              </HelperText>
+            </FormHelperText>
+          )}
+        </FormGroup>
+      </Form>
+    </Modal>
+  );
+};
+
+AddTokenModal.propTypes = {
+  isOpen: PropTypes.bool,
+  onClose: PropTypes.func,
+};
+
+export default AddTokenModal;

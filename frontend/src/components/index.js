@@ -1,7 +1,5 @@
-export { AddTokenModal } from './add-token-modal';
 export { ClassificationDropdown, MultiClassificationDropdown } from './classification-dropdown';
 export { ClassifyFailuresTable } from './classify-failures';
-export { DeleteModal } from './delete-modal';
 export { DownloadButton } from './download-button';
 export { EmptyObject } from './empty-object';
 export { FilterTable, MetaFilter } from './filtertable';
