@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -12,125 +12,111 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { CLASSIFICATION } from '../constants.js';
 
+const ClassificationDropdown = (props) => {
+  const [testResult, setTestResult] = useState(props.testResult);
+  const [classificationOpen, setclassificationOpen] = useState(false);
 
-export class ClassificationDropdown extends React.Component {
-  static propTypes = {
-    testResult: PropTypes.object,
-  };
-
-  constructor (props) {
-    super(props);
-    this.state = {
-      testResult: this.props.testResult,
-      isClassificationOpen: false
+  const onClassificationSelect = (_event, selection) => {
+    let updatedResult = {
+      ...testResult,
+      'metadata': {
+        ...testResult.metadata,
+        'classification': selection
+      }
     };
-  }
-
-  componentDidUpdate (prevProps) {
-    if (prevProps !== this.props) {
-      this.setState({testResult: this.props.testResult});
-    }
-  }
-
-  onClassificationToggle = () => {
-    this.setState({isClassificationOpen: !this.state.isClassificationOpen});
+    setTestResult(updatedResult);
+    setclassificationOpen(!classificationOpen);
+    HttpClient.put([Settings.serverUrl, 'result', testResult['id']], {}, updatedResult)
+      .then(console.log('put classification'))
+      .catch(error => console.error(error));
   };
 
-  onClassificationSelect = (_event, selection) => {
-    let testResult = this.state.testResult;
-    testResult['metadata']['classification'] = selection;
-    this.setState({testResult: testResult, isClassificationOpen: !this.state.isClassificationOpen});
-    HttpClient.put([Settings.serverUrl, 'result', testResult['id']], {}, testResult);
-  };
+  useEffect(()=>{
+    setTestResult(props.testResult);
+  }, [props.testResult]);
 
-  render () {
-    const testResult = this.state.testResult;
-    return (
-      <Dropdown
-        isOpen={this.state.isClassificationOpen}
-        onSelect={this.onClassificationSelect}
-        onOpenChange={() => this.setState({isClassificationOpen: false})}
-        toggle={toggleRef => (
-          <MenuToggle
-            ref={toggleRef}
-            onClick={this.onClassificationToggle}
-            isExpanded={this.state.isClassificationOpen}
-          >
-            {CLASSIFICATION[testResult.metadata && testResult.metadata.classification] || '(unset)'}
-          </MenuToggle>
-        )}
-      >
-        <DropdownList>
-          {Object.keys(CLASSIFICATION).map((key) => (
-            <DropdownItem key={key} value={key}>
-              {CLASSIFICATION[key]}
-            </DropdownItem>
-          ))}
-        </DropdownList>
-      </Dropdown>
-    );
-  }
-}
+  return (
+    <Dropdown
+      key={testResult.id}
+      isOpen={classificationOpen}
+      onSelect={onClassificationSelect}
+      onOpenChange={() => setclassificationOpen(false)}
+      toggle={toggleRef => (
+        <MenuToggle
+          ref={toggleRef}
+          onClick={() => setclassificationOpen(!classificationOpen)}
+          isExpanded={classificationOpen}
+        >
+          {CLASSIFICATION[testResult?.metadata?.classification] || '(unset)'}
+        </MenuToggle>
+      )}
+    >
+      <DropdownList>
+        {Object.keys(CLASSIFICATION).map((key) => (
+          <DropdownItem key={key} value={key}>
+            {CLASSIFICATION[key]}
+          </DropdownItem>
+        ))}
+      </DropdownList>
+    </Dropdown>
+  );
+};
 
-export class MultiClassificationDropdown extends React.Component {
-  static propTypes = {
-    selectedResults: PropTypes.array,
-    refreshFunc: PropTypes.func
-  };
+ClassificationDropdown.propTypes = {
+  testResult: PropTypes.object,
+};
 
-  constructor (props) {
-    super(props);
-    this.state = {
-      isClassificationOpen: false
-    };
-  }
 
-  onClassificationToggle = isOpen => {
-    this.setState({isClassificationOpen: isOpen});
-  };
+const MultiClassificationDropdown = (props) => {
+  // TODO: callback to trigger re-render of the classify failures page
+  const {
+    selectedResults,
+  } = props;
 
-  onClassificationSelect = event => {
-    const { selectedResults } = this.props;
-    let classification = event.target.getAttribute('value');
+  const [classificationOpen, setclassificationOpen] = useState(false);
+
+  const onClassificationSelect = (_event, selection) => {
     if (selectedResults.length === 0) {
-      this.setState({isClassificationOpen: !this.state.isClassificationOpen});
+      setclassificationOpen(false);
     }
     else {
       selectedResults.forEach(result => {
-        result['metadata']['classification'] = classification;
+        result['metadata']['classification'] = selection;
         HttpClient.put([Settings.serverUrl, 'result', result['id']], {}, result)
-          .then(this.props.refreshFunc());
+          .catch(error => console.error('Error setting classification: ' + error));
       });
-      this.setState({isClassificationOpen: !this.state.isClassificationOpen});
+      setclassificationOpen(false);
     }
   };
+  return (
+    <Dropdown
+      isOpen={classificationOpen}
+      onSelect={onClassificationSelect}
+      onOpenChange={() => setclassificationOpen(false)}
+      toggle={toggleRef => (
+        <MenuToggle
+          ref={toggleRef}
+          isDisabled={selectedResults.length === 0}
+          onClick={() => setclassificationOpen(!classificationOpen)}
+          isExpanded={classificationOpen}
+        >
+          Classify Selected Failures
+        </MenuToggle>
+      )}
+    >
+      <DropdownList>
+        {Object.keys(CLASSIFICATION).map((key) => (
+          <DropdownItem key={key} value={key}>
+            {CLASSIFICATION[key]}
+          </DropdownItem>
+        ))}
+      </DropdownList>
+    </Dropdown>
+  );
+};
 
-  render () {
-    const { selectedResults } = this.props;
-    return (
-      <Dropdown
-        isOpen={this.state.isClassificationOpen}
-        onSelect={this.onClassificationSelect}
-        onOpenChange={() => this.setState({isClassificationOpen: false})}
-        toggle={toggleRef => (
-          <MenuToggle
-            ref={toggleRef}
-            isDisabled={selectedResults.length === 0}
-            onClick={this.onClassificationToggle}
-            isExpanded={this.state.isClassificationOpen}
-          >
-            Classify Selected Failures
-          </MenuToggle>
-        )}
-      >
-        <DropdownList>
-          {Object.keys(CLASSIFICATION).map((key) => (
-            <DropdownItem key={key} value={key}>
-              {CLASSIFICATION[key]}
-            </DropdownItem>
-          ))}
-        </DropdownList>
-      </Dropdown>
-    );
-  }
-}
+MultiClassificationDropdown.propTypes = {
+  selectedResults: PropTypes.array,
+};
+
+export {ClassificationDropdown, MultiClassificationDropdown};

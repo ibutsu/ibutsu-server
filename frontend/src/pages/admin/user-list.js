@@ -18,7 +18,7 @@ import { Link } from 'react-router-dom';
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import { getSpinnerRow } from '../../utilities';
-import { FilterTable } from '../../components/filtertable';
+import FilterTable from '../../components/filtertable';
 
 
 const COLUMNS = ['Display Name', 'Email', 'Projects', 'Status', ''];

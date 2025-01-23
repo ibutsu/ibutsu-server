@@ -17,7 +17,8 @@ import {
   expandable
 } from '@patternfly/react-table';
 
-import { FilterTable, MetaFilter } from '../components/filtertable';
+import FilterTable from '../components/filtertable';
+import MetaFilter from '../components/metafilter';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
