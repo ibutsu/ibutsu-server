@@ -32,7 +32,8 @@ import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle
 import { HttpClient } from './services/http';
 import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
-import { DeleteModal, NewDashboardModal, NewWidgetWizard, EditWidgetModal } from './components';
+import { NewDashboardModal, NewWidgetWizard, EditWidgetModal } from './components';
+import DeleteModal from './components/delete-modal.js';
 import {
   GenericAreaWidget,
   GenericBarWidget,
@@ -173,25 +174,9 @@ function Dashboard() {
       .catch(error => console.error(error));
   }
 
-  function onDeleteDashboard() {
-    HttpClient.delete([Settings.serverUrl, 'dashboard', selectedDB.id])
-        .then(response => HttpClient.handleResponse(response))
-        .then(() => onDashboardClear()) // only run after successful delete, otherwise it's a race to remove from the dropdown
-        .catch(error => console.error(error));
-    setIsDeleteDBOpen(false);
-
-  }
-
   function onDeleteWidgetClick(id) {
     setIsDeleteWidgetOpen(true);
     setCurrentWidget(id)
-  }
-
-  function onDeleteWidget() {
-    HttpClient.delete([Settings.serverUrl, 'widget-config', currentWidget])
-        .then(response => HttpClient.handleResponse(response))
-        .then(() => setIsDeleteWidgetOpen(false))
-        .catch(error => console.error(error));
   }
 
   function onNewWidgetSave(widgetData) {
@@ -201,7 +186,6 @@ function Dashboard() {
     HttpClient.post([Settings.serverUrl, 'widget-config'], widgetData)
       .then(()=> setIsNewWidgetOpen(false))  // wait to close modal until widget is saved
       .catch(error => console.error(error));
-
   }
 
   function onEditWidgetSave(editedData) {
@@ -500,17 +484,20 @@ function Dashboard() {
       />
       <DeleteModal
         title="Delete Dashboard"
-        body={<>Would you like to delete the current dashboard? <strong>ALL WIDGETS</strong> on the dashboard will also be deleted. <hr/> <strong>This action cannot be undone.</strong></>}
+        body={<>Would you like to delete the current dashboard? <strong>ALL WIDGETS</strong> on the dashboard will also be deleted. <br/> <strong>This action cannot be undone.</strong></>}
         isOpen={isDeleteDBOpen}
-        onDelete={onDeleteDashboard}
+        onDelete={onDashboardClear}
         onClose={() => {setIsDeleteDBOpen(false)}}
+        toDeletePath={['dashboard']}
+        toDeleteId={selectedDB?.id}
       />
       <DeleteModal
         title="Delete widget"
         body="Would you like to delete the selected widget?"
         isOpen={isDeleteWidgetOpen}
-        onDelete={onDeleteWidget}
         onClose={() => {setIsDeleteWidgetOpen(false)}}
+        toDeletePath={['widget-config']}
+        toDeleteId={currentWidget}
       />
       {isEditModalOpen ?
         <EditWidgetModal
