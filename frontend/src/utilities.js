@@ -30,7 +30,7 @@ import {
   NUMERIC_RUN_FIELDS,
   THEME_KEY,
 } from './constants';
-import { ClassificationDropdown } from './components';
+import {ClassificationDropdown} from './components/classification-dropdown'
 
 export function getDateString() {
   return String((new Date()).getTime());

@@ -27,10 +27,11 @@ import {
 } from '../utilities';
 import {
   FilterTable,
-  MultiClassificationDropdown,
   MetaFilter,
   ResultView
 } from './index';
+
+import {MultiClassificationDropdown} from './classification-dropdown';
 
 
 export class ClassifyFailuresTable extends React.Component {
