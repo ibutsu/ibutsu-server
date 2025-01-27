@@ -25,11 +25,9 @@ import {
   getSpinnerRow,
   resultToClassificationRow,
 } from '../utilities';
-import {
-  MultiClassificationDropdown,
-  ResultView
-} from './index';
+import { MultiClassificationDropdown } from './classification-dropdown';
 import { FilterTable, MetaFilter } from './filtertable';
+import ResultView from './result';
 
 
 export class ClassifyFailuresTable extends React.Component {
