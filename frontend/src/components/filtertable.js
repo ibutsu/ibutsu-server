@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -183,12 +183,12 @@ function MetaFilter (props) {
   const context = useContext(IbutsuContext);
   const {primaryObject} = context;
 
-  const [fieldSelection, setFieldSelection] = useContext([]);
-  const [isFieldOpen, setisFieldOpen] = useContext(false);
-  const [isValueOpen, setIsValueOpen] = useContext(false);
-  const [valueOptions, setValueOptions] = useContext([]);
-  const [valueSelections, setValueSelections] = useContext([]);
-  const [fieldOptions, setFieldOptions] = useContext([]);
+  const [fieldSelection, setFieldSelection] = useState([]);
+  const [isFieldOpen, setisFieldOpen] = useState(false);
+  const [isValueOpen, setIsValueOpen] = useState(false);
+  const [valueOptions, setValueOptions] = useState([]);
+  const [valueSelections, setValueSelections] = useState([]);
+  const [fieldOptions, setFieldOptions] = useState([]);
 
   function onFieldSelect(event, selection) {
     // clear value state too, otherwise the old selection remains selected but is no longer visible
