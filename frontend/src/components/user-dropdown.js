@@ -16,14 +16,6 @@ const UserDropdown = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  function onDropdownToggle() {
-    setIsDropdownOpen(!isDropdownOpen);
-  }
-
-  function onDropdownSelect() {
-    setIsDropdownOpen(false);
-  }
-
   function logout() {
     AuthService.logout();
     window.location = '/';
@@ -37,12 +29,12 @@ const UserDropdown = () => {
   return (
     <Dropdown
       isOpen={isDropdownOpen}
-      onSelect={onDropdownSelect}
+      onSelect={() => setIsDropdownOpen(false)}
       onOpenChange={() => setIsDropdownOpen(false)}
       toggle={toggleRef => (
         <MenuToggle
           ref={toggleRef}
-          onClick={onDropdownToggle}
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           isExpanded={isDropdownOpen}
           icon={<UserIcon />}
         >
