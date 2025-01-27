@@ -1,5 +1,4 @@
 import React, {useContext, useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import {
   AboutModal,
   Brand,
@@ -333,10 +332,5 @@ function IbutsuHeader () {
     </React.Fragment>
   )
 }
-
-IbutsuHeader.propTypes = {
-  // TODO convert UserDropdown to functional and drop eventemitter
-  eventEmitter: PropTypes.object,
-};
 
 export default IbutsuHeader;
