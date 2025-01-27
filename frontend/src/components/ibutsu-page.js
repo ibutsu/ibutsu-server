@@ -51,7 +51,7 @@ export class IbutsuPage extends React.Component {
     return (
       <React.Fragment>
         <Page
-          header={<IbutsuHeader eventEmitter={this.props.eventEmitter}/>}
+          header={<IbutsuHeader/>}
           sidebar={<IbutsuSidebar eventEmitter={this.props.eventEmitter} />}
           isManagedSidebar={true}
           style={{position: 'relative'}}
