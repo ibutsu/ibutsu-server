@@ -9,15 +9,12 @@ import {
 } from '@patternfly/react-core';
 
 import { Link, Outlet } from 'react-router-dom';
-import ElementWrapper from './elementWrapper';
 
 import IbutsuHeader from './ibutsu-header';
-import PropTypes from 'prop-types';
 
 
 
-const AdminPage = (props) => {
-    // TODO useEffect instead of eventEmitter prop
+const AdminPage = () => {
     const navigation = (
       // TODO what is onNavSelect doing here ... I just carried this from a class ref
       <PageSidebar theme="dark" >
@@ -45,7 +42,7 @@ const AdminPage = (props) => {
       <React.Fragment>
         <Page
          // TODO simplified admin header
-          header={<ElementWrapper routeElement={IbutsuHeader} eventEmitter={props.eventEmitter}/>}
+          header={<IbutsuHeader/>}
           sidebar={navigation}
           isManagedSidebar={true}
           style={{position: 'relative'}}
@@ -54,10 +51,6 @@ const AdminPage = (props) => {
         </Page>
       </React.Fragment>
     );
-};
-
-AdminPage.propTypes = {
-    eventEmitter: PropTypes.object,
 };
 
 export default AdminPage;

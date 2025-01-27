@@ -11,16 +11,14 @@ import {
 import { NavLink, Outlet} from 'react-router-dom';
 
 
-import ElementWrapper from './elementWrapper';
 import IbutsuHeader from './ibutsu-header';
-import PropTypes from 'prop-types';
 import { ToastContainer } from 'react-toastify';
 import { ALERT_TIMEOUT } from '../constants';
 import { getDarkTheme } from '../utilities';
 
 
 
-const ProfilePage = (props) => {
+const ProfilePage = () => {
   // TODO useEffect
 
   const navigation = (
@@ -45,7 +43,7 @@ const ProfilePage = (props) => {
     <React.Fragment>
         <ToastContainer autoclose={ALERT_TIMEOUT} />
         <Page
-            header={<ElementWrapper routeElement={IbutsuHeader} eventEmitter={props.eventEmitter}/>}
+            header={<IbutsuHeader/>}
             sidebar={navigation}
             isManagedSidebar={true}
             style={{position: 'relative'}}
@@ -55,9 +53,5 @@ const ProfilePage = (props) => {
     </React.Fragment>
   );
 }
-
-ProfilePage.propTypes = {
-    eventEmitter: PropTypes.object,
-};
 
 export default ProfilePage
