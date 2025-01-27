@@ -52,15 +52,15 @@ const UserDropdown = () => {
     >
       <DropdownList>
         <DropdownItem key="profile">
-          <Link to="/profile/user" className="pf-v5-c-menu__list-item">Profile</Link>
+          <Link to="/profile/user">Profile</Link>
         </DropdownItem>
         {!!isSuperAdmin &&
           <DropdownItem key="admin">
-            <Link to="/admin/home" className="pf-v5-c-menu__list-item">Administration</Link>
+            <Link to="/admin/home">Administration</Link>
           </DropdownItem>
         }
         <DropdownItem key="logout" onClick={logout}>
-          Logout
+          <Link>Logout</Link>
         </DropdownItem>
       </DropdownList>
     </Dropdown>
