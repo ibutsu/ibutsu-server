@@ -16,14 +16,6 @@ const UserDropdown = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  function onDropdownToggle() {
-    setIsDropdownOpen(!isDropdownOpen);
-  }
-
-  function onDropdownSelect() {
-    setIsDropdownOpen(false);
-  }
-
   function logout() {
     AuthService.logout();
     window.location = '/';
@@ -37,12 +29,12 @@ const UserDropdown = () => {
   return (
     <Dropdown
       isOpen={isDropdownOpen}
-      onSelect={onDropdownSelect}
+      onSelect={() => setIsDropdownOpen(false)}
       onOpenChange={() => setIsDropdownOpen(false)}
       toggle={toggleRef => (
         <MenuToggle
           ref={toggleRef}
-          onClick={onDropdownToggle}
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           isExpanded={isDropdownOpen}
           icon={<UserIcon />}
         >
@@ -52,15 +44,15 @@ const UserDropdown = () => {
     >
       <DropdownList>
         <DropdownItem key="profile">
-          <Link to="/profile/user" className="pf-v5-c-menu__list-item">Profile</Link>
+          <Link to="/profile/user">Profile</Link>
         </DropdownItem>
         {!!isSuperAdmin &&
           <DropdownItem key="admin">
-            <Link to="/admin/home" className="pf-v5-c-menu__list-item">Administration</Link>
+            <Link to="/admin/home">Administration</Link>
           </DropdownItem>
         }
         <DropdownItem key="logout" onClick={logout}>
-          Logout
+          <Link>Logout</Link>
         </DropdownItem>
       </DropdownList>
     </Dropdown>
