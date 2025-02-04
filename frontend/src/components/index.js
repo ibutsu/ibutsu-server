@@ -11,4 +11,3 @@ export { ResultView } from './result';
 export { RunSummary } from './runsummary';
 export { TableEmptyState, TableErrorState } from './tablestates';
 export { View } from './view';
-export { EditWidgetModal } from './edit-widget-modal';
