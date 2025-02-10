@@ -21,7 +21,8 @@ import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { ParamDropdown, WidgetHeader } from '../components/widget-components';
+import WidgetHeader from '../components/widget-header';
+import ParamDropdown from '../components/param-dropdown';
 
 export class ImportanceComponentWidget extends React.Component {
   static propTypes = {
