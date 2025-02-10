@@ -10,7 +10,6 @@ export { NewWidgetWizard } from './new-widget-wizard';
 export { ParamDropdown } from './widget-components';
 export { ResultView } from './result';
 export { RunSummary } from './runsummary';
-export { TabTitle } from './tabs';
 export { TableEmptyState, TableErrorState } from './tablestates';
 export { UserDropdown } from './user-dropdown';
 export { View } from './view';
