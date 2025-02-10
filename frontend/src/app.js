@@ -11,11 +11,12 @@ import { RunList } from './run-list';
 import { Run } from './run';
 import { ResultList } from './result-list';
 import { Result } from './result';
-import { View, IbutsuPage } from './components';
+import { IbutsuPage } from './components';
+import View from './components/view';
+
 import { IbutsuContext } from './services/context';
 
 import './app.css';
-
 
 export class App extends React.Component {
   static contextType = IbutsuContext;
@@ -83,7 +84,7 @@ export class App extends React.Component {
 
           <Route
             path="view/:view_id"
-            element={<ElementWrapper routeElement={View} />}
+            element={<View />}
           />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Route>
