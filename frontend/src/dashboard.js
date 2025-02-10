@@ -32,7 +32,8 @@ import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle
 import { HttpClient } from './services/http';
 import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
-import { NewDashboardModal, NewWidgetWizard, EditWidgetModal } from './components';
+import { NewWidgetWizard, EditWidgetModal } from './components';
+import NewDashboardModal from './components/new-dashboard-modal.js';
 import DeleteModal from './components/delete-modal.js';
 import {
   GenericAreaWidget,
@@ -472,9 +473,9 @@ function Dashboard() {
       </PageSection>
       <NewDashboardModal
         project={primaryObject}
+        saveCallback={(newDashboard) => onNewDashboardSave(newDashboard)}
+        closeCallback={() => {setIsNewDBOpen(false)}}
         isOpen={isNewDBOpen}
-        onSave={onNewDashboardSave}
-        onClose={() => {setIsNewDBOpen(false)}}
       />
       <NewWidgetWizard
         dashboard={selectedDB}
