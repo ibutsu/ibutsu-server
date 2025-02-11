@@ -33,7 +33,7 @@ import { HttpClient } from './services/http';
 import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
 import NewDashboardModal from './components/new-dashboard-modal.js';
-import { NewWidgetWizard } from './components';
+import NewWidgetWizard from './components/new-widget-wizard.js';
 import EditWidgetModal from './components/edit-widget-modal.js'
 import DeleteModal from './components/delete-modal.js';
 import {
@@ -481,8 +481,8 @@ function Dashboard() {
       <NewWidgetWizard
         dashboard={selectedDB}
         isOpen={isNewWidgetOpen}
-        onSave={onNewWidgetSave}
-        onClose={() => {setIsNewWidgetOpen(false)}}
+        saveCallback={onNewWidgetSave}
+        closeCallback={() => {setIsNewWidgetOpen(false)}}
       />
       <DeleteModal
         title="Delete Dashboard"
