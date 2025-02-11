@@ -32,8 +32,9 @@ import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle
 import { HttpClient } from './services/http';
 import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
-import { NewWidgetWizard, EditWidgetModal } from './components';
 import NewDashboardModal from './components/new-dashboard-modal.js';
+import { NewWidgetWizard } from './components';
+import EditWidgetModal from './components/edit-widget-modal.js'
 import DeleteModal from './components/delete-modal.js';
 import {
   GenericAreaWidget,
