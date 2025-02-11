@@ -15,7 +15,7 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { toTitleCase } from '../utilities';
-import { WidgetHeader } from '../components/widget-components';
+import WidgetHeader from '../components/widget-header';
 
 export class ResultSummaryWidget extends React.Component {
   static propTypes = {

@@ -22,7 +22,8 @@ import HeatMap from 'react-heatmap-grid';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { ParamDropdown, WidgetHeader } from '../components/widget-components';
+import WidgetHeader from '../components/widget-header';
+import ParamDropdown from '../components/param-dropdown';
 
 
 export class FilterHeatmapWidget extends React.Component {
@@ -230,11 +231,17 @@ export class FilterHeatmapWidget extends React.Component {
       }
     }
     labels.forEach((item) => xLabels.push(item));
-    const actions = this.getJenkinsAnalysisLink() || null;
+    const jenkins_analysis_link = this.getJenkinsAnalysisLink();
 
     return (
       <Card>
-        <WidgetHeader title={this.title} actions={actions} getDataFunc={this.getHeatmap} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
+        <WidgetHeader
+          title={this.title}
+          actions={[jenkins_analysis_link].filter(a => a !== null)}
+          getDataFunc={this.getHeatmap}
+          onEditClick={this.props.onEditClick}
+          onDeleteClick={this.props.onDeleteClick}
+        />
         <CardBody data-id="heatmap" style={{paddingTop: '0.5rem'}}>
           {(!this.state.heatmapError && this.state.isLoading) &&
           <Text component="h2">Loading ...</Text>
@@ -270,7 +277,7 @@ export class FilterHeatmapWidget extends React.Component {
             dropdownItems={this.props.dropdownItems || [3, 5, 6, 7]}
             handleSelect={this.onBuildSelect}
             defaultValue={this.params.builds}
-            tooltip="Set no. of builds to:"
+            tooltip="Number of builds:"
           />
           {this.props.type === 'jenkins' &&
           <ParamDropdown
