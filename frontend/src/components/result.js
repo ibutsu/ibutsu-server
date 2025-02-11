@@ -28,7 +28,7 @@ import { DownloadButton } from './download-button';
 import { linkifyDecorator } from './decorators'
 import { Settings } from '../settings';
 import { getIconForResult, getDarkTheme, round } from '../utilities';
-import { TabTitle } from './tabs';
+import TabTitle from './tabs';
 import { TestHistoryTable } from './test-history';
 
 const MockTest = {
@@ -150,7 +150,7 @@ export class ResultView extends React.Component {
               if (contentType.includes('text')) {
                 response.text().then(text => {
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={<FileAltIcon/>} text={artifact.filename} />}>
                       <Card>
                         <CardBody>
                           <Editor fontFamily="Noto Sans Mono, Hack, monospace" theme="vs-dark" value={text} height="40rem" options={{readOnly: true}} />
@@ -168,7 +168,7 @@ export class ResultView extends React.Component {
                 response.blob().then(blob => {
                   let imageUrl = URL.createObjectURL(blob);
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={<FileImageIcon/>} text={artifact.filename} />}>
                       <Card>
                         <CardBody>
                           <img src={imageUrl} alt={artifact.filename}/>
@@ -266,7 +266,7 @@ export class ResultView extends React.Component {
         {this.state.testResult &&
         <Tabs activeKey={activeTab} onSelect={this.onTabSelect} isBox>
           {!this.props.hideSummary &&
-          <Tab eventKey="summary" title={<TabTitle icon={InfoCircleIcon} text="Summary" />}>
+          <Tab eventKey="summary" title={<TabTitle icon={<InfoCircleIcon/>} text="Summary" />}>
             <Card>
               <CardBody style={{padding: 0}}>
                 <DataList selectedDataListItemId={null} aria-label="Test Result" style={{borderBottom: 'none', borderTop: 'none'}}>
@@ -535,12 +535,12 @@ export class ResultView extends React.Component {
           }
           {!this.props.hideArtifact && artifactTabs}
           {!this.props.hideTestHistory &&
-          <Tab eventKey="test-history" title={<TabTitle icon={SearchIcon} text="Test History"/>}>
+          <Tab eventKey="test-history" title={<TabTitle icon={<SearchIcon/>} text="Test History"/>}>
           {testHistoryTable}
           </Tab>
           }
           {!this.props.hideTestObject &&
-          <Tab eventKey="test-object" title={<TabTitle icon={CodeIcon} text="Test Object" />}>
+          <Tab eventKey="test-object" title={<TabTitle icon={<CodeIcon/>} text="Test Object" />}>
             <Card>
               <CardBody>
                 <JSONTree data={testResult} theme={jsonViewTheme} invertTheme={jsonViewLightThemeOn} hideRoot shouldExpandNodeInitially={() => true}/>
