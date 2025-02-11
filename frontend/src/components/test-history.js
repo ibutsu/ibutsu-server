@@ -33,8 +33,8 @@ import {
 import {
   FilterTable,
   ResultView,
-  RunSummary
 } from './index';
+import RunSummary from './runsummary';
 
 
 export class TestHistoryTable extends React.Component {
