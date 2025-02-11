@@ -35,8 +35,8 @@ import {
   parseFilter,
   resultToRow
 } from './utilities';
-import { FilterTable } from './components';
 import MultiValueInput from './components/multivalueinput'
+import { FilterTable } from './components/filtertable';
 import { OPERATIONS, RESULT_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
 
@@ -759,8 +759,7 @@ export class ResultList extends React.Component {
           <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: 'inherit'}}/>
         }
         {(filterMode === 'text' && operationMode === 'multi') &&
-          <MultiValueInput
-          onValuesChange={this.onInValuesChange} style={{height: 'inherit'}}/>
+          <MultiValueInput onValuesChange={this.onInValuesChange} style={{height: 'inherit'}}/>
         }
         {(filterMode === 'run' && operationMode !== 'bool') &&
           <Select

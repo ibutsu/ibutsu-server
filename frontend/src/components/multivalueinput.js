@@ -66,44 +66,44 @@ const MultiValueInput = (props) => {
     }
   };
 
-    return (
-      <React.Fragment>
-        <TextInputGroup>
-          <TextInputGroupMain
-            value={value}
-            placeholder="Type any value and hit <Enter>"
-            onChange={handleTextInputChange}
-            onKeyDown={handleKeyPress}
-            style={{...style, minWidth: '240px'}}
-            type="text"
-          >
-            <ChipGroup aria-label="Current selections">
-              {values.map((item, index) => (
-                <Chip
-                  key={index}
-                  onClick={() => handleItemRemove(item)}
-                >
-                  {value}
-                </Chip>
-              ))}
-            </ChipGroup>
-          </TextInputGroupMain>
-          <TextInputGroupUtilities>
-            {(values.length > 0 || !!value) && (
-              <Button
-                variant="plain"
-                onClick={() => {
-                  setValues([]);
-                  setValue('');
-                }}
-                aria-label="Clear input value">
-                <TimesIcon aria-hidden />
-              </Button>
-            )}
-          </TextInputGroupUtilities>
-        </TextInputGroup>
-      </React.Fragment>
-    );
+  return (
+    <React.Fragment>
+      <TextInputGroup>
+        <TextInputGroupMain
+          value={value}
+          placeholder="Type any value and hit <Enter>"
+          onChange={handleTextInputChange}
+          onKeyDown={handleKeyPress}
+          style={{...style, minWidth: '240px'}}
+          type="text"
+        >
+          <ChipGroup aria-label="Current selections">
+            {values.map((item, index) => (
+              <Chip
+                key={index}
+                onClick={() => handleItemRemove(item)}
+              >
+                {value}
+              </Chip>
+            ))}
+          </ChipGroup>
+        </TextInputGroupMain>
+        <TextInputGroupUtilities>
+          {(values.length > 0 || !!value) && (
+            <Button
+              variant="plain"
+              onClick={() => {
+                setValues([]);
+                setValue('');
+              }}
+              aria-label="Clear input value">
+              <TimesIcon aria-hidden />
+            </Button>
+          )}
+        </TextInputGroupUtilities>
+      </TextInputGroup>
+    </React.Fragment>
+  );
 }
 
 MultiValueInput.propTypes = {
