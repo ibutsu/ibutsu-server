@@ -35,8 +35,9 @@ import {
   parseFilter,
   round
 } from './utilities';
-import { FilterTable, RunSummary } from './components';
+import { FilterTable } from './components';
 import MultiValueInput from './components/multivalueinput'
+import RunSummary from './components/runsummary';
 import { OPERATIONS, RUN_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
 
