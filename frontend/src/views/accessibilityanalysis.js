@@ -36,8 +36,9 @@ import {
   getSpinnerRow,
   resultToRow,
 } from '../utilities';
-import { FilterTable, TabTitle } from '../components';
+import { FilterTable } from '../components';
 import { IbutsuContext } from '../services/context';
+import TabTitle from '../components/tabs';
 const MockRun = {
   id: null,
   duration: null,
@@ -184,7 +185,7 @@ export class AccessibilityAnalysisView extends React.Component {
               if (contentType.includes('text')) {
                 response.text().then(text => {
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />} style={{backgroundColor: 'white'}}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={<FileAltIcon/>} text={artifact.filename} />} style={{backgroundColor: 'white'}}>
                       <Card>
                         <CardBody>
                           <Editor fontFamily="Hack, monospace" theme="vs-dark" value={text} height="40rem" options={{readOnly: true}} />
@@ -202,7 +203,7 @@ export class AccessibilityAnalysisView extends React.Component {
                 response.blob().then(blob => {
                   let imageUrl = URL.createObjectURL(blob);
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />} style={{backgroundColor: 'white'}}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={<FileImageIcon/>} text={artifact.filename} />} style={{backgroundColor: 'white'}}>
                       <Card>
                         <CardBody>
                           <img src={imageUrl} alt={artifact.filename}/>
@@ -421,7 +422,7 @@ export class AccessibilityAnalysisView extends React.Component {
       <React.Fragment>
         <PageSection>
           <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-            <Tab eventKey="overview" title={<TabTitle icon={CatalogIcon} text="Overview" />} style={{backgroundColor: 'white'}}>
+            <Tab eventKey="overview" title={<TabTitle icon={<CatalogIcon/>} text="Overview" />} style={{backgroundColor: 'white'}}>
               <div style={{ height: '1000px', width: '1250px', backgroundColor: 'white' }}>
                   <ChartDonut
                     ariaDesc="Accessibility results donut chart"
@@ -464,14 +465,14 @@ export class AccessibilityAnalysisView extends React.Component {
                   />
               </div>
             </Tab>
-            <Tab eventKey="run-object" title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: 'white'}}>
+            <Tab eventKey="run-object" title={<TabTitle icon={<CodeIcon/>} text="Run Object" />} style={{backgroundColor: 'white'}}>
               <Card>
                 <CardBody>
                   <JSONTree data={run} theme={jsonViewTheme} invertTheme hideRoot shouldExpandNodeInitially={() => true}/>
                 </CardBody>
               </Card>
             </Tab>
-            <Tab eventKey="results-list" title={<TabTitle icon={CatalogIcon} text="Results List" />} style={{backgroundColor: 'white'}}>
+            <Tab eventKey="results-list" title={<TabTitle icon={<CatalogIcon/>} text="Results List" />} style={{backgroundColor: 'white'}}>
               <Card className="pf-u-mt-lg">
                 <CardHeader>
                   <Flex style={{ width: '100%' }}>
