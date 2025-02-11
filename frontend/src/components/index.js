@@ -5,7 +5,6 @@ export { EmptyObject } from './empty-object';
 export { FilterTable, MetaFilter } from './filtertable';
 export { IbutsuPage } from './ibutsu-page';
 export { MultiValueInput } from './multivalueinput';
-export { NewDashboardModal } from './new-dashboard-modal';
 export { NewWidgetWizard } from './new-widget-wizard';
 export { ParamDropdown } from './widget-components';
 export { ResultView } from './result';
