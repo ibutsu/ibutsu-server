@@ -28,7 +28,8 @@ import {
   getSpinnerRow,
   parseFilter
 } from '../utilities';
-import { FilterTable, MultiValueInput, RunSummary } from '../components';
+import { FilterTable, RunSummary } from '../components';
+import MultiValueInput from '../components/multivalueinput'
 import { OPERATIONS, JJV_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 
