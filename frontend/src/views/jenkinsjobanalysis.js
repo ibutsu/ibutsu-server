@@ -12,9 +12,9 @@ import {
   parseFilter,
 } from '../utilities';
 import { FilterHeatmapWidget, GenericAreaWidget, GenericBarWidget } from '../widgets';
-import { ParamDropdown } from '../components';
 import { HEATMAP_MAX_BUILDS } from '../constants'
 import { IbutsuContext } from '../services/context';
+import ParamDropdown from '../components/param-dropdown';
 
 
 export class JenkinsJobAnalysisView extends React.Component {
@@ -114,11 +114,12 @@ export class JenkinsJobAnalysisView extends React.Component {
     if (activeTab === 'heatmap') {
       defaultValue = Math.min(defaultValue, HEATMAP_MAX_BUILDS);
     }
-    return (<ParamDropdown
+    return (
+      <ParamDropdown
         dropdownItems={dropdownItems}
         defaultValue={defaultValue}
         handleSelect={this.onBuildSelect}
-        tooltip="Set builds to:"
+        tooltip="Number of builds:"
       />);
   }
 

@@ -19,7 +19,8 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { toTitleCase } from '../utilities';
-import { ParamDropdown, WidgetHeader } from '../components/widget-components';
+import WidgetHeader from '../components/widget-header';
+import ParamDropdown from '../components/param-dropdown';
 
 export class GenericBarWidget extends React.Component {
   static propTypes = {
