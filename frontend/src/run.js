@@ -66,8 +66,9 @@ import {
   FilterTable,
   ClassifyFailuresTable,
   ResultView,
-  TabTitle
 } from './components';
+
+import TabTitle from './components/tabs';
 
 const MockRun = {
   id: null,
@@ -244,7 +245,7 @@ export class Run extends React.Component {
               if (contentType.includes('text')) {
                 response.text().then(text => {
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={<FileAltIcon/>} text={artifact.filename} />}>
                       <Card>
                         <CardBody>
                           <Editor fontFamily="Noto Sans Mono, Hack, monospace" theme="vs-dark" value={text} height="40rem" options={{readOnly: true}} />
@@ -262,7 +263,7 @@ export class Run extends React.Component {
                 response.blob().then(blob => {
                   let imageUrl = URL.createObjectURL(blob);
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={<FileImageIcon/>} text={artifact.filename} />}>
                       <Card>
                         <CardBody>
                           <img src={imageUrl} alt={artifact.filename}/>
@@ -523,7 +524,7 @@ export class Run extends React.Component {
           }
           {this.state.isRunValid &&
             <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-              <Tab eventKey="summary" title={<TabTitle icon={InfoCircleIcon} text="Summary" />}>
+              <Tab eventKey="summary" title={<TabTitle icon={<InfoCircleIcon/>} text="Summary" />}>
                 <Card>
                   <CardBody style={{padding: 0}} id="run-detail">
                     <Grid>
@@ -717,7 +718,7 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey="results-list" title={<TabTitle icon={CatalogIcon} text="Results List" />}>
+              <Tab eventKey="results-list" title={<TabTitle icon={<CatalogIcon/>} text="Results List" />}>
                 <Card className="pf-u-mt-lg">
                   <CardHeader>
                     <Flex style={{ width: '100%' }}>
@@ -747,7 +748,7 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey="results-tree" title={<TabTitle icon={RepositoryIcon} text="Results Tree" />}>
+              <Tab eventKey="results-tree" title={<TabTitle icon={<RepositoryIcon/>} text="Results Tree" />}>
                 <Card className="pf-u-mt-lg">
                   <CardBody>
                     <Grid gutter="sm">
@@ -784,11 +785,11 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey="classify-failures" title={<TabTitle icon={MessagesIcon} text="Classify Failures" />}>
+              <Tab eventKey="classify-failures" title={<TabTitle icon={<MessagesIcon/>} text="Classify Failures" />}>
                 {classificationTable}
               </Tab>
               {artifactTabs}
-              <Tab eventKey="run-object" title={<TabTitle icon={CodeIcon} text="Run Object" />}>
+              <Tab eventKey="run-object" title={<TabTitle icon={<CodeIcon/>} text="Run Object" />}>
                 <Card>
                   <CardBody>
                     <JSONTree data={run} theme={jsonViewTheme} invertTheme={jsonViewLightThemeOn} hideRoot shouldExpandNodeInitially={() => true}/>
