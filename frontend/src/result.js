@@ -10,7 +10,8 @@ import {
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import { EmptyObject, ResultView } from './components';
+import { EmptyObject } from './components';
+import ResultView from './components/result';
 
 
 export class Result extends React.Component {
@@ -66,7 +67,7 @@ export class Result extends React.Component {
         </PageSection>
         <PageSection>
           {this.state.isResultValid ?
-            <ResultView testResult={testResult} location={this.props.location} navigate={this.props.navigate} /> :
+            <ResultView testResult={testResult} /> :
             <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list"/>}
         </PageSection>
       </React.Fragment>
