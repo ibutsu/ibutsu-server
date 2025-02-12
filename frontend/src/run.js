@@ -64,11 +64,9 @@ import {
   DownloadButton,
   EmptyObject,
   ClassifyFailuresTable,
-  ResultView,
 } from './components';
 import { FilterTable } from './components/filtertable';
-
-
+import ResultView from './components/result';
 import TabTitle from './components/tabs';
 
 const MockRun = {
@@ -775,7 +773,7 @@ export class Run extends React.Component {
                                 }
                               </CardHeader>
                               <CardBody style={{backgroundColor: 'var(--pf-v5-c-card--BackgroundColor)', paddingTop: '1.2em'}}>
-                                <ResultView testResult={this.state.testResult}/>
+                                <ResultView testResult={this.state.testResult} defaultTab='summary'/>
                               </CardBody>
                             </Card>
                             }

@@ -16,12 +16,8 @@ import {
   TableVariant,
   expandable
 } from '@patternfly/react-table';
-import {
-  ResultView
-} from '../components';
 
 import { FilterTable, MetaFilter } from '../components/filtertable';
-
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
@@ -30,6 +26,7 @@ import {
   resultToComparisonRow
 } from '../utilities';
 import { IbutsuContext } from '../services/context';
+import ResultView from '../components/result';
 
 export class CompareRunsView extends React.Component {
   static contextType = IbutsuContext;

@@ -30,12 +30,10 @@ import {
   getSpinnerRow,
   resultToTestHistoryRow,
 } from '../utilities';
-import {
-  ResultView,
-} from './index';
-import RunSummary from './runsummary';
-import { FilterTable } from './filtertable';
 
+import { FilterTable } from './filtertable';
+import RunSummary from './runsummary';
+import ResultView from './result';
 
 
 export class TestHistoryTable extends React.Component {
