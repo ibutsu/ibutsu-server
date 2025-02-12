@@ -17,10 +17,11 @@ import {
   expandable
 } from '@patternfly/react-table';
 import {
-  FilterTable,
-  MetaFilter,
   ResultView
 } from '../components';
+
+import { FilterTable, MetaFilter } from '../components/filtertable';
+
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {

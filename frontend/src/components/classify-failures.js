@@ -26,11 +26,10 @@ import {
   resultToClassificationRow,
 } from '../utilities';
 import {
-  FilterTable,
   MultiClassificationDropdown,
-  MetaFilter,
   ResultView
 } from './index';
+import { FilterTable, MetaFilter } from './filtertable';
 
 
 export class ClassifyFailuresTable extends React.Component {

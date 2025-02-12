@@ -63,10 +63,11 @@ import {
 import {
   DownloadButton,
   EmptyObject,
-  FilterTable,
   ClassifyFailuresTable,
   ResultView,
 } from './components';
+import { FilterTable } from './components/filtertable';
+
 
 import TabTitle from './components/tabs';
 

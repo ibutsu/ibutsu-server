@@ -20,7 +20,8 @@ import { Link } from 'react-router-dom';
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import { debounce, getSpinnerRow } from '../../utilities';
-import { FilterTable } from '../../components';
+import { FilterTable } from '../../components/filtertable';
+
 
 function projectToRow(project, onDeleteClick) {
   return {
@@ -34,7 +35,7 @@ function projectToRow(project, onDeleteClick) {
             <Button
               variant="primary"
               ouiaId={`admin-projects-edit-${project.id}`}
-              component={(props: any) => <Link {...props} to={`/admin/projects/${project.id}`} />}
+              component={(props) => <Link {...props} to={`/admin/projects/${project.id}`} />}
               size="sm"
             >
               <PencilAltIcon />

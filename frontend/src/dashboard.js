@@ -48,7 +48,7 @@ import { IbutsuContext } from './services/context.js';
 import { useNavigate, useParams } from 'react-router-dom';
 
 
-function Dashboard() {
+const Dashboard = () => {
   const {defaultDashboard, primaryObject } = useContext(IbutsuContext);
   const { dashboard_id, project_id } = useParams();
 

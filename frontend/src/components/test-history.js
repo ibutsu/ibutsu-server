@@ -31,10 +31,11 @@ import {
   resultToTestHistoryRow,
 } from '../utilities';
 import {
-  FilterTable,
   ResultView,
 } from './index';
 import RunSummary from './runsummary';
+import { FilterTable } from './filtertable';
+
 
 
 export class TestHistoryTable extends React.Component {
