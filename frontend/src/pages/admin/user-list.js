@@ -19,7 +19,8 @@ import { Link } from 'react-router-dom';
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import { debounce, getSpinnerRow } from '../../utilities';
-import { FilterTable } from '../../components';
+import { FilterTable } from '../../components/filtertable';
+
 
 function userToRow(user, onDeleteClick) {
   let userName = user.name;

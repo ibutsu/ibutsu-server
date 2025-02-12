@@ -28,7 +28,8 @@ import {
   getSpinnerRow,
   parseFilter
 } from '../utilities';
-import { FilterTable } from '../components';
+
+import { FilterTable } from '../components/filtertable';
 import MultiValueInput from '../components/multivalueinput'
 import RunSummary from '../components/runsummary';
 import { OPERATIONS, JJV_FIELDS } from '../constants';

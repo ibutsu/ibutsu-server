@@ -19,7 +19,7 @@ import { PlusCircleIcon } from '@patternfly/react-icons';
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import { getSpinnerRow } from '../../utilities';
-import { FilterTable } from '../../components';
+import { FilterTable } from '../../components/filtertable';
 import AddTokenModal from '../../components/add-token-modal';
 import DeleteModal from '../../components/delete-modal';
 import ToastWrapper from '../../components/toast-wrapper';

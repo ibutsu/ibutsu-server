@@ -26,11 +26,11 @@ import { Settings } from '../settings';
 import { HttpClient } from '../services/http';
 import { toAPIFilter } from '../utilities';
 
-import { TableEmptyState, TableErrorState } from './tablestates';
+import {TableEmptyState, TableErrorState} from './tablestates'
 import { IbutsuContext } from '../services/context';
 
 
-function FilterTable (props) {
+const FilterTable = (props) => {
   const {
     isEmpty,
     isError,
@@ -44,6 +44,7 @@ function FilterTable (props) {
     onSetPageSize,
     variant
   } = props;
+
   let columns = props.columns || [];
   let rows = props.rows || [];
   let actions = props.actions || [];
@@ -170,7 +171,7 @@ FilterTable.propTypes = {
 
 // TODO Extend this to contain the filter handling functions, and better integrate filter state
 // with FilterTable. See https://github.com/ibutsu/ibutsu-server/issues/230
-function MetaFilter (props) {
+const MetaFilter = (props) => {
   const {
     setFilter,
     activeFilters,
@@ -190,7 +191,7 @@ function MetaFilter (props) {
   const [valueSelections, setValueSelections] = useState([]);
   const [fieldOptions, setFieldOptions] = useState([]);
 
-  function onFieldSelect(event, selection) {
+  const onFieldSelect = (event, selection) => {
     // clear value state too, otherwise the old selection remains selected but is no longer visible
     setFieldSelection(selection);
     setisFieldOpen(false);
@@ -201,7 +202,7 @@ function MetaFilter (props) {
     updateValueOptions();
   };
 
-  function onValueSelect(event, selection) {
+  const onValueSelect = (event, selection) => {
     // update state and call setFilter
     const valueSelections = valueSelections;
     let updatedValues = (valueSelections.includes(selection))
@@ -212,7 +213,7 @@ function MetaFilter (props) {
       setFilter(id, fieldSelection, valueSelections.join(';'));
   };
 
-  function onFieldClear() {
+  const onFieldClear = () => {
     setFieldSelection([]);
     setisFieldOpen(false);
     setIsValueOpen(false);
@@ -220,13 +221,13 @@ function MetaFilter (props) {
     setValueSelections([]);
   };
 
-  function onValueClear() {
+  const onValueClear = () => {
     setValueSelections([]);
     setIsValueOpen(false);
     setFilter(id, fieldSelection, [])
   }
 
-  function updateValueOptions () {
+  const updateValueOptions = () => {
     const customFilters = activeFilters;
     console.debug('CUSTOMFILTER: ' + customFilters);
 
