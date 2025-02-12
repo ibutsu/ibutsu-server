@@ -26,7 +26,7 @@ import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
 import { getIconForResult, getDarkTheme, round } from '../utilities';
 import TabTitle from './tabs';
-import { TestHistoryTable } from './test-history';
+import TestHistoryTable  from './test-history';
 import ArtifactTab from './artifact-tab';
 
 const JSONTHEME = {
