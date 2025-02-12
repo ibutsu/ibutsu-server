@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -24,30 +24,22 @@ import { Settings } from '../settings';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 
-export class ImportanceComponentWidget extends React.Component {
-  static propTypes = {
-    title: PropTypes.string,
-    params: PropTypes.object,
-    onDeleteClick: PropTypes.func,
-    onEditClick: PropTypes.func
-  }
+const ImportanceComponentWidget = (props) => {
+  const {
+    title,
+    params,
+    onDeleteClick,
+    onEditClick
+  } = props;
 
-  constructor(props) {
-    super(props);
-    this.title = props.title || 'Importance Component Widget';
-    this.params = props.params || {};
-    this.state = {
-      data: {
-        table_data: []
-      },
-      isLoading: true,
-      countSkips: 'No',
-    };
-  }
+  const [tableData, setTableData] = useState([]);
+  const [dataError, setDataError] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [countSkips, setCountSkips] = useState('No');
 
-  getData = () => {
-    this.setState({isLoading: true})
-    HttpClient.get([Settings.serverUrl, 'widget', 'importance-component'], this.params)
+  const getData = useCallback(() => {
+    setIsLoading(true);
+    HttpClient.get([Settings.serverUrl, 'widget', 'importance-component'], params)
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
         if (!response.ok) {
@@ -55,50 +47,46 @@ export class ImportanceComponentWidget extends React.Component {
         }
         return response.json();
       })
-      .then(data => this.setState({data: data, isLoading: false}))
+      .then(data => {
+        setTableData(data.table_data);
+        setIsLoading(false);
+        setDataError(false);
+        return data
+      })
       .catch(error => {
-        this.setState({dataError: true});
+        setDataError(true);
         console.log(error);
       });
+  }, [params])
+
+  useEffect(() => {
+    getData();
+  }, [getData]);
+
+  const onSkipSelect = (value) => {
+    setCountSkips(value);
+    params.count_skips = value;
+    getData();
   }
 
-  componentDidMount() {
-    this.getData();
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.params !== this.props.params) {
-      this.params = this.props.params;
-      this.getData();
-    }
-  }
-
-  onSkipSelect = (value) => {
-    this.setState({countSkips: value}, () => {
-      this.props.params.count_skips = (value === 'Yes');
-      this.getData();
-    });
-  }
-
-  toPercent(num) {
+  const toPercent = (num) => {
     if (typeof(num) === 'number') {
       return Math.round(num * 100)
     }
     return num
   }
 
-  render() {
     return (
       <Card>
-        <WidgetHeader title={this.title} getDataFunc={this.getData} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
-        {(!this.state.dataError && this.state.isLoading) &&
+        <WidgetHeader title={title} getDataFunc={getData} onEditClick={onEditClick} onDeleteClick={onDeleteClick}/>
+        {(!dataError && isLoading) &&
         <CardBody>
           <Text component="h2">Loading ...</Text>
         </CardBody>
         }
-        {(!this.state.dataError && !this.state.isLoading) &&
+        {(!dataError && !isLoading) &&
         <CardBody>
-          {this.state.data.table_data.map((tdat) => (
+          {tableData.map(tdat => (
             <div key={tdat.component}>
               <Text key={tdat.component} component="h2">{tdat.component}</Text>
               <Table aria-label="importance-component-table" variant="compact">
@@ -110,11 +98,11 @@ export class ImportanceComponentWidget extends React.Component {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {tdat.importances.map((importance) => (
+                  {tdat.importances.map(importance => (
                   <Tr key={importance}>
                     <Td>{importance}</Td>
-                    {tdat.bnums.map((buildnum) => (
-                      <Td key={buildnum}><Link to={'/project/' + this.props.params.project + `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`}>{this.toPercent(tdat.data[buildnum][importance]['percentage'])}</Link></Td>
+                    {tdat.bnums.map(buildnum => (
+                      <Td key={buildnum}><Link to={'/project/' + params.project + `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`}>{toPercent(tdat.data[buildnum][importance]['percentage'])}</Link></Td>
                     ))}
                   </Tr>
                   ))}
@@ -127,12 +115,20 @@ export class ImportanceComponentWidget extends React.Component {
         <CardFooter>
           <ParamDropdown
             dropdownItems={['Yes', 'No']}
-            handleSelect={this.onSkipSelect}
-            defaultValue={this.state.countSkips}
+            handleSelect={onSkipSelect}
+            defaultValue={countSkips}
             tooltip="Count skips as failure:"
           />
         </CardFooter>
       </Card>
     );
-  }
 }
+
+ImportanceComponentWidget.propTypes = {
+    title: PropTypes.string,
+    params: PropTypes.object,
+    onDeleteClick: PropTypes.func,
+    onEditClick: PropTypes.func
+  }
+
+export default ImportanceComponentWidget;
