@@ -19,9 +19,9 @@ export class Result extends React.Component {
     params: PropTypes.object,
     location: PropTypes.object,
     navigate: PropTypes.func,
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       isResultValid: false,
@@ -30,7 +30,7 @@ export class Result extends React.Component {
     };
   }
 
-  getTestResult() {
+  getTestResult () {
     if (!this.state.id) {
       return;
     }
@@ -50,11 +50,11 @@ export class Result extends React.Component {
       .catch(error => console.log(error));
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getTestResult();
   }
 
-  render() {
+  render () {
     const testResult = this.state.testResult;
     return (
       <React.Fragment>

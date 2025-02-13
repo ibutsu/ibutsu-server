@@ -22,7 +22,7 @@ import { JSONTree } from 'react-json-tree';
 
 import * as http from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
-import { linkifyDecorator } from './decorators'
+import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
 import { getIconForResult, getDarkTheme, round } from '../utilities';
 import TabTitle from './tabs';
@@ -59,7 +59,7 @@ const ResultView = (props) => {
     hideTestObject=false,
     hideTestHistory=false,
     testResult
-   } = props;
+  } = props;
 
   // State
   const [artifacts, setArtifacts] = useState([]);
@@ -131,12 +131,12 @@ const ResultView = (props) => {
     window.addEventListener('popstate', handlePopState);
     return () => {
       window.removeEventListener('popstate', handlePopState);
-    }
+    };
   }, [activeTab, getTestHistoryTable, handlePopState]);
 
   const onTabSelect = (_event, tabIndex) => {
     if (location) {
-      navigate(`${location.pathname}${location.search}#${tabIndex}`)
+      navigate(`${location.pathname}${location.search}#${tabIndex}`);
     }
     setActiveTab(tabIndex);
   };
@@ -145,21 +145,21 @@ const ResultView = (props) => {
     const artTabs=[];
     artifacts.forEach((art) => {
       artTabs.push(
-      <Tab
-        key={art.filename}
-        eventKey={art.filename}
-        title={<TabTitle
+        <Tab
+          key={art.filename}
+          eventKey={art.filename}
+          title={<TabTitle
             icon={<FileAltIcon/>}
             text={art.filename}/>}><ArtifactTab artifact={art} /></Tab>
-        )
+      );
     });
     setArtifactTabs(artTabs);
-  }, [artifacts])
+  }, [artifacts]);
 
   useEffect(() => {
     // Get artifacts when the test result changes
     if (testResult) {
-        http.HttpClient.get([Settings.serverUrl, 'artifact'], {resultId: testResult.id})
+      http.HttpClient.get([Settings.serverUrl, 'artifact'], {resultId: testResult.id})
         .then(response => http.HttpClient.handleResponse(response))
         .then(data => { setArtifacts(data['artifacts']); })
         .catch((error) => console.error(error));
@@ -189,30 +189,30 @@ const ResultView = (props) => {
       <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
         {!hideSummary &&
         <Tab key="summary" eventKey="summary" title={<TabTitle icon={<InfoCircleIcon/>} text="Summary" />}>
-        <Card>
-          <CardBody style={{padding: 0}}>
-            <DataList selectedDataListItemId={null} aria-label="Test Result" style={{borderBottom: 'none', borderTop: 'none'}}>
-              <DataListItem isExpanded={false} aria-labelledby="result-label">
-                <DataListItemRow>
-                  <DataListItemCells
-                    dataListCells={[
-                      <DataListCell key="result-label" width={2}><strong>Result:</strong></DataListCell>,
-                      <DataListCell key="result-data" width={4}><span className={testResult.result}>{resultIcon} {testResult.result}</span></DataListCell>
-                    ]}
-                  />
-                </DataListItemRow>
-              </DataListItem>
-              <DataListItem aria-labelledby="run-label">
-                <DataListItemRow>
-                  <DataListItemCells
-                    dataListCells={[
-                      <DataListCell key="run-label" width={2}><strong>Run:</strong></DataListCell>,
-                      <DataListCell key="run-data" width={4}>{runLink}</DataListCell>
-                    ]}
-                  />
-                </DataListItemRow>
-              </DataListItem>
-              {testResult.component &&
+          <Card>
+            <CardBody style={{padding: 0}}>
+              <DataList selectedDataListItemId={null} aria-label="Test Result" style={{borderBottom: 'none', borderTop: 'none'}}>
+                <DataListItem isExpanded={false} aria-labelledby="result-label">
+                  <DataListItemRow>
+                    <DataListItemCells
+                      dataListCells={[
+                        <DataListCell key="result-label" width={2}><strong>Result:</strong></DataListCell>,
+                        <DataListCell key="result-data" width={4}><span className={testResult.result}>{resultIcon} {testResult.result}</span></DataListCell>
+                      ]}
+                    />
+                  </DataListItemRow>
+                </DataListItem>
+                <DataListItem aria-labelledby="run-label">
+                  <DataListItemRow>
+                    <DataListItemCells
+                      dataListCells={[
+                        <DataListCell key="run-label" width={2}><strong>Run:</strong></DataListCell>,
+                        <DataListCell key="run-data" width={4}>{runLink}</DataListCell>
+                      ]}
+                    />
+                  </DataListItemRow>
+                </DataListItem>
+                {testResult.component &&
               <DataListItem aria-labelledby="component-label">
                 <DataListItemRow>
                   <DataListItemCells
@@ -223,8 +223,8 @@ const ResultView = (props) => {
                   />
                 </DataListItemRow>
               </DataListItem>
-              }
-              {testResult.metadata && testResult.metadata.code_link &&
+                }
+                {testResult.metadata && testResult.metadata.code_link &&
               <DataListItem aria-labelledby="code-link-label">
                 <DataListItemRow>
                   <DataListItemCells
@@ -235,8 +235,8 @@ const ResultView = (props) => {
                   />
                 </DataListItemRow>
               </DataListItem>
-              }
-              {testResult.metadata && testResult.metadata.tags &&
+                }
+                {testResult.metadata && testResult.metadata.tags &&
               <DataListItem aria-labelledby="tags-label">
                 <DataListItemRow>
                   <DataListItemCells
@@ -251,8 +251,8 @@ const ResultView = (props) => {
                   />
                 </DataListItemRow>
               </DataListItem>
-              }
-              {testResult.result === 'skipped' && testResult.metadata && testResult.metadata.skip_reason &&
+                }
+                {testResult.result === 'skipped' && testResult.metadata && testResult.metadata.skip_reason &&
               <DataListItem aria-labelledby="skip-reason-label">
                 <DataListItemRow>
                   <DataListItemCells
@@ -263,8 +263,8 @@ const ResultView = (props) => {
                   />
                 </DataListItemRow>
               </DataListItem>
-              }
-              {testResult.result === 'xfailed' && testResult.metadata && testResult.metadata.xfail_reason &&
+                }
+                {testResult.result === 'xfailed' && testResult.metadata && testResult.metadata.xfail_reason &&
               <DataListItem aria-labelledby="xfail-reason-label">
                 <DataListItemRow>
                   <DataListItemCells
@@ -275,8 +275,8 @@ const ResultView = (props) => {
                   />
                 </DataListItemRow>
               </DataListItem>
-              }
-              {(testResult.result === 'failed' || testResult.result === 'error' || testResult.result === 'skipped') &&
+                }
+                {(testResult.result === 'failed' || testResult.result === 'error' || testResult.result === 'skipped') &&
               <DataListItem aria-labelledby="classification-label">
                 <DataListItemRow>
                   <DataListItemCells
@@ -289,15 +289,15 @@ const ResultView = (props) => {
                   />
                 </DataListItemRow>
               </DataListItem>
-              }
-              <DataListItem aria-labelledby="duration">
-                <DataListItemRow>
-                  <DataListItemCells
-                    dataListCells={[
-                      <DataListCell key="duration-label" width={2}><strong>Duration:</strong></DataListCell>,
-                      <DataListCell key="duration-data" width={4} style={{paddingTop: 0, paddingBottom: 0, marginBottom: '-25px'}}>
-                        <DataList selectedDataListItemId={null} aria-label="Durations" style={{borderTop: 'none'}}>
-                          {(testResult.start_time ? testResult.start_time : testResult.starttime) > 0 &&
+                }
+                <DataListItem aria-labelledby="duration">
+                  <DataListItemRow>
+                    <DataListItemCells
+                      dataListCells={[
+                        <DataListCell key="duration-label" width={2}><strong>Duration:</strong></DataListCell>,
+                        <DataListCell key="duration-data" width={4} style={{paddingTop: 0, paddingBottom: 0, marginBottom: '-25px'}}>
+                          <DataList selectedDataListItemId={null} aria-label="Durations" style={{borderTop: 'none'}}>
+                            {(testResult.start_time ? testResult.start_time : testResult.starttime) > 0 &&
                             <DataListItem className="pf-u-p-0" aria-labelledby="started-label">
                               <DataListItemRow>
                                 <DataListItemCells
@@ -308,18 +308,18 @@ const ResultView = (props) => {
                                 />
                               </DataListItemRow>
                             </DataListItem>
-                          }
-                          <DataListItem className="pf-u-p-0" aria-labelledby="total-label">
-                            <DataListItemRow>
-                              <DataListItemCells
-                                dataListCells={[
-                                  <DataListCell key="total-label" className="pf-u-p-sm">Total:</DataListCell>,
-                                  <DataListCell key="total-data" className="pf-u-p-sm">{round(testResult.duration)}s</DataListCell>
-                                ]}
-                              />
-                            </DataListItemRow>
-                          </DataListItem>
-                          {testResult.metadata && testResult.metadata.durations &&
+                            }
+                            <DataListItem className="pf-u-p-0" aria-labelledby="total-label">
+                              <DataListItemRow>
+                                <DataListItemCells
+                                  dataListCells={[
+                                    <DataListCell key="total-label" className="pf-u-p-sm">Total:</DataListCell>,
+                                    <DataListCell key="total-data" className="pf-u-p-sm">{round(testResult.duration)}s</DataListCell>
+                                  ]}
+                                />
+                              </DataListItemRow>
+                            </DataListItem>
+                            {testResult.metadata && testResult.metadata.durations &&
                             <React.Fragment>
                               {testResult.metadata.durations.setup &&
                                 <DataListItem className="pf-u-p-0" aria-labelledby="setup-label">
@@ -358,14 +358,14 @@ const ResultView = (props) => {
                                 </DataListItem>
                               }
                             </React.Fragment>
-                          }
-                        </DataList>
-                      </DataListCell>
-                    ]}
-                  />
-                </DataListItemRow>
-              </DataListItem>
-              {testResult.metadata && testResult.metadata.statuses &&
+                            }
+                          </DataList>
+                        </DataListCell>
+                      ]}
+                    />
+                  </DataListItemRow>
+                </DataListItem>
+                {testResult.metadata && testResult.metadata.statuses &&
                 <DataListItem aria-labelledby="stages-label">
                   <DataListItemRow>
                     <DataListItemCells
@@ -415,44 +415,44 @@ const ResultView = (props) => {
                     />
                   </DataListItemRow>
                 </DataListItem>
-              }
-              <DataListItem aria-labelledby="source-label">
-                <DataListItemRow>
-                  <DataListItemCells
-                    dataListCells={[
-                      <DataListCell key="source-label" width={2}><strong>Source:</strong></DataListCell>,
-                      <DataListCell key="source-data" width={4}><Link to={`../results?source[eq]=${testResult.source}`} relative="Path">{testResult.source}</Link></DataListCell>
-                    ]}
-                  />
-                </DataListItemRow>
-              </DataListItem>
-              {parameters.length > 0 &&
+                }
+                <DataListItem aria-labelledby="source-label">
+                  <DataListItemRow>
+                    <DataListItemCells
+                      dataListCells={[
+                        <DataListCell key="source-label" width={2}><strong>Source:</strong></DataListCell>,
+                        <DataListCell key="source-data" width={4}><Link to={`../results?source[eq]=${testResult.source}`} relative="Path">{testResult.source}</Link></DataListCell>
+                      ]}
+                    />
+                  </DataListItemRow>
+                </DataListItem>
+                {parameters.length > 0 &&
                 <DataListItem aria-labelledby="params-label">
                   <DataListItemRow>
                     <DataListItemCells
                       dataListCells={[
-                          <DataListCell key="params-label" width={2}><strong>Parameters:</strong></DataListCell>,
-                          <DataListCell key="params-data" width={4}>{parameters}</DataListCell>
+                        <DataListCell key="params-label" width={2}><strong>Parameters:</strong></DataListCell>,
+                        <DataListCell key="params-data" width={4}>{parameters}</DataListCell>
                       ]}
                     />
                   </DataListItemRow>
                 </DataListItem>
-              }
-              {testResult.metadata && Object.prototype.hasOwnProperty.call(testResult, 'short_tb') &&
+                }
+                {testResult.metadata && Object.prototype.hasOwnProperty.call(testResult, 'short_tb') &&
                 <DataListItem aria-labelledby="traceback-label">
                   <DataListItemRow>
                     <DataListItemCells
                       dataListCells={[
-                          <DataListCell key="traceback-label" width={2}><strong>Traceback:</strong></DataListCell>,
-                          <DataListCell key="traceback-data" width={4}><div style={{overflow: 'scroll', width: '100%'}}><pre><code>{testResult.metadata.short_tb}</code></pre></div></DataListCell>
+                        <DataListCell key="traceback-label" width={2}><strong>Traceback:</strong></DataListCell>,
+                        <DataListCell key="traceback-data" width={4}><div style={{overflow: 'scroll', width: '100%'}}><pre><code>{testResult.metadata.short_tb}</code></pre></div></DataListCell>
                       ]}
                     />
                   </DataListItemRow>
                 </DataListItem>
-              }
-            </DataList>
-          </CardBody>
-        </Card>
+                }
+              </DataList>
+            </CardBody>
+          </Card>
         </Tab>
         }
         {!hideArtifact &&

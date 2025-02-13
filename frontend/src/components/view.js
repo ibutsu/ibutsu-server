@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router';
 
 import {
   PageSection,
@@ -30,12 +30,12 @@ const View = () => {
   useEffect(() =>{
     if (params?.view_id) {
       HttpClient.get([Settings.serverUrl, 'widget-config', params.view_id])
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => setView(data))
-      .catch((error) => {console.error(error)});
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => setView(data))
+        .catch((error) => {console.error(error);});
     }
 
-  }, [params])
+  }, [params]);
 
   document.title = view ? view.title + ' | Ibutsu' : document.title;
   const ViewComponent = view ? VIEW_MAP[view.widget] : null;
@@ -56,7 +56,7 @@ const View = () => {
         }
       </PageSection>
     </React.Fragment>
-    );
-}
+  );
+};
 
 export default View;

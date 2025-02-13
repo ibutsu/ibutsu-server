@@ -46,9 +46,9 @@ export class GenericAreaWidget extends React.Component {
     yLabel: PropTypes.string,
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.title = props.title || 'Generic Area Chart';
     this.params = props.params || {};
@@ -60,7 +60,7 @@ export class GenericAreaWidget extends React.Component {
     };
   }
 
-  getLabels() {
+  getLabels () {
     if (this.props.percentData) {
       return ({datum}) => `${toTitleCase(datum.name, true)}: ${datum.y} %`;
     }
@@ -69,7 +69,7 @@ export class GenericAreaWidget extends React.Component {
     }
   }
 
-  getData() {
+  getData () {
     this.setState({isLoading: true});
     let widgetEndpoint = this.props.widgetEndpoint || 'jenkins-line-chart';
     HttpClient.get([Settings.serverUrl, 'widget', widgetEndpoint], this.params)
@@ -89,7 +89,7 @@ export class GenericAreaWidget extends React.Component {
       });
   }
 
-  getLegendData() {
+  getLegendData () {
     let legendData = [];
     for (const legend of Object.keys(this.state.data)) {
       legendData.push({name: toTitleCase(legend, true)});
@@ -97,14 +97,14 @@ export class GenericAreaWidget extends React.Component {
     return legendData;
   }
 
-  getAreaCharts() {
+  getAreaCharts () {
     let areaCharts = [];
-    let index = 0
+    let index = 0;
     for (const key of Object.keys(this.state.data)) {
       let chartData = [];
       if (key !== 'filter') {
         for (const groupField of Object.keys(this.state.data[key])) {
-          chartData.push({name: toTitleCase(key), x: groupField, y: this.state.data[key][groupField]})
+          chartData.push({name: toTitleCase(key), x: groupField, y: this.state.data[key][groupField]});
         }
         if (chartData.length !== 0) {
           areaCharts.push(
@@ -117,25 +117,25 @@ export class GenericAreaWidget extends React.Component {
               style={this.props.getColors ? {data: { fill: this.props.getColors(key)}}: {}}
             />
           );
-          index++
+          index++;
         }
       }
     }
     this.setState({areaCharts});
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getData();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps.params !== this.props.params) {
       this.params = this.props.params;
       this.getData();
     }
   }
 
-  getTooltip() {
+  getTooltip () {
     const { showTooltip } = this.props;
     const CursorVoronoiContainer = createContainer('cursor', 'voronoi');
     if (showTooltip) {
@@ -148,14 +148,14 @@ export class GenericAreaWidget extends React.Component {
           voronoiDimension="x"
           voronoiPadding={50}
         />
-      )
+      );
     }
     else {
       return <ChartContainer/>;
     }
   }
 
-  render() {
+  render () {
     const legendData = this.getLegendData();
     return (
       <Card>
@@ -216,8 +216,8 @@ export class GenericAreaWidget extends React.Component {
           {this.props.varExplanation &&
           <Text component="h3">{this.props.varExplanation}</Text>
           }
-       </CardFooter>
+        </CardFooter>
       </Card>
-    )
+    );
   }
 }

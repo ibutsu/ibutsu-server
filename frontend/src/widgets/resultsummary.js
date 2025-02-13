@@ -23,9 +23,9 @@ export class ResultSummaryWidget extends React.Component {
     params: PropTypes.object,
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.title = props.title || 'Result Summary';
     this.params = props.params || {};
@@ -62,20 +62,20 @@ export class ResultSummaryWidget extends React.Component {
         this.setState({dataError: true});
         console.log(error);
       });
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getResultSummary();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps.params !== this.props.params) {
       this.params = this.props.params;
       this.getResultSummary();
     }
   }
 
-  render() {
+  render () {
     const themeColors = [
       'var(--pf-v5-global--success-color--100)',
       'var(--pf-v5-global--danger-color--100)',
@@ -123,13 +123,13 @@ export class ResultSummaryWidget extends React.Component {
           {!this.state.isLoading &&
           <ChartLegend
             data={[
-                {name: 'Passed (' + this.state.summary.passed + ')'},
-                {name: 'Failed (' + this.state.summary.failed + ')'},
-                {name: 'Skipped (' + this.state.summary.skipped + ')'},
-                {name: 'Error (' + this.state.summary.error + ')'},
-                {name: 'Xfailed (' + this.state.summary.xfailed + ')'},
-                {name: 'Xpassed (' + this.state.summary.xpassed + ')'}
-              ]}
+              {name: 'Passed (' + this.state.summary.passed + ')'},
+              {name: 'Failed (' + this.state.summary.failed + ')'},
+              {name: 'Skipped (' + this.state.summary.skipped + ')'},
+              {name: 'Error (' + this.state.summary.error + ')'},
+              {name: 'Xfailed (' + this.state.summary.xfailed + ')'},
+              {name: 'Xpassed (' + this.state.summary.xpassed + ')'}
+            ]}
             height={120}
             orientation="horizontal"
             responsive={false}

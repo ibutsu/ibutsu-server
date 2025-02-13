@@ -25,11 +25,11 @@ const ParamDropdown = (props) => {
     setIsOpen(!isOpen);
     handleSelect(event.target.innerText);
     setValue(event.target.innerText);
-  }
+  };
 
   useEffect(()=>{
-    setValue(defaultValue)
-  }, [defaultValue, setValue])
+    setValue(defaultValue);
+  }, [defaultValue, setValue]);
 
   return (
     // TODO this formatting of the dropdown labels is ugly as hell

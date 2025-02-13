@@ -16,7 +16,7 @@ const UserDropdown = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  function logout() {
+  function logout () {
     AuthService.logout();
     window.location = '/';
   }
@@ -57,6 +57,6 @@ const UserDropdown = () => {
       </DropdownList>
     </Dropdown>
   );
-}
+};
 
 export default UserDropdown;

@@ -70,9 +70,9 @@ const ImportanceComponentWidget = (props) => {
 
   const toPercent = (num) => {
     if (typeof(num) === 'number') {
-      return Math.round(num * 100)
+      return Math.round(num * 100);
     }
-    return num
+    return num;
   }
 
     return (

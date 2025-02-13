@@ -9,14 +9,14 @@ const ElementWrapper = (props) => {
   const location = useLocation();
   const navigate = useNavigate();
   const Element = props.routeElement;
-  const eventEmitter = props.eventEmitter
+  const eventEmitter = props.eventEmitter;
 
   return <Element eventEmitter={eventEmitter} location={location} navigate={navigate} params={params} />;
 };
 
 ElementWrapper.propTypes = {
-    eventEmitter: PropTypes.object,
-    routeElement: PropTypes.func,
+  eventEmitter: PropTypes.object,
+  routeElement: PropTypes.func,
 };
 
 export default ElementWrapper;
