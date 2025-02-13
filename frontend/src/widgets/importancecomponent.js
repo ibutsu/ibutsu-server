@@ -51,7 +51,6 @@ const ImportanceComponentWidget = (props) => {
         setTableData(data.table_data);
         setIsLoading(false);
         setDataError(false);
-        return data
       })
       .catch(error => {
         setDataError(true);
