@@ -1,5 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect, useState } from 'react';
 
 import {
   ActionGroup,
@@ -22,9 +21,10 @@ import {
   TextInputGroup,
   TextInputGroupMain,
   TextInputGroupUtilities,
-  Title
+  Title,
+  ValidatedOptions
 } from '@patternfly/react-core';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { TimesIcon } from '@patternfly/react-icons';
 
@@ -33,448 +33,415 @@ import { Settings } from '../../settings';
 import { dashboardToOption } from '../../utilities.js';
 
 
-function userToOption (user) {
+const userToOption = (user) => {
   if (!user) {
     return '';
   }
   return {
     user: user,
-    toString: function () { return this.user.name; },
+    toString: function () { return user.name; },
     compareTo: function (value) {
       if (value.user) {
-        return this.user.id === value.user.id;
+        return user.id === value.user.id;
       }
-      return this.user.name.toLowerCase().includes(value.toLowerCase()) ||
-        this.user.email.includes(value.toLowerCase());
+      return user.name.toLowerCase().includes(value.toLowerCase()) ||
+        user.email.includes(value.toLowerCase());
     }
   };
-}
+};
 
-export class ProjectEdit extends React.Component {
-  static propTypes = {
-    params: PropTypes.object,
-    location: PropTypes.object,
-    navigate: PropTypes.func,
-  };
+const ProjectEdit = () => {
 
-  constructor (props) {
-    super(props);
-    this.state = {
-      id: props.params.id,
-      project: {},
-      filteredUsers: [],
-      users: [],
-      isOwnerOpen: false,
-      selectedOwner: {},
-      filterValueOwner: '',
-      inputValueOwner: '',
-      filteredDashboards: [],
-      dashboards: [],
-      isDashboardOpen: false,
-      selectedDashboard: null,
-      filterValueDashboard: '',
-      inputValueDashboard: '',
+  const params = useParams();
+  const navigate = useNavigate();
+
+  // project title and name states, required
+  const [id, setId] = useState();
+  const [title, setTitle] = useState('');
+  const [crumbTitle, setCrumbTitle] = useState('');
+  const [titleValid, setTitleValid] = useState(false);
+  const [name, setName] = useState('');
+  const [nameValid, setNameValid] = useState(false);
+
+
+  // owner selection state
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [isOwnerOpen, setIsOwnerOpen] = useState(false);
+  const [selectedOwner, setSelectedOwner] = useState({});
+  const [filterValueOwner, setFilterValueOwner] = useState('');
+  const [inputValueOwner, setInputValueOwner] = useState('');
+
+  // dashboard selection state
+  const [filteredDashboards, setFilteredDashboards] = useState([]);
+  const [dashboards, setDashboards] = useState([]);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [selectedDashboard, setSelectedDashboard] = useState();
+  const [filterValueDashboard, setFilterValueDashboard] = useState('');
+  const [inputValueDashboard, setInputValueDashboard] = useState('');
+
+  // sync URL and the state
+  useEffect(() => {
+    setId(params.id);
+  }, [params]);
+
+  const onSubmitClick = () => {
+    let project = {
+      title: title,
+      name: name,
+      owner_id: selectedOwner ? selectedOwner.id : null,
+      default_dashboard_id: selectedDashboard ? selectedDashboard.id : null,
     };
-  }
 
-  onProjectNameChanged = (value) => {
-    const { project } = this.state;
-    project.name = value;
-    this.setState({project});
-  };
-
-  onProjectTitleChanged = (value) => {
-    const { project } = this.state;
-    project.title = value;
-    this.setState({project});
-  };
-
-  onSubmitClick = () => {
-    const { project, selectedOwner, selectedDashboard } = this.state;
-    project.owner_id = selectedOwner ? selectedOwner.id : null;
-    project.default_dashboard_id = selectedDashboard ? selectedDashboard.id : null;
-    delete project.owner;
-    // delete project.defaultDashboard;
-    this.saveProject(project.id || null, project)
-      .then(() => this.props.navigate(-1))
-      .catch((error) => console.error(error));
-  };
-
-  onOwnerToggle = () => {
-    this.setState({isOwnerOpen: !this.state.isOwnerOpen});
-  };
-
-  onDashboardToggle = () => {
-    this.setState({isDashboardOpen: !this.state.isDashboardOpen});
-  };
-
-  onOwnerInputChange = (_event, value) => {
-    this.setState({inputValueOwner: value});
-    this.setState({filterValueOwner: value});
-  };
-
-  onOwnerSelect = (event, value) => {
-    this.setState({
-      selectedOwner: value.user,
-      isOwnerOpen: false,
-      filterValueOwner: '',
-      inputValueOwner: value.user.name
-    });
-  };
-
-  onOwnerClear = () => {
-    this.setState({
-      selectedOwner: null,
-      inputValueOwner: '',
-      filterValueOwner: ''
-    });
-  };
-
-  getProject (projectId) {
-    HttpClient.get([Settings.serverUrl, 'admin', 'project', projectId])
-      .then(response => {
-        response = HttpClient.handleResponse(response, 'response');
-        return response.json();
-      })
-      .then(project => {
-        this.setState({project: project, selectedOwner: project.owner,
-          inputValueOwner: project.owner?.name,
-          selectedDashboard: project.defaultDashboard,
-          inputValueDashboard: project.defaultDashboard?.title});
-      })
-      .catch(error => console.error(error));
-  }
-
-  onDashboardSelect = (event, value) => {
-    this.setState({
-      selectedDashboard: value.dashboard,
-      isDashboardOpen: false,
-      filterValueDashboard: '',
-      inputValueDashboard: value.dashboard.title
-    });
-  };
-
-  onDashboardClear = () => {
-    this.setState({
-      selectedDashboard: null,
-      inputValueDashboard: '',
-      filterValueDashboard: ''
-    });
-  };
-
-  onDashboardInputChange = (_event, value) => {
-    this.setState({inputValueDashboard: value});
-    this.setState({filterValueDashboard: value});
-  };
-
-  getDashboards () {
-    if (!this.state.id || this.state.id == 'new' || !this.state.project) {
-      return;
-    }
-    let params = {
-      'project_id': this.state.id,
-      'pageSize': 10
-    };
-    HttpClient.get([Settings.serverUrl, 'dashboard'], params)
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => this.setState({dashboards: data['dashboards'], filteredDashboards: data['dashboards']}));
-  }
-
-  getUsers () {
-    HttpClient.get([Settings.serverUrl, 'admin', 'user'])
-      .then(response => {
-        response = HttpClient.handleResponse(response, 'response');
-        return response.json();
-      })
-      .then(data => this.setState({users: data.users, filteredUsers: data.users}))
-      .catch(error => console.error(error));
-  }
-
-  saveProject (projectId, project) {
     let request = null;
-    if (!projectId) {
+    if (id === 'new') {
       request = HttpClient.post([Settings.serverUrl, 'admin', 'project'], project);
     }
     else {
-      request = HttpClient.put([Settings.serverUrl, 'admin', 'project', projectId], {}, project);
+      request = HttpClient.put([Settings.serverUrl, 'admin', 'project', id], {}, project);
     }
-    return request.then(response => HttpClient.handleResponse(response, 'response'))
-      .then(response => response.json());
-  }
+    request.then(response => HttpClient.handleResponse(response))
+      .then(() => navigate(-1))
+      .catch((error) => console.error(error));
+  };
 
-  componentDidMount () {
-    if (this.state.id === 'new') {
-      this.setState({project: {title: 'New project', name: 'new-project'}});
+  const onOwnerInputChange = (_event, value) => {
+    setInputValueOwner(value);
+    setFilterValueOwner(value);
+  };
+
+  const onOwnerSelect = (event, value) => {
+    setSelectedOwner(value.user);
+    setIsOwnerOpen(false);
+    setFilterValueOwner('');
+    setInputValueOwner(value.user.name);
+  };
+
+  const onOwnerClear = () => {
+    setSelectedOwner(null);
+    setFilterValueOwner('');
+    setInputValueOwner('');
+  };
+
+  const onDashboardSelect = (event, value) => {
+    setSelectedDashboard(value.dashboard);
+    setIsDashboardOpen(false);
+    setFilterValueDashboard('');
+    setInputValueDashboard(value.dashboard.title);
+  };
+
+  const onDashboardClear = () => {
+    setSelectedDashboard(null);
+    setInputValueDashboard('');
+    setFilterValueDashboard('');
+  };
+
+  const onDashboardInputChange = (_event, value) => {
+    setInputValueDashboard(value);
+    setFilterValueDashboard(value);
+  };
+
+  // fetch the admin users once
+  useEffect(() => {
+    HttpClient.get([Settings.serverUrl, 'admin', 'user'])
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => {
+        setUsers(data.users);
+        setFilteredUsers(data.users);
+      })
+      .catch(error => console.error(error));
+  }, []);
+
+  // fetch the project if needed
+  useEffect(() => {
+    if (id === 'new') {
+      setTitle('New project');
+      setName('new-project');
+    } else if (id) {
+      HttpClient.get([Settings.serverUrl, 'admin', 'project', id])
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          setTitle(data.title);
+          setCrumbTitle(data.title);
+          setName(data.name);
+          setSelectedOwner(data.owner);
+          setInputValueOwner(data.owner?.name);
+          setSelectedDashboard(data.defaultDashboard);
+          setInputValueDashboard(data.defaultDashboard?.title);
+        })
+        .catch(error => {
+          console.error(error);
+          navigate('/admin/projects');
+        });
     }
-    else {
-      this.getProject(this.state.id);
-      this.getDashboards();
+  }, [id, navigate]);
+
+  // validate Title
+  useEffect(() => {
+    setTitleValid(title !== '');
+  }, [title]);
+
+  // validate Name
+  useEffect(() => {
+    setNameValid(name !== '');
+  }, [name]);
+
+  // get dashboards for the project
+  useEffect(() => {
+    if (id && id !== 'new') {
+      HttpClient.get([Settings.serverUrl, 'dashboard'], {
+        'project_id': id,
+        'pageSize': 10
+      })
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          setDashboards(data['dashboards']);
+          setFilteredDashboards(data['dashboards']);
+        })
+        .catch(error => console.error(error));
     }
-    this.getUsers();
-  }
+  }, [id]);
 
-  componentDidUpdate (prevProps, prevState) {
-    if (
-      prevState.filterValueDashboard !== this.state.filterValueDashboard
-    ) {
-      let newSelectOptionsDashboard = this.state.dashboards;
-      if (this.state.inputValueDashboard) {
-        newSelectOptionsDashboard = this.state.dashboards.filter(menuItem =>
-          String(menuItem.title).toLowerCase().includes(this.state.filterValueDashboard.toLowerCase())
-        );
-        if (newSelectOptionsDashboard.length === 0) {
-          newSelectOptionsDashboard = [{
-            isDisabled: true,
-            value: {},
-            title: `No results found for "${this.state.filterValueDashboard}"`,
-          }];
-        }
-
-        if (!this.state.isDashboardOpen) {
-          this.setState({ isDashboardOpen: true });
-        }
+  // update dashboard filtering and selection items
+  useEffect(() => {
+    let newSelectOptionsDashboard = [...dashboards];
+    if (inputValueDashboard) {
+      newSelectOptionsDashboard = dashboards.filter(menuItem =>
+        String(menuItem.title).toLowerCase().includes(filterValueDashboard.toLowerCase())
+      );
+      if (newSelectOptionsDashboard.length === 0) {
+        newSelectOptionsDashboard = [{
+          isDisabled: true,
+          value: {},
+          title: `No results found for "${filterValueDashboard}"`,
+        }];
       }
-
-      this.setState({
-        filteredDashboards: newSelectOptionsDashboard,
-      });
     }
+    setFilteredDashboards(newSelectOptionsDashboard);
+  }, [dashboards, filterValueDashboard, inputValueDashboard, isDashboardOpen]);
 
-    if (
-      prevState.filterValueOwner !== this.state.filterValueOwner
-    ) {
-      let newSelectOptionsUser = this.state.users;
-      if (this.state.inputValueOwner) {
-        newSelectOptionsUser = this.state.users.filter(menuItem =>
-          String(menuItem.name).toLowerCase().includes(this.state.filterValueOwner.toLowerCase())
-        );
-        if (newSelectOptionsUser.length === 0) {
-          newSelectOptionsUser = [{
-            isDisabled: true,
-            value: {},
-            name: `No results found for "${this.state.filterValueOwner}"`,
-          }];
-        }
-
-        if (!this.state.isOwnerOpen) {
-          this.setState({ isOwnerOpen: true });
-        }
+  // update owner filtering and selection items
+  useEffect(() => {
+    let newSelectOptionsUser = [...users];
+    if (inputValueOwner) {
+      newSelectOptionsUser = users.filter(menuItem =>
+        String(menuItem.name).toLowerCase().includes(filterValueOwner.toLowerCase())
+      );
+      if (newSelectOptionsUser.length === 0) {
+        newSelectOptionsUser = [{
+          isDisabled: true,
+          value: {},
+          name: `No results found for "${filterValueOwner}"`,
+        }];
       }
-
-      this.setState({
-        filteredUsers: newSelectOptionsUser,
-      });
     }
-  }
+    setFilteredUsers(newSelectOptionsUser);
+  }, [filterValueOwner, inputValueOwner, isOwnerOpen, users]);
 
+  const toggleOwner = (toggleRef) => (
+    <MenuToggle
+      innerRef={toggleRef}
+      variant="typeahead"
+      aria-label="Typeahead menu toggle"
+      onClick={() => {setIsOwnerOpen(!isOwnerOpen);}}
+      isExpanded={isOwnerOpen}
+      isFullWidth
+    >
+      <TextInputGroup isPlain>
+        <TextInputGroupMain
+          value={inputValueOwner}
+          onClick={() => {setIsOwnerOpen(!isOwnerOpen);}}
+          onChange={onOwnerInputChange}
+          id="typeahead-select-input"
+          autoComplete="off"
+          placeholder="Select project owner"
+          role="combobox"
+          isExpanded={isOwnerOpen}
+          aria-controls="select-typeahead-listbox"
+        />
+        <TextInputGroupUtilities>
+          {(!!inputValueOwner) && (
+            <Button
+              variant="plain"
+              onClick={onOwnerClear}
+              aria-label="Clear input value"
+            >
+              <TimesIcon aria-hidden />
+            </Button>
+          )}
+        </TextInputGroupUtilities>
+      </TextInputGroup>
+    </MenuToggle>
+  );
 
-  render () {
-    const { project, filteredUsers, selectedOwner, filteredDashboards, selectedDashboard, inputValueDashboard, inputValueOwner } = this.state;
+  const toggleDashboard = (toggleRef) => (
+    <MenuToggle
+      innerRef={toggleRef}
+      variant="typeahead"
+      aria-label="Typeahead menu toggle"
+      onClick={() => {setIsDashboardOpen(!isDashboardOpen);}}
+      isExpanded={isDashboardOpen}
+      isFullWidth
+      isDisabled={filteredDashboards.length === 0 ? true : false }
+    >
+      <TextInputGroup isPlain>
+        <TextInputGroupMain
+          value={inputValueDashboard}
+          onClick={() => {setIsDashboardOpen(!isDashboardOpen);}}
+          onChange={onDashboardInputChange}
+          id="typeahead-select-input"
+          autoComplete="off"
+          placeholder="Select dashboard"
+          role="combobox"
+          isExpanded={isDashboardOpen}
+          aria-controls="select-typeahead-listbox"
+        />
+        <TextInputGroupUtilities>
+          {(!!inputValueDashboard) && (
+            <Button
+              variant="plain"
+              onClick={onDashboardClear}
+              aria-label="Clear input value"
+            >
+              <TimesIcon aria-hidden />
+            </Button>
+          )}
+        </TextInputGroupUtilities>
+      </TextInputGroup>
+    </MenuToggle>
+  );
 
-    const toggleOwner = toggleRef => (
-      <MenuToggle
-        innerRef={toggleRef}
-        variant="typeahead"
-        aria-label="Typeahead menu toggle"
-        onClick={this.onOwnerToggle}
-        isExpanded={this.state.isOwnerOpen}
-        isFullWidth
-      >
-        <TextInputGroup isPlain>
-          <TextInputGroupMain
-            value={inputValueOwner}
-            onClick={this.onOwnerToggle}
-            onChange={this.onOwnerInputChange}
-            id="typeahead-select-input"
-            autoComplete="off"
-            placeholder="Select project owner"
-            role="combobox"
-            isExpanded={this.state.isOwnerOpen}
-            aria-controls="select-typeahead-listbox"
-          />
-          <TextInputGroupUtilities>
-            {(!!inputValueOwner) && (
-              <Button
-                variant="plain"
-                onClick={() => {
-                  this.onOwnerClear();
-                }}
-                aria-label="Clear input value"
-              >
-                <TimesIcon aria-hidden />
-              </Button>
-            )}
-          </TextInputGroupUtilities>
-        </TextInputGroup>
-      </MenuToggle>
-    );
+  return (
+    <React.Fragment>
+      <PageSection variant={PageSectionVariants.light}>
+        <Title headingLevel="h1" size='2xl' className="pf-v5-c-title">
+          Projects / {crumbTitle}
+        </Title>
+      </PageSection>
+      <PageSection>
+        {!title && <Alert variant="info" title="Loading..." />}
+        <Card>
+          <CardBody>
+            <Form>
+              <FormGroup label="Title" isRequired fieldId="projectTitle">
+                <TextInput
+                  isRequired
+                  type="text"
+                  id="projectTitle"
+                  name="projectTitle"
+                  aria-describedby="The project display name"
+                  value={title}
+                  onChange={(_event, value) => setTitle(value)}
+                  validated={titleValid ? ValidatedOptions.default : ValidatedOptions.error}
+                />
+                <FormHelperText>
+                  <HelperText>
+                    <HelperTextItem>The project display name</HelperTextItem>
+                  </HelperText>
+                </FormHelperText>
+              </FormGroup>
+              <FormGroup label="Name" isRequired fieldId="projectName">
+                <TextInput
+                  isRequired
+                  type="text"
+                  id="projectName"
+                  name="projectName"
+                  aria-describedby="The project machine name"
+                  value={name}
+                  onChange={(_event, value) => setName(value)}
+                  validated={nameValid ? ValidatedOptions.default : ValidatedOptions.error}
+                />
+                <FormHelperText>
+                  <HelperText>
+                    <HelperTextItem>The project machine name</HelperTextItem>
+                  </HelperText>
+                </FormHelperText>
+              </FormGroup>
+              <FormGroup fieldId="owner" label="Owner">
+                <Select
+                  id="typeahead-select-owner"
+                  isOpen={isOwnerOpen}
+                  selected={selectedOwner}
+                  onSelect={onOwnerSelect}
+                  onOpenChange={() => setIsOwnerOpen(false)}
+                  toggle={toggleOwner}
+                >
+                  <SelectList id="select-typeahead-listbox">
+                    {filteredUsers?.map((user, index) => (
+                      <SelectOption
+                        key={user.id || index}
+                        onClick={() => setSelectedOwner(user)}
+                        value={userToOption(user)}
+                        description={user.email}
+                        isDisabled={user.isDisabled}
+                        ref={null}
+                      >
+                        {user.name}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
+                </Select>
+                <FormHelperText>
+                  <HelperText>
+                    <HelperTextItem>The user who owns the project</HelperTextItem>
+                  </HelperText>
+                </FormHelperText>
+              </FormGroup>
+              <FormGroup fieldId="default-dashboard" label="Default dashboard">
+                <Select
+                  id="typeahead-select-dashboard"
+                  isOpen={isDashboardOpen}
+                  selected={selectedDashboard}
+                  onSelect={onDashboardSelect}
+                  onOpenChange={() => setIsDashboardOpen(false)}
+                  toggle={toggleDashboard}
+                >
+                  <SelectList id="select-typeahead-listbox">
+                    {filteredDashboards.map((dashboard, index) => (
+                      <SelectOption
+                        key={dashboard.id || index}
+                        onClick={() => setSelectedDashboard(dashboard)}
+                        value={dashboardToOption(dashboard)}
+                        description={dashboard.description}
+                        isDisabled={dashboard.isDisabled}
+                        ref={null}
+                      >
+                        {dashboard.title}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
+                </Select>
+                <FormHelperText>
+                  <HelperText>
+                    <HelperTextItem>The default dashboard for the project</HelperTextItem>
+                  </HelperText>
+                </FormHelperText>
+              </FormGroup>
+              <ActionGroup>
+                <Button
+                  variant="primary"
+                  ouiaId="admin-project-edit-save"
+                  onClick={onSubmitClick}
+                  disabled={titleValid && nameValid}
+                >
+                  Submit
+                </Button>
+                <Button
+                  variant="secondary"
+                  ouiaId="admin-project-edit-cancel"
+                  component={(props) => <Link {...props} to="/admin/projects" />}
+                >
+                  Cancel
+                </Button>
+              </ActionGroup>
+            </Form>
+          </CardBody>
+        </Card>
+      </PageSection>
+    </React.Fragment>
+  );
+};
 
-    const toggleDashboard = toggleRef => (
-      <MenuToggle
-        innerRef={toggleRef}
-        variant="typeahead"
-        aria-label="Typeahead menu toggle"
-        onClick={this.onDashboardToggle}
-        isExpanded={this.state.isDashboardOpen}
-        isFullWidth
-        isDisabled={filteredDashboards.length === 0 ? true : false }
-      >
-        <TextInputGroup isPlain>
-          <TextInputGroupMain
-            value={inputValueDashboard}
-            onClick={this.onDashboardToggle}
-            onChange={this.onDashboardInputChange}
-            id="typeahead-select-input"
-            autoComplete="off"
-            placeholder="Select dashboard"
-            role="combobox"
-            isExpanded={this.state.isDashboardOpen}
-            aria-controls="select-typeahead-listbox"
-          />
-          <TextInputGroupUtilities>
-            {(!!inputValueDashboard) && (
-              <Button
-                variant="plain"
-                onClick={() => {
-                  this.onDashboardClear();
-                }}
-                aria-label="Clear input value"
-              >
-                <TimesIcon aria-hidden />
-              </Button>
-            )}
-          </TextInputGroupUtilities>
-        </TextInputGroup>
-      </MenuToggle>
-    );
+ProjectEdit.propTypes = {};
 
-    return (
-      <React.Fragment>
-        <PageSection variant={PageSectionVariants.light}>
-          <Title headingLevel="h1" size='2xl' className="pf-v5-c-title">
-            Projects / {project && project.title}
-          </Title>
-        </PageSection>
-        <PageSection>
-          {!project && <Alert variant="info" title="Loading..." />}
-          {project &&
-          <Card>
-            <CardBody>
-              <Form>
-                <FormGroup label="Title" isRequired fieldId="projectTitle">
-                  <TextInput
-                    isRequired
-                    type="text"
-                    id="projectTitle"
-                    name="projectTitle"
-                    aria-describedby="The project's friendly name"
-                    value={project.title || ''}
-                    onChange={(_event, value) => this.onProjectTitleChanged(value)}
-                  />
-                  <FormHelperText>
-                    <HelperText>
-                      <HelperTextItem>The project&lsquo;s friendly name</HelperTextItem>
-                    </HelperText>
-                  </FormHelperText>
-                </FormGroup>
-                <FormGroup label="Name" isRequired fieldId="projectName">
-                  <TextInput
-                    isRequired
-                    type="text"
-                    id="projectName"
-                    name="projectName"
-                    aria-describedby="The project's machine name"
-                    value={project.name || ''}
-                    onChange={(_event, value) => this.onProjectNameChanged(value)}
-                  />
-                  <FormHelperText>
-                    <HelperText>
-                      <HelperTextItem>The project&lsquo;s machine name</HelperTextItem>
-                    </HelperText>
-                  </FormHelperText>
-                </FormGroup>
-                <FormGroup fieldId="owner" label="Owner">
-                  <Select
-                    id="typeahead-select-owner"
-                    isOpen={this.state.isOwnerOpen}
-                    selected={selectedOwner}
-                    onSelect={this.onOwnerSelect}
-                    onOpenChange={() => this.setState({isOwnerOpen: false})}
-                    toggle={toggleOwner}
-                  >
-                    <SelectList id="select-typeahead-listbox">
-                      {filteredUsers.map((user, index) => (
-                        <SelectOption
-                          key={user.id || index}
-                          onClick={() => this.setState({selectedOwner: user})}
-                          value={userToOption(user)}
-                          description={user.email}
-                          isDisabled={user.isDisabled}
-                          ref={null}
-                        >
-                          {user.name}
-                        </SelectOption>
-                      ))}
-                    </SelectList>
-                  </Select>
-                  <FormHelperText>
-                    <HelperText>
-                      <HelperTextItem>The user who owns the project</HelperTextItem>
-                    </HelperText>
-                  </FormHelperText>
-                </FormGroup>
-                <FormGroup fieldId="default-dashboard" label="Default dashboard">
-                  <Select
-                    id="typeahead-select-dashboard"
-                    isOpen={this.state.isDashboardOpen}
-                    selected={selectedDashboard}
-                    onSelect={this.onDashboardSelect}
-                    onOpenChange={() => this.setState({isDashboardOpen: false})}
-                    toggle={toggleDashboard}
-                  >
-                    <SelectList id="select-typeahead-listbox">
-                      {filteredDashboards.map((dashboard, index) => (
-                        <SelectOption
-                          key={dashboard.id || index}
-                          onClick={() => this.setState({selectedDashboard: dashboard})}
-                          value={dashboardToOption(dashboard)}
-                          description={dashboard.description}
-                          isDisabled={dashboard.isDisabled}
-                          ref={null}
-                        >
-                          {dashboard.title}
-                        </SelectOption>
-                      ))}
-                    </SelectList>
-                  </Select>
-                  <FormHelperText>
-                    <HelperText>
-                      <HelperTextItem>The default dashboard for the project</HelperTextItem>
-                    </HelperText>
-                  </FormHelperText>
-                </FormGroup>
-                <ActionGroup>
-                  <Button
-                    variant="primary"
-                    ouiaId="admin-project-edit-save"
-                    onClick={this.onSubmitClick}
-                  >
-                    Submit
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    ouiaId="admin-project-edit-cancel"
-                    component={(props) => <Link {...props} to="/admin/projects" />}
-                  >
-                    Cancel
-                  </Button>
-                </ActionGroup>
-              </Form>
-            </CardBody>
-          </Card>
-          }
-        </PageSection>
-      </React.Fragment>
-    );
-  }
-}
+export default ProjectEdit;
