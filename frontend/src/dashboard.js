@@ -40,10 +40,10 @@ import {
   GenericAreaWidget,
   GenericBarWidget,
   FilterHeatmapWidget,
-  ImportanceComponentWidget,
   ResultAggregatorWidget,
   ResultSummaryWidget
 } from './widgets';
+import ImportanceComponentWidget from './widgets/importancecomponent'
 import { IbutsuContext } from './services/context.js';
 import { useNavigate, useParams } from 'react-router-dom';
 
