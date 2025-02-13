@@ -36,15 +36,15 @@ class PasswordErrorBoundary extends React.Component {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError() {
+  static getDerivedStateFromError () {
     return { hasError: true };
   }
 
-  componentDidCatch() {
+  componentDidCatch () {
     console.error('Failed to load password strength indicator');
   }
 
-  render() {
+  render () {
     if (this.state.hasError) {
       // Hide the components, we don't need to worry about it
       return '';
@@ -59,7 +59,7 @@ export class SignUp extends React.Component {
     location: PropTypes.object
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       alertText: '',
@@ -95,32 +95,32 @@ export class SignUp extends React.Component {
         confirmPasswordValidation: 'error'
       });
     }
-  }
+  };
 
   onEmailChange = emailValue => {
     this.setState({ emailValue });
-  }
+  };
 
   onPasswordChange = passwordValue => {
     this.setState({ passwordValue }, this.validatePasswordMatch);
-  }
+  };
 
   onConfirmPasswordChange = confirmPasswordValue => {
     this.setState({ confirmPasswordValue }, this.validatePasswordMatch);
-  }
+  };
 
   onPasswordVisibleClick = () => {
     this.setState({isPasswordVisible: !this.state.isPasswordVisible});
-  }
+  };
 
   onConfirmPasswordVisibleClick = () => {
     this.setState({isConfirmPasswordVisible: !this.state.isConfirmPasswordVisible});
-  }
+  };
 
   onRegisterButtonClick = event => {
     event.preventDefault();
     const isValidEmail = !!this.state.emailValue;
-    const isValidPassword = (!!this.state.passwordValue && this.state.passwordValue === this.state.confirmPasswordValue)
+    const isValidPassword = (!!this.state.passwordValue && this.state.passwordValue === this.state.confirmPasswordValue);
     this.setState({isValidEmail, isValidPassword});
     if (isValidEmail && isValidPassword) {
       AuthService.register(this.state.emailValue, this.state.passwordValue)
@@ -155,9 +155,9 @@ export class SignUp extends React.Component {
         showAlert: true
       });
     }
-  }
+  };
 
-  render() {
+  render () {
     const loginMessage = (
       <LoginMainFooterBandItem>
         Already registered? <NavLink to="/login">Log in.</NavLink>

@@ -6,7 +6,7 @@ import { Button } from '@patternfly/react-core';
 import { HttpClient } from '../services/http';
 
 
-export function DownloadButton(props) {
+export function DownloadButton (props) {
   let { url, filename, children, ...rest } = props;
   if (!filename) {
     filename = url.split('/').pop();
@@ -24,7 +24,7 @@ export function DownloadButton(props) {
         aElement.click();
         URL.revokeObjectURL(href);
       });
-  }
+  };
 
   return <Button onClick={handleClick} {...rest}>{children}</Button>;
 }

@@ -39,7 +39,7 @@ import { useLocation } from 'react-router-dom';
 
 const COLUMNS = ['Report', 'Status', 'Actions'];
 
-function ReportBuilder() {
+function ReportBuilder () {
   const context = useContext(IbutsuContext);
   const {primaryObject} = context;
 
@@ -80,13 +80,13 @@ function ReportBuilder() {
       filterString = filters.join();
       setReportFilter(filterString);
     }
-  }, [location])
+  }, [location]);
 
   useEffect(() => {
     HttpClient.get([Settings.serverUrl, 'report', 'types'])
       .then(response => HttpClient.handleResponse(response))
       .then(data => setReportTypes(data));
-  }, [])
+  }, []);
 
   useEffect(() => {
     const reportToRow = (report) => {
@@ -113,7 +113,7 @@ function ReportBuilder() {
           {title: row_actions}
         ]
       };
-    }
+    };
 
     const getReports = () => {
       let params = {
@@ -142,7 +142,7 @@ function ReportBuilder() {
           setIsEmpty(false);
           setIsError(true);
         });
-    }
+    };
 
     getReports();
 
@@ -150,10 +150,10 @@ function ReportBuilder() {
 
     return () => {
       clearInterval(intervalId.current);
-    }
-  }, [primaryObject])
+    };
+  }, [primaryObject]);
 
-  function onRunReportClick() {
+  function onRunReportClick () {
     let params = {
       type: reportType,
       filter: reportFilter,
@@ -195,7 +195,7 @@ function ReportBuilder() {
               </FormGroup>
               <FormGroup label="Filter" fieldId="report-filter">
                 <TextInput type="text" id="report-filter" value={reportFilter} onChange={(_event, change) => setReportFilter(change)} />
-                <ExpandableSection toggleText="Filter Help" onToggle={() => {setIsHelpExpanded(!isHelpExpanded)}} isExpanded={isHelpExpanded}>
+                <ExpandableSection toggleText="Filter Help" onToggle={() => {setIsHelpExpanded(!isHelpExpanded);}} isExpanded={isHelpExpanded}>
                   <TextContent>
                     <p>The filter parameter takes a comma-separated list of filters to apply. <Linkify componentDecorator={linkifyDecorator}>https://docs.ibutsu-project.org/en/latest/user-guide/filter-help.html</Linkify></p>
                   </TextContent>
@@ -230,8 +230,8 @@ function ReportBuilder() {
               pagination={pagination}
               isEmpty={isEmpty}
               isError={isError}
-              onSetPage={(_event, change) => {pagination_page.current = change}}
-              onSetPageSize={(_event, change) => {pagination_pageSize.current = change}}
+              onSetPage={(_event, change) => {pagination_page.current = change;}}
+              onSetPageSize={(_event, change) => {pagination_pageSize.current = change;}}
             />
           </CardBody>
         </Card>

@@ -43,7 +43,7 @@ export class UserEdit extends React.Component {
     navigate: PropTypes.func,
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       id: props.params.id,
@@ -60,13 +60,13 @@ export class UserEdit extends React.Component {
     const { user } = this.state;
     user.name = value;
     this.setState({user});
-  }
+  };
 
   onUserEmailChanged = (value) => {
     const { user } = this.state;
     user.email = value;
     this.setState({user});
-  }
+  };
 
   onIsActiveToggle = (checked) => {
     const { user } = this.state;
@@ -112,9 +112,9 @@ export class UserEdit extends React.Component {
       isProjectsOpen: false,
       inputValue: ''
     });
-  }
+  };
 
-  getUser(userId) {
+  getUser (userId) {
     HttpClient.get([Settings.serverUrl, 'admin', 'user', userId])
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
@@ -124,7 +124,7 @@ export class UserEdit extends React.Component {
       .catch(error => console.error(error));
   }
 
-  getProjects() {
+  getProjects () {
     HttpClient.get([Settings.serverUrl, 'admin', 'project'])
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
@@ -134,7 +134,7 @@ export class UserEdit extends React.Component {
       .catch(error => console.error(error));
   }
 
-  saveUser(userId, user) {
+  saveUser (userId, user) {
     return HttpClient.put([Settings.serverUrl, 'admin', 'user', userId], {}, user)
       .then(response => HttpClient.handleResponse(response, 'response'))
       .then(response => response.json());
@@ -142,18 +142,18 @@ export class UserEdit extends React.Component {
 
   goBack = () => {
     this.props.navigate(-1);
-  }
+  };
 
   onTextInputChange = (_event, value) => {
     this.setState({inputValue: value});
   };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getUser(this.state.id);
     this.getProjects();
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate (prevProps, prevState) {
     if (
       prevState.inputValue !== this.state.inputValue
     ) {
@@ -182,7 +182,7 @@ export class UserEdit extends React.Component {
     }
   }
 
-  render() {
+  render () {
     const { projects, inputValue, filteredProjects, user, userProjects } = this.state;
 
     const toggle = toggleRef => (
@@ -235,7 +235,7 @@ export class UserEdit extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
 
     return (
       <React.Fragment>
@@ -313,28 +313,28 @@ export class UserEdit extends React.Component {
                     toggle={toggle}
                   >
                     <SelectList isAriaMultiselectable id="select-multi-typeahead-listbox">
-                    {(projects.length === 0 && inputValue === '') && (
-                      <SelectOption
-                        isDisabled={true}
-                        description="To create your first project, navigate to projects and click on 'Add project'"
-                      >
+                      {(projects.length === 0 && inputValue === '') && (
+                        <SelectOption
+                          isDisabled={true}
+                          description="To create your first project, navigate to projects and click on 'Add project'"
+                        >
                       No projects exists
-                      </SelectOption>
-                    )}
-                    {filteredProjects.map((project, index) => (
-                      <SelectOption
-                        key={project.id || index}
-                        value={projectToOption(project)}
-                        description={project.name}
-                        isDisabled={project.isDisabled}
-                        ref={null}
-                      >
-                      {project.title}
-                      </SelectOption>
-                    ))}
+                        </SelectOption>
+                      )}
+                      {filteredProjects.map((project, index) => (
+                        <SelectOption
+                          key={project.id || index}
+                          value={projectToOption(project)}
+                          description={project.name}
+                          isDisabled={project.isDisabled}
+                          ref={null}
+                        >
+                          {project.title}
+                        </SelectOption>
+                      ))}
                     </SelectList>
                   </Select>
-                   <FormHelperText>
+                  <FormHelperText>
                     <HelperText>
                       <HelperTextItem>The projects to which a user has access</HelperTextItem>
                     </HelperText>

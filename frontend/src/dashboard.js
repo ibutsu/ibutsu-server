@@ -34,7 +34,7 @@ import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
 import NewDashboardModal from './components/new-dashboard-modal.js';
 import NewWidgetWizard from './components/new-widget-wizard.js';
-import EditWidgetModal from './components/edit-widget-modal.js'
+import EditWidgetModal from './components/edit-widget-modal.js';
 import DeleteModal from './components/delete-modal.js';
 import {
   GenericAreaWidget,
@@ -43,7 +43,7 @@ import {
   ResultAggregatorWidget,
   ResultSummaryWidget
 } from './widgets';
-import ImportanceComponentWidget from './widgets/importancecomponent'
+import ImportanceComponentWidget from './widgets/importancecomponent';
 import { IbutsuContext } from './services/context.js';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -115,7 +115,7 @@ const Dashboard = () => {
             if (default_db_item) {
               setSelectedDB(default_db_item);
               setSelectDBInputValue(default_db_item.title);
-              navigate('/project/' + default_db_item.project_id + '/dashboard/' + default_db_item.id)
+              navigate('/project/' + default_db_item.project_id + '/dashboard/' + default_db_item.id);
             }
           }
         })
@@ -138,35 +138,35 @@ const Dashboard = () => {
         })
         .catch(error => console.error(error));
     }
-  }, [dashboard_id, selectedDB])
+  }, [dashboard_id, selectedDB]);
 
 
-  function onDashboardSelect(_event, value) {
+  function onDashboardSelect (_event, value) {
     // state update
     setSelectedDB(value);
     setIsDBSelectorOpen(false);
     setFilterDBValue('');
     setSelectDBInputValue(value.title);
 
-    navigate('/project/' + value.project_id + '/dashboard/' + value.id)
+    navigate('/project/' + value.project_id + '/dashboard/' + value.id);
   }
 
-  function onDashboardClear() {
+  function onDashboardClear () {
     // state update
     setSelectedDB();
     setIsDBSelectorOpen(false);
     setSelectDBInputValue('');
     setFilterDBValue('');
 
-    navigate('/project/' + project_id + '/dashboard/')
+    navigate('/project/' + project_id + '/dashboard/');
   }
 
-  function handleDBFilterInput(e) {
+  function handleDBFilterInput (e) {
     setSelectDBInputValue(e.target.value);
     setFilterDBValue(e.target.value);
   }
 
-  function onNewDashboardSave(newDashboard) {
+  function onNewDashboardSave (newDashboard) {
     HttpClient.post([Settings.serverUrl, 'dashboard'], newDashboard)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
@@ -176,12 +176,12 @@ const Dashboard = () => {
       .catch(error => console.error(error));
   }
 
-  function onDeleteWidgetClick(id) {
+  function onDeleteWidgetClick (id) {
     setIsDeleteWidgetOpen(true);
-    setCurrentWidget(id)
+    setCurrentWidget(id);
   }
 
-  function onNewWidgetSave(widgetData) {
+  function onNewWidgetSave (widgetData) {
     if (!widgetData.project_id && primaryObject) {
       widgetData.project_id = primaryObject.id;
     }
@@ -190,29 +190,29 @@ const Dashboard = () => {
       .catch(error => console.error(error));
   }
 
-  function onEditWidgetSave(editedData) {
+  function onEditWidgetSave (editedData) {
     if (!editedData.project_id && primaryObject) {
       editedData.project_id = primaryObject.id;
     }
     HttpClient.put([Settings.serverUrl, 'widget-config', currentWidget], '', editedData)
-        .then(response => HttpClient.handleResponse(response))
-        .catch(error => console.error(error));
+      .then(response => HttpClient.handleResponse(response))
+      .catch(error => console.error(error));
     setIsEditModalOpen(false);
   }
 
-  function onEditWidgetClick(id) {
+  function onEditWidgetClick (id) {
     setIsEditModalOpen(true);
 
     HttpClient.get([Settings.serverUrl, 'widget-config', id])
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          setCurrentWidget(id);
-          setEditWidgetData(data);
-        })
-        .catch(error => {
-          console.error(error);
-          setIsEditModalOpen(false);
-        });
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => {
+        setCurrentWidget(id);
+        setEditWidgetData(data);
+      })
+      .catch(error => {
+        console.error(error);
+        setIsEditModalOpen(false);
+      });
 
   }
 
@@ -223,7 +223,7 @@ const Dashboard = () => {
       ref={toggleRef}
       variant="typeahead"
       aria-label="Typeahead menu toggle"
-      onClick={() => {setIsDBSelectorOpen({isDBSelectorOpen: !isDBSelectorOpen})}}
+      onClick={() => {setIsDBSelectorOpen({isDBSelectorOpen: !isDBSelectorOpen});}}
       isExpanded={isDBSelectorOpen}
       isFullWidth
       isDisabled={!primaryObject}
@@ -231,7 +231,7 @@ const Dashboard = () => {
       <TextInputGroup isPlain>
         <TextInputGroupMain
           value={selectDBInputValue}
-          onClick={() => {setIsDBSelectorOpen({isDBSelectorOpen: !isDBSelectorOpen})}}
+          onClick={() => {setIsDBSelectorOpen({isDBSelectorOpen: !isDBSelectorOpen});}}
           onChange={handleDBFilterInput}
           id="typeahead-select-input"
           autoComplete="off"
@@ -253,7 +253,7 @@ const Dashboard = () => {
         </TextInputGroupUtilities>
       </TextInputGroup>
     </MenuToggle>
-  )
+  );
 
   return (
     <React.Fragment>
@@ -272,7 +272,7 @@ const Dashboard = () => {
                 selected={selectedDB}
                 onSelect={onDashboardSelect}
                 onOpenChange={() => {
-                  setIsDBSelectorOpen(false)
+                  setIsDBSelectorOpen(false);
                 }}
                 toggle={
                   toggle
@@ -292,7 +292,7 @@ const Dashboard = () => {
                   {filteredDBs?.map((dash, index) => (
                     <SelectOption
                       key={dash.id || index}
-                      onClick={() => {setSelectedDB(dash)}}
+                      onClick={() => {setSelectedDB(dash);}}
                       value={dash}
                       {...dash}
                     >
@@ -308,7 +308,7 @@ const Dashboard = () => {
                 variant="plain"
                 title="New dashboard"
                 isDisabled={isDBSelectorOpen}
-                onClick={() => {setIsNewDBOpen(true)}}
+                onClick={() => {setIsNewDBOpen(true);}}
               >
                 <PlusCircleIcon />
               </Button>
@@ -319,7 +319,7 @@ const Dashboard = () => {
                 variant="plain"
                 title="Delete dashboard"
                 isDisabled={!selectedDB}
-                onClick={() => {setIsDeleteDBOpen(true)}}
+                onClick={() => {setIsDeleteDBOpen(true);}}
               >
                 <TimesCircleIcon />
               </Button>
@@ -333,7 +333,7 @@ const Dashboard = () => {
                 variant="secondary"
                 title="Add widget"
                 isDisabled={!selectedDB}
-                onClick={() => {setIsNewWidgetOpen(true)}}
+                onClick={() => {setIsNewWidgetOpen(true);}}
               >
                 <PlusCircleIcon /> Add Widget
               </Button>
@@ -354,8 +354,8 @@ const Dashboard = () => {
                       params={widget.params}
                       includeAnalysisLink={true}
                       type='jenkins'
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id)}}
-                      onEditClick={() => {onEditWidgetClick(widget.id)}}
+                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
+                      onEditClick={() => {onEditWidgetClick(widget.id);}}
                     />
                   }
                   {(widget.type === 'widget' && widget.widget === 'filter-heatmap') &&
@@ -363,8 +363,8 @@ const Dashboard = () => {
                       title={widget.title}
                       params={widget.params}
                       includeAnalysisLink={true}
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id)}}
-                      onEditClick={() => {onEditWidgetClick(widget.id)}}
+                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
+                      onEditClick={() => {onEditWidgetClick(widget.id);}}
                     />
                   }
                   {(widget.type === 'widget' && widget.widget === 'run-aggregator') &&
@@ -374,24 +374,24 @@ const Dashboard = () => {
                       horizontal={true}
                       percentData={true}
                       barWidth={20}
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id)}}
-                      onEditClick={() => {onEditWidgetClick(widget.id)}}
+                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
+                      onEditClick={() => {onEditWidgetClick(widget.id);}}
                     />
                   }
                   {(widget.type === 'widget' && widget.widget === 'result-summary') &&
                     <ResultSummaryWidget
                       title={widget.title}
                       params={widget.params}
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id)}}
-                      onEditClick={() => {onEditWidgetClick(widget.id)}}
+                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
+                      onEditClick={() => {onEditWidgetClick(widget.id);}}
                     />
                   }
                   {(widget.type === 'widget' && widget.widget === 'result-aggregator') &&
                     <ResultAggregatorWidget
                       title={widget.title}
                       params={widget.params}
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id)}}
-                      onEditClick={() => {onEditWidgetClick(widget.id)}}
+                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
+                      onEditClick={() => {onEditWidgetClick(widget.id);}}
                     />
                   }
                   {(widget.type === 'widget' && widget.widget === 'jenkins-line-chart') &&
@@ -400,8 +400,8 @@ const Dashboard = () => {
                       params={widget.params}
                       yLabel="Execution time"
                       widgetEndpoint="jenkins-line-chart"
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id)}}
-                      onEditClick={() => {onEditWidgetClick(widget.id)}}
+                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
+                      onEditClick={() => {onEditWidgetClick(widget.id);}}
                     />
                   }
                   {(widget.type === 'widget' && widget.widget === 'jenkins-bar-chart') &&
@@ -412,8 +412,8 @@ const Dashboard = () => {
                       horizontal={true}
                       hideDropdown={true}
                       widgetEndpoint="jenkins-bar-chart"
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id)}}
-                      onEditClick={() => {onEditWidgetClick(widget.id)}}
+                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
+                      onEditClick={() => {onEditWidgetClick(widget.id);}}
                     />
                   }
                   {(widget.type === 'widget' && widget.widget === 'importance-component') &&
@@ -424,8 +424,8 @@ const Dashboard = () => {
                       horizontal={true}
                       hideDropdown={true}
                       widgetEndpoint="importance-component"
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id)}}
-                      onEditClick={() => {onEditWidgetClick(widget.id)}}
+                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
+                      onEditClick={() => {onEditWidgetClick(widget.id);}}
                     />
                   }
                 </GridItem>
@@ -447,7 +447,7 @@ const Dashboard = () => {
           <EmptyStateFooter>
             <Button
               variant="primary"
-              onClick={() => {setIsNewDBOpen(true)}}
+              onClick={() => {setIsNewDBOpen(true);}}
             >
               New Dashboard
             </Button>
@@ -464,7 +464,7 @@ const Dashboard = () => {
           <EmptyStateFooter>
             <Button
               variant="primary"
-              onClick={() => {setIsNewWidgetOpen(true)}}
+              onClick={() => {setIsNewWidgetOpen(true);}}
             >
               Add Widget
             </Button>
@@ -475,21 +475,21 @@ const Dashboard = () => {
       <NewDashboardModal
         project={primaryObject}
         saveCallback={(newDashboard) => onNewDashboardSave(newDashboard)}
-        closeCallback={() => {setIsNewDBOpen(false)}}
+        closeCallback={() => {setIsNewDBOpen(false);}}
         isOpen={isNewDBOpen}
       />
       <NewWidgetWizard
         dashboard={selectedDB}
         isOpen={isNewWidgetOpen}
         saveCallback={onNewWidgetSave}
-        closeCallback={() => {setIsNewWidgetOpen(false)}}
+        closeCallback={() => {setIsNewWidgetOpen(false);}}
       />
       <DeleteModal
         title="Delete Dashboard"
         body={<>Would you like to delete the current dashboard? <strong>ALL WIDGETS</strong> on the dashboard will also be deleted. <br/> <strong>This action cannot be undone.</strong></>}
         isOpen={isDeleteDBOpen}
         onDelete={onDashboardClear}
-        onClose={() => {setIsDeleteDBOpen(false)}}
+        onClose={() => {setIsDeleteDBOpen(false);}}
         toDeletePath={['dashboard']}
         toDeleteId={selectedDB?.id}
       />
@@ -497,7 +497,7 @@ const Dashboard = () => {
         title="Delete widget"
         body="Would you like to delete the selected widget?"
         isOpen={isDeleteWidgetOpen}
-        onClose={() => {setIsDeleteWidgetOpen(false)}}
+        onClose={() => {setIsDeleteWidgetOpen(false);}}
         toDeletePath={['widget-config']}
         toDeleteId={currentWidget}
       />
@@ -505,13 +505,13 @@ const Dashboard = () => {
         <EditWidgetModal
           isOpen={isEditModalOpen}
           onSave={onEditWidgetSave}
-          onClose={() => {setIsEditModalOpen(false)}}
+          onClose={() => {setIsEditModalOpen(false);}}
           data={editWidgetData}
         />
-      : ''}
+        : ''}
     </React.Fragment>
   );
-}
+};
 
 Dashboard.propTypes = {
 };

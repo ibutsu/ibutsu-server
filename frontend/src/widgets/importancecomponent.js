@@ -56,7 +56,7 @@ const ImportanceComponentWidget = (props) => {
         setDataError(true);
         console.log(error);
       });
-  }, [params])
+  }, [params]);
 
   useEffect(() => {
     getData();
@@ -66,24 +66,24 @@ const ImportanceComponentWidget = (props) => {
     setCountSkips(value);
     params.count_skips = value;
     getData();
-  }
+  };
 
   const toPercent = (num) => {
     if (typeof(num) === 'number') {
-      return Math.round(num * 100)
+      return Math.round(num * 100);
     }
-    return num
-  }
+    return num;
+  };
 
-    return (
-      <Card>
-        <WidgetHeader title={title} getDataFunc={getData} onEditClick={onEditClick} onDeleteClick={onDeleteClick}/>
-        {(!dataError && isLoading) &&
+  return (
+    <Card>
+      <WidgetHeader title={title} getDataFunc={getData} onEditClick={onEditClick} onDeleteClick={onDeleteClick}/>
+      {(!dataError && isLoading) &&
         <CardBody>
           <Text component="h2">Loading ...</Text>
         </CardBody>
-        }
-        {(!dataError && !isLoading) &&
+      }
+      {(!dataError && !isLoading) &&
         <CardBody>
           {tableData.map(tdat => (
             <div key={tdat.component}>
@@ -98,36 +98,36 @@ const ImportanceComponentWidget = (props) => {
                 </Thead>
                 <Tbody>
                   {tdat.importances.map(importance => (
-                  <Tr key={importance}>
-                    <Td>{importance}</Td>
-                    {tdat.bnums.map(buildnum => (
-                      <Td key={buildnum}><Link to={'/project/' + params.project + `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`}>{toPercent(tdat.data[buildnum][importance]['percentage'])}</Link></Td>
-                    ))}
-                  </Tr>
+                    <Tr key={importance}>
+                      <Td>{importance}</Td>
+                      {tdat.bnums.map(buildnum => (
+                        <Td key={buildnum}><Link to={'/project/' + params.project + `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`}>{toPercent(tdat.data[buildnum][importance]['percentage'])}</Link></Td>
+                      ))}
+                    </Tr>
                   ))}
                 </Tbody>
               </Table>
             </div>
           ))}
         </CardBody>
-        }
-        <CardFooter>
-          <ParamDropdown
-            dropdownItems={['Yes', 'No']}
-            handleSelect={onSkipSelect}
-            defaultValue={countSkips}
-            tooltip="Count skips as failure:"
-          />
-        </CardFooter>
-      </Card>
-    );
-}
+      }
+      <CardFooter>
+        <ParamDropdown
+          dropdownItems={['Yes', 'No']}
+          handleSelect={onSkipSelect}
+          defaultValue={countSkips}
+          tooltip="Count skips as failure:"
+        />
+      </CardFooter>
+    </Card>
+  );
+};
 
 ImportanceComponentWidget.propTypes = {
-    title: PropTypes.string,
-    params: PropTypes.object,
-    onDeleteClick: PropTypes.func,
-    onEditClick: PropTypes.func
-  }
+  title: PropTypes.string,
+  params: PropTypes.object,
+  onDeleteClick: PropTypes.func,
+  onEditClick: PropTypes.func
+};
 
 export default ImportanceComponentWidget;

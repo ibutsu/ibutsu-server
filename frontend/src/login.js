@@ -26,7 +26,7 @@ import { KeycloakService } from './services/keycloak';
 import { Settings } from './settings';
 import { IbutsuContext } from './services/context';
 
-function getLocationFrom(location) {
+function getLocationFrom (location) {
   let { from } = location.state || {from: {pathname: '/'}};
   if (from.pathname === '/login') {
     from.pathname = '/';
@@ -34,7 +34,7 @@ function getLocationFrom(location) {
   return from;
 }
 
-function getAlert(location) {
+function getAlert (location) {
   const alert = {status: 'info'};
   const urlParams = new URLSearchParams(location.search);
   if (!urlParams.get('msg')) {
@@ -47,7 +47,7 @@ function getAlert(location) {
   return alert;
 }
 
-function getUser(location) {
+function getUser (location) {
   const userProperties = ['name', 'email', 'token'];
   const urlParams = new URLSearchParams(location.search);
   let user = null;
@@ -68,7 +68,7 @@ export class Login extends React.Component {
     location: PropTypes.object
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       emailValue: '',
@@ -91,15 +91,15 @@ export class Login extends React.Component {
 
   onEmailChange = emailValue => {
     this.setState({ emailValue });
-  }
+  };
 
   onPasswordChange = passwordValue => {
     this.setState({ passwordValue });
-  }
+  };
 
   onPasswordVisibleClick = () => {
     this.setState({isPasswordVisible: !this.state.isPasswordVisible});
-  }
+  };
 
   onLoginButtonClick = event => {
     // check if null to allow login via enter key
@@ -108,8 +108,8 @@ export class Login extends React.Component {
       event.preventDefault();
     }
     var isValidEmail = !!this.state.emailValue,
-        isValidPassword = !!this.state.passwordValue,
-        alert = null;
+      isValidPassword = !!this.state.passwordValue,
+      alert = null;
     if (!isValidEmail || !isValidPassword) {
       alert = {message: 'E-mail and/or password fields are blank', status: 'danger'};
     }
@@ -143,14 +143,14 @@ export class Login extends React.Component {
     else {
       this.setState({isLoggingIn: false});
     }
-  }
+  };
 
   onEnterKeyPress = (target) => {
     // allow login by pressing the enter key
     if (target.charCode === 13) {
       this.onLoginButtonClick();
     }
-  }
+  };
 
   onOAuth2Success = (response) => {
     // Make sure there are no active projects or dashboards selected
@@ -158,7 +158,7 @@ export class Login extends React.Component {
     setPrimaryObject();
     AuthService.setUser(response);
     window.location = this.state.from.pathname;
-  }
+  };
 
   onGoogleLogin = (response) => {
     const { redirect_uri } = this.state.externalLogins.google;
@@ -171,7 +171,7 @@ export class Login extends React.Component {
         AuthService.setUser(user);
         window.location = this.state.from.pathname;
       });
-  }
+  };
 
   onKeycloakLogin = () => {
     const { server_url, realm, client_id } = this.state.externalLogins.keycloak;
@@ -182,11 +182,11 @@ export class Login extends React.Component {
       setPrimaryObject();
       KeycloakService.login(server_url, realm, client_id);
     });
-  }
+  };
 
-  onFacebookLogin = () => {}
+  onFacebookLogin = () => {};
 
-  componentDidMount() {
+  componentDidMount () {
     HttpClient.get([Settings.serverUrl, 'login', 'support'])
       .then(response => response.json())
       .then(data => {
@@ -196,7 +196,7 @@ export class Login extends React.Component {
             HttpClient.get([Settings.serverUrl, 'login', 'config', key])
               .then(response => response.json())
               .then(data => {
-                this.setState(function(previousState) {
+                this.setState(function (previousState) {
                   let externalLogins = previousState.externalLogins;
                   externalLogins[key] = data;
                   return {externalLogins: externalLogins};
@@ -207,33 +207,33 @@ export class Login extends React.Component {
       });
   }
 
-  getKeycloakIcon() {
+  getKeycloakIcon () {
     const hasIcon = Object.prototype.hasOwnProperty.call(this.state.externalLogins.keycloak, 'icon');
     if (hasIcon && this.state.externalLogins.keycloak.icon.startsWith('http')) {
-      return <img src={this.state.externalLogins.keycloak.icon} alt="Keycloak Icon"/>
+      return <img src={this.state.externalLogins.keycloak.icon} alt="Keycloak Icon"/>;
     }
     else if (hasIcon && this.state.externalLogins.keycloak.icon.toLowerCase() === 'redhat') {
-      return <RedhatIcon size="lg" />
+      return <RedhatIcon size="lg" />;
     }
     else {
       return <KeyIcon size="lg" />;
     }
   }
 
-  getKeycloakName() {
+  getKeycloakName () {
     if (!Object.prototype.hasOwnProperty.call(this.state.externalLogins.keycloak, 'display_name')) {
       return 'Keycloak';
     }
     return this.state.externalLogins.keycloak.display_name;
   }
 
-  render() {
+  render () {
     const socialMediaLoginContent = (
       <React.Fragment>
         {this.state.externalLogins.keycloak &&
         <LoginMainFooterLinksItem onClick={this.onKeycloakLogin} href="#" linkComponentProps={{ 'aria-label': `Login with ${this.getKeycloakName()}`, 'title': `Login with ${this.getKeycloakName()}` }}>
-            {this.getKeycloakIcon()}
-          </LoginMainFooterLinksItem>
+          {this.getKeycloakIcon()}
+        </LoginMainFooterLinksItem>
         }
         {this.state.externalLogins.google &&
           <GoogleLogin
@@ -337,14 +337,14 @@ export class Login extends React.Component {
         {this.state.loginSupport.user &&
         <Form>
           <FormAlert>
-          {this.state.alert && this.state.alert.message &&
+            {this.state.alert && this.state.alert.message &&
             <Alert
               variant={this.state.alert.status || 'info'}
               title={this.state.alert.message}
               aria-live="polite"
               isInline
             />
-          }
+            }
           </FormAlert>
           <FormGroup
             label="Email address"

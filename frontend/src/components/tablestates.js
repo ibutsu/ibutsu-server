@@ -38,11 +38,11 @@ const TableEmptyState = (props) => {
       </EmptyState>
     </Bullseye>
   );
-}
+};
 
 TableEmptyState.propTypes = {
   onClearFilters: PropTypes.func,
-}
+};
 
 const TableErrorState = (props) => {
   const {onClearFilters} = props;
@@ -66,10 +66,10 @@ const TableErrorState = (props) => {
       </EmptyState>
     </Bullseye>
   );
-}
+};
 
 TableErrorState.propTypes = {
   onClearFilters: PropTypes.func,
-}
+};
 
 export {TableEmptyState, TableErrorState};
