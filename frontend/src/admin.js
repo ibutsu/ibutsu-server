@@ -8,7 +8,7 @@ import AdminHome from './pages/admin/home';
 import { UserList } from './pages/admin/user-list';
 import { UserEdit } from './pages/admin/user-edit';
 import { ProjectList } from './pages/admin/project-list';
-import { ProjectEdit } from './pages/admin/project-edit';
+import ProjectEdit from './pages/admin/project-edit';
 import { AuthService } from './services/auth';
 
 import './app.css';
@@ -40,7 +40,7 @@ export class Admin extends React.Component {
           <Route path="users" element={<ElementWrapper routeElement={UserList} emitter={this.eventEmitter} />} />
           <Route path="users/:id" element={<ElementWrapper routeElement={UserEdit} emitter={this.eventEmitter} />} />
           <Route path="projects" element={<ElementWrapper routeElement={ProjectList} emitter={this.eventEmitter} />} />
-          <Route path="projects/:id" element={<ElementWrapper routeElement={ProjectEdit} emitter={this.eventEmitter} />} />
+          <Route path="projects/:id" element={<ProjectEdit/>} />
         </Route>
         <Route path="*" element={<Navigate to="" replace />}/>
       </Routes>
