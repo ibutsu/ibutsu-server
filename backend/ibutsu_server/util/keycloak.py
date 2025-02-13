@@ -32,6 +32,8 @@ def get_keycloak_config(is_private=False):
         config["icon"] = current_app.config["KEYCLOAK_ICON"]
     if current_app.config.get("KEYCLOAK_NAME"):
         config["display_name"] = current_app.config["KEYCLOAK_NAME"]
+    if current_app.config.get("KEYCLOAK_AUTH_PATH"):
+        config["redirect_uri"] = backend_url + current_app.config["KEYCLOAK_AUTH_PATH"]
     if current_app.config.get("KEYCLOAK_VERIFY_SSL"):
         config["verify_ssl"] = current_app.config["KEYCLOAK_VERIFY_SSL"].lower()[0] in [
             "y",
