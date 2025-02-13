@@ -17,18 +17,18 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
-function AddTokenModal(props) {
-    const [name, setName] = useState('');
-    const [expiryDate, setExpiryDate] = useState('');
-    const [isNameValid, setIsNameValid] = useState(true);
-    const [isExpiryValid, setIsExpiryValid] = useState(true);
+function AddTokenModal (props) {
+  const [name, setName] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [isNameValid, setIsNameValid] = useState(true);
+  const [isExpiryValid, setIsExpiryValid] = useState(true);
 
-    const {
-      isOpen,
-      onClose,
-    } = props;
+  const {
+    isOpen,
+    onClose,
+  } = props;
 
-  function onSave() {
+  function onSave () {
     const expiry = new Date(expiryDate);
     const now = new Date();
 
@@ -36,7 +36,7 @@ function AddTokenModal(props) {
       setIsNameValid(false);
       return;
     }
-    else {setIsNameValid(true)}
+    else {setIsNameValid(true);}
 
     if (expiryDate === ''){
       setIsExpiryValid(false);
@@ -60,7 +60,7 @@ function AddTokenModal(props) {
 
   };
 
-  function localOnClose() {
+  function localOnClose () {
     // call prop function
     onClose();
 
@@ -105,7 +105,7 @@ function AddTokenModal(props) {
                 </HelperTextItem>
               </HelperText>
             </FormHelperText>
-            )}
+          )}
         </FormGroup>
         <FormGroup
           label="Expiry"
@@ -115,7 +115,7 @@ function AddTokenModal(props) {
         >
           <DatePicker
             appendTo={() => document.getElementById('add-token-modal')}
-            onChange={(_event, change) => {setExpiryDate(change)}}
+            onChange={(_event, change) => {setExpiryDate(change);}}
             value={expiryDate}
             inputProps={{
               id: 'token-expiry-date',

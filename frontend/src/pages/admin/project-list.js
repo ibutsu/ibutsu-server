@@ -23,7 +23,7 @@ import { debounce, getSpinnerRow } from '../../utilities';
 import { FilterTable } from '../../components/filtertable';
 
 
-function projectToRow(project, onDeleteClick) {
+function projectToRow (project, onDeleteClick) {
   return {
     cells: [
       {title: project.title},
@@ -53,16 +53,16 @@ function projectToRow(project, onDeleteClick) {
         )
       }
     ]
-  }
+  };
 }
 
 export class ProjectList extends React.Component {
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     const params = new URLSearchParams(props.location.search);
     let page = 1, pageSize = 20;
@@ -93,7 +93,7 @@ export class ProjectList extends React.Component {
     };
   }
 
-  updateUrl() {
+  updateUrl () {
     let params = [];
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
@@ -104,15 +104,15 @@ export class ProjectList extends React.Component {
     this.setState({page: pageNumber}, () => {
       this.updateUrl();
     });
-  }
+  };
 
   setPageSize = (_event, perPage) => {
     this.setState({pageSize: perPage}, () => {
       this.updateUrl();
     });
-  }
+  };
 
-  getProjects() {
+  getProjects () {
     // Show a spinner
     this.setState({rows: [getSpinnerRow(4)], isEmpty: false, isError: false});
     let params = {
@@ -156,7 +156,7 @@ export class ProjectList extends React.Component {
         this.getProjects();
         this.setState({isDeleteModalOpen: false});
       });
-  }
+  };
 
   onTextChanged = (newValue) => {
     this.setState({textFilter: newValue}, debounce(() => {
@@ -167,11 +167,11 @@ export class ProjectList extends React.Component {
     }));
   };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getProjects();
   }
 
-  render() {
+  render () {
     document.title = 'Projects - Administration | Ibutsu';
     const { columns, rows, textFilter } = this.state;
     const pagination = {

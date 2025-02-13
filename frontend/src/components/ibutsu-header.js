@@ -79,7 +79,7 @@ function IbutsuHeader () {
       .then(data => {
         setProjects(data[endpoint+'s']);
         setFilteredProjects(data[endpoint+'s']);
-      })
+      });
   }, [filterValue, endpoint]);
 
   useEffect(() => {
@@ -92,18 +92,18 @@ function IbutsuHeader () {
       HttpClient.get([Settings.serverUrl, '/project/', project_id])
         .then(response => HttpClient.handleResponse(response))
         .then((data) => {
-          setPrimaryObject(data)
-          setPrimaryType('project')
-          setDefaultDashboard(data.default_dashboard_id)
+          setPrimaryObject(data);
+          setPrimaryType('project');
+          setDefaultDashboard(data.default_dashboard_id);
           setSelectedProject(data);
           setFilterValue();
           setInputValue(data.title);
           setIsProjectSelectOpen(false);
         });
     }
-  }, [project_id, selectedProject, setDefaultDashboard, setPrimaryObject, setPrimaryType])
+  }, [project_id, selectedProject, setDefaultDashboard, setPrimaryObject, setPrimaryType]);
 
-  function onProjectSelect(_event, value) {
+  function onProjectSelect (_event, value) {
     const {
       primaryObject,
       setPrimaryObject,
@@ -130,7 +130,7 @@ function IbutsuHeader () {
     navigate('/project/' + value?.id + '/dashboard/');
   }
 
-  function onProjectClear() {
+  function onProjectClear () {
     const { setPrimaryObject } = context;
 
     setSelectedProject('');
@@ -143,7 +143,7 @@ function IbutsuHeader () {
     navigate('/project');
   }
 
-  function onProjectTextInputChange(_event, value) {
+  function onProjectTextInputChange (_event, value) {
     setInputValue(value);
     setFilterValue(value);
   }
@@ -151,7 +151,7 @@ function IbutsuHeader () {
   const toggle = toggleRef => (
     <MenuToggle
       variant="typeahead"
-      onClick={() => {setIsProjectSelectOpen(!isProjectSelectOpen)}}
+      onClick={() => {setIsProjectSelectOpen(!isProjectSelectOpen);}}
       isExpanded={isProjectSelectOpen}
       isFullWidth
       innerRef={toggleRef}
@@ -159,7 +159,7 @@ function IbutsuHeader () {
       <TextInputGroup isPlain>
         <TextInputGroupMain
           value={inputValue}
-          onClick={() => {setIsProjectSelectOpen(!isProjectSelectOpen)}}
+          onClick={() => {setIsProjectSelectOpen(!isProjectSelectOpen);}}
           onChange={onProjectTextInputChange}
           id="typeahead-select-input"
           autoComplete="off"
@@ -171,7 +171,7 @@ function IbutsuHeader () {
         <TextInputGroupUtilities>
           {!!inputValue && (
             <Button onClick={() => {
-              onProjectClear()
+              onProjectClear();
             }} aria-label="Clear input value">
               <Icon><TimesIcon aria-hidden /></Icon>
             </Button>
@@ -209,7 +209,7 @@ function IbutsuHeader () {
             {filteredProjects.map((project, index) => (
               <SelectOption
                 key={project.id || index}
-                onClick={() => {setSelectedProject(project)}}
+                onClick={() => {setSelectedProject(project);}}
                 value={project}
                 description={project.name}
                 isDisabled={project.isDisabled}>
@@ -266,14 +266,14 @@ function IbutsuHeader () {
                 icon={<Icon><SunIcon /></Icon>}
                 buttonId='theme-toggle-light'
                 isSelected={!darkTheme}
-                onChange={() => {setDarkTheme(false)}}
+                onChange={() => {setDarkTheme(false);}}
               />
               <ToggleGroupItem
                 aria-label='Dark theme'
                 icon={<Icon><MoonIcon /></Icon>}
                 buttonId='theme-toggle-dark'
                 isSelected={darkTheme}
-                onChange={() => {setDarkTheme(true)}}
+                onChange={() => {setDarkTheme(true);}}
               />
             </ToggleGroup>
           </ToolbarItem>
@@ -283,7 +283,7 @@ function IbutsuHeader () {
         </ToolbarGroup>
       </ToolbarContent>
     </Toolbar>
-  )
+  );
 
   return (
     <React.Fragment>
@@ -330,7 +330,7 @@ function IbutsuHeader () {
         </MastheadContent>
       </Masthead>
     </React.Fragment>
-  )
+  );
 }
 
 export default IbutsuHeader;

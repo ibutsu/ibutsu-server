@@ -14,11 +14,11 @@ import { TimesIcon } from '@patternfly/react-icons';
 
 const MultiValueInput = (props) => {
   const {
-      onAddValue,
-      onRemoveValue,
-      onValuesChange,
-      style,
-    } = props;
+    onAddValue,
+    onRemoveValue,
+    onValuesChange,
+    style,
+  } = props;
 
   const [values, setValues] = useState([]);
   const [value, setValue] = useState('');
@@ -49,7 +49,7 @@ const MultiValueInput = (props) => {
         onValuesChange(newValues);
       }
     }
-    setValue('')
+    setValue('');
   };
 
   const handleEnter = () => {
@@ -60,9 +60,9 @@ const MultiValueInput = (props) => {
 
   const handleKeyPress = (event) => {
     switch (event.key) {
-      case 'Enter':
-        handleEnter();
-        break;
+    case 'Enter':
+      handleEnter();
+      break;
     }
   };
 
@@ -104,13 +104,13 @@ const MultiValueInput = (props) => {
       </TextInputGroup>
     </React.Fragment>
   );
-}
+};
 
 MultiValueInput.propTypes = {
   onAddValue: PropTypes.func,
   onRemoveValue: PropTypes.func,
   onValuesChange: PropTypes.func,
   style: PropTypes.object
-}
+};
 
 export default MultiValueInput;

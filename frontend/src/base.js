@@ -13,27 +13,27 @@ import ElementWrapper from './components/elementWrapper';
 import { IbutsuContextProvider } from './services/context';
 
 export const Base = () => (
-    <IbutsuContextProvider>
-      <Router>
-        <Routes>
-          <Route path="login" element={<ElementWrapper routeElement={Login} />} />
-          <Route path="sign-up" element={<ElementWrapper routeElement={SignUp} />} />
-          <Route path="forgot-password" element={<ElementWrapper routeElement={ForgotPassword} />} />
-          <Route path="reset-password/:activationCode" element={<ElementWrapper routeElement={ResetPassword} />} />
-          <Route
-            path="profile/*"
-            element={AuthService.isLoggedIn() ? <Profile /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="admin/*"
-            element={AuthService.isLoggedIn() && AuthService.isSuperAdmin() ? <Admin /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="project/*"
-            element={AuthService.isLoggedIn() ? <App /> : <Navigate to="/login" />}
-          />
-          <Route path="*" element={<Navigate to="project" replace />} />
-        </Routes>
-      </Router>
-    </IbutsuContextProvider>
-  );
+  <IbutsuContextProvider>
+    <Router>
+      <Routes>
+        <Route path="login" element={<ElementWrapper routeElement={Login} />} />
+        <Route path="sign-up" element={<ElementWrapper routeElement={SignUp} />} />
+        <Route path="forgot-password" element={<ElementWrapper routeElement={ForgotPassword} />} />
+        <Route path="reset-password/:activationCode" element={<ElementWrapper routeElement={ResetPassword} />} />
+        <Route
+          path="profile/*"
+          element={AuthService.isLoggedIn() ? <Profile /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="admin/*"
+          element={AuthService.isLoggedIn() && AuthService.isSuperAdmin() ? <Admin /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="project/*"
+          element={AuthService.isLoggedIn() ? <App /> : <Navigate to="/login" />}
+        />
+        <Route path="*" element={<Navigate to="project" replace />} />
+      </Routes>
+    </Router>
+  </IbutsuContextProvider>
+);

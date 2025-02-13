@@ -32,9 +32,9 @@ export class IbutsuPage extends React.Component {
     children: PropTypes.node,
     title: PropTypes.string,
     params: PropTypes.object
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       views: []
@@ -45,7 +45,7 @@ export class IbutsuPage extends React.Component {
 
 
 
-  render() {
+  render () {
     document.title = this.props.title || 'Ibutsu';
     const { primaryObject } = this.context;
     return (
@@ -57,14 +57,14 @@ export class IbutsuPage extends React.Component {
           style={{position: 'relative'}}
         >
           {primaryObject ?
-          <Outlet/> :
-          <EmptyState>
-            <EmptyStateHeader titleText="No Project Selected" icon={<EmptyStateIcon icon={ArchiveIcon} />} headingLevel="h4" />
-            <EmptyStateBody>
+            <Outlet/> :
+            <EmptyState>
+              <EmptyStateHeader titleText="No Project Selected" icon={<EmptyStateIcon icon={ArchiveIcon} />} headingLevel="h4" />
+              <EmptyStateBody>
               There is currently no project selected. Please select a project from the dropdown in
               order to view the dashboard.
-            </EmptyStateBody>
-          </EmptyState>
+              </EmptyStateBody>
+            </EmptyState>
           }
         </Page>
         <ToastContainer stacked autoclose={ALERT_TIMEOUT} />

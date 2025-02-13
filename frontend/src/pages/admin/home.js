@@ -8,15 +8,15 @@ import {
 } from '@patternfly/react-core';
 
 const AdminHome = () => (
-    <React.Fragment>
-      <PageSection id="page" variant={PageSectionVariants.light}>
-        <TextContent>
-          <Text className="title" component="h1" ouiaId="admin">Administration</Text>
-        </TextContent>
-      </PageSection>
-      <PageSection />
-    </React.Fragment>
-  );
+  <React.Fragment>
+    <PageSection id="page" variant={PageSectionVariants.light}>
+      <TextContent>
+        <Text className="title" component="h1" ouiaId="admin">Administration</Text>
+      </TextContent>
+    </PageSection>
+    <PageSection />
+  </React.Fragment>
+);
 
 AdminHome.propTypes = {};
 

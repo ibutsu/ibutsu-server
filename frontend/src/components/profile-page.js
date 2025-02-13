@@ -41,17 +41,17 @@ const ProfilePage = () => {
 
   return (
     <React.Fragment>
-        <ToastContainer autoclose={ALERT_TIMEOUT} />
-        <Page
-            header={<IbutsuHeader/>}
-            sidebar={navigation}
-            isManagedSidebar={true}
-            style={{position: 'relative'}}
-        >
-            <Outlet/>
-        </Page>
+      <ToastContainer autoclose={ALERT_TIMEOUT} />
+      <Page
+        header={<IbutsuHeader/>}
+        sidebar={navigation}
+        isManagedSidebar={true}
+        style={{position: 'relative'}}
+      >
+        <Outlet/>
+      </Page>
     </React.Fragment>
   );
-}
+};
 
-export default ProfilePage
+export default ProfilePage;

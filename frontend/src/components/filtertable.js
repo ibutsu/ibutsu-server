@@ -26,7 +26,7 @@ import { Settings } from '../settings';
 import { HttpClient } from '../services/http';
 import { toAPIFilter } from '../utilities';
 
-import {TableEmptyState, TableErrorState} from './tablestates'
+import {TableEmptyState, TableErrorState} from './tablestates';
 import { IbutsuContext } from '../services/context';
 
 
@@ -59,8 +59,8 @@ const FilterTable = (props) => {
         {(filters || onApplyFilter) &&
         <Flex spaceItems={{default: 'spaceItemsXs'}} grow={{default: 'grow'}}>
           {filters && filters.map((filter, index) => (
-              <FlexItem key={index}>{filter}</FlexItem>
-            ))}
+            <FlexItem key={index}>{filter}</FlexItem>
+          ))}
           {onApplyFilter &&
           <FlexItem>
             <Button onClick={onApplyFilter}>Apply Filter</Button>
@@ -91,8 +91,8 @@ const FilterTable = (props) => {
         </Flex>
         <Flex grow={{default: 'grow'}}>
           {Object.keys(activeFilters).map(key => (
-          <FlexItem spacer={{ default: 'spacerXs'}} key={key}>
-            {!hideFilters.includes(key) &&
+            <FlexItem spacer={{ default: 'spacerXs'}} key={key}>
+              {!hideFilters.includes(key) &&
             <ChipGroup categoryName={key}>
               <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={() => onRemoveFilter(key)}>
                 {(typeof activeFilters[key] === 'object') &&
@@ -103,8 +103,8 @@ const FilterTable = (props) => {
                 {(typeof activeFilters[key] !== 'object') && activeFilters[key]}
               </Chip>
             </ChipGroup>
-            }
-          </FlexItem>
+              }
+            </FlexItem>
           ))}
         </Flex>
         {onApplyReport &&
@@ -166,7 +166,7 @@ FilterTable.propTypes = {
   onSetPageSize: PropTypes.func,
   onRowSelect: PropTypes.func,
   variant: PropTypes.node
-}
+};
 
 
 // TODO Extend this to contain the filter handling functions, and better integrate filter state
@@ -207,10 +207,10 @@ const MetaFilter = (props) => {
     const valueSelections = valueSelections;
     let updatedValues = (valueSelections.includes(selection))
       ? valueSelections.filter(item => item !== selection)
-      : [...valueSelections, selection]
+      : [...valueSelections, selection];
 
-      setValueSelections(updatedValues);
-      setFilter(id, fieldSelection, valueSelections.join(';'));
+    setValueSelections(updatedValues);
+    setFilter(id, fieldSelection, valueSelections.join(';'));
   };
 
   const onFieldClear = () => {
@@ -224,8 +224,8 @@ const MetaFilter = (props) => {
   const onValueClear = () => {
     setValueSelections([]);
     setIsValueOpen(false);
-    setFilter(id, fieldSelection, [])
-  }
+    setFilter(id, fieldSelection, []);
+  };
 
   const updateValueOptions = () => {
     const customFilters = activeFilters;
@@ -235,36 +235,36 @@ const MetaFilter = (props) => {
       let api_filter = toAPIFilter(customFilters).join();
       console.debug('APIFILTER: ' + customFilters);
 
-      let projectId = primaryObject ? primaryObject.id : ''
+      let projectId = primaryObject ? primaryObject.id : '';
 
       // make runId optional
-      let params = {}
+      let params = {};
       if (runId) {
         params = {
           group_field: fieldSelection,
           run_id: runId,
           additional_filters: api_filter,
           project: projectId
-        }
+        };
       } else {
         params = {
           days: 30,
           project: projectId,
           group_field: fieldSelection,
           additional_filters: api_filter,
-        }
+        };
       }
 
       HttpClient.get(
         [Settings.serverUrl, 'widget', 'result-aggregator'],
         params
       )
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
-        setValueOptions(data);
-      });
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          setValueOptions(data);
+        });
     }
-  }
+  };
 
   useEffect(() => {
     HttpClient.get([Settings.serverUrl, 'project', 'filter-params', primaryObject.id])
@@ -272,7 +272,7 @@ const MetaFilter = (props) => {
       .then(data => {
         setFieldOptions(data);
       });
-  }, [primaryObject, setFieldOptions])
+  }, [primaryObject, setFieldOptions]);
 
   let field_selected = fieldSelection !== null;
   let values_available = valueOptions.length > 0;
@@ -330,8 +330,8 @@ const MetaFilter = (props) => {
         </Flex>
         <Flex grow={{default: 'grow'}}>
           {Object.keys(activeFilters).map(key => (
-          <FlexItem style={{marginBottom: '0.5rem'}} spacer={{ default: 'spacerXs'}} key={key}>
-            {!hideFilters.includes(key) &&
+            <FlexItem style={{marginBottom: '0.5rem'}} spacer={{ default: 'spacerXs'}} key={key}>
+              {!hideFilters.includes(key) &&
             <ChipGroup categoryName={key}>
               <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={() => onRemoveFilter(id, key)}>
                 {(typeof activeFilters[key] === 'object') &&
@@ -342,8 +342,8 @@ const MetaFilter = (props) => {
                 {(typeof activeFilters[key] !== 'object') && activeFilters[key]}
               </Chip>
             </ChipGroup>
-            }
-          </FlexItem>
+              }
+            </FlexItem>
           ))}
         </Flex>
         {onApplyReport &&

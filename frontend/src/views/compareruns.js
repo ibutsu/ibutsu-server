@@ -35,8 +35,8 @@ export class CompareRunsView extends React.Component {
     view: PropTypes.object
   };
 
-  constructor(props) {
-    super(props)
+  constructor (props) {
+    super(props);
     this.state = {
       columns: [{title: 'Test', cellFormatters: [expandable]}, 'Run 1', 'Run 2'],
       rows: [getSpinnerRow(3)],
@@ -54,13 +54,13 @@ export class CompareRunsView extends React.Component {
       filters: [Object.assign({
         'result': {op: 'in', val: 'failed;error;passed'},
         'id': 0
-        }),
-        Object.assign({
-          'result': {op: 'in', val: 'failed;error;passed'},
-          'id': 1
-        })],
+      }),
+      Object.assign({
+        'result': {op: 'in', val: 'failed;error;passed'},
+        'id': 1
+      })],
       loadingProps: {}
-    }
+    };
     this.refreshResults = this.refreshResults.bind(this);
     this.onCollapse = this.onCollapse.bind(this);
   }
@@ -68,22 +68,22 @@ export class CompareRunsView extends React.Component {
   onSkipCheck = (checked) => {
     let filters = this.state.filters;
     filters.forEach(filter => {
-      filter['result']['val'] = ('failed;error;passed') + ((checked) ? ';skipped;xfailed' : '')
+      filter['result']['val'] = ('failed;error;passed') + ((checked) ? ';skipped;xfailed' : '');
     });
 
     this.setState(
       {includeSkipped: checked, filters},
       this.refreshResults
     );
-  }
+  };
 
   setFilter = (filterId, field, value) => {
     // maybe process values array to string format here instead of expecting caller to do it?
     let operator = (value.includes(';')) ? 'in' : 'eq';
-    this.updateFilters(filterId, field, operator, value)
-  }
+    this.updateFilters(filterId, field, operator, value);
+  };
 
-  updateFilters(filterId, name, operator, value) {
+  updateFilters (filterId, name, operator, value) {
     let newFilters = this.state.filters.map((filter) => {
       if (filter.id === filterId) {
         if ((value === null) || (value.length === 0)) {
@@ -93,18 +93,18 @@ export class CompareRunsView extends React.Component {
           filter[name] = {'op': operator, 'val': String(value)};
         }
       }
-      return filter
+      return filter;
     });
     this.setState({filters: newFilters, page: 1});
   }
 
   removeFilter = (filterId, id) => {
     if ((id !== 'result') && (id !== 'run_id')) {   // Don't allow removal of error/failure filter
-      this.updateFilters(filterId, id, null, null)
+      this.updateFilters(filterId, id, null, null);
     }
-  }
+  };
 
-  getResultsForTable() {
+  getResultsForTable () {
     const filter = this.state.filters;
 
     // Check to see if filters have been set besides id and result
@@ -115,7 +115,7 @@ export class CompareRunsView extends React.Component {
           isNew = true;
         }
       }
-    })
+    });
 
     // Add loading animations to button and table
     this.setState({rows: [getSpinnerRow(3)], isEmpty: false, isError: false});
@@ -127,12 +127,12 @@ export class CompareRunsView extends React.Component {
         'isLoading': true
       },
       isLoading: true
-    })
+    });
 
     if (isNew === true) {
       // Add project id to params
       const { primaryObject } = this.context;
-      const projectId = primaryObject ? primaryObject.id : ''
+      const projectId = primaryObject ? primaryObject.id : '';
       filter.forEach(filter => {
         filter['project_id'] = {op: 'in', val: projectId};
       });
@@ -141,7 +141,7 @@ export class CompareRunsView extends React.Component {
       let apiFilters = [];
       filter.forEach(filter => {
         apiFilters.push(toAPIFilter(filter));
-      })
+      });
       let params = [];
       params['filters'] = apiFilters;
 
@@ -149,13 +149,13 @@ export class CompareRunsView extends React.Component {
       HttpClient.get([Settings.serverUrl, 'widget', 'compare-runs-view'], params)
         .then(response => HttpClient.handleResponse(response))
         .then(data => this.setState({
-            results: data.results,
-            rows: data.results.map((result, index) => resultToComparisonRow(result, index)).flat(),
-            totalItems: data.pagination.totalItems,
-            pageSize: data.pagination.totalItems,
-            isEmpty: data.pagination.totalItems === 0,
-            loadingProps: {},
-            isLoading: false
+          results: data.results,
+          rows: data.results.map((result, index) => resultToComparisonRow(result, index)).flat(),
+          totalItems: data.pagination.totalItems,
+          pageSize: data.pagination.totalItems,
+          isEmpty: data.pagination.totalItems === 0,
+          loadingProps: {},
+          isLoading: false
         }))
         .catch((error) => {
           console.error('Error fetching result data:', error);
@@ -170,7 +170,7 @@ export class CompareRunsView extends React.Component {
     }
   }
 
-  onCollapse(event, rowIndex, isOpen) {
+  onCollapse (event, rowIndex, isOpen) {
     const { rows } = this.state;
 
     // lazy-load the result view so we don't have to make a bunch of artifact requests
@@ -185,7 +185,7 @@ export class CompareRunsView extends React.Component {
       }
       rows[rowIndex + 1].cells = [{
         title: <ResultView hideArtifact={true} comparisonResults={result} defaultTab={defaultTab} hideTestHistory={false} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={result[0]}/>
-      }]
+      }];
     }
     rows[rowIndex].isOpen = isOpen;
     this.setState({rows});
@@ -195,19 +195,19 @@ export class CompareRunsView extends React.Component {
     this.setState({page: pageNumber}, () => {
       this.getResultsForTable();
     });
-  }
+  };
 
   refreshResults = () => {
     this.setState({selectedResults: []});
     this.getResultsForTable();
-  }
+  };
 
   // Remove all active filters and clear table
   clearFilters = () => {
     this.setState({
       filters: [Object.assign({
-      'result': {op: 'in', val: 'failed;error;passed'},
-      'id': 0
+        'result': {op: 'in', val: 'failed;error;passed'},
+        'id': 0
       }),
       Object.assign({
         'result': {op: 'in', val: 'failed;error;passed'},
@@ -216,16 +216,16 @@ export class CompareRunsView extends React.Component {
       page: 1,
       totalItems: 0,
       totalPages: 0},
-      this.getResultsForTable
+    this.getResultsForTable
     );
 
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getResultsForTable();
   }
 
-  render() {
+  render () {
     const {
       columns,
       rows,
@@ -237,7 +237,7 @@ export class CompareRunsView extends React.Component {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
-    }
+    };
 
     const resultFilters = [
       <Flex key="metafilters" direction={{default: 'column'}} spaceItems={{default: 'spaceItemsMd'}}>
@@ -268,7 +268,7 @@ export class CompareRunsView extends React.Component {
           />
         </FlexItem>
       </Flex>
-    ]
+    ];
     const { primaryObject } = this.context;
     // Compare runs work only when project is selected
     return ( primaryObject &&

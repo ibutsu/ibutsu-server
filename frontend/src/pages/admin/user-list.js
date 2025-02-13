@@ -22,7 +22,7 @@ import { debounce, getSpinnerRow } from '../../utilities';
 import { FilterTable } from '../../components/filtertable';
 
 
-function userToRow(user, onDeleteClick) {
+function userToRow (user, onDeleteClick) {
   let userName = user.name;
   if (user.is_superadmin) {
     userName = [
@@ -61,16 +61,16 @@ function userToRow(user, onDeleteClick) {
         )
       }
     ]
-  }
+  };
 }
 
 export class UserList extends React.Component {
   static propTypes = {
     location: PropTypes.object,
     navigate: PropTypes.func,
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     const params = new URLSearchParams(props.location.search);
     let page = 1, pageSize = 20;
@@ -101,11 +101,11 @@ export class UserList extends React.Component {
     };
   }
 
-  updateUrl() {
+  updateUrl () {
     let params = [];
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.navigate('/admin/users?' + params.join('&'))
+    this.props.navigate('/admin/users?' + params.join('&'));
   }
 
   setPage = (_event, pageNumber) => {
@@ -113,16 +113,16 @@ export class UserList extends React.Component {
       this.updateUrl();
       this.getUsers();
     });
-  }
+  };
 
   setPageSize = (_event, perPage) => {
     this.setState({pageSize: perPage}, () => {
       this.updateUrl();
       this.getUsers();
     });
-  }
+  };
 
-  getUsers() {
+  getUsers () {
     // Show a spinner
     this.setState({rows: [getSpinnerRow(4)], isEmpty: false, isError: false});
     let params = {
@@ -166,7 +166,7 @@ export class UserList extends React.Component {
         this.getUsers();
         this.setState({isDeleteModalOpen: false});
       });
-  }
+  };
 
   onTextChanged = (newValue) => {
     this.setState({textFilter: newValue}, debounce(() => {
@@ -177,11 +177,11 @@ export class UserList extends React.Component {
     }));
   };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getUsers();
   }
 
-  render() {
+  render () {
     document.title = 'Users - Administration | Ibutsu';
     const { columns, rows, textFilter } = this.state;
     const pagination = {
