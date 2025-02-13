@@ -43,7 +43,7 @@ import {
   ResultAggregatorWidget,
   ResultSummaryWidget
 } from './widgets';
-import ImportanceComponentWidget from './widgets/importancecomponent'
+import ImportanceComponentWidget from './widgets/importancecomponent';
 import { IbutsuContext } from './services/context.js';
 import { useNavigate, useParams } from 'react-router-dom';
 
