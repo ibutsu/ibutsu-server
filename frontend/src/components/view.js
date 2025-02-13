@@ -28,7 +28,7 @@ export class View extends React.Component {
     params: PropTypes.object,
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       id: props.params.view_id,
@@ -36,23 +36,23 @@ export class View extends React.Component {
     };
   }
 
-  getView() {
+  getView () {
     HttpClient.get([Settings.serverUrl, 'widget-config', this.state.id])
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({view: data}));
   }
 
-  componentDidUpdate(prevProps){
+  componentDidUpdate (prevProps){
     if (prevProps !== this.props) {
       this.setState({id: this.props.params.view_id}, this.getView);
     }
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getView();
   }
 
-  render() {
+  render () {
     const { view } = this.state;
     const { location, navigate } = this.props;
     document.title = view ? view.title + ' | Ibutsu' : document.title;

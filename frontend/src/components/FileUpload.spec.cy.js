@@ -17,7 +17,7 @@ describe('FileUpload', () => {
       <IbutsuContext.Provider value={{'primaryObject': {'id': '1234'}}}>
         <FileUpload url='/upload' beforeUpload={beforeUpload}>Upload</FileUpload>
       </IbutsuContext.Provider>
-      );
+    );
     cy.get('input[type="file"]')
       .selectFile({
         contents: 'cypress/fixtures/example.json',

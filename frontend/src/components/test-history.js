@@ -42,9 +42,9 @@ export class TestHistoryTable extends React.Component {
     filters: PropTypes.object,
     testResult: PropTypes.object,
     comparisonResults: PropTypes.array
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       columns: [{title: 'Result', cellFormatters: [expandable]}, 'Source', 'Exception Name', 'Duration', 'Start Time'],
@@ -70,7 +70,7 @@ export class TestHistoryTable extends React.Component {
         'component': {op: 'eq', val: props.testResult.component},
         // default to filter only from 1 weeks ago to the most test's start_time.
         'start_time': {op: 'gt', val: new Date(new Date(props.testResult.start_time).getTime() - (0.25 * 30 * 86400 * 1000)).toISOString()}
-        }, props.filters),
+      }, props.filters),
       comparisonResults: this.props.comparisonResults
     };
     // filter on env by default
@@ -83,16 +83,16 @@ export class TestHistoryTable extends React.Component {
 
   refreshResults = () => {
     this.getHistorySummary();
-  }
+  };
 
-  onCollapse(event, rowIndex, isOpen) {
+  onCollapse (event, rowIndex, isOpen) {
     const { rows } = this.state;
 
     // lazy-load the result view so we don't have to make a bunch of artifact requests
     if (isOpen) {
       rows[rowIndex + 1].cells = [{
         title: <ResultView hideTestHistory={true} hideSummary={false} hideTestObject={false} testResult={rows[rowIndex].result}/>
-      }]
+      }];
     }
     rows[rowIndex].isOpen = isOpen;
     this.setState({rows});
@@ -102,15 +102,15 @@ export class TestHistoryTable extends React.Component {
     this.setState({page: pageNumber}, () => {
       this.getResultsForTable();
     });
-  }
+  };
 
   pageSizeSelect = (_event, perPage) => {
     this.setState({pageSize: perPage}, () => {
       this.getResultsForTable();
     });
-  }
+  };
 
-  updateFilters(name, operator, value, callback) {
+  updateFilters (name, operator, value, callback) {
     let filters = this.state.filters;
     if ((value === null) || (value.length === 0)) {
       delete filters[name];
@@ -123,28 +123,28 @@ export class TestHistoryTable extends React.Component {
 
   setFilter = (field, value) => {
     // maybe process values array to string format here instead of expecting caller to do it?
-    let operator = (value.includes(';')) ? 'in' : 'eq'
-    this.updateFilters(field, operator, value, this.refreshResults)
-  }
+    let operator = (value.includes(';')) ? 'in' : 'eq';
+    this.updateFilters(field, operator, value, this.refreshResults);
+  };
 
   removeFilter = id => {
     if ((id !== 'result') && (id !== 'test_id')) {   // Don't allow removal of error/failure filter
-      this.updateFilters(id, null, null, this.refreshResults)
+      this.updateFilters(id, null, null, this.refreshResults);
     }
-  }
+  };
 
   onFailuresCheck = (checked) => {
     let { filters } = this.state;
-    filters['result']['val'] = ('failed;error') + ((checked) ? ';skipped;xfailed' : ';skipped;xfailed;xpassed;passed')
+    filters['result']['val'] = ('failed;error') + ((checked) ? ';skipped;xfailed' : ';skipped;xfailed;xpassed;passed');
     this.setState(
       {onlyFailures: checked, filters},
       this.refreshResults
     );
-  }
+  };
 
   onDropdownToggle = isOpen => {
     this.setState({isDropdownOpen: isOpen});
-  }
+  };
 
   onDropdownSelect  = (_event, selection) => {
     let { filters } = this.state;
@@ -153,16 +153,16 @@ export class TestHistoryTable extends React.Component {
     // here a selection (month) is considered to be 30 days, and there are 86400*1000 ms in a day
     let timeRange = new Date(startTime.getTime() - (selection * 30 * 86400 * 1000));
     // set the filters
-    filters['start_time'] = {op: 'gt', val: timeRange.toISOString()}
+    filters['start_time'] = {op: 'gt', val: timeRange.toISOString()};
     this.setState({filters, isDropdownOpen: false, dropdownSelection: selection}, this.refreshResults);
-  }
+  };
 
-  getHistorySummary() {
+  getHistorySummary () {
     // get the passed/failed/etc test summary
     let filters = {...this.state.filters};
     // disregard result filter (we want all results)
     delete filters['result'];
-    let api_filter = toAPIFilter(filters).join()
+    let api_filter = toAPIFilter(filters).join();
     let dataToSummary = Object.assign({
       'passed': 'passes',
       'failed': 'failures',
@@ -170,7 +170,7 @@ export class TestHistoryTable extends React.Component {
       'skipped': 'skips',
       'xfailed': 'xfailures',
       'xpassed': 'xpasses'
-    })
+    });
     let summary = Object.assign({
       'passes': 0,
       'failures': 0,
@@ -182,27 +182,27 @@ export class TestHistoryTable extends React.Component {
 
     HttpClient.get(
       [Settings.serverUrl, 'widget', 'result-aggregator'],
-        {
-          group_field: 'result',
-          additional_filters: api_filter,
-        }
-      )
+      {
+        group_field: 'result',
+        additional_filters: api_filter,
+      }
+    )
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         data.forEach(item => {
-          summary[dataToSummary[item['_id']]] = item['count']
-        })
-        this.setState({historySummary: summary}, this.getResultsForTable)
-      })
+          summary[dataToSummary[item['_id']]] = item['count'];
+        });
+        this.setState({historySummary: summary}, this.getResultsForTable);
+      });
   }
 
-  getLastPassed(){
+  getLastPassed (){
     // get the passed/failed/etc test summary
     let filters = {...this.state.filters};
     // disregard result filter so we can filter on last passed
     delete filters['result'];
     delete filters['start_time'];
-    filters['result'] = {'op': 'eq', 'val': 'passed'}
+    filters['result'] = {'op': 'eq', 'val': 'passed'};
     let params = buildParams(filters);
     params['filter'] = toAPIFilter(filters);
     params['pageSize'] = 1;
@@ -212,7 +212,7 @@ export class TestHistoryTable extends React.Component {
     HttpClient.get([Settings.serverUrl, 'result'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
-          lastPassedDate:
+        lastPassedDate:
             <React.Fragment>
               <Link target="_blank" rel="noopener noreferrer" to={`../results/${data.results[0].id}`} relative="Path">
                 <Badge isRead>
@@ -227,7 +227,7 @@ export class TestHistoryTable extends React.Component {
       });
   }
 
-  getResultsForTable() {
+  getResultsForTable () {
     if (this.state.comparisonResults !== undefined) {
       this.setState({
         results: this.state.comparisonResults,
@@ -246,13 +246,13 @@ export class TestHistoryTable extends React.Component {
       HttpClient.get([Settings.serverUrl, 'result'], params)
         .then(response => HttpClient.handleResponse(response))
         .then(data => this.setState({
-            results: data.results,
-            rows: data.results.map((result, index) => resultToTestHistoryRow(result, index, this.setFilter)).flat(),
-            page: data.pagination.page,
-            pageSize: data.pagination.pageSize,
-            totalItems: data.pagination.totalItems,
-            totalPages: data.pagination.totalPages,
-            isEmpty: data.pagination.totalItems === 0,
+          results: data.results,
+          rows: data.results.map((result, index) => resultToTestHistoryRow(result, index, this.setFilter)).flat(),
+          page: data.pagination.page,
+          pageSize: data.pagination.pageSize,
+          totalItems: data.pagination.totalItems,
+          totalPages: data.pagination.totalPages,
+          isEmpty: data.pagination.totalItems === 0,
         }))
         .catch((error) => {
           console.error('Error fetching result data:', error);
@@ -262,12 +262,12 @@ export class TestHistoryTable extends React.Component {
 
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getHistorySummary();
     this.getLastPassed();
   }
 
-  render() {
+  render () {
     const {
       columns,
       rows,
@@ -282,12 +282,12 @@ export class TestHistoryTable extends React.Component {
       '2 Months': 2.0,
       '3 Months': 3.0,
       '5 Months': 5.0
-    })
+    });
     const pagination = {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
-    }
+    };
 
     return (
       <Card className="pf-u-mt-lg">

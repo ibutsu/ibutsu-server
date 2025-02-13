@@ -13,7 +13,7 @@ import {
 } from '../utilities';
 import { FilterHeatmapWidget, GenericAreaWidget, GenericBarWidget } from '../widgets';
 import { ParamDropdown } from '../components';
-import { HEATMAP_MAX_BUILDS } from '../constants'
+import { HEATMAP_MAX_BUILDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 
 
@@ -25,7 +25,7 @@ export class JenkinsJobAnalysisView extends React.Component {
     view: PropTypes.object
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     const params = new URLSearchParams(props.location.search);
     let filters = {};
@@ -54,7 +54,7 @@ export class JenkinsJobAnalysisView extends React.Component {
     };
   }
 
-  getTabIndex(defaultValue) {
+  getTabIndex (defaultValue) {
     defaultValue = defaultValue || null;
     return this.props.location.hash !== '' ? this.props.location.hash.substring(1) : defaultValue;
   }
@@ -88,9 +88,9 @@ export class JenkinsJobAnalysisView extends React.Component {
           isLoading: false,
         });
       });
-  }
+  };
 
-  getBarWidth() {
+  getBarWidth () {
     const numBars = this.state.builds;
     let barWidth = 8;
     if (numBars > HEATMAP_MAX_BUILDS) {
@@ -101,12 +101,12 @@ export class JenkinsJobAnalysisView extends React.Component {
         barWidth = 5;
       }
     }
-    this.setState({barWidth})
+    this.setState({barWidth});
   }
 
-  getBuildsDropdown() {
+  getBuildsDropdown () {
     const { activeTab } = this.state;
-    let dropdownItems = [10, 20, 30, 40]
+    let dropdownItems = [10, 20, 30, 40];
     let defaultValue = this.state.builds;
     if (activeTab === 'overall-health' || activeTab === 'build-durations') {
       dropdownItems.push(70, 150);
@@ -115,14 +115,14 @@ export class JenkinsJobAnalysisView extends React.Component {
       defaultValue = Math.min(defaultValue, HEATMAP_MAX_BUILDS);
     }
     return (<ParamDropdown
-        dropdownItems={dropdownItems}
-        defaultValue={defaultValue}
-        handleSelect={this.onBuildSelect}
-        tooltip="Set builds to:"
-      />);
+      dropdownItems={dropdownItems}
+      defaultValue={defaultValue}
+      handleSelect={this.onBuildSelect}
+      tooltip="Set builds to:"
+    />);
   }
 
-  getSwitch() {
+  getSwitch () {
     const { isAreaChart } = this.state;
     return (
       <Switch
@@ -153,37 +153,37 @@ export class JenkinsJobAnalysisView extends React.Component {
       color = 'var(--pf-v5-global--palette--purple-700)';
     }
     return color;
-  }
+  };
 
   onTabSelect = (_event, tabIndex) => {
     const loc = this.props.location;
-    this.props.navigate(`${loc.pathname}${loc.search}#${tabIndex}`)
+    this.props.navigate(`${loc.pathname}${loc.search}#${tabIndex}`);
     this.setState({activeTab: tabIndex});
-  }
+  };
 
   onBuildSelect = (value) => {
     this.setState({builds: value}, () => {
       this.getWidgetParams();
       this.getBarWidth();
     });
-  }
+  };
 
   onSkipSelect = (value) => {
     this.setState({countSkips: value}, () => {
       this.getWidgetParams();
     });
-  }
+  };
 
   handleSwitch = (_event, isChecked) => {
     this.setState({isAreaChart: isChecked});
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getWidgetParams();
     window.addEventListener('popstate', this.handlePopState);
   }
 
-  componentWillUnmount() {
+  componentWillUnmount () {
     window.removeEventListener('popstate', this.handlePopState);
   }
 
@@ -195,7 +195,7 @@ export class JenkinsJobAnalysisView extends React.Component {
     });
   };
 
-  render() {
+  render () {
     const {
       activeTab,
       isAreaChart,
@@ -226,14 +226,14 @@ export class JenkinsJobAnalysisView extends React.Component {
           {this.getSwitch()}
         </div>
         }
-      <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-        <Tab eventKey='heatmap' title="Heatmap">
-          {!isLoading && activeTab === 'heatmap' &&
+        <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
+          <Tab eventKey='heatmap' title="Heatmap">
+            {!isLoading && activeTab === 'heatmap' &&
           <FilterHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true} labelWidth={400} type='jenkins'/>
-          }
-        </Tab>
-        <Tab eventKey='overall-health' title="Overall Health">
-          {!isLoading && !isAreaChart && activeTab === 'overall-health' &&
+            }
+          </Tab>
+          <Tab eventKey='overall-health' title="Overall Health">
+            {!isLoading && !isAreaChart && activeTab === 'overall-health' &&
           <GenericBarWidget
             title={'Test counts for ' + barchartParams.job_name}
             params={barchartParams}
@@ -254,8 +254,8 @@ export class JenkinsJobAnalysisView extends React.Component {
             fontSize={9}
             sortOrder="ascending"
           />
-          }
-          {!isLoading && isAreaChart && activeTab === 'overall-health' &&
+            }
+            {!isLoading && isAreaChart && activeTab === 'overall-health' &&
           <GenericAreaWidget
             title={'Test counts for ' + barchartParams.job_name}
             params={barchartParams}
@@ -281,10 +281,10 @@ export class JenkinsJobAnalysisView extends React.Component {
             }}
             fontSize={9}
           />
-          }
-        </Tab>
-        <Tab eventKey='build-durations' title="Build Duration">
-          {!isLoading && activeTab === 'build-durations' &&
+            }
+          </Tab>
+          <Tab eventKey='build-durations' title="Build Duration">
+            {!isLoading && activeTab === 'build-durations' &&
           <GenericAreaWidget
             title={'Durations for ' + linechartParams.job_name}
             params={linechartParams}
@@ -303,9 +303,9 @@ export class JenkinsJobAnalysisView extends React.Component {
             yLabel="Time [hrs]"
             varExplanation="* Note: since for some jobs, the plugin tests execute in parallel, 'Duration' is the real time for which the build ran. 'Total Execution Time' is the sum of durations for each plugin run."
           />
-          }
-        </Tab>
-      </Tabs>
+            }
+          </Tab>
+        </Tabs>
       </React.Fragment>
     );
   }

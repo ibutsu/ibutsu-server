@@ -37,7 +37,7 @@ import { OPERATIONS } from './constants';
 import { IbutsuContext } from './services/context';
 
 
-function reportToRow(report) {
+function reportToRow (report) {
   let reportStatus = 'pending';
   let reportName = report.filename ? report.filename : '(report pending)';
   let actions = '';
@@ -68,9 +68,9 @@ export class ReportBuilder extends React.Component {
   static propTypes = {
     location: PropTypes.object,
     eventEmitter: PropTypes.object
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     const params = new URLSearchParams(props.location.search);
     let page = 1, pageSize = 20, filters = [], filterString = '';
@@ -129,13 +129,13 @@ export class ReportBuilder extends React.Component {
 
   setPage = (_event, pageNumber) => {
     this.setState({page: pageNumber}, this.getResults);
-  }
+  };
 
   setPageSize = (_event, perPage) => {
     this.setState({pageSize: perPage}, this.getResults);
-  }
+  };
 
-  getReports() {
+  getReports () {
     let params = {
       pageSize: this.state.pageSize,
       page: this.state.page
@@ -161,7 +161,7 @@ export class ReportBuilder extends React.Component {
       });
   }
 
-  getReportTypes() {
+  getReportTypes () {
     HttpClient.get([Settings.serverUrl, 'report', 'types'])
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({reportTypes: data}));
@@ -180,17 +180,17 @@ export class ReportBuilder extends React.Component {
     HttpClient.post([Settings.serverUrl, 'report'], params).then(() => this.getReports());
   };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getReportTypes();
     this.getReports();
     this.interval = setInterval(() => this.getReports(), 5000);
   }
 
-  componentWillUnmount() {
+  componentWillUnmount () {
     clearInterval(this.interval);
   }
 
-  render() {
+  render () {
     document.title = 'Report Builder | Ibutsu';
     const { columns, rows, actions } = this.state;
     const reportTypes = this.state.reportTypes.map((reportType) => <FormSelectOption key={reportType.type} value={reportType.type} label={reportType.name} />);

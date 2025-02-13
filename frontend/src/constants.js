@@ -68,7 +68,7 @@ export const STRING_RESULT_FIELDS = [
 export const RESULT_FIELDS = [...NUMERIC_RESULT_FIELDS, ...STRING_RESULT_FIELDS, ...ARRAY_RESULT_FIELDS];
 export const ARRAY_RUN_FIELDS = [
   'metadata.tags',
-]
+];
 export const NUMERIC_RUN_FIELDS = [
   'duration',
   'summary.errors',
@@ -100,11 +100,11 @@ export const STRING_JJV_FIELDS = [
   'source',
   'build_number',
   'env'
-]
+];
 export const NUMERIC_JJV_FIELDS = [
   'start_time',
-]
-export const JJV_FIELDS = [...STRING_JJV_FIELDS, ...NUMERIC_JJV_FIELDS]
+];
+export const JJV_FIELDS = [...STRING_JJV_FIELDS, ...NUMERIC_JJV_FIELDS];
 export const CLASSIFICATION = {
   dependency_outage: 'Dependency Outage',
   environment_failure: 'Environment Failure',

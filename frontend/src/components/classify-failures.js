@@ -37,9 +37,9 @@ export class ClassifyFailuresTable extends React.Component {
   static propTypes = {
     filters: PropTypes.object,
     run_id: PropTypes.string
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       columns: [{title: 'Test', cellFormatters: [expandable]}, 'Result', 'Exception Name', 'Classification', 'Duration'],
@@ -67,9 +67,9 @@ export class ClassifyFailuresTable extends React.Component {
   refreshResults = () => {
     this.setState({selectedResults: []});
     this.getResultsForTable();
-  }
+  };
 
-  onCollapse(event, rowIndex, isOpen) {
+  onCollapse (event, rowIndex, isOpen) {
     const { rows } = this.state;
 
     // lazy-load the result view so we don't have to make a bunch of artifact requests
@@ -85,7 +85,7 @@ export class ClassifyFailuresTable extends React.Component {
       }
       rows[rowIndex + 1].cells = [{
         title: <ResultView defaultTab={defaultTab} hideTestHistory={false} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={rows[rowIndex].result}/>
-      }]
+      }];
     }
     rows[rowIndex].isOpen = isOpen;
     this.setState({rows});
@@ -107,21 +107,21 @@ export class ClassifyFailuresTable extends React.Component {
       rows,
     });
     this.getSelectedResults();
-  }
+  };
 
   setPage = (_event, pageNumber) => {
     this.setState({page: pageNumber}, () => {
       this.getResultsForTable();
     });
-  }
+  };
 
   pageSizeSelect = (_event, perPage) => {
     this.setState({pageSize: perPage}, () => {
       this.getResultsForTable();
     });
-  }
+  };
 
-  updateFilters(filterId, name, operator, value, callback) {
+  updateFilters (filterId, name, operator, value, callback) {
     let filters = this.state.filters;
     if ((value === null) || (value.length === 0)) {
       delete filters[name];
@@ -134,24 +134,24 @@ export class ClassifyFailuresTable extends React.Component {
 
   setFilter = (filterId, field, value) => {
     // maybe process values array to string format here instead of expecting caller to do it?
-    let operator = (value.includes(';')) ? 'in' : 'eq'
-    this.updateFilters(filterId, field, operator, value, this.refreshResults)
-  }
+    let operator = (value.includes(';')) ? 'in' : 'eq';
+    this.updateFilters(filterId, field, operator, value, this.refreshResults);
+  };
 
   removeFilter = (filterId, id) => {
     if ((id !== 'result') && (id !== 'run_id')) {   // Don't allow removal of error/failure filter
-      this.updateFilters(filterId, id, null, null, this.refreshResults)
+      this.updateFilters(filterId, id, null, null, this.refreshResults);
     }
-  }
+  };
 
   onSkipCheck = (checked) => {
     let { filters } = this.state;
-    filters['result']['val'] = ('failed;error') + ((checked) ? ';skipped;xfailed' : '')
+    filters['result']['val'] = ('failed;error') + ((checked) ? ';skipped;xfailed' : '');
     this.setState(
       {includeSkipped: checked, filters},
       this.refreshResults
     );
-  }
+  };
 
   getSelectedResults = () => {
     const { results, rows } = this.state;
@@ -162,9 +162,9 @@ export class ClassifyFailuresTable extends React.Component {
       }
     }
     this.setState({selectedResults});
-  }
+  };
 
-  getResultsForTable() {
+  getResultsForTable () {
     const filters = this.state.filters;
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
     // get only failed results
@@ -176,13 +176,13 @@ export class ClassifyFailuresTable extends React.Component {
     HttpClient.get([Settings.serverUrl, 'result'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
-          results: data.results,
-          rows: data.results.map((result, index) => resultToClassificationRow(result, index, this.setFilter)).flat(),
-          page: data.pagination.page,
-          pageSize: data.pagination.pageSize,
-          totalItems: data.pagination.totalItems,
-          totalPages: data.pagination.totalPages,
-          isEmpty: data.pagination.totalItems === 0,
+        results: data.results,
+        rows: data.results.map((result, index) => resultToClassificationRow(result, index, this.setFilter)).flat(),
+        page: data.pagination.page,
+        pageSize: data.pagination.pageSize,
+        totalItems: data.pagination.totalItems,
+        totalPages: data.pagination.totalPages,
+        isEmpty: data.pagination.totalItems === 0,
       }))
       .catch((error) => {
         console.error('Error fetching result data:', error);
@@ -190,11 +190,11 @@ export class ClassifyFailuresTable extends React.Component {
       });
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getResultsForTable();
   }
 
-  render() {
+  render () {
     const {
       columns,
       rows,
@@ -202,12 +202,12 @@ export class ClassifyFailuresTable extends React.Component {
       includeSkipped,
       filters
     } = this.state;
-    const { run_id } = this.props
+    const { run_id } = this.props;
     const pagination = {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
-    }
+    };
     // filters for the metadata
     const resultFilters = [
       <MetaFilter
@@ -220,7 +220,7 @@ export class ClassifyFailuresTable extends React.Component {
         hideFilters={['run_id', 'project_id']}
         id={0}
       />,
-    ]
+    ];
     return (
       <Card className="pf-u-mt-lg">
         <CardHeader>

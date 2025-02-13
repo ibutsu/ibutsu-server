@@ -18,9 +18,9 @@ export class MultiValueInput extends React.Component {
     onRemoveValue: PropTypes.func,
     onValuesChange: PropTypes.func,
     style: PropTypes.object
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.style = props.style || {};
     this.state = {
@@ -58,7 +58,7 @@ export class MultiValueInput extends React.Component {
         if (this.props.onValuesChange) {
           this.props.onValuesChange(newValues);
         }
-     });
+      });
     }
     this.setState({
       value: ''
@@ -73,13 +73,13 @@ export class MultiValueInput extends React.Component {
 
   handleKeyPress = event => {
     switch (event.key) {
-      case 'Enter':
-        this.handleEnter();
-        break;
+    case 'Enter':
+      this.handleEnter();
+      break;
     }
   };
 
-  render() {
+  render () {
     return (
       <React.Fragment>
         <TextInputGroup>

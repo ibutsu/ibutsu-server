@@ -21,11 +21,11 @@ export class DeleteModal extends React.Component {
 
   onDelete = () => {
     this.props.onDelete(this.props.id);
-  }
+  };
 
   onClose = () => {
     this.props.onClose();
-  }
+  };
 
   render () {
     return (
@@ -39,7 +39,7 @@ export class DeleteModal extends React.Component {
           <Button key="cancel" variant="link" onClick={this.onClose}>Cancel</Button>
         ]}
       >
-      <Text>{this.props.body}</Text>
+        <Text>{this.props.body}</Text>
       </Modal>
     );
   }

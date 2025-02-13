@@ -25,7 +25,7 @@ import Editor from '@monaco-editor/react';
 import * as http from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
 import { DownloadButton } from './download-button';
-import { linkifyDecorator } from './decorators'
+import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
 import { getIconForResult, getTheme, round } from '../utilities';
 import { TabTitle } from './tabs';
@@ -67,9 +67,9 @@ export class ResultView extends React.Component {
     location: PropTypes.object,
     comparisonResults: PropTypes.array,
     hideArtifact: PropTypes.bool
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       testResult: this.props.testResult || MockTest,
@@ -82,7 +82,7 @@ export class ResultView extends React.Component {
     };
   }
 
-  getDefaultTab() {
+  getDefaultTab () {
     if (this.props.defaultTab) {
       return this.props.defaultTab;
     }
@@ -97,7 +97,7 @@ export class ResultView extends React.Component {
     }
   }
 
-  getTabIndex(defaultValue) {
+  getTabIndex (defaultValue) {
     defaultValue = defaultValue || null;
     if (!!this.props.location && this.props.location.hash !== '') {
       return this.props.location.hash.substring(1);
@@ -107,7 +107,7 @@ export class ResultView extends React.Component {
     }
   }
 
-  updateTab(tabIndex) {
+  updateTab (tabIndex) {
     if (tabIndex === 'test-history') {
       this.getTestHistoryTable();
     }
@@ -116,7 +116,7 @@ export class ResultView extends React.Component {
   onTabSelect = (_event, tabIndex) => {
     const loc = this.props.location;
     if (loc) {
-      this.props.navigate(`${loc.pathname}${loc.search}#${tabIndex}`)
+      this.props.navigate(`${loc.pathname}${loc.search}#${tabIndex}`);
     }
     this.setState({activeTab: tabIndex});
     this.updateTab(tabIndex);
@@ -129,15 +129,15 @@ export class ResultView extends React.Component {
       this.setState({testHistoryTable: <TestHistoryTable testResult={this.state.testResult}/>});
     }
 
-  }
+  };
 
-  getTestResult(resultId) {
+  getTestResult (resultId) {
     http.HttpClient.get([Settings.serverUrl, 'result', resultId])
       .then(response => http.HttpClient.handleResponse(response))
       .then(data => this.setState({testResult: data}));
   }
 
-  getTestArtifacts(resultId) {
+  getTestArtifacts (resultId) {
     http.HttpClient.get([Settings.serverUrl, 'artifact'], {resultId: resultId})
       .then(response => http.HttpClient.handleResponse(response))
       .then(data => {
@@ -187,7 +187,7 @@ export class ResultView extends React.Component {
       });
   }
 
-  getResult() {
+  getResult () {
     if (this.state.resultId && !this.state.testResult.id) {
       this.getTestResult(this.state.resultId);
     }
@@ -196,7 +196,7 @@ export class ResultView extends React.Component {
     }
   }
 
-  componentDidUpdate() {
+  componentDidUpdate () {
     if (this.props.testResult !== this.state.testResult) {
       this.setState({testResult: this.props.testResult}, () => this.getResult());
     }
@@ -205,7 +205,7 @@ export class ResultView extends React.Component {
     }
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getResult();
     if (this.state.activeTab === 'test-history') {
       this.getTestHistoryTable();
@@ -213,7 +213,7 @@ export class ResultView extends React.Component {
     window.addEventListener('popstate', this.handlePopState);
   }
 
-  componentWillUnmount() {
+  componentWillUnmount () {
     window.removeEventListener('popstate', this.handlePopState);
   }
 
@@ -225,7 +225,7 @@ export class ResultView extends React.Component {
     });
   };
 
-  render() {
+  render () {
     let { testResult, artifactTabs, activeTab, testHistoryTable } = this.state;
     const jsonViewLightThemeOn = getTheme() === 'dark' ? false : true ;
     if (activeTab === null) {
@@ -421,7 +421,7 @@ export class ResultView extends React.Component {
                                           ]}
                                         />
                                       </DataListItemRow>
-                                   </DataListItem>
+                                    </DataListItem>
                                   }
                                   {testResult.metadata.durations.teardown &&
                                     <DataListItem className="pf-u-p-0" aria-labelledby="teardown-label">
@@ -509,8 +509,8 @@ export class ResultView extends React.Component {
                       <DataListItemRow>
                         <DataListItemCells
                           dataListCells={[
-                              <DataListCell key="params-label" width={2}><strong>Parameters:</strong></DataListCell>,
-                              <DataListCell key="params-data" width={4}>{parameters}</DataListCell>
+                            <DataListCell key="params-label" width={2}><strong>Parameters:</strong></DataListCell>,
+                            <DataListCell key="params-data" width={4}>{parameters}</DataListCell>
                           ]}
                         />
                       </DataListItemRow>
@@ -521,8 +521,8 @@ export class ResultView extends React.Component {
                       <DataListItemRow>
                         <DataListItemCells
                           dataListCells={[
-                              <DataListCell key="traceback-label" width={2}><strong>Traceback:</strong></DataListCell>,
-                              <DataListCell key="traceback-data" width={4}><div style={{overflow: 'scroll', width: '100%'}}><pre><code>{testResult.metadata.short_tb}</code></pre></div></DataListCell>
+                            <DataListCell key="traceback-label" width={2}><strong>Traceback:</strong></DataListCell>,
+                            <DataListCell key="traceback-data" width={4}><div style={{overflow: 'scroll', width: '100%'}}><pre><code>{testResult.metadata.short_tb}</code></pre></div></DataListCell>
                           ]}
                         />
                       </DataListItemRow>
@@ -536,7 +536,7 @@ export class ResultView extends React.Component {
           {!this.props.hideArtifact && artifactTabs}
           {!this.props.hideTestHistory &&
           <Tab eventKey="test-history" title={<TabTitle icon={SearchIcon} text="Test History"/>}>
-          {testHistoryTable}
+            {testHistoryTable}
           </Tab>
           }
           {!this.props.hideTestObject &&

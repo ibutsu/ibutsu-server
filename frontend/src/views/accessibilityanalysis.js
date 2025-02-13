@@ -60,7 +60,7 @@ export class AccessibilityAnalysisView extends React.Component {
     view: PropTypes.object
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     const params = new URLSearchParams(props.location.search);
     let page = 1, pageSize = 20, filters = {};
@@ -107,7 +107,7 @@ export class AccessibilityAnalysisView extends React.Component {
     };
   }
 
-  getTabIndex(defaultValue) {
+  getTabIndex (defaultValue) {
     defaultValue = defaultValue || null;
     return this.props.location.hash !== '' ? this.props.location.hash.substring(1) : defaultValue;
   }
@@ -136,10 +136,10 @@ export class AccessibilityAnalysisView extends React.Component {
           isLoading: false,
         });
       });
-  }
+  };
 
 
-  getSwitch() {
+  getSwitch () {
     const { isAreaChart } = this.state;
     return (<Switch
       id="bar-chart-switch"
@@ -170,9 +170,9 @@ export class AccessibilityAnalysisView extends React.Component {
       color = 'var(--pf-v5-global--palette--purple-700)';
     }
     return color;
-  }
+  };
 
-  getRunArtifacts() {
+  getRunArtifacts () {
     HttpClient.get([Settings.serverUrl, 'artifact'], {runId: this.state.id})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
@@ -221,7 +221,7 @@ export class AccessibilityAnalysisView extends React.Component {
       });
   }
 
-  updateTab(tabIndex) {
+  updateTab (tabIndex) {
     if (tabIndex === 'overview') {
       this.getResultsForPie();
     }
@@ -232,31 +232,31 @@ export class AccessibilityAnalysisView extends React.Component {
 
   onSearch = (value) => {
     this.setState({treeSearch: value}, this.setFilteredTree);
-  }
+  };
 
   onTabSelect = (_event, tabIndex) => {
     const loc = this.props.location;
-    this.props.navigate(`${loc.pathname}${loc.search}#${tabIndex}`)
+    this.props.navigate(`${loc.pathname}${loc.search}#${tabIndex}`);
     this.setState({activeTab: tabIndex});
     this.updateTab(tabIndex);
-  }
+  };
 
   onBuildSelect = (value) => {
     this.setState({builds: value}, () => {
       this.getWidgetParams();
       this.getBarWidth();
     });
-  }
+  };
 
   onSkipSelect = (value) => {
     this.setState({countSkips: value}, () => {
       this.getWidgetParams();
     });
-  }
+  };
 
   handleSwitch = isChecked => {
     this.setState({isAreaChart: isChecked});
-  }
+  };
 
 
   onToggle = (node) => {
@@ -268,30 +268,30 @@ export class AccessibilityAnalysisView extends React.Component {
             .then(data => {
               let { currentTest } = this.state;
               currentTest.artifacts = data.artifacts;
-              this.setState({currentTest})
+              this.setState({currentTest});
             });
         }
       });
     }
-  }
+  };
 
   setPage = (_event, pageNumber) => {
     this.setState({page: pageNumber}, () => {
       this.getResultsForTable();
     });
-  }
+  };
 
   pageSizeSelect = (_event, perPage) => {
     this.setState({pageSize: perPage}, () => {
       this.getResultsForTable();
     });
-  }
+  };
 
   refreshResults = () => {
     this.getResultsForTable();
-  }
+  };
 
-  getRun() {
+  getRun () {
     HttpClient.get([Settings.serverUrl, 'run', this.state.id])
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
@@ -309,7 +309,7 @@ export class AccessibilityAnalysisView extends React.Component {
       .catch(error => console.log(error));
   }
 
-  getResultsForTable() {
+  getResultsForTable () {
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
     let params = {filter: ['run_id=' + this.state.id, 'metadata.markers*accessibility']};
     params['pageSize'] = this.state.pageSize;
@@ -318,13 +318,13 @@ export class AccessibilityAnalysisView extends React.Component {
     HttpClient.get([Settings.serverUrl + '/result'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
-          results: data.results,
-          rows: data.results.map((result) => resultToRow(result)),
-          page: data.pagination.page,
-          pageSize: data.pagination.pageSize,
-          totalItems: data.pagination.totalItems,
-          totalPages: data.pagination.totalPages,
-          isEmpty: data.pagination.totalItems === 0
+        results: data.results,
+        rows: data.results.map((result) => resultToRow(result)),
+        page: data.pagination.page,
+        pageSize: data.pagination.pageSize,
+        totalItems: data.pagination.totalItems,
+        totalPages: data.pagination.totalPages,
+        isEmpty: data.pagination.totalItems === 0
       }))
       .catch((error) => {
         console.error('Error fetching result data:', error);
@@ -332,21 +332,21 @@ export class AccessibilityAnalysisView extends React.Component {
       });
   }
 
-  getResultsForPie_old() {
+  getResultsForPie_old () {
     HttpClient.get([Settings.serverUrl, 'widget', 'accessibility-bar-chart'], {run_list: this.state.id})
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
-          pieData: data,
+        pieData: data,
       }))
       .catch((error) => {
         console.error('Error fetching pie data:', error);
       });
   }
 
-  getResultsForPie() {
-    let passes = this.state.run.metadata.accessibility_data.passes
-    let violations = this.state.run.metadata.accessibility_data.violations
-    let total = passes + violations
+  getResultsForPie () {
+    let passes = this.state.run.metadata.accessibility_data.passes;
+    let violations = this.state.run.metadata.accessibility_data.violations;
+    let total = passes + violations;
     this.setState({
       pieData: [
         {
@@ -367,13 +367,13 @@ export class AccessibilityAnalysisView extends React.Component {
   }
 
 
-  componentDidMount() {
+  componentDidMount () {
     this.getRun();
     this.getWidgetParams();
     window.addEventListener('popstate', this.handlePopState);
   }
 
-  componentWillUnmount() {
+  componentWillUnmount () {
     window.removeEventListener('popstate', this.handlePopState);
   }
 
@@ -385,7 +385,7 @@ export class AccessibilityAnalysisView extends React.Component {
     });
   };
 
-  render() {
+  render () {
     const {
       run,
       columns,
@@ -396,7 +396,7 @@ export class AccessibilityAnalysisView extends React.Component {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
-    }
+    };
     const jsonViewTheme = {
       scheme: 'monokai',
       author: 'wimer hazenberg (http://www.monokai.nl)',
@@ -423,45 +423,45 @@ export class AccessibilityAnalysisView extends React.Component {
           <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
             <Tab eventKey="overview" title={<TabTitle icon={CatalogIcon} text="Overview" />} style={{backgroundColor: 'white'}}>
               <div style={{ height: '1000px', width: '1250px', backgroundColor: 'white' }}>
-                  <ChartDonut
-                    ariaDesc="Accessibility results donut chart"
-                    ariaTitle="Accessibility results"
-                    subTitle="Elements"
-                    title={this.state.pieData[2].total}
-                    constrainToVisibleArea={true}
-                    data={this.state.pieData}
-                    labels={({ datum }) => `${datum.x}: ${datum.ratio}%`}
-                    legendData={[{name: 'Passes', color: 'red'}, {name: 'Violations'}]}
-                    legendOrientation="vertical"
-                    legendPosition="right"
-                    legendComponent = {
-                      <ChartLegend
-                        data={[
-                          {
-                            name: 'Passes: ' + this.state.pieData[0].y,
-                              symbol: { fill: 'var(--pf-v5-global--success-color--100)'}
-                          },
-                          {
-                            name: 'Violations: ' + this.state.pieData[1].y,
-                            symbol: { fill: 'var(--pf-v5-global--danger-color--100)'}
-                          }
-                        ]}
-                      />
-                    }
-                    padding = {{
-                      bottom: 20,
-                      left: 20,
-                      right: 140,
-                      top: 0
-                    }}
-                    colorScale={[
-                      'var(--pf-v5-global--success-color--100)',
-                      'var(--pf-v5-global--danger-color--100)',
-                      'var(--pf-v5-global--warning-color--100)',
-                      'var(--pf-v5-global--info-color--100)',
-                    ]}
-                    width={300}
-                  />
+                <ChartDonut
+                  ariaDesc="Accessibility results donut chart"
+                  ariaTitle="Accessibility results"
+                  subTitle="Elements"
+                  title={this.state.pieData[2].total}
+                  constrainToVisibleArea={true}
+                  data={this.state.pieData}
+                  labels={({ datum }) => `${datum.x}: ${datum.ratio}%`}
+                  legendData={[{name: 'Passes', color: 'red'}, {name: 'Violations'}]}
+                  legendOrientation="vertical"
+                  legendPosition="right"
+                  legendComponent = {
+                    <ChartLegend
+                      data={[
+                        {
+                          name: 'Passes: ' + this.state.pieData[0].y,
+                          symbol: { fill: 'var(--pf-v5-global--success-color--100)'}
+                        },
+                        {
+                          name: 'Violations: ' + this.state.pieData[1].y,
+                          symbol: { fill: 'var(--pf-v5-global--danger-color--100)'}
+                        }
+                      ]}
+                    />
+                  }
+                  padding = {{
+                    bottom: 20,
+                    left: 20,
+                    right: 140,
+                    top: 0
+                  }}
+                  colorScale={[
+                    'var(--pf-v5-global--success-color--100)',
+                    'var(--pf-v5-global--danger-color--100)',
+                    'var(--pf-v5-global--warning-color--100)',
+                    'var(--pf-v5-global--info-color--100)',
+                  ]}
+                  width={300}
+                />
               </div>
             </Tab>
             <Tab eventKey="run-object" title={<TabTitle icon={CodeIcon} text="Run Object" />} style={{backgroundColor: 'white'}}>

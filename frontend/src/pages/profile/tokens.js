@@ -27,9 +27,9 @@ export class UserTokens extends React.Component {
     location: PropTypes.object,
     navigate: PropTypes.func,
     eventEmitter: PropTypes.object
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.eventEmitter = props.eventEmitter;
     const params = new URLSearchParams(props.location.search);
@@ -59,7 +59,7 @@ export class UserTokens extends React.Component {
     };
   }
 
-  showNotification(type, title, message, action?, timeout?, key?) {
+  showNotification (type, title, message, action?, timeout?, key?) {
     if (!this.eventEmitter) {
       return;
     }
@@ -69,9 +69,9 @@ export class UserTokens extends React.Component {
   copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     this.showNotification('info', 'Copied to clipboard', 'Your token has been copied to the clipboard');
-  }
+  };
 
-  tokenToRow(token) {
+  tokenToRow (token) {
     return {
       'cells': [
         {title: token.name},
@@ -86,7 +86,7 @@ export class UserTokens extends React.Component {
     };
   }
 
-  updateUrl() {
+  updateUrl () {
     let params = [];
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
@@ -98,16 +98,16 @@ export class UserTokens extends React.Component {
       this.updateUrl();
       this.getTokens();
     });
-  }
+  };
 
   setPageSize = (_event, perPage) => {
     this.setState({pageSize: perPage}, () => {
       this.updateUrl();
       this.getTokens();
     });
-  }
+  };
 
-  getTokens() {
+  getTokens () {
     // First, show a spinner
     this.setState({rows: [getSpinnerRow(4)], isEmpty: false, isError: false});
     let params = {
@@ -136,15 +136,15 @@ export class UserTokens extends React.Component {
       .then(response => HttpClient.handleResponse(response))
       .then(() => this.getTokens());
     this.setState({isAddTokenOpen: false});
-  }
+  };
 
   onAddTokenClick = () => {
     this.setState({isAddTokenOpen: true});
-  }
+  };
 
   onAddTokenClose = () => {
     this.setState({isAddTokenOpen: false});
-  }
+  };
 
   onDeleteToken = () => {
     const token = this.state.tokenToDelete;
@@ -154,21 +154,21 @@ export class UserTokens extends React.Component {
         this.getTokens();
         this.onDeleteTokenClose();
       });
-  }
+  };
 
   onDeleteTokenClick = (token) => {
     this.setState({tokenToDelete: token, isDeleteTokenOpen: true});
-  }
+  };
 
   onDeleteTokenClose = () => {
     this.setState({tokenToDelete: null, isDeleteTokenOpen: false});
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getTokens();
   }
 
-  render() {
+  render () {
     document.title = 'User Tokens | Ibutsu';
     const { columns, rows } = this.state;
     const pagination = {

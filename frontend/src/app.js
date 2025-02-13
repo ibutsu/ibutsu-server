@@ -19,7 +19,7 @@ import './app.css';
 
 export class App extends React.Component {
   static contextType = IbutsuContext;
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.eventEmitter = new EventEmitter();
     this.state = {
@@ -31,7 +31,7 @@ export class App extends React.Component {
     };
   }
 
-  render() {
+  render () {
     document.title = 'Ibutsu';
     return (
       <Routes>
@@ -86,7 +86,7 @@ export class App extends React.Component {
             path="view/:view_id"
             element={<ElementWrapper routeElement={View} />}
           />
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
+          <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Route>
       </Routes>
     );

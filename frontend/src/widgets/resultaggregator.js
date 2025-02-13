@@ -28,9 +28,9 @@ export class ResultAggregatorWidget extends React.Component {
     dropdownItems: PropTypes.array,
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.title = props.title || 'Result Categories';
     this.params = props.params || {};
@@ -46,7 +46,7 @@ export class ResultAggregatorWidget extends React.Component {
     };
   }
 
-  getResultData() {
+  getResultData () {
     this.setState({isLoading: true});
     HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], this.params)
       .then(response => {
@@ -65,13 +65,13 @@ export class ResultAggregatorWidget extends React.Component {
       });
   }
 
-  getChartData() {
+  getChartData () {
     let chartData = [];
     let legendData = [];
     let total = 0;
     this.state.data.forEach( ( datum ) =>  {
-      chartData.push({x: datum._id, y: datum.count})
-      legendData.push({name: toTitleCase(datum._id) + ': ' + datum.count})
+      chartData.push({x: datum._id, y: datum.count});
+      legendData.push({name: toTitleCase(datum._id) + ': ' + datum.count});
       total = total + datum.count;
     });
     this.setState({
@@ -81,11 +81,11 @@ export class ResultAggregatorWidget extends React.Component {
     });
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getResultData();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps.params !== this.props.params) {
       this.params = this.props.params;
       this.getResultData();
@@ -95,14 +95,14 @@ export class ResultAggregatorWidget extends React.Component {
   onGroupFieldSelect = (value) => {
     this.props.params.group_field = value;
     this.getResultData();
-  }
+  };
 
   onDaySelect = (value) => {
     this.props.params.days = value;
     this.getResultData();
-  }
+  };
 
-  render() {
+  render () {
     const themeColors = [
       'var(--pf-v5-global--success-color--100)',
       'var(--pf-v5-global--danger-color--100)',
@@ -191,6 +191,6 @@ export class ResultAggregatorWidget extends React.Component {
           />
         </CardFooter>
       </Card>
-    )
+    );
   }
 }

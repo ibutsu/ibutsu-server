@@ -32,11 +32,11 @@ import {
 } from './constants';
 import { ClassificationDropdown } from './components';
 
-export function getDateString() {
+export function getDateString () {
   return String((new Date()).getTime());
 }
 
-export function getIconForResult(result) {
+export function getIconForResult (result) {
   let resultIcon = '';
   if (result === 'passed') {
     resultIcon = <CheckCircleIcon />;
@@ -59,7 +59,7 @@ export function getIconForResult(result) {
   return resultIcon;
 }
 
-export function getIconForStatus(status) {
+export function getIconForStatus (status) {
   let statusIcon = '';
   if (status === 'done') {
     statusIcon = <CheckCircleIcon />;
@@ -79,7 +79,7 @@ export function getIconForStatus(status) {
   return statusIcon;
 }
 
-export function toTitleCase(str, convertToSpace=false) {
+export function toTitleCase (str, convertToSpace=false) {
   if (!str) {
     return str;
   }
@@ -88,13 +88,13 @@ export function toTitleCase(str, convertToSpace=false) {
   }
   return str.replace(
     /\w\S*/g,
-    function(txt) {
+    function (txt) {
       return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
     }
   );
 }
 
-export function buildParams(filters) {
+export function buildParams (filters) {
   let getParams = [];
   for (let key in filters) {
     if (!!filters[key] && !!filters[key]['val']) {
@@ -106,7 +106,7 @@ export function buildParams(filters) {
   return getParams;
 }
 
-export function buildUrl(url, params) {
+export function buildUrl (url, params) {
   // shorthand
   const esc = encodeURIComponent;
   let query = [];
@@ -124,9 +124,9 @@ export function buildUrl(url, params) {
   return url + '?' + query.join('&');
 }
 
-export function toAPIFilter(filters) {
+export function toAPIFilter (filters) {
   // Take UI style filter object with field/op/val keys and generate an array of filter strings for the API
-  let filter_strings = []
+  let filter_strings = [];
   for (const key in filters) {
     if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key] && key !== 'id') {
       const val = filters[key]['val'];
@@ -134,37 +134,37 @@ export function toAPIFilter(filters) {
       filter_strings.push(key + op + val);
     }
   }
-  return filter_strings
+  return filter_strings;
 }
 
-export function round(number) {
+export function round (number) {
   let rounded = Math.round(number * 10);
   return rounded / 10;
 }
 
-export function buildBadge(key, value, isRead, onClick) {
+export function buildBadge (key, value, isRead, onClick) {
   const badge = <Badge key={key} isRead = {isRead}>{value}</Badge>;
   if (onClick) {
-    return <Button key={key} variant="link" style={{padding:0}} onClick = {onClick}>{badge}</Button>
+    return <Button key={key} variant="link" style={{padding:0}} onClick = {onClick}>{badge}</Button>;
   }
   else {
     return badge;
   }
 }
 
-export function generateId(length) {
-    let resultId = '';
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const charsLength = chars.length;
-    let counter = 0;
-    while (counter < length) {
-      resultId += chars.charAt(Math.floor(Math.random() * charsLength));
-      counter += 1;
-    }
-    return resultId;
+export function generateId (length) {
+  let resultId = '';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const charsLength = chars.length;
+  let counter = 0;
+  while (counter < length) {
+    resultId += chars.charAt(Math.floor(Math.random() * charsLength));
+    counter += 1;
+  }
+  return resultId;
 }
 
-export function resultToRow(result, filterFunc) {
+export function resultToRow (result, filterFunc) {
   let resultIcon = getIconForResult(result.result);
   let markers = [];
   let runLink = '';
@@ -216,7 +216,7 @@ export function resultToRow(result, filterFunc) {
   };
 }
 
-export function resultToClassificationRow(result, index, filterFunc) {
+export function resultToClassificationRow (result, index, filterFunc) {
   let resultIcon = getIconForResult(result.result);
   let markers = [];
   let exceptionBadge;
@@ -262,26 +262,26 @@ export function resultToClassificationRow(result, index, filterFunc) {
   ];
 }
 
-export function resultToComparisonRow(result, index) {
+export function resultToComparisonRow (result, index) {
   let resultIcons = [];
   let markers = [];
   result.forEach(result => {
-    resultIcons.push(getIconForResult(result.result))
+    resultIcons.push(getIconForResult(result.result));
     if (result.metadata && result.metadata.markers) {
-        for (const marker of result.metadata.markers) {
-          // Don't add duplicate markers
-          if (markers.filter(m => m.key === marker).length === 0) {
-            markers.push(<Badge isRead key={marker}>{marker}</Badge>);
-          }
+      for (const marker of result.metadata.markers) {
+        // Don't add duplicate markers
+        if (markers.filter(m => m.key === marker).length === 0) {
+          markers.push(<Badge isRead key={marker}>{marker}</Badge>);
         }
       }
+    }
   });
 
   if (result[0].metadata && result[0].metadata.component) {
     markers.push(<Badge key={result[0].metadata.component}>{result[0].metadata.component}</Badge>);
   }
 
-  let cells = []
+  let cells = [];
   cells.push({title: <React.Fragment><Link to={`../results/${result[0].id}`} relative="Path">{result[0].test_id}</Link> {markers}</React.Fragment>});
   result.forEach((result, index) => {
     cells.push({title: <span className={result.result}>{resultIcons[index]} {toTitleCase(result.result)}</span>});
@@ -303,7 +303,7 @@ export function resultToComparisonRow(result, index) {
   ];
 }
 
-export function resultToTestHistoryRow(result, index, filterFunc) {
+export function resultToTestHistoryRow (result, index, filterFunc) {
   let resultIcon = getIconForResult(result.result);
   let exceptionBadge;
 
@@ -336,7 +336,7 @@ export function resultToTestHistoryRow(result, index, filterFunc) {
   ];
 }
 
-export function parseFilter(paramKey) {
+export function parseFilter (paramKey) {
   const re = /(.*?)\[(.*?)\]/;
   let match = re.exec(paramKey);
   if (match) {
@@ -353,7 +353,7 @@ export function parseFilter(paramKey) {
   }
 }
 
-export function getSpinnerRow(columnCount) {
+export function getSpinnerRow (columnCount) {
   return {
     heightAuto: true,
     cells: [
@@ -365,7 +365,7 @@ export function getSpinnerRow(columnCount) {
   };
 }
 
-export function getFilterMode(field) {
+export function getFilterMode (field) {
   let filterMode = 'text';
   if (field === 'run_id') {
     filterMode = 'run';
@@ -376,7 +376,7 @@ export function getFilterMode(field) {
   return filterMode;
 }
 
-export function getOperationMode(operation) {
+export function getOperationMode (operation) {
   let operationMode = 'single';
   if (operation === 'in') {
     operationMode = 'multi';
@@ -387,7 +387,7 @@ export function getOperationMode(operation) {
   return operationMode;
 }
 
-export function getOperationsFromField(field) {
+export function getOperationsFromField (field) {
   let operations = OPERATIONS;  // default to all OPERATIONS
   if (ARRAY_RESULT_FIELDS.includes(field) || ARRAY_RUN_FIELDS.includes(field)) {
     operations = ARRAY_OPERATIONS;
@@ -401,13 +401,13 @@ export function getOperationsFromField(field) {
   return operations;
 }
 
-export function projectToOption(project) {
+export function projectToOption (project) {
   if (!project) {
     return '';
   }
   return {
     project: project,
-    toString: function() {
+    toString: function () {
       return this.project.title;
     },
     compareTo: function (value) {
@@ -422,13 +422,13 @@ export function projectToOption(project) {
   };
 }
 
-export function dashboardToOption(dashboard) {
+export function dashboardToOption (dashboard) {
   if (!dashboard) {
     return '';
   }
   return {
     dashboard: dashboard,
-    toString: function() {
+    toString: function () {
       return this.dashboard.title;
     },
     compareTo: function (value) {
@@ -442,7 +442,7 @@ export function dashboardToOption(dashboard) {
   };
 }
 
-export function processPyTestPath(path) {
+export function processPyTestPath (path) {
   if (path && path.indexOf('/') === 0) {
     path = path.substring(1);
   }
@@ -457,7 +457,7 @@ export function processPyTestPath(path) {
   return [segment, ...processPyTestPath(rest)];
 }
 
-export function convertDate(s) {
+export function convertDate (s) {
   let days = 0;
   let date = new Date(0);
   days = Math.floor(s / (24 * 60 * 60));
@@ -476,7 +476,7 @@ export function convertDate(s) {
   return '[' + dayString + timeString + ']';
 }
 
-export function cleanPath(path) {
+export function cleanPath (path) {
   if (!path) {
     // if xml imported results have no fspath
     return 'Tests';
@@ -492,7 +492,7 @@ export function cleanPath(path) {
   return pathParts.join('/');
 }
 
-export function debounce(func, timeout = 500) {
+export function debounce (func, timeout = 500) {
   let timerId;
   return (...args) => {
     if (!timerId) {
@@ -503,9 +503,9 @@ export function debounce(func, timeout = 500) {
   };
 }
 
-export function getTheme() {
+export function getTheme () {
   // check local storage and default to browser theme
-  const local_theme = localStorage.getItem(THEME_KEY)
+  const local_theme = localStorage.getItem(THEME_KEY);
   if (local_theme) {
     return local_theme;
   }
@@ -515,7 +515,7 @@ export function getTheme() {
   }
 }
 
-export function setTheme(theme) {
+export function setTheme (theme) {
   let target_theme = theme ? theme : getTheme();
   if (!['dark', 'light'].includes(target_theme)) {
     console.log('bad theme value passed, defaulting to dark');

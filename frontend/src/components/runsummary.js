@@ -4,9 +4,9 @@ import PropTypes from 'prop-types';
 export class RunSummary extends React.Component {
   static propTypes = {
     summary: PropTypes.object
-  }
+  };
 
-  render() {
+  render () {
     if (!this.props.summary) {
       return '';
     }

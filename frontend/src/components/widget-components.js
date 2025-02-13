@@ -21,7 +21,7 @@ export class WidgetHeader extends React.Component {
     title: PropTypes.string,
     actions: PropTypes.object,
     onEditClick: PropTypes.func
-  }
+  };
 
 
   render () {
@@ -65,9 +65,9 @@ export class ParamDropdown extends React.Component {
     handleSelect: PropTypes.func,
     showDescription: PropTypes.bool,
     tooltip: PropTypes.string
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.onSelect = this.onSelect.bind(this);
     this.onToggle = this.onToggle.bind(this);
@@ -80,7 +80,7 @@ export class ParamDropdown extends React.Component {
 
   onToggle = () => {
     this.setState({isOpen: !this.state.isOpen});
-  }
+  };
 
 
   onSelect = (event) => {
@@ -91,9 +91,9 @@ export class ParamDropdown extends React.Component {
     this.setState({
       value: event.target.innerText
     });
-  }
+  };
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps !== this.props) {
       this.setState({
         value: this.props.defaultValue
@@ -101,7 +101,7 @@ export class ParamDropdown extends React.Component {
     }
   }
 
-  render() {
+  render () {
     const { isOpen } = this.state;
     const { showDescription } = this.state;
 

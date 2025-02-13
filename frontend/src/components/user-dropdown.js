@@ -17,9 +17,9 @@ export class UserDropdown extends React.Component {
   static contextType = IbutsuContext;
   static propTypes = {
     eventEmitter: PropTypes.object
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.eventEmitter = props.eventEmitter;
     this.state = {
@@ -32,7 +32,7 @@ export class UserDropdown extends React.Component {
     });
   }
 
-  updateUserName(userName) {
+  updateUserName (userName) {
     // Update the user in the browser
     const sessionUser = AuthService.getUser();
     sessionUser.name = userName;
@@ -54,16 +54,16 @@ export class UserDropdown extends React.Component {
     setActiveDashboard();
     AuthService.logout();
     window.location = '/';
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     AuthService.isSuperAdmin().then(isSuperAdmin => this.setState({isSuperAdmin}));
     this.setState({
       displayName: AuthService.getUser() && (AuthService.getUser().name || AuthService.getUser().email)
     });
   }
 
-  render() {
+  render () {
     return (
       <Dropdown
         isOpen={this.state.isDropdownOpen}

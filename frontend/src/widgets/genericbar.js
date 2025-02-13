@@ -40,9 +40,9 @@ export class GenericBarWidget extends React.Component {
     yLabel: PropTypes.string,
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.title = props.title || 'Recent Run Results';
     this.params = props.params || {};
@@ -60,14 +60,14 @@ export class GenericBarWidget extends React.Component {
   onGroupFieldSelect = (value) => {
     this.props.params.group_field = value;
     this.getData();
-  }
+  };
 
   onWeekSelect = (value) => {
     this.props.params.weeks = value;
     this.getData();
-  }
+  };
 
-  getData() {
+  getData () {
     this.setState({isLoading: true});
     let widgetEndpoint = this.props.widgetEndpoint || 'run-aggregator';
     HttpClient.get([Settings.serverUrl, 'widget', widgetEndpoint], this.params)
@@ -105,9 +105,9 @@ export class GenericBarWidget extends React.Component {
       color = 'var(--pf-v5-global--palette--purple-700)';
     }
     return color;
-  }
+  };
 
-  getLabels() {
+  getLabels () {
     if (this.props.percentData) {
       return ({datum}) => `${toTitleCase(datum.name)}: ${datum.y} %`;
     }
@@ -122,13 +122,13 @@ export class GenericBarWidget extends React.Component {
     }
   }
 
-  getBarCharts() {
+  getBarCharts () {
     let barCharts = [];
     for (const test_state of Object.keys(this.state.data)) {
       if (test_state !== 'filter') {
         let barData = [];
         for (const group_field of Object.keys(this.state.data[test_state])) {
-          barData.push({name: toTitleCase(test_state), x: group_field, y: this.state.data[test_state][group_field]})
+          barData.push({name: toTitleCase(test_state), x: group_field, y: this.state.data[test_state][group_field]});
         }
         if (barData.length !== 0) {
           barCharts.push(
@@ -163,20 +163,20 @@ export class GenericBarWidget extends React.Component {
     else {
       return 300;
     }
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getData();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps.params !== this.props.params) {
       this.params = this.props.params;
       this.getData();
     }
   }
 
-  getDropdowns() {
+  getDropdowns () {
     if (this.props.hideDropdown) {
       return null;
     }
@@ -196,11 +196,11 @@ export class GenericBarWidget extends React.Component {
             tooltip="Set weeks to:"
           />
         </div>
-      )
+      );
     }
   }
 
-  render() {
+  render () {
     return (
       <Card>
         <WidgetHeader title={this.title} getDataFunc={this.getData} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
@@ -269,8 +269,8 @@ export class GenericBarWidget extends React.Component {
             }}
           />
           {this.getDropdowns()}
-       </CardFooter>
+        </CardFooter>
       </Card>
-    )
+    );
   }
 }

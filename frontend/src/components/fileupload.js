@@ -18,9 +18,9 @@ export class FileUpload extends React.Component {
     children: PropTypes.node,
     className: PropTypes.node,
     isUnstyled: PropTypes.bool,
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       url: props.url,
@@ -34,7 +34,7 @@ export class FileUpload extends React.Component {
 
   onClick = () => {
     this.inputRef.current.click();
-  }
+  };
 
   onFileChange = (e) => {
     let files = e.target.files || e.dataTransfer.files;
@@ -44,7 +44,7 @@ export class FileUpload extends React.Component {
       // Clear the upload field
       this.inputRef.current.value = '';
     }
-  }
+  };
 
   uploadFile = (file) => {
     const files = {};
@@ -58,9 +58,9 @@ export class FileUpload extends React.Component {
       response = HttpClient.handleResponse(response, 'response');
       this.state.afterUpload(response);
     });
-  }
+  };
 
-  render() {
+  render () {
     const { children, className } = this.props;
     const { primaryObject } = this.context;
     return (

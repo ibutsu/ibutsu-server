@@ -20,84 +20,87 @@ const compat = new FlatCompat({
 });
 
 export default [
-    {
-        files: ['src/*', 'cypress/*'],
-        ignores: ['node_modules/*'],
+  {
+    files: ['src/*', 'cypress/*'],
+    ignores: ['node_modules/*'],
+  },
+  ...compat.extends(
+    'eslint:recommended',
+    'plugin:react/recommended',
+    'plugin:react-hooks/recommended',
+    'plugin:cypress/recommended',
+    'prettier',
+  ),
+  {
+    plugins: {
+      cypress,
+      prettier,
+      react,
+      'unused-imports': unusedImports,
+      'react-hooks': hooksPlugin,
     },
-    ...compat.extends(
-        'eslint:recommended',
-        'plugin:react/recommended',
-        'plugin:react-hooks/recommended',
-        'plugin:cypress/recommended',
-        'prettier',
-    ),
-    {
-        plugins: {
-            cypress,
-            prettier,
-            react,
-            'unused-imports': unusedImports,
-            'react-hooks': hooksPlugin,
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.cypress,
+        es202: true,
+      },
+      parser: pkg,
+      parserOptions: {
+        ecmaVersion: 2020,
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
         },
-        languageOptions: {
-            globals: {
-                ...globals.browser,
-                ...globals.node,
-                ...globals.cypress,
-                es202: true,
-            },
-            parser: pkg,
-            parserOptions: {
-                ecmaVersion: 2020,
-                sourceType: 'module',
-                ecmaFeatures: {
-                    jsx: true,
-                },
-                requireConfigFile: false,
-                plugins: [
-                    '@babel/plugin-transform-class-properties',
-                    '@babel/plugin-transform-private-methods',
-                    '@babel/plugin-syntax-jsx',
-                    '@babel/plugin-syntax-flow'
-                ],
-                babelOptions: {
-                    presets: [
-                        '@babel/preset-flow',
-                        '@babel/preset-env',
-                        '@babel/preset-react',
-                    ]
-                },
-            },
+        requireConfigFile: false,
+        plugins: [
+          '@babel/plugin-transform-class-properties',
+          '@babel/plugin-transform-private-methods',
+          '@babel/plugin-syntax-jsx',
+          '@babel/plugin-syntax-flow'
+        ],
+        babelOptions: {
+          presets: [
+            '@babel/preset-flow',
+            '@babel/preset-env',
+            '@babel/preset-react',
+          ]
         },
-        rules: {
-            'cypress/no-assigning-return-values': 'error',
-            'cypress/no-unnecessary-waiting': 'error',
-            'cypress/assertion-before-screenshot': 'warn',
-            'cypress/no-force': 'warn',
-            'cypress/no-async-tests': 'error',
-            'cypress/no-async-before': 'error',
-            'cypress/no-pause': 'error',
-            'react/jsx-curly-brace-presence': [
-                'error',
-                {
-                  props: 'never',
-                  children: 'never',
-                },
-              ],
+      },
+    },
+    rules: {
+      'cypress/no-assigning-return-values': 'error',
+      'cypress/no-unnecessary-waiting': 'error',
+      'cypress/assertion-before-screenshot': 'warn',
+      'cypress/no-force': 'warn',
+      'cypress/no-async-tests': 'error',
+      'cypress/no-async-before': 'error',
+      'cypress/no-pause': 'error',
+      'react/jsx-curly-brace-presence': [
+        'error',
+        {
+          props: 'never',
+          children: 'never',
+        },
+      ],
 
-              'arrow-body-style': ['error', 'as-needed'],
-              'react/react-in-jsx-scope': 'off',
-              camelcase: 'off',
-              'spaced-comment': 'error',
-              quotes: ['warn', 'single'],
-              'no-duplicate-imports': 'error',
-              'unused-imports/no-unused-imports': 'error',
-              'unused-imports/no-unused-vars': ['warn'],
-        },
-        settings: {
-            react:{
-                version: 'detect',
-            }
-        },
-    }
-]
+      'arrow-body-style': ['error', 'as-needed'],
+      'react/react-in-jsx-scope': 'off',
+      camelcase: 'off',
+      'spaced-comment': 'error',
+      quotes: ['warn', 'single'],
+      'no-duplicate-imports': 'error',
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': ['warn'],
+      'semi': ['error'],
+      'indent': ['error', 2],
+      'space-before-function-paren': ['error', 'always'],
+    },
+    settings: {
+      react:{
+        version: 'detect',
+      }
+    },
+  }
+];

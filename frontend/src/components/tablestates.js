@@ -18,9 +18,9 @@ import {
 export class TableEmptyState extends React.Component {
   static propTypes = {
     onClearFilters: PropTypes.func,
-  }
+  };
 
-  render() {
+  render () {
     return (
       <Bullseye>
         <EmptyState>
@@ -46,9 +46,9 @@ export class TableEmptyState extends React.Component {
 export class TableErrorState extends React.Component {
   static propTypes = {
     onClearFilters: PropTypes.func,
-  }
+  };
 
-  render() {
+  render () {
     return (
       <Bullseye>
         <EmptyState>

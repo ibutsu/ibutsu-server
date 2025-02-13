@@ -6,9 +6,9 @@ export class TabTitle extends React.Component {
   static propTypes = {
     icon: PropTypes.elementType,
     text: PropTypes.string
-  }
+  };
 
-  render() {
+  render () {
     const Icon = this.props.icon;
     return (
       <React.Fragment>

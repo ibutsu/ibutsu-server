@@ -32,7 +32,7 @@ import {
   Th,
   Thead,
   Tr,
-} from '@patternfly/react-table'
+} from '@patternfly/react-table';
 import Linkify from 'react-linkify';
 import { linkifyDecorator } from './decorators';
 
@@ -47,7 +47,7 @@ export class NewWidgetWizard extends React.Component {
     isOpen: PropTypes.bool
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       widgetTypes: [],
@@ -104,7 +104,7 @@ export class NewWidgetWizard extends React.Component {
       selectedTypeId: null,
       stepIdReached: 1
     });
-  }
+  };
 
   onClose = () => {
     this.setState({
@@ -118,7 +118,7 @@ export class NewWidgetWizard extends React.Component {
       stepIdReached: 1
     });
     this.props.onClose();
-  }
+  };
 
   onSelectType = (_, event) => {
     let selectedTypeId = event.currentTarget.value;
@@ -146,15 +146,15 @@ export class NewWidgetWizard extends React.Component {
       }
     });
     this.setState({selectedTypeId: selectedTypeId, selectedType: selectedType, params: params});
-  }
+  };
 
   onTitleChange = (value) => {
     this.setState({title: value, isTitleValid: (value !== '')});
-  }
+  };
 
   onWeightChange = (value) => {
     this.setState({weight: value});
-  }
+  };
 
   onParamChange = (value, event) => {
     const params = this.state.params;
@@ -164,22 +164,22 @@ export class NewWidgetWizard extends React.Component {
     }
     this.setState({params: params});
     this.state.selectedType.params.forEach(widgetParam => {
-        if ((widgetParam.required) && (!params[widgetParam.name])) {
-          areParamsFilled = false;
-        }
+      if ((widgetParam.required) && (!params[widgetParam.name])) {
+        areParamsFilled = false;
+      }
     });
     this.setState({areParamsFilled: areParamsFilled});
-  }
+  };
 
   handleRequiredParam = (param) => {
     if (param.required) {
       if (this.state.params[param.name] === '') {
-        return 'error'
+        return 'error';
       }
     }
     // TODO: Handle parameter types
-    return 'default'
-  }
+    return 'default';
+  };
 
   onNext = (_event, currentStep) => {
     if (currentStep.id === 3) {
@@ -188,9 +188,9 @@ export class NewWidgetWizard extends React.Component {
     this.setState({
       stepIdReached: this.state.stepIdReached < currentStep.id ? currentStep.id : this.state.stepIdReached
     });
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     HttpClient.get([Settings.serverUrl, 'widget', 'types'], {'type': 'widget'})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
@@ -198,7 +198,7 @@ export class NewWidgetWizard extends React.Component {
       });
   }
 
-  render() {
+  render () {
     const { widgetTypes, selectedType, selectedTypeId, stepIdReached, isTitleValid, areParamsFilled } = this.state;
     const steps = [
       {
@@ -209,10 +209,10 @@ export class NewWidgetWizard extends React.Component {
           <Form>
             <Title headingLevel="h1" size="xl">Select a widget type</Title>
             {widgetTypes.map(widgetType => (
-                <div key={widgetType.id}>
-                  <Radio id={widgetType.id} value={widgetType.id} label={widgetType.title} description={widgetType.description} isChecked={selectedTypeId === widgetType.id} onChange={(event, _) => this.onSelectType(_, event)}/>
-                </div>
-              ))}
+              <div key={widgetType.id}>
+                <Radio id={widgetType.id} value={widgetType.id} label={widgetType.title} description={widgetType.description} isChecked={selectedTypeId === widgetType.id} onChange={(event, _) => this.onSelectType(_, event)}/>
+              </div>
+            ))}
           </Form>
         )
       },
@@ -227,13 +227,13 @@ export class NewWidgetWizard extends React.Component {
             <FormGroup label="Title" fieldId="widget-title" isRequired>
               <TextInput type="text" id="widget-title" name="widget-title" value={this.state.title} onChange={(_event, value) => this.onTitleChange(value)} validated={this.state.isTitleValid ? 'default' : 'error'} isRequired />
               {this.state.isTitleValid !== true && (
-              <FormHelperText>
-                <HelperText>
-                  <HelperTextItem variant="error">
+                <FormHelperText>
+                  <HelperText>
+                    <HelperTextItem variant="error">
                     Please enter a title for this widget
-                  </HelperTextItem>
-                </HelperText>
-              </FormHelperText>
+                    </HelperTextItem>
+                  </HelperText>
+                </FormHelperText>
               )}
             </FormGroup>
             <FormGroup label="Weight" fieldId="widget-weight">
@@ -258,7 +258,7 @@ export class NewWidgetWizard extends React.Component {
           <Form isHorizontal>
             <Title headingLevel="h1" size="xl">Set widget parameters</Title>
             {!!selectedType && selectedType.params.map(param => (
-                <React.Fragment key={param.name}>
+              <React.Fragment key={param.name}>
                 {(param.type === 'string' || param.type === 'integer' || param.type === 'float') &&
                   <FormGroup
                     label={param.name}
@@ -314,8 +314,8 @@ export class NewWidgetWizard extends React.Component {
                       resizeOrientation='vertical' />
                   </FormGroup>
                 }
-                </React.Fragment>
-              ))}
+              </React.Fragment>
+            ))}
           </Form>
         )
       },

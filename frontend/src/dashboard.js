@@ -54,9 +54,9 @@ export class Dashboard extends React.Component {
     eventEmitter: PropTypes.object,
     navigate: PropTypes.func,
     params: PropTypes.object,
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       widgets: [],
@@ -111,9 +111,9 @@ export class Dashboard extends React.Component {
       this.setState({
         selectedDashboard: updatedDash,
         dashboardInputValue: updatedDash.title
-      })
+      });
     }
-  }
+  };
 
   getDashboards = (handledOject = null) => {
     // value is checked because of handler scope not seeing context state updates
@@ -123,7 +123,7 @@ export class Dashboard extends React.Component {
     const primaryObjectId = handledOject?.id ?? primaryObject?.id ?? paramProject;
 
     if (!primaryObjectId) {
-      this.setState({dashboardInputValue: ''})
+      this.setState({dashboardInputValue: ''});
       return;
     }
     let params = {
@@ -140,7 +140,7 @@ export class Dashboard extends React.Component {
         this.setState({dashboards: data['dashboards'], filteredDashboards: data['dashboards']});
       })
       .catch(error => console.log(error));
-  }
+  };
 
   getDefaultDashboard = (handledObject = null) => {
     const { primaryObject, activeDashboard, setActiveDashboard } = this.context;
@@ -163,9 +163,9 @@ export class Dashboard extends React.Component {
       this.setState({
         'selectedDashboard': targetObject.defaultDashboard,
         'dashboardInputValue': targetObject.defaultDashboard?.title
-      })
+      });
     }
-  }
+  };
 
   getWidgets = (dashboard) => {
     let params = {'type': 'widget'};
@@ -191,7 +191,7 @@ export class Dashboard extends React.Component {
         this.setState({widgets: data.widgets});
       })
       .catch(error => console.log(error));
-  }
+  };
 
   onDashboardToggle = () => {
     this.setState({isDashboardSelectorOpen: !this.state.isDashboardSelectorOpen});
@@ -211,7 +211,7 @@ export class Dashboard extends React.Component {
 
     // does it really matter whether I read from params or the context here?
     // they should be the same, reading from params 'feels' better
-    this.props.navigate('/project/' + this.props.params?.project_id + '/dashboard/' + value?.id)
+    this.props.navigate('/project/' + this.props.params?.project_id + '/dashboard/' + value?.id);
   };
 
   onDashboardClear = () => {
@@ -225,8 +225,8 @@ export class Dashboard extends React.Component {
     // TODO convert to functional component and rely on context updating within callbacks
     this.getWidgets(null);
 
-    this.props.navigate('/project/' + this.props.params?.project_id + '/dashboard/')
-  }
+    this.props.navigate('/project/' + this.props.params?.project_id + '/dashboard/');
+  };
 
   onTextInputChange = (_event, value) => {
     this.setState({
@@ -237,11 +237,11 @@ export class Dashboard extends React.Component {
 
   onNewDashboardClick = () => {
     this.setState({isNewDashboardOpen: true});
-  }
+  };
 
   onNewDashboardClose = () => {
     this.setState({isNewDashboardOpen: false});
-  }
+  };
 
   onNewDashboardSave = (newDashboard) => {
     HttpClient.post([Settings.serverUrl, 'dashboard'], newDashboard)
@@ -256,41 +256,41 @@ export class Dashboard extends React.Component {
         }, this.getWidgets);
       })
       .catch(error => console.log(error));
-  }
+  };
 
   onDeleteDashboardClick = () => {
     this.setState({isDeleteDashboardOpen: true});
-  }
+  };
 
   onDeleteDashboardClose = () => {
     this.setState({isDeleteDashboardOpen: false});
-  }
+  };
 
   onDeleteDashboard = () => {
     const { activeDashboard, setActiveDashboard } = this.context;
 
     HttpClient.delete([Settings.serverUrl, 'dashboard', activeDashboard.id])
-        .then(response => HttpClient.handleResponse(response))
-        .then(() => {
-          setActiveDashboard();
-          this.getDashboards();
-          this.setState({
-            isDeleteDashboardOpen: false,
-            selectedDashboard: null
-          });
-        })
-        .catch(error => console.log(error));
-  }
+      .then(response => HttpClient.handleResponse(response))
+      .then(() => {
+        setActiveDashboard();
+        this.getDashboards();
+        this.setState({
+          isDeleteDashboardOpen: false,
+          selectedDashboard: null
+        });
+      })
+      .catch(error => console.log(error));
+  };
 
   onDeleteWidget = () => {
     HttpClient.delete([Settings.serverUrl, 'widget-config', this.state.currentWidgetId])
-        .then(response => HttpClient.handleResponse(response))
-        .then(() => {
-          this.getWidgets();
-          this.setState({isDeleteWidgetOpen: false});
-        })
-        .catch(error => console.log(error));
-  }
+      .then(response => HttpClient.handleResponse(response))
+      .then(() => {
+        this.getWidgets();
+        this.setState({isDeleteWidgetOpen: false});
+      })
+      .catch(error => console.log(error));
+  };
 
   onEditWidgetSave = (editWidget) => {
     const { primaryObject } = this.context;
@@ -298,44 +298,44 @@ export class Dashboard extends React.Component {
       editWidget.project_id = primaryObject.id;
     }
     this.setState({isEditModalOpen: false});
-    editWidget.id = this.state.currentWidgetId
+    editWidget.id = this.state.currentWidgetId;
     HttpClient.put([Settings.serverUrl, 'widget-config', this.state.currentWidgetId], '', editWidget)
-        .then(response => HttpClient.handleResponse(response))
-        .then(() => {
-          this.getWidgets();
-        })
-        .catch(error => console.log(error));
-  }
+      .then(response => HttpClient.handleResponse(response))
+      .then(() => {
+        this.getWidgets();
+      })
+      .catch(error => console.log(error));
+  };
 
   onEditWidgetClose = () => {
     this.setState({isEditModalOpen: false});
-  }
+  };
 
   onEditWidgetClick = (id) => {
     HttpClient.get([Settings.serverUrl, 'widget-config', id])
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          this.setState({isEditModalOpen: true, currentWidgetId: id, editWidgetData: data});
-        })
-        .catch(error => console.log(error));
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => {
+        this.setState({isEditModalOpen: true, currentWidgetId: id, editWidgetData: data});
+      })
+      .catch(error => console.log(error));
 
-  }
+  };
 
   onDeleteWidgetClick = (id) => {
     this.setState({isDeleteWidgetOpen: true, currentWidgetId: id});
-  }
+  };
 
   onDeleteWidgetClose = () => {
     this.setState({isDeleteWidgetOpen: false});
-  }
+  };
 
   onAddWidgetClick = () => {
     this.setState({isWidgetWizardOpen: true});
-  }
+  };
 
   onNewWidgetClose = () => {
     this.setState({isWidgetWizardOpen: false});
-  }
+  };
 
   onNewWidgetSave = (newWidget) => {
     const { primaryObject } = this.context;
@@ -343,19 +343,19 @@ export class Dashboard extends React.Component {
       newWidget.project_id = primaryObject.id;
     }
     HttpClient.post([Settings.serverUrl, 'widget-config'], newWidget)
-      .then(() => { this.getWidgets() })
+      .then(() => { this.getWidgets(); })
       .catch(error => console.log(error));
     this.setState({isWidgetWizardOpen: false});
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     this.sync_context();
     this.getDashboards();
     this.getDefaultDashboard();
     this.getWidgets();
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate (prevProps, prevState) {
     if (
       prevState.filterValueDashboard !== this.state.filterValueDashboard
     ) {
@@ -376,7 +376,7 @@ export class Dashboard extends React.Component {
     }
   }
 
-  render() {
+  render () {
     document.title = 'Dashboard | Ibutsu';
     const { widgets } = this.state;
     const { primaryObject, activeDashboard } = this.context;
@@ -418,7 +418,7 @@ export class Dashboard extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
 
     return (
       <React.Fragment>
@@ -657,7 +657,7 @@ export class Dashboard extends React.Component {
             onClose={this.onEditWidgetClose}
             data={this.state.editWidgetData}
           />
-        : ''}
+          : ''}
       </React.Fragment>
     );
   }

@@ -29,9 +29,9 @@ export class ImportanceComponentWidget extends React.Component {
     params: PropTypes.object,
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.title = props.title || 'Importance Component Widget';
     this.params = props.params || {};
@@ -45,7 +45,7 @@ export class ImportanceComponentWidget extends React.Component {
   }
 
   getData = () => {
-    this.setState({isLoading: true})
+    this.setState({isLoading: true});
     HttpClient.get([Settings.serverUrl, 'widget', 'importance-component'], this.params)
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
@@ -59,13 +59,13 @@ export class ImportanceComponentWidget extends React.Component {
         this.setState({dataError: true});
         console.log(error);
       });
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getData();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps.params !== this.props.params) {
       this.params = this.props.params;
       this.getData();
@@ -77,16 +77,16 @@ export class ImportanceComponentWidget extends React.Component {
       this.props.params.count_skips = (value === 'Yes');
       this.getData();
     });
-  }
+  };
 
-  toPercent(num) {
+  toPercent (num) {
     if (typeof(num) === 'number') {
-      return Math.round(num * 100)
+      return Math.round(num * 100);
     }
-    return num
+    return num;
   }
 
-  render() {
+  render () {
     return (
       <Card>
         <WidgetHeader title={this.title} getDataFunc={this.getData} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
@@ -110,12 +110,12 @@ export class ImportanceComponentWidget extends React.Component {
                 </Thead>
                 <Tbody>
                   {tdat.importances.map((importance) => (
-                  <Tr key={importance}>
-                    <Td>{importance}</Td>
-                    {tdat.bnums.map((buildnum) => (
-                      <Td key={buildnum}><Link to={'/project/' + this.props.params.project + `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`}>{this.toPercent(tdat.data[buildnum][importance]['percentage'])}</Link></Td>
-                    ))}
-                  </Tr>
+                    <Tr key={importance}>
+                      <Td>{importance}</Td>
+                      {tdat.bnums.map((buildnum) => (
+                        <Td key={buildnum}><Link to={'/project/' + this.props.params.project + `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`}>{this.toPercent(tdat.data[buildnum][importance]['percentage'])}</Link></Td>
+                      ))}
+                    </Tr>
                   ))}
                 </Tbody>
               </Table>

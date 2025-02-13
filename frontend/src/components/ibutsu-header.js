@@ -35,7 +35,7 @@ import { BarsIcon, MoonIcon, ServerIcon, TimesIcon, QuestionCircleIcon, UploadIc
 
 import { FileUpload, UserDropdown } from '../components';
 import { MONITOR_UPLOAD_TIMEOUT, VERSION_CHECK_TIMEOUT } from '../constants';
-import  packageJson from '../../package.json'
+import  packageJson from '../../package.json';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { getDateString, getTheme, setTheme } from '../utilities';
@@ -50,9 +50,9 @@ export class IbutsuHeader extends React.Component {
     navigate: PropTypes.func,
     version: PropTypes.string,
     params: PropTypes.object,
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.eventEmitter = props.eventEmitter;
     this.versionCheckId = '';
@@ -90,8 +90,8 @@ export class IbutsuHeader extends React.Component {
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
           updatedPrimary = data;
-          setPrimaryObject(data)
-          setPrimaryType('project')
+          setPrimaryObject(data);
+          setPrimaryType('project');
           // update state
           this.setState({
             selectedProject: data,
@@ -99,7 +99,7 @@ export class IbutsuHeader extends React.Component {
             inputValue: data?.title,
             filterValue: ''
           });
-      });
+        });
     }
 
     // update selector state
@@ -107,22 +107,22 @@ export class IbutsuHeader extends React.Component {
       this.setState({
         selectedProject: updatedPrimary,
         inputValue: updatedPrimary.title
-      })
+      });
     }
 
     if ( updatedPrimary ) {
       this.emitProjectChange(updatedPrimary);
     }
-  }
+  };
 
-  showNotification(type, title, message, action = null, timeout = null, key = null) {
+  showNotification (type, title, message, action = null, timeout = null, key = null) {
     if (!this.eventEmitter) {
       return;
     }
     this.eventEmitter.emit('showNotification', type, title, message, action, timeout, key);
   }
 
-  checkVersion() {
+  checkVersion () {
     const frontendUrl = window.location.origin;
     HttpClient.get([frontendUrl, 'version.json'], {'v': getDateString()})
       .then(response => HttpClient.handleResponse(response))
@@ -140,7 +140,7 @@ export class IbutsuHeader extends React.Component {
       });
   }
 
-  emitProjectChange(value = null) {
+  emitProjectChange (value = null) {
     if (!this.eventEmitter) {
       return;
     }
@@ -158,21 +158,21 @@ export class IbutsuHeader extends React.Component {
     HttpClient.get([Settings.serverUrl, endpoint], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
-          this.setState(
-            {
-              projects: data[pluralEndpoint],
-              filteredProjects: data[pluralEndpoint],
-            })
-        }
-    );
-  }
+        this.setState(
+          {
+            projects: data[pluralEndpoint],
+            filteredProjects: data[pluralEndpoint],
+          });
+      }
+      );
+  };
 
   // TODO: separate functional upload component from ibutsu-header
   onBeforeUpload = (files) => {
     for (var i = 0; i < files.length; i++) {
       this.showNotification('info', 'File Uploaded', files[i].name + ' has been uploaded, importing will start momentarily.');
     }
-  }
+  };
 
   onAfterUpload = (response) => {
     response = HttpClient.handleResponse(response, 'response');
@@ -188,7 +188,7 @@ export class IbutsuHeader extends React.Component {
     else {
       this.showNotification('danger', 'Import Error', 'There was a problem importing your file');
     }
-  }
+  };
 
   monitorUpload = () => {
     const { primaryObject } = this.context;
@@ -201,20 +201,20 @@ export class IbutsuHeader extends React.Component {
           let action = null;
           if (data.metadata.run_id) {
             const RunButton = () => (
-              <AlertActionLink onClick={() => {this.props.navigate('/project/' + (data.metadata.project_id || primaryObject.id) + '/runs/' + data.metadata.run_id)}}>
+              <AlertActionLink onClick={() => {this.props.navigate('/project/' + (data.metadata.project_id || primaryObject.id) + '/runs/' + data.metadata.run_id);}}>
                 Go to Run
               </AlertActionLink>
-            )
+            );
             action = <RunButton />;
           }
           this.showNotification('success', 'Import Complete', `${data.filename} has been successfully imported as run ${data.metadata.run_id}`, action);
         }
       });
-  }
+  };
 
   onProjectToggle = () => {
     this.setState({isProjectSelectorOpen: !this.state.isProjectSelectorOpen});
-  }
+  };
 
   onProjectSelect = (_event, value) => {
     const { primaryObject, setPrimaryObject, setPrimaryType } = this.context;
@@ -227,8 +227,8 @@ export class IbutsuHeader extends React.Component {
       return;
     }
     // update context
-    setPrimaryObject(value)
-    setPrimaryType('project')
+    setPrimaryObject(value);
+    setPrimaryType('project');
     // update state
     this.setState({
       selectedProject: value,
@@ -238,12 +238,12 @@ export class IbutsuHeader extends React.Component {
     });
     // Consider whether the location should be changed within the emit hooks?
     let dash_path = '';
-    if (value?.default_dashboard_id != null) {dash_path = '/dashboard/' + value?.default_dashboard_id}
+    if (value?.default_dashboard_id != null) {dash_path = '/dashboard/' + value?.default_dashboard_id;}
     this.props.navigate('/project/' + value?.id + dash_path);
 
     // useEffect with dependency on functional component to remove passing value, handlers don't see updated context
     this.emitProjectChange(value);
-  }
+  };
 
   onProjectClear = () => {
     const { setPrimaryObject } = this.context;
@@ -259,25 +259,25 @@ export class IbutsuHeader extends React.Component {
     this.props.navigate('/project');
 
     this.emitProjectChange();
-  }
+  };
 
   onProjectTextInputChange = (_event, value) => {
     this.setState({
       inputValue: value,
       filterValue: value
     }, this.getSelectorOptions('project'));
-  }
+  };
 
   toggleAbout = () => {
     this.setState({isAboutOpen: !this.state.isAboutOpen});
-  }
+  };
 
   onThemeChanged = (isChecked) => {
     setTheme(isChecked ? 'dark' : 'light');
     this.setState({isDarkTheme: isChecked});
-  }
+  };
 
-  componentWillUnmount() {
+  componentWillUnmount () {
     if (this.state.monitorUploadId) {
       clearInterval(this.state.monitorUploadId);
     }
@@ -286,14 +286,14 @@ export class IbutsuHeader extends React.Component {
     }
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getSelectorOptions('project');
     this.sync_context();
     this.checkVersion();
     this.versionCheckId = setInterval(() => this.checkVersion(), VERSION_CHECK_TIMEOUT);
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate (prevProps, prevState) {
     if (
       prevState.filterValue !== this.state.filterValue
     ) {
@@ -337,7 +337,7 @@ export class IbutsuHeader extends React.Component {
         <TextInputGroupUtilities>
           {!!this.state.inputValue && (
             <Button variant="plain" onClick={() => {
-              this.onProjectClear()
+              this.onProjectClear();
             }} aria-label="Clear input value">
               <TimesIcon aria-hidden />
             </Button>
@@ -347,7 +347,7 @@ export class IbutsuHeader extends React.Component {
     </MenuToggle>
   );
 
-  render() {
+  render () {
     document.title = 'Ibutsu';
     const apiUiUrl = Settings.serverUrl + '/ui/';
     const {
@@ -447,17 +447,17 @@ export class IbutsuHeader extends React.Component {
             </ToolbarItem>
             <ToolbarItem>
               <Switch
-              id="theme-toggle"
-              label={<MoonIcon />}
-              isChecked={this.state.isDarkTheme}
-              onChange={(_event, isChecked) => this.onThemeChanged(isChecked)} />
+                id="theme-toggle"
+                label={<MoonIcon />}
+                isChecked={this.state.isDarkTheme}
+                onChange={(_event, isChecked) => this.onThemeChanged(isChecked)} />
             </ToolbarItem>
             <ToolbarItem id="user-dropdown">
               <UserDropdown eventEmitter={this.eventEmitter}/>
             </ToolbarItem>
           </ToolbarGroup>
-      </ToolbarContent>
-    </Toolbar>
+        </ToolbarContent>
+      </Toolbar>
     );
     return (
       <React.Fragment>

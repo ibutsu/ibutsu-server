@@ -40,7 +40,7 @@ import { OPERATIONS, RUN_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
 
 
-function runToRow(run, filterFunc) {
+function runToRow (run, filterFunc) {
   let badges = [];
   let created = 0;
   let componentBadge;
@@ -48,7 +48,7 @@ function runToRow(run, filterFunc) {
     created = new Date(run.start_time);
   }
   else {
-      created = new Date(run.created);
+    created = new Date(run.created);
   }
 
   if (filterFunc) {
@@ -92,9 +92,9 @@ export class RunList extends React.Component {
     navigate: PropTypes.func,
     eventEmitter: PropTypes.object,
     params: PropTypes.object,
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     const params = new URLSearchParams(props.location.search);
     let page = 1, pageSize = 20, filters = {};
@@ -145,7 +145,7 @@ export class RunList extends React.Component {
   }
 
   applyReport = () => {
-    this.props.navigate('/project/' + this.props.params.project_id + '/reports?' + buildParams(this.state.filters).join('&'))
+    this.props.navigate('/project/' + this.props.params.project_id + '/reports?' + buildParams(this.state.filters).join('&'));
   };
 
   onFieldToggle = () => {
@@ -160,7 +160,7 @@ export class RunList extends React.Component {
         fieldSelection: fieldFilterValue,
         fieldInputValue: fieldFilterValue,
         operationSelection: 'eq',
-      })
+      });
     }
     else {
       this.setState({
@@ -261,7 +261,7 @@ export class RunList extends React.Component {
     });
   };
 
-  updateFilters(name, operator, value, callback) {
+  updateFilters (name, operator, value, callback) {
     let filters = this.state.filters;
     if (!value) {
       delete filters[name];
@@ -284,20 +284,20 @@ export class RunList extends React.Component {
         inValues: []
       });
     });
-  }
+  };
 
   removeFilter = id => {
     this.updateFilters(id, null, null, () => {
       this.updateUrl();
       this.setState({page: 1}, this.getRuns);
     });
-  }
+  };
 
-  updateUrl() {
+  updateUrl () {
     let params = buildParams(this.state.filters);
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.navigate('?' + params.join('&'))
+    this.props.navigate('?' + params.join('&'));
   }
 
   setPage = (_event, pageNumber) => {
@@ -305,14 +305,14 @@ export class RunList extends React.Component {
       this.updateUrl();
       this.getRuns();
     });
-  }
+  };
 
   setPageSize = (_event, perPage) => {
     this.setState({pageSize: perPage}, () => {
       this.updateUrl();
       this.getRuns();
     });
-  }
+  };
 
   getRuns = (handledOject = null) => {
     // First, show a spinner
@@ -325,7 +325,7 @@ export class RunList extends React.Component {
       filters['project_id'] = {'val': targetObject.id, 'op': 'eq'};
     }
     else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
-      delete filters['project_id']
+      delete filters['project_id'];
     }
     params['estimate'] = true;
     params['pageSize'] = this.state.pageSize;
@@ -368,11 +368,11 @@ export class RunList extends React.Component {
     this.updateUrl();
   };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getRuns();
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate (prevProps, prevState) {
     if (
       prevState.fieldFilterValue !== this.state.fieldFilterValue
     ) {
@@ -396,7 +396,7 @@ export class RunList extends React.Component {
     }
   }
 
-  render() {
+  render () {
     document.title = 'Test Runs | Ibutsu';
     const {
       columns,
@@ -440,7 +440,7 @@ export class RunList extends React.Component {
             {!!fieldInputValue && (
               <Button
                 variant="plain"
-                onClick={() => {this.onFieldClear()}}
+                onClick={() => {this.onFieldClear();}}
                 aria-label="Clear input value"
               >
                 <TimesIcon aria-hidden />
@@ -449,7 +449,7 @@ export class RunList extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
 
     const operationToggle = toggleRef => (
       <MenuToggle
@@ -460,7 +460,7 @@ export class RunList extends React.Component {
       >
         {this.state.operationSelection}
       </MenuToggle>
-    )
+    );
 
     const boolToggle = toggleRef => (
       <MenuToggle
@@ -490,7 +490,7 @@ export class RunList extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
 
     const filters = [
       <Select

@@ -22,7 +22,7 @@ export class AddTokenModal extends React.Component {
     isOpen: PropTypes.bool
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       name: '',
@@ -34,11 +34,11 @@ export class AddTokenModal extends React.Component {
 
   onNameChange = (name) => {
     this.setState({name});
-  }
+  };
 
   onExpiryDateChange = (_event, expiryStr) => {
     this.setState({expiryDate: expiryStr});
-  }
+  };
 
   onSave = () => {
     if (this.state.name === '' || this.state.expiryDate === '') {
@@ -62,7 +62,7 @@ export class AddTokenModal extends React.Component {
       isNameValid: true,
       isExpiryValid: true
     });
-  }
+  };
 
   onClose = () => {
     this.setState({
@@ -72,7 +72,7 @@ export class AddTokenModal extends React.Component {
       isExpiryValid: true
     });
     this.props.onClose();
-  }
+  };
 
   render () {
     return (
@@ -110,7 +110,7 @@ export class AddTokenModal extends React.Component {
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
-              )}
+            )}
           </FormGroup>
           <FormGroup
             label="Expiry"

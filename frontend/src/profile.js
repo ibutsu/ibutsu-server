@@ -23,7 +23,7 @@ const Profile = () => {
       </Route>
     </Routes>
   );
-}
+};
 
 Profile.propTypes = {
 

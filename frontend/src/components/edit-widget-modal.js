@@ -29,7 +29,7 @@ export class EditWidgetModal extends React.Component {
     data: PropTypes.object,
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       widgetType: null,
@@ -45,11 +45,11 @@ export class EditWidgetModal extends React.Component {
 
   onNameChange = (name) => {
     this.setState({name});
-  }
+  };
 
   onExpiryDateChange = (expiryStr) => {
     this.setState({expiryDate: expiryStr});
-  }
+  };
 
   onSave = () => {
     const updatedWidget = {
@@ -58,7 +58,7 @@ export class EditWidgetModal extends React.Component {
       weight: parseInt(this.state.weight),
       type: 'widget',
       widget: this.props.data.widget
-    }
+    };
     this.props.onSave(updatedWidget);
     this.setState({
       widgetType: null,
@@ -68,7 +68,7 @@ export class EditWidgetModal extends React.Component {
       isTitleValid: false,
       areParamsFilled: false
     });
-  }
+  };
 
   onClose = () => {
     this.setState({
@@ -79,15 +79,15 @@ export class EditWidgetModal extends React.Component {
       areParamsFilled: false,
     });
     this.props.onClose();
-  }
+  };
 
   onTitleChange = (value) => {
     this.setState({title: value, isTitleValid: (value !== '')});
-  }
+  };
 
   onWeightChange = (value) => {
     this.setState({weight: value});
-  }
+  };
 
   onParamChange = (value, event) => {
     const params = this.state.params;
@@ -97,14 +97,14 @@ export class EditWidgetModal extends React.Component {
     }
     this.setState({params: params});
     this.state.widgetType.params.forEach(widgetParam => {
-        if ((widgetParam.required) && (!params[widgetParam.name])) {
-          areParamsFilled = false;
-        }
+      if ((widgetParam.required) && (!params[widgetParam.name])) {
+        areParamsFilled = false;
+      }
     });
     this.setState({areParamsFilled: areParamsFilled});
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     HttpClient.get([Settings.serverUrl, 'widget', 'types'], {'type': 'widget'})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
@@ -141,7 +141,7 @@ export class EditWidgetModal extends React.Component {
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
-              )}
+            )}
           </FormGroup>
           <FormGroup label="Weight" fieldId="widget-weight">
             <TextInput type="number" id="widget-weight" name="widget-weight" value={this.state.weight} onChange={(_event, value) => this.onWeightChange(value)} />
@@ -154,32 +154,32 @@ export class EditWidgetModal extends React.Component {
             </FormHelperText>
           </FormGroup>
           {componentLoaded ? widgetType.params.map(param => (
-              <React.Fragment key={param.name}>
-                <FormGroup
+            <React.Fragment key={param.name}>
+              <FormGroup
                 label={param.name}
                 fieldId={param.name}
                 isRequired={param.required}>
-                  <TextInput
-                    value={this.state.params[param.name]}
-                    type={(param.type === 'integer' || param.type === 'float') ? 'number' : 'text'}
-                    id={param.name}
-                    aria-describedby={`${param.name}-helper`}
-                    name={param.name}
-                    onChange={(event, value) => this.onParamChange(value, event)}
-                    isRequired={param.required}
-                  />
-                  <FormHelperText>
-                    <HelperText>
-                      <HelperTextItem variant="default">
-                        <Linkify componentDecorator={linkifyDecorator}>
-                          {param.description}
-                        </Linkify>
-                      </HelperTextItem>
-                    </HelperText>
-                  </FormHelperText>
-                </FormGroup>
-              </React.Fragment>
-            )): ''}
+                <TextInput
+                  value={this.state.params[param.name]}
+                  type={(param.type === 'integer' || param.type === 'float') ? 'number' : 'text'}
+                  id={param.name}
+                  aria-describedby={`${param.name}-helper`}
+                  name={param.name}
+                  onChange={(event, value) => this.onParamChange(value, event)}
+                  isRequired={param.required}
+                />
+                <FormHelperText>
+                  <HelperText>
+                    <HelperTextItem variant="default">
+                      <Linkify componentDecorator={linkifyDecorator}>
+                        {param.description}
+                      </Linkify>
+                    </HelperTextItem>
+                  </HelperText>
+                </FormHelperText>
+              </FormGroup>
+            </React.Fragment>
+          )): ''}
         </Form>
       </Modal>
     );

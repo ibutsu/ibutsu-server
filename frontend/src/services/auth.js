@@ -5,14 +5,14 @@ export class AuthService {
   static registerError = null;
   static recoverError = null;
 
-  static isLoggedIn() {
+  static isLoggedIn () {
     if (AuthService.getToken()) {
       return true;
     }
     return false;
   }
 
-  static getUser() {
+  static getUser () {
     let user = localStorage.getItem('user');
     if (user) {
       return JSON.parse(user);
@@ -20,11 +20,11 @@ export class AuthService {
     return user;
   }
 
-  static setUser(user) {
+  static setUser (user) {
     localStorage.setItem('user', JSON.stringify(user));
   }
 
-  static getToken() {
+  static getToken () {
     let user = AuthService.getUser();
     if (user && user.token) {
       return user.token;
@@ -32,7 +32,7 @@ export class AuthService {
     return null;
   }
 
-  static setToken(token) {
+  static setToken (token) {
     let user = AuthService.getUser();
     if (user) {
       user.token = token;
@@ -43,7 +43,7 @@ export class AuthService {
     AuthService.setUser(user);
   }
 
-  static register(email, password) {
+  static register (email, password) {
     // Cannot use the HttpClient service here, otherwise we have circular imports
     return fetch(Settings.serverUrl + '/login/register', {
       method: 'POST',
@@ -59,7 +59,7 @@ export class AuthService {
       });
   }
 
-  static recover(email) {
+  static recover (email) {
     // Cannot use the HttpClient service here, otherwise we have circular imports
     return fetch(Settings.serverUrl + '/login/recover', {
       method: 'POST',
@@ -71,7 +71,7 @@ export class AuthService {
           return true;
         }
         else {
-          AuthService.recoverError = {message: 'There was a problem recovering your account'}
+          AuthService.recoverError = {message: 'There was a problem recovering your account'};
           return false;
         }
       })
@@ -82,7 +82,7 @@ export class AuthService {
       });
   }
 
-  static resetPassword(activationCode, newPassword) {
+  static resetPassword (activationCode, newPassword) {
     // Cannot use the HttpClient service here, otherwise we have circular imports
     return fetch(Settings.serverUrl + '/login/reset-password', {
       method: 'POST',
@@ -105,7 +105,7 @@ export class AuthService {
       });
   }
 
-  static login(email, password) {
+  static login (email, password) {
     // Cannot use the HttpClient service here, otherwise we have circular imports
     return fetch(Settings.serverUrl + '/login', {
       method: 'POST',
@@ -128,11 +128,11 @@ export class AuthService {
       });
   }
 
-  static logout() {
+  static logout () {
     localStorage.removeItem('user');
   }
 
-  static isSuperAdmin() {
+  static isSuperAdmin () {
     // Cannot use the HttpClient service here, otherwise we have circular imports
     const user = AuthService.getUser();
     if (!user) {

@@ -16,12 +16,12 @@ import AdminPage from './components/admin-page';
 
 
 export class Admin extends React.Component {
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.eventEmitter = new EventEmitter();
   }
 
-  componentDidMount() {
+  componentDidMount () {
     AuthService.isSuperAdmin().then(isSuperAdmin => {
       if (!isSuperAdmin) {
         window.location = '/';
@@ -29,7 +29,7 @@ export class Admin extends React.Component {
     });
   }
 
-  render() {
+  render () {
     return (
       <Routes>
         <Route

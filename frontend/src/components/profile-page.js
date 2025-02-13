@@ -40,20 +40,20 @@ const ProfilePage = (props) => {
 
   return (
     <React.Fragment>
-        <Page
-            header={<ElementWrapper routeElement={IbutsuHeader} eventEmitter={props.eventEmitter}/>}
-            sidebar={navigation}
-            isManagedSidebar={true}
-            style={{position: 'relative'}}
-        >
-            <Outlet/>
-        </Page>
+      <Page
+        header={<ElementWrapper routeElement={IbutsuHeader} eventEmitter={props.eventEmitter}/>}
+        sidebar={navigation}
+        isManagedSidebar={true}
+        style={{position: 'relative'}}
+      >
+        <Outlet/>
+      </Page>
     </React.Fragment>
   );
-}
-
-ProfilePage.propTypes = {
-    eventEmitter: PropTypes.object,
 };
 
-export default ProfilePage
+ProfilePage.propTypes = {
+  eventEmitter: PropTypes.object,
+};
+
+export default ProfilePage;

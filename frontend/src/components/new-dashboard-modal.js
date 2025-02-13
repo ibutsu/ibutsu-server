@@ -20,7 +20,7 @@ export class NewDashboardModal extends React.Component {
     isOpen: PropTypes.bool
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       widgetTypes: [],
@@ -32,11 +32,11 @@ export class NewDashboardModal extends React.Component {
 
   onTitleChange = (title) => {
     this.setState({title});
-  }
+  };
 
   onDescriptionChange = (description) => {
     this.setState({description});
-  }
+  };
 
   onSave = () => {
     if (this.state.title === '') {
@@ -56,7 +56,7 @@ export class NewDashboardModal extends React.Component {
       description: '',
       isTitleValid: false
     });
-  }
+  };
 
   onClose = () => {
     this.setState({
@@ -65,7 +65,7 @@ export class NewDashboardModal extends React.Component {
       isTitleValid: false
     });
     this.props.onClose();
-  }
+  };
 
   render () {
     return (

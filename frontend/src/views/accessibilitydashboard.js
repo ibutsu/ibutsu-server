@@ -34,7 +34,7 @@ import { FilterTable, MultiValueInput, RunSummary } from '../components';
 import { OPERATIONS, ACCESSIBILITY_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 
-function runToRow(run, filterFunc, analysisViewId) {
+function runToRow (run, filterFunc, analysisViewId) {
   let badges = [];
   let created = 0;
   let badge;
@@ -42,7 +42,7 @@ function runToRow(run, filterFunc, analysisViewId) {
     created = new Date(run.start_time);
   }
   else {
-      created = new Date(run.created);
+    created = new Date(run.created);
   }
 
   if (filterFunc) {
@@ -65,7 +65,7 @@ function runToRow(run, filterFunc, analysisViewId) {
     else {
       badge = buildBadge(run.env, run.env, false);
     }
-    badges.push(badge)
+    badges.push(badge);
   }
   return {
     'cells': [
@@ -78,12 +78,12 @@ function runToRow(run, filterFunc, analysisViewId) {
   };
 }
 
-function fieldToColumnName(fields) {
+function fieldToColumnName (fields) {
   // For each value in fields, changes from ex_ample to Ex Ample
   let results = [];
   for (var i = 0; i < fields.length; i++) {
     let tmp_item = fields[i];
-    tmp_item = tmp_item.replace(/_/g, ' ').replace(/(?: |\b)(\w)/g, function(key) { return key.toUpperCase()});
+    tmp_item = tmp_item.replace(/_/g, ' ').replace(/(?: |\b)(\w)/g, function (key) { return key.toUpperCase();});
     results.push(tmp_item);
   }
   return results;
@@ -97,7 +97,7 @@ export class AccessibilityDashboardView extends React.Component {
     view: PropTypes.object
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     const params = new URLSearchParams(props.location.search);
     let page = 1, pageSize = 20, filters = {};
@@ -140,7 +140,7 @@ export class AccessibilityDashboardView extends React.Component {
     };
   }
 
-  updateUrl() {
+  updateUrl () {
     let params = buildParams(this.state.filters);
     params.push('page=' + this.state.pagination.page);
     params.push('pageSize=' + this.state.pagination.pageSize);
@@ -154,7 +154,7 @@ export class AccessibilityDashboardView extends React.Component {
       this.updateUrl();
       this.getData();
     });
-  }
+  };
 
   setPageSize = (_event, perPage) => {
     let { pagination } = this.state;
@@ -163,7 +163,7 @@ export class AccessibilityDashboardView extends React.Component {
       this.updateUrl();
       this.getData();
     });
-  }
+  };
 
   onFieldToggle = () => {
     this.setState({isFieldOpen: !this.state.isFieldOpen});
@@ -177,7 +177,7 @@ export class AccessibilityDashboardView extends React.Component {
         fieldSelection: fieldFilterValue,
         fieldInputValue: fieldFilterValue,
         operationSelection: 'eq',
-      })
+      });
     }
     else {
       this.setState({
@@ -277,7 +277,7 @@ export class AccessibilityDashboardView extends React.Component {
     });
   };
 
-  updateFilters(name, operator, value, callback) {
+  updateFilters (name, operator, value, callback) {
     let { filters, pagination } = this.state;
     if (!value) {
       delete filters[name];
@@ -296,9 +296,9 @@ export class AccessibilityDashboardView extends React.Component {
       pagination.page = 1;
       this.setState({pagination}, this.getData);
     });
-  }
+  };
 
-  getData() {
+  getData () {
     // First, show a spinner
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
     let analysisViewId = '';
@@ -309,17 +309,17 @@ export class AccessibilityDashboardView extends React.Component {
       filters['project_id'] = {'val': primaryObject.id, 'op': 'eq'};
     }
     else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
-      delete filters['project_id']
+      delete filters['project_id'];
     }
     // get the widget ID for the analysis view
     HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=accessibility-analysis-view'})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
-        analysisViewId = data.widgets[0]?.id
+        analysisViewId = data.widgets[0]?.id;
       }).catch(error => {
-        console.log(error)
+        console.log(error);
       });
-    params.filter.push('metadata.accessibility@t')
+    params.filter.push('metadata.accessibility@t');
     // Convert UI filters to API filters
     for (let key in filters) {
       if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key]) {
@@ -347,7 +347,7 @@ export class AccessibilityDashboardView extends React.Component {
       });
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate (prevProps, prevState) {
     if (prevProps.view !== this.props.view) {
       this.getData();
     }
@@ -375,11 +375,11 @@ export class AccessibilityDashboardView extends React.Component {
     }
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getData();
   }
 
-  render() {
+  render () {
     const {
       columns,
       rows,
@@ -426,7 +426,7 @@ export class AccessibilityDashboardView extends React.Component {
             {!!fieldInputValue && (
               <Button
                 variant="plain"
-                onClick={() => {this.onFieldClear()}}
+                onClick={() => {this.onFieldClear();}}
                 aria-label="Clear input value"
               >
                 <TimesIcon aria-hidden />
@@ -435,7 +435,7 @@ export class AccessibilityDashboardView extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
 
     const operationToggle = toggleRef => (
       <MenuToggle
@@ -446,7 +446,7 @@ export class AccessibilityDashboardView extends React.Component {
       >
         {this.state.operationSelection}
       </MenuToggle>
-    )
+    );
 
     const boolToggle = toggleRef => (
       <MenuToggle
@@ -476,7 +476,7 @@ export class AccessibilityDashboardView extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
 
     const filters = [
       <Select

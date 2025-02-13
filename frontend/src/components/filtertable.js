@@ -52,7 +52,7 @@ export class FilterTable extends React.Component {
     variant: PropTypes.node
   };
 
-  render() {
+  render () {
     const {
       isEmpty,
       isError,
@@ -80,8 +80,8 @@ export class FilterTable extends React.Component {
           {(filters || onApplyFilter) &&
           <Flex spaceItems={{default: 'spaceItemsXs'}} grow={{default: 'grow'}}>
             {filters && filters.map((filter, index) => (
-                <FlexItem key={index}>{filter}</FlexItem>
-              ))}
+              <FlexItem key={index}>{filter}</FlexItem>
+            ))}
             {onApplyFilter &&
             <FlexItem>
               <Button onClick={onApplyFilter}>Apply Filter</Button>
@@ -112,8 +112,8 @@ export class FilterTable extends React.Component {
           </Flex>
           <Flex grow={{default: 'grow'}}>
             {Object.keys(activeFilters).map(key => (
-            <FlexItem spacer={{ default: 'spacerXs'}} key={key}>
-              {!hideFilters.includes(key) &&
+              <FlexItem spacer={{ default: 'spacerXs'}} key={key}>
+                {!hideFilters.includes(key) &&
               <ChipGroup categoryName={key}>
                 <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={() => onRemoveFilter(key)}>
                   {(typeof activeFilters[key] === 'object') &&
@@ -124,8 +124,8 @@ export class FilterTable extends React.Component {
                   {(typeof activeFilters[key] !== 'object') && activeFilters[key]}
                 </Chip>
               </ChipGroup>
-              }
-            </FlexItem>
+                }
+              </FlexItem>
             ))}
           </Flex>
           {onApplyReport &&
@@ -184,7 +184,7 @@ export class MetaFilter extends React.Component {
     id: PropTypes.number,
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       fieldSelection: [],
@@ -197,11 +197,11 @@ export class MetaFilter extends React.Component {
   }
 
   onFieldToggle = isExpanded => {
-    this.setState({isFieldOpen: isExpanded})
+    this.setState({isFieldOpen: isExpanded});
   };
 
   onValueToggle = isExpanded => {
-    this.setState({isValueOpen: isExpanded})
+    this.setState({isValueOpen: isExpanded});
   };
 
   onFieldSelect = (event, selection) => {
@@ -223,12 +223,12 @@ export class MetaFilter extends React.Component {
     const valueSelections = this.state.valueSelections;
     let updatedValues = (valueSelections.includes(selection))
       ? valueSelections.filter(item => item !== selection)
-      : [...valueSelections, selection]
+      : [...valueSelections, selection];
 
     this.setState(
       {valueSelections: updatedValues},
       () => this.props.setFilter(this.props.id, this.state.fieldSelection, this.state.valueSelections.join(';'))
-    )
+    );
   };
 
   onFieldClear = () => {
@@ -245,8 +245,8 @@ export class MetaFilter extends React.Component {
     this.setState(
       {valueSelections: [], isValueOpen: false},
       () => this.props.setFilter(this, this.state.fieldSelection, this.state.valueSelections)
-    )
-  }
+    );
+  };
 
   updateValueOptions = () => {
     const { fieldSelection } = this.state;
@@ -258,38 +258,38 @@ export class MetaFilter extends React.Component {
       console.debug('APIFILTER: ' + customFilters);
 
       const { primaryObject } = this.context;
-      let projectId = primaryObject ? primaryObject.id : ''
+      let projectId = primaryObject ? primaryObject.id : '';
 
       // make runId optional
-      let params = {}
+      let params = {};
       if (this.props.runId) {
         params = {
           group_field: fieldSelection,
           run_id: this.props.runId,
           additional_filters: api_filter,
           project: projectId
-        }
+        };
       } else {
         params = {
           days: 30,
           project: projectId,
           group_field: fieldSelection,
           additional_filters: api_filter,
-        }
+        };
       }
 
       HttpClient.get(
         [Settings.serverUrl, 'widget', 'result-aggregator'],
         params
       )
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
-        this.setState({valueOptions: data})
-      });
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          this.setState({valueOptions: data});
+        });
     }
-  }
+  };
 
-  getProjectFilterParams() {
+  getProjectFilterParams () {
     const { primaryObject } = this.context;
     HttpClient.get([Settings.serverUrl, 'project', 'filter-params', primaryObject.id])
       .then(response => HttpClient.handleResponse(response))
@@ -298,7 +298,7 @@ export class MetaFilter extends React.Component {
       });
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getProjectFilterParams();
   }
 
@@ -373,8 +373,8 @@ export class MetaFilter extends React.Component {
           </Flex>
           <Flex grow={{default: 'grow'}}>
             {Object.keys(activeFilters).map(key => (
-            <FlexItem style={{marginBottom: '0.5rem'}} spacer={{ default: 'spacerXs'}} key={key}>
-              {!hideFilters.includes(key) &&
+              <FlexItem style={{marginBottom: '0.5rem'}} spacer={{ default: 'spacerXs'}} key={key}>
+                {!hideFilters.includes(key) &&
               <ChipGroup categoryName={key}>
                 <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={() => onRemoveFilter(id, key)}>
                   {(typeof activeFilters[key] === 'object') &&
@@ -385,8 +385,8 @@ export class MetaFilter extends React.Component {
                   {(typeof activeFilters[key] !== 'object') && activeFilters[key]}
                 </Chip>
               </ChipGroup>
-              }
-            </FlexItem>
+                }
+              </FlexItem>
             ))}
           </Flex>
           {onApplyReport &&
