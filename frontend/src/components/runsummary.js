@@ -43,7 +43,7 @@ const RunSummary = (props) => {
         </>}
     </React.Fragment>
   );
-}
+};
 
 RunSummary.propTypes = {
   summary: PropTypes.object

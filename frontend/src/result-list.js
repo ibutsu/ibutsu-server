@@ -35,7 +35,7 @@ import {
   parseFilter,
   resultToRow
 } from './utilities';
-import MultiValueInput from './components/multivalueinput'
+import MultiValueInput from './components/multivalueinput';
 import { FilterTable } from './components/filtertable';
 import { OPERATIONS, RESULT_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
@@ -48,9 +48,9 @@ export class ResultList extends React.Component {
     navigate: PropTypes.func,
     eventEmitter: PropTypes.object,
     params: PropTypes.object,
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     // TODO just use props.params when converting to funcational component
     const params = new URLSearchParams(props.location.search);
@@ -120,7 +120,7 @@ export class ResultList extends React.Component {
         fieldSelection: fieldFilterValue,
         fieldInputValue: fieldFilterValue,
         operationSelection: 'eq',
-      })
+      });
     }
     else {
       this.setState({
@@ -194,7 +194,7 @@ export class ResultList extends React.Component {
         this.setState({runSelection: runSelection.filter(item => item !== selection)});
       }
       else {
-       this.setState({runSelection: [...runSelection, selection]});
+        this.setState({runSelection: [...runSelection, selection]});
       }
     }
   };
@@ -262,7 +262,7 @@ export class ResultList extends React.Component {
 
   onInValuesChange = (values) => {
     this.setState({inValues: values});
-  }
+  };
 
   applyFilter = () => {
     const field = this.state.fieldSelection;
@@ -302,10 +302,10 @@ export class ResultList extends React.Component {
   };
 
   applyReport = () => {
-    this.props.navigate('/project/' + this.props.params.project_id + '/reports?' + buildParams(this.state.filters).join('&'))
+    this.props.navigate('/project/' + this.props.params.project_id + '/reports?' + buildParams(this.state.filters).join('&'));
   };
 
-  updateFilters(name, operator, value, callback) {
+  updateFilters (name, operator, value, callback) {
     let filters = this.state.filters;
     if (!value) {
       delete filters[name];
@@ -330,14 +330,14 @@ export class ResultList extends React.Component {
         inValues: []
       });
     });
-  }
+  };
 
   removeFilter = id => {
     this.updateFilters(id, null, null, () => {
       this.updateUrl();
       this.setState({page: 1}, this.getResults);
     });
-  }
+  };
 
   clearFilters = () => {
     this.setState({
@@ -357,11 +357,11 @@ export class ResultList extends React.Component {
     });
   };
 
-  updateUrl() {
+  updateUrl () {
     let params = buildParams(this.state.filters);
     params.push('page=' + this.state.page);
     params.push('pageSize=' + this.state.pageSize);
-    this.props.navigate('?' + params.join('&'))
+    this.props.navigate('?' + params.join('&'));
   }
 
   setPage = (_event, pageNumber) => {
@@ -369,16 +369,16 @@ export class ResultList extends React.Component {
       this.updateUrl();
       this.getResults();
     });
-  }
+  };
 
   setPageSize = (_event, perPage) => {
     this.setState({pageSize: perPage}, () => {
       this.updateUrl();
       this.getResults();
     });
-  }
+  };
 
-  getResults() {
+  getResults () {
     // Show a spinner
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
     let params = {filter: []};
@@ -388,7 +388,7 @@ export class ResultList extends React.Component {
       filters['project_id'] = {'val': primaryObject.id, 'op': 'eq'};
     }
     else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
-      delete filters['project_id']
+      delete filters['project_id'];
     }
     params['estimate'] = true;  // use a count estimate for this page
     params['pageSize'] = this.state.pageSize;
@@ -417,7 +417,7 @@ export class ResultList extends React.Component {
       });
   }
 
-  getRuns() {
+  getRuns () {
     HttpClient.get([Settings.serverUrl, 'run'], {pageSize: 500, estimate: true})
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
@@ -426,12 +426,12 @@ export class ResultList extends React.Component {
       });
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getResults();
     this.getRuns();
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate (prevProps, prevState) {
     if (
       prevState.fieldFilterValue !== this.state.fieldFilterValue
     ) {
@@ -474,7 +474,7 @@ export class ResultList extends React.Component {
     }
   }
 
-  render() {
+  render () {
     document.title = 'Test Results | Ibutsu';
     const {
       columns,
@@ -524,7 +524,7 @@ export class ResultList extends React.Component {
             {!!fieldInputValue && (
               <Button
                 variant="plain"
-                onClick={() => {this.onFieldClear()}}
+                onClick={() => {this.onFieldClear();}}
                 aria-label="Clear input value"
               >
                 <TimesIcon aria-hidden />
@@ -533,7 +533,7 @@ export class ResultList extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
     const operationToggle = toggleRef => (
       <MenuToggle
         onClick={this.onOperationToggle}
@@ -543,7 +543,7 @@ export class ResultList extends React.Component {
       >
         {this.state.operationSelection}
       </MenuToggle>
-    )
+    );
     const boolToggle = toggleRef => (
       <MenuToggle
         onClick={this.onBoolToggle}
@@ -572,7 +572,7 @@ export class ResultList extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
     const resultToggle = toggleRef => (
       <MenuToggle
         onClick={this.onResultToggle}
@@ -583,7 +583,7 @@ export class ResultList extends React.Component {
       >
         {resultSelection ? resultSelection : 'Select a result'}
       </MenuToggle>
-    )
+    );
     const resultMultiToggle = toggleRef => (
       <MenuToggle
         variant="typeahead"
@@ -617,7 +617,7 @@ export class ResultList extends React.Component {
             {!!resultSelection && (
               <Button
                 variant="plain"
-                onClick={() => {this.onResultClear()}}
+                onClick={() => {this.onResultClear();}}
                 aria-label="Clear input value"
               >
                 <TimesIcon aria-hidden />
@@ -626,7 +626,7 @@ export class ResultList extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
     const runToggle = toggleRef => (
       <MenuToggle
         variant="typeahead"
@@ -656,7 +656,7 @@ export class ResultList extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
     const runMultiToggle = toggleRef => (
       <MenuToggle
         variant="typeahead"
@@ -700,7 +700,7 @@ export class ResultList extends React.Component {
           </TextInputGroupUtilities>
         </TextInputGroup>
       </MenuToggle>
-    )
+    );
     const filters = [
       <Select
         id="typeahead-select"

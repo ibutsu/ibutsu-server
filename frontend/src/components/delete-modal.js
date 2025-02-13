@@ -21,7 +21,7 @@ function DeleteModal (props){
     body,
   } = props;
 
-  function localOnDelete() {
+  function localOnDelete () {
     HttpClient.delete([Settings.serverUrl, ...toDeletePath, toDeleteId])
       .then(response => HttpClient.handleResponse(response))
       .then(onDelete?.());
@@ -39,7 +39,7 @@ function DeleteModal (props){
         <Button key="cancel" variant="link" onClick={onClose}>Cancel</Button>
       ]}
     >
-    <Text>{body}</Text>
+      <Text>{body}</Text>
     </Modal>
   );
 

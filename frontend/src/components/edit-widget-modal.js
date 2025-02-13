@@ -46,7 +46,7 @@ const EditWidgetModal = (props) => {
       weight: parseInt(weight) || 0, // 400 if this is null
       type: 'widget',
       widget: data.widget
-    }
+    };
     onSave(updatedWidget);
 
     setTitle('');
@@ -54,7 +54,7 @@ const EditWidgetModal = (props) => {
     setWeight(0);
     setIsTitleValid(false);
     setWidgetType({});
-  }
+  };
 
   const onCloseModal = () => {
     setTitle('');
@@ -63,40 +63,40 @@ const EditWidgetModal = (props) => {
     setIsTitleValid(false);
     setWidgetType({});
     onClose();
-  }
+  };
 
   useEffect(() => {
     setTitle(data.title);
     setWeight(data ? data.weight : 0);
     setParams(data.params || {});
-  }, [data])
+  }, [data]);
 
   useEffect(() => {
-    let validCheck = (title !== '')
+    let validCheck = (title !== '');
     setIsTitleValid(validCheck);
-    if (validCheck) {setSaveButtonDisabled(false)}
-    else {setSaveButtonDisabled(true)}
-  }, [title])
+    if (validCheck) {setSaveButtonDisabled(false);}
+    else {setSaveButtonDisabled(true);}
+  }, [title]);
 
   const onParamChange = (value, event) => {
     setParams({
       ...params,
       [event.target.name]: value
     });
-  }
+  };
 
   useEffect(() =>{
     HttpClient.get([Settings.serverUrl, 'widget', 'types'], {'type': 'widget'})
-    .then(response => HttpClient.handleResponse(response))
-    .then(typesData => {
-      typesData.types.forEach(type => {
-        if (type.id == data.widget) {
-          setWidgetType(type);
-          setComponentLoaded(true);
-        }
+      .then(response => HttpClient.handleResponse(response))
+      .then(typesData => {
+        typesData.types.forEach(type => {
+          if (type.id == data.widget) {
+            setWidgetType(type);
+            setComponentLoaded(true);
+          }
+        });
       });
-    });
-  }, [data?.widget])
+  }, [data?.widget]);
 
 
   return (
@@ -121,7 +121,7 @@ const EditWidgetModal = (props) => {
                 </HelperTextItem>
               </HelperText>
             </FormHelperText>
-            )}
+          )}
         </FormGroup>
         <FormGroup label="Weight" fieldId="widget-weight">
           <TextInput type="number" id="widget-weight" name="widget-weight" value={weight} onChange={(_event, value) => setWeight(value)} />
@@ -166,18 +166,18 @@ const EditWidgetModal = (props) => {
               </FormHelperText>
             </FormGroup>
           </React.Fragment>
-          )): ''}
+        )): ''}
       </Form>
     </Modal>
   );
 
-}
+};
 
 EditWidgetModal.propTypes = {
   onSave: PropTypes.func,
   onClose: PropTypes.func,
   isOpen: PropTypes.bool,
   data: PropTypes.object,
-}
+};
 
 export default EditWidgetModal;

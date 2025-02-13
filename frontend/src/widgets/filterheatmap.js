@@ -37,9 +37,9 @@ export class FilterHeatmapWidget extends React.Component {
     onDeleteClick: PropTypes.func,
     onEditClick: PropTypes.func,
     type: PropTypes.string
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.title = props.title || 'Filter Heatmap';
     this.params = props.params || {};
@@ -56,14 +56,14 @@ export class FilterHeatmapWidget extends React.Component {
     this.renderCell = this.renderCell.bind(this);
   }
 
-  getJenkinsAnalysisViewId() {
+  getJenkinsAnalysisViewId () {
     HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=jenkins-analysis-view'})
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({analysisViewId: data.widgets[0]?.id}))
       .catch(error => console.log(error));
   }
 
-  getJenkinsAnalysisLink() {
+  getJenkinsAnalysisLink () {
     const { analysisViewId } = this.state;
     if (this.props.includeAnalysisLink && analysisViewId !== null) {
       return (
@@ -77,37 +77,37 @@ export class FilterHeatmapWidget extends React.Component {
     }
   }
 
-  getHeatmap() {
-    this.setState({isLoading: true})
+  getHeatmap () {
+    this.setState({isLoading: true});
     if (this.type === 'jenkins') {
       this.getJenkinsAnalysisViewId();
       HttpClient.get([Settings.serverUrl, 'widget', 'jenkins-heatmap'], this.params)
-      .then(response => {
-        response = HttpClient.handleResponse(response, 'response');
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response.json();
-      })
-      .then(data => this.setState({data: data, isLoading: false}))
-      .catch(error => {
-        this.setState({heatmapError: true});
-        console.log(error);
-      });
+        .then(response => {
+          response = HttpClient.handleResponse(response, 'response');
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+          return response.json();
+        })
+        .then(data => this.setState({data: data, isLoading: false}))
+        .catch(error => {
+          this.setState({heatmapError: true});
+          console.log(error);
+        });
     } else {
       HttpClient.get([Settings.serverUrl, 'widget', 'filter-heatmap'], this.params)
-      .then(response => {
-        response = HttpClient.handleResponse(response, 'response');
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response.json();
-      })
-      .then(data => this.setState({data: data, isLoading: false}))
-      .catch(error => {
-        this.setState({heatmapError: true});
-        console.log(error);
-      });
+        .then(response => {
+          response = HttpClient.handleResponse(response, 'response');
+          if (!response.ok) {
+            throw Error(response.statusText);
+          }
+          return response.json();
+        })
+        .then(data => this.setState({data: data, isLoading: false}))
+        .catch(error => {
+          this.setState({heatmapError: true});
+          console.log(error);
+        });
     }
 
   }
@@ -147,9 +147,9 @@ export class FilterHeatmapWidget extends React.Component {
       }
     }
     return style;
-  }
+  };
 
-  renderCell(value) {
+  renderCell (value) {
     let contents = '';
     let style = {marginTop: '-4px'};
     if (!!value && (value[1] === 0)) {
@@ -167,7 +167,7 @@ export class FilterHeatmapWidget extends React.Component {
       }
     }
     else if (!!value && isNaN(value[0])) {
-      contents = 'n/a'
+      contents = 'n/a';
     }
     else if (value) {
       if (value[2]) {
@@ -186,11 +186,11 @@ export class FilterHeatmapWidget extends React.Component {
     return <div style={style}>{contents}</div>;
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getHeatmap();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps.params !== this.props.params) {
       this.params = this.props.params;
       this.getHeatmap();
@@ -200,7 +200,7 @@ export class FilterHeatmapWidget extends React.Component {
   onBuildSelect = (value) => {
     this.props.params.builds = value;
     this.getHeatmap();
-  }
+  };
 
   onSkipSelect = (value) => {
     this.setState({countSkips: value}, () => {
@@ -209,9 +209,9 @@ export class FilterHeatmapWidget extends React.Component {
       }
       this.getHeatmap();
     });
-  }
+  };
 
-  render() {
+  render () {
     const xLabels = [<ChartLineIcon key={0} />];
     const yLabels = [];
     const data = [];
@@ -261,11 +261,11 @@ export class FilterHeatmapWidget extends React.Component {
           }
           {(!this.state.heatmapError && !this.state.isLoading && data.length === 0) &&
           <EmptyState>
-          <EmptyStateHeader titleText="No data found for heatmap" headingLevel="h3" />
-          <EmptyStateBody style={{ fontSize: '15px' , fontFamily: 'sans-serif'}}>
+            <EmptyStateHeader titleText="No data found for heatmap" headingLevel="h3" />
+            <EmptyStateBody style={{ fontSize: '15px' , fontFamily: 'sans-serif'}}>
             Ensure that you have correct job name and addition filters set
-          </EmptyStateBody>
-        </EmptyState>
+            </EmptyStateBody>
+          </EmptyState>
           }
           {this.state.heatmapError &&
           <p>Error fetching data</p>

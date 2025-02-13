@@ -16,9 +16,9 @@ import { CLASSIFICATION } from '../constants.js';
 export class ClassificationDropdown extends React.Component {
   static propTypes = {
     testResult: PropTypes.object,
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       testResult: this.props.testResult,
@@ -26,7 +26,7 @@ export class ClassificationDropdown extends React.Component {
     };
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate (prevProps) {
     if (prevProps !== this.props) {
       this.setState({testResult: this.props.testResult});
     }
@@ -41,9 +41,9 @@ export class ClassificationDropdown extends React.Component {
     testResult['metadata']['classification'] = selection;
     this.setState({testResult: testResult, isClassificationOpen: !this.state.isClassificationOpen});
     HttpClient.put([Settings.serverUrl, 'result', testResult['id']], {}, testResult);
-  }
+  };
 
-  render() {
+  render () {
     const testResult = this.state.testResult;
     return (
       <Dropdown
@@ -68,7 +68,7 @@ export class ClassificationDropdown extends React.Component {
           ))}
         </DropdownList>
       </Dropdown>
-    )
+    );
   }
 }
 
@@ -76,9 +76,9 @@ export class MultiClassificationDropdown extends React.Component {
   static propTypes = {
     selectedResults: PropTypes.array,
     refreshFunc: PropTypes.func
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       isClassificationOpen: false
@@ -87,25 +87,25 @@ export class MultiClassificationDropdown extends React.Component {
 
   onClassificationToggle = isOpen => {
     this.setState({isClassificationOpen: isOpen});
-  }
+  };
 
   onClassificationSelect = event => {
     const { selectedResults } = this.props;
     let classification = event.target.getAttribute('value');
     if (selectedResults.length === 0) {
-      this.setState({isClassificationOpen: !this.state.isClassificationOpen})
+      this.setState({isClassificationOpen: !this.state.isClassificationOpen});
     }
     else {
       selectedResults.forEach(result => {
         result['metadata']['classification'] = classification;
         HttpClient.put([Settings.serverUrl, 'result', result['id']], {}, result)
           .then(this.props.refreshFunc());
-      })
+      });
       this.setState({isClassificationOpen: !this.state.isClassificationOpen});
     }
-  }
+  };
 
-  render() {
+  render () {
     const { selectedResults } = this.props;
     return (
       <Dropdown
@@ -131,6 +131,6 @@ export class MultiClassificationDropdown extends React.Component {
           ))}
         </DropdownList>
       </Dropdown>
-    )
+    );
   }
 }

@@ -28,9 +28,9 @@ import ToastWrapper from '../../components/toast-wrapper';
 export class UserProfile extends React.Component {
   static propTypes = {
     eventEmitter: PropTypes.object
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.eventEmitter = props.eventEmitter;
     this.state = {
@@ -40,14 +40,14 @@ export class UserProfile extends React.Component {
     };
   }
 
-  updateUserName(userName) {
+  updateUserName (userName) {
     if (!this.eventEmitter) {
       return;
     }
     this.eventEmitter.emit('updateUserName', userName);
   }
 
-  getUser() {
+  getUser () {
     HttpClient.get([Settings.serverUrl, 'user'])
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
@@ -57,14 +57,14 @@ export class UserProfile extends React.Component {
       .catch(error => console.error(error));
   }
 
-  getProjects() {
+  getProjects () {
     HttpClient.get([Settings.serverUrl, 'project'])
       .then(response => HttpClient.handleResponse(response, 'response').json())
       .then(data => this.setState({projects: data.projects}))
       .catch(error => console.error(error));
   }
 
-  saveUser(user) {
+  saveUser (user) {
     return HttpClient.put([Settings.serverUrl, 'user'], {}, user)
       .then(response => HttpClient.handleResponse(response))
       .catch(error => console.error(error));
@@ -72,11 +72,11 @@ export class UserProfile extends React.Component {
 
   onEditButtonClicked = () => {
     this.setState({tempName: this.state.user.name, isEditing: true});
-  }
+  };
 
   onCancelButtonClicked = () => {
     this.setState({isEditing: false});
-  }
+  };
 
   onSaveButtonClicked = () => {
     const { user, tempName } = this.state;
@@ -91,7 +91,7 @@ export class UserProfile extends React.Component {
           },
           type: 'success',
           theme: getDarkTheme() ? 'dark' : 'light'
-        })
+        });
         this.setState({user: tempUser, isEditing: false});
         this.updateUserName(tempName);
       }
@@ -103,20 +103,20 @@ export class UserProfile extends React.Component {
               title: 'Error Updating',
               message: 'Your name has NOT been updated.'
             },
-          type: 'danger',
-          theme: getDarkTheme() ? 'dark' : 'light'
-        });
+            type: 'danger',
+            theme: getDarkTheme() ? 'dark' : 'light'
+          });
         this.setState({isEditing: false});
       }
     });
-  }
+  };
 
-  componentDidMount() {
+  componentDidMount () {
     this.getUser();
     this.getProjects();
   }
 
-  render() {
+  render () {
     document.title = 'Profile | Ibutsu';
 
     const { user, projects } = this.state;
@@ -124,13 +124,13 @@ export class UserProfile extends React.Component {
     // create the project rows
     if (projects && user) {
       projectInfo.push(projects.map((project) => (
-            <DataListCell key={project.name} className="pf-u-p-sm">
-              <span> {project.title} </span>
-              {project.owner_id === user.id &&
+        <DataListCell key={project.name} className="pf-u-p-sm">
+          <span> {project.title} </span>
+          {project.owner_id === user.id &&
                 <Label className="project-owner-label" variant="filled" color="green" isCompact>Owner</Label>
-              }
-            </DataListCell>
-      )))
+          }
+        </DataListCell>
+      )));
     }
     return (
       <React.Fragment>

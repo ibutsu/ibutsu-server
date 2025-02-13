@@ -9,12 +9,12 @@ const TabTitle = (props) => {
       <TabTitleIcon>{icon}</TabTitleIcon>
       <TabTitleText>{text?.toString()}</TabTitleText>
     </>
-  )
-}
+  );
+};
 
 TabTitle.propTypes ={
   icon: PropTypes.object,
   text: PropTypes.string
-}
+};
 
 export default TabTitle;

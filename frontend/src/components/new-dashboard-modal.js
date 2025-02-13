@@ -38,14 +38,14 @@ const NewDashboardModal = (props) => {
     setTitle();
     setDescription();
     setIsTitleValid(false);
-  }
+  };
 
   const modalOnClose = () => {
     closeCallback();
     setTitle();
     setDescription();
     setIsTitleValid(false);
-  }
+  };
 
   return(
     <Modal
@@ -66,14 +66,14 @@ const NewDashboardModal = (props) => {
           helpertextinvalidicon={<ExclamationCircleIcon />}
           validated={isTitleValid.toString()}
           isRequired>
-            <TextInput
-              type="text"
-              id="dashboard-title"
-              name="dashboard-title"
-              value={title}
-              onChange={(_event, value) => setTitle(value)}
-              validated={isTitleValid}
-              isRequired />
+          <TextInput
+            type="text"
+            id="dashboard-title"
+            name="dashboard-title"
+            value={title}
+            onChange={(_event, value) => setTitle(value)}
+            validated={isTitleValid}
+            isRequired />
         </FormGroup>
         <FormGroup label="Description" fieldId="dashboard-description">
           <TextInput
@@ -85,14 +85,14 @@ const NewDashboardModal = (props) => {
         </FormGroup>
       </Form>
     </Modal>
-  )
-}
+  );
+};
 
 NewDashboardModal.propTypes = {
   project: PropTypes.object,
   saveCallback: PropTypes.func,
   closeCallback: PropTypes.func,
   isOpen: PropTypes.bool
-}
+};
 
-export default NewDashboardModal
+export default NewDashboardModal;

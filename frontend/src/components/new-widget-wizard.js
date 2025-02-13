@@ -32,7 +32,7 @@ import {
   Th,
   Thead,
   Tr,
-} from '@patternfly/react-table'
+} from '@patternfly/react-table';
 import Linkify from 'react-linkify';
 import { linkifyDecorator } from './decorators';
 
@@ -67,7 +67,7 @@ const NewWidgetWizard = (props) =>{
     setSelectedType();
     setSelectedTypeId();
     setStepIdReached(1);
-  }
+  };
 
   const onSave = () => {
     let newParams = {};
@@ -101,12 +101,12 @@ const NewWidgetWizard = (props) =>{
     }
     saveCallback(newWidget);
     clearState();
-  }
+  };
 
   const onClose = () => {
     clearState();
     closeCallback();
-  }
+  };
 
   const onSelectType = (_, event) => {
     setSelectedTypeId(event.currentTarget.value);
@@ -135,12 +135,12 @@ const NewWidgetWizard = (props) =>{
     });
     setSelectedType(target_type);
     setParams(target_params);
-  }
+  };
 
   const onTitleChange = (value) => {
     setTitle(value);
-    setTitleValid((value !== ''))
-  }
+    setTitleValid((value !== ''));
+  };
 
   const onParamChange = (value, event) => {
     let areParamsFilled = true;
@@ -148,39 +148,39 @@ const NewWidgetWizard = (props) =>{
       setParams({
         ...params,
         [event.target.name]: value
-      })
+      });
     }
     selectedType?.params?.forEach(widgetParam => {
-        if ((widgetParam.required) && (!params[widgetParam.name])) {
-          areParamsFilled = false;
-        }
+      if ((widgetParam.required) && (!params[widgetParam.name])) {
+        areParamsFilled = false;
+      }
     });
     setParamsFilled(areParamsFilled);
-  }
+  };
 
   const handleRequiredParam = (param) => {
     if (param.required) {
       if (params[param.name] === '') {
-        return 'error'
+        return 'error';
       }
     }
     // TODO: Handle parameter types
-    return 'default'
-  }
+    return 'default';
+  };
 
   const onNext = (_event, currentStep) => {
     if (currentStep.id === 3) {
       onParamChange('', null);
     }
-    setStepIdReached(Math.max(stepIdReached, currentStep.id))
-  }
+    setStepIdReached(Math.max(stepIdReached, currentStep.id));
+  };
 
   useEffect(() => {
     HttpClient.get([Settings.serverUrl, 'widget', 'types'], {'type': 'widget'})
       .then(response => HttpClient.handleResponse(response))
-      .then(data => {setWidgetTypes(data.types)})
+      .then(data => {setWidgetTypes(data.types);})
       .catch((error) => console.error(error));
-  }, [])
+  }, []);
 
   const steps = [
     {
@@ -191,10 +191,10 @@ const NewWidgetWizard = (props) =>{
         <Form>
           <Title headingLevel="h1" size="xl">Select a widget type</Title>
           {widgetTypes.map(widgetType => (
-              <div key={widgetType.id}>
-                <Radio id={widgetType.id} value={widgetType.id} label={widgetType.title} description={widgetType.description} isChecked={selectedTypeId === widgetType.id} onChange={(event, _) => onSelectType(_, event)}/>
-              </div>
-            ))}
+            <div key={widgetType.id}>
+              <Radio id={widgetType.id} value={widgetType.id} label={widgetType.title} description={widgetType.description} isChecked={selectedTypeId === widgetType.id} onChange={(event, _) => onSelectType(_, event)}/>
+            </div>
+          ))}
         </Form>
       )
     },
@@ -209,13 +209,13 @@ const NewWidgetWizard = (props) =>{
           <FormGroup label="Title" fieldId="widget-title" isRequired>
             <TextInput type="text" id="widget-title" name="widget-title" value={title} onChange={(_event, value) => onTitleChange(value)} validated={titleValid.toString()} isRequired />
             {titleValid !== true && (
-            <FormHelperText>
-              <HelperText>
-                <HelperTextItem variant="error">
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="error">
                   Please enter a title for this widget
-                </HelperTextItem>
-              </HelperText>
-            </FormHelperText>
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
             )}
           </FormGroup>
           <FormGroup label="Weight" fieldId="widget-weight">
@@ -240,7 +240,7 @@ const NewWidgetWizard = (props) =>{
         <Form isHorizontal>
           <Title headingLevel="h1" size="xl">Set widget parameters</Title>
           {!!selectedType && selectedType.params?.map(param => (
-              <React.Fragment key={param.name}>
+            <React.Fragment key={param.name}>
               {(param.type === 'string' || param.type === 'integer' || param.type === 'float') &&
                 <FormGroup
                   label={param.name}
@@ -296,8 +296,8 @@ const NewWidgetWizard = (props) =>{
                     resizeOrientation='vertical' />
                 </FormGroup>
               }
-              </React.Fragment>
-            ))}
+            </React.Fragment>
+          ))}
         </Form>
       )
     },
@@ -392,7 +392,7 @@ const NewWidgetWizard = (props) =>{
       </Wizard>
     </Modal>
   );
-}
+};
 
 NewWidgetWizard.propTypes = {
   dashboard: PropTypes.object,

@@ -23,14 +23,14 @@ export class EmptyObject extends React.Component {
     returnLink: PropTypes.string,
     returnLinkText: PropTypes.string
   };
-  render() {
+  render () {
     return (
       <React.Fragment>
         <EmptyState>
           <EmptyStateHeader icon={<EmptyStateIcon icon={SearchIcon} />} />
-            <Text component="h1" size="lg">
-              {this.props.headingText ? this.props.headingText : 'This object couldn\'t be found.'}
-            </Text>
+          <Text component="h1" size="lg">
+            {this.props.headingText ? this.props.headingText : 'This object couldn\'t be found.'}
+          </Text>
           <EmptyStateBody>
             {this.props.bodyText ? this.props.bodyText : 'Either the object doesn\'t exist or the ID is invalid.'}
           </EmptyStateBody>

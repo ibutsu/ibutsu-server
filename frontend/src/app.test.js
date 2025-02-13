@@ -15,8 +15,8 @@ describe('Render full app', () => {
         onchange: null,
       })),
     });
-  })
+  });
   it('renders without crashing', () => {
     render(<Base />);
   });
-})
+});
