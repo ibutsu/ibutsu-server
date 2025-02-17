@@ -17,11 +17,14 @@ import AdminPage from './components/admin-page';
 const Admin = () => {
   const [isSuper, setIsSuper] = useState();
   useEffect(() => {
-    AuthService.isSuperAdmin().then(admin => setIsSuper(admin));
+
+    AuthService.isSuperAdmin().then((admin) => {
+      setIsSuper(admin);
+    });
   }, []);
 
   useEffect(() => {
-    if (!isSuper) {
+    if (isSuper === false) {
       window.location = '/';
     }
   }, [isSuper]);
@@ -31,12 +34,12 @@ const Admin = () => {
     <Routes>
       <Route
         path=""
-        element={<AdminPage eventEmitter={this.eventEmitter} />}
+        element={<AdminPage/>}
       >
         <Route path="home" element={<AdminHome/>} />
-        <Route path="users" element={<ElementWrapper routeElement={UserList} emitter={this.eventEmitter} />} />
-        <Route path="users/:id" element={<ElementWrapper routeElement={UserEdit} emitter={this.eventEmitter} />} />
-        <Route path="projects" element={<ProjectList/>} />
+        <Route path="users" element={<ElementWrapper routeElement={UserList} />} />
+        <Route path="users/:id" element={<ElementWrapper routeElement={UserEdit} />} />
+        <Route path="projects" element={<ElementWrapper routeElement={ProjectList}/>} />
         <Route path="projects/:id" element={<ProjectEdit/>} />
       </Route>
       <Route path="*" element={<Navigate to="" replace />}/>
