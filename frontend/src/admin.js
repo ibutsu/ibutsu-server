@@ -1,7 +1,6 @@
-import React from 'react';
+import React, {useState, useEffect} from 'react';
 
 import { Navigate, Route, Routes } from 'react-router-dom';
-import EventEmitter from 'wolfy87-eventemitter';
 import ElementWrapper from './components/elementWrapper';
 
 import AdminHome from './pages/admin/home';
@@ -15,35 +14,39 @@ import './app.css';
 import AdminPage from './components/admin-page';
 
 
-export class Admin extends React.Component {
-  constructor (props) {
-    super(props);
-    this.eventEmitter = new EventEmitter();
-  }
+const Admin = () => {
+  const [isSuper, setIsSuper] = useState();
+  useEffect(() => {
 
-  componentDidMount () {
-    AuthService.isSuperAdmin().then(isSuperAdmin => {
-      if (!isSuperAdmin) {
-        window.location = '/';
-      }
+    AuthService.isSuperAdmin().then((admin) => {
+      setIsSuper(admin);
     });
-  }
+  }, []);
 
-  render () {
-    return (
-      <Routes>
-        <Route
-          path=""
-          element={<AdminPage eventEmitter={this.eventEmitter} />}
-        >
-          <Route path="home" element={<AdminHome/>} />
-          <Route path="users" element={<ElementWrapper routeElement={UserList} emitter={this.eventEmitter} />} />
-          <Route path="users/:id" element={<ElementWrapper routeElement={UserEdit} emitter={this.eventEmitter} />} />
-          <Route path="projects" element={<ElementWrapper routeElement={ProjectList} emitter={this.eventEmitter} />} />
-          <Route path="projects/:id" element={<ProjectEdit/>} />
-        </Route>
-        <Route path="*" element={<Navigate to="" replace />}/>
-      </Routes>
-    );
-  }
-}
+  useEffect(() => {
+    if (isSuper === false) {
+      window.location = '/';
+    }
+  }, [isSuper]);
+
+
+  return (
+    <Routes>
+      <Route
+        path=""
+        element={<AdminPage/>}
+      >
+        <Route path="home" element={<AdminHome/>} />
+        <Route path="users" element={<ElementWrapper routeElement={UserList} />} />
+        <Route path="users/:id" element={<ElementWrapper routeElement={UserEdit} />} />
+        <Route path="projects" element={<ElementWrapper routeElement={ProjectList}/>} />
+        <Route path="projects/:id" element={<ProjectEdit/>} />
+      </Route>
+      <Route path="*" element={<Navigate to="" replace />}/>
+    </Routes>
+  );
+};
+
+Admin.propTypes = {};
+
+export default Admin;

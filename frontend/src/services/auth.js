@@ -6,10 +6,7 @@ export class AuthService {
   static recoverError = null;
 
   static isLoggedIn () {
-    if (AuthService.getToken()) {
-      return true;
-    }
-    return false;
+    return Boolean(AuthService.getToken());
   }
 
   static getUser () {
@@ -26,7 +23,7 @@ export class AuthService {
 
   static getToken () {
     let user = AuthService.getUser();
-    if (user && user.token) {
+    if (user?.token) {
       return user.token;
     }
     return null;
@@ -51,7 +48,7 @@ export class AuthService {
       headers: {'Content-Type': 'application/json; charset=UTF-8'}
     })
       .then(response => response.json())
-      .then(() => true)
+      .then(() => true) // returns for register
       .catch(error => {
         console.log(error);
         AuthService.registerError = error;
