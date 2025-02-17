@@ -5,11 +5,11 @@ import {
   CardHeader,
   CardBody,
   Checkbox,
-  Dropdown,
-  DropdownItem,
-  DropdownList,
   Flex,
   FlexItem,
+  Select,
+  SelectOption,
+  SelectList,
   MenuToggle,
   TextContent,
   Text,
@@ -63,6 +63,9 @@ const RESULT_STATES = {
   'xpassed': 'xpasses'
 };
 
+// Month is considered to be 30 days, and there are 86400*1000 ms in a day
+const millisecondsInMonth = 30 * 86400 * 1000;
+
 const TestHistoryTable = (props) => {
   const {
     comparisonResults,
@@ -76,10 +79,10 @@ const TestHistoryTable = (props) => {
   const [totalItems, setTotalItems] = useState(0);
   const [isEmpty, setIsEmpty] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isTimeRangeSelectOpen, setTimeRangeOpen] = useState(false);
+  const [selectedTimeRange, setTimeRange] = useState('1 Week');
   const [onlyFailures, setOnlyFailures] = useState(false);
   const [historySummary, setHistorySummary] = useState();
-  const [dropdownSelection, setDropdownSelection] = useState('1 Week');
   const [filtersState, setFiltersState] = useState({});
 
   useEffect(() => {
@@ -95,7 +98,7 @@ const TestHistoryTable = (props) => {
       // default to filter only from 1 weeks ago to the most test's start_time.
       time_filter['start_time'] = {
         op: 'gt',
-        val: new Date(new Date(testResult?.start_time).getTime() - (0.25 * 30 * 86400 * 1000)).toISOString()
+        val: new Date(new Date(testResult?.start_time).getTime() - (WEEKS['1 Week'] * millisecondsInMonth)).toISOString()
       };
     }
     setFiltersState(
@@ -246,20 +249,21 @@ const TestHistoryTable = (props) => {
     setOnlyFailures(checked);
   };
 
-  const onDropdownSelect  = (_event, selection) => {
+  const onTimeRangeSelect  = (_event, selection) => {
     if (testResult?.start_time) {
       const startTime = new Date(testResult?.start_time);
-      // here a selection (month) is considered to be 30 days, and there are 86400*1000 ms in a day
-      const timeRange = new Date(startTime.getTime() - (selection * 30 * 86400 * 1000));
-      // set the filters
+      const selectionCoefficient = WEEKS[selection];
+      const timeRange = new Date(startTime.getTime() - (selectionCoefficient * millisecondsInMonth));
       setFiltersState({
         ...filtersState,
         ['start_time']: {op: 'gt', val: timeRange.toISOString()}
       });
-      setIsDropdownOpen(false);
-      setDropdownSelection(selection);
+      setTimeRangeOpen(false);
+      setTimeRange(selection);
     }
-
+  };
+  const onTimeRangeToggleClick = () => {
+    setTimeRangeOpen(!isTimeRangeSelectOpen);
   };
 
   return (
@@ -278,29 +282,37 @@ const TestHistoryTable = (props) => {
               <Checkbox id="only-failures" label="Only show failures/errors" isChecked={onlyFailures} aria-label="only-failures-checkbox" onChange={(_event, checked) => onFailuresCheck(checked)}/>
             </TextContent>
           </FlexItem>
+          <FlexItem spacer={{ sm: 'spacerSm' }}>
+            <TextContent>
+              Time range:
+            </TextContent>
+          </FlexItem>
           <FlexItem>
-            <Dropdown
-              isOpen={isDropdownOpen}
-              onSelect={onDropdownSelect}
-              onOpenChange={() => {setIsDropdownOpen(false);}}
+            <Select
+              id="single-select"
+              isOpen={isTimeRangeSelectOpen}
+              selected={selectedTimeRange}
+              onSelect={onTimeRangeSelect}
+              onOpenChange={(isTimeRangeSelectOpen) => setTimeRangeOpen(isTimeRangeSelectOpen)}
               toggle={toggleRef => (
                 <MenuToggle
                   ref={toggleRef}
-                  onClick={() => {setIsDropdownOpen(!isDropdownOpen);}}
-                  isExpanded={isDropdownOpen}
+                  onClick={onTimeRangeToggleClick}
+                  isExpanded={isTimeRangeSelectOpen}
                 >
-                  Time range
+                  {selectedTimeRange}
                 </MenuToggle>
               )}
+              shouldFocusToggleOnSelect
             >
-              <DropdownList>
+              <SelectList>
                 {Object.keys(WEEKS).map((key) => (
-                  <DropdownItem key={key} value={WEEKS[key]} autoFocus={key === dropdownSelection}>
+                  <SelectOption key={key} value={key}>
                     {key}
-                  </DropdownItem>
+                  </SelectOption>
                 ))}
-              </DropdownList>
-            </Dropdown>
+              </SelectList>
+            </Select>
           </FlexItem>
         </Flex>
       </CardHeader>
