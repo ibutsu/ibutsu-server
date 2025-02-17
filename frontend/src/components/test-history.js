@@ -83,14 +83,14 @@ const TestHistoryTable = (props) => {
   const [filtersState, setFiltersState] = useState({});
 
   useEffect(() => {
-    let env_filter = {};
+    const env_filter = {};
     if (testResult?.env) {
       env_filter['env'] = {
         op: 'eq',
         val: testResult.env
       };
     }
-    let time_filter = {};
+    const time_filter = {};
     if (testResult?.start_time) {
       // default to filter only from 1 weeks ago to the most test's start_time.
       time_filter['start_time'] = {
@@ -142,7 +142,7 @@ const TestHistoryTable = (props) => {
   };
 
   const updateFilters = useCallback((name, operator, value) => {
-    let updatedfilters = {...filtersState};
+    const updatedfilters = {...filtersState};
     if ((value === null) || (value.length === 0)) {
       delete updatedfilters[name];
     }
@@ -155,7 +155,7 @@ const TestHistoryTable = (props) => {
 
   const setFilter = useCallback((field, value) => {
     // maybe process values array to string format here instead of expecting caller to do it?
-    let operator = (value.includes(';')) ? 'in' : 'eq';
+    const operator = (value.includes(';')) ? 'in' : 'eq';
     updateFilters(field, operator, value);
   }, [updateFilters]);
 
@@ -167,7 +167,7 @@ const TestHistoryTable = (props) => {
       setRows([getSpinnerRow(4)]);
       setIsEmpty(false);
       setIsError(false);
-      let params = buildParams(filtersState);
+      const params = buildParams(filtersState);
       params['filter'] = toAPIFilter(filtersState);
       params['pageSize'] = pageSize;
       params['page'] = page;
@@ -204,19 +204,19 @@ const TestHistoryTable = (props) => {
   useEffect(() => {
     // get the passed/failed/etc test summary
     if (JSON.stringify(filtersState) !== '{}') {
-      let historyFilters = {...filtersState};
+      const historyFilters = {...filtersState};
       // disregard result filter (we want all results)
       delete historyFilters['result'];
-      let api_filter = toAPIFilter(historyFilters).join();
+      const api_filter = toAPIFilter(historyFilters).join();
 
-      let summary = Object.assign({
+      const summary = {
         'passes': 0,
         'failures': 0,
         'errors': 0,
         'skips': 0,
         'xfailures': 0,
         'xpasses': 0
-      });
+      };
 
       HttpClient.get(
         [Settings.serverUrl, 'widget', 'result-aggregator'],
@@ -250,7 +250,7 @@ const TestHistoryTable = (props) => {
     if (testResult?.start_time) {
       const startTime = new Date(testResult?.start_time);
       // here a selection (month) is considered to be 30 days, and there are 86400*1000 ms in a day
-      let timeRange = new Date(startTime.getTime() - (selection * 30 * 86400 * 1000));
+      const timeRange = new Date(startTime.getTime() - (selection * 30 * 86400 * 1000));
       // set the filters
       setFiltersState({
         ...filtersState,

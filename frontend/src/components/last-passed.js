@@ -19,11 +19,11 @@ const LastPassed = (props) => {
     // get the passed/failed/etc test summary
     // disregard result filter so we can filter on last passed
     if (filters) {
-      let params = {...filters};
+      const params = {...filters};
       delete params['result'];
       delete params['start_time'];
       params['result'] = {'op': 'eq', 'val': 'passed'};
-      let apiParams = buildParams(filters);
+      const apiParams = buildParams(filters);
       apiParams['filter'] = toAPIFilter(filters);
       apiParams['pageSize'] = 1;
       apiParams['page'] = 1;
