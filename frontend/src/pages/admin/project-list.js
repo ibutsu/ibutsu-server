@@ -20,7 +20,7 @@ import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import { getSpinnerRow } from '../../utilities';
 import { FilterTable } from '../../components/filtertable';
-import { EmptyObject } from '../../components';
+import EmptyObject from '../../components/empty-object';
 
 const COLUMNS = ['Title', 'Name', 'Owner', ''];
 
@@ -39,40 +39,41 @@ const ProjectList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const projectToRow = (project) => {
-    const shutupEslint = {'cells': [
-      {title: project.title},
-      {title: project.name},
-      {title: project.owner && project.owner.name},
-      {
-        title: (
-          <div style={{textAlign: 'right'}}>
-            <Button
-              variant="primary"
-              ouiaId={`admin-projects-edit-${project.id}`}
-              component={(props) => <Link {...props} to={`/admin/projects/${project.id}`} />}
-              size="sm"
-            >
-              <PencilAltIcon />
-            </Button>
-            &nbsp;
-            <Button
-              variant="danger"
-              ouiaId={`admin-projects-delete-${project.id}`}
-              onClick={() => {
-                setSelectedProject(project);
-                setIsDeleteModalOpen(true);
-              }}
-              size="sm"
-            >
-              <TrashIcon />
-            </Button>
-          </div>
-        )
-      }
-    ]};
-    return(shutupEslint);
-  };
+  const projectToRow = (project) => (
+    {
+      'cells': [
+        {title: project.title},
+        {title: project.name},
+        {title: project.owner && project.owner.name},
+        {
+          title: (
+            <div style={{textAlign: 'right'}}>
+              <Button
+                variant="primary"
+                ouiaId={`admin-projects-edit-${project.id}`}
+                component={(props) => <Link {...props} to={`/admin/projects/${project.id}`} />}
+                size="sm"
+              >
+                <PencilAltIcon />
+              </Button>
+              &nbsp;
+              <Button
+                variant="danger"
+                ouiaId={`admin-projects-delete-${project.id}`}
+                onClick={() => {
+                  setSelectedProject(project);
+                  setIsDeleteModalOpen(true);
+                }}
+                size="sm"
+              >
+                <TrashIcon />
+              </Button>
+            </div>
+          )
+        }
+      ]
+    }
+  );
 
   const onModalDeleteClick = () => {
     setIsDeleting(true);

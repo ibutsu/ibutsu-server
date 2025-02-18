@@ -17,7 +17,7 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
-function AddTokenModal (props) {
+const AddTokenModal = (props) => {
   const [name, setName] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [isNameValid, setIsNameValid] = useState(true);
@@ -28,7 +28,7 @@ function AddTokenModal (props) {
     onClose,
   } = props;
 
-  function onSave () {
+  const onSave = () => {
     const expiry = new Date(expiryDate);
     const now = new Date();
 
@@ -60,7 +60,7 @@ function AddTokenModal (props) {
 
   };
 
-  function localOnClose () {
+  const localOnClose = () => {
     // call prop function
     onClose();
 
