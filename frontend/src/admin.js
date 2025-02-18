@@ -5,7 +5,7 @@ import ElementWrapper from './components/elementWrapper';
 
 import AdminHome from './pages/admin/home';
 import { UserList } from './pages/admin/user-list';
-import { UserEdit } from './pages/admin/user-edit';
+import UserEdit from './pages/admin/user-edit';
 import { ProjectList } from './pages/admin/project-list';
 import ProjectEdit from './pages/admin/project-edit';
 import { AuthService } from './services/auth';
