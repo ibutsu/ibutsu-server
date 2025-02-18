@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -12,7 +12,7 @@ import {
   Card,
   CardBody,
   CardFooter,
-  Text
+  Title
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
@@ -22,7 +22,7 @@ import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 
 
-const ResultAggregatorWidget = (props) => {
+const ResultAggregatorWidget = ( props ) => {
   const {
     title,
     params,
@@ -31,13 +31,16 @@ const ResultAggregatorWidget = (props) => {
     onEditClick
   } = props;
 
+
   const [chartData, setChartData] = useState([]);
   const [legendData, setLegendData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [resultAggregatorError, setResultAggregatorError] = useState(false);
+  const [days, setDays] = useState(params.days);
+  const [groupField, setGroupField] = useState(params.group_field);
 
-  const getChartData = useCallback(() => {
+  useEffect(() => {
     setIsLoading(true);
     HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], params)
       .then(response => {
@@ -67,20 +70,16 @@ const ResultAggregatorWidget = (props) => {
         setResultAggregatorError(true);
         console.log(error);
       });
-  }, [params]);
-
-  useEffect(() => {
-    getChartData();
-  }, [getChartData]);
+  }, [params, days, groupField]);
 
   const onGroupFieldSelect = (value) => {
     params.group_field = value;
-    getChartData();
+    setGroupField(value);
   };
 
   const onDaySelect = (value) => {
     params.days = value;
-    getChartData();
+    setDays(value);
   };
 
   const themeColors = [
@@ -93,8 +92,8 @@ const ResultAggregatorWidget = (props) => {
 
   return (
     <Card>
-      <WidgetHeader title={title} getDataFunc={getChartData} onEditClick={onEditClick} onDeleteClick={onDeleteClick}/>
-      <CardBody data-id="recent-result-data">
+      <WidgetHeader title={title} onEditClick={onEditClick} onDeleteClick={onDeleteClick}/>
+      <CardBody  data-id="recent-result-data">
         {resultAggregatorError &&
           <p>Error fetching data</p>
         }
@@ -102,7 +101,7 @@ const ResultAggregatorWidget = (props) => {
           <p>No data returned, try changing the days.</p>
         }
         {(!resultAggregatorError && isLoading) &&
-        <Text component="h2">Loading ...</Text>
+        <Title headingLevel='h2'>Loading ...</Title>
         }
         {(!resultAggregatorError && !isLoading && params.chart_type === 'pie' && total !== 0) &&
           <ChartPie
@@ -165,7 +164,7 @@ const ResultAggregatorWidget = (props) => {
           tooltip="Group data by:"
         />
         <ParamDropdown
-          dropdownItems={[0.1, 0.5, 1, 3, 5]}
+          dropdownItems={[3, 5, 10, 14]}
           handleSelect={onDaySelect}
           defaultValue={params.days}
           tooltip="Set days to:"
@@ -174,7 +173,6 @@ const ResultAggregatorWidget = (props) => {
     </Card>
   );
 };
-
 
 ResultAggregatorWidget.propTypes = {
   title: PropTypes.string,
