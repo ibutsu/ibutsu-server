@@ -1,5 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect, useState } from 'react';
 
 import {
   Button,
@@ -19,13 +18,29 @@ import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { debounce, getSpinnerRow } from '../../utilities';
+import { getSpinnerRow } from '../../utilities';
 import { FilterTable } from '../../components/filtertable';
+import { EmptyObject } from '../../components';
 
+const COLUMNS = ['Title', 'Name', 'Owner', ''];
 
-function projectToRow (project, onDeleteClick) {
-  return {
-    cells: [
+const ProjectList = () => {
+  const [filterText, setFilterText] = useState('');
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [activeFilters, setActiveFilters] = useState({});
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  const [projects, setProjects] = useState([]);
+
+  const [totalItems, setTotalItems] = useState(0);
+  const [isError, setIsError] = useState(false);
+  const [selectedProject, setSelectedProject] = useState();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const projectToRow = (project) => {
+    const shutupEslint = {'cells': [
       {title: project.title},
       {title: project.name},
       {title: project.owner && project.owner.name},
@@ -44,7 +59,10 @@ function projectToRow (project, onDeleteClick) {
             <Button
               variant="danger"
               ouiaId={`admin-projects-delete-${project.id}`}
-              onClick={() => onDeleteClick(project.id)}
+              onClick={() => {
+                setSelectedProject(project);
+                setIsDeleteModalOpen(true);
+              }}
               size="sm"
             >
               <TrashIcon />
@@ -52,208 +70,162 @@ function projectToRow (project, onDeleteClick) {
           </div>
         )
       }
-    ]
-  };
-}
-
-export class ProjectList extends React.Component {
-  static propTypes = {
-    location: PropTypes.object,
-    navigate: PropTypes.func,
+    ]};
+    return(shutupEslint);
   };
 
-  constructor (props) {
-    super(props);
-    const params = new URLSearchParams(props.location.search);
-    let page = 1, pageSize = 20;
-    if (params.toString() !== '') {
-      for(let pair of params) {
-        if (pair[0] === 'page') {
-          page = parseInt(pair[1]);
-        }
-        else if (pair[0] === 'pageSize') {
-          pageSize = parseInt(pair[1]);
-        }
-      }
-    }
-    this.state = {
-      columns: ['Title', 'Name', 'Owner', ''],
-      rows: [getSpinnerRow(4)],
-      projects: [],
-      page: page,
-      pageSize: pageSize,
-      totalItems: 0,
-      totalPages: 0,
-      isError: false,
-      isEmpty: false,
-      selectedProject: null,
-      isDeleting: false,
-      isDeleteModalOpen: false,
-      textFilter: ''
-    };
-  }
-
-  updateUrl () {
-    let params = [];
-    params.push('page=' + this.state.page);
-    params.push('pageSize=' + this.state.pageSize);
-    this.props.navigate('/admin/projects?' + params.join('&'));
-  }
-
-  setPage = (_event, pageNumber) => {
-    this.setState({page: pageNumber}, () => {
-      this.updateUrl();
-    });
-  };
-
-  setPageSize = (_event, perPage) => {
-    this.setState({pageSize: perPage}, () => {
-      this.updateUrl();
-    });
-  };
-
-  getProjects () {
-    // Show a spinner
-    this.setState({rows: [getSpinnerRow(4)], isEmpty: false, isError: false});
-    let params = {
-      pageSize: this.state.pageSize,
-      page: this.state.page
-    };
-    if (this.state.textFilter) {
-      params['filter'] = ['title%' + this.state.textFilter];
-    }
-    HttpClient.get([Settings.serverUrl, 'admin', 'project'], params)
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => this.setState({
-        rows: data.projects.map((project) => projectToRow(project, this.onDeleteClick)),
-        projects: data.projects,
-        page: data.pagination.page,
-        pageSize: data.pagination.pageSize,
-        totalItems: data.pagination.totalItems,
-        totalPages: data.pagination.totalPages,
-        isEmpty: data.pagination.totalItems === 0
-      }))
-      .catch((error) => {
-        console.error('Error fetching projects data:', error);
-        this.setState({rows: [], isEmpty: false, isError: true});
-      });
-  }
-
-  onDeleteClick = (projectId) => {
-    const selectedProject = this.state.projects.find((project) => project.id === projectId);
-    this.setState({selectedProject: selectedProject, isDeleteModalOpen: true});
-  };
-
-  onDeleteModalClose = () => {
-    this.setState({isDeleteModalOpen: false});
-  };
-
-  onModalDeleteClick = () => {
-    // spinner
-    HttpClient.delete([Settings.serverUrl, 'admin', 'project', this.state.selectedProject.id])
+  const onModalDeleteClick = () => {
+    setIsDeleting(true);
+    HttpClient.delete([Settings.serverUrl, 'admin', 'project', selectedProject.id])
       .then(response => HttpClient.handleResponse(response))
       .then(() => {
-        this.getProjects();
-        this.setState({isDeleteModalOpen: false});
+        setIsDeleteModalOpen(false);
+        setIsDeleting(false);
+
       });
   };
 
-  onTextChanged = (newValue) => {
-    this.setState({textFilter: newValue}, debounce(() => {
-      if (newValue.length >= 3 || newValue.length === 0) {
-        this.updateUrl();
-        this.getProjects();
-      }
-    }));
+  useEffect(() => {
+    // handle input value changing for project filter
+    setActiveFilters(filterText ? {'title': filterText} : {});
+
+    let newProjects = projects;
+    if (filterText && projects) {
+      newProjects = projects.filter(p =>
+        String(p.title).toLowerCase().includes(filterText.toLowerCase())
+      );
+    }
+    setFilteredProjects(newProjects);
+  }, [filterText, projects]);
+
+  useEffect(() => {
+    HttpClient.get([Settings.serverUrl, 'admin', 'project'], {page: page, pageSize: pageSize})
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => {
+        setIsError(false);
+        if (data?.projects) {
+          setProjects(data.projects);
+          setPage(data.pagination.page);
+          setPageSize(data.pagination.pageSize);
+          setTotalItems(data.pagination.totalItems);
+        } else {
+          setProjects([]);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching projects data:', error);
+        setFilteredProjects([]);
+        setIsError(true);
+      });
+  }, [page, pageSize, isDeleting]); // isDeleteing so the projects fetch after delete
+
+  const onFilterChange = (_event, value) => {
+    setFilterText(value);
   };
 
-  componentDidMount () {
-    this.getProjects();
-  }
+  const onDeleteClose = () => {
+    setIsDeleteModalOpen(false);
+  };
 
-  render () {
-    document.title = 'Projects - Administration | Ibutsu';
-    const { columns, rows, textFilter } = this.state;
-    const pagination = {
-      pageSize: this.state.pageSize,
-      page: this.state.page,
-      totalItems: this.state.totalItems
-    };
-    const filters = [
-      <TextInput type="text" id="filter" placeholder="Search for project..." value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: 'inherit'}} key="textFilter"/>
-    ];
-    return (
-      <React.Fragment>
-        <PageSection id="page" variant={PageSectionVariants.light}>
-          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
-            <Flex>
-              <FlexItem spacer={{ default: 'spacerLg' }}>
-                <TextContent>
-                  <Text className="title" component="h1" ouiaId="admin-projects">Projects</Text>
-                </TextContent>
-              </FlexItem>
-            </Flex>
-            <Flex>
-              <FlexItem>
-                <Button
-                  aria-label="Add project"
-                  variant="secondary"
-                  title="Add project"
-                  ouiaId="admin-projects-add"
-                  component={(props: any) => <Link {...props} to="/admin/projects/new" />}
-                >
-                  <PlusCircleIcon /> Add Project
-                </Button>
-              </FlexItem>
-            </Flex>
+  const onRemoveFilter = () => {
+    setFilterText('');
+  };
+
+  document.title = 'Projects - Administration | Ibutsu';
+  return (
+    <React.Fragment>
+      <PageSection id="page" variant={PageSectionVariants.light}>
+        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+          <Flex>
+            <FlexItem spacer={{ default: 'spacerLg' }}>
+              <TextContent>
+                <Text className="title" component="h1" ouiaId="admin-projects">Projects</Text>
+              </TextContent>
+            </FlexItem>
           </Flex>
-        </PageSection>
-        <PageSection className="pf-u-pb-0">
-          <Card>
-            <CardBody className="pf-u-p-0">
-              <FilterTable
-                columns={columns}
-                rows={rows}
-                filters={filters}
-                pagination={pagination}
-                isEmpty={this.state.isEmpty}
-                isError={this.state.isError}
-                onSetPage={this.setPage}
-                onSetPageSize={this.setPageSize}
-              />
-            </CardBody>
-          </Card>
-        </PageSection>
-        <Modal
-          title="Confirm Delete"
-          variant="small"
-          isOpen={this.state.isDeleteModalOpen}
-          onClose={this.onDeleteModalClose}
-          actions={[
-            <Button
-              key="delete"
-              variant="danger"
-              ouiaId="admin-projects-modal-delete"
-              isLoading={this.state.isDeleting}
-              isDisabled={this.state.isDeleting}
-              onClick={this.onModalDeleteClick}
-            >
-              {this.state.isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>,
-            <Button
-              key="cancel"
-              variant="secondary"
-              ouiaId="admin-projects-modal-cancel"
-              isDisabled={this.state.isDeleting}
-              onClick={this.onDeleteModalClose}
-            >
-              Cancel
-            </Button>
-          ]}
-        >
-          Are you sure you want to delete &ldquo;{this.state.selectedProject && this.state.selectedProject.title}&rdquo;? This cannot be undone!
-        </Modal>
-      </React.Fragment>
-    );
-  }
-}
+          <Flex>
+            <FlexItem>
+              <Button
+                aria-label="Add project"
+                variant="secondary"
+                title="Add project"
+                ouiaId="admin-projects-add"
+                component={(props) => <Link {...props} to="/admin/projects/new" />}
+              >
+                <PlusCircleIcon /> Add Project
+              </Button>
+            </FlexItem>
+          </Flex>
+        </Flex>
+      </PageSection>
+      <PageSection className="pf-u-pb-0">
+        {projects.length > 0 &&
+        <Card>
+          <CardBody className="pf-u-p-0">
+            <FilterTable
+              columns={COLUMNS}
+              rows={filteredProjects ? filteredProjects.map((p) => projectToRow(p)) : [getSpinnerRow(4)]}
+              activeFilters={activeFilters}
+              filters={[
+                <TextInput
+                  type="text"
+                  id="filter"
+                  placeholder="Search for project..."
+                  value={filterText}
+                  onChange={onFilterChange}
+                  style={{height: 'inherit'}}
+                  key="filterText"
+                />
+              ]}
+              pagination={{
+                pageSize: pageSize,
+                page: page,
+                totalItems: totalItems
+              }}
+              onRemoveFilter={onRemoveFilter}
+              isEmpty={filteredProjects.length === 0}
+              isError={isError}
+              onSetPage={(_event, value) => {setPage(value);}}
+              onSetPageSize={(_event, value) => {setPageSize(value);}}
+            />
+          </CardBody>
+        </Card>
+        }
+        {projects.length === 0 && <EmptyObject headingText='No Projects found' bodyText='Create your first project' returnLink='/admin/projects/new' returnLinkText='Add Project'/>}
+      </PageSection>
+      <Modal
+        title="Confirm Delete"
+        variant="small"
+        isOpen={isDeleteModalOpen}
+        onClose={onDeleteClose}
+        actions={[
+          <Button
+            key="delete"
+            variant="danger"
+            ouiaId="admin-projects-modal-delete"
+            isLoading={isDeleting}
+            isDisabled={isDeleting}
+            onClick={onModalDeleteClick}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>,
+          <Button
+            key="cancel"
+            variant="secondary"
+            ouiaId="admin-projects-modal-cancel"
+            isDisabled={isDeleting}
+            onClick={onDeleteClose}
+          >
+            Cancel
+          </Button>
+        ]}
+      >
+        Are you sure you want to delete &ldquo;{selectedProject && selectedProject.title}&rdquo;? This cannot be undone!
+      </Modal>
+    </React.Fragment>
+  );
+};
+
+ProjectList.propTypes = {};
+
+export default ProjectList;
