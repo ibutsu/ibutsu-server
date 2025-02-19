@@ -62,9 +62,9 @@ import {
 } from './utilities';
 import {
   DownloadButton,
-  EmptyObject,
   ClassifyFailuresTable,
 } from './components';
+import EmptyObject from './components/empty-object';
 import { FilterTable } from './components/filtertable';
 import ResultView from './components/result';
 import TabTitle from './components/tabs';

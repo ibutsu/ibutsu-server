@@ -10,7 +10,7 @@ import {
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import { EmptyObject } from './components';
+import EmptyObject from './components/empty-object';
 import ResultView from './components/result';
 
 
