@@ -26,16 +26,17 @@ const COLUMNS = ['Title', 'Name', 'Owner', ''];
 
 const ProjectList = () => {
   const [filterText, setFilterText] = useState('');
-  const [filteredProjects, setFilteredProjects] = useState([]);
   const [activeFilters, setActiveFilters] = useState({});
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [totalItems, setTotalItems] = useState(0);
 
   const [projects, setProjects] = useState([]);
-
-  const [totalItems, setTotalItems] = useState(0);
-  const [isError, setIsError] = useState(false);
+  const [filteredProjects, setFilteredProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState();
+
+  const [isError, setIsError] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
