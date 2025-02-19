@@ -6,7 +6,7 @@ import ElementWrapper from './components/elementWrapper';
 import AdminHome from './pages/admin/home';
 import { UserList } from './pages/admin/user-list';
 import UserEdit from './pages/admin/user-edit';
-import { ProjectList } from './pages/admin/project-list';
+import ProjectList from './pages/admin/project-list';
 import ProjectEdit from './pages/admin/project-edit';
 import { AuthService } from './services/auth';
 
@@ -29,7 +29,6 @@ const Admin = () => {
     }
   }, [isSuper]);
 
-
   return (
     <Routes>
       <Route
@@ -39,7 +38,7 @@ const Admin = () => {
         <Route path="home" element={<AdminHome/>} />
         <Route path="users" element={<ElementWrapper routeElement={UserList} />} />
         <Route path="users/:id" element={<ElementWrapper routeElement={UserEdit} />} />
-        <Route path="projects" element={<ElementWrapper routeElement={ProjectList}/>} />
+        <Route path="projects" element={<ProjectList/>} />
         <Route path="projects/:id" element={<ProjectEdit/>} />
       </Route>
       <Route path="*" element={<Navigate to="" replace />}/>
