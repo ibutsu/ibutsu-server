@@ -35,7 +35,6 @@ const ProjectList = () => {
 
   const [totalItems, setTotalItems] = useState(0);
   const [isError, setIsError] = useState(false);
-  const [isEmpty, setIsEmpty] = useState(false);
   const [selectedProject, setSelectedProject] = useState();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -88,19 +87,13 @@ const ProjectList = () => {
 
   useEffect(() => {
     // handle input value changing for project filter
+    setActiveFilters(filterText ? {'title': filterText} : {});
+
     let newProjects = projects;
     if (filterText && projects) {
       newProjects = projects.filter(p =>
         String(p.title).toLowerCase().includes(filterText.toLowerCase())
       );
-
-      if (newProjects.length === 0) {
-        newProjects = [{
-          isDisabled: true,
-          value: {},
-          title: `No results found for "${filterText}"`,
-        }];
-      }
     }
     setFilteredProjects(newProjects);
   }, [filterText, projects]);
@@ -111,14 +104,12 @@ const ProjectList = () => {
       .then(data => {
         setIsError(false);
         if (data?.projects) {
-          setIsEmpty(false);
           setProjects(data.projects);
           setPage(data.pagination.page);
           setPageSize(data.pagination.pageSize);
           setTotalItems(data.pagination.totalItems);
-          setIsEmpty(data.pagination.totalItems === 0);
         } else {
-          setIsEmpty(true);
+          setProjects([]);
         }
       })
       .catch((error) => {
@@ -130,11 +121,14 @@ const ProjectList = () => {
 
   const onFilterChange = (_event, value) => {
     setFilterText(value);
-    setActiveFilters(value ? {'title': value} : {});
   };
 
   const onDeleteClose = () => {
     setIsDeleteModalOpen(false);
+  };
+
+  const onRemoveFilter = () => {
+    setFilterText('');
   };
 
   document.title = 'Projects - Administration | Ibutsu';
@@ -165,7 +159,7 @@ const ProjectList = () => {
         </Flex>
       </PageSection>
       <PageSection className="pf-u-pb-0">
-        {!isEmpty &&
+        {projects.length > 0 &&
         <Card>
           <CardBody className="pf-u-p-0">
             <FilterTable
@@ -188,7 +182,8 @@ const ProjectList = () => {
                 page: page,
                 totalItems: totalItems
               }}
-              isEmpty={isEmpty}
+              onRemoveFilter={onRemoveFilter}
+              isEmpty={filteredProjects.length === 0}
               isError={isError}
               onSetPage={(_event, value) => {setPage(value);}}
               onSetPageSize={(_event, value) => {setPageSize(value);}}
@@ -196,7 +191,7 @@ const ProjectList = () => {
           </CardBody>
         </Card>
         }
-        {isEmpty && !filterText && <EmptyObject headingText='No Projects found' bodyText='Create your first project' returnLink='/admin/projects/new' returnLinkText='Add Project'/>}
+        {projects.length === 0 && <EmptyObject headingText='No Projects found' bodyText='Create your first project' returnLink='/admin/projects/new' returnLinkText='Add Project'/>}
       </PageSection>
       <Modal
         title="Confirm Delete"
