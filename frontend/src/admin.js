@@ -4,7 +4,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import ElementWrapper from './components/elementWrapper';
 
 import AdminHome from './pages/admin/home';
-import { UserList } from './pages/admin/user-list';
+import UserList from './pages/admin/user-list';
 import UserEdit from './pages/admin/user-edit';
 import ProjectList from './pages/admin/project-list';
 import ProjectEdit from './pages/admin/project-edit';
@@ -36,7 +36,7 @@ const Admin = () => {
         element={<AdminPage/>}
       >
         <Route path="home" element={<AdminHome/>} />
-        <Route path="users" element={<ElementWrapper routeElement={UserList} />} />
+        <Route path="users" element={<UserList />} />
         <Route path="users/:id" element={<ElementWrapper routeElement={UserEdit} />} />
         <Route path="projects" element={<ProjectList/>} />
         <Route path="projects/:id" element={<ProjectEdit/>} />
