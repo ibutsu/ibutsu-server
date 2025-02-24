@@ -118,7 +118,7 @@ WIDGET_TYPES = {
         "params": [
             {
                 "name": "filters",
-                "description": "The filters for the runs to be included" " in the query.",
+                "description": "The filters for the runs to be included in the query.",
                 "type": "string",
                 "required": True,
             },
