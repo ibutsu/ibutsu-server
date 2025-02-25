@@ -177,6 +177,7 @@ def auth(provider):
     )
     provider_config = _get_provider_config(provider)
     user = _get_user_from_provider(provider, provider_config, code)
+    print(f"Using provider: {provider} ")
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
     jwt_token = generate_token(user.id)
