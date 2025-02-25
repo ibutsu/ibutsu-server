@@ -29,7 +29,7 @@ def get_keycloak_config(is_private=False):
         "client_id": current_app.config.get("KEYCLOAK_CLIENT_ID"),
         "redirect_uri": backend_url + "/login/keycloak",
     }
-    print(f"authorization_url: {config["authorization_url"]} ")
+    print(f"authorization_url: {config['authorization_url']} ")
     if current_app.config.get("KEYCLOAK_ICON"):
         config["icon"] = current_app.config["KEYCLOAK_ICON"]
     if current_app.config.get("KEYCLOAK_NAME"):
