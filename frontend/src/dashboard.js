@@ -389,7 +389,16 @@ const Dashboard = () => {
                   {(widget.type === 'widget' && widget.widget === 'result-aggregator') &&
                     <ResultAggregatorWidget
                       title={widget.title}
-                      params={widget.params}
+                      params={
+                        {
+                          project: widget.params.project,
+                          run_id: widget.params.run_id,
+                          additional_filters: widget.params.additional_filters
+                        }
+                      }
+                      chartType={widget.params.chart_type}
+                      days={widget.params.days}
+                      groupField={widget.params.group_field}
                       onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
                       onEditClick={() => {onEditWidgetClick(widget.id);}}
                     />

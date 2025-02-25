@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -26,6 +26,9 @@ const ResultAggregatorWidget = ( props ) => {
   const {
     title,
     params,
+    chartType,
+    days,
+    groupField,
     dropdownItems,
     onDeleteClick,
     onEditClick
@@ -37,12 +40,25 @@ const ResultAggregatorWidget = ( props ) => {
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [resultAggregatorError, setResultAggregatorError] = useState(false);
-  const [days, setDays] = useState(params.days);
-  const [groupField, setGroupField] = useState(params.group_field);
+  const [filterDays, setFilterDays] = useState(days);
+  const [filterGroupField, setFilterGroupField] = useState(groupField);
+  const filterChartType = useRef(chartType);
+  const additionalFilters = useRef(params.additional_filters);
+  const runId = useRef(params.run_id);
+  const project = useRef(params.project);
 
   useEffect(() => {
     setIsLoading(true);
-    HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], params)
+    const _params = {
+      days: filterDays,
+      group_field: filterGroupField,
+      chart_type: filterChartType.current,
+      project: project.current,
+      additional_filters: additionalFilters.current,
+      run_id: runId.current
+    };
+
+    HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], _params)
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
         if (!response.ok) {
@@ -70,16 +86,15 @@ const ResultAggregatorWidget = ( props ) => {
         setResultAggregatorError(true);
         console.log(error);
       });
-  }, [params, days, groupField]);
+  }, [filterDays, filterGroupField, filterChartType]);
+
 
   const onGroupFieldSelect = (value) => {
-    params.group_field = value;
-    setGroupField(value);
+    setFilterGroupField(value);
   };
 
   const onDaySelect = (value) => {
-    params.days = value;
-    setDays(value);
+    setFilterDays(value);
   };
 
   const themeColors = [
@@ -103,7 +118,7 @@ const ResultAggregatorWidget = ( props ) => {
         {(!resultAggregatorError && isLoading) &&
         <Title headingLevel='h2'>Loading ...</Title>
         }
-        {(!resultAggregatorError && !isLoading && params.chart_type === 'pie' && total !== 0) &&
+        {(!resultAggregatorError && !isLoading && filterChartType.current === 'pie' && total !== 0) &&
           <ChartPie
             constrainToVisibleArea={true}
             data={chartData}
@@ -126,7 +141,7 @@ const ResultAggregatorWidget = ( props ) => {
             themeColor={ChartThemeColor.multi}
           />
         }
-        {(!resultAggregatorError && !isLoading && params.chart_type === 'donut' && total !== 0) &&
+        {(!resultAggregatorError && !isLoading && filterChartType.current === 'donut' && total !== 0) &&
           <ChartDonut
             constrainToVisibleArea
             data={chartData}
@@ -159,14 +174,14 @@ const ResultAggregatorWidget = ( props ) => {
         }
         <ParamDropdown
           dropdownItems={dropdownItems || ['result', 'metadata.exception_name', 'component', 'metadata.classification']}
-          defaultValue={params.group_field}
+          defaultValue={filterGroupField}
           handleSelect={onGroupFieldSelect}
           tooltip="Group data by:"
         />
         <ParamDropdown
           dropdownItems={[3, 5, 10, 14]}
           handleSelect={onDaySelect}
-          defaultValue={params.days}
+          defaultValue={filterDays}
           tooltip="Set days to:"
         />
       </CardFooter>
@@ -177,6 +192,9 @@ const ResultAggregatorWidget = ( props ) => {
 ResultAggregatorWidget.propTypes = {
   title: PropTypes.string,
   params: PropTypes.object,
+  chartType: PropTypes.string,
+  days: PropTypes.string,
+  groupField: PropTypes.string,
   dropdownItems: PropTypes.array,
   onDeleteClick: PropTypes.func,
   onEditClick: PropTypes.func
