@@ -6,6 +6,6 @@ export class KeycloakService {
   static login(url, realm, client_id) {
     const keycloakInstance = new Keycloak({url: url, realm: realm, clientId: client_id});
     keycloakInstance.init({onLoad: 'login-required', checkLoginIframe: false, responseMode: 'query',
-       redirectUri: Settings.serverUrl + (Settings.keycloakAuthPath || '/login/auth/keycloak') });
+       redirectUri: Settings.serverUrl + '/login/keycloak' });
   }
 }
