@@ -21,6 +21,7 @@ def get_keycloak_config(is_private=False):
     #    server_url = build_url(server_url, "auth")
     realm = current_app.config.get("KEYCLOAK_REALM")
     realm_base_url = build_url(server_url, "realms", realm)
+    print(f"server_url: {server_url} ")
     config = {
         "server_url": server_url,
         "authorization_url": build_url(realm_base_url, "protocol/openid-connect/auth"),
@@ -28,6 +29,7 @@ def get_keycloak_config(is_private=False):
         "client_id": current_app.config.get("KEYCLOAK_CLIENT_ID"),
         "redirect_uri": backend_url + "/login/keycloak",
     }
+    print(f"authorization_url: {config['authorization_url']} ")
     if current_app.config.get("KEYCLOAK_ICON"):
         config["icon"] = current_app.config["KEYCLOAK_ICON"]
     if current_app.config.get("KEYCLOAK_NAME"):
