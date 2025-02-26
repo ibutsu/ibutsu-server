@@ -60,14 +60,12 @@ import {
   resultToRow,
   round
 } from './utilities';
-import {
-  DownloadButton,
-  ClassifyFailuresTable,
-} from './components';
+import DownloadButton from './components/download-button';
 import EmptyObject from './components/empty-object';
-import { FilterTable } from './components/filtertable';
+import FilterTable from './components/filtertable';
 import ResultView from './components/result';
 import TabTitle from './components/tabs';
+import ClassifyFailuresTable from './components/classify-failures';
 
 const MockRun = {
   id: null,
