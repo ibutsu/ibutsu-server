@@ -45,9 +45,6 @@ const ResultSummaryWidget = ( props ) => {
     HttpClient.get([Settings.serverUrl, 'widget', 'result-summary'], params)
       .then(response => {
         response = HttpClient.handleResponse(response, 'response');
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
         return response.json();
       })
       .then(data => {
@@ -57,6 +54,7 @@ const ResultSummaryWidget = ( props ) => {
       })
       .catch(error => {
         setDataError(true);
+        setIsLoading(false);
         console.log(error);
       });
   }, [params]);
