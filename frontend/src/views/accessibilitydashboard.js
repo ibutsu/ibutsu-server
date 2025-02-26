@@ -30,7 +30,7 @@ import {
   getSpinnerRow,
   parseFilter
 } from '../utilities';
-import { FilterTable } from '../components/filtertable';
+import FilterTable from '../components/filtertable';
 import MultiValueInput from '../components/multivalueinput';
 import RunSummary from '../components/runsummary';
 import { OPERATIONS, ACCESSIBILITY_FIELDS } from '../constants';

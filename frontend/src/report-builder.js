@@ -31,8 +31,8 @@ import {
   parseFilter,
   getSpinnerRow,
 } from './utilities';
-import { DownloadButton } from './components';
-import {FilterTable} from './components/filtertable';
+import DownloadButton from './components/download-button';
+import FilterTable from './components/filtertable';
 import { OPERATIONS } from './constants';
 import { IbutsuContext } from './services/context';
 import { useLocation } from 'react-router-dom';

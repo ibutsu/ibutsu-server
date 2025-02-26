@@ -36,7 +36,7 @@ import {
   resultToRow
 } from './utilities';
 import MultiValueInput from './components/multivalueinput';
-import { FilterTable } from './components/filtertable';
+import FilterTable from './components/filtertable';
 import { OPERATIONS, RESULT_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
 

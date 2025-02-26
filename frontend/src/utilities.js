@@ -30,7 +30,6 @@ import {
   NUMERIC_RUN_FIELDS,
   THEME_KEY,
 } from './constants';
-import { ClassificationDropdown } from './components';
 
 export function getDateString () {
   return String((new Date()).getTime());
@@ -214,52 +213,6 @@ export function resultToRow (result, filterFunc) {
       {title: (new Date(result.start_time).toLocaleString())}
     ]
   };
-}
-
-export function resultToClassificationRow (result, index, filterFunc) {
-  let resultIcon = getIconForResult(result.result);
-  let markers = [];
-  let exceptionBadge;
-
-  if (filterFunc) {
-    exceptionBadge = buildBadge(`exception_name-${result.id}`, result.metadata.exception_name, false,
-      () => filterFunc('metadata.exception_name', result.metadata.exception_name));
-  }
-  else {
-    exceptionBadge = buildBadge(`exception_name-${result.id}`, result.metadata.exception_name, false);
-  }
-
-  if (result.metadata && result.metadata.component) {
-    markers.push(<Badge key={`component-${result.id}`}>{result.metadata.component}</Badge>);
-  }
-  if (result.metadata && result.metadata.markers) {
-    for (const marker of result.metadata.markers) {
-      // Don't add duplicate markers
-      if (markers.filter(m => m.key === marker.name).length === 0) {
-        markers.push(<Badge isRead key={`${marker.name}-${generateId(5)}`}>{marker.name}</Badge>);
-      }
-    }
-  }
-
-  return [
-    // parent row
-    {
-      'isOpen': false,
-      'result': result,
-      'cells': [
-        {title: <React.Fragment><Link to={`../results/${result.id}`} relative="Path">{result.test_id}</Link> {markers}</React.Fragment>},
-        {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
-        {title: <React.Fragment>{exceptionBadge}</React.Fragment>},
-        {title: <ClassificationDropdown testResult={result} />},
-        {title: round(result.duration) + 's'},
-      ],
-    },
-    // child row (this is set in the onCollapse function for lazy-loading)
-    {
-      'parent': 2*index,
-      'cells': [{title: <div/>}]
-    }
-  ];
 }
 
 export function resultToComparisonRow (result, index) {
