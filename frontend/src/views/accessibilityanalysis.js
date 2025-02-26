@@ -36,7 +36,7 @@ import {
   getSpinnerRow,
   resultToRow,
 } from '../utilities';
-import { FilterTable } from '../components/filtertable';
+import FilterTable from '../components/filtertable';
 import { IbutsuContext } from '../services/context';
 import TabTitle from '../components/tabs';
 const MockRun = {

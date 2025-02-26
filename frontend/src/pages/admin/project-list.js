@@ -19,7 +19,7 @@ import { Link } from 'react-router-dom';
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import { getSpinnerRow } from '../../utilities';
-import { FilterTable } from '../../components/filtertable';
+import FilterTable from '../../components/filtertable';
 import EmptyObject from '../../components/empty-object';
 
 const COLUMNS = ['Title', 'Name', 'Owner', ''];

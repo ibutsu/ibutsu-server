@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
-  Button,
   Card,
   CardHeader,
   CardBody,
@@ -10,7 +9,8 @@ import {
   Flex,
   FlexItem,
   TextContent,
-  Text,
+  Title,
+  Badge,
 } from '@patternfly/react-core';
 import {
   TableVariant,
@@ -20,56 +20,126 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
-  buildParams,
   toAPIFilter,
   getSpinnerRow,
-  resultToClassificationRow,
+  getIconForResult,
+  buildBadge,
+  generateId,
+  toTitleCase,
+  round,
 } from '../utilities';
-import { MultiClassificationDropdown } from './classification-dropdown';
-import { FilterTable, MetaFilter } from './filtertable';
+import { ClassificationDropdown, MultiClassificationDropdown } from './classification-dropdown';
+import FilterTable from './filtertable';
+import MetaFilter from './metafilter';
 import ResultView from './result';
+import { Link } from 'react-router-dom';
 
+const COLUMNS = [
+  {
+    title: 'Test',
+    cellFormatters: [expandable]
+  },
+  'Result',
+  'Exception Name',
+  'Classification',
+  'Duration'
+];
 
-export class ClassifyFailuresTable extends React.Component {
-  static propTypes = {
-    filters: PropTypes.object,
-    run_id: PropTypes.string
-  };
+const resultToClassificationRow = (result, index, filterFunc) => {
+  let resultIcon = getIconForResult(result.result);
+  let markers = [];
+  let exceptionBadge;
 
-  constructor (props) {
-    super(props);
-    this.state = {
-      columns: [{title: 'Test', cellFormatters: [expandable]}, 'Result', 'Exception Name', 'Classification', 'Duration'],
-      rows: [getSpinnerRow(5)],
-      results: [],
-      selectedResults: [],
-      cursor: null,
-      pageSize: 10,
-      page: 1,
-      totalItems: 0,
-      totalPages: 0,
-      isEmpty: false,
-      isError: false,
-      isFieldOpen: false,
-      isOperationOpen: false,
-      includeSkipped: false,
-      filters: Object.assign({
-        'result': {op: 'in', val: 'failed;error'},
-        'run_id': {op: 'eq', val: props.run_id}}, props.filters),
-    };
-    this.refreshResults = this.refreshResults.bind(this);
-    this.onCollapse = this.onCollapse.bind(this);
+  if (filterFunc) {
+    exceptionBadge = buildBadge(`exception_name-${result.id}`, result.metadata.exception_name, false,
+      () => filterFunc('metadata.exception_name', result.metadata.exception_name));
+  }
+  else {
+    exceptionBadge = buildBadge(`exception_name-${result.id}`, result.metadata.exception_name, false);
   }
 
-  refreshResults = () => {
-    this.setState({selectedResults: []});
-    this.getResultsForTable();
-  };
+  if (result.metadata && result.metadata.component) {
+    markers.push(<Badge key={`component-${result.id}`}>{result.metadata.component}</Badge>);
+  }
+  if (result.metadata && result.metadata.markers) {
+    for (const marker of result.metadata.markers) {
+      // Don't add duplicate markers
+      if (markers.filter(m => m.key === marker.name).length === 0) {
+        markers.push(<Badge isRead key={`${marker.name}-${generateId(5)}`}>{marker.name}</Badge>);
+      }
+    }
+  }
 
-  onCollapse (event, rowIndex, isOpen) {
-    const { rows } = this.state;
+  return [
+    // parent row
+    {
+      'isOpen': false,
+      'result': result,
+      'cells': [
+        {title: <React.Fragment><Link to={`../results/${result.id}`} relative="Path">{result.test_id}</Link> {markers}</React.Fragment>},
+        {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
+        {title: <React.Fragment>{exceptionBadge}</React.Fragment>},
+        {title: <ClassificationDropdown testResult={result} />},
+        {title: round(result.duration) + 's'},
+      ],
+    },
+    // child row (this is set in the onCollapse function for lazy-loading)
+    {
+      'parent': 2*index,
+      'cells': [{title: <div/>}]
+    }
+  ];
+};
 
-    // lazy-load the result view so we don't have to make a bunch of artifact requests
+const ClassifyFailuresTable = (props) => {
+  const {
+    filters,
+    run_id,
+  } = props;
+
+  const [rows, setRows] = useState([getSpinnerRow(5)]);
+  const [filteredResults, setFilteredResults] = useState([]);
+  const [selectedResults, setSelectedResults] = useState([]);
+
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+
+  const [isError, setIsError] = useState(false);
+  const [includeSkipped, setIncludeSkipped] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState({
+    ...filters,
+    'result': {op: 'in', val: 'failed;error'},
+    'run_id': {op: 'eq', val: props.run_id}}
+  );
+
+  // Fetch and set filteredResults on filter and pagination updates
+  useEffect(()=> {
+    setIsError(false);
+
+    // get only filtered results
+    HttpClient.get([Settings.serverUrl, 'result'], {
+      filter: toAPIFilter(appliedFilters),
+      pageSize: pageSize,
+      page: page
+    })
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => {
+        setFilteredResults(data.results);
+        setPage(data.pagination.page);
+        setPageSize(data.pagination.pageSize);
+        setTotalItems(data.pagination.totalItems);
+      })
+      .catch((error) => {
+        console.error('Error fetching result data:', error);
+        setFilteredResults([]);
+        setIsError(true);
+      });
+  }, [page, pageSize, appliedFilters]);
+
+
+  const onCollapse = (_event, rowIndex, isOpen) => {
+    // handle row click opening the child row with ResultView
     if (isOpen) {
       let result = rows[rowIndex].result;
       let hideSummary=true;
@@ -80,184 +150,173 @@ export class ClassifyFailuresTable extends React.Component {
         hideTestObject=false;
         defaultTab='summary';
       }
-      rows[rowIndex + 1].cells = [{
-        title: <ResultView defaultTab={defaultTab} hideTestHistory={false} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={rows[rowIndex].result}/>
-      }];
-    }
-    rows[rowIndex].isOpen = isOpen;
-    this.setState({rows});
-  }
 
-  onTableRowSelect = (event, isSelected, rowId) => {
-    let rows;
-    if (rowId === -1) {
-      rows = this.state.rows.map(oneRow => {
-        oneRow.selected = isSelected;
+      const updatedRows = rows.map((row, index) => {
+        let newRow = {};
+        // set isOpen on the parent row items
+        if (index === rowIndex) {
+          newRow = {...row, isOpen: isOpen};
+        } else if (index === (rowIndex + 1)) {
+          // set the ResultView on the child rows
+          newRow = {
+            ...row,
+            cells: [
+              {title:
+                  <ResultView
+                    defaultTab={defaultTab}
+                    hideTestHistory={false}
+                    hideSummary={hideSummary}
+                    hideTestObject={hideTestObject}
+                    testResult={rows[rowIndex].result}
+                  />}
+            ]
+          };
+        } else {
+          newRow = {...row};
+        }
+        return newRow;
+      });
+      setRows(updatedRows);
+    } else {
+      // handle updating isOpen on the clicked row (closing)
+      setRows(prevRows => {
+        const updatedRows = [...prevRows];
+        if (updatedRows[rowIndex]) {
+          updatedRows[rowIndex] = {...updatedRows[rowIndex], isOpen: isOpen};
+        }
+        return updatedRows;
+      });
+    }
+
+  };
+
+  const onTableRowSelect = (_event, isSelected, rowId) => {
+    // either set every row or single row selected state
+    let mutatedRows = rows.map(
+      (oneRow, index) => {
+        if((index === rowId) || (rowId === -1)) {oneRow.selected = isSelected;}
         return oneRow;
-      });
-    }
-    else {
-      rows = [...this.state.rows];
-      rows[rowId].selected = isSelected;
-    }
-    this.setState({
-      rows,
-    });
-    this.getSelectedResults();
-  };
-
-  setPage = (_event, pageNumber) => {
-    this.setState({page: pageNumber}, () => {
-      this.getResultsForTable();
-    });
-  };
-
-  pageSizeSelect = (_event, perPage) => {
-    this.setState({pageSize: perPage}, () => {
-      this.getResultsForTable();
-    });
-  };
-
-  updateFilters (filterId, name, operator, value, callback) {
-    let filters = this.state.filters;
-    if ((value === null) || (value.length === 0)) {
-      delete filters[name];
-    }
-    else {
-      filters[name] = {'op': operator, 'val': value};
-    }
-    this.setState({filters: filters, page: 1}, callback);
-  }
-
-  setFilter = (filterId, field, value) => {
-    // maybe process values array to string format here instead of expecting caller to do it?
-    let operator = (value.includes(';')) ? 'in' : 'eq';
-    this.updateFilters(filterId, field, operator, value, this.refreshResults);
-  };
-
-  removeFilter = (filterId, id) => {
-    if ((id !== 'result') && (id !== 'run_id')) {   // Don't allow removal of error/failure filter
-      this.updateFilters(filterId, id, null, null, this.refreshResults);
-    }
-  };
-
-  onSkipCheck = (checked) => {
-    let { filters } = this.state;
-    filters['result']['val'] = ('failed;error') + ((checked) ? ';skipped;xfailed' : '');
-    this.setState(
-      {includeSkipped: checked, filters},
-      this.refreshResults
-    );
-  };
-
-  getSelectedResults = () => {
-    const { results, rows } = this.state;
-    let selectedResults = [];
-    for (const [index, row] of rows.entries()) {
-      if (row.selected && row.parent === null) {  // rows with a parent attr are the child rows
-        selectedResults.push(results[index / 2]);  // divide by 2 to convert row index to result index
       }
-    }
-    this.setState({selectedResults});
+    );
+    setRows(mutatedRows);
+
+    // filter to only pick parent rows
+    let resultsToSelect = mutatedRows.filter(
+      (oneRow) => (oneRow.selected && oneRow.parent === undefined)
+    );
+    // map again to pull the result out of the row
+    resultsToSelect = resultsToSelect.map(
+      (oneRow) => oneRow.result
+    );
+    setSelectedResults(resultsToSelect);
   };
 
-  getResultsForTable () {
-    const filters = this.state.filters;
-    this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
-    // get only failed results
-    let params = buildParams(filters);
-    params['filter'] = toAPIFilter(filters);
-    params['pageSize'] = this.state.pageSize;
-    params['page'] = this.state.page;
-    this.setState({rows: [['Loading...', '', '', '', '']]});
-    HttpClient.get([Settings.serverUrl, 'result'], params)
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => this.setState({
-        results: data.results,
-        rows: data.results.map((result, index) => resultToClassificationRow(result, index, this.setFilter)).flat(),
-        page: data.pagination.page,
-        pageSize: data.pagination.pageSize,
-        totalItems: data.pagination.totalItems,
-        totalPages: data.pagination.totalPages,
-        isEmpty: data.pagination.totalItems === 0,
-      }))
-      .catch((error) => {
-        console.error('Error fetching result data:', error);
-        this.setState({rows: [], isEmpty: false, isError: true});
-      });
-  }
+  const onSkipCheck = (checked) => {
+    setIncludeSkipped(checked);
+    setAppliedFilters({
+      ...appliedFilters,
+      'result': {
+        ...appliedFilters.result,
+        'val': ('failed;error') + ((checked) ? ';skipped;xfailed' : '')
+      }
+    });
+  };
 
-  componentDidMount () {
-    this.getResultsForTable();
-  }
+  // METAFILTER FUNCTIONS
+  const updateFilters = useCallback((_filterId, name, operator, value) => {
+    let localFilters = {...appliedFilters};
+    if ((value === null) || (value.length === 0)) {
+      delete localFilters[name];
+    }
+    else {
+      localFilters[name] = {'op': operator, 'val': value};
+    }
 
-  render () {
-    const {
-      columns,
-      rows,
-      selectedResults,
-      includeSkipped,
-      filters
-    } = this.state;
-    const { run_id } = this.props;
-    const pagination = {
-      pageSize: this.state.pageSize,
-      page: this.state.page,
-      totalItems: this.state.totalItems
-    };
-    // filters for the metadata
-    const resultFilters = [
-      <MetaFilter
-        key="metafilter"
-        runId={run_id}
-        setFilter={this.setFilter}
-        customFilters={{'result': filters['result']}}
-        activeFilters={this.state.filters}
-        onRemoveFilter={this.removeFilter}
-        hideFilters={['run_id', 'project_id']}
-        id={0}
-      />,
-    ];
-    return (
-      <Card className="pf-u-mt-lg">
-        <CardHeader>
-          <Flex style={{ width: '100%' }}>
-            <FlexItem grow={{ default: 'grow' }}>
-              <TextContent>
-                <Text component="h2" className="pf-v5-c-title pf-m-xl">Test Failures</Text>
-              </TextContent>
-            </FlexItem>
-            <FlexItem>
-              <TextContent>
-                <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={(_event, checked) => this.onSkipCheck(checked)}/>
-              </TextContent>
-            </FlexItem>
-            <FlexItem>
-              <MultiClassificationDropdown selectedResults={selectedResults} refreshFunc={this.refreshResults}/>
-            </FlexItem>
-            <FlexItem>
-              <Button variant="secondary" onClick={this.refreshResults}>Refresh results</Button>
-            </FlexItem>
-          </Flex>
-        </CardHeader>
-        <CardBody>
-          <FilterTable
-            columns={columns}
-            rows={rows}
-            pagination={pagination}
-            isEmpty={this.state.isEmpty}
-            isError={this.state.isError}
-            onCollapse={this.onCollapse}
-            onSetPage={this.setPage}
-            onSetPageSize={this.pageSizeSelect}
-            canSelectAll={true}
-            onRowSelect={this.onTableRowSelect}
-            variant={TableVariant.compact}
-            filters={resultFilters}
-          />
-        </CardBody>
-      </Card>
+    setAppliedFilters(localFilters);
+    setPage(1);
+  }, [appliedFilters]);
+
+  const setFilter = useCallback((filterId, field, value) => {
+    // maybe process values array to string format here instead of expecting caller to do it?
+    // TODO when value is an object (params field?) .includes blows up
+    let operator = (value.includes(';')) ? 'in' : 'eq';
+    updateFilters(filterId, field, operator, value);
+  }, [updateFilters]);
+
+  const removeFilter = (filterId, id) => {
+    if ((id !== 'result') && (id !== 'run_id')) {   // Don't allow removal of error/failure filter
+      updateFilters(filterId, id, null, null);
+    }
+  };
+
+  const resultFilters = [
+    <MetaFilter
+      key="metafilter"
+      runId={run_id}
+      setFilter={setFilter}
+      activeFilters={appliedFilters}
+      onRemoveFilter={removeFilter}
+      hideFilters={['run_id', 'project_id']}
+      id={0}
+    />,
+  ];
+
+  useEffect(() => {
+    // set rows when filtered items update
+    setRows(
+      filteredResults.flatMap(
+        (result, index) => resultToClassificationRow(result, index, setFilter)
+      )
     );
-  }
+  }, [filteredResults, setFilter]);
 
-}
+  return (
+    // mt-lg == margin top large
+    <Card className='pf-u-mt-lg'>
+      <CardHeader>
+        <Flex style={{ width: '100%' }}>
+          <FlexItem grow={{ default: 'grow' }}>
+            <TextContent>
+              <Title headingLevel="h2">Test Failures</Title>
+            </TextContent>
+          </FlexItem>
+          <FlexItem>
+            <TextContent>
+              <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={(_event, checked) => onSkipCheck(checked)}/>
+            </TextContent>
+          </FlexItem>
+          <FlexItem>
+            <MultiClassificationDropdown selectedResults={selectedResults}/>
+          </FlexItem>
+        </Flex>
+      </CardHeader>
+      <CardBody>
+        <FilterTable
+          columns={COLUMNS}
+          rows={rows}
+          pagination={{
+            pageSize: pageSize,
+            page: page,
+            totalItems: totalItems
+          }}
+          isEmpty={rows.length === 0}
+          isError={isError}
+          onCollapse={onCollapse}
+          onSetPage={(_event, change) => setPage(change)}
+          onSetPageSize={(_event, change) => setPageSize(change)}
+          canSelectAll={true}
+          onRowSelect={onTableRowSelect}
+          variant={TableVariant.compact}
+          filters={resultFilters}
+        />
+      </CardBody>
+    </Card>
+  );
+};
+
+ClassifyFailuresTable.propTypes = {
+  filters: PropTypes.object,
+  run_id: PropTypes.string
+};
+
+export default ClassifyFailuresTable;

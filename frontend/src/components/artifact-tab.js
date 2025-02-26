@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Card, CardBody, CardFooter, Text } from '@patternfly/react-core';
 import { Editor } from '@monaco-editor/react';
-import { DownloadButton } from './download-button';
+import DownloadButton from './download-button';
 import { Settings } from '../settings';
 import { HttpClient } from '../services/http';
 

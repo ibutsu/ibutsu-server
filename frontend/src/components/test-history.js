@@ -29,7 +29,8 @@ import {
   resultToTestHistoryRow,
 } from '../utilities';
 
-import { FilterTable } from './filtertable';
+import FilterTable from './filtertable';
+
 import RunSummary from './runsummary';
 import LastPassed from './last-passed';
 import ResultView from './result';
