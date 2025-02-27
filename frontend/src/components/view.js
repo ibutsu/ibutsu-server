@@ -10,7 +10,8 @@ import {
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { AccessibilityDashboardView, CompareRunsView, JenkinsJobView, JenkinsJobAnalysisView } from '../views';
+import { CompareRunsView, JenkinsJobView, JenkinsJobAnalysisView } from '../views';
+import AccessibilityDashboardView from '../views/accessibilitydashboard';
 import AccessibilityAnalysisView from '../views/accessibilityanalysis';
 
 const VIEW_MAP = {
