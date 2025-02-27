@@ -1,4 +1,7 @@
-import React from 'react';
+// TODO This component is incomplete
+// The class was converted to functional react, but needs additional work.
+// It's not in use in downstream environments at the moment
+import React, { useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -23,12 +26,10 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   buildBadge,
-  buildParams,
   getFilterMode,
   getOperationMode,
   getOperationsFromField,
-  getSpinnerRow,
-  parseFilter
+  // parseFilter
 } from '../utilities';
 import FilterTable from '../components/filtertable';
 import MultiValueInput from '../components/multivalueinput';
@@ -91,227 +92,134 @@ function fieldToColumnName (fields) {
   return results;
 }
 
-export class AccessibilityDashboardView extends React.Component {
-  static contextType = IbutsuContext;
-  static propTypes = {
-    location: PropTypes.object,
-    navigate: PropTypes.func,
-    view: PropTypes.object
-  };
+const AccessibilityDashboardView = (props) => {
+  const {view} = props;
 
-  constructor (props) {
-    super(props);
-    const params = new URLSearchParams(props.location.search);
-    let page = 1, pageSize = 20, filters = {};
-    if (params.toString() !== '') {
-      for(let pair of params) {
-        if (pair[0] === 'page') {
-          page = parseInt(pair[1]);
-        }
-        else if (pair[0] === 'pageSize') {
-          pageSize = parseInt(pair[1]);
-        }
-        else {
-          const combo = parseFilter(pair[0]);
-          filters[combo['key']] = {
-            'op': combo['op'],
-            'val': pair[1]
-          };
-        }
-      }
-    }
-    this.state = {
-      rows: [getSpinnerRow(7)],
-      columns: [...fieldToColumnName(ACCESSIBILITY_FIELDS), ''],
-      pagination: {page: page, pageSize: pageSize, totalItems: 0},
-      filters: filters,
-      isEmpty: true,
-      isError: false,
-      fieldSelection: null,
-      filteredFieldOptions: ACCESSIBILITY_FIELDS,
-      fieldOptions: ACCESSIBILITY_FIELDS,
-      fieldInputValue: '',
-      fieldFilterValue: '',
-      isFieldOpen: false,
-      operationSelection: 'eq',
-      isOperationOpen: false,
-      textFilter: '',
-      inValues: [],
-      boolSelection: null,
-      isBoolOpen: false,
-    };
-  }
+  const context = useContext(IbutsuContext);
+  // const params = useSearchParams();
 
-  updateUrl () {
-    let params = buildParams(this.state.filters);
-    params.push('page=' + this.state.pagination.page);
-    params.push('pageSize=' + this.state.pagination.pageSize);
-    this.props.navigate(this.props.location.pathname + '?' + params.join('&'));
-  }
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalItems, setTotalItems] = useState();
+  const [filters, setFilters] = useState({});
 
-  setPage = (_event, pageNumber) => {
-    let { pagination } = this.state;
-    pagination.page = pageNumber;
-    this.setState({pagination}, () => {
-      this.updateUrl();
-      this.getData();
-    });
-  };
 
-  setPageSize = (_event, perPage) => {
-    let { pagination } = this.state;
-    pagination.pageSize = perPage;
-    this.setState({pagination}, () => {
-      this.updateUrl();
-      this.getData();
-    });
-  };
+  // const combo = parseFilter(pair[0]);
+  // filters[combo['key']] = {
+  //   'op': combo['op'],
+  //   'val': pair[1]
+  // };
 
-  onFieldToggle = () => {
-    this.setState({isFieldOpen: !this.state.isFieldOpen});
-  };
+  // states
+  const [rows, setRows] = useState();
+  const [columns] = useState([...fieldToColumnName(ACCESSIBILITY_FIELDS), '']); // doesn't need to be in state
 
-  onFieldSelect = (_event, selection) => {
-    const fieldFilterValue = this.state.fieldFilterValue;
+  const [isError, setIsError] = useState(false);
+
+  const [fieldSelection, setFieldSelection] = useState();
+  const [filteredFieldOptions, setFilteredFieldOptions] = useState(ACCESSIBILITY_FIELDS);
+  const [fieldOptions] = useState(ACCESSIBILITY_FIELDS);
+  const [fieldInputValue, setFieldInputValue] = useState('');
+  const [fieldFilterValue, setFieldFilterValue] = useState('');  // same as fieldInputValue?
+  const [isFieldOpen, setIsFieldOpen] = useState(false);
+
+  const [operationSelection, setOperationSelection] = useState('eq');
+  const [isOperationOpen, setIsOperationOpen] = useState(false);
+
+  const [textFilter, setTextFilter] = useState('');
+  const [inValues, setInValues] = useState([]);
+  const [boolSelection, setBoolSelection] = useState();
+  const [isBoolOpen, setIsBoolOpen] = useState(false);
+
+  // TODO sync params for pagination and filters?
+
+  const onFieldSelect = (_, selection) => {
     if (selection == `Create "${fieldFilterValue}"`) {
-      this.setState({
-        filteredFieldOptions: [...this.state.fieldOptions, fieldFilterValue],
-        fieldSelection: fieldFilterValue,
-        fieldInputValue: fieldFilterValue,
-        operationSelection: 'eq',
-      });
+      setFilteredFieldOptions([...fieldOptions, fieldFilterValue]);
+      setFieldSelection(fieldFilterValue);
+      setFieldInputValue(fieldFilterValue);
+      setOperationSelection('eq');
     }
     else {
-      this.setState({
-        fieldSelection: selection,
-        fieldInputValue: selection,
-        isFieldOpen: false,
-        operationSelection: 'eq',
-      });
+      setFieldSelection(selection);
+      setFieldInputValue(selection);
+      setIsFieldOpen(false);
+      setOperationSelection('eq');
     }
   };
 
-  onFieldTextInputChange = (_event, value) => {
-    this.setState({fieldInputValue: value});
-    this.setState({fieldFilterValue: value});
+  const onFieldClear = () => {
+    setFieldSelection();
+    setFieldInputValue('');
+    setFieldFilterValue('');
   };
 
-  onFieldClear = () => {
-    this.setState({
-      fieldSelection: null,
-      fieldInputValue: '',
-      fieldFilterValue: ''
-    });
+  // const onFieldCreate = newValue => {
+  //   this.setState({filteredFieldOptions: [...this.state.filteredFieldOptions, newValue]});
+  // };
+
+  const onOperationSelect = (_, selection) => {
+    setOperationSelection(selection);
+    setIsOperationOpen(false);
+
+    // isMultiSelect: selection === 'in',  Wasn't in state originally, is only set here and never read?
   };
 
-  onFieldCreate = newValue => {
-    this.setState({filteredFieldOptions: [...this.state.filteredFieldOptions, newValue]});
+  const updateFilters = (name, operator, value, callback) => {
+    let newFilters = {...filters};
+    if (!value) {
+      delete newFilters[name];
+    }
+    else {
+      newFilters[name] = {'op': operator, 'val': value};
+    }
+
+    setFilters(filters);
+    setPage(1);
+
+    callback();
   };
 
-  onOperationToggle = () => {
-    this.setState({isOperationOpen: !this.state.isOperationOpen});
-  };
-
-  onOperationSelect = (event, selection) => {
-    this.setState({
-      operationSelection: selection,
-      isOperationOpen: false,
-      isMultiSelect: selection === 'in',
-    });
-  };
-
-  onOperationClear = () => {
-    this.setState({
-      operationSelection: null,
-      isOperationOpen: false
-    });
-  };
-
-  onTextChanged = newValue => {
-    this.setState({textFilter: newValue});
-  };
-
-  onInValuesChange = (values) => {
-    this.setState({inValues: values});
-  };
-
-  onBoolSelect = (event, selection) => {
-    this.setState({
-      boolSelection: selection,
-      isBoolOpen: false
-    });
-  };
-
-  onBoolToggle = () => {
-    this.setState({isBoolOpen: !this.state.isBoolOpen});
-  };
-
-  onBoolClear = () => {
-    this.setState({
-      boolSelection: null,
-      isBoolOpen: false
-    });
-  };
-
-  applyFilter = () => {
-    const field = this.state.fieldSelection;
-    const operator = this.state.operationSelection;
-    const operationMode = getOperationMode(operator);
-    let value = this.state.textFilter;
+  const applyFilter = () => {
+    const operationMode = getOperationMode(operationSelection);
+    let value = '';
     if (operationMode === 'multi') {
-      value = this.state.inValues.join(';');  // translate list to ;-separated string for BE
+      value = inValues.join(';');  // translate list to ;-separated string for BE
     }
     else if (operationMode === 'bool') {
-      value = this.state.boolSelection;
+      value = boolSelection;
+    } else {
+      value = textFilter;
     }
-    this.updateFilters(field, operator, value, () => {
-      this.updateUrl();
-      this.getData();
-      this.setState({
-        fieldSelection: null,
-        fieldInputValue: '',
-        fieldFilterValue: '',
-        operationSelection: 'eq',
-        textFilter: '',
-        inValues: [],
-        boolSelection: null,
-      });
+
+    updateFilters(fieldSelection, operationMode, value, () => {
+      setFieldSelection();
+      setFieldInputValue('');
+      setFieldFilterValue('');
+      setOperationSelection('eq');
+      setTextFilter('');
+      setInValues([]);
+      setBoolSelection();
     });
   };
 
-  updateFilters (name, operator, value, callback) {
-    let { filters, pagination } = this.state;
-    if (!value) {
-      delete filters[name];
-    }
-    else {
-      filters[name] = {'op': operator, 'val': value};
-    }
-    pagination.page = 1;
-    this.setState({filters: filters, pagination: pagination}, callback);
-  }
-
-  removeFilter = id => {
-    let { pagination } = this.state;
-    this.updateFilters(id, null, null, () => {
-      this.updateUrl();
-      pagination.page = 1;
-      this.setState({pagination}, this.getData);
-    });
+  const removeFilter = id => {
+    setPage(1);
+    updateFilters(id, null, null, () => {});
   };
 
-  getData () {
+  useEffect(() => {
     // First, show a spinner
-    this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
+    setIsError(false);
     let analysisViewId = '';
-    let params = {filter: []};
-    let filters = this.state.filters;
-    const { primaryObject } = this.context;
+    let httpParams = {filter: []};
+    let newFilters = {...filters};
+    const { primaryObject } = context;
     if (primaryObject) {
-      filters['project_id'] = {'val': primaryObject.id, 'op': 'eq'};
+      newFilters['project_id'] = {'val': primaryObject.id, 'op': 'eq'};
     }
     else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
-      delete filters['project_id'];
+      delete newFilters['project_id'];
     }
     // get the widget ID for the analysis view
     HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=accessibility-analysis-view'})
@@ -319,249 +227,225 @@ export class AccessibilityDashboardView extends React.Component {
       .then(data => {
         analysisViewId = data.widgets[0]?.id;
       }).catch(error => {
-        console.log(error);
+        console.error(error);
       });
-    params.filter.push('metadata.accessibility@t');
+    httpParams.filter.push('metadata.accessibility@t');
     // Convert UI filters to API filters
-    for (let key in filters) {
-      if (Object.prototype.hasOwnProperty.call(filters, key) && !!filters[key]) {
-        const val = filters[key]['val'];
-        const op = OPERATIONS[filters[key]['op']];
-        params.filter.push(key + op + val);
+    for (let key in newFilters) {
+      if (Object.prototype.hasOwnProperty.call(newFilters, key) && !!newFilters[key]) {
+        const val = newFilters[key]['val'];
+        const op = OPERATIONS[newFilters[key]['op']];
+        httpParams.filter.push(key + op + val);
       }
     }
 
-    params.filter = params.filter.join();
-    HttpClient.get([Settings.serverUrl + '/run'], params)
+    httpParams.filter = httpParams.filter.join();
+    HttpClient.get([Settings.serverUrl + '/run'], httpParams)
       .then(response => HttpClient.handleResponse(response))
-      .then(data => this.setState({
-        rows: data.runs.map((run) => runToRow(run, this.setFilter, analysisViewId)),
-        pagination: data.pagination,
-        totalItems: data.pagination.totalItems,
-        totalPages: data.pagination.totalPages,
-        isEmpty: data.pagination.totalItems === 0
-      }
-      ))
-
+      .then(data => {
+        setRows(data.runs.map((run) => runToRow(run, setFilters, analysisViewId)));
+        setPage(data.pagination.page);
+        setPageSize(data.pagination.pageSize);
+        setTotalItems(data.pagination.totalItems);
+      })
       .catch((error) => {
         console.error('Error fetching accessibility run data:', error);
-        this.setState({rows: [], isEmpty: false, isError: true});
+        setRows([]);
+        setIsError(true);
       });
-  }
+  }, [view, filters, context]);
 
-  componentDidUpdate (prevProps, prevState) {
-    if (prevProps.view !== this.props.view) {
-      this.getData();
-    }
-
-    if (
-      prevState.fieldFilterValue !== this.state.fieldFilterValue
-    ) {
-      let newSelectOptionsField = this.state.fieldOptions;
-      if (this.state.fieldInputValue) {
-        newSelectOptionsField = this.state.fieldOptions.filter(menuItem =>
-          menuItem.toLowerCase().includes(this.state.fieldFilterValue.toLowerCase())
-        );
-        if (newSelectOptionsField.length !== 1 && !newSelectOptionsField.includes(this.state.fieldFilterValue) ) {
-          newSelectOptionsField.push(`Create "${this.state.fieldFilterValue}"`);
-        }
-
-        if (!this.state.isFieldOpen) {
-          this.setState({ isFieldOpen: true });
-        }
+  useEffect(() => {
+    let newSelectOptionsField = {...fieldOptions};
+    if (fieldInputValue) {
+      newSelectOptionsField = fieldOptions.filter(menuItem =>
+        menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase())
+      );
+      if (newSelectOptionsField.length !== 1 && !newSelectOptionsField.includes(fieldFilterValue) ) {
+        newSelectOptionsField.push(`Create "${fieldFilterValue}"`);
       }
 
-      this.setState({
-        filteredFieldOptions: newSelectOptionsField,
-      });
+      if (!isFieldOpen) {
+        setIsFieldOpen(true);
+      }
     }
-  }
 
-  componentDidMount () {
-    this.getData();
-  }
+    setFilteredFieldOptions(newSelectOptionsField);
+  }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
 
-  render () {
-    const {
-      columns,
-      rows,
-      boolSelection,
-      fieldSelection,
-      isFieldOpen,
-      filteredFieldOptions,
-      fieldInputValue,
-      isBoolOpen,
-      isEmpty,
-      isError,
-      isOperationOpen,
-      operationSelection,
-      pagination,
-      textFilter,
-    } = this.state;
 
-    const filterMode = getFilterMode(fieldSelection);
-    const operationMode = getOperationMode(operationSelection);
-    const operations = getOperationsFromField(fieldSelection);
+  const filterMode = getFilterMode(fieldSelection);
+  const operationMode = getOperationMode(operationSelection);
+  const operations = getOperationsFromField(fieldSelection);
 
-    const fieldToggle = toggleRef => (
-      <MenuToggle
-        variant="typeahead"
-        aria-label="Typeahead creatable menu toggle"
-        onClick={this.onFieldToggle}
-        isExpanded={this.state.isFieldOpen}
-        isFullWidth
-        innerRef={toggleRef}
-      >
-        <TextInputGroup isPlain>
-          <TextInputGroupMain
-            value={fieldInputValue}
-            onClick={this.onFieldToggle}
-            onChange={this.onFieldTextInputChange}
-            id="create-typeahead-select-input"
-            autoComplete="off"
-            placeholder="Select a field"
-            role="combobox"
-            isExpanded={this.state.isFieldOpen}
-            aria-controls="select-create-typeahead-listbox"
-          />
-          <TextInputGroupUtilities>
-            {!!fieldInputValue && (
-              <Button
-                variant="plain"
-                onClick={() => {this.onFieldClear();}}
-                aria-label="Clear input value"
-              >
-                <TimesIcon aria-hidden />
-              </Button>
-            )}
-          </TextInputGroupUtilities>
-        </TextInputGroup>
-      </MenuToggle>
-    );
+  const fieldToggle = toggleRef => (
+    <MenuToggle
+      variant="typeahead"
+      aria-label="Typeahead creatable menu toggle"
+      onClick={() => setIsFieldOpen(!isFieldOpen)}
+      isExpanded={isFieldOpen}
+      isFullWidth
+      innerRef={toggleRef}
+    >
+      <TextInputGroup isPlain>
+        <TextInputGroupMain
+          value={fieldInputValue}
+          onClick={() => setIsFieldOpen(!isFieldOpen)}
+          onChange={(value) => {setFieldFilterValue(value); setFieldInputValue(value);}}
+          id="create-typeahead-select-input"
+          autoComplete="off"
+          placeholder="Select a field"
+          role="combobox"
+          isExpanded={isFieldOpen}
+          aria-controls="select-create-typeahead-listbox"
+        />
+        <TextInputGroupUtilities>
+          {!!fieldInputValue && (
+            <Button
+              variant="plain"
+              onClick={() => {onFieldClear();}}
+              aria-label="Clear input value"
+            >
+              <TimesIcon aria-hidden />
+            </Button>
+          )}
+        </TextInputGroupUtilities>
+      </TextInputGroup>
+    </MenuToggle>
+  );
 
-    const operationToggle = toggleRef => (
-      <MenuToggle
-        onClick={this.onOperationToggle}
-        isExpanded={isOperationOpen}
-        isFullWidth
-        ref={toggleRef}
-      >
-        {this.state.operationSelection}
-      </MenuToggle>
-    );
+  const operationToggle = toggleRef => (
+    <MenuToggle
+      onClick={() => setIsOperationOpen(!isOperationOpen)}
+      isExpanded={isOperationOpen}
+      isFullWidth
+      ref={toggleRef}
+    >
+      {operationSelection}
+    </MenuToggle>
+  );
 
-    const boolToggle = toggleRef => (
-      <MenuToggle
-        onClick={this.onBoolToggle}
-        isExpanded={this.state.isBoolOpen}
-        isFullWidth
-        ref={toggleRef}
-        style={{maxHeight: '36px'}}
-      >
-        <TextInputGroup isPlain>
-          <TextInputGroupMain
-            value={boolSelection}
-            onClick={this.onBoolToggle}
-            autoComplete="off"
-            placeholder="Select True/False"
-            role="combobox"
-            isExpanded={this.state.isBoolOpen}
-          />
-          <TextInputGroupUtilities>
-            {!!boolSelection && (
-              <Button variant="plain" onClick={() => {
-                this.onBoolClear();
-              }} aria-label="Clear input value">
-                <TimesIcon aria-hidden />
-              </Button>
-            )}
-          </TextInputGroupUtilities>
-        </TextInputGroup>
-      </MenuToggle>
-    );
+  const boolToggle = toggleRef => (
+    <MenuToggle
+      onClick={() => {setIsBoolOpen(!isBoolOpen);}}
+      isExpanded={isBoolOpen}
+      isFullWidth
+      ref={toggleRef}
+      style={{maxHeight: '36px'}}
+    >
+      <TextInputGroup isPlain>
+        <TextInputGroupMain
+          value={boolSelection}
+          onClick={() => {setIsBoolOpen(!isBoolOpen);}}
+          autoComplete="off"
+          placeholder="Select True/False"
+          role="combobox"
+          isExpanded={isBoolOpen}
+        />
+        <TextInputGroupUtilities>
+          {!!boolSelection && (
+            <Button variant="plain" onClick={() => {
+              setBoolSelection();
+            }} aria-label="Clear input value">
+              <TimesIcon aria-hidden />
+            </Button>
+          )}
+        </TextInputGroupUtilities>
+      </TextInputGroup>
+    </MenuToggle>
+  );
 
-    const filters = [
-      <Select
-        id="multi-typeahead-select"
-        selected={fieldSelection}
-        isOpen={isFieldOpen}
-        onSelect={this.onFieldSelect}
-        key="field"
-        onOpenChange={() => this.setState({isFieldOpen: false})}
-        toggle={fieldToggle}
-      >
-        <SelectList id="select-typeahead-listbox">
-          {filteredFieldOptions.map((option, index) => (
-            <SelectOption key={index} value={option}>
-              {option}
-            </SelectOption>
-          ))}
-        </SelectList>
-      </Select>,
-      <Select
-        id="single-select"
-        isOpen={isOperationOpen}
-        selected={operationSelection}
-        onSelect={this.onOperationSelect}
-        onOpenChange={() => this.setState({isOperationOpen: false})}
-        key="operation"
-        toggle={operationToggle}
-      >
-        <SelectList>
-          {Object.keys(operations).map((option, index) => (
-            <SelectOption key={index} value={option}>
-              {option}
-            </SelectOption>
-          ))}
-        </SelectList>
-      </Select>,
-      <React.Fragment key="value">
-        {(operationMode === 'bool') &&
-          <Select
-            id="single-select"
-            isOpen={isBoolOpen}
-            selected={boolSelection}
-            onSelect={this.onBoolSelect}
-            onOpenChange={() => this.setState({isBoolOpen: false})}
-            toggle={boolToggle}
-          >
-            <SelectList>
-              {['True', 'False'].map((option, index) => (
-                <SelectOption key={index} value={option}>
-                  {option}
-                </SelectOption>
-              ))}
-            </SelectList>
-          </Select>
-        }
-        {(filterMode === 'text' && operationMode === 'single') &&
-          <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter || ''} onChange={(_event, newValue) => this.onTextChanged(newValue)} style={{height: 'inherit'}}/>
-        }
-        {(operationMode === 'multi') &&
-          <MultiValueInput onValuesChange={this.onInValuesChange} style={{height: 'inherit'}}/>
-        }
-      </React.Fragment>
-    ];
+  const jsxFilters = [
+    <Select
+      id="multi-typeahead-select"
+      selected={fieldSelection}
+      isOpen={isFieldOpen}
+      onSelect={onFieldSelect}
+      key="field"
+      onOpenChange={() => setIsFieldOpen(false)}
+      toggle={fieldToggle}
+    >
+      <SelectList id="select-typeahead-listbox">
+        {filteredFieldOptions.map((option, index) => (
+          <SelectOption key={index} value={option}>
+            {option}
+          </SelectOption>
+        ))}
+      </SelectList>
+    </Select>,
+    <Select
+      id="single-select"
+      isOpen={isOperationOpen}
+      selected={operationSelection}
+      onSelect={onOperationSelect}
+      onOpenChange={() => setIsOperationOpen(false)}
+      key="operation"
+      toggle={operationToggle}
+    >
+      <SelectList>
+        {Object.keys(operations).map((option, index) => (
+          <SelectOption key={index} value={option}>
+            {option}
+          </SelectOption>
+        ))}
+      </SelectList>
+    </Select>,
+    <React.Fragment key="value">
+      {(operationMode === 'bool') &&
+        <Select
+          id="single-select"
+          isOpen={isBoolOpen}
+          selected={boolSelection}
+          onSelect={(selection) => {setBoolSelection(selection);}}
+          onOpenChange={() => setIsBoolOpen(false)}
+          toggle={boolToggle}
+        >
+          <SelectList>
+            {['True', 'False'].map((option, index) => (
+              <SelectOption key={index} value={option}>
+                {option}
+              </SelectOption>
+            ))}
+          </SelectList>
+        </Select>
+      }
+      {(filterMode === 'text' && operationMode === 'single') &&
+        <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter} onChange={(_event, value) => setTextFilter(value)} style={{height: 'inherit'}}/>
+      }
+      {(operationMode === 'multi') &&
+        <MultiValueInput onValuesChange={(_event, values) => setInValues(values)} style={{height: 'inherit'}}/>
+      }
+    </React.Fragment>
+  ];
 
-    return (
-      <Card>
-        <CardBody className="pf-u-p-0">
-          <FilterTable
-            columns={columns}
-            rows={rows}
-            filters={filters}
-            pagination={pagination}
-            isEmpty={isEmpty}
-            isError={isError}
-            onSetPage={this.setPage}
-            onSetPageSize={this.setPageSize}
-            onApplyFilter={this.applyFilter}
-            onRemoveFilter={this.removeFilter}
-            onClearFilters={this.clearFilters}
-            activeFilters={this.state.filters}
-          />
-        </CardBody>
-      </Card>
-    );
-  }
-}
+  return (
+    <Card>
+      <CardBody className="pf-u-p-0">
+        <FilterTable
+          columns={columns}
+          rows={rows}
+          filters={jsxFilters}
+          pagination={{
+            page: page,
+            pageSize: pageSize,
+            totalItems: totalItems
+          }}
+          isEmpty={rows.length === 0}
+          isError={isError}
+          onSetPage={(value) => setPage(value)}
+          onSetPageSize={(value) => setPageSize(value)}
+          onApplyFilter={applyFilter}
+          onRemoveFilter={removeFilter}
+          onClearFilters={() => setTextFilter('')}
+          activeFilters={filters}
+        />
+      </CardBody>
+    </Card>
+  );
+};
+
+AccessibilityDashboardView.propTypes = {
+  view: PropTypes.object
+};
+
+export default AccessibilityDashboardView;
