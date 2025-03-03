@@ -1,5 +1,9 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+// TODO this component is incomplete
+// It has been converted to functional, but aspects of the view aren't working in production and aren't fixed here
+// MetaFilter removal isn't working right now
+// The Apply Filters button needs connection to table rendering
+// It would be great to better control the selectable fields in MetaFilter for this view as not all fields are relevant
+import React, { useContext, useEffect, useState } from 'react';
 
 import {
   Card,
@@ -29,152 +33,130 @@ import {
 import { IbutsuContext } from '../services/context';
 import ResultView from '../components/result';
 
-export class CompareRunsView extends React.Component {
-  static contextType = IbutsuContext;
-  static propTypes = {
-    location: PropTypes.object,
-    view: PropTypes.object
-  };
+const COLUMNS = [{title: 'Test', cellFormatters: [expandable]}, 'Run 1', 'Run 2'];
+const FEP = 'failed;error;passed';
+const FEPSX = 'failed;error;passed;skipped;xfailed';
 
-  constructor (props) {
-    super(props);
-    this.state = {
-      columns: [{title: 'Test', cellFormatters: [expandable]}, 'Run 1', 'Run 2'],
-      rows: [getSpinnerRow(3)],
-      results: [],
-      selectedResults: [],
-      cursor: null,
-      pageSize: 0,
-      page: 1,
-      totalItems: 0,
-      totalPages: 0,
-      isEmpty: false,
-      isError: false,
-      includeSkipped: false,
-      isLoading: false,
-      filters: [Object.assign({
-        'result': {op: 'in', val: 'failed;error;passed'},
-        'id': 0
-      }),
-      Object.assign({
-        'result': {op: 'in', val: 'failed;error;passed'},
-        'id': 1
-      })],
-      loadingProps: {}
-    };
-    this.refreshResults = this.refreshResults.bind(this);
-    this.onCollapse = this.onCollapse.bind(this);
+const DEFAULT_FILTER = {
+  // one for each run
+  // TODO flatten this here and expand when fetch is made since they're kept in sync?
+  'run0': {
+    'result': {op: 'in', val: FEP},
+  },
+  'run1': {
+    'result': {op: 'in', val: FEP},
   }
+};
 
-  onSkipCheck = (checked) => {
-    let filters = this.state.filters;
-    filters.forEach(filter => {
-      filter['result']['val'] = ('failed;error;passed') + ((checked) ? ';skipped;xfailed' : '');
-    });
+const CompareRunsView = () => {
+  // const {view} = props;
 
-    this.setState(
-      {includeSkipped: checked, filters},
-      this.refreshResults
-    );
-  };
+  const context = useContext(IbutsuContext);
+  const {primaryObject} = context;
 
-  setFilter = (filterId, field, value) => {
-    // maybe process values array to string format here instead of expecting caller to do it?
-    let operator = (value.includes(';')) ? 'in' : 'eq';
-    this.updateFilters(filterId, field, operator, value);
-  };
+  const [results, setResults] = useState([]);
+  const [rows, setRows] = useState([getSpinnerRow(3)]);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalItems, setTotalItems] = useState(0);
 
-  updateFilters (filterId, name, operator, value) {
-    let newFilters = this.state.filters.map((filter) => {
-      if (filter.id === filterId) {
-        if ((value === null) || (value.length === 0)) {
-          delete filter[name];
-        }
-        else {
-          filter[name] = {'op': operator, 'val': String(value)};
-        }
+  const [isError, setIsError] = useState(false);
+  const [includeSkipped, setIncludeSkipped] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [filters, setFilters] = useState(DEFAULT_FILTER);
+
+  const onSkipCheck = (checked) => {
+    setIncludeSkipped(checked);
+
+    // mutate to set the result value field
+    setFilters({
+      ...filters,
+      'result': {
+        ...filters.result,
+        'val': (checked) ? FEPSX : FEP
       }
-      return filter;
     });
-    this.setState({filters: newFilters, page: 1});
-  }
 
-  removeFilter = (filterId, id) => {
+  };
+
+  const updateFilters = (filterId, name, operator, value) => {
+    let newFilters = {...filters};
+    if ((value === null) || (value.length === 0)) {
+      console.log('removing filter');
+      console.dir(filterId);
+      console.dir(newFilters);
+      delete newFilters['run'+filterId][name];
+    } else {
+      console.log('adding filter');
+      console.dir(filterId);
+      console.dir(newFilters);
+      newFilters['run'+filterId][name] = {'op': operator, 'val': String(value)};
+    }
+
+    setFilters(newFilters);
+    setPage(1);
+  };
+
+  const setFilter = (filterId, field, value) => {
+    // maybe process values array to string format here instead of expecting caller to do it?
+    updateFilters(filterId, field, (value.includes(';')) ? 'in' : 'eq', value);
+  };
+
+  const removeFilter = (filterId, id) => {
     if ((id !== 'result') && (id !== 'run_id')) {   // Don't allow removal of error/failure filter
-      this.updateFilters(filterId, id, null, null);
+      updateFilters(filterId, id, null, null);
     }
   };
 
-  getResultsForTable () {
-    const filter = this.state.filters;
 
+  useEffect(() => {
     // Check to see if filters have been set besides id and result
     let isNew = false;
-    filter.forEach(filter => {
-      for (const prop in filter) {
-        if (prop !== 'id' && prop !== 'result') {
-          isNew = true;
-        }
-      }
-    });
+    setIsError(false);
+    setIsLoading(true);
 
-    // Add loading animations to button and table
-    this.setState({rows: [getSpinnerRow(3)], isEmpty: false, isError: false});
-    this.setState({rows: [['Loading...', '', '']]});
-    this.setState({
-      loadingProps: {
-        'spinnerAriaValueText': 'Loading',
-        'spinnerAriaLabelledBy': 'primary-loading-button',
-        'isLoading': true
-      },
-      isLoading: true
+    // not mutating filters state, looking if there is a filter name that's non-default
+    Object.values(filters).map(filter => {
+      if (Object.keys(filter).every(prop => prop !== 'result')) {
+        isNew = true;
+      }
     });
 
     if (isNew === true) {
       // Add project id to params
-      const { primaryObject } = this.context;
       const projectId = primaryObject ? primaryObject.id : '';
-      filter.forEach(filter => {
-        filter['project_id'] = {op: 'in', val: projectId};
-      });
+      let filtersWithProject = {
+        ...filters,
+        'project_id': {op: 'in', val: projectId}
+      };
 
-      // Build params and filters for each MetaFilter
-      let apiFilters = [];
-      filter.forEach(filter => {
-        apiFilters.push(toAPIFilter(filter));
-      });
-      let params = [];
-      params['filters'] = apiFilters;
+      console.dir(filtersWithProject);
 
       // Retrieve results from database
-      HttpClient.get([Settings.serverUrl, 'widget', 'compare-runs-view'], params)
+      HttpClient.get([Settings.serverUrl, 'widget', 'compare-runs-view'],
+        {'filters': filtersWithProject.map((f) => toAPIFilter(f))}
+      )
         .then(response => HttpClient.handleResponse(response))
-        .then(data => this.setState({
-          results: data.results,
-          rows: data.results.map((result, index) => resultToComparisonRow(result, index)).flat(),
-          totalItems: data.pagination.totalItems,
-          pageSize: data.pagination.totalItems,
-          isEmpty: data.pagination.totalItems === 0,
-          loadingProps: {},
-          isLoading: false
-        }))
+        .then(data => {
+          console.dir(data.results);
+          setResults(data.results);
+          setPage(data.pagination.page);
+          setPageSize(data.pagination.pageSize);
+          setTotalItems(data.pagination.totalItems);
+
+        })
         .catch((error) => {
           console.error('Error fetching result data:', error);
-          this.setState({rows: [], isEmpty: false, isError: true});
-          this.setState({loadingProps: {}});
-          this.setState({isLoading: false});
+          setIsError(true);
         });
-    } else {
-      this.setState({rows: [['No filters set.', '', '']]});
-      this.setState({loadingProps: {}});
-      this.setState({isLoading: false});
     }
-  }
 
-  onCollapse (event, rowIndex, isOpen) {
-    const { rows } = this.state;
+    setIsLoading(false);
+  }, [filters, primaryObject]);
 
-    // lazy-load the result view so we don't have to make a bunch of artifact requests
+  const onCollapse = (_, rowIndex, isOpen) => {
+    // handle row expansion with ResultView
     if (isOpen) {
       let result = rows[rowIndex].result;
       let hideSummary=true;
@@ -184,135 +166,147 @@ export class CompareRunsView extends React.Component {
         hideSummary=false;
         hideTestObject=false;
       }
-      rows[rowIndex + 1].cells = [{
-        title: <ResultView hideArtifact={true} comparisonResults={result} defaultTab={defaultTab} hideTestHistory={false} hideSummary={hideSummary} hideTestObject={hideTestObject} testResult={result[0]}/>
-      }];
+      const updatedRows = rows.map((row, index) => {
+        let newRow = {};
+        if (index === rowIndex) {
+          // expand the parent
+          newRow = {...row, isOpen: isOpen};
+        } else if (index === (rowIndex + 1)) {
+          // populate the expanded child with a ResultView in the title cell
+          newRow = {
+            ...row,
+            cells: [
+              {title:
+                <ResultView
+                  hideArtifact={true}
+                  comparisonResults={result}
+                  defaultTab={defaultTab}
+                  hideTestHistory={false}
+                  hideSummary={hideSummary}
+                  hideTestObject={hideTestObject}
+                  testResult={result[0]}
+                />}
+            ]
+          };
+        } else {
+          newRow = {...row};
+        }
+        return newRow;
+      });
+      setRows(updatedRows);
+    } else {
+      // handle closing clicked rows
+      setRows(prevRows => {
+        const updatedRows = [...prevRows];
+        if (updatedRows[rowIndex]) {
+          updatedRows[rowIndex] = {...updatedRows[rowIndex], isOpen: isOpen};
+        }
+        return updatedRows;
+      });
     }
-    rows[rowIndex].isOpen = isOpen;
-    this.setState({rows});
-  }
-
-  setPage = (_event, pageNumber) => {
-    this.setState({page: pageNumber}, () => {
-      this.getResultsForTable();
-    });
-  };
-
-  refreshResults = () => {
-    this.setState({selectedResults: []});
-    this.getResultsForTable();
   };
 
   // Remove all active filters and clear table
-  clearFilters = () => {
-    this.setState({
-      filters: [Object.assign({
-        'result': {op: 'in', val: 'failed;error;passed'},
-        'id': 0
-      }),
-      Object.assign({
-        'result': {op: 'in', val: 'failed;error;passed'},
-        'id': 1
-      })],
-      page: 1,
-      totalItems: 0,
-      totalPages: 0},
-    this.getResultsForTable
-    );
-
+  const clearFilters = () => {
+    setFilters(DEFAULT_FILTER);
+    setPage(1);
+    setTotalItems(0);
   };
 
-  componentDidMount () {
-    this.getResultsForTable();
-  }
+  const resultFilters = [
+    <Flex key="metafilters" direction={{default: 'column'}} spaceItems={{default: 'spaceItemsMd'}}>
+      <FlexItem key="metafilter1">
+        <TextContent style={{ fontWeight: 'bold' }}>
+          Run 1:
+        </TextContent>
+        <MetaFilter
+          setFilter={setFilter}
+          customFilters={{'result': filters['result']}}
+          activeFilters={filters['run0']}
+          onRemoveFilter={removeFilter}
+          hideFilters={['project_id']}
+          id={0}
+        />
+      </FlexItem>
+      <FlexItem key="metafilter2">
+        <TextContent style={{ fontWeight: 'bold' }}>
+          Run 2:
+        </TextContent>
+        <MetaFilter
+          setFilter={setFilter}
+          customFilters={{'result': filters['result']}}
+          activeFilters={filters['run1']}
+          onRemoveFilter={removeFilter}
+          hideFilters={['project_id']}
+          id={1}
+        />
+      </FlexItem>
+    </Flex>
+  ];
 
-  render () {
-    const {
-      columns,
-      rows,
-      filters,
-      includeSkipped
-    } = this.state;
+  useEffect(() => {
+    setRows(results.flatMap((result, index) => resultToComparisonRow(result, index)));
+  }, [results]);
 
-    const pagination = {
-      pageSize: this.state.pageSize,
-      page: this.state.page,
-      totalItems: this.state.totalItems
-    };
+  // Compare runs work only when project is selected
+  // TODO Apply Filters button needs to trigger table render
+  return ( primaryObject &&
+    <Card>
+      <CardHeader>
+        <Flex style={{ width: '100%' }}>
+          <FlexItem grow={{ default: 'grow' }}>
+            <TextContent>
+              <Text component="h2" className="pf-v5-c-title pf-m-xl">Select Test Run metadata to compare</Text>
+            </TextContent>
+          </FlexItem>
+          <FlexItem>
+            <TextContent>
+              <Checkbox
+                id="include-skips"
+                label="Include skips, xfails"
+                isChecked={includeSkipped}
+                aria-label="include-skips-checkbox"
+                onChange={(_, checked) => onSkipCheck(checked)}
+              />
+            </TextContent>
+          </FlexItem>
+          <FlexItem>
+            <Button variant="primary" >
+              {isLoading ? 'Loading Results' : 'Apply Filters'}
+            </Button>
+          </FlexItem>
+          <FlexItem>
+            <Button variant="secondary" onClick={clearFilters} isDanger>Clear Filters</Button>
+          </FlexItem>
+        </Flex>
+      </CardHeader>
+      <CardBody>
+        <FilterTable
+          columns={COLUMNS}
+          rows={rows}
+          pagination={{
+            pageSize:pageSize,
+            page: page,
+            totalItems: totalItems
+          }}
+          isEmpty={results.length === 0}
+          isError={isError}
+          onCollapse={onCollapse}
+          onSetPage={(value) => setPage(value)}
+          onSetPageSize={(value) => setPageSize(value)}
+          canSelectAll={false}
+          variant={TableVariant.compact}
+          filters={resultFilters}
+          onRemoveFilter={removeFilter}
+          hideFilters={['project_id']}
+        />
+      </CardBody>
+    </Card>
+  );
+};
 
-    const resultFilters = [
-      <Flex key="metafilters" direction={{default: 'column'}} spaceItems={{default: 'spaceItemsMd'}}>
-        <FlexItem key="metafilter1">
-          <TextContent style={{ fontWeight: 'bold' }}>
-            Run 1:
-          </TextContent>
-          <MetaFilter
-            setFilter={this.setFilter}
-            customFilters={{'result': filters['result']}}
-            activeFilters={this.state.filters[0]}
-            onRemoveFilter={this.removeFilter}
-            hideFilters={['run_id', 'project_id', 'id']}
-            id={0}
-          />
-        </FlexItem>
-        <FlexItem key="metafilter2">
-          <TextContent style={{ fontWeight: 'bold' }}>
-            Run 2:
-          </TextContent>
-          <MetaFilter
-            setFilter={this.setFilter}
-            customFilters={{'result': filters['result']}}
-            activeFilters={this.state.filters[1]}
-            onRemoveFilter={this.removeFilter}
-            hideFilters={['run_id', 'project_id', 'id']}
-            id={1}
-          />
-        </FlexItem>
-      </Flex>
-    ];
-    const { primaryObject } = this.context;
-    // Compare runs work only when project is selected
-    return ( primaryObject &&
-      <Card>
-        <CardHeader>
-          <Flex style={{ width: '100%' }}>
-            <FlexItem grow={{ default: 'grow' }}>
-              <TextContent>
-                <Text component="h2" className="pf-v5-c-title pf-m-xl">Select Test Run metadata to compare</Text>
-              </TextContent>
-            </FlexItem>
-            <FlexItem>
-              <TextContent>
-                <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={(_event, checked) => this.onSkipCheck(checked)}/>
-              </TextContent>
-            </FlexItem>
-            <FlexItem>
-              <Button variant="primary" onClick={this.refreshResults} {...this.state.loadingProps}>
-                {this.state.isLoading ? 'Loading Results' : 'Apply Filters'}
-              </Button>
-            </FlexItem>
-            <FlexItem>
-              <Button variant="secondary" onClick={this.clearFilters} isDanger>Clear Filters</Button>
-            </FlexItem>
-          </Flex>
-        </CardHeader>
-        <CardBody>
-          <FilterTable
-            columns={columns}
-            rows={rows}
-            pagination={pagination}
-            isEmpty={this.state.isEmpty}
-            isError={this.state.isError}
-            onCollapse={this.onCollapse}
-            onSetPage={this.setPage}
-            canSelectAll={false}
-            variant={TableVariant.compact}
-            filters={resultFilters}
-            onRemoveFilter={this.removeFilter}
-            hideFilters={['project_id']}
-          />
-        </CardBody>
-      </Card>
-    );
-  }
-}
+CompareRunsView.propTypes = {
+  // view: PropTypes.object
+};
+
+export default CompareRunsView;
