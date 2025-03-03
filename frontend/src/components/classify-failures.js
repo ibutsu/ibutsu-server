@@ -138,7 +138,7 @@ const ClassifyFailuresTable = (props) => {
   }, [page, pageSize, appliedFilters]);
 
 
-  const onCollapse = (_event, rowIndex, isOpen) => {
+  const onCollapse = (_, rowIndex, isOpen) => {
     // handle row click opening the child row with ResultView
     if (isOpen) {
       let result = rows[rowIndex].result;
@@ -224,15 +224,15 @@ const ClassifyFailuresTable = (props) => {
 
   // METAFILTER FUNCTIONS
   const updateFilters = useCallback((_filterId, name, operator, value) => {
-    let localFilters = {...appliedFilters};
+    let newFilters = {...appliedFilters};
     if ((value === null) || (value.length === 0)) {
-      delete localFilters[name];
+      delete newFilters[name];
     }
     else {
-      localFilters[name] = {'op': operator, 'val': value};
+      newFilters[name] = {'op': operator, 'val': value};
     }
 
-    setAppliedFilters(localFilters);
+    setAppliedFilters(newFilters);
     setPage(1);
   }, [appliedFilters]);
 

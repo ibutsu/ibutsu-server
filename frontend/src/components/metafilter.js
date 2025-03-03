@@ -154,7 +154,7 @@ const MetaFilter = (props) => {
           </Select>
         </FlexItem>
       </Flex>
-      {Object.keys(activeFilters).length > 0 &&
+      {activeFilters && Object.keys(activeFilters).length > 0 &&
     <Flex style={{marginTop: '1rem', fontWeight: 'normal'}}>
       <Flex>
         <FlexItem style={{marginBottom: '0.5rem'}}>
@@ -166,7 +166,7 @@ const MetaFilter = (props) => {
           <FlexItem style={{marginBottom: '0.5rem'}} spacer={{ default: 'spacerXs'}} key={key}>
             {!hideFilters.includes(key) &&
             <ChipGroup categoryName={key}>
-              <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={(id,) => onRemoveFilter(id, key)}>
+              <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={() => onRemoveFilter(id, key)}>
                 {(typeof activeFilters[key] === 'object') &&
                 <React.Fragment>
                   {activeFilters[key]['val']}
