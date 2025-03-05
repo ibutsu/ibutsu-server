@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -34,22 +34,6 @@ import RunSummary from '../components/runsummary';
 import { JJV_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 
-
-function jobToRow (job, analysisViewId) {
-  let start_time = new Date(job.start_time);
-  return {
-    cells: [
-      analysisViewId ? {title: <Link to={`../view/${analysisViewId}?job_name=${job.job_name}`} relative='Path'>{job.job_name}</Link>} : job.job_name,
-      {title: <a href={job.build_url} target="_blank" rel="noopener noreferrer">{job.build_number}</a>},
-      {title: <RunSummary summary={job.summary} />},
-      job.source,
-      job.env,
-      start_time.toLocaleString(),
-      {title: <Link to={`../runs?metadata.jenkins.job_name[eq]=${job.job_name}&metadata.jenkins.build_number=${job.build_number}`} relative='Path'>See runs <ChevronRightIcon /></Link>}
-    ]
-  };
-}
-
 const COLUMNS = ['Job name', 'Build number', 'Summary', 'Source', 'Env', 'Started', ''];
 const DEFAULT_OPERATION = 'eq';
 
@@ -57,6 +41,8 @@ const JenkinsJobView = (props) => {
   const {view} = props;
   const context = useContext(IbutsuContext);
   const { primaryObject } = context;
+
+  const [analysisViewId, setAnalysisViewId] = useState();
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -171,22 +157,35 @@ const JenkinsJobView = (props) => {
     updateFilters(id, null, null, () => {});
   };
 
-  // TODO useEffect
+  useEffect(() =>{
+    // get the widget ID for the analysis view
+    HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=jenkins-analysis-view'})
+      .then(response => HttpClient.handleResponse(response))
+      .then(data => {
+        setAnalysisViewId(data.widgets[0]?.id);
+      }).catch(error => {
+        console.log(error);
+      });
+  }, []);
+
+  const jobToRow = useCallback((job) => (
+    {
+      cells: [
+        analysisViewId ? {title: <Link to={`../view/${analysisViewId}?job_name=${job.job_name}`} relative='Path'>{job.job_name}</Link>} : job.job_name,
+        {title: <a href={job.build_url} target="_blank" rel="noopener noreferrer">{job.build_number}</a>},
+        {title: <RunSummary summary={job.summary} />},
+        job.source,
+        job.env,
+        new Date(job.start_time).toLocaleString(),
+        {title: <Link to={`../runs?metadata.jenkins.job_name[eq]=${job.job_name}&metadata.jenkins.build_number=${job.build_number}`} relative='Path'>See runs <ChevronRightIcon /></Link>}
+      ]
+    }
+  ), [analysisViewId]);
+
   useEffect(() => {
     if (view) {
       let analysisViewId = '';
       let params = {...view.params};
-
-      // get the widget ID for the analysis view
-      HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=jenkins-analysis-view'})
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          analysisViewId = data.widgets[0]?.id;
-        }).catch(error => {
-          console.log(error);
-        });
-      // Show a spinner
-      setRows([getSpinnerRow(7)]);
       setIsError(false);
 
       if (primaryObject) {
@@ -211,7 +210,7 @@ const JenkinsJobView = (props) => {
           setRows([]);
         });
     }
-  }, [filters, page, pageSize, primaryObject, view]);
+  }, [filters, page, pageSize, primaryObject, view, jobToRow]);
 
   useEffect(() => {
     let newSelectOptionsField = [...fieldOptions];
