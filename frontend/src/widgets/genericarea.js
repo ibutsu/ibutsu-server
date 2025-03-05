@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -25,125 +25,81 @@ import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 
 
-export class GenericAreaWidget extends React.Component {
-  static propTypes = {
-    colorScale: PropTypes.array,
-    dropdownItems: PropTypes.array,
-    fontSize: PropTypes.number,
-    getColors: PropTypes.func,
-    height: PropTypes.number,
-    hideDropdown: PropTypes.bool,
-    interpolation: PropTypes.string,
-    padding: PropTypes.object,
-    params: PropTypes.object,
-    percentData: PropTypes.bool,
-    showTooltip: PropTypes.bool,
-    sortOrder: PropTypes.string,
-    title: PropTypes.string,
-    varExplanation: PropTypes.string,
-    widgetEndpoint: PropTypes.string,
-    xLabel: PropTypes.string,
-    yLabel: PropTypes.string,
-    onDeleteClick: PropTypes.func,
-    onEditClick: PropTypes.func
-  };
+const GenericAreaWidget = (props) => {
+  const {
+    colorScale,
+    fontSize,
+    getColors,
+    height,
+    interpolation,
+    padding,
+    params,
+    percentData,
+    showTooltip,
+    sortOrder,
+    title,
+    varExplanation,
+    xLabel,
+    yLabel,
+    onDeleteClick,
+    onEditClick,
+    widgetEndpoint
+  } = props;
 
-  constructor (props) {
-    super(props);
-    this.title = props.title || 'Generic Area Chart';
-    this.params = props.params || {};
-    this.getData = this.getData.bind(this);
-    this.state = {
-      data: {},
-      areaCharts: [],
-      isLoading: true,
-    };
-  }
+  const [data, setData] = useState({});
+  const [areaCharts, setAreaCharts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
-  getLabels () {
-    if (this.props.percentData) {
-      return ({datum}) => `${toTitleCase(datum.name, true)}: ${datum.y} %`;
-    }
-    else {
-      return ({datum}) => `${toTitleCase(datum.name, true)}: ${datum.y}`;
-    }
-  }
-
-  getData () {
-    this.setState({isLoading: true});
-    let widgetEndpoint = this.props.widgetEndpoint || 'jenkins-line-chart';
-    HttpClient.get([Settings.serverUrl, 'widget', widgetEndpoint], this.params)
-      .then(response => {
-        response = HttpClient.handleResponse(response, 'response');
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response.json();
-      })
-      .then(data => this.setState({data: data, isLoading: false}, () => {
-        this.getAreaCharts();
-      }))
-      .catch(error => {
-        this.setState({areaChartError: true});
-        console.log(error);
-      });
-  }
-
-  getLegendData () {
-    let legendData = [];
-    for (const legend of Object.keys(this.state.data)) {
-      legendData.push({name: toTitleCase(legend, true)});
-    }
-    return legendData;
-  }
-
-  getAreaCharts () {
-    let areaCharts = [];
+  useEffect(() => {
+    let newAreaCharts = [];
     let index = 0;
-    for (const key of Object.keys(this.state.data)) {
+    for (const key of Object.keys(data)) {
       let chartData = [];
       if (key !== 'filter') {
-        for (const groupField of Object.keys(this.state.data[key])) {
-          chartData.push({name: toTitleCase(key), x: groupField, y: this.state.data[key][groupField]});
+        for (const groupField of Object.keys(data[key])) {
+          chartData.push({name: toTitleCase(key), x: groupField, y: data[key][groupField]});
         }
         if (chartData.length !== 0) {
-          areaCharts.push(
+          newAreaCharts.push(
             <ChartArea
               data={chartData}
               key={index}
               sortKey={(datum) => `${datum.x}`}
-              sortOrder={this.props.sortOrder || 'ascending'}
-              interpolation={this.props.interpolation || 'monotoneX'}
-              style={this.props.getColors ? {data: { fill: this.props.getColors(key)}}: {}}
+              sortOrder={sortOrder || 'ascending'}
+              interpolation={interpolation || 'monotoneX'}
+              style={getColors ? {data: { fill: getColors(key)}}: {}}
             />
           );
           index++;
         }
       }
     }
-    this.setState({areaCharts});
-  }
+    setAreaCharts(newAreaCharts);
+  }, [data, getColors, interpolation, sortOrder]);
 
-  componentDidMount () {
-    this.getData();
-  }
 
-  componentDidUpdate (prevProps) {
-    if (prevProps.params !== this.props.params) {
-      this.params = this.props.params;
-      this.getData();
-    }
-  }
+  useEffect(() => {
+    setIsLoading(true);
+    setIsError(false);
+    HttpClient.get([Settings.serverUrl, 'widget', (widgetEndpoint || 'jenkins-line-chart')], (params || {}))
+      .then(response => HttpClient.handleResponse(response))
+      .then(responseData => setData(responseData))
+      .catch(error => {
+        setIsError(true);
+        console.log(error);
+      });
+    setIsLoading(false);
+  }, [params, widgetEndpoint]);
 
-  getTooltip () {
-    const { showTooltip } = this.props;
+  const getTooltip = () => {
     const CursorVoronoiContainer = createContainer('cursor', 'voronoi');
     if (showTooltip) {
       return (
         <CursorVoronoiContainer
           cursorDimension="x"
-          labels={this.getLabels()}
-          labelComponent={<ChartTooltip style={{ fill: 'white', fontSize: this.props.fontSize-2 || 14}}/>}
+          labels={({datum}) => `${toTitleCase(datum.name, true)}: ${datum.y} ${percentData ? ' %' : ''}`}
+          labelComponent={<ChartTooltip style={{ fill: 'white', fontSize: fontSize-2 || 14}}/>}
           mouseFollowTooltips
           voronoiDimension="x"
           voronoiPadding={50}
@@ -153,71 +109,92 @@ export class GenericAreaWidget extends React.Component {
     else {
       return <ChartContainer/>;
     }
-  }
+  };
 
-  render () {
-    const legendData = this.getLegendData();
-    return (
-      <Card>
-        <WidgetHeader title={this.title} getDataFunc={this.getData} onEditClick={this.props.onEditClick} onDeleteClick={this.props.onDeleteClick}/>
-        <CardBody data-id="generic-area">
-          {this.state.areaChartError &&
-            <p>Error fetching data</p>
-          }
-          {(!this.state.runAggregatorError && this.state.isLoading) &&
-          <Text component="h2">Loading ...</Text>
-          }
-          {(!this.state.runAggregatorError && !this.state.isLoading) &&
-          <Chart
-            padding={ this.props.padding || {
-              bottom: 30,
-              left: 150,
-              right: 15,
-              top: 20
-            }}
-            domainPadding={{y: 10}}
-            height={this.props.height || 200}
-            themeColor={ChartThemeColor.multiUnordered}
-            containerComponent={this.getTooltip()}
-          >
-            <ChartStack>
-              {this.state.areaCharts}
-            </ChartStack>
-            <ChartAxis
-              label={this.props.xLabel || 'x'}
-              fixLabelOverlap
-              style={{
-                tickLabels: {fontSize: this.props.fontSize-2 || 14},
-                axisLabel: {fontSize: this.props.fontSize || 14}
-              }}
-            />
-            <ChartAxis
-              label={this.props.yLabel || 'y'}
-              dependentAxis
-              style={{
-                tickLabels: {fontSize: this.props.fontSize-2 || 14},
-                axisLabel: {fontSize: this.props.fontSize || 14}
-              }}
-            />
-          </Chart>
-          }
-        </CardBody>
-        <CardFooter>
-          <ChartLegend
-            height={30}
-            data={legendData}
+  return (
+    <Card>
+      <WidgetHeader title={title || 'Generic Area Chart'} onEditClick={onEditClick} onDeleteClick={onDeleteClick}/>
+      <CardBody data-id="generic-area">
+        {isError &&
+          <p>Error fetching data</p>
+        }
+        {(!isError && isLoading) &&
+        <Text component="h2">Loading ...</Text>
+        }
+        {(!isError && !isLoading) &&
+        <Chart
+          padding={ padding || {
+            bottom: 30,
+            left: 150,
+            right: 15,
+            top: 20
+          }}
+          domainPadding={{y: 10}}
+          height={height || 200}
+          themeColor={ChartThemeColor.multiUnordered}
+          containerComponent={getTooltip()}
+        >
+          <ChartStack>
+            {areaCharts}
+          </ChartStack>
+          <ChartAxis
+            label={xLabel || 'x'}
+            fixLabelOverlap
             style={{
-              labels: {fontFamily: 'RedHatText', fontSize: this.props.fontSize-2 || 14},
-              title: {fontFamily: 'RedHatText'}
+              tickLabels: {fontSize: fontSize-2 || 14},
+              axisLabel: {fontSize: fontSize || 14}
             }}
-            colorScale={this.props.colorScale}
-            themeColor={ChartThemeColor.multiUnordered}
           />
-          {this.props.varExplanation &&
-          <Text component="h3">{this.props.varExplanation}</Text>
-          }
-        </CardFooter>
-      </Card>
-    );
-  }
-}
+          <ChartAxis
+            label={yLabel || 'y'}
+            dependentAxis
+            style={{
+              tickLabels: {fontSize: fontSize-2 || 14},
+              axisLabel: {fontSize: fontSize || 14}
+            }}
+          />
+        </Chart>
+        }
+      </CardBody>
+      <CardFooter>
+        <ChartLegend
+          height={30}
+          data={Object.keys(data).map((legend) => ({'name': toTitleCase(legend, true)}))}
+          style={{
+            labels: {fontFamily: 'RedHatText', fontSize: fontSize-2 || 14},
+            title: {fontFamily: 'RedHatText'}
+          }}
+          colorScale={colorScale}
+          themeColor={ChartThemeColor.multiUnordered}
+        />
+        {varExplanation &&
+        <Text component="h3">{varExplanation}</Text>
+        }
+      </CardFooter>
+    </Card>
+  );
+};
+
+GenericAreaWidget.propTypes = {
+  colorScale: PropTypes.array,
+  dropdownItems: PropTypes.array,
+  fontSize: PropTypes.number,
+  getColors: PropTypes.func,
+  height: PropTypes.number,
+  hideDropdown: PropTypes.bool,
+  interpolation: PropTypes.string,
+  padding: PropTypes.object,
+  params: PropTypes.object,
+  percentData: PropTypes.bool,
+  showTooltip: PropTypes.bool,
+  sortOrder: PropTypes.string,
+  title: PropTypes.string,
+  varExplanation: PropTypes.string,
+  widgetEndpoint: PropTypes.string,
+  xLabel: PropTypes.string,
+  yLabel: PropTypes.string,
+  onDeleteClick: PropTypes.func,
+  onEditClick: PropTypes.func
+};
+
+export default GenericAreaWidget;

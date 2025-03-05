@@ -11,7 +11,8 @@ import { Settings } from '../settings';
 import {
   parseFilter,
 } from '../utilities';
-import { FilterHeatmapWidget, GenericAreaWidget, GenericBarWidget } from '../widgets';
+import { FilterHeatmapWidget, GenericBarWidget } from '../widgets';
+import GenericAreaWidget from '../widgets/genericarea';
 import { HEATMAP_MAX_BUILDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 import ParamDropdown from '../components/param-dropdown';
@@ -260,7 +261,6 @@ export class JenkinsJobAnalysisView extends React.Component {
           <GenericAreaWidget
             title={'Test counts for ' + barchartParams.job_name}
             params={barchartParams}
-            hideDropdown={true}
             getColors={this.getColors}
             widgetEndpoint="jenkins-bar-chart"
             height={180}
@@ -289,7 +289,6 @@ export class JenkinsJobAnalysisView extends React.Component {
           <GenericAreaWidget
             title={'Durations for ' + linechartParams.job_name}
             params={linechartParams}
-            hideDropdown={true}
             height={180}
             padding={{
               bottom: 50,
