@@ -49,6 +49,7 @@ class BaseTestCase(TestCase):
             "JWT_SECRET": "89807erkjhdfgu768dfsgdsfg345r",
             "KEYCLOAK_BASE_URL": None,
             "KEYCLOAK_CLIENT_ID": None,
+            "KEYCLOAK_AUTH_PATH": "auth",
         }
         app = get_app(**extra_config)
         create_celery_app(app)
