@@ -84,13 +84,9 @@ const CompareRunsView = () => {
     let newFilters = {...filters};
     if ((value === null) || (value.length === 0)) {
       console.log('removing filter');
-      console.dir(filterId);
-      console.dir(newFilters);
       delete newFilters['run'+filterId][name];
     } else {
       console.log('adding filter');
-      console.dir(filterId);
-      console.dir(newFilters);
       newFilters['run'+filterId][name] = {'op': operator, 'val': String(value)};
     }
 
@@ -292,8 +288,8 @@ const CompareRunsView = () => {
           isEmpty={results.length === 0}
           isError={isError}
           onCollapse={onCollapse}
-          onSetPage={(value) => setPage(value)}
-          onSetPageSize={(value) => setPageSize(value)}
+          onSetPage={(_, value) => setPage(value)}
+          onSetPageSize={(_, value) => setPageSize(value)}
           canSelectAll={false}
           variant={TableVariant.compact}
           filters={resultFilters}
