@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -24,50 +24,45 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
+import { IbutsuContext } from '../services/context';
 
 
-export class FilterHeatmapWidget extends React.Component {
-  static propTypes = {
-    title: PropTypes.string,
-    params: PropTypes.object,
-    labelWidth: PropTypes.number,
-    hideDropdown: PropTypes.bool,
-    dropdownItems: PropTypes.array,
-    includeAnalysisLink: PropTypes.bool,
-    onDeleteClick: PropTypes.func,
-    onEditClick: PropTypes.func,
-    type: PropTypes.string
-  };
+const FilterHeatmapWidget = (props) => {
+  const {
+    title='Filter Heatmap',
+    params,
+    labelWidth = 200,
+    hideDropdown,
+    dropdownItems = [3, 5, 6, 7],
+    includeAnalysisLink,
+    onDeleteClick,
+    onEditClick,
+    type='filter'
+  } = props;
 
-  constructor (props) {
-    super(props);
-    this.title = props.title || 'Filter Heatmap';
-    this.params = props.params || {};
-    this.labelWidth = props.labelWidth || 200;
-    this.getHeatmap = this.getHeatmap.bind(this);
-    this.onBuildSelect = this.onBuildSelect.bind(this);
-    this.type = props.type || 'filter';
-    this.state = {
-      data: {heatmap: {}},
-      isLoading: true,
-      analysisViewId: null,
-      countSkips: 'No',
-    };
-    this.renderCell = this.renderCell.bind(this);
-  }
+  const [data, setData] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
-  getJenkinsAnalysisViewId () {
+  const [analysisViewId, setAnalysisViewId] = useState();
+
+  const [countSkips, setCountSkips] = useState((params?.count_skips !== undefined) ? params.count_skips : true);
+  const [builds, setBuilds] = useState(params?.builds);
+
+  const context = useContext(IbutsuContext);
+  const {primaryObject} = context;
+
+  const getJenkinsAnalysisViewId = () => {
     HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=jenkins-analysis-view'})
       .then(response => HttpClient.handleResponse(response))
-      .then(data => this.setState({analysisViewId: data.widgets[0]?.id}))
-      .catch(error => console.log(error));
-  }
+      .then(responseData => setAnalysisViewId(responseData.widgets[0]?.id))
+      .catch(error => console.error(error));
+  };
 
-  getJenkinsAnalysisLink () {
-    const { analysisViewId } = this.state;
-    if (this.props.includeAnalysisLink && analysisViewId !== null) {
+  const getJenkinsAnalysisLink = () => {
+    if (includeAnalysisLink && analysisViewId !== null) {
       return (
-        <Link to={`/project/${this.params.project}/view/${analysisViewId}?job_name=${this.params.job_name}`}>
+        <Link to={`/project/${primaryObject?.id || params?.project}/view/${analysisViewId}?job_name=${params?.job_name}`}>
           <Button variant="secondary" title="See analysis" aria-label="See analysis" isInline><ChartLineIcon/></Button>
         </Link>
       );
@@ -75,44 +70,49 @@ export class FilterHeatmapWidget extends React.Component {
     else {
       return null;
     }
-  }
+  };
 
-  getHeatmap () {
-    this.setState({isLoading: true});
-    if (this.type === 'jenkins') {
-      this.getJenkinsAnalysisViewId();
-      HttpClient.get([Settings.serverUrl, 'widget', 'jenkins-heatmap'], this.params)
-        .then(response => {
-          response = HttpClient.handleResponse(response, 'response');
-          if (!response.ok) {
-            throw Error(response.statusText);
-          }
-          return response.json();
-        })
-        .then(data => this.setState({data: data, isLoading: false}))
-        .catch(error => {
-          this.setState({heatmapError: true});
-          console.log(error);
-        });
-    } else {
-      HttpClient.get([Settings.serverUrl, 'widget', 'filter-heatmap'], this.params)
-        .then(response => {
-          response = HttpClient.handleResponse(response, 'response');
-          if (!response.ok) {
-            throw Error(response.statusText);
-          }
-          return response.json();
-        })
-        .then(data => this.setState({data: data, isLoading: false}))
-        .catch(error => {
-          this.setState({heatmapError: true});
-          console.log(error);
-        });
+  useEffect(() => {
+    // Fetch widget data
+    setIsLoading(true);
+    const widgetParams = {
+      ...params,
+      ...(builds? {builds: builds} : {}),
+    };
+
+    if (widgetParams.builds && widgetParams.group_field) {
+      if ((type === 'jenkins') && (widgetParams.job_name)) {
+        getJenkinsAnalysisViewId();
+        HttpClient.get([Settings.serverUrl, 'widget', 'jenkins-heatmap'],
+          {
+            ...widgetParams,
+            count_skips: countSkips // only accepted for jenkins-heatmap type
+          })
+          .then(response => HttpClient.handleResponse(response))
+          .then(responseData => {
+            setData(responseData);
+            setIsLoading(false);
+          })
+          .catch(error => {
+            setIsError(true);
+            console.error(error);
+          });
+      } else {
+        HttpClient.get([Settings.serverUrl, 'widget', 'filter-heatmap'], widgetParams)
+          .then(response => HttpClient.handleResponse(response))
+          .then(responseData => {
+            setData(responseData);
+            setIsLoading(false);
+          })
+          .catch(error => {
+            setIsError(true);
+            console.error(error);
+          });
+      }
     }
+  }, [countSkips, builds, params, params.count_skips, type]);
 
-  }
-
-  getCellStyle = (background, value, min, max, data, x) => {
+  const getCellStyle = (background, value, min, max, data, x) => {
     let style = {paddingTop: '-8.10811px'};
     if ((x === 0) && !!value) {
       if (value[0] < 0) {
@@ -149,7 +149,7 @@ export class FilterHeatmapWidget extends React.Component {
     return style;
   };
 
-  renderCell (value) {
+  const renderCell = (value) => {
     let contents = '';
     let style = {marginTop: '-4px'};
     if (!!value && (value[1] === 0)) {
@@ -171,125 +171,114 @@ export class FilterHeatmapWidget extends React.Component {
     }
     else if (value) {
       if (value[2]) {
-        let title = '';
+        let cellTitle = '';
         value[2].forEach((item) => {
           if (!!item.name && !!item.value) {
-            title += item.name + ': ' + item.value + '\n';
+            cellTitle += item.name + ': ' + item.value + '\n';
           }
         });
-        contents = <p title={title}><Link to={'/project/' + this.props.params.project + `/runs/${value[1]}`}>{Math.floor(value[0])}</Link></p>;
+        contents = <p title={cellTitle}><Link to={'/project/' + primaryObject.id + `/runs/${value[1]}`}>{Math.floor(value[0])}</Link></p>;
       }
       else {
-        contents = <Link to={'/project/' + this.props.params.project + `/runs/${value[1]}`}>{Math.floor(value[0])}</Link>;
+        contents = <Link to={'/project/' + primaryObject.id + `/runs/${value[1]}`}>{Math.floor(value[0])}</Link>;
       }
     }
     return <div style={style}>{contents}</div>;
-  }
-
-  componentDidMount () {
-    this.getHeatmap();
-  }
-
-  componentDidUpdate (prevProps) {
-    if (prevProps.params !== this.props.params) {
-      this.params = this.props.params;
-      this.getHeatmap();
-    }
-  }
-
-  onBuildSelect = (value) => {
-    this.props.params.builds = value;
-    this.getHeatmap();
   };
 
-  onSkipSelect = (value) => {
-    this.setState({countSkips: value}, () => {
-      if (this.props.type === 'jenkins') {
-        this.props.params.count_skips = (value === 'Yes');
-      }
-      this.getHeatmap();
-    });
-  };
-
-  render () {
-    const xLabels = [<ChartLineIcon key={0} />];
-    const yLabels = [];
-    const data = [];
-    let labels = [];
-    for (const key of Object.keys(this.state.data.heatmap)) {
+  const xLabels = [<ChartLineIcon key={0} />];
+  const yLabels = [];
+  const renderData = [];
+  let labels = [];
+  if (data && data?.heatmap) {
+    for (const key of Object.keys(data.heatmap)) {
       const newLabels = [];
-      const values = this.state.data.heatmap[key];
+      const values = data.heatmap[key];
       yLabels.push(<div key={key} title={key} className="ellipsis">{key}</div>);
-      data.push(values);
+      renderData.push(values);
       values.forEach((item) => {
         if (!!item && (item.length > 2) && !!item[3]) {
-          newLabels.push(<Link to={'/project/' + (this.props.params.project) +`/results?metadata.jenkins.build_number[eq]=${item[3]}&metadata.jenkins.job_name[eq]=` + this.params['job_name']} key={item[3]}>{item[3]}</Link>);
+          newLabels.push(<Link to={'/project/' + (params?.project) +`/results?metadata.jenkins.build_number[eq]=${item[3]}&metadata.jenkins.job_name[eq]=` + params?.job_name} key={item[3]}>{item[3]}</Link>);
         }
       });
       if (newLabels.length > labels.length) {
         labels = newLabels;
       }
     }
-    labels.forEach((item) => xLabels.push(item));
-    const jenkins_analysis_link = this.getJenkinsAnalysisLink();
-
-    return (
-      <Card>
-        <WidgetHeader
-          title={this.title}
-          actions={[jenkins_analysis_link].filter(a => a !== null)}
-          getDataFunc={this.getHeatmap}
-          onEditClick={this.props.onEditClick}
-          onDeleteClick={this.props.onDeleteClick}
-        />
-        <CardBody data-id="heatmap" style={{paddingTop: '0.5rem'}}>
-          {(!this.state.heatmapError && this.state.isLoading) &&
-          <Text component="h2">Loading ...</Text>
-          }
-          {(!this.state.heatmapError && !this.state.isLoading && data.length !== 0) &&
-          <HeatMap
-            xLabels={xLabels}
-            yLabels={yLabels}
-            yLabelWidth={this.labelWidth}
-            yLabelTextAlign="left"
-            data={data}
-            squares
-            cellStyle={this.getCellStyle}
-            cellRender={this.renderCell}
-            title={(value) => value ? `${value[0]}` : ''}
-          />
-          }
-          {(!this.state.heatmapError && !this.state.isLoading && data.length === 0) &&
-          <EmptyState>
-            <EmptyStateHeader titleText="No data found for heatmap" headingLevel="h3" />
-            <EmptyStateBody style={{ fontSize: '15px' , fontFamily: 'sans-serif'}}>
-            Ensure that you have correct job name and addition filters set
-            </EmptyStateBody>
-          </EmptyState>
-          }
-          {this.state.heatmapError &&
-          <p>Error fetching data</p>
-          }
-        </CardBody>
-        {!this.props.hideDropdown &&
-        <CardFooter>
-          <ParamDropdown
-            dropdownItems={this.props.dropdownItems || [3, 5, 6, 7]}
-            handleSelect={this.onBuildSelect}
-            defaultValue={this.params.builds}
-            tooltip="Number of builds:"
-          />
-          {this.props.type === 'jenkins' &&
-          <ParamDropdown
-            dropdownItems={['Yes', 'No']}
-            handleSelect={this.onSkipSelect}
-            defaultValue={this.state.countSkips}
-            tooltip="Count skips as failure:"
-          />
-          }
-        </CardFooter>
-        }
-      </Card>
-    );
   }
-}
+
+  labels.forEach((item) => xLabels.push(item));
+  const jenkins_analysis_link = getJenkinsAnalysisLink();
+
+  return (
+    <Card>
+      <WidgetHeader
+        title={title || 'Filter Heatmap'}
+        actions={[jenkins_analysis_link].filter(a => a !== null)}
+        onEditClick={onEditClick}
+        onDeleteClick={onDeleteClick}
+      />
+      <CardBody data-id="heatmap" style={{paddingTop: '0.5rem'}}>
+        {(!isError && isLoading) &&
+        <Text component="h2">Loading ...</Text>
+        }
+        {(!isError && !isLoading && renderData.length !== 0) &&
+        <HeatMap
+          xLabels={xLabels}
+          yLabels={yLabels}
+          yLabelWidth={labelWidth}
+          yLabelTextAlign="left"
+          data={renderData}
+          squares
+          cellStyle={getCellStyle}
+          cellRender={renderCell}
+          title={(value) => value ? `${value[0]}` : ''}
+        />
+        }
+        {(!isError && !isLoading && renderData.length === 0) &&
+        <EmptyState>
+          <EmptyStateHeader titleText="No data found for heatmap" headingLevel="h3" />
+          <EmptyStateBody style={{ fontSize: '15px' , fontFamily: 'sans-serif'}}>
+          Ensure that you have correct job name and addition filters set
+          </EmptyStateBody>
+        </EmptyState>
+        }
+        {isError &&
+        <p>Error fetching data</p>
+        }
+      </CardBody>
+      {!hideDropdown &&
+      <CardFooter>
+        <ParamDropdown
+          dropdownItems={dropdownItems}
+          handleSelect={(value) => setBuilds(value)}
+          defaultValue={builds}
+          tooltip="Number of builds:"
+        />
+        {type === 'jenkins' &&
+        <ParamDropdown
+          dropdownItems={['Yes', 'No']}
+          handleSelect={(value) => setCountSkips(value === 'Yes')}
+          defaultValue={(countSkips ? 'Yes' : 'No')}
+          tooltip="Count skips as failure:"
+        />
+        }
+      </CardFooter>
+      }
+    </Card>
+  );
+};
+
+FilterHeatmapWidget.propTypes = {
+  title: PropTypes.string,
+  params: PropTypes.object,
+  labelWidth: PropTypes.number,
+  hideDropdown: PropTypes.bool,
+  dropdownItems: PropTypes.array,
+  includeAnalysisLink: PropTypes.bool,
+  onDeleteClick: PropTypes.func,
+  onEditClick: PropTypes.func,
+  type: PropTypes.string
+};
+
+export default FilterHeatmapWidget;
