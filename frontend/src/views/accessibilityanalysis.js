@@ -381,8 +381,8 @@ const AccessibilityAnalysisView = (props) => {
                   }}
                   isEmpty={rows?.length === 0}
                   isError={isError}
-                  onSetPage={(value) => setPage(value)}
-                  onSetPageSize={(value) => setPageSize(value)}
+                  onSetPage={(_, value) => setPage(value)}
+                  onSetPageSize={(_, value) => setPageSize(value)}
                 />
               </CardBody>
             </Card>

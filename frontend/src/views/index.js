@@ -1,1 +1,0 @@
-export { JenkinsJobAnalysisView } from './jenkinsjobanalysis';
