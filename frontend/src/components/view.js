@@ -11,8 +11,8 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import AccessibilityDashboardView from '../views/accessibilitydashboard';
-import { JenkinsJobAnalysisView } from '../views';
 import JenkinsJobView from '../views/jenkinsjob';
+import JenkinsJobAnalysisView from '../views/jenkinsjobanalysis';
 import AccessibilityAnalysisView from '../views/accessibilityanalysis';
 import CompareRunsView from '../views/compareruns';
 

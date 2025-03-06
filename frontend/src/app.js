@@ -11,7 +11,7 @@ import { RunList } from './run-list';
 import { Run } from './run';
 import { ResultList } from './result-list';
 import { Result } from './result';
-import { IbutsuPage } from './components';
+import {IbutsuPage} from './components/';
 import View from './components/view';
 
 import { IbutsuContext } from './services/context';

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Switch,
@@ -8,136 +8,84 @@ import {
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import {
-  parseFilter,
-} from '../utilities';
+
+
 import { FilterHeatmapWidget, GenericBarWidget } from '../widgets';
 import GenericAreaWidget from '../widgets/genericarea';
 import { HEATMAP_MAX_BUILDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 import ParamDropdown from '../components/param-dropdown';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
+const DEFAULT_BAR = 8;
 
-export class JenkinsJobAnalysisView extends React.Component {
-  static contextType = IbutsuContext;
-  static propTypes = {
-    location: PropTypes.object,
-    navigate: PropTypes.func,
-    view: PropTypes.object
-  };
+const SHORT_BUILDS = [10, 20, 30, 40];
+const LONG_BUILDS = [...SHORT_BUILDS, 70, 150];
 
-  constructor (props) {
-    super(props);
-    const params = new URLSearchParams(props.location.search);
-    let filters = {};
-    if (params.toString() !== '') {
-      for(let pair of params) {
-        const combo = parseFilter(pair[0]);
-        filters[combo['key']] = {
-          'op': combo['op'],
-          'val': pair[1]
-        };
-      }
-    }
-    this.state = {
-      isAreaChart: false,
-      isEmpty: true,
-      isError: false,
-      isLoading: true,
-      filters: filters,
-      activeTab: this.getTabIndex('heatmap'),
-      barWidth: 8,
-      builds: 20,
-      heatmapParams: {},
-      barchartParams: {},
-      linechartParams: {},
-      countSkips: 'Yes'
-    };
-  }
+const JenkinsJobAnalysisView =(props) => {
+  const context = useContext(IbutsuContext);
+  const {primaryObject} = context;
+  const {view} = props;
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  getTabIndex (defaultValue) {
-    defaultValue = defaultValue || null;
-    return this.props.location.hash !== '' ? this.props.location.hash.substring(1) : defaultValue;
-  }
+  const [isAreaChart, setIsAreaChart] = useState(false);
+  const [isLoading, setIsLoading] = useState();
+  const [activeTab, setActiveTab] = useState('heatmap');
+  const [barWidth, setBarWidth] = useState(DEFAULT_BAR);
+  const [builds, setBuilds] = useState(20);
+  const [heatmapParams, setHeatmapParams] = useState({});
+  const [barchartParams, setBarchartParams] = useState({});
+  const [linechartParams, setLinechartParams] = useState({});
+  const [countSkips, setCountSkips] = useState(true);
 
-  getWidgetParams = () => {
+  useEffect(() => {
     // Show a spinner
-    this.setState({isLoading: true, isEmpty: false, isError: false});
-    if (!this.props.view) {
-      return;
-    }
-    let params = this.props.view.params;
-    const { primaryObject } = this.context;
-    if (primaryObject) {
-      params['project'] = primaryObject.id;
-    }
-    else {
-      delete params['project'];
-    }
-    if (this.state.filters.job_name) {
-      params['job_name'] = this.state.filters.job_name.val;
-    }
-    params['builds'] = this.state.builds;
-    HttpClient.get([Settings.serverUrl, 'widget', this.props.view.widget], params)
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
-        data.heatmap_params['count_skips'] = (this.state.countSkips === 'Yes');
-        this.setState({
-          heatmapParams: data.heatmap_params,
-          barchartParams: data.barchart_params,
-          linechartParams: data.linechart_params,
-          isLoading: false,
-        });
-      });
-  };
+    if (view) {
+      setIsLoading(true);
 
-  getBarWidth () {
-    const numBars = this.state.builds;
-    let barWidth = 8;
-    if (numBars > HEATMAP_MAX_BUILDS) {
-      if (numBars > 100) {
-        barWidth = 2;
+      let params = {...view.params};
+      if (primaryObject) {
+        params['project'] = primaryObject.id;
       }
       else {
-        barWidth = 5;
+        delete params['project'];
+      }
+      if (searchParams.get('job_name')) {
+        params['job_name'] = searchParams.get('job_name');
+      }
+      params['builds'] = builds;
+      HttpClient.get([Settings.serverUrl, 'widget', view.widget], params)
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          data.heatmap_params['count_skips'] = countSkips;
+          setHeatmapParams(data.heatmap_params);
+          setBarchartParams(data.barchart_params);
+          setLinechartParams(data.linechart_params);
+          setIsLoading(false);
+        })
+        .catch(error => {
+          console.error(error);
+          setIsLoading(false);
+        });
+    }
+  }, [builds, countSkips, primaryObject, view, searchParams]);
+
+  useEffect(() => {
+    let newWidth = DEFAULT_BAR;
+    if (builds > HEATMAP_MAX_BUILDS) {
+      if (builds > 100) {
+        newWidth = 2;
+      }
+      else {
+        newWidth = 5;
       }
     }
-    this.setState({barWidth});
-  }
+    setBarWidth(newWidth);
+  }, [builds]);
 
-  getBuildsDropdown () {
-    const { activeTab } = this.state;
-    let dropdownItems = [10, 20, 30, 40];
-    let defaultValue = this.state.builds;
-    if (activeTab === 'overall-health' || activeTab === 'build-durations') {
-      dropdownItems.push(70, 150);
-    }
-    if (activeTab === 'heatmap') {
-      defaultValue = Math.min(defaultValue, HEATMAP_MAX_BUILDS);
-    }
-    return (
-      <ParamDropdown
-        dropdownItems={dropdownItems}
-        defaultValue={defaultValue}
-        handleSelect={this.onBuildSelect}
-        tooltip="Number of builds:"
-      />);
-  }
-
-  getSwitch () {
-    const { isAreaChart } = this.state;
-    return (
-      <Switch
-        id="bar-chart-switch"
-        labelOff="Change to Area Chart"
-        label="Change to Bar Chart"
-        isChecked={isAreaChart}
-        onChange={this.handleSwitch}
-      />
-    );
-  }
-
-  getColors = (key) => {
+  const getColors = (key) => {
     let color = 'var(--pf-v5-global--success-color--100)';
     if (key === 'failed') {
       color = 'var(--pf-v5-global--danger-color--100)';
@@ -157,156 +105,128 @@ export class JenkinsJobAnalysisView extends React.Component {
     return color;
   };
 
-  onTabSelect = (_event, tabIndex) => {
-    const loc = this.props.location;
-    this.props.navigate(`${loc.pathname}${loc.search}#${tabIndex}`);
-    this.setState({activeTab: tabIndex});
+  const onTabSelect = (_, tabIndex) => {
+    navigate(`${location.pathname}${location.search}#${tabIndex}`);
+    setActiveTab(tabIndex);
   };
 
-  onBuildSelect = (value) => {
-    this.setState({builds: value}, () => {
-      this.getWidgetParams();
-      this.getBarWidth();
-    });
-  };
+  return (
+    <React.Fragment>
+      <div style={{backgroundColor: 'var(--pf-v5-global--BackgroundColor--100)', float: 'right', clear: 'right', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
+        <ParamDropdown
+          dropdownItems={['overall-health', 'build-durations'].includes(activeTab) ? LONG_BUILDS : SHORT_BUILDS}
+          defaultValue={(activeTab === 'heatmap') ? Math.min(builds, HEATMAP_MAX_BUILDS) : builds}
+          handleSelect={setBuilds}
+          tooltip="Number of builds:"
+        />
+      </div>
+      {activeTab === 'heatmap' &&
+      <div style={{backgroundColor: 'var(--pf-v5-global--BackgroundColor--100)', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
+        <ParamDropdown
+          dropdownItems={['Yes', 'No']}
+          defaultValue={countSkips ? 'Yes': 'No'}
+          handleSelect={(value) => setCountSkips(value === 'yes')}
+          tooltip="Count skips as failure:"
+        />
+      </div>
+      }
+      {activeTab === 'overall-health' &&
+      <div style={{backgroundColor: 'var(--pf-v5-global--BackgroundColor--100)', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em'}}>
+        <Switch
+          id="bar-chart-switch"
+          labelOff="Change to Area Chart"
+          label="Change to Bar Chart"
+          isChecked={isAreaChart}
+          onChange={(_, checked) => setIsAreaChart(checked)}
+        />
+      </div>
+      }
+      <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
+        <Tab eventKey='heatmap' title="Heatmap">
+          {!isLoading && activeTab === 'heatmap' &&
+        <FilterHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true} labelWidth={400} type='jenkins'/>
+          }
+        </Tab>
+        <Tab eventKey='overall-health' title="Overall Health">
+          {!isLoading && !isAreaChart && activeTab === 'overall-health' &&
+        <GenericBarWidget
+          title={'Test counts for ' + barchartParams.job_name}
+          params={barchartParams}
+          hideDropdown={true}
+          widgetEndpoint="jenkins-bar-chart"
+          barWidth={barWidth}
+          horizontal={false}
+          xLabelTooltip="Build"
+          height={180}
+          yLabel="Test counts"
+          xLabel="Build number"
+          padding={{
+            bottom: 50,
+            left: 50,
+            right: 20,
+            top: 20
+          }}
+          fontSize={9}
+          sortOrder="ascending"
+        />
+          }
+          {!isLoading && isAreaChart && activeTab === 'overall-health' &&
+        <GenericAreaWidget
+          title={'Test counts for ' + barchartParams.job_name}
+          params={barchartParams}
+          hideDropdown={true}
+          getColors={getColors}
+          widgetEndpoint="jenkins-bar-chart"
+          height={180}
+          yLabel="Test counts"
+          xLabel="Build number"
+          sortOrder="ascending"
+          showTooltip={false}
+          colorScale={[
+            'var(--pf-v5-global--warning-color--100)',
+            'var(--pf-v5-global--danger-color--100)',
+            'var(--pf-v5-global--success-color--100)',
+            'var(--pf-v5-global--info-color--100)',
+          ]}
+          padding={{
+            bottom: 50,
+            left: 50,
+            right: 20,
+            top: 20
+          }}
+          fontSize={9}
+        />
+          }
+        </Tab>
+        <Tab eventKey='build-durations' title="Build Duration">
+          {!isLoading && activeTab === 'build-durations' &&
+        <GenericAreaWidget
+          title={'Durations for ' + linechartParams.job_name}
+          params={linechartParams}
+          hideDropdown={true}
+          height={180}
+          padding={{
+            bottom: 50,
+            left: 50,
+            right: 20,
+            top: 20
+          }}
+          fontSize={9}
+          showTooltip={true}
+          sortOrder="ascending"
+          xLabel="Build number"
+          yLabel="Time [hrs]"
+          varExplanation="* Note: since for some jobs, the plugin tests execute in parallel, 'Duration' is the real time for which the build ran. 'Total Execution Time' is the sum of durations for each plugin run."
+        />
+          }
+        </Tab>
+      </Tabs>
+    </React.Fragment>
+  );
+};
 
-  onSkipSelect = (value) => {
-    this.setState({countSkips: value}, () => {
-      this.getWidgetParams();
-    });
-  };
+JenkinsJobAnalysisView.propTypes = {
+  view: PropTypes.object
+};
 
-  handleSwitch = (_event, isChecked) => {
-    this.setState({isAreaChart: isChecked});
-  };
-
-  componentDidMount () {
-    this.getWidgetParams();
-    window.addEventListener('popstate', this.handlePopState);
-  }
-
-  componentWillUnmount () {
-    window.removeEventListener('popstate', this.handlePopState);
-  }
-
-  handlePopState = () => {
-    // Handle browser navigation buttons click
-    const tabIndex = this.getTabIndex('summary');
-    this.setState({activeTab: tabIndex}, () => {
-      this.updateTab(tabIndex);
-    });
-  };
-
-  render () {
-    const {
-      activeTab,
-      isAreaChart,
-      isLoading,
-      barchartParams,
-      barWidth,
-      heatmapParams,
-      linechartParams
-    } = this.state;
-
-    return (
-      <React.Fragment>
-        <div style={{backgroundColor: 'var(--pf-v5-global--BackgroundColor--100)', float: 'right', clear: 'right', marginBottom: '-2em', padding: '0.2em 1em', width: '20em'}}>
-          {this.getBuildsDropdown()}
-        </div>
-        {activeTab === 'heatmap' &&
-        <div style={{backgroundColor: 'var(--pf-v5-global--BackgroundColor--100)', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
-          <ParamDropdown
-            dropdownItems={['Yes', 'No']}
-            defaultValue={this.state.countSkips}
-            handleSelect={this.onSkipSelect}
-            tooltip="Count skips as failure:"
-          />
-        </div>
-        }
-        {activeTab === 'overall-health' &&
-        <div style={{backgroundColor: 'var(--pf-v5-global--BackgroundColor--100)', float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em'}}>
-          {this.getSwitch()}
-        </div>
-        }
-        <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-          <Tab eventKey='heatmap' title="Heatmap">
-            {!isLoading && activeTab === 'heatmap' &&
-          <FilterHeatmapWidget title={heatmapParams.job_name} params={heatmapParams} hideDropdown={true} labelWidth={400} type='jenkins'/>
-            }
-          </Tab>
-          <Tab eventKey='overall-health' title="Overall Health">
-            {!isLoading && !isAreaChart && activeTab === 'overall-health' &&
-          <GenericBarWidget
-            title={'Test counts for ' + barchartParams.job_name}
-            params={barchartParams}
-            hideDropdown={true}
-            widgetEndpoint="jenkins-bar-chart"
-            barWidth={barWidth}
-            horizontal={false}
-            xLabelTooltip="Build"
-            height={180}
-            yLabel="Test counts"
-            xLabel="Build number"
-            padding={{
-              bottom: 50,
-              left: 50,
-              right: 20,
-              top: 20
-            }}
-            fontSize={9}
-            sortOrder="ascending"
-          />
-            }
-            {!isLoading && isAreaChart && activeTab === 'overall-health' &&
-          <GenericAreaWidget
-            title={'Test counts for ' + barchartParams.job_name}
-            params={barchartParams}
-            getColors={this.getColors}
-            widgetEndpoint="jenkins-bar-chart"
-            height={180}
-            yLabel="Test counts"
-            xLabel="Build number"
-            sortOrder="ascending"
-            showTooltip={false}
-            colorScale={[
-              'var(--pf-v5-global--warning-color--100)',
-              'var(--pf-v5-global--danger-color--100)',
-              'var(--pf-v5-global--success-color--100)',
-              'var(--pf-v5-global--info-color--100)',
-            ]}
-            padding={{
-              bottom: 50,
-              left: 50,
-              right: 20,
-              top: 20
-            }}
-            fontSize={9}
-          />
-            }
-          </Tab>
-          <Tab eventKey='build-durations' title="Build Duration">
-            {!isLoading && activeTab === 'build-durations' &&
-          <GenericAreaWidget
-            title={'Durations for ' + linechartParams.job_name}
-            params={linechartParams}
-            height={180}
-            padding={{
-              bottom: 50,
-              left: 50,
-              right: 20,
-              top: 20
-            }}
-            fontSize={9}
-            showTooltip={true}
-            sortOrder="ascending"
-            xLabel="Build number"
-            yLabel="Time [hrs]"
-            varExplanation="* Note: since for some jobs, the plugin tests execute in parallel, 'Duration' is the real time for which the build ran. 'Total Execution Time' is the sum of durations for each plugin run."
-          />
-            }
-          </Tab>
-        </Tabs>
-      </React.Fragment>
-    );
-  }
-}
+export default JenkinsJobAnalysisView;
