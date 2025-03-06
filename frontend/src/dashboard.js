@@ -37,10 +37,10 @@ import NewWidgetWizard from './components/new-widget-wizard.js';
 import EditWidgetModal from './components/edit-widget-modal.js';
 import DeleteModal from './components/delete-modal.js';
 import {
-  GenericAreaWidget,
   GenericBarWidget,
   FilterHeatmapWidget,
 } from './widgets';
+import GenericAreaWidget from './widgets/genericarea.js';
 import ImportanceComponentWidget from './widgets/importancecomponent';
 import ResultAggregatorWidget from './widgets/resultaggregator';
 import ResultSummaryWidget from './widgets/resultsummary';
