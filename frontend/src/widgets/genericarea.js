@@ -52,10 +52,9 @@ const GenericAreaWidget = (props) => {
   const [isError, setIsError] = useState(false);
 
   useEffect(() => {
-    let newAreaCharts = [];
-    let index = 0;
-    for (const key of Object.keys(data)) {
-      let chartData = [];
+    const newAreaCharts = [];
+    for (const [index, key] of Object.keys(data).entries()) {
+      const chartData = [];
       if (key !== 'filter') {
         for (const groupField of Object.keys(data[key])) {
           chartData.push({name: toTitleCase(key), x: groupField, y: data[key][groupField]});
@@ -71,7 +70,6 @@ const GenericAreaWidget = (props) => {
               style={getColors ? {data: { fill: getColors(key)}}: {}}
             />
           );
-          index++;
         }
       }
     }
@@ -84,12 +82,14 @@ const GenericAreaWidget = (props) => {
     setIsError(false);
     HttpClient.get([Settings.serverUrl, 'widget', (widgetEndpoint || 'jenkins-line-chart')], (params || {}))
       .then(response => HttpClient.handleResponse(response))
-      .then(responseData => setData(responseData))
+      .then(responseData => {
+        setData(responseData);
+        setIsLoading(false);
+      })
       .catch(error => {
         setIsError(true);
         console.log(error);
       });
-    setIsLoading(false);
   }, [params, widgetEndpoint]);
 
   const getTooltip = () => {
