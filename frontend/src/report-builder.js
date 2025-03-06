@@ -127,8 +127,6 @@ function ReportBuilder () {
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
           let row_data = data.reports.map((report) => reportToRow(report));
-          console.log('ROW DATA: ');
-          console.dir(row_data);
           setRows(row_data);
           setTotalItems(data.pagination.totalItems);
           setIsEmpty(data.pagination.totalItems === 0);
