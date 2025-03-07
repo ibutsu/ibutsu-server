@@ -10,8 +10,9 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
 
-import { FilterHeatmapWidget, GenericBarWidget } from '../widgets';
+import { FilterHeatmapWidget } from '../widgets';
 import GenericAreaWidget from '../widgets/genericarea';
+import GenericBarWidget from '../widgets/genericbar';
 import { HEATMAP_MAX_BUILDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 import ParamDropdown from '../components/param-dropdown';
