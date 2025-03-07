@@ -1,16 +1,20 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, {useEffect, useState} from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router';
 
 import {
   PageSection,
   PageSectionVariants,
-  Text,
+  Title,
   TextContent
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { AccessibilityDashboardView, AccessibilityAnalysisView, CompareRunsView, JenkinsJobView, JenkinsJobAnalysisView } from '../views';
+import AccessibilityDashboardView from '../views/accessibilitydashboard';
+import JenkinsJobView from '../views/jenkinsjob';
+import JenkinsJobAnalysisView from '../views/jenkinsjobanalysis';
+import AccessibilityAnalysisView from '../views/accessibilityanalysis';
+import CompareRunsView from '../views/compareruns';
 
 const VIEW_MAP = {
   'accessibility-dashboard-view': AccessibilityDashboardView,
@@ -20,56 +24,43 @@ const VIEW_MAP = {
   'jenkins-analysis-view': JenkinsJobAnalysisView
 };
 
-export class View extends React.Component {
-  // TODO: convert to functional
-  static propTypes = {
-    location: PropTypes.object,
-    navigate: PropTypes.func,
-    params: PropTypes.object,
-  };
+const View = () => {
+  const location = useLocation();
+  const params = useParams();
+  const navigate = useNavigate();
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      id: props.params.view_id,
-      view: null,
-    };
-  }
+  const [view, setView] = useState();
 
-  getView() {
-    HttpClient.get([Settings.serverUrl, 'widget-config', this.state.id])
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => this.setState({view: data}));
-  }
-
-  componentDidUpdate(prevProps){
-    if (prevProps !== this.props) {
-      this.setState({id: this.props.params.view_id}, this.getView);
+  useEffect(() =>{
+    if (params?.view_id) {
+      HttpClient.get([Settings.serverUrl, 'widget-config', params.view_id])
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => setView(data))
+        .catch((error) => {console.error(error);});
     }
-  }
 
-  componentDidMount() {
-    this.getView();
-  }
+  }, [params]);
 
-  render() {
-    const { view } = this.state;
-    const { location, navigate } = this.props;
-    document.title = view ? view.title + ' | Ibutsu' : document.title;
-    const ViewComponent = view ? VIEW_MAP[view.widget] : null;
-    return (
-      <React.Fragment>
-        <PageSection id="page" variant={PageSectionVariants.light}>
-          <TextContent>
-            <Text className="title" component="h1">{(view && view.title) || 'Loading...'}</Text>
-          </TextContent>
-        </PageSection>
-        <PageSection className="pf-u-pb-0">
-          {!!ViewComponent &&
-            <ViewComponent view={view} location={location} navigate={navigate}/>
-          }
-        </PageSection>
-      </React.Fragment>
-    );
-  }
-}
+  document.title = view ? view.title + ' | Ibutsu' : document.title;
+  const ViewComponent = view ? VIEW_MAP[view.widget] : null;
+
+  return(
+    <React.Fragment>
+      <PageSection id="page" variant={PageSectionVariants.light}>
+        <TextContent>
+          <Title headingLevel="h1">
+            {(view && view.title) ||
+            'Loading...'}
+          </Title>
+        </TextContent>
+      </PageSection>
+      <PageSection className="pf-u-pb-0">
+        {!!ViewComponent &&
+          <ViewComponent view={view} location={location} navigate={navigate}/>
+        }
+      </PageSection>
+    </React.Fragment>
+  );
+};
+
+export default View;

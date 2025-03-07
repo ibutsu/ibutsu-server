@@ -10,7 +10,8 @@ import {
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import { EmptyObject, ResultView } from './components';
+import EmptyObject from './components/empty-object';
+import ResultView from './components/result';
 
 
 export class Result extends React.Component {
@@ -18,9 +19,9 @@ export class Result extends React.Component {
     params: PropTypes.object,
     location: PropTypes.object,
     navigate: PropTypes.func,
-  }
+  };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       isResultValid: false,
@@ -29,7 +30,7 @@ export class Result extends React.Component {
     };
   }
 
-  getTestResult() {
+  getTestResult () {
     if (!this.state.id) {
       return;
     }
@@ -49,11 +50,11 @@ export class Result extends React.Component {
       .catch(error => console.log(error));
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getTestResult();
   }
 
-  render() {
+  render () {
     const testResult = this.state.testResult;
     return (
       <React.Fragment>
@@ -66,7 +67,7 @@ export class Result extends React.Component {
         </PageSection>
         <PageSection>
           {this.state.isResultValid ?
-            <ResultView testResult={testResult} location={this.props.location} navigate={this.props.navigate} /> :
+            <ResultView testResult={testResult} /> :
             <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list"/>}
         </PageSection>
       </React.Fragment>

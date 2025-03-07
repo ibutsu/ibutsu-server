@@ -36,15 +36,15 @@ class PasswordErrorBoundary extends React.Component {
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError() {
+  static getDerivedStateFromError () {
     return { hasError: true };
   }
 
-  componentDidCatch() {
+  componentDidCatch () {
     console.error('Failed to load password strength indicator');
   }
 
-  render() {
+  render () {
     if (this.state.hasError) {
       // Hide the components, we don't need to worry about it
       return '';
@@ -60,7 +60,7 @@ export class ResetPassword extends React.Component {
     params: PropTypes.object
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       activationCode: props.params.activationCode,
@@ -95,23 +95,23 @@ export class ResetPassword extends React.Component {
         confirmPasswordValidation: 'error'
       });
     }
-  }
+  };
 
   onPasswordChange = passwordValue => {
     this.setState({ passwordValue }, this.validatePasswordMatch);
-  }
+  };
 
   onConfirmPasswordChange = confirmPasswordValue => {
     this.setState({ confirmPasswordValue }, this.validatePasswordMatch);
-  }
+  };
 
   onPasswordVisibleClick = () => {
     this.setState({isPasswordVisible: !this.state.isPasswordVisible});
-  }
+  };
 
   onConfirmPasswordVisibleClick = () => {
     this.setState({isConfirmPasswordVisible: !this.state.isConfirmPasswordVisible});
-  }
+  };
 
   onResetButtonClick = event => {
     event.preventDefault();
@@ -150,9 +150,9 @@ export class ResetPassword extends React.Component {
         showAlert: true
       });
     }
-  }
+  };
 
-  render() {
+  render () {
     const loginMessage = (
       <LoginMainFooterBandItem>
         Already registered? <NavLink to="/login">Log in.</NavLink>
@@ -239,8 +239,8 @@ export class ResetPassword extends React.Component {
               {this.state.isConfirmPasswordVisible && <TextInput isRequired type="text" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={(_event, confirmPasswordValue) => this.onConfirmPasswordChange(confirmPasswordValue)} validated={this.state.confirmPasswordValidation} />}
               <InputGroupItem>
                 <Button variant="control" aria-label="Show password" onClick={this.onConfirmPasswordVisibleClick}>
-                {!this.state.isConfirmPasswordVisible && <EyeIcon/>}
-                {this.state.isConfirmPasswordVisible && <EyeSlashIcon/>}
+                  {!this.state.isConfirmPasswordVisible && <EyeIcon/>}
+                  {this.state.isConfirmPasswordVisible && <EyeSlashIcon/>}
                 </Button>
               </InputGroupItem>
             </InputGroup>
