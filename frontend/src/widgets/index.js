@@ -1,1 +1,0 @@
-export { FilterHeatmapWidget } from './filterheatmap';

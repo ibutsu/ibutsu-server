@@ -164,7 +164,7 @@ const JenkinsJobView = (props) => {
       .then(data => {
         setAnalysisViewId(data.widgets[0]?.id);
       }).catch(error => {
-        console.log(error);
+        console.error(error);
       });
   }, []);
 
