@@ -88,7 +88,7 @@ const GenericAreaWidget = (props) => {
       })
       .catch(error => {
         setIsError(true);
-        console.log(error);
+        console.error(error);
       });
   }, [params, widgetEndpoint]);
 
