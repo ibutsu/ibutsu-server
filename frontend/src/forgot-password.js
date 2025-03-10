@@ -24,7 +24,7 @@ export class ForgotPassword extends React.Component {
     navigate: PropTypes.func
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       alertText: '',
@@ -37,14 +37,14 @@ export class ForgotPassword extends React.Component {
 
   onEmailChange = emailValue => {
     this.setState({ emailValue });
-  }
+  };
 
   onRecoverAccountClick = event => {
     event.preventDefault();
     var isValidEmail = !!this.state.emailValue,
-        showAlert = !this.state.emailValue,
-        alertText = '',
-        alertType = 'danger';
+      showAlert = !this.state.emailValue,
+      alertText = '',
+      alertType = 'danger';
     if (!isValidEmail) {
       alertText = 'E-mail field is blank';
       showAlert = true;
@@ -60,7 +60,7 @@ export class ForgotPassword extends React.Component {
               showAlert: true,
               isValidEmail: true
             });
-            this.props.navigate('/login')
+            this.props.navigate('/login');
           }
           else {
             this.setState({
@@ -80,9 +80,9 @@ export class ForgotPassword extends React.Component {
           });
         });
     }
-  }
+  };
 
-  render() {
+  render () {
     const signUpForAccountMessage = (
       <LoginMainFooterBandItem>
         Need an account? <NavLink to="/sign-up">Sign up.</NavLink>

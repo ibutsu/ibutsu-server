@@ -55,19 +55,17 @@ import { Settings } from './settings';
 import {
   cleanPath,
   getSpinnerRow,
-  getTheme,
+  getDarkTheme,
   processPyTestPath,
   resultToRow,
   round
 } from './utilities';
-import {
-  DownloadButton,
-  EmptyObject,
-  FilterTable,
-  ClassifyFailuresTable,
-  ResultView,
-  TabTitle
-} from './components';
+import DownloadButton from './components/download-button';
+import EmptyObject from './components/empty-object';
+import FilterTable from './components/filtertable';
+import ResultView from './components/result';
+import TabTitle from './components/tabs';
+import ClassifyFailuresTable from './components/classify-failures';
 
 const MockRun = {
   id: null,
@@ -85,8 +83,8 @@ const MockRun = {
 const match = (node, text) => node.name.toLowerCase().indexOf(text.toLowerCase()) !== -1;
 
 const findNode = (node, text) => match(node, text) || (
-    node.children && node.children.length && !!node.children.find(child => findNode(child, text))
-  );
+  node.children && node.children.length && !!node.children.find(child => findNode(child, text))
+);
 
 const searchTree = (node, text) => {
   if (match(node, text) || !node.children) {
@@ -105,7 +103,7 @@ export class Run extends React.Component {
     location: PropTypes.object,
   };
 
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.state = {
       run: MockRun,
@@ -134,7 +132,7 @@ export class Run extends React.Component {
     };
   }
 
-  getTabIndex(defaultValue) {
+  getTabIndex (defaultValue) {
     defaultValue = defaultValue || null;
     return this.props.location.hash !== '' ? this.props.location.hash.substring(1) : defaultValue;
   }
@@ -143,10 +141,10 @@ export class Run extends React.Component {
     if (treeItem && ! treeItem.children) {
       this.setState({activeItems: [treeItem], testResult: treeItem._testResult});
     }
-  }
+  };
 
-  buildTree(results) {
-    function getPassPercent(stats) {
+  buildTree (results) {
+    function getPassPercent (stats) {
       let percent = 'N/A';
       if (stats.count > 0) {
         percent = Math.round(((stats.passed + stats.xfailed) / stats.count * 100));
@@ -154,7 +152,7 @@ export class Run extends React.Component {
       return percent;
     }
 
-    function getBadgeClass(passPercent) {
+    function getBadgeClass (passPercent) {
       let className = 'failed';
       if (passPercent > 75) {
         className = 'error';
@@ -230,7 +228,7 @@ export class Run extends React.Component {
     return treeStructure;
   }
 
-  getRunArtifacts() {
+  getRunArtifacts () {
     if (!this.state.id) {return;}
     HttpClient.get([Settings.serverUrl, 'artifact'], {runId: this.state.id})
       .then(response => HttpClient.handleResponse(response))
@@ -244,7 +242,7 @@ export class Run extends React.Component {
               if (contentType.includes('text')) {
                 response.text().then(text => {
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileAltIcon} text={artifact.filename} />}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={<FileAltIcon/>} text={artifact.filename} />}>
                       <Card>
                         <CardBody>
                           <Editor fontFamily="Noto Sans Mono, Hack, monospace" theme="vs-dark" value={text} height="40rem" options={{readOnly: true}} />
@@ -262,7 +260,7 @@ export class Run extends React.Component {
                 response.blob().then(blob => {
                   let imageUrl = URL.createObjectURL(blob);
                   artifactTabs.push(
-                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={FileImageIcon} text={artifact.filename} />}>
+                    <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={<FileImageIcon/>} text={artifact.filename} />}>
                       <Card>
                         <CardBody>
                           <img src={imageUrl} alt={artifact.filename}/>
@@ -281,7 +279,7 @@ export class Run extends React.Component {
       });
   }
 
-  updateTab(tabIndex) {
+  updateTab (tabIndex) {
     if (tabIndex === 'results-list') {
       this.getResultsForTable();
     }
@@ -295,20 +293,20 @@ export class Run extends React.Component {
 
   onSearch = (value) => {
     this.setState({treeSearch: value}, this.setFilteredTree);
-  }
+  };
 
   onTabSelect = (event, tabIndex) => {
     const loc = this.props.location;
     if (loc) {
-      this.props.navigate(`${loc.pathname}#${tabIndex}`)
+      this.props.navigate(`${loc.pathname}#${tabIndex}`);
     }
     this.setState({activeTab: tabIndex});
     this.updateTab(tabIndex);
-  }
+  };
 
   getClassificationTable = () => {
     this.setState({classificationTable: <ClassifyFailuresTable run_id={this.state.id}/>});
-  }
+  };
 
   onToggle = (node) => {
     if (node.result) {
@@ -319,14 +317,14 @@ export class Run extends React.Component {
             .then(data => {
               let { currentTest } = this.state;
               currentTest.artifacts = data.artifacts;
-              this.setState({currentTest})
+              this.setState({currentTest});
             });
         }
       });
     }
-  }
+  };
 
-  setFilteredTree() {
+  setFilteredTree () {
     if (!this.state.treeSearch) {
       this.setState({filteredTree: this.state.resultsTree});
     }
@@ -339,19 +337,19 @@ export class Run extends React.Component {
     this.setState({page: pageNumber}, () => {
       this.getResultsForTable();
     });
-  }
+  };
 
   pageSizeSelect = (_event, perPage) => {
     this.setState({pageSize: perPage}, () => {
       this.getResultsForTable();
     });
-  }
+  };
 
   refreshResults = () => {
     this.getResultsForTable();
-  }
+  };
 
-  getRun() {
+  getRun () {
     if (!this.state.id) {return;}
     HttpClient.get([Settings.serverUrl, 'run', this.state.id])
       .then(response => {
@@ -370,7 +368,7 @@ export class Run extends React.Component {
       .catch(error => console.log(error));
   }
 
-  getResultsForTable() {
+  getResultsForTable () {
     this.setState({rows: [getSpinnerRow(5)], isEmpty: false, isError: false});
     let params = {filter: 'run_id=' + this.state.id};
     params['pageSize'] = this.state.pageSize;
@@ -379,13 +377,13 @@ export class Run extends React.Component {
     HttpClient.get([Settings.serverUrl, 'result'], params)
       .then(response => HttpClient.handleResponse(response))
       .then(data => this.setState({
-          results: data.results,
-          rows: data.results.map((result) => resultToRow(result)),
-          page: data.pagination.page,
-          pageSize: data.pagination.pageSize,
-          totalItems: data.pagination.totalItems,
-          totalPages: data.pagination.totalPages,
-          isEmpty: data.pagination.totalItems === 0
+        results: data.results,
+        rows: data.results.map((result) => resultToRow(result)),
+        page: data.pagination.page,
+        pageSize: data.pagination.pageSize,
+        totalItems: data.pagination.totalItems,
+        totalPages: data.pagination.totalPages,
+        isEmpty: data.pagination.totalItems === 0
       }))
       .catch((error) => {
         console.error('Error fetching result data:', error);
@@ -393,7 +391,7 @@ export class Run extends React.Component {
       });
   }
 
-  getResultsForTree(page) {
+  getResultsForTree (page) {
     let params = {filter: 'run_id=' + this.state.id};
     params['pageSize'] = 500;
     params['page'] = page;
@@ -420,12 +418,12 @@ export class Run extends React.Component {
       });
   }
 
-  componentDidMount() {
+  componentDidMount () {
     this.getRun();
     window.addEventListener('popstate', this.handlePopState);
   }
 
-  componentWillUnmount() {
+  componentWillUnmount () {
     window.removeEventListener('popstate', this.handlePopState);
   }
 
@@ -437,12 +435,12 @@ export class Run extends React.Component {
     });
   };
 
-  render() {
+  render () {
     let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0, not_run = 0;
     let created = 0;
     let calculatePasses = true;
     const { run, columns, rows, classificationTable, artifactTabs } = this.state;
-    const jsonViewLightThemeOn = getTheme() === 'dark' ? false : true ;
+    const jsonViewLightThemeOn = !getDarkTheme();
     const jsonViewTheme = {
       scheme: 'monokai',
       author: 'wimer hazenberg (http://www.monokai.nl)',
@@ -509,7 +507,7 @@ export class Run extends React.Component {
       pageSize: this.state.pageSize,
       page: this.state.page,
       totalItems: this.state.totalItems
-    }
+    };
     return (
       <React.Fragment>
         <PageSection variant={PageSectionVariants.light}>
@@ -523,7 +521,7 @@ export class Run extends React.Component {
           }
           {this.state.isRunValid &&
             <Tabs activeKey={this.state.activeTab} onSelect={this.onTabSelect} isBox>
-              <Tab eventKey="summary" title={<TabTitle icon={InfoCircleIcon} text="Summary" />}>
+              <Tab eventKey="summary" title={<TabTitle icon={<InfoCircleIcon/>} text="Summary" />}>
                 <Card>
                   <CardBody style={{padding: 0}} id="run-detail">
                     <Grid>
@@ -589,7 +587,7 @@ export class Run extends React.Component {
                               </DataListItemRow>
                             </DataListItem>
                           }
-                        {run.metadata && run.metadata.jenkins && run.metadata.jenkins.job_name &&
+                          {run.metadata && run.metadata.jenkins && run.metadata.jenkins.job_name &&
                           <DataListItem aria-labelledby="Jenkins Job Name">
                             <DataListItemRow>
                               <DataListItemCells
@@ -717,7 +715,7 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey="results-list" title={<TabTitle icon={CatalogIcon} text="Results List" />}>
+              <Tab eventKey="results-list" title={<TabTitle icon={<CatalogIcon/>} text="Results List" />}>
                 <Card className="pf-u-mt-lg">
                   <CardHeader>
                     <Flex style={{ width: '100%' }}>
@@ -747,7 +745,7 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey="results-tree" title={<TabTitle icon={RepositoryIcon} text="Results Tree" />}>
+              <Tab eventKey="results-tree" title={<TabTitle icon={<RepositoryIcon/>} text="Results Tree" />}>
                 <Card className="pf-u-mt-lg">
                   <CardBody>
                     <Grid gutter="sm">
@@ -773,7 +771,7 @@ export class Run extends React.Component {
                                 }
                               </CardHeader>
                               <CardBody style={{backgroundColor: 'var(--pf-v5-c-card--BackgroundColor)', paddingTop: '1.2em'}}>
-                                <ResultView testResult={this.state.testResult}/>
+                                <ResultView testResult={this.state.testResult} defaultTab='summary'/>
                               </CardBody>
                             </Card>
                             }
@@ -784,11 +782,11 @@ export class Run extends React.Component {
                   </CardBody>
                 </Card>
               </Tab>
-              <Tab eventKey="classify-failures" title={<TabTitle icon={MessagesIcon} text="Classify Failures" />}>
+              <Tab eventKey="classify-failures" title={<TabTitle icon={<MessagesIcon/>} text="Classify Failures" />}>
                 {classificationTable}
               </Tab>
               {artifactTabs}
-              <Tab eventKey="run-object" title={<TabTitle icon={CodeIcon} text="Run Object" />}>
+              <Tab eventKey="run-object" title={<TabTitle icon={<CodeIcon/>} text="Run Object" />}>
                 <Card>
                   <CardBody>
                     <JSONTree data={run} theme={jsonViewTheme} invertTheme={jsonViewLightThemeOn} hideRoot shouldExpandNodeInitially={() => true}/>
