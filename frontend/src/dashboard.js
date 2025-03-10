@@ -36,11 +36,9 @@ import NewDashboardModal from './components/new-dashboard-modal.js';
 import NewWidgetWizard from './components/new-widget-wizard.js';
 import EditWidgetModal from './components/edit-widget-modal.js';
 import DeleteModal from './components/delete-modal.js';
-import {
-  FilterHeatmapWidget,
-} from './widgets';
 import GenericAreaWidget from './widgets/genericarea.js';
 import GenericBarWidget from './widgets/genericbar.js';
+import FilterHeatmapWidget from './widgets/filterheatmap';
 import ImportanceComponentWidget from './widgets/importancecomponent';
 import ResultAggregatorWidget from './widgets/resultaggregator';
 import ResultSummaryWidget from './widgets/resultsummary';
