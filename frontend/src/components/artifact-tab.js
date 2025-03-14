@@ -9,6 +9,7 @@ import { HttpClient } from '../services/http';
 const ArtifactTab = ({ artifact }) => {
   const [blob, setBlob] = useState();
   const [blobType, setBlobType] = useState();
+  const [imageUrl, setImageUrl] = useState();
 
   const fetchArtifact = useCallback(async () => {
     try {
@@ -50,9 +51,19 @@ const ArtifactTab = ({ artifact }) => {
         />
       );
     } else if (blobType === 'image') {
-      return <img key={artifact.id} src={URL.createObjectURL(blob)} alt={artifact.filename} />;
+      return <img key={artifact.id} src={imageUrl} alt={artifact.filename} />;
     }
-  }, [blob, blobType, artifact.id, artifact.filename]);
+  }, [blob, blobType, artifact.id, artifact.filename, imageUrl]);
+
+  useEffect(() => {
+    if (blobType === 'image' && blob) {
+      const objectUrl = URL.createObjectURL(blob);
+      setImageUrl(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    } else {
+      setImageUrl();
+    }
+  }, [blob, blobType]);
 
   return (
     <Card>
