@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -91,11 +91,7 @@ const resultToClassificationRow = (result, index, filterFunc) => {
   ];
 };
 
-const ClassifyFailuresTable = (props) => {
-  const {
-    filters,
-    run_id,
-  } = props;
+const ClassifyFailuresTable = ({ filters, run_id }) => {
 
   const [rows, setRows] = useState([getSpinnerRow(5)]);
   const [filteredResults, setFilteredResults] = useState([]);
@@ -109,39 +105,38 @@ const ClassifyFailuresTable = (props) => {
   const [includeSkipped, setIncludeSkipped] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState({
     ...filters,
-    'result': {op: 'in', val: 'failed;error'},
-    'run_id': {op: 'eq', val: props.run_id}}
-  );
+    'result': { op: 'in', val: 'failed;error' },
+    'run_id': { op: 'eq', val: run_id }
+  });
 
   // Fetch and set filteredResults on filter and pagination updates
-  useEffect(()=> {
-    setIsError(false);
-
-    // get only filtered results
-    HttpClient.get([Settings.serverUrl, 'result'], {
-      filter: toAPIFilter(appliedFilters),
-      pageSize: pageSize,
-      page: page
-    })
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+  useEffect(() => {
+    const fetchResults = async () => {
+      setIsError(false);
+      try {
+        const response = await HttpClient.get([Settings.serverUrl, 'result'], {
+          filter: toAPIFilter(appliedFilters),
+          pageSize,
+          page
+        });
+        const data = await HttpClient.handleResponse(response);
         setFilteredResults(data.results);
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error fetching result data:', error);
         setFilteredResults([]);
         setIsError(true);
-      });
+      }
+    };
+    fetchResults();
   }, [page, pageSize, appliedFilters]);
 
-
-  const onCollapse = (_, rowIndex, isOpen) => {
+  const onCollapse = useCallback((_, rowIndex, isOpen) => {
     // handle row click opening the child row with ResultView
     if (isOpen) {
-      let result = rows[rowIndex].result;
+      let {result} = rows[rowIndex];
       let hideSummary=true;
       let hideTestObject=true;
       let defaultTab='test-history';
@@ -188,9 +183,9 @@ const ClassifyFailuresTable = (props) => {
       });
     }
 
-  };
+  }, [rows]);
 
-  const onTableRowSelect = (_event, isSelected, rowId) => {
+  const onTableRowSelect = useCallback((_event, isSelected, rowId) => {
     // either set every row or single row selected state
     let mutatedRows = rows.map(
       (oneRow, index) => {
@@ -209,9 +204,9 @@ const ClassifyFailuresTable = (props) => {
       (oneRow) => oneRow.result
     );
     setSelectedResults(resultsToSelect);
-  };
+  }, [rows]);
 
-  const onSkipCheck = (checked) => {
+  const onSkipCheck = useCallback((checked) => {
     setIncludeSkipped(checked);
     setAppliedFilters({
       ...appliedFilters,
@@ -220,7 +215,7 @@ const ClassifyFailuresTable = (props) => {
         'val': ('failed;error') + ((checked) ? ';skipped;xfailed' : '')
       }
     });
-  };
+  }, [appliedFilters]);
 
   // METAFILTER FUNCTIONS
   const updateFilters = useCallback((_filterId, name, operator, value) => {
@@ -243,13 +238,13 @@ const ClassifyFailuresTable = (props) => {
     updateFilters(filterId, field, operator, value);
   }, [updateFilters]);
 
-  const removeFilter = (filterId, id) => {
+  const removeFilter = useCallback((filterId, id) => {
     if ((id !== 'result') && (id !== 'run_id')) {   // Don't allow removal of error/failure filter
       updateFilters(filterId, id, null, null);
     }
-  };
+  }, [updateFilters]);
 
-  const resultFilters = [
+  const resultFilters = useMemo(() => [
     <MetaFilter
       key="metafilter"
       runId={run_id}
@@ -259,7 +254,7 @@ const ClassifyFailuresTable = (props) => {
       hideFilters={['run_id', 'project_id']}
       id={0}
     />,
-  ];
+  ], [run_id, setFilter, appliedFilters, removeFilter]);
 
   useEffect(() => {
     // set rows when filtered items update
