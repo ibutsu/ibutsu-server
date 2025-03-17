@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -17,58 +17,50 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
-const AddTokenModal = (props) => {
+const AddTokenModal = ({ isOpen, onClose }) => {
   const [name, setName] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [isNameValid, setIsNameValid] = useState(true);
   const [isExpiryValid, setIsExpiryValid] = useState(true);
 
-  const {
-    isOpen,
-    onClose,
-  } = props;
-
-  const onSave = () => {
+  const onSave = useCallback(async () => {
     const expiry = new Date(expiryDate);
     const now = new Date();
 
-    if (name === '' ){
+    if (name === '') {
       setIsNameValid(false);
       return;
+    } else {
+      setIsNameValid(true);
     }
-    else {setIsNameValid(true);}
 
-    if (expiryDate === ''){
+    if (expiryDate === '') {
       setIsExpiryValid(false);
       return;
-    }
-    else {
+    } else {
       expiry.setHours(23, 59, 59, 999);
       if (expiry.getTime() <= now.getTime()) {
         setIsExpiryValid(false);
         return;
       }
     }
-    HttpClient.post([Settings.serverUrl, 'user', 'token'],
-      {name: name, expires: expiry.toISOString()})
-      .then(response => HttpClient.handleResponse(response))
-      .catch((error) => {
-        console.error('Error posting token:', error);
-      });
+
+    try {
+      await HttpClient.post([Settings.serverUrl, 'user', 'token'], { name, expires: expiry.toISOString() });
+    } catch (error) {
+      console.error('Error posting token:', error);
+    }
 
     onClose();
+  }, [name, expiryDate, onClose]);
 
-  };
-
-  const localOnClose = () => {
-    // call prop function
+  const localOnClose = useCallback(() => {
     onClose();
-
     setName('');
     setExpiryDate('');
     setIsNameValid(true);
     setIsExpiryValid(true);
-  };
+  }, [onClose]);
 
   return (
     <Modal

@@ -5,7 +5,8 @@ import {
   NavList,
   Page,
   PageSidebar,
-  PageSidebarBody
+  PageSidebarBody,
+  NavItem
 } from '@patternfly/react-core';
 
 import { Link, Outlet } from 'react-router-dom';
@@ -13,23 +14,21 @@ import { Link, Outlet } from 'react-router-dom';
 import IbutsuHeader from './ibutsu-header';
 
 
-
 const AdminPage = () => {
   const navigation = (
-    // TODO what is onNavSelect doing here ... I just carried this from a class ref
-    <PageSidebar theme="dark" >
+    <PageSidebar theme="dark">
       <PageSidebarBody>
-        <Nav onSelect={React.Component.onNavSelect} theme="dark" aria-label="Nav">
+        <Nav theme="dark" aria-label="Nav">
           <NavList>
-            <li className="pf-v5-c-nav__item">
+            <NavItem>
               <Link to="home" className="pf-v5-c-nav__link">Admin Home</Link>
-            </li>
-            <li className="pf-v5-c-nav__item">
+            </NavItem>
+            <NavItem>
               <Link to="users" className="pf-v5-c-nav__link">Users</Link>
-            </li>
-            <li className="pf-v5-c-nav__item">
+            </NavItem>
+            <NavItem>
               <Link to="projects" className="pf-v5-c-nav__link">Projects</Link>
-            </li>
+            </NavItem>
           </NavList>
         </Nav>
       </PageSidebarBody>
@@ -41,13 +40,12 @@ const AdminPage = () => {
   return (
     <React.Fragment>
       <Page
-        // TODO simplified admin header
-        header={<IbutsuHeader/>}
+        header={<IbutsuHeader />}
         sidebar={navigation}
         isManagedSidebar={true}
-        style={{position: 'relative'}}
+        style={{ position: 'relative' }}
       >
-        <Outlet/>
+        <Outlet />
       </Page>
     </React.Fragment>
   );
