@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -12,12 +12,12 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { CLASSIFICATION } from '../constants.js';
 
-const ClassificationDropdown = (props) => {
-  const [testResult, setTestResult] = useState(props.testResult);
-  const [classificationOpen, setclassificationOpen] = useState(false);
+const ClassificationDropdown = ({ testResult: initialTestResult }) => {
+  const [testResult, setTestResult] = useState(initialTestResult);
+  const [classificationOpen, setClassificationOpen] = useState(false);
 
-  const onClassificationSelect = (_event, selection) => {
-    let updatedResult = {
+  const onClassificationSelect = useCallback(async (_event, selection) => {
+    const updatedResult = {
       ...testResult,
       'metadata': {
         ...testResult.metadata,
@@ -25,26 +25,29 @@ const ClassificationDropdown = (props) => {
       }
     };
     setTestResult(updatedResult);
-    setclassificationOpen(!classificationOpen);
-    HttpClient.put([Settings.serverUrl, 'result', testResult['id']], {}, updatedResult)
-      .then(console.log('put classification'))
-      .catch(error => console.error(error));
-  };
+    setClassificationOpen(!classificationOpen);
+    try {
+      await HttpClient.put([Settings.serverUrl, 'result', testResult['id']], {}, updatedResult);
+      console.log('put classification');
+    } catch (error) {
+      console.error(error);
+    }
+  }, [testResult, classificationOpen]);
 
-  useEffect(()=>{
-    setTestResult(props.testResult);
-  }, [props.testResult]);
+  useEffect(() => {
+    setTestResult(initialTestResult);
+  }, [initialTestResult]);
 
   return (
     <Dropdown
       key={testResult.id}
       isOpen={classificationOpen}
       onSelect={onClassificationSelect}
-      onOpenChange={() => setclassificationOpen(false)}
+      onOpenChange={() => setClassificationOpen(false)}
       toggle={toggleRef => (
         <MenuToggle
           ref={toggleRef}
-          onClick={() => setclassificationOpen(!classificationOpen)}
+          onClick={() => setClassificationOpen(!classificationOpen)}
           isExpanded={classificationOpen}
         >
           {CLASSIFICATION[testResult?.metadata?.classification] || '(unset)'}
@@ -66,38 +69,35 @@ ClassificationDropdown.propTypes = {
   testResult: PropTypes.object,
 };
 
+const MultiClassificationDropdown = ({ selectedResults }) => {
+  const [classificationOpen, setClassificationOpen] = useState(false);
 
-const MultiClassificationDropdown = (props) => {
-  // TODO: callback to trigger re-render of the classify failures page
-  const {
-    selectedResults,
-  } = props;
-
-  const [classificationOpen, setclassificationOpen] = useState(false);
-
-  const onClassificationSelect = (_event, selection) => {
+  const onClassificationSelect = useCallback(async (_event, selection) => {
     if (selectedResults.length === 0) {
-      setclassificationOpen(false);
+      setClassificationOpen(false);
+    } else {
+      try {
+        await Promise.all(selectedResults.map(result => {
+          result['metadata']['classification'] = selection;
+          return HttpClient.put([Settings.serverUrl, 'result', result['id']], {}, result);
+        }));
+      } catch (error) {
+        console.error('Error setting classification: ' + error);
+      }
+      setClassificationOpen(false);
     }
-    else {
-      selectedResults.forEach(result => {
-        result['metadata']['classification'] = selection;
-        HttpClient.put([Settings.serverUrl, 'result', result['id']], {}, result)
-          .catch(error => console.error('Error setting classification: ' + error));
-      });
-      setclassificationOpen(false);
-    }
-  };
+  }, [selectedResults]);
+
   return (
     <Dropdown
       isOpen={classificationOpen}
       onSelect={onClassificationSelect}
-      onOpenChange={() => setclassificationOpen(false)}
+      onOpenChange={() => setClassificationOpen(false)}
       toggle={toggleRef => (
         <MenuToggle
           ref={toggleRef}
           isDisabled={selectedResults.length === 0}
-          onClick={() => setclassificationOpen(!classificationOpen)}
+          onClick={() => setClassificationOpen(!classificationOpen)}
           isExpanded={classificationOpen}
         >
           Classify Selected Failures
@@ -119,4 +119,4 @@ MultiClassificationDropdown.propTypes = {
   selectedResults: PropTypes.array,
 };
 
-export {ClassificationDropdown, MultiClassificationDropdown};
+export { ClassificationDropdown, MultiClassificationDropdown };
