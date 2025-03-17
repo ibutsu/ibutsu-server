@@ -91,12 +91,7 @@ const resultToClassificationRow = (result, index, filterFunc) => {
   ];
 };
 
-const ClassifyFailuresTable = (props) => {
-  const {
-    filters,
-    run_id,
-  } = props;
-
+const ClassifyFailuresTable = ({ filters, run_id }) => {
   const [rows, setRows] = useState([getSpinnerRow(5)]);
   const [filteredResults, setFilteredResults] = useState([]);
   const [selectedResults, setSelectedResults] = useState([]);
@@ -110,69 +105,72 @@ const ClassifyFailuresTable = (props) => {
   const [appliedFilters, setAppliedFilters] = useState({
     ...filters,
     'result': {op: 'in', val: 'failed;error'},
-    'run_id': {op: 'eq', val: props.run_id}}
-  );
+    'run_id': {op: 'eq', val: run_id}
+  });
 
   // Fetch and set filteredResults on filter and pagination updates
-  useEffect(()=> {
-    setIsError(false);
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsError(false);
 
-    // get only filtered results
-    HttpClient.get([Settings.serverUrl, 'result'], {
-      filter: toAPIFilter(appliedFilters),
-      pageSize: pageSize,
-      page: page
-    })
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+      try {
+        const response = await HttpClient.get([Settings.serverUrl, 'result'], {
+          filter: toAPIFilter(appliedFilters),
+          pageSize: pageSize,
+          page: page
+        });
+        const data = await HttpClient.handleResponse(response);
         setFilteredResults(data.results);
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error fetching result data:', error);
         setFilteredResults([]);
         setIsError(true);
-      });
-  }, [page, pageSize, appliedFilters]);
+      }
+    };
 
+    fetchData();
+  }, [page, pageSize, appliedFilters]);
 
   const onCollapse = (_, rowIndex, isOpen) => {
     // handle row click opening the child row with ResultView
     if (isOpen) {
-      let result = rows[rowIndex].result;
-      let hideSummary=true;
-      let hideTestObject=true;
-      let defaultTab='test-history';
+      let {result} = rows[rowIndex];
+      let hideSummary = true;
+      let hideTestObject = true;
+      let defaultTab = 'test-history';
       if (result.result === 'skipped') {
-        hideSummary=false;
-        hideTestObject=false;
-        defaultTab='summary';
+        hideSummary = false;
+        hideTestObject = false;
+        defaultTab = 'summary';
       }
 
       const updatedRows = rows.map((row, index) => {
         let newRow = {};
         // set isOpen on the parent row items
         if (index === rowIndex) {
-          newRow = {...row, isOpen: isOpen};
+          newRow = { ...row, isOpen: isOpen };
         } else if (index === (rowIndex + 1)) {
           // set the ResultView on the child rows
           newRow = {
             ...row,
             cells: [
-              {title:
+              {
+                title:
                   <ResultView
                     defaultTab={defaultTab}
                     hideTestHistory={false}
                     hideSummary={hideSummary}
                     hideTestObject={hideTestObject}
                     testResult={rows[rowIndex].result}
-                  />}
+                  />
+              }
             ]
           };
         } else {
-          newRow = {...row};
+          newRow = { ...row };
         }
         return newRow;
       });
@@ -182,19 +180,18 @@ const ClassifyFailuresTable = (props) => {
       setRows(prevRows => {
         const updatedRows = [...prevRows];
         if (updatedRows[rowIndex]) {
-          updatedRows[rowIndex] = {...updatedRows[rowIndex], isOpen: isOpen};
+          updatedRows[rowIndex] = { ...updatedRows[rowIndex], isOpen: isOpen };
         }
         return updatedRows;
       });
     }
-
   };
 
   const onTableRowSelect = (_event, isSelected, rowId) => {
     // either set every row or single row selected state
     let mutatedRows = rows.map(
       (oneRow, index) => {
-        if((index === rowId) || (rowId === -1)) {oneRow.selected = isSelected;}
+        if ((index === rowId) || (rowId === -1)) { oneRow.selected = isSelected; }
         return oneRow;
       }
     );
@@ -224,12 +221,12 @@ const ClassifyFailuresTable = (props) => {
 
   // METAFILTER FUNCTIONS
   const updateFilters = useCallback((_filterId, name, operator, value) => {
-    let newFilters = {...appliedFilters};
+    let newFilters = { ...appliedFilters };
     if ((value === null) || (value.length === 0)) {
       delete newFilters[name];
     }
     else {
-      newFilters[name] = {'op': operator, 'val': value};
+      newFilters[name] = { 'op': operator, 'val': value };
     }
 
     setAppliedFilters(newFilters);
@@ -282,11 +279,11 @@ const ClassifyFailuresTable = (props) => {
           </FlexItem>
           <FlexItem>
             <TextContent>
-              <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={(_event, checked) => onSkipCheck(checked)}/>
+              <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={(_event, checked) => onSkipCheck(checked)} />
             </TextContent>
           </FlexItem>
           <FlexItem>
-            <MultiClassificationDropdown selectedResults={selectedResults}/>
+            <MultiClassificationDropdown selectedResults={selectedResults} />
           </FlexItem>
         </Flex>
       </CardHeader>
