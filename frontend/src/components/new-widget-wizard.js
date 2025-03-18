@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -40,14 +40,7 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
 
-const NewWidgetWizard = (props) =>{
-  const {
-    dashboard,
-    saveCallback,
-    closeCallback,
-    isOpen
-  } = props;
-
+const NewWidgetWizard = ({ dashboard, saveCallback, closeCallback, isOpen }) => {
   const [widgetTypes, setWidgetTypes] = useState([]);
   const [title, setTitle] = useState('');
   const [params, setParams] = useState({});
@@ -58,7 +51,7 @@ const NewWidgetWizard = (props) =>{
   const [selectedTypeId, setSelectedTypeId] = useState();
   const [stepIdReached, setStepIdReached] = useState(1);
 
-  const clearState = () => {
+  const clearState = useCallback(() => {
     setTitle('');
     setParams({});
     setWeight(0);
@@ -67,48 +60,42 @@ const NewWidgetWizard = (props) =>{
     setSelectedType();
     setSelectedTypeId();
     setStepIdReached(1);
-  };
+  }, []);
 
-  const onSave = () => {
+  const onSave = useCallback(() => {
     let newParams = {};
     Object.entries(params).forEach(paramPair => {
       const param = selectedType.params?.find(el => el.name === paramPair[0]);
       if (param) {
-        // Some values need to be typecast/parsed
         let newValue = paramPair[1];
         if (param.type === 'float') {
           newValue = parseFloat(newValue);
-        }
-        else if (param.type === 'integer') {
+        } else if (param.type === 'integer') {
           newValue = parseInt(newValue);
-        }
-        else if (param.type === 'list') {
+        } else if (param.type === 'list') {
           newValue = newValue.split('\n').map(val => val.trim());
         }
         newParams[paramPair[0]] = newValue;
       }
     });
     const newWidget = {
-      title: title,
+      title,
       params: newParams,
       weight: parseInt(weight),
       type: 'widget',
-      widget: selectedTypeId
+      widget: selectedTypeId,
+      ...(dashboard && { dashboard_id: dashboard.id, project_id: dashboard.project_id })
     };
-    if (dashboard) {
-      newWidget.dashboard_id = dashboard.id;
-      newWidget.project_id = dashboard.project_id;
-    }
     saveCallback(newWidget);
     clearState();
-  };
+  }, [params, selectedType, title, weight, selectedTypeId, dashboard, saveCallback, clearState]);
 
-  const onClose = () => {
+  const onClose = useCallback(() => {
     clearState();
     closeCallback();
-  };
+  }, [clearState, closeCallback]);
 
-  const onSelectType = (_, event) => {
+  const onSelectType = useCallback((_, event) => {
     setSelectedTypeId(event.currentTarget.value);
     let target_type = null;
     let target_params = {};
@@ -118,15 +105,10 @@ const NewWidgetWizard = (props) =>{
         widgetType.params.forEach(param => {
           let paramDefault = '';
           if (param.default) {
-            // if the widget has a default defined, use that
             paramDefault = param.default;
-          }
-          else if (param.type === 'integer' || param.type === 'float') {
-            // NOTE: This is a somewhat arbitrary value, numeric parameters should have sensible
-            //       defaults provided in constants.py
+          } else if (param.type === 'integer' || param.type === 'float') {
             paramDefault = 3;
-          }
-          else if (param.type === 'boolean') {
+          } else if (param.type === 'boolean') {
             paramDefault = false;
           }
           target_params[param.name] = paramDefault;
@@ -135,54 +117,57 @@ const NewWidgetWizard = (props) =>{
     });
     setSelectedType(target_type);
     setParams(target_params);
-  };
+  }, [widgetTypes]);
 
-  const onTitleChange = (value) => {
+  const onTitleChange = useCallback((value) => {
     setTitle(value);
-    setTitleValid((value !== ''));
-  };
+    setTitleValid(value !== '');
+  }, []);
 
-  const onParamChange = (value, event) => {
+  const onParamChange = useCallback((value, event) => {
     let areParamsFilled = true;
     if (event) {
-      setParams({
-        ...params,
+      setParams(prevParams => ({
+        ...prevParams,
         [event.target.name]: value
-      });
+      }));
     }
     selectedType?.params?.forEach(widgetParam => {
-      if ((widgetParam.required) && (!params[widgetParam.name])) {
+      if (widgetParam.required && !params[widgetParam.name]) {
         areParamsFilled = false;
       }
     });
     setParamsFilled(areParamsFilled);
-  };
+  }, [params, selectedType]);
 
-  const handleRequiredParam = (param) => {
-    if (param.required) {
-      if (params[param.name] === '') {
-        return 'error';
-      }
+  const handleRequiredParam = useCallback((param) => {
+    if (param.required && params[param.name] === '') {
+      return 'error';
     }
-    // TODO: Handle parameter types
     return 'default';
-  };
+  }, [params]);
 
-  const onNext = (_event, currentStep) => {
+  const onNext = useCallback((_event, currentStep) => {
     if (currentStep.id === 3) {
       onParamChange('', null);
     }
-    setStepIdReached(Math.max(stepIdReached, currentStep.id));
-  };
+    setStepIdReached(prevStepId => Math.max(prevStepId, currentStep.id));
+  }, [onParamChange]);
 
   useEffect(() => {
-    HttpClient.get([Settings.serverUrl, 'widget', 'types'], {'type': 'widget'})
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {setWidgetTypes(data.types);})
-      .catch((error) => console.error(error));
+    const fetchWidgetTypes = async () => {
+      try {
+        const response = await HttpClient.get([Settings.serverUrl, 'widget', 'types'], { type: 'widget' });
+        const data = await HttpClient.handleResponse(response);
+        setWidgetTypes(data.types);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchWidgetTypes();
   }, []);
 
-  const steps = [
+  const steps = useMemo(() => [
     {
       id: 1,
       name: 'Select type',
@@ -192,7 +177,7 @@ const NewWidgetWizard = (props) =>{
           <Title headingLevel="h1" size="xl">Select a widget type</Title>
           {widgetTypes.map(widgetType => (
             <div key={widgetType.id}>
-              <Radio id={widgetType.id} value={widgetType.id} label={widgetType.title} description={widgetType.description} isChecked={selectedTypeId === widgetType.id} onChange={(event, _) => onSelectType(_, event)}/>
+              <Radio id={widgetType.id} value={widgetType.id} label={widgetType.title} description={widgetType.description} isChecked={selectedTypeId === widgetType.id} onChange={(event, _) => onSelectType(_, event)} />
             </div>
           ))}
         </Form>
@@ -212,7 +197,7 @@ const NewWidgetWizard = (props) =>{
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="error">
-                  Please enter a title for this widget
+                    Please enter a title for this widget
                   </HelperTextItem>
                 </HelperText>
               </FormHelperText>
@@ -286,7 +271,6 @@ const NewWidgetWizard = (props) =>{
                   label={param.name}
                   fieldId={param.name}
                   helperText={`${param.description}. Place items on separate lines.`}>
-                  isRequired={param.required}
                   <TextArea
                     id={param.name}
                     name={param.name}
@@ -355,7 +339,7 @@ const NewWidgetWizard = (props) =>{
         </Stack>
       )
     }
-  ];
+  ], [selectedTypeId, widgetTypes, stepIdReached, titleValid, title, weight, paramsFilled, selectedType, params, onSelectType, onTitleChange, handleRequiredParam, onParamChange]);
 
   return (
     <Modal
@@ -384,7 +368,10 @@ const NewWidgetWizard = (props) =>{
             key={step.id}
             name={step.name}
             id={step.id}
-            footer={{ isNextDisabled: !step.enableNext, nextButtonText: step.nextButtonText? step.nextButtonText : 'Next' }}
+            footer={{
+              isNextDisabled: !step.enableNext,
+              nextButtonText: step.nextButtonText || 'Next'
+            }}
           >
             {step.component}
           </WizardStep>

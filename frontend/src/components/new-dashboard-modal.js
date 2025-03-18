@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -11,43 +11,35 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
-const NewDashboardModal = (props) => {
-  const {
-    project,
-    saveCallback,
-    closeCallback,
-    isOpen
-  } = props;
-
+const NewDashboardModal = ({ project, saveCallback, closeCallback, isOpen }) => {
   const [title, setTitle] = useState('');
-  const [description, setDescription ] = useState('');
-  const [isTitleValid, setIsTitleValid ] = useState(false);
+  const [description, setDescription] = useState('');
+  const [isTitleValid, setIsTitleValid] = useState(false);
 
-  const modalOnSave = () => {
-    console.dir(project);
+  const modalOnSave = useCallback(() => {
     if (title === '') {
       setIsTitleValid(false);
       return;
     }
-    let newDashboard = {
-      title: title,
-      description: description,
+    const newDashboard = {
+      title,
+      description,
       project_id: project?.id
     };
     saveCallback(newDashboard);
-    setTitle();
-    setDescription();
+    setTitle('');
+    setDescription('');
     setIsTitleValid(false);
-  };
+  }, [title, description, project?.id, saveCallback]);
 
-  const modalOnClose = () => {
+  const modalOnClose = useCallback(() => {
     closeCallback();
-    setTitle();
-    setDescription();
+    setTitle('');
+    setDescription('');
     setIsTitleValid(false);
-  };
+  }, [closeCallback]);
 
-  return(
+  return (
     <Modal
       variant={ModalVariant.small}
       title="New Dashboard"
@@ -65,15 +57,17 @@ const NewDashboardModal = (props) => {
           helpertextinvalid="A dashboard title is required"
           helpertextinvalidicon={<ExclamationCircleIcon />}
           validated={isTitleValid.toString()}
-          isRequired>
+          isRequired
+        >
           <TextInput
             type="text"
             id="dashboard-title"
             name="dashboard-title"
             value={title}
             onChange={(_event, value) => setTitle(value)}
-            validated={isTitleValid}
-            isRequired />
+            validated={isTitleValid.toString()}
+            isRequired
+          />
         </FormGroup>
         <FormGroup label="Description" fieldId="dashboard-description">
           <TextInput
@@ -81,7 +75,8 @@ const NewDashboardModal = (props) => {
             id="dashboard-description"
             name="dashboard-description"
             value={description}
-            onChange={(_event, value) => setDescription(value)} />
+            onChange={(_event, value) => setDescription(value)}
+          />
         </FormGroup>
       </Form>
     </Modal>
