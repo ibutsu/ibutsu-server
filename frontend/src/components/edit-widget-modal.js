@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -19,85 +19,102 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { linkifyDecorator } from './decorators';
 
-
-const EditWidgetModal = (props) => {
-  const {
-    onSave,
-    onClose,
-    isOpen,
-    data,
-  } = props;
-
+const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
   const [widgetType, setWidgetType] = useState({});
   const [title, setTitle] = useState('');
   const [weight, setWeight] = useState(10);
-
-  // TODO: move the widget params to their own component to better handle validation?
   const [componentLoaded, setComponentLoaded] = useState(false);
-  const [params, setParams] = useState();
-
-  const [isTitleValid, setIsTitleValid] = useState(title !== '');
+  const [params, setParams] = useState({});
+  const [isTitleValid, setIsTitleValid] = useState(false);
   const [saveButtonDisabled, setSaveButtonDisabled] = useState(false);
 
-  const onSaveModal = () => {
+  const onSaveModal = useCallback(() => {
     const updatedWidget = {
-      title: title,
-      params: params,
-      weight: parseInt(weight) || 0, // 400 if this is null
+      title,
+      params,
+      weight: parseInt(weight) || 0,
       type: 'widget',
       widget: data.widget
     };
     onSave(updatedWidget);
-
     setTitle('');
     setParams({});
     setWeight(0);
     setIsTitleValid(false);
     setWidgetType({});
-  };
+  }, [title, params, weight, data.widget, onSave]);
 
-  const onCloseModal = () => {
+  const onCloseModal = useCallback(() => {
     setTitle('');
     setParams({});
     setWeight(0);
     setIsTitleValid(false);
     setWidgetType({});
     onClose();
-  };
+  }, [onClose]);
 
   useEffect(() => {
     setTitle(data.title);
-    setWeight(data ? data.weight : 0);
+    setWeight(data.weight || 0);
     setParams(data.params || {});
   }, [data]);
 
   useEffect(() => {
-    let validCheck = (title !== '');
-    setIsTitleValid(validCheck);
-    if (validCheck) {setSaveButtonDisabled(false);}
-    else {setSaveButtonDisabled(true);}
+    setIsTitleValid(title !== '');
+    setSaveButtonDisabled(title === '');
   }, [title]);
 
-  const onParamChange = (value, event) => {
-    setParams({
-      ...params,
+  const onParamChange = useCallback((value, event) => {
+    setParams(prevParams => ({
+      ...prevParams,
       [event.target.name]: value
-    });
-  };
+    }));
+  }, []);
 
-  useEffect(() =>{
-    HttpClient.get([Settings.serverUrl, 'widget', 'types'], {'type': 'widget'})
-      .then(response => HttpClient.handleResponse(response))
-      .then(typesData => {
-        typesData.types.forEach(type => {
-          if (type.id == data.widget) {
-            setWidgetType(type);
-            setComponentLoaded(true);
-          }
-        });
+  useEffect(() => {
+    const fetchWidgetTypes = async () => {
+      const response = await HttpClient.get([Settings.serverUrl, 'widget', 'types'], { type: 'widget' });
+      const typesData = await HttpClient.handleResponse(response);
+      typesData.types.forEach(type => {
+        if (type.id === data.widget) {
+          setWidgetType(type);
+          setComponentLoaded(true);
+        }
       });
-  }, [data?.widget]);
+    };
+    fetchWidgetTypes();
+  }, [data.widget]);
 
+  const widgetParams = useMemo(() => (
+    componentLoaded ? widgetType?.params.map(param => (
+      <React.Fragment key={param.name}>
+        <FormGroup
+          label={param.name}
+          fieldId={param.name}
+          isRequired={param.required}
+        >
+          <TextInput
+            value={params[param.name]}
+            type={(param.type === 'integer' || param.type === 'float') ? 'number' : 'text'}
+            id={param.name}
+            aria-describedby={`${param.name}-helper`}
+            name={param.name}
+            onChange={(event, value) => onParamChange(value, event)}
+            isRequired={param.required}
+          />
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem variant="default">
+                <Linkify componentDecorator={linkifyDecorator}>
+                  {param.description}
+                </Linkify>
+              </HelperTextItem>
+            </HelperText>
+          </FormHelperText>
+        </FormGroup>
+      </React.Fragment>
+    )) : ''
+  ), [componentLoaded, widgetType, params, onParamChange]);
 
   return (
     <Modal
@@ -128,49 +145,15 @@ const EditWidgetModal = (props) => {
           <FormHelperText>
             <HelperText>
               <HelperTextItem variant="default">
-              How widgets are ordered on the dashboard
+                How widgets are ordered on the dashboard
               </HelperTextItem>
             </HelperText>
           </FormHelperText>
         </FormGroup>
-        {componentLoaded ? widgetType?.params.map(param => (
-          <React.Fragment key={param.name}>
-            <FormGroup
-              label={param.name}
-              fieldId={param.name}
-              isRequired={param.required}
-              // TODO this validation hook isn't working in main branch right now
-              // TODO some cool things we could do here,
-              // applying the param default if the user empties a required field
-              // validated={
-              //   (param.required && (params[param.name] !== '')).toString()
-              // }
-            >
-              <TextInput
-                value={params[param.name]}
-                type={(param.type === 'integer' || param.type === 'float') ? 'number' : 'text'}
-                id={param.name}
-                aria-describedby={`${param.name}-helper`}
-                name={param.name}
-                onChange={(event, value) => onParamChange(value, event)}
-                isRequired={param.required}
-              />
-              <FormHelperText>
-                <HelperText>
-                  <HelperTextItem variant="default">
-                    <Linkify componentDecorator={linkifyDecorator}>
-                      {param.description}
-                    </Linkify>
-                  </HelperTextItem>
-                </HelperText>
-              </FormHelperText>
-            </FormGroup>
-          </React.Fragment>
-        )): ''}
+        {widgetParams}
       </Form>
     </Modal>
   );
-
 };
 
 EditWidgetModal.propTypes = {
