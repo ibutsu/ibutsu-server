@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import { App } from './app';
 import Admin from './admin';
 import Profile from './profile';
-import { Login } from './login';
+import Login from './login';
 import { SignUp } from './sign-up';
 import { ForgotPassword } from './forgot-password';
 import { ResetPassword } from './reset-password';
@@ -16,7 +16,7 @@ export const Base = () => (
   <IbutsuContextProvider>
     <Router>
       <Routes>
-        <Route path="login" element={<ElementWrapper routeElement={Login} />} />
+        <Route path="login" element={<Login />} />
         <Route path="sign-up" element={<ElementWrapper routeElement={SignUp} />} />
         <Route path="forgot-password" element={<ElementWrapper routeElement={ForgotPassword} />} />
         <Route path="reset-password/:activationCode" element={<ElementWrapper routeElement={ResetPassword} />} />
