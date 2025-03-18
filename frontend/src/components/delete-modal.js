@@ -10,23 +10,17 @@ import {
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
-function DeleteModal (props){
-  const {
-    onDelete,
-    onClose,
-    toDeleteId,
-    toDeletePath,
-    title,
-    isOpen,
-    body,
-  } = props;
-
-  function localOnDelete () {
-    HttpClient.delete([Settings.serverUrl, ...toDeletePath, toDeleteId])
-      .then(response => HttpClient.handleResponse(response))
-      .then(onDelete?.());
+const DeleteModal = ({ onDelete, onClose, toDeleteId, toDeletePath, title, isOpen, body }) => {
+  const localOnDelete = async () => {
+    try {
+      const response = await HttpClient.delete([Settings.serverUrl, ...toDeletePath, toDeleteId]);
+      await HttpClient.handleResponse(response);
+      onDelete?.();
+    } catch (error) {
+      console.error(error);
+    }
     onClose();
-  }
+  };
 
   return (
     <Modal
