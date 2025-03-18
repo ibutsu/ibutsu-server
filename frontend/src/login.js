@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useCallback, useState, useContext } from 'react';
 import {
   Alert,
   ActionGroup,
@@ -63,23 +63,24 @@ function getUser (location) {
 
 const Login = () => {
   const location = useLocation();
-  const context = React.useContext(IbutsuContext);
+  const context = useContext(IbutsuContext);
 
   const {setPrimaryObject} = context;
 
-  const [emailValue, setEmailValue] = React.useState('');
-  const [isValidEmail, setIsValidEmail] = React.useState(true);
-  const [passwordValue, setPasswordValue] = React.useState('');
-  const [isValidPassword, setIsValidPassword] = React.useState(true);
-  const [isPasswordVisible, setIsPasswordVisible] = React.useState(false);
-  const [loginSupport, setLoginSupport] = React.useState({});
-  const [externalLogins, setExternalLogins] = React.useState({});
-  const [isLoggingIn, setIsLoggingIn] = React.useState(false);
-  const [from] = React.useState(getLocationFrom(location));
-  const [alert, setAlert] = React.useState(getAlert(location));
+  const [emailValue, setEmailValue] = useState('');
+  const [isValidEmail, setIsValidEmail] = useState(true);
+  const [passwordValue, setPasswordValue] = useState('');
+  const [isValidPassword, setIsValidPassword] = useState(true);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [loginSupport, setLoginSupport] = useState({});
+  const [externalLogins, setExternalLogins] = useState({});
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(getAlert(location));
 
+  const from = useMemo(() => getLocationFrom(location), [location]);
 
   useEffect(() => {
+    console.log('Login useEffect location');
     const user = getUser(location);
     if (user) {
       AuthService.setUser(user);
@@ -87,8 +88,7 @@ const Login = () => {
     }
   }, [location]);
 
-  const onLoginButtonClick = (event) => {
-    // check if null to allow login via enter key
+  const onLoginButtonClick = useCallback(async (event) => {
     setIsLoggingIn(true);
     if (event) {
       event.preventDefault();
@@ -102,90 +102,89 @@ const Login = () => {
     }
     setIsValidEmail(emailCheck);
     setIsValidPassword(passCheck);
-    setAlert(RaiseAlert);
-    if (isValidEmail && isValidPassword) {
-      AuthService.login(emailValue, passwordValue)
-        .then(isLoggedIn => {
-          if (isLoggedIn) {
-            setPrimaryObject();
-            window.location = from.pathname;
-          }
-          else {
-            setAlert({message: AuthService.loginError.message, status: 'danger'});
-            setIsLoggingIn(false);
-            setIsValidEmail(false);
-            setIsValidPassword(false);
-          }
-        })
-        .catch(error => {
-          setAlert({message: error, status: 'danger'});
+    setAlertMessage(RaiseAlert);
+    if (emailCheck && passCheck) {
+      try {
+        const isLoggedIn = await AuthService.login(emailValue, passwordValue);
+        if (isLoggedIn) {
+          setPrimaryObject();
+          window.location = from?.pathname;
+        } else {
+          setAlertMessage({message: AuthService.loginError.message, status: 'danger'});
           setIsLoggingIn(false);
           setIsValidEmail(false);
           setIsValidPassword(false);
-        });
-    }
-    else {
+        }
+      } catch (error) {
+        setAlertMessage({message: error, status: 'danger'});
+        setIsLoggingIn(false);
+        setIsValidEmail(false);
+        setIsValidPassword(false);
+      }
+    } else {
       setIsLoggingIn(false);
     }
-  };
+  }, [emailValue, passwordValue, from, setPrimaryObject]);
 
-  const onEnterKeyPress = (target) => {
-    // allow login by pressing the enter key
+  const onEnterKeyPress = useCallback((target) => {
     if (target.charCode === 13) {
       onLoginButtonClick();
     }
-  };
+  }, [onLoginButtonClick]);
 
-  const onOAuth2Success = (response) => {
-    // Make sure there are no active projects or dashboards selected
+  const onOAuth2Success = useCallback((response) => {
     setPrimaryObject();
     AuthService.setUser(response);
-    window.location = from.pathname;
-  };
+    window.location = from?.pathname;
+  }, [from, setPrimaryObject]);
 
-  const onGoogleLogin = (response) => {
+  const onGoogleLogin = useCallback(async (response) => {
     const { redirect_uri } = externalLogins.google;
-    HttpClient.get([redirect_uri], {'code': response['tokenId']})
-      .then(response => response.json())
-      .then(user => {
-        // Make sure there are no active projects or dashboards selected
-        setPrimaryObject();
-        AuthService.setUser(user);
-        window.location = from.pathname;
-      });
-  };
+    try {
+      const res = await HttpClient.get([redirect_uri], {'code': response['tokenId']});
+      const user = await res.json();
+      setPrimaryObject();
+      AuthService.setUser(user);
+      window.location = from?.pathname;
+    } catch (error) {
+      console.error(error);
+    }
+  }, [externalLogins.google, from, setPrimaryObject]);
 
-  const onKeycloakLogin = () => {
+  const onKeycloakLogin = useCallback(() => {
     const { server_url, realm, client_id } = externalLogins.keycloak;
-
     setIsLoggingIn(true);
-    // Make sure there are no active projects or dashboards selected
     setPrimaryObject();
     KeycloakService.login(server_url, realm, client_id);
-  };
+  }, [externalLogins.keycloak, setPrimaryObject]);
 
-  const onFacebookLogin = () => {
+  const onFacebookLogin = useCallback(() => {
     alert('Facebook login not implemented yet');
-  };
+  }, []);
 
   useEffect(() => {
-    HttpClient.get([Settings.serverUrl, 'login', 'support'])
-      .then(response => response.json())
-      .then(data => {
+    console.log('Login useEffect fetch support');
+
+    const fetchLoginSupport = async () => {
+      try {
+        const response = await HttpClient.get([Settings.serverUrl, 'login', 'support']);
+        const data = await response.json();
         setLoginSupport(data);
         for (const [key, value] of Object.entries(data)) {
           if (key !== 'user' && value) {
-            HttpClient.get([Settings.serverUrl, 'login', 'config', key])
-              .then(response => response.json())
-              .then(data => {
-                setExternalLogins((prevLogins) => ({...prevLogins, [key]: data}));
-              });
+            const res = await HttpClient.get([Settings.serverUrl, 'login', 'config', key]);
+            const configData = await res.json();
+            setExternalLogins((prevLogins) => ({...prevLogins, [key]: configData}));
           }
         }
-      });
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchLoginSupport();
   }, []);
 
-  const getKeycloakIcon = () => {
+  const getKeycloakIcon = useCallback(() => {
     const hasIcon = Object.prototype.hasOwnProperty.call(externalLogins.keycloak, 'icon');
     if (hasIcon && externalLogins.keycloak.icon.startsWith('http')) {
       return <img src={externalLogins.keycloak.icon} alt="Keycloak Icon"/>;
@@ -196,14 +195,14 @@ const Login = () => {
     else {
       return <KeyIcon size="lg" />;
     }
-  };
+  }, [externalLogins.keycloak]);
 
-  const getKeycloakName = () => {
+  const getKeycloakName = useCallback(() => {
     if (!Object.prototype.hasOwnProperty.call(externalLogins.keycloak, 'display_name')) {
       return 'Keycloak';
     }
     return externalLogins.keycloak.display_name;
-  };
+  }, [externalLogins.keycloak]);
 
   const socialMediaLoginContent = (
     <React.Fragment>
@@ -298,6 +297,7 @@ const Login = () => {
     xs2x: '/images/pfbg_576@2x.jpg'
   };
 
+  console.log('Login render');
   return (
     <LoginPage
       footerListVariants="inline"
@@ -314,10 +314,10 @@ const Login = () => {
       {loginSupport.user &&
       <Form>
         <FormAlert>
-          {alert && alert.message &&
+          {alertMessage && alertMessage.message &&
           <Alert
-            variant={alert.status || 'info'}
-            title={alert.message}
+            variant={alertMessage.status || 'info'}
+            title={alertMessage.message}
             aria-live="polite"
             isInline
           />
@@ -372,7 +372,7 @@ const Login = () => {
               onChange={(_, value) => setPasswordValue(value)}
               onKeyDown={onEnterKeyPress} />
             }
-            <InputGroupItem><Button variant="control" aria-label="Show password" onClick={setIsPasswordVisible(!isPasswordVisible)}>
+            <InputGroupItem><Button variant="control" aria-label="Show password" onClick={() => setIsPasswordVisible(!isPasswordVisible)}>
               {!isPasswordVisible && <EyeIcon/>}
               {isPasswordVisible && <EyeSlashIcon/>}
             </Button></InputGroupItem>
