@@ -1,5 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { useEffect, useMemo, useCallback, useState, useContext } from 'react';
 import {
   Alert,
   ActionGroup,
@@ -15,7 +14,7 @@ import {
   TextInput
 } from '@patternfly/react-core';
 import { EyeIcon, EyeSlashIcon, GoogleIcon, FacebookIcon, GithubIcon, GitlabIcon, RedhatIcon, KeyIcon } from '@patternfly/react-icons';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import OAuth2Login from 'react-simple-oauth2-login';
 import FacebookLogin from '@greatsumini/react-facebook-login';
@@ -26,15 +25,15 @@ import { KeycloakService } from './services/keycloak';
 import { Settings } from './settings';
 import { IbutsuContext } from './services/context';
 
-function getLocationFrom (location) {
+const getLocationFrom = (location) => {
   let { from } = location.state || {from: {pathname: '/'}};
   if (from.pathname === '/login') {
     from.pathname = '/';
   }
   return from;
-}
+};
 
-function getAlert (location) {
+const getAlert = (location) => {
   const alert = {status: 'info'};
   const urlParams = new URLSearchParams(location.search);
   if (!urlParams.get('msg')) {
@@ -45,7 +44,7 @@ function getAlert (location) {
     alert['status'] = urlParams.get('st');
   }
   return alert;
-}
+};
 
 function getUser (location) {
   const userProperties = ['name', 'email', 'token'];
@@ -62,359 +61,340 @@ function getUser (location) {
   return user;
 }
 
-export class Login extends React.Component {
-  static contextType = IbutsuContext;
-  static propTypes = {
-    location: PropTypes.object
-  };
+const Login = () => {
+  const location = useLocation();
+  const context = useContext(IbutsuContext);
 
-  constructor (props) {
-    super(props);
-    this.state = {
-      emailValue: '',
-      isValidEmail: true,
-      passwordValue: '',
-      isValidPassword: true,
-      isPasswordVisible: false,
-      loginSupport: {},
-      externalLogins: {},
-      isLoggingIn: false,
-      from: getLocationFrom(props.location),
-      alert: getAlert(props.location)
-    };
-    const user = getUser(props.location);
+  const {setPrimaryObject} = context;
+
+  const [emailValue, setEmailValue] = useState('');
+  const [isValidEmail, setIsValidEmail] = useState(true);
+  const [passwordValue, setPasswordValue] = useState('');
+  const [isValidPassword, setIsValidPassword] = useState(true);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [loginSupport, setLoginSupport] = useState({});
+  const [externalLogins, setExternalLogins] = useState({});
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(getAlert(location));
+
+  const from = useMemo(() => getLocationFrom(location), [location]);
+
+  useEffect(() => {
+    console.log('Login useEffect location');
+    const user = getUser(location);
     if (user) {
       AuthService.setUser(user);
       window.location = '/';
     }
-  }
+  }, [location]);
 
-  onEmailChange = emailValue => {
-    this.setState({ emailValue });
-  };
-
-  onPasswordChange = passwordValue => {
-    this.setState({ passwordValue });
-  };
-
-  onPasswordVisibleClick = () => {
-    this.setState({isPasswordVisible: !this.state.isPasswordVisible});
-  };
-
-  onLoginButtonClick = event => {
-    // check if null to allow login via enter key
-    this.setState({isLoggingIn: true});
+  const onLoginButtonClick = useCallback(async (event) => {
+    setIsLoggingIn(true);
     if (event) {
       event.preventDefault();
     }
-    var isValidEmail = !!this.state.emailValue,
-      isValidPassword = !!this.state.passwordValue,
-      alert = null;
-    if (!isValidEmail || !isValidPassword) {
-      alert = {message: 'E-mail and/or password fields are blank', status: 'danger'};
-    }
-    this.setState({isValidEmail, isValidPassword, alert});
-    const { setPrimaryObject } = this.context;
-    if (isValidEmail && isValidPassword) {
-      AuthService.login(this.state.emailValue, this.state.passwordValue)
-        .then(isLoggedIn => {
-          if (isLoggedIn) {
-            setPrimaryObject();
-            window.location = this.state.from.pathname;
-          }
-          else {
-            this.setState({
-              alert: {message: AuthService.loginError.message, status: 'danger'},
-              isValidEmail: false,
-              isValidPassword: false,
-              isLoggingIn: false
-            });
-          }
-        })
-        .catch(error => {
-          this.setState({
-            alert: {message: error, status: 'danger'},
-            isValidEmail: false,
-            isValidPassword: false,
-            isLoggingIn: false
-          });
-        });
-    }
-    else {
-      this.setState({isLoggingIn: false});
-    }
-  };
+    let RaiseAlert = null,
+      emailCheck = !!emailValue,
+      passCheck = !!passwordValue;
 
-  onEnterKeyPress = (target) => {
-    // allow login by pressing the enter key
+    if (!emailCheck || !passCheck) {
+      RaiseAlert = {message: 'E-mail and/or password fields are blank', status: 'danger'};
+    }
+    setIsValidEmail(emailCheck);
+    setIsValidPassword(passCheck);
+    setAlertMessage(RaiseAlert);
+    if (emailCheck && passCheck) {
+      try {
+        const isLoggedIn = await AuthService.login(emailValue, passwordValue);
+        if (isLoggedIn) {
+          setPrimaryObject();
+          window.location = from?.pathname;
+        } else {
+          setAlertMessage({message: AuthService.loginError.message, status: 'danger'});
+          setIsLoggingIn(false);
+          setIsValidEmail(false);
+          setIsValidPassword(false);
+        }
+      } catch (error) {
+        setAlertMessage({message: error, status: 'danger'});
+        setIsLoggingIn(false);
+        setIsValidEmail(false);
+        setIsValidPassword(false);
+      }
+    } else {
+      setIsLoggingIn(false);
+    }
+  }, [emailValue, passwordValue, from, setPrimaryObject]);
+
+  const onEnterKeyPress = useCallback((target) => {
     if (target.charCode === 13) {
-      this.onLoginButtonClick();
+      onLoginButtonClick();
     }
-  };
+  }, [onLoginButtonClick]);
 
-  onOAuth2Success = (response) => {
-    // Make sure there are no active projects or dashboards selected
-    const { setPrimaryObject } = this.context;
+  const onOAuth2Success = useCallback((response) => {
     setPrimaryObject();
     AuthService.setUser(response);
-    window.location = this.state.from.pathname;
-  };
+    window.location = from?.pathname;
+  }, [from, setPrimaryObject]);
 
-  onGoogleLogin = (response) => {
-    const { redirect_uri } = this.state.externalLogins.google;
-    const { setPrimaryObject } = this.context;
-    HttpClient.get([redirect_uri], {'code': response['tokenId']})
-      .then(response => response.json())
-      .then(user => {
-        // Make sure there are no active projects or dashboards selected
-        setPrimaryObject();
-        AuthService.setUser(user);
-        window.location = this.state.from.pathname;
-      });
-  };
-
-  onKeycloakLogin = () => {
-    const { server_url, realm, client_id } = this.state.externalLogins.keycloak;
-    const { setPrimaryObject } = this.context;
-
-    this.setState({isLoggingIn: true}, () => {
-      // Make sure there are no active projects or dashboards selected
+  const onGoogleLogin = useCallback(async (response) => {
+    const { redirect_uri } = externalLogins.google;
+    try {
+      const res = await HttpClient.get([redirect_uri], {'code': response['tokenId']});
+      const user = await res.json();
       setPrimaryObject();
-      KeycloakService.login(server_url, realm, client_id);
-    });
-  };
+      AuthService.setUser(user);
+      window.location = from?.pathname;
+    } catch (error) {
+      console.error(error);
+    }
+  }, [externalLogins.google, from, setPrimaryObject]);
 
-  onFacebookLogin = () => {};
+  const onKeycloakLogin = useCallback(() => {
+    const { server_url, realm, client_id } = externalLogins.keycloak;
+    setIsLoggingIn(true);
+    setPrimaryObject();
+    KeycloakService.login(server_url, realm, client_id);
+  }, [externalLogins.keycloak, setPrimaryObject]);
 
-  componentDidMount () {
-    HttpClient.get([Settings.serverUrl, 'login', 'support'])
-      .then(response => response.json())
-      .then(data => {
-        this.setState({loginSupport: data});
+  const onFacebookLogin = useCallback(() => {
+    alert('Facebook login not implemented yet');
+  }, []);
+
+  useEffect(() => {
+    console.log('Login useEffect fetch support');
+
+    const fetchLoginSupport = async () => {
+      try {
+        const response = await HttpClient.get([Settings.serverUrl, 'login', 'support']);
+        const data = await response.json();
+        setLoginSupport(data);
         for (const [key, value] of Object.entries(data)) {
           if (key !== 'user' && value) {
-            HttpClient.get([Settings.serverUrl, 'login', 'config', key])
-              .then(response => response.json())
-              .then(data => {
-                this.setState(function (previousState) {
-                  let externalLogins = previousState.externalLogins;
-                  externalLogins[key] = data;
-                  return {externalLogins: externalLogins};
-                });
-              });
+            const res = await HttpClient.get([Settings.serverUrl, 'login', 'config', key]);
+            const configData = await res.json();
+            setExternalLogins((prevLogins) => ({...prevLogins, [key]: configData}));
           }
         }
-      });
-  }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchLoginSupport();
+  }, []);
 
-  getKeycloakIcon () {
-    const hasIcon = Object.prototype.hasOwnProperty.call(this.state.externalLogins.keycloak, 'icon');
-    if (hasIcon && this.state.externalLogins.keycloak.icon.startsWith('http')) {
-      return <img src={this.state.externalLogins.keycloak.icon} alt="Keycloak Icon"/>;
+  const getKeycloakIcon = useCallback(() => {
+    const hasIcon = Object.prototype.hasOwnProperty.call(externalLogins.keycloak, 'icon');
+    if (hasIcon && externalLogins.keycloak.icon.startsWith('http')) {
+      return <img src={externalLogins.keycloak.icon} alt="Keycloak Icon"/>;
     }
-    else if (hasIcon && this.state.externalLogins.keycloak.icon.toLowerCase() === 'redhat') {
+    else if (hasIcon && externalLogins.keycloak.icon.toLowerCase() === 'redhat') {
       return <RedhatIcon size="lg" />;
     }
     else {
       return <KeyIcon size="lg" />;
     }
-  }
+  }, [externalLogins.keycloak]);
 
-  getKeycloakName () {
-    if (!Object.prototype.hasOwnProperty.call(this.state.externalLogins.keycloak, 'display_name')) {
+  const getKeycloakName = useCallback(() => {
+    if (!Object.prototype.hasOwnProperty.call(externalLogins.keycloak, 'display_name')) {
       return 'Keycloak';
     }
-    return this.state.externalLogins.keycloak.display_name;
-  }
+    return externalLogins.keycloak.display_name;
+  }, [externalLogins.keycloak]);
 
-  render () {
-    const socialMediaLoginContent = (
-      <React.Fragment>
-        {this.state.externalLogins.keycloak &&
-        <LoginMainFooterLinksItem onClick={this.onKeycloakLogin} href="#" linkComponentProps={{ 'aria-label': `Login with ${this.getKeycloakName()}`, 'title': `Login with ${this.getKeycloakName()}` }}>
-          {this.getKeycloakIcon()}
-        </LoginMainFooterLinksItem>
-        }
-        {this.state.externalLogins.google &&
-          <GoogleLogin
-            clientId={this.state.externalLogins.google.client_id}
-            scope={this.state.externalLogins.google.scope}
-            redirectUri={this.state.externalLogins.google.redirect_uri}
-            onSuccess={this.onGoogleLogin}
-            onFailure={(response) => console.error(response)}
-            render={renderProps => (
-              <LoginMainFooterLinksItem onClick={renderProps.onClick} href="#" linkComponentProps={{ 'aria-label': 'Login with Google', 'title': 'Login with Google' }}>
-                <GoogleIcon size="lg" />
-              </LoginMainFooterLinksItem>
-            )}
+  const socialMediaLoginContent = (
+    <React.Fragment>
+      {externalLogins.keycloak &&
+    <LoginMainFooterLinksItem onClick={onKeycloakLogin} href="#" linkComponentProps={{ 'aria-label': `Login with ${getKeycloakName()}`, 'title': `Login with ${getKeycloakName()}` }}>
+      {getKeycloakIcon()}
+    </LoginMainFooterLinksItem>
+      }
+      {externalLogins.google &&
+      <GoogleLogin
+        clientId={externalLogins.google.client_id}
+        scope={externalLogins.google.scope}
+        redirectUri={externalLogins.google.redirect_uri}
+        onSuccess={onGoogleLogin}
+        onFailure={(response) => console.error(response)}
+        render={renderProps => (
+          <LoginMainFooterLinksItem onClick={renderProps.onClick} href="#" linkComponentProps={{ 'aria-label': 'Login with Google', 'title': 'Login with Google' }}>
+            <GoogleIcon size="lg" />
+          </LoginMainFooterLinksItem>
+        )}
+      />
+      }
+      {externalLogins.github &&
+      <OAuth2Login
+        isCrossOrigin={true}
+        authorizationUrl={externalLogins.github.authorization_url}
+        responseType="code"
+        clientId={externalLogins.github.client_id}
+        redirectUri={externalLogins.github.redirect_uri}
+        scope={externalLogins.github.scope}
+        onSuccess={onOAuth2Success}
+        onFailure={(response) => console.error(response)}
+        render={renderProps => (
+          <LoginMainFooterLinksItem onClick={renderProps.onClick} href="#" linkComponentProps={{ 'aria-label': 'Login with GitHub', 'title': 'Login with GitHub' }}>
+            <GithubIcon size="lg" />
+          </LoginMainFooterLinksItem>
+        )}
+      />
+      }
+      {externalLogins.facebook &&
+      <FacebookLogin
+        appId={externalLogins.facebook.app_id}
+        onSuccess={onFacebookLogin}
+        onFail={(response) => console.error(response)}
+        // useRedirect={true}
+        dialogParams={{redirect_uri: externalLogins.facebook.redirect_uri, response_type: 'code'}}
+        render={(renderProps) => (
+          <LoginMainFooterLinksItem onClick={renderProps.onClick} href="#" linkComponentProps={{ 'aria-label': 'Login with Facebook' }}>
+            <FacebookIcon size="lg" />
+          </LoginMainFooterLinksItem>
+        )}
+      />
+      }
+      {externalLogins.gitlab &&
+        <OAuth2Login
+          isCrossOrigin={true}
+          authorizationUrl={externalLogins.gitlab.authorization_url}
+          responseType="code"
+          clientId={externalLogins.gitlab.client_id}
+          redirectUri={externalLogins.gitlab.redirect_uri}
+          scope={externalLogins.gitlab.scope}
+          onSuccess={onOAuth2Success}
+          onFailure={(response) => console.error(response)}
+          render={renderProps => (
+            <LoginMainFooterLinksItem onClick={renderProps.onClick} href="#" linkComponentProps={{ 'aria-label': 'Login with GitLab', 'title': 'Login with GitLab' }}>
+              <GitlabIcon size="lg" />
+            </LoginMainFooterLinksItem>
+          )}
+        />
+      }
+    </React.Fragment>
+  );
+
+  const signUpForAccountMessage = (
+    <LoginMainFooterBandItem>
+      Need an account? <NavLink to="/sign-up">Sign up.</NavLink>
+    </LoginMainFooterBandItem>
+  );
+  const forgotCredentials = (
+    <LoginMainFooterBandItem>
+      <NavLink to="/forgot-password">Forgot username or password?</NavLink>
+    </LoginMainFooterBandItem>
+  );
+  const loginWithUserDescription = 'Please use your e-mail address and password, or login via one of the icons below the Log In button.';
+  const loginWithoutUserDescription = 'Log in via one of the icons below.';
+
+  const backgroundImages = {
+    lg: '/images/pfbg_1200.jpg',
+    sm: '/images/pfbg_768.jpg',
+    sm2x: '/images/pfbg_768@2x.jpg',
+    xs: '/images/pfbg_576.jpg',
+    xs2x: '/images/pfbg_576@2x.jpg'
+  };
+
+  console.log('Login render');
+  return (
+    <LoginPage
+      footerListVariants="inline"
+      brandImgSrc="/images/ibutsu-wordart-164.png"
+      brandImgAlt="Ibutsu"
+      backgroundImgSrc={backgroundImages}
+      textContent="Ibutsu is an open source test result aggregation tool. Collect and display your test results, view artifacts, and monitor tests."
+      loginTitle="Log in to your account"
+      loginSubtitle={loginSupport.user ? loginWithUserDescription : loginWithoutUserDescription}
+      socialMediaLoginContent={socialMediaLoginContent}
+      signUpForAccountMessage={loginSupport.user ? signUpForAccountMessage : ''}
+      forgotCredentials={loginSupport.user ? forgotCredentials : ''}
+    >
+      {loginSupport.user &&
+      <Form>
+        <FormAlert>
+          {alertMessage && alertMessage.message &&
+          <Alert
+            variant={alertMessage.status || 'info'}
+            title={alertMessage.message}
+            aria-live="polite"
+            isInline
           />
-        }
-        {this.state.externalLogins.github &&
-          <OAuth2Login
-            isCrossOrigin={true}
-            authorizationUrl={this.state.externalLogins.github.authorization_url}
-            responseType="code"
-            clientId={this.state.externalLogins.github.client_id}
-            redirectUri={this.state.externalLogins.github.redirect_uri}
-            scope={this.state.externalLogins.github.scope}
-            onSuccess={this.onOAuth2Success}
-            onFailure={(response) => console.error(response)}
-            render={renderProps => (
-              <LoginMainFooterLinksItem onClick={renderProps.onClick} href="#" linkComponentProps={{ 'aria-label': 'Login with GitHub', 'title': 'Login with GitHub' }}>
-                <GithubIcon size="lg" />
-              </LoginMainFooterLinksItem>
-            )}
-          />
-        }
-        {this.state.externalLogins.facebook &&
-          <FacebookLogin
-            appId={this.state.externalLogins.facebook.app_id}
-            onSuccess={this.onFacebookLogin}
-            onFail={(response) => console.error(response)}
-            // useRedirect={true}
-            dialogParams={{redirect_uri: this.state.externalLogins.facebook.redirect_uri, response_type: 'code'}}
-            render={(renderProps) => (
-              <LoginMainFooterLinksItem onClick={renderProps.onClick} href="#" linkComponentProps={{ 'aria-label': 'Login with Facebook' }}>
-                <FacebookIcon size="lg" />
-              </LoginMainFooterLinksItem>
-            )}
-          />
-        }
-        {this.state.externalLogins.gitlab &&
-            <OAuth2Login
-              isCrossOrigin={true}
-              authorizationUrl={this.state.externalLogins.gitlab.authorization_url}
-              responseType="code"
-              clientId={this.state.externalLogins.gitlab.client_id}
-              redirectUri={this.state.externalLogins.gitlab.redirect_uri}
-              scope={this.state.externalLogins.gitlab.scope}
-              onSuccess={this.onOAuth2Success}
-              onFailure={(response) => console.error(response)}
-              render={renderProps => (
-                <LoginMainFooterLinksItem onClick={renderProps.onClick} href="#" linkComponentProps={{ 'aria-label': 'Login with GitLab', 'title': 'Login with GitLab' }}>
-                  <GitlabIcon size="lg" />
-                </LoginMainFooterLinksItem>
-              )}
-            />
-        }
-      </React.Fragment>
-    );
-
-    const signUpForAccountMessage = (
-      <LoginMainFooterBandItem>
-        Need an account? <NavLink to="/sign-up">Sign up.</NavLink>
-      </LoginMainFooterBandItem>
-    );
-    const forgotCredentials = (
-      <LoginMainFooterBandItem>
-        <NavLink to="/forgot-password">Forgot username or password?</NavLink>
-      </LoginMainFooterBandItem>
-    );
-    const loginWithUserDescription = 'Please use your e-mail address and password, or login via one of the icons below the Log In button.';
-    const loginWithoutUserDescription = 'Log in via one of the icons below.';
-
-    const backgroundImages = {
-      lg: '/images/pfbg_1200.jpg',
-      sm: '/images/pfbg_768.jpg',
-      sm2x: '/images/pfbg_768@2x.jpg',
-      xs: '/images/pfbg_576.jpg',
-      xs2x: '/images/pfbg_576@2x.jpg'
-    };
-
-    return (
-      <LoginPage
-        footerListVariants="inline"
-        brandImgSrc="/images/ibutsu-wordart-164.png"
-        brandImgAlt="Ibutsu"
-        backgroundImgSrc={backgroundImages}
-        textContent="Ibutsu is an open source test result aggregation tool. Collect and display your test results, view artifacts, and monitor tests."
-        loginTitle="Log in to your account"
-        loginSubtitle={this.state.loginSupport.user ? loginWithUserDescription : loginWithoutUserDescription}
-        socialMediaLoginContent={socialMediaLoginContent}
-        signUpForAccountMessage={this.state.loginSupport.user ? signUpForAccountMessage : ''}
-        forgotCredentials={this.state.loginSupport.user ? forgotCredentials : ''}
-      >
-        {this.state.loginSupport.user &&
-        <Form>
-          <FormAlert>
-            {this.state.alert && this.state.alert.message &&
-            <Alert
-              variant={this.state.alert.status || 'info'}
-              title={this.state.alert.message}
-              aria-live="polite"
-              isInline
-            />
-            }
-          </FormAlert>
-          <FormGroup
-            label="Email address"
+          }
+        </FormAlert>
+        <FormGroup
+          label="Email address"
+          isRequired
+          fieldId="email"
+          validated={isValidEmail ? 'default' : 'error'}
+        >
+          <TextInput
             isRequired
-            fieldId="email"
-            validated={this.state.isValidEmail ? 'default' : 'error'}
-          >
+            type="email"
+            id="email"
+            name="email"
+            validated={isValidEmail ? 'default' : 'error'}
+            aria-describedby="email-helper"
+            value={emailValue}
+            onChange={(_, value) => setEmailValue(value)}
+            onKeyDown={onEnterKeyPress}
+          />
+        </FormGroup>
+        <FormGroup
+          label="Password"
+          isRequired
+          fieldId="password"
+          validated={isValidPassword ? 'default' : 'error'}
+        >
+          <InputGroup>
+            {!isPasswordVisible &&
             <TextInput
               isRequired
-              type="email"
-              id="email"
-              name="email"
-              validated={this.state.isValidEmail ? 'default' : 'error'}
-              aria-describedby="email-helper"
-              value={this.state.emailValue}
-              onChange={(_event, emailValue) => this.onEmailChange(emailValue)}
-              onKeyPress={this.onEnterKeyPress}
-            />
-          </FormGroup>
-          <FormGroup
-            label="Password"
-            isRequired
-            fieldId="password"
-            validated={this.state.isValidPassword ? 'default' : 'error'}
+              type="password"
+              id="password"
+              name="password"
+              validated={isValidPassword ? 'default' : 'error'}
+              aria-describedby="password-helper"
+              value={passwordValue}
+              onChange={(_, value) => setPasswordValue(value)}
+              onKeyDown={onEnterKeyPress} />
+            }
+            {isPasswordVisible &&
+            <TextInput
+              isRequired
+              type="text"
+              id="password"
+              name="password"
+              validated={isValidPassword ? 'default' : 'error'}
+              aria-describedby="password-helper"
+              value={passwordValue}
+              onChange={(_, value) => setPasswordValue(value)}
+              onKeyDown={onEnterKeyPress} />
+            }
+            <InputGroupItem><Button variant="control" aria-label="Show password" onClick={() => setIsPasswordVisible(!isPasswordVisible)}>
+              {!isPasswordVisible && <EyeIcon/>}
+              {isPasswordVisible && <EyeSlashIcon/>}
+            </Button></InputGroupItem>
+          </InputGroup>
+        </FormGroup>
+        <ActionGroup>
+          <Button
+            variant="primary"
+            isBlock
+            isLoading={isLoggingIn}
+            isDisabled={isLoggingIn}
+            onClick={onLoginButtonClick}
           >
-            <InputGroup>
-              {!this.state.isPasswordVisible &&
-              <TextInput
-                isRequired
-                type="password"
-                id="password"
-                name="password"
-                validated={this.state.isValidPassword ? 'default' : 'error'}
-                aria-describedby="password-helper"
-                value={this.state.passwordValue}
-                onChange={(_event, passwordValue) => this.onPasswordChange(passwordValue)}
-                onKeyPress={this.onEnterKeyPress} />
-              }
-              {this.state.isPasswordVisible &&
-              <TextInput
-                isRequired
-                type="text"
-                id="password"
-                name="password"
-                validated={this.state.isValidPassword ? 'default' : 'error'}
-                aria-describedby="password-helper"
-                value={this.state.passwordValue}
-                onChange={(_event, passwordValue) => this.onPasswordChange(passwordValue)}
-                onKeyPress={this.onEnterKeyPress} />
-              }
-              <InputGroupItem><Button variant="control" aria-label="Show password" onClick={this.onPasswordVisibleClick}>
-                {!this.state.isPasswordVisible && <EyeIcon/>}
-                {this.state.isPasswordVisible && <EyeSlashIcon/>}
-              </Button></InputGroupItem>
-            </InputGroup>
-          </FormGroup>
-          <ActionGroup>
-            <Button
-              variant="primary"
-              isBlock
-              isLoading={this.state.isLoggingIn}
-              isDisabled={this.state.isLoggingIn}
-              onClick={this.onLoginButtonClick}
-            >
-              {this.state.isLoggingIn ? 'Logging in...' : 'Log In'}
-            </Button>
-          </ActionGroup>
-        </Form>
-        }
-      </LoginPage>
-    );
-  }
-}
+            {isLoggingIn ? 'Logging in...' : 'Log In'}
+          </Button>
+        </ActionGroup>
+      </Form>
+      }
+    </LoginPage>
+  );
+};
+
+Login.propTypes = {};
+
+export default Login;
