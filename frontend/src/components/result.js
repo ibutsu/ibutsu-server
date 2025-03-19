@@ -441,7 +441,7 @@ const ResultView = ({
                 isDarkTheme={darkTheme}
                 language={Language.json}
                 code={testJson}
-                height="sizeToFit"
+                height="1200px" // use sizeToFit when tab navigation is fixed
               />
             </CardBody>
           </Card>
