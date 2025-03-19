@@ -56,7 +56,6 @@ class PasswordErrorBoundary extends React.Component {
 
 export class SignUp extends React.Component {
   static propTypes = {
-    location: PropTypes.object
   };
 
   constructor (props) {
