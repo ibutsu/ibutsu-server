@@ -8,7 +8,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Dashboard from './dashboard';
 import ReportBuilder from './report-builder';
 import RunList from './run-list';
-import { Run } from './run';
+import Run from './run';
 import { ResultList } from './result-list';
 import { Result } from './result';
 import IbutsuPage from './components/ibutsu-page';
@@ -59,13 +59,11 @@ export class App extends React.Component {
 
           <Route
             path="runs"
-            element={
-              <ElementWrapper routeElement={RunList} eventEmitter={this.eventEmitter} />
-            }
+            element={<RunList />}
           />
           <Route
             path="runs/:run_id"
-            element={<ElementWrapper routeElement={Run} />}
+            element={<Run />}
           />
 
           <Route

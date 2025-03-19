@@ -8,7 +8,7 @@ import globals from 'globals';
 import path from 'node:path';
 import js from '@eslint/js';
 import { FlatCompat } from '@eslint/eslintrc';
-import hooksPlugin from 'eslint-plugin-react-hooks';
+import reactHooks from 'eslint-plugin-react-hooks';
 import pkg from '@babel/eslint-parser';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,7 +37,7 @@ export default [
       prettier,
       react,
       'unused-imports': unusedImports,
-      'react-hooks': hooksPlugin,
+      'react-hooks': reactHooks,
     },
     languageOptions: {
       globals: {
