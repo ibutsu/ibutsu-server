@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext, useCallback, useMemo } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   Button,
@@ -460,10 +459,6 @@ const RunList = () => {
   );
 };
 
-RunList.propTypes = {
-  location: PropTypes.object,
-  navigate: PropTypes.func,
-  params: PropTypes.object,
-};
+RunList.propTypes = {};
 
 export default RunList;
