@@ -260,8 +260,7 @@ const AccessibilityAnalysisView = (props) => {
   }, [page, pageSize, id]);
 
   useEffect(() => {
-    let passes = run.metadata.accessibility_data.passes;
-    let violations = run.metadata.accessibility_data.violations;
+    let {passes, violations} = run.metadata.accessibility_data;
     let total = passes + violations;
     setPieData([
       {
