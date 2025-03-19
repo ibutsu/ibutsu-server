@@ -9,7 +9,6 @@ import { SignUp } from './sign-up';
 import ForgotPassword from './forgot-password';
 import ResetPassword from './reset-password';
 import { AuthService } from './services/auth';
-import ElementWrapper from './components/elementWrapper';
 import { IbutsuContextProvider } from './services/context';
 
 export const Base = () => (
@@ -17,7 +16,7 @@ export const Base = () => (
     <Router>
       <Routes>
         <Route path="login" element={<Login />} />
-        <Route path="sign-up" element={<ElementWrapper routeElement={SignUp} />} />
+        <Route path="sign-up" element={<SignUp />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="reset-password/:activationCode" element={<ResetPassword />} />
         <Route
