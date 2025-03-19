@@ -9,7 +9,7 @@ import Dashboard from './dashboard';
 import ReportBuilder from './report-builder';
 import RunList from './run-list';
 import Run from './run';
-import { ResultList } from './result-list';
+import ResultList from './result-list';
 import { Result } from './result';
 import IbutsuPage from './components/ibutsu-page';
 import View from './components/view';
@@ -68,7 +68,7 @@ export class App extends React.Component {
 
           <Route
             path="results"
-            element={<ElementWrapper routeElement={ResultList} eventEmitter={this.eventEmitter} />}
+            element={<ResultList />}
           />
           <Route
             path="results/:result_id"

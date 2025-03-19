@@ -207,16 +207,16 @@ const Run = () => {
   };
 
   useEffect(() => {
-    const getResultsForTree = (page) => {
+    const getResultsForTree = (treePage) => {
       HttpClient.get([Settings.serverUrl, 'result'], {
         filter: 'run_id=' + run_id,
         pageSize: 500,
-        page: page
+        page: treePage
       })
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
           let fetchedResults = [];
-          if (page !== 1) {
+          if (treePage !== 1) {
             fetchedResults = [...treeData];
           }
           // extend the treedata with the current page
@@ -224,7 +224,7 @@ const Run = () => {
           setTreeData(fetchedResults);
           if (data.results.length === 500) {
             // recursively fetch the next page
-            getResultsForTree(page + 1);
+            getResultsForTree(treePage + 1);
           }
           else {
             setResultsTree(buildTree(fetchedResults));
@@ -586,7 +586,7 @@ const Run = () => {
                     }}
                     isEmpty={rows.length === 0}
                     isError={isError}
-                    onSetPage={(_, value) => setPage(_, value)}
+                    onSetPage={(_, value) => setPage(value)}
                     onSetPageSize={(_, value) => setPageSize(value)}
                   />
                 </CardBody>
