@@ -7,7 +7,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 
 import Dashboard from './dashboard';
 import ReportBuilder from './report-builder';
-import { RunList } from './run-list';
+import RunList from './run-list';
 import { Run } from './run';
 import { ResultList } from './result-list';
 import { Result } from './result';
