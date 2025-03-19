@@ -125,20 +125,13 @@ const NewWidgetWizard = ({ dashboard, saveCallback, closeCallback, isOpen }) => 
   }, []);
 
   const onParamChange = useCallback((value, event) => {
-    let areParamsFilled = true;
     if (event) {
       setParams(prevParams => ({
         ...prevParams,
         [event.target.name]: value
       }));
     }
-    selectedType?.params?.forEach(widgetParam => {
-      if (widgetParam.required && !params[widgetParam.name]) {
-        areParamsFilled = false;
-      }
-    });
-    setParamsFilled(areParamsFilled);
-  }, [params, selectedType]);
+  }, []);
 
   const handleRequiredParam = useCallback((param) => {
     if (param.required && params[param.name] === '') {
@@ -153,6 +146,16 @@ const NewWidgetWizard = ({ dashboard, saveCallback, closeCallback, isOpen }) => 
     }
     setStepIdReached(prevStepId => Math.max(prevStepId, currentStep.id));
   }, [onParamChange]);
+
+  useEffect(() => {
+    let areParamsFilled = true;
+    selectedType?.params?.forEach(widgetParam => {
+      if (widgetParam.required && !params[widgetParam.name]) {
+        areParamsFilled = false;
+      }
+    });
+    setParamsFilled(areParamsFilled);
+  }, [params, selectedType]);
 
   useEffect(() => {
     const fetchWidgetTypes = async () => {
