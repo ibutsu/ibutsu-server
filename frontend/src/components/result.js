@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -13,57 +13,38 @@ import {
   FlexItem,
   Label,
   Tabs,
-  Tab
+  Tab,
 } from '@patternfly/react-core';
 import { InfoCircleIcon, CodeIcon, SearchIcon, FileAltIcon } from '@patternfly/react-icons';
+import { CodeEditor, Language } from '@patternfly/react-code-editor';
+
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Linkify from 'react-linkify';
-import { JSONTree } from 'react-json-tree';
 
 import * as http from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
 import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
-import { getIconForResult, getDarkTheme, round } from '../utilities';
+import { getIconForResult, round } from '../utilities';
 import TabTitle from './tabs';
 import TestHistoryTable  from './test-history';
 import ArtifactTab from './artifact-tab';
+import { IbutsuContext } from '../services/context';
 
-const JSONTHEME = {
-  scheme: 'monokai',
-  author: 'wimer hazenberg (http://www.monokai.nl)',
-  base00: '#272822',
-  base01: '#383830',
-  base02: '#49483e',
-  base03: '#75715e',
-  base04: '#a59f85',
-  base05: '#f8f8f2',
-  base06: '#f5f4f1',
-  base07: '#f9f8f5',
-  base08: '#f92672',
-  base09: '#fd971f',
-  base0A: '#f4bf75',
-  base0B: '#a6e22e',
-  base0C: '#a1efe4',
-  base0D: '#66d9ef',
-  base0E: '#ae81ff',
-  base0F: '#cc6633',
-};
-
-const ResultView = (props) => {
-  const {
-    comparisonResults,
-    defaultTab,
-    hideArtifact=false,
-    hideSummary=false,
-    hideTestObject=false,
-    hideTestHistory=false,
-    testResult
-  } = props;
+const ResultView = ({
+  comparisonResults,
+  defaultTab,
+  hideArtifact=false,
+  hideSummary=false,
+  hideTestObject=false,
+  hideTestHistory=false,
+  testResult
+}) => {
+  const context = useContext(IbutsuContext);
+  const { darkTheme } = context;
 
   // State
   const [artifacts, setArtifacts] = useState([]);
-  const [artifactTabs, setArtifactTabs] = useState([]);
   const [testHistoryTable, setTestHistoryTable] = useState(null);
 
   // Hooks
@@ -85,15 +66,7 @@ const ResultView = (props) => {
     }
   };
 
-  const getTabIndex = useCallback((defaultValue) => {
-    defaultValue = defaultValue || null;
-    if (!!location && location.hash !== '') {
-      return location.hash.substring(1);
-    }
-    else {
-      return defaultValue;
-    }
-  },[location]);
+  const getTabIndex = useCallback((defaultValue) => (!!location && location.hash !== '') ? location.hash.substring(1) : defaultValue,[location]);
 
   const getTestHistoryTable = useCallback(() => {
     if (comparisonResults !== undefined) {
@@ -141,20 +114,16 @@ const ResultView = (props) => {
     setActiveTab(tabIndex);
   };
 
-  useEffect(() => {
-    const artTabs=[];
-    artifacts.forEach((art) => {
-      artTabs.push(
-        <Tab
-          key={art.filename}
-          eventKey={art.filename}
-          title={<TabTitle
-            icon={<FileAltIcon/>}
-            text={art.filename}/>}><ArtifactTab artifact={art} /></Tab>
-      );
-    });
-    setArtifactTabs(artTabs);
-  }, [artifacts]);
+  const artifactTabs = useMemo(() => artifacts.map((art) => (
+    <Tab
+      key={art.filename}
+      eventKey={art.filename}
+      title={<TabTitle icon={<FileAltIcon/>} text={art.filename}/>}
+    >
+      <ArtifactTab artifact={art} />
+    </Tab>
+  )
+  ), [artifacts]);
 
   useEffect(() => {
     // Get artifacts when the test result changes
@@ -168,7 +137,6 @@ const ResultView = (props) => {
     }
   }, [testResult]);
 
-  const jsonViewLightThemeOn = !getDarkTheme;
   if (activeTab === null) {
     setActiveTab(getDefaultTab());
   }
@@ -182,6 +150,8 @@ const ResultView = (props) => {
     parameters = Object.keys(testResult.params).map((key) => <div key={key}>{key} = {testResult.params[key]}</div>);
     runLink = <Link to={`../runs/${testResult.run_id}`} relative="Path">{testResult.run_id}</Link>;
   }
+
+  const testJson = useMemo(() => JSON.stringify(testResult, null, '\t'), [testResult]);
 
   return (
     <React.Fragment>
@@ -297,7 +267,7 @@ const ResultView = (props) => {
                         <DataListCell key="duration-label" width={2}><strong>Duration:</strong></DataListCell>,
                         <DataListCell key="duration-data" width={4} style={{paddingTop: 0, paddingBottom: 0, marginBottom: '-25px'}}>
                           <DataList selectedDataListItemId={null} aria-label="Durations" style={{borderTop: 'none'}}>
-                            {(testResult.start_time ? testResult.start_time : testResult.starttime) > 0 &&
+                            {(testResult.start_time || testResult.starttime) > 0 &&
                             <DataListItem className="pf-u-p-0" aria-labelledby="started-label">
                               <DataListItemRow>
                                 <DataListItemCells
@@ -462,11 +432,17 @@ const ResultView = (props) => {
           {testHistoryTable}
         </Tab>
         }
-        {!hideTestObject &&
+        {!hideTestObject && testJson &&
         <Tab key="test-object" eventKey="test-object" title={<TabTitle icon={<CodeIcon/>} text="Test Object" />}>
           <Card>
-            <CardBody>
-              <JSONTree data={testResult} theme={JSONTHEME} invertTheme={jsonViewLightThemeOn} hideRoot shouldExpandNodeInitially={() => true}/>
+            <CardBody id='object-card-body'>
+              <CodeEditor
+                isReadOnly={true}
+                isDarkTheme={darkTheme}
+                language={Language.json}
+                code={testJson}
+                height="sizeToFit"
+              />
             </CardBody>
           </Card>
         </Tab>
