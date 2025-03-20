@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -25,7 +25,7 @@ import * as http from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
 import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
-import { getIconForResult, getDarkTheme, round } from '../utilities';
+import { getIconForResult, round } from '../utilities';
 import TabTitle from './tabs';
 import TestHistoryTable  from './test-history';
 import ArtifactTab from './artifact-tab';
@@ -45,7 +45,6 @@ const ResultView = ({
 
   // State
   const [artifacts, setArtifacts] = useState([]);
-  const [artifactTabs, setArtifactTabs] = useState([]);
   const [testHistoryTable, setTestHistoryTable] = useState(null);
 
   // Hooks
@@ -115,20 +114,16 @@ const ResultView = ({
     setActiveTab(tabIndex);
   };
 
-  useEffect(() => {
-    const artTabs=[];
-    artifacts.forEach((art) => {
-      artTabs.push(
-        <Tab
-          key={art.filename}
-          eventKey={art.filename}
-          title={<TabTitle
-            icon={<FileAltIcon/>}
-            text={art.filename}/>}><ArtifactTab artifact={art} /></Tab>
-      );
-    });
-    setArtifactTabs(artTabs);
-  }, [artifacts]);
+  const artifactTabs = useMemo(() => artifacts.map((art) => (
+    <Tab
+      key={art.filename}
+      eventKey={art.filename}
+      title={<TabTitle icon={<FileAltIcon/>} text={art.filename}/>}
+    >
+      <ArtifactTab artifact={art} />
+    </Tab>
+  )
+  ), [artifacts]);
 
   useEffect(() => {
     // Get artifacts when the test result changes
@@ -142,7 +137,6 @@ const ResultView = ({
     }
   }, [testResult]);
 
-  const jsonViewLightThemeOn = !getDarkTheme;
   if (activeTab === null) {
     setActiveTab(getDefaultTab());
   }
@@ -156,6 +150,8 @@ const ResultView = ({
     parameters = Object.keys(testResult.params).map((key) => <div key={key}>{key} = {testResult.params[key]}</div>);
     runLink = <Link to={`../runs/${testResult.run_id}`} relative="Path">{testResult.run_id}</Link>;
   }
+
+  const testJson = useMemo(() => JSON.stringify(testResult, null, '\t'), [testResult]);
 
   return (
     <React.Fragment>
@@ -436,21 +432,19 @@ const ResultView = ({
           {testHistoryTable}
         </Tab>
         }
-        {!hideTestObject &&
+        {!hideTestObject && testJson &&
         <Tab key="test-object" eventKey="test-object" title={<TabTitle icon={<CodeIcon/>} text="Test Object" />}>
-          {testResult && <Card>
-
+          <Card>
             <CardBody id='object-card-body'>
               <CodeEditor
                 isReadOnly={true}
                 isDarkTheme={darkTheme}
                 language={Language.json}
-                code={JSON.stringify(testResult, null, '\t')}
+                code={testJson}
                 height="sizeToFit"
               />
             </CardBody>
           </Card>
-          }
         </Tab>
         }
       </Tabs>
