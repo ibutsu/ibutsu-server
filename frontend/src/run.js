@@ -47,6 +47,7 @@ import {
 } from '@patternfly/react-icons';
 
 import { Link } from 'react-router-dom';
+// TODO replace with CodeEditor during functional conversion
 import { JSONTree } from 'react-json-tree';
 import Editor from '@monaco-editor/react';
 
