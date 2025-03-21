@@ -83,7 +83,7 @@ const MultiValueInput = (props) => {
                 key={index}
                 onClick={() => handleItemRemove(item)}
               >
-                {value}
+                {item}
               </Chip>
             ))}
           </ChipGroup>
