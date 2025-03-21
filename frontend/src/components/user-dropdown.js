@@ -1,5 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
 
 import {
   Dropdown,
@@ -11,89 +10,53 @@ import { UserIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
 import { AuthService } from '../services/auth';
-import { IbutsuContext } from '../services/context';
 
-export class UserDropdown extends React.Component {
-  static contextType = IbutsuContext;
-  static propTypes = {
-    eventEmitter: PropTypes.object
-  }
+const UserDropdown = () => {
+  const [displayName, setDisplayName] = useState('User');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  constructor(props) {
-    super(props);
-    this.eventEmitter = props.eventEmitter;
-    this.state = {
-      displayName: 'User',
-      isDropdownOpen: false,
-      isSuperAdmin: false
-    };
-    this.eventEmitter.on('updateUserName', (userName) => {
-      this.updateUserName(userName);
-    });
-  }
-
-  updateUserName(userName) {
-    // Update the user in the browser
-    const sessionUser = AuthService.getUser();
-    sessionUser.name = userName;
-    AuthService.setUser(sessionUser);
-    this.setState({displayName: userName});
-  }
-
-  onDropdownToggle = () => {
-    this.setState({isDropdownOpen: !this.state.isDropdownOpen});
-  };
-
-  onDropdownSelect = () => {
-    this.setState({isDropdownOpen: false});
-  };
-
-  logout = () => {
-    const { setPrimaryObject, setActiveDashboard } = this.context;
-    setPrimaryObject();
-    setActiveDashboard();
+  function logout () {
     AuthService.logout();
     window.location = '/';
   }
 
-  componentDidMount() {
-    AuthService.isSuperAdmin().then(isSuperAdmin => this.setState({isSuperAdmin}));
-    this.setState({
-      displayName: AuthService.getUser() && (AuthService.getUser().name || AuthService.getUser().email)
-    });
-  }
+  useEffect(() => {
+    AuthService.isSuperAdmin().then(isSuperAdmin => setIsSuperAdmin(isSuperAdmin));
+    setDisplayName(AuthService.getUser() && (AuthService.getUser().name || AuthService.getUser().email));
+  }, []);
 
-  render() {
-    return (
-      <Dropdown
-        isOpen={this.state.isDropdownOpen}
-        onSelect={this.onDropdownSelect}
-        onOpenChange={() => this.setState({isDropdownOpen: false})}
-        toggle={toggleRef => (
-          <MenuToggle
-            ref={toggleRef}
-            onClick={this.onDropdownToggle}
-            isExpanded={this.state.isDropdownOpen}
-            icon={<UserIcon />}
-          >
-            {this.state.displayName}
-          </MenuToggle>
-        )}
-      >
-        <DropdownList>
-          <DropdownItem key="profile">
-            <Link to="/profile/user" className="pf-v5-c-menu__list-item">Profile</Link>
+  return (
+    <Dropdown
+      isOpen={isDropdownOpen}
+      onSelect={() => setIsDropdownOpen(false)}
+      onOpenChange={() => setIsDropdownOpen(false)}
+      toggle={toggleRef => (
+        <MenuToggle
+          ref={toggleRef}
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          isExpanded={isDropdownOpen}
+          icon={<UserIcon />}
+        >
+          {displayName}
+        </MenuToggle>
+      )}
+    >
+      <DropdownList>
+        <DropdownItem key="profile">
+          <Link to="/profile/user">Profile</Link>
+        </DropdownItem>
+        {!!isSuperAdmin &&
+          <DropdownItem key="admin">
+            <Link to="/admin/home">Administration</Link>
           </DropdownItem>
-          {!!this.state.isSuperAdmin &&
-            <DropdownItem key="admin">
-              <Link to="/admin/home" className="pf-v5-c-menu__list-item">Administration</Link>
-            </DropdownItem>
-          }
-          <DropdownItem key="logout" onClick={this.logout}>
-            Logout
-          </DropdownItem>
-        </DropdownList>
-      </Dropdown>
-    );
-  }
-}
+        }
+        <DropdownItem key="logout" onClick={logout}>
+          <Link>Logout</Link>
+        </DropdownItem>
+      </DropdownList>
+    </Dropdown>
+  );
+};
+
+export default UserDropdown;

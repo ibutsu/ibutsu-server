@@ -8,6 +8,7 @@
     "@monaco-editor/react": "^4.6.0",
     "@patternfly/patternfly": "^5.2.1",
     "@patternfly/react-charts": "^7.2.2",
+    "@patternfly/react-code-editor": "5.4.18",
     "@patternfly/react-core": "^5.2.3",
     "@patternfly/react-icons": "^5.2.1",
     "@patternfly/react-styles": "^5.2.1",
@@ -22,13 +23,14 @@
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-error-boundary": "^5.0.0",
     "react-heatmap-grid": "^0.9.0",
-    "react-json-tree": "^0.19.0",
     "react-linkify": "^1.0.0-alpha",
     "react-password-strength-bar": "^0.4.1",
     "react-router-dom": "^6.28.0",
     "react-scripts": "^5.0.1",
     "react-simple-oauth2-login": "^0.5.4",
+    "react-toastify": "^11.0.2",
     "serve": "^12.0.1",
     "typescript": "^4.9.5",
     "wolfy87-eventemitter": "^5.2.9"
@@ -60,7 +62,7 @@
   "scripts": {
     "start": "serve -s build -l tcp://0.0.0.0:8080",
     "build": "./bin/write-version-file.cjs && react-scripts build",
-    "test": "./bin/write-version-file.cjs && react-scripts test --transformIgnorePatterns \"node_modules/(?!@patternfly)/\" && cypress run --component",
+    "test": "./bin/write-version-file.cjs && react-scripts test --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
     "eject": "react-scripts eject",
     "devserver": "./bin/write-version-file.cjs && CI=true react-scripts start",
     "lint": "eslint"
@@ -79,5 +81,8 @@
   },
   "bin": {
     "write-version-file": "./bin/write-version-file.cjs"
+  },
+  "jest": {
+    "resetMocks": false
   }
 }

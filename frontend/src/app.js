@@ -5,33 +5,33 @@ import ElementWrapper from './components/elementWrapper';
 
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { Dashboard } from './dashboard';
-import { ReportBuilder } from './report-builder';
-import { RunList } from './run-list';
-import { Run } from './run';
-import { ResultList } from './result-list';
-import { Result } from './result';
-import { View, IbutsuPage } from './components';
+import Dashboard from './dashboard';
+import ReportBuilder from './report-builder';
+import RunList from './run-list';
+import Run from './run';
+import ResultList from './result-list';
+import Result from './result';
+import IbutsuPage from './components/ibutsu-page';
+import View from './components/view';
+
 import { IbutsuContext } from './services/context';
 
 import './app.css';
 
-
 export class App extends React.Component {
   static contextType = IbutsuContext;
-  constructor(props) {
+  constructor (props) {
     super(props);
     this.eventEmitter = new EventEmitter();
     this.state = {
       uploadFileName: '',
       importId: '',
-      notifications: [],
       searchValue: '',
       views: []
     };
   }
 
-  render() {
+  render () {
     document.title = 'Ibutsu';
     return (
       <Routes>
@@ -48,45 +48,43 @@ export class App extends React.Component {
           <Route
             path="dashboard/:dashboard_id"
             element={
-              <ElementWrapper routeElement={Dashboard} eventEmitter={this.eventEmitter} />
+              <Dashboard />
             }
           />
           <Route
             path="dashboard/*"
-            element={<ElementWrapper routeElement={Dashboard} eventEmitter={this.eventEmitter} />}
+            element={<Dashboard />}
           />
 
 
           <Route
             path="runs"
-            element={
-              <ElementWrapper routeElement={RunList} eventEmitter={this.eventEmitter} />
-            }
+            element={<RunList />}
           />
           <Route
             path="runs/:run_id"
-            element={<ElementWrapper routeElement={Run} />}
+            element={<Run />}
           />
 
           <Route
             path="results"
-            element={<ElementWrapper routeElement={ResultList} eventEmitter={this.eventEmitter} />}
+            element={<ResultList />}
           />
           <Route
             path="results/:result_id"
-            element={<ElementWrapper routeElement={Result} />}
+            element={<Result />}
           />
 
           <Route
             path="reports"
-            element={<ElementWrapper routeElement={ReportBuilder} eventEmitter={this.eventEmitter} />}
+            element={<ReportBuilder/>}
           />
 
           <Route
             path="view/:view_id"
-            element={<ElementWrapper routeElement={View} />}
+            element={<View />}
           />
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
+          <Route path="*" element={<Navigate to="dashboard" replace />} />
         </Route>
       </Routes>
     );

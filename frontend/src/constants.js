@@ -1,4 +1,6 @@
-export const VERSION_CHECK_TIMEOUT = 15 * 60 * 1000;  // 15 minutes
+import  packageJson from '../package.json';
+
+export const VERSION = packageJson.version;
 export const MONITOR_UPLOAD_TIMEOUT = 1 * 1000;  // 1 second
 export const ALERT_TIMEOUT = 5 * 1000;  // 5 seconds
 export const KNOWN_WIDGETS = [
@@ -68,7 +70,7 @@ export const STRING_RESULT_FIELDS = [
 export const RESULT_FIELDS = [...NUMERIC_RESULT_FIELDS, ...STRING_RESULT_FIELDS, ...ARRAY_RESULT_FIELDS];
 export const ARRAY_RUN_FIELDS = [
   'metadata.tags',
-]
+];
 export const NUMERIC_RUN_FIELDS = [
   'duration',
   'summary.errors',
@@ -100,11 +102,11 @@ export const STRING_JJV_FIELDS = [
   'source',
   'build_number',
   'env'
-]
+];
 export const NUMERIC_JJV_FIELDS = [
   'start_time',
-]
-export const JJV_FIELDS = [...STRING_JJV_FIELDS, ...NUMERIC_JJV_FIELDS]
+];
+export const JJV_FIELDS = [...STRING_JJV_FIELDS, ...NUMERIC_JJV_FIELDS];
 export const CLASSIFICATION = {
   dependency_outage: 'Dependency Outage',
   environment_failure: 'Environment Failure',
