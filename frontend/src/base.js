@@ -7,7 +7,7 @@ import Profile from './profile';
 import Login from './login';
 import { SignUp } from './sign-up';
 import { ForgotPassword } from './forgot-password';
-import { ResetPassword } from './reset-password';
+import ResetPassword from './reset-password';
 import { AuthService } from './services/auth';
 import ElementWrapper from './components/elementWrapper';
 import { IbutsuContextProvider } from './services/context';
@@ -19,7 +19,7 @@ export const Base = () => (
         <Route path="login" element={<Login />} />
         <Route path="sign-up" element={<ElementWrapper routeElement={SignUp} />} />
         <Route path="forgot-password" element={<ElementWrapper routeElement={ForgotPassword} />} />
-        <Route path="reset-password/:activationCode" element={<ElementWrapper routeElement={ResetPassword} />} />
+        <Route path="reset-password/:activationCode" element={<ResetPassword />} />
         <Route
           path="profile/*"
           element={AuthService.isLoggedIn() ? <Profile /> : <Navigate to="/login" />}
