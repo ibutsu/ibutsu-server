@@ -13,7 +13,8 @@ import {
   PageSection,
   PageSectionVariants,
   TextInput,
-  Title
+  Title,
+  Spinner
 } from '@patternfly/react-core';
 import { CheckIcon, PencilAltIcon, TimesIcon } from '@patternfly/react-icons';
 
@@ -28,14 +29,21 @@ const UserProfile = () => {
   const [user, setUser] = useState();
   const [projects, setProjects] = useState();
   const [isEditing, setIsEditing] = useState();
+  const [isLoading, setIsLoading] = useState(true);
   const [tempName, setTempName] = useState('');
 
   useEffect(() => {
     // get user
     HttpClient.get([Settings.serverUrl, 'user'])
       .then(response => HttpClient.handleResponse(response))
-      .then(data => setUser(data))
-      .catch(error => console.error(error));
+      .then(data => {
+        setUser(data);
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error(error);
+        setIsLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -95,8 +103,9 @@ const UserProfile = () => {
         </Title>
       </PageSection>
       <PageSection>
-        {!user && <Alert variant="danger" title="Error fetching user details" />}
-        {user &&
+        {isLoading && <center><Spinner size="xl" /></center>}
+        {!isLoading && !user && <Alert variant="danger" title="Error fetching user details" />}
+        {!isLoading && user &&
         <DataList selectedDataListItemId={null} aria-label="User profile">
           <DataListItem aria-labelledby="Name">
             <DataListItemRow>
