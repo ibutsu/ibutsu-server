@@ -10,7 +10,7 @@ import ReportBuilder from './report-builder';
 import RunList from './run-list';
 import Run from './run';
 import ResultList from './result-list';
-import { Result } from './result';
+import Result from './result';
 import IbutsuPage from './components/ibutsu-page';
 import View from './components/view';
 
@@ -72,7 +72,7 @@ export class App extends React.Component {
           />
           <Route
             path="results/:result_id"
-            element={<ElementWrapper routeElement={Result} />}
+            element={<Result />}
           />
 
           <Route
