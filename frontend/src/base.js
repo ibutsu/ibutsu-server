@@ -6,7 +6,7 @@ import Admin from './admin';
 import Profile from './profile';
 import Login from './login';
 import { SignUp } from './sign-up';
-import { ForgotPassword } from './forgot-password';
+import ForgotPassword from './forgot-password';
 import ResetPassword from './reset-password';
 import { AuthService } from './services/auth';
 import ElementWrapper from './components/elementWrapper';
@@ -18,7 +18,7 @@ export const Base = () => (
       <Routes>
         <Route path="login" element={<Login />} />
         <Route path="sign-up" element={<ElementWrapper routeElement={SignUp} />} />
-        <Route path="forgot-password" element={<ElementWrapper routeElement={ForgotPassword} />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
         <Route path="reset-password/:activationCode" element={<ResetPassword />} />
         <Route
           path="profile/*"
