@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
+  Card,
+  CardBody,
   DataList,
   DataListCell,
   DataListItem,
@@ -13,7 +15,8 @@ import {
   PageSection,
   PageSectionVariants,
   TextInput,
-  Title
+  Title,
+  Skeleton
 } from '@patternfly/react-core';
 import { CheckIcon, PencilAltIcon, TimesIcon } from '@patternfly/react-icons';
 
@@ -28,14 +31,20 @@ const UserProfile = () => {
   const [user, setUser] = useState();
   const [projects, setProjects] = useState();
   const [isEditing, setIsEditing] = useState();
+  const [isError, setIsError] = useState(false);
   const [tempName, setTempName] = useState('');
 
   useEffect(() => {
     // get user
     HttpClient.get([Settings.serverUrl, 'user'])
       .then(response => HttpClient.handleResponse(response))
-      .then(data => setUser(data))
-      .catch(error => console.error(error));
+      .then(data => {
+        setUser(data);
+      })
+      .catch(error => {
+        console.error(error);
+        setIsError(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -95,80 +104,87 @@ const UserProfile = () => {
         </Title>
       </PageSection>
       <PageSection>
-        {!user && <Alert variant="danger" title="Error fetching user details" />}
-        {user &&
-        <DataList selectedDataListItemId={null} aria-label="User profile">
-          <DataListItem aria-labelledby="Name">
-            <DataListItemRow>
-              {!isEditing &&
-                <DataListItemCells
-                  dataListCells={[
-                    <DataListCell key={1} width={2}><strong>Name:</strong></DataListCell>,
-                    <DataListCell key={2} width={4}>{user.name} <Button variant="link" icon={<PencilAltIcon />} onClick={() => {
-                      setTempName(user.name);
-                      setIsEditing(true);
-                    }} isInline size="sm" ouiaId="edit-profile-button">Edit</Button></DataListCell>
-                  ]}
-                />
-              }
-              {isEditing &&
-                <DataListItemCells
-                  dataListCells={[
-                    <DataListCell key={1} width={2}><strong>Name:</strong></DataListCell>,
-                    <DataListCell key={2} width={4}>
-                      <InputGroup>
-                        <InputGroupItem isFill ><TextInput value={tempName} type="text" onChange={(_event, value) => setTempName(value)} aria-label="User name" /></InputGroupItem>
-                        <InputGroupItem>
-                          <Button variant="control" icon={<CheckIcon />} onClick={onSaveButtonClicked} ouiaId="edit-save-button">
-                            Save
-                          </Button>
-                        </InputGroupItem>
-                        <InputGroupItem>
-                          <Button variant="control" icon={<TimesIcon />} onClick={() => setIsEditing(false)} ouiaId="edit-cancel-button">
-                            Cancel
-                          </Button>
-                        </InputGroupItem>
-                      </InputGroup>
-                    </DataListCell>
-                  ]}
-                />
-              }
-            </DataListItemRow>
-          </DataListItem>
-          <DataListItem aria-labelledby="E-mail">
-            <DataListItemRow>
-              <DataListItemCells
-                dataListCells={[
-                  <DataListCell key={1} width={2}><strong>E-mail:</strong></DataListCell>,
-                  <DataListCell key={2} width={4}>{user.email}</DataListCell>
-                ]}
-              />
-            </DataListItemRow>
-          </DataListItem>
-          <DataListItem aria-labelledby="Projects">
-            <DataListItemRow>
-              <DataListItemCells
-                dataListCells={[
-                  <DataListCell key={1} width={2}><strong>My Projects:</strong></DataListCell>,
-                  <DataListCell key={2} width={4} style={{paddingTop: 0, paddingBottom: 0}}>
-                    <DataList aria-label="projects" style={{borderTop: 'none'}}>
-                      {projects &&
-                        projects.map((project) => (
-                          <DataListCell key={project.name} className="pf-u-p-sm">
-                            <span> {project.title} </span>
-                            {project.owner_id === user.id &&
-                                  <Label className="project-owner-label" variant="filled" color="green" isCompact>Owner</Label>
-                            }
-                          </DataListCell>
-                        ))
+        {isError && <Alert variant="danger" title="Error fetching user details" />}
+        {!isError &&
+          <Card>
+            <CardBody>
+              {!user && <Skeleton></Skeleton>}
+              {user &&
+                <DataList selectedDataListItemId={null} aria-label="User profile">
+                  <DataListItem aria-labelledby="Name">
+                    <DataListItemRow>
+                      {!isEditing &&
+                        <DataListItemCells
+                          dataListCells={[
+                            <DataListCell key={1} width={2}><strong>Name:</strong></DataListCell>,
+                            <DataListCell key={2} width={4}>{user.name} <Button variant="link" icon={<PencilAltIcon />} onClick={() => {
+                              setTempName(user.name);
+                              setIsEditing(true);
+                            }} isInline size="sm" ouiaId="edit-profile-button">Edit</Button></DataListCell>
+                          ]}
+                        />
                       }
-                    </DataList>
-                  </DataListCell>
-                ]}
-              />
-            </DataListItemRow>
-          </DataListItem>
-        </DataList>
+                      {isEditing &&
+                        <DataListItemCells
+                          dataListCells={[
+                            <DataListCell key={1} width={2}><strong>Name:</strong></DataListCell>,
+                            <DataListCell key={2} width={4}>
+                              <InputGroup>
+                                <InputGroupItem isFill ><TextInput value={tempName} type="text" onChange={(_event, value) => setTempName(value)} aria-label="User name" /></InputGroupItem>
+                                <InputGroupItem>
+                                  <Button variant="control" icon={<CheckIcon />} onClick={onSaveButtonClicked} ouiaId="edit-save-button">
+                                    Save
+                                  </Button>
+                                </InputGroupItem>
+                                <InputGroupItem>
+                                  <Button variant="control" icon={<TimesIcon />} onClick={() => setIsEditing(false)} ouiaId="edit-cancel-button">
+                                    Cancel
+                                  </Button>
+                                </InputGroupItem>
+                              </InputGroup>
+                            </DataListCell>
+                          ]}
+                        />
+                      }
+                    </DataListItemRow>
+                  </DataListItem>
+                  <DataListItem aria-labelledby="E-mail">
+                    <DataListItemRow>
+                      <DataListItemCells
+                        dataListCells={[
+                          <DataListCell key={1} width={2}><strong>E-mail:</strong></DataListCell>,
+                          <DataListCell key={2} width={4}>{user.email}</DataListCell>
+                        ]}
+                      />
+                    </DataListItemRow>
+                  </DataListItem>
+                  <DataListItem aria-labelledby="Projects">
+                    <DataListItemRow>
+                      <DataListItemCells
+                        dataListCells={[
+                          <DataListCell key={1} width={2}><strong>My Projects:</strong></DataListCell>,
+                          <DataListCell key={2} width={4} style={{paddingTop: 0, paddingBottom: 0}}>
+                            <DataList aria-label="projects" style={{borderTop: 'none'}}>
+                              {projects &&
+                                projects.map((project) => (
+                                  <DataListCell key={project.name} className="pf-u-p-sm">
+                                    <span> {project.title} </span>
+                                    {project.owner_id === user.id &&
+                                          <Label className="project-owner-label" variant="filled" color="green" isCompact>Owner</Label>
+                                    }
+                                  </DataListCell>
+                                ))
+                              }
+                            </DataList>
+                          </DataListCell>
+                        ]}
+                      />
+                    </DataListItemRow>
+                  </DataListItem>
+                </DataList>
+              }
+            </CardBody>
+          </Card>
         }
       </PageSection>
     </React.Fragment>
