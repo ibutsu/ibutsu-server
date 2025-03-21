@@ -1,7 +1,6 @@
 {/* TODO: Consider renaming to projects-page, maybe updates for static routing? */}
 
-import React, {useEffect, useContext} from 'react';
-import PropTypes from 'prop-types';
+import React, {useContext} from 'react';
 
 import { Outlet } from 'react-router-dom';
 
@@ -21,23 +20,16 @@ import { ToastContainer } from 'react-toastify';
 import { ALERT_TIMEOUT } from '../constants';
 
 
-const IbutsuPage = (props) => {
-  const {
-    eventEmitter,
-    title = 'Ibutsu'
-  } = props;
-
+const IbutsuPage = () => {
   const {primaryObject} = useContext(IbutsuContext);
 
-  useEffect(() => {
-    document.title = title;
-  }, [title]);
+  document.title = 'Ibutsu';
 
   return (
     <React.Fragment>
       <Page
         header={<IbutsuHeader/>}
-        sidebar={<IbutsuSidebar eventEmitter={eventEmitter} />}
+        sidebar={<IbutsuSidebar />}
         isManagedSidebar={true}
         style={{position: 'relative'}}
       >
@@ -58,13 +50,6 @@ const IbutsuPage = (props) => {
 
 };
 
-IbutsuPage.propTypes = {
-  eventEmitter: PropTypes.object,
-  navigation: PropTypes.node,
-  location: PropTypes.object,
-  children: PropTypes.node,
-  title: PropTypes.string,
-  params: PropTypes.object,
-};
+IbutsuPage.propTypes = {};
 
 export default IbutsuPage;

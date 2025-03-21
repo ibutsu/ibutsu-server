@@ -1,7 +1,6 @@
 import React, {useState, useEffect} from 'react';
 
 import { Navigate, Route, Routes } from 'react-router-dom';
-import ElementWrapper from './components/elementWrapper';
 
 import AdminHome from './pages/admin/home';
 import UserList from './pages/admin/user-list';
@@ -17,7 +16,6 @@ import AdminPage from './components/admin-page';
 const Admin = () => {
   const [isSuper, setIsSuper] = useState();
   useEffect(() => {
-
     AuthService.isSuperAdmin().then((admin) => {
       setIsSuper(admin);
     });
@@ -37,7 +35,7 @@ const Admin = () => {
       >
         <Route path="home" element={<AdminHome/>} />
         <Route path="users" element={<UserList />} />
-        <Route path="users/:id" element={<ElementWrapper routeElement={UserEdit} />} />
+        <Route path="users/:id" element={<UserEdit />} />
         <Route path="projects" element={<ProjectList/>} />
         <Route path="projects/:id" element={<ProjectEdit/>} />
       </Route>

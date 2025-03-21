@@ -17,7 +17,7 @@ export const Base = () => (
     <Router>
       <Routes>
         <Route path="login" element={<Login />} />
-        <Route path="sign-up" element={<ElementWrapper routeElement={SignUp} />} />
+        <Route path="sign-up" element={<SignUp />} />
         <Route path="forgot-password" element={<ElementWrapper routeElement={ForgotPassword} />} />
         <Route path="reset-password/:activationCode" element={<ElementWrapper routeElement={ResetPassword} />} />
         <Route
