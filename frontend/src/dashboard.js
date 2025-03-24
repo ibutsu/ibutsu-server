@@ -139,7 +139,7 @@ const Dashboard = () => {
   }, [dashboard_id, selectedDB]);
 
 
-  function onDashboardSelect (_event, value) {
+  function onDashboardSelect (_, value) {
     // state update
     setSelectedDB(value);
     setIsDBSelectorOpen(false);

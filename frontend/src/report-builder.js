@@ -182,7 +182,7 @@ function ReportBuilder () {
           <CardBody>
             <Form isHorizontal>
               <FormGroup isRequired label="Report Type" fieldId="report-type">
-                <FormSelect id="report-type" value={reportType} onChange={(_event, change) => setReportType(change)}>
+                <FormSelect id="report-type" value={reportType} onChange={(_, change) => setReportType(change)}>
                   {reportTypes.map((rpt) => <FormSelectOption key={rpt.type} value={rpt.type} label={rpt.name} />)}
                 </FormSelect>
                 <FormHelperText>
@@ -192,7 +192,7 @@ function ReportBuilder () {
                 </FormHelperText>
               </FormGroup>
               <FormGroup label="Filter" fieldId="report-filter">
-                <TextInput type="text" id="report-filter" value={reportFilter} onChange={(_event, change) => setReportFilter(change)} />
+                <TextInput type="text" id="report-filter" value={reportFilter} onChange={(_, change) => setReportFilter(change)} />
                 <ExpandableSection toggleText="Filter Help" onToggle={() => {setIsHelpExpanded(!isHelpExpanded);}} isExpanded={isHelpExpanded}>
                   <TextContent>
                     <p>The filter parameter takes a comma-separated list of filters to apply. <Linkify componentDecorator={linkifyDecorator}>https://docs.ibutsu-project.org/en/latest/user-guide/filter-help.html</Linkify></p>
@@ -200,7 +200,7 @@ function ReportBuilder () {
                 </ExpandableSection>
               </FormGroup>
               <FormGroup label="Source" fieldId="report-source">
-                <TextInput type="text" id="report-source" value={reportSource} onChange={(_event, change) => setReportSource(change)} />
+                <TextInput type="text" id="report-source" value={reportSource} onChange={(_, change) => setReportSource(change)} />
                 <FormHelperText>
                   <HelperText>
                     <HelperTextItem>The source of report</HelperTextItem>
@@ -228,8 +228,8 @@ function ReportBuilder () {
               pagination={pagination}
               isEmpty={isEmpty}
               isError={isError}
-              onSetPage={(_event, change) => {pagination_page.current = change;}}
-              onSetPageSize={(_event, change) => {pagination_pageSize.current = change;}}
+              onSetPage={(_, change) => {pagination_page.current = change;}}
+              onSetPageSize={(_, change) => {pagination_pageSize.current = change;}}
             />
           </CardBody>
         </Card>

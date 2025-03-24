@@ -410,10 +410,10 @@ const AccessibilityDashboardView = (props) => {
         </Select>
       }
       {(filterMode === 'text' && operationMode === 'single') &&
-        <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter} onChange={(_event, value) => setTextFilter(value)} style={{height: 'inherit'}}/>
+        <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter} onChange={(_, value) => setTextFilter(value)} style={{height: 'inherit'}}/>
       }
       {(operationMode === 'multi') &&
-        <MultiValueInput onValuesChange={(_event, values) => setInValues(values)} style={{height: 'inherit'}}/>
+        <MultiValueInput onValuesChange={(_, values) => setInValues(values)} style={{height: 'inherit'}}/>
       }
     </React.Fragment>
   ];
