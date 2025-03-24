@@ -139,7 +139,7 @@ const Dashboard = () => {
   }, [dashboard_id, selectedDB]);
 
 
-  function onDashboardSelect (_, value) {
+  const onDashboardSelect = (_, value) => {
     // state update
     setSelectedDB(value);
     setIsDBSelectorOpen(false);
@@ -147,9 +147,9 @@ const Dashboard = () => {
     setSelectDBInputValue(value.title);
 
     navigate('/project/' + value.project_id + '/dashboard/' + value.id);
-  }
+  };
 
-  function onDashboardClear () {
+  const onDashboardClear = () => {
     // state update
     setSelectedDB();
     setIsDBSelectorOpen(false);
@@ -157,14 +157,14 @@ const Dashboard = () => {
     setFilterDBValue('');
 
     navigate('/project/' + project_id + '/dashboard/');
-  }
+  };
 
-  function handleDBFilterInput (e) {
+  const handleDBFilterInput = (e) => {
     setSelectDBInputValue(e.target.value);
     setFilterDBValue(e.target.value);
-  }
+  };
 
-  function onNewDashboardSave (newDashboard) {
+  const onNewDashboardSave = (newDashboard) => {
     HttpClient.post([Settings.serverUrl, 'dashboard'], newDashboard)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
@@ -172,23 +172,23 @@ const Dashboard = () => {
         onDashboardSelect(null, data);
       })
       .catch(error => console.error(error));
-  }
+  };
 
-  function onDeleteWidgetClick (id) {
+  const onDeleteWidgetClick = (id) => {
     setIsDeleteWidgetOpen(true);
     setCurrentWidget(id);
-  }
+  };
 
-  function onNewWidgetSave (widgetData) {
+  const onNewWidgetSave = (widgetData) => {
     if (!widgetData.project_id && primaryObject) {
       widgetData.project_id = primaryObject.id;
     }
     HttpClient.post([Settings.serverUrl, 'widget-config'], widgetData)
       .then(()=> setIsNewWidgetOpen(false))  // wait to close modal until widget is saved
       .catch(error => console.error(error));
-  }
+  };
 
-  function onEditWidgetSave (editedData) {
+  const onEditWidgetSave = (editedData) => {
     if (!editedData.project_id && primaryObject) {
       editedData.project_id = primaryObject.id;
     }
@@ -196,9 +196,9 @@ const Dashboard = () => {
       .then(response => HttpClient.handleResponse(response))
       .catch(error => console.error(error));
     setIsEditModalOpen(false);
-  }
+  };
 
-  function onEditWidgetClick (id) {
+  const onEditWidgetClick = (id) => {
     setIsEditModalOpen(true);
 
     HttpClient.get([Settings.serverUrl, 'widget-config', id])
@@ -212,9 +212,9 @@ const Dashboard = () => {
         setIsEditModalOpen(false);
       });
 
-  }
+  };
 
-  document.title = 'Dashboard | Ibutsu';
+  useEffect(() => { document.title = 'Dashboard | Ibutsu'; }, []);
 
   const toggle = toggleRef => (
     <MenuToggle

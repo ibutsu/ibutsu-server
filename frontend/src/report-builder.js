@@ -39,7 +39,7 @@ import { useLocation } from 'react-router-dom';
 
 const COLUMNS = ['Report', 'Status', 'Actions'];
 
-function ReportBuilder () {
+const ReportBuilder = () => {
   const context = useContext(IbutsuContext);
   const {primaryObject} = context;
 
@@ -91,7 +91,7 @@ function ReportBuilder () {
   useEffect(() => {
     const reportToRow = (report) => {
       let reportStatus = 'pending';
-      let reportName = report.filename ? report.filename : '(report pending)';
+      let reportName = report?.filename || '(report pending)';
       let row_actions = 'N/A';
       if (report.status !== undefined && !!report.status) {
         reportStatus = report.status;
@@ -151,7 +151,7 @@ function ReportBuilder () {
     };
   }, [primaryObject]);
 
-  function onRunReportClick () {
+  const onRunReportClick = () => {
     let params = {
       type: reportType,
       filter: reportFilter,
@@ -163,7 +163,8 @@ function ReportBuilder () {
     HttpClient.post([Settings.serverUrl, 'report'], params);
   };
 
-  document.title = 'Report Builder | Ibutsu';
+  useEffect(() => { document.title = 'Report Builder | Ibutsu'; }, []);
+
   const pagination = {
     page: pagination_page.current,
     pageSize: pagination_pageSize.current,
@@ -236,7 +237,7 @@ function ReportBuilder () {
       </PageSection>
     </React.Fragment>
   );
-}
+};
 
 
 ReportBuilder.propTypes = {

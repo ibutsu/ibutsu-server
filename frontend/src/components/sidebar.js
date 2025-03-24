@@ -11,7 +11,7 @@ import {  PageSidebar,
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
-function IbutsuSidebar () {
+const IbutsuSidebar = () => {
   const context = useContext(IbutsuContext);
   const { primaryType, primaryObject } = context;
 
