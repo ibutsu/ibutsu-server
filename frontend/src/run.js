@@ -188,7 +188,6 @@ const Run = () => {
   const [isRunValid, setIsRunValid] = useState(true);
   const [isError, setIsError] = useState(false);
   const [resultsTree, setResultsTree] = useState([]);
-  const [treeData, setTreeData] = useState([]);
   const [activeItems, setActiveItems] = useState([]);
 
   const [artifactTabs, setArtifactTabs] = useState([]);
@@ -207,6 +206,7 @@ const Run = () => {
   };
 
   useEffect(() => {
+    let fetchedResults = [];
     const getResultsForTree = (treePage) => {
       HttpClient.get([Settings.serverUrl, 'result'], {
         filter: 'run_id=' + run_id,
@@ -215,13 +215,7 @@ const Run = () => {
       })
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
-          let fetchedResults = [];
-          if (treePage !== 1) {
-            fetchedResults = [...treeData];
-          }
-          // extend the treedata with the current page
-          fetchedResults = [...treeData, ...data.results];
-          setTreeData(fetchedResults);
+          fetchedResults = [...fetchedResults, ...data.results];
           if (data.results.length === 500) {
             // recursively fetch the next page
             getResultsForTree(treePage + 1);
@@ -239,7 +233,7 @@ const Run = () => {
       getResultsForTree(1);
     }
 
-  }, [activeTab, run_id, treeData]);
+  }, [activeTab, run_id]);
 
   const onTabSelect = (_, tabIndex) => {
     if (location) {
