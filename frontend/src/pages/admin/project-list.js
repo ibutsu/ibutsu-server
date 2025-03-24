@@ -121,7 +121,7 @@ const ProjectList = () => {
       });
   }, [page, pageSize, isDeleting]); // isDeleteing so the projects fetch after delete
 
-  const onFilterChange = (_event, value) => {
+  const onFilterChange = (_, value) => {
     setFilterText(value);
   };
 
@@ -187,8 +187,8 @@ const ProjectList = () => {
               onRemoveFilter={onRemoveFilter}
               isEmpty={filteredProjects.length === 0}
               isError={isError}
-              onSetPage={(_event, value) => {setPage(value);}}
-              onSetPageSize={(_event, value) => {setPageSize(value);}}
+              onSetPage={(_, value) => {setPage(value);}}
+              onSetPageSize={(_, value) => {setPageSize(value);}}
             />
           </CardBody>
         </Card>

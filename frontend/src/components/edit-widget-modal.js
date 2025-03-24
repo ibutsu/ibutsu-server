@@ -129,7 +129,7 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
     >
       <Form>
         <FormGroup label="Title" fieldId="widget-title" validated={isTitleValid.toString()} isRequired>
-          <TextInput type="text" id="widget-title" name="widget-title" value={title} onChange={(_event, value) => setTitle(value)} validated={isTitleValid.toString()} isRequired />
+          <TextInput type="text" id="widget-title" name="widget-title" value={title} onChange={(_, value) => setTitle(value)} validated={isTitleValid.toString()} isRequired />
           {isTitleValid !== true && (
             <FormHelperText>
               <HelperText>
@@ -141,7 +141,7 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
           )}
         </FormGroup>
         <FormGroup label="Weight" fieldId="widget-weight">
-          <TextInput type="number" id="widget-weight" name="widget-weight" value={weight} onChange={(_event, value) => setWeight(value)} />
+          <TextInput type="number" id="widget-weight" name="widget-weight" value={weight} onChange={(_, value) => setWeight(value)} />
           <FormHelperText>
             <HelperText>
               <HelperTextItem variant="default">

@@ -16,7 +16,7 @@ const ClassificationDropdown = ({ testResult: initialTestResult }) => {
   const [testResult, setTestResult] = useState(initialTestResult);
   const [classificationOpen, setClassificationOpen] = useState(false);
 
-  const onClassificationSelect = useCallback(async (_event, selection) => {
+  const onClassificationSelect = useCallback(async (_, selection) => {
     const updatedResult = {
       ...testResult,
       'metadata': {
@@ -72,7 +72,7 @@ ClassificationDropdown.propTypes = {
 const MultiClassificationDropdown = ({ selectedResults }) => {
   const [classificationOpen, setClassificationOpen] = useState(false);
 
-  const onClassificationSelect = useCallback(async (_event, selection) => {
+  const onClassificationSelect = useCallback(async (_, selection) => {
     if (selectedResults.length === 0) {
       setClassificationOpen(false);
     } else {

@@ -130,7 +130,7 @@ const UserProfile = () => {
                             <DataListCell key={1} width={2}><strong>Name:</strong></DataListCell>,
                             <DataListCell key={2} width={4}>
                               <InputGroup>
-                                <InputGroupItem isFill ><TextInput value={tempName} type="text" onChange={(_event, value) => setTempName(value)} aria-label="User name" /></InputGroupItem>
+                                <InputGroupItem isFill ><TextInput value={tempName} type="text" onChange={(_, value) => setTempName(value)} aria-label="User name" /></InputGroupItem>
                                 <InputGroupItem>
                                   <Button variant="control" icon={<CheckIcon />} onClick={onSaveButtonClicked} ouiaId="edit-save-button">
                                     Save

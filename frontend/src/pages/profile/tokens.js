@@ -115,8 +115,8 @@ const UserTokens = () => {
               }}
               isEmpty={!fetching && tokens.length === 0}
               isError={isError}
-              onSetPage={(_event, value) => {setPage(value);}}
-              onSetPageSize={(_event, value) => {setPageSize(value);}}
+              onSetPage={(_, value) => {setPage(value);}}
+              onSetPageSize={(_, value) => {setPageSize(value);}}
             />
           </CardBody>
         </Card>

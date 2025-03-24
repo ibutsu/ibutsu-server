@@ -23,7 +23,7 @@ const MultiValueInput = (props) => {
   const [values, setValues] = useState([]);
   const [value, setValue] = useState('');
 
-  const handleTextInputChange = (_event, event_value) => {
+  const handleTextInputChange = (_, event_value) => {
     setValue(event_value);
   };
 

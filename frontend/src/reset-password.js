@@ -183,8 +183,8 @@ const ResetPassword = () => {
           fieldId="confirm-password"
         >
           <InputGroup>
-            {!isConfirmPasswordVisible && <TextInput isRequired type="password" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={confirmPasswordValue} onChange={(_event, confirmPasswordValue) => onConfirmPasswordChange(confirmPasswordValue)} validated={confirmPasswordValidation} />}
-            {isConfirmPasswordVisible && <TextInput isRequired type="text" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={confirmPasswordValue} onChange={(_event, confirmPasswordValue) => onConfirmPasswordChange(confirmPasswordValue)} validated={confirmPasswordValidation} />}
+            {!isConfirmPasswordVisible && <TextInput isRequired type="password" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={confirmPasswordValue} onChange={(_, confirmPasswordValue) => onConfirmPasswordChange(confirmPasswordValue)} validated={confirmPasswordValidation} />}
+            {isConfirmPasswordVisible && <TextInput isRequired type="text" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={confirmPasswordValue} onChange={(_, confirmPasswordValue) => onConfirmPasswordChange(confirmPasswordValue)} validated={confirmPasswordValidation} />}
             <InputGroupItem>
               <Button variant="control" aria-label="Show password" onClick={onConfirmPasswordVisibleClick}>
                 {!isConfirmPasswordVisible && <EyeIcon/>}

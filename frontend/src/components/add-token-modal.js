@@ -85,7 +85,7 @@ const AddTokenModal = ({ isOpen, onClose }) => {
             id="token-name"
             name="token-name"
             value={name}
-            onChange={(_event, change) => setName(change)}
+            onChange={(_, change) => setName(change)}
             validated={isNameValid ? ValidatedOptions.default : ValidatedOptions.error}
             isRequired
           />
@@ -107,7 +107,7 @@ const AddTokenModal = ({ isOpen, onClose }) => {
         >
           <DatePicker
             appendTo={() => document.getElementById('add-token-modal')}
-            onChange={(_event, change) => {setExpiryDate(change);}}
+            onChange={(_, change) => {setExpiryDate(change);}}
             value={expiryDate}
             inputProps={{
               id: 'token-expiry-date',
