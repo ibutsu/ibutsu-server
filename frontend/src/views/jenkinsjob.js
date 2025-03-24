@@ -70,7 +70,7 @@ const JenkinsJobView = (props) => {
   const [isBoolOpen, setIsBoolOpen] = useState(false);
 
 
-  const onFieldSelect = (_event, selection) => {
+  const onFieldSelect = (_, selection) => {
     if (selection == `Create "${fieldFilterValue}"`) {
       setFilteredFieldOptions([...fieldOptions, fieldFilterValue]);
       setFieldSelection(fieldFilterValue);

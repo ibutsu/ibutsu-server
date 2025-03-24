@@ -103,7 +103,7 @@ function IbutsuHeader () {
     }
   }, [project_id, selectedProject, setDefaultDashboard, setPrimaryObject, setPrimaryType]);
 
-  function onProjectSelect (_event, value) {
+  function onProjectSelect (_, value) {
     const {
       primaryObject,
       setPrimaryObject,
@@ -143,7 +143,7 @@ function IbutsuHeader () {
     navigate('/project');
   }
 
-  function onProjectTextInputChange (_event, value) {
+  function onProjectTextInputChange (_, value) {
     setInputValue(value);
     setFilterValue(value);
   }

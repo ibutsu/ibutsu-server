@@ -250,7 +250,7 @@ const TestHistoryTable = (props) => {
     setOnlyFailures(checked);
   };
 
-  const onTimeRangeSelect  = (_event, selection) => {
+  const onTimeRangeSelect  = (_, selection) => {
     if (testResult?.start_time) {
       const startTime = new Date(testResult?.start_time);
       const selectionCoefficient = WEEKS[selection];
@@ -280,7 +280,7 @@ const TestHistoryTable = (props) => {
           </FlexItem>
           <FlexItem>
             <TextContent>
-              <Checkbox id="only-failures" label="Only show failures/errors" isChecked={onlyFailures} aria-label="only-failures-checkbox" onChange={(_event, checked) => onFailuresCheck(checked)}/>
+              <Checkbox id="only-failures" label="Only show failures/errors" isChecked={onlyFailures} aria-label="only-failures-checkbox" onChange={(_, checked) => onFailuresCheck(checked)}/>
             </TextContent>
           </FlexItem>
           <FlexItem spacer={{ sm: 'spacerSm' }}>
@@ -329,8 +329,8 @@ const TestHistoryTable = (props) => {
           isEmpty={isEmpty}
           isError={isError}
           onCollapse={onCollapse}
-          onSetPage={(_event, pageNumber) => setPage(pageNumber)}
-          onSetPageSize={(_event, pageSizeValue) => setPageSize(pageSizeValue)}
+          onSetPage={(_, pageNumber) => setPage(pageNumber)}
+          onSetPageSize={(_, pageSizeValue) => setPageSize(pageSizeValue)}
           canSelectAll={false}
           variant={TableVariant.compact}
           activeFilters={filtersState}

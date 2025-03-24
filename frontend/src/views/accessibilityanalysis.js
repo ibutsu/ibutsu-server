@@ -119,7 +119,7 @@ const AccessibilityAnalysisView = (props) => {
   //     labelOff="Change to Area Chart"
   //     label="Change to Bar Chart"
   //     isChecked={areaChart}
-  //     onChange={(_event, isChecked) => setAreaChart(isChecked)}
+  //     onChange={(_, isChecked) => setAreaChart(isChecked)}
   //   />
   // );
 
@@ -195,7 +195,7 @@ const AccessibilityAnalysisView = (props) => {
   //     });
   // }, [run]),
 
-  const onTabSelect = (_event, tabIndex) => {
+  const onTabSelect = (_, tabIndex) => {
     navigate(`${location.pathname}${params}#${tabIndex}`);
     setActiveTab(tabIndex);
   };

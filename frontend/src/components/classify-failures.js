@@ -187,7 +187,7 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
     }
   };
 
-  const onTableRowSelect = (_event, isSelected, rowId) => {
+  const onTableRowSelect = (_, isSelected, rowId) => {
     // either set every row or single row selected state
     let mutatedRows = rows.map(
       (oneRow, index) => {
@@ -279,7 +279,7 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
           </FlexItem>
           <FlexItem>
             <TextContent>
-              <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={(_event, checked) => onSkipCheck(checked)} />
+              <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={(_, checked) => onSkipCheck(checked)} />
             </TextContent>
           </FlexItem>
           <FlexItem>
@@ -299,8 +299,8 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
           isEmpty={rows.length === 0}
           isError={isError}
           onCollapse={onCollapse}
-          onSetPage={(_event, change) => setPage(change)}
-          onSetPageSize={(_event, change) => setPageSize(change)}
+          onSetPage={(_, change) => setPage(change)}
+          onSetPageSize={(_, change) => setPageSize(change)}
           canSelectAll={true}
           onRowSelect={onTableRowSelect}
           variant={TableVariant.compact}
