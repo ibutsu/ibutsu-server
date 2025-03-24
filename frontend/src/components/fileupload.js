@@ -50,7 +50,7 @@ const FileUpload = (props) => {
             let action = null;
             if (data.metadata.run_id) {
               const RunButton = () => (
-                <AlertActionLink component='a' href={'/project/' + (data.metadata.project_id || primaryObject.id) + '/runs/' + data.metadata.run_id}>
+                <AlertActionLink component='a' href={`/project/${(data.metadata.project_id || primaryObject.id)}/runs/${data.metadata.run_id}#summary`}>
                 Go to Run
                 </AlertActionLink>
               );

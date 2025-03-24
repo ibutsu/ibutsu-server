@@ -37,7 +37,7 @@ const Result = () => {
           throw new Error('Failed with HTTP code ' + response.status);
         }
       } catch (error) {
-        console.log(error);
+        console.error(error);
       }
     };
     fetchTestResult();
@@ -53,13 +53,12 @@ const Result = () => {
         </TextContent>
       </PageSection>
       <PageSection>
-        {!testResult ? (
-          <Skeleton />
-        ) : (
+        {testResult ? (
           isResultValid ?
             <ResultView testResult={testResult} /> :
             <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list"/>
-        )}
+        ) :
+          <Skeleton />}
       </PageSection>
     </React.Fragment>
   );

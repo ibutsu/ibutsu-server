@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
 
 import {
   Badge,
@@ -29,29 +29,23 @@ import {
 import {
   CatalogIcon,
   ChevronRightIcon,
-  CheckCircleIcon,
   CodeIcon,
-  ExclamationCircleIcon,
-  FileIcon,
   FileAltIcon,
   FolderIcon,
   FolderOpenIcon,
   InfoCircleIcon,
   MessagesIcon,
-  QuestionCircleIcon,
-  RepositoryIcon,
-  TimesCircleIcon
+  RepositoryIcon
 } from '@patternfly/react-icons';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
-  cleanPath,
   getSpinnerRow,
-  processPyTestPath,
   resultToRow,
-  round
+  round,
+  buildResultsTree
 } from './utilities';
 import EmptyObject from './components/empty-object';
 import FilterTable from './components/filtertable';
@@ -60,114 +54,13 @@ import TabTitle from './components/tabs';
 import ClassifyFailuresTable from './components/classify-failures';
 import ArtifactTab from './components/artifact-tab';
 import { IbutsuContext } from './services/context';
+import { useTabHook } from './components/tabHook';
 
-// const match = (node, text) => node.name.toLowerCase().indexOf(text.toLowerCase()) !== -1;
-
-// const findNode = (node, text) => match(node, text) || (
-//   node.children && node.children.length && !!node.children.find(child => findNode(child, text))
-// );
-
-// const searchTree = (node, text) => {
-//   if (match(node, text) || !node.children) {
-//     return node;
-//   }
-//   const filtered = node.children
-//     .filter(child => findNode(child, text))
-//     .map(child => searchTree(child, text));
-//   return Object.assign({}, node, {children: filtered});
-// };
-
-const buildTree = (results) => {
-  const getPassPercent = (stats) => {
-    let percent = 'N/A';
-    if (stats.count > 0) {
-      percent = Math.round(((stats.passed + stats.xfailed) / stats.count * 100));
-    }
-    return percent;
-  };
-
-  const getBadgeClass = (passPercent) => {
-    let className = 'failed';
-    if (passPercent > 75) {
-      className = 'error';
-    }
-    if (passPercent > 90) {
-      className = 'passed';
-    }
-    return className;
-  };
-
-  let treeStructure = [];
-  results.forEach(testResult => {
-    const pathParts = processPyTestPath(cleanPath(testResult.metadata.fspath));
-    let children = treeStructure;
-    pathParts.forEach(dirName => {
-      let child = children.find(item => item.name == dirName);
-      if (!child) {
-        child = {
-          name: dirName,
-          id: dirName,
-          children: [],
-          hasBadge: true,
-          _stats: {
-            count: 0,
-            passed: 0,
-            failed: 0,
-            skipped: 0,
-            error: 0,
-            xpassed: 0,
-            xfailed: 0
-          },
-        };
-        if (dirName.endsWith('.py')) {
-          child.icon = <FileIcon />;
-          child.expandedIcon = <FileIcon />;
-        }
-        children.push(child);
-      }
-      child._stats[testResult.result] += 1;
-      child._stats.count += 1;
-      const passPercent = getPassPercent(child._stats);
-      const className = getBadgeClass(passPercent);
-      child.customBadgeContent = `${passPercent}%`;
-      child.badgeProps = { className: className };
-      children = child.children;
-    });
-    let icon = <QuestionCircleIcon />;
-    if (testResult.result === 'passed') {
-      icon = <CheckCircleIcon />;
-    }
-    else if (testResult.result === 'failed') {
-      icon = <TimesCircleIcon />;
-    }
-    else if (testResult.result === 'error') {
-      icon = <ExclamationCircleIcon />;
-    }
-    else if (testResult.result === 'skipped') {
-      icon = <ChevronRightIcon />;
-    }
-    else if (testResult.result === 'xfailed') {
-      icon = <CheckCircleIcon />;
-    }
-    else if (testResult.result === 'xpassed') {
-      icon = <TimesCircleIcon />;
-    }
-    children.push({
-      id: testResult.id,
-      name: testResult.test_id,
-      icon: <span className={testResult.result}>{icon}</span>,
-      _testResult: testResult
-    });
-  });
-  return treeStructure;
-};
 
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 
-const Run = () => {
+const Run = ({defaultTab='summary'}) => {
   const { run_id } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const context = useContext(IbutsuContext);
   const {darkTheme} = context;
@@ -175,11 +68,6 @@ const Run = () => {
   const [run, setRun] = useState({});
   const [testResult, setTestResult] = useState(null);
   const [rows, setRows] = useState([getSpinnerRow(5)]);
-
-  // eslint-disable-next-line no-unused-vars
-  const [results, setResults] = useState([]);  // results unused?
-
-  const [activeTab, setActiveTab] = useState();
 
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
@@ -190,56 +78,13 @@ const Run = () => {
   const [resultsTree, setResultsTree] = useState([]);
   const [activeItems, setActiveItems] = useState([]);
 
-  const [artifactTabs, setArtifactTabs] = useState([]);
-
-  useEffect(() => {
-    if (!activeTab) {
-      setActiveTab('summary');
-    }
-  }, [activeTab]);
+  const [artifacts, setArtifacts] = useState([]);
 
   const onTreeItemSelect = (_, treeItem) => {
     if (treeItem && !treeItem.children) {
       setActiveItems([treeItem]);
       setTestResult(treeItem._testResult);
     }
-  };
-
-  useEffect(() => {
-    let fetchedResults = [];
-    const getResultsForTree = (treePage) => {
-      HttpClient.get([Settings.serverUrl, 'result'], {
-        filter: 'run_id=' + run_id,
-        pageSize: 500,
-        page: treePage
-      })
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          fetchedResults = [...fetchedResults, ...data.results];
-          if (data.results.length === 500) {
-            // recursively fetch the next page
-            getResultsForTree(treePage + 1);
-          }
-          else {
-            setResultsTree(buildTree(fetchedResults));
-          }
-        })
-        .catch((error) => {
-          console.error('Error fetching result data:', error);
-        });
-    };
-
-    if (activeTab === 'results-tree') {
-      getResultsForTree(1);
-    }
-
-  }, [activeTab, run_id]);
-
-  const onTabSelect = (_, tabIndex) => {
-    if (location) {
-      navigate(`${location.pathname}#${tabIndex}`);
-    }
-    setActiveTab(tabIndex);
   };
 
   useEffect(() => {
@@ -253,7 +98,6 @@ const Run = () => {
     })
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
-        setResults(data.results);
         setRows(data.results.map((result) => resultToRow(result)));
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
@@ -266,41 +110,74 @@ const Run = () => {
       });
   }, [page, pageSize, run_id]);
 
-  const handlePopState = useCallback(() => {
-    // Handle browser navigation buttons click
-    const tabIndex = ( !!location && location.hash !== '' ) ? location.hash.substring(1) : 'summary';
-    setActiveTab(tabIndex);
-  }, [location]);
-
   useEffect(() => {
     if (!run_id) { return; }
     HttpClient.get([Settings.serverUrl, 'run', run_id])
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         setRun(data);
-        setArtifactTabs(data.artifacts?.map(artifact => (
-          <Tab
-            key={artifact.id}
-            eventKey={artifact.id}
-            title={
-              <TabTitle
-                icon={<FileAltIcon />}
-                text={artifact.filename} />
-            }>
-            <ArtifactTab artifact={artifact} />
-          </Tab>
-        )));
+        setArtifacts(data.artifacts);
       })
       .catch(error => {
         console.error(error);
         setIsRunValid(false);
       });
+  }, [run_id]);
 
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
+  const artifactTabs = useMemo(() => (
+    artifacts?.map(artifact => (
+      <Tab
+        key={artifact.id}
+        eventKey={artifact.id}
+        title={
+          <TabTitle
+            icon={<FileAltIcon />}
+            text={artifact.filename} />
+        }>
+        <ArtifactTab artifact={artifact} />
+      </Tab>))
+  ), [artifacts]);
+
+  const artifactKeys = useCallback(() => {
+    if (artifactTabs && artifactTabs?.length !== 0) {return(artifactTabs.map((tab) => tab.key));}
+    else {return([]);}
+  }, [artifactTabs]);
+
+  // Tab state and navigation hooks/effects
+  const {activeTab, onTabSelect} = useTabHook(
+    ['summary', 'results-list', 'results-tree', 'classify-failures', 'run-object', ...artifactKeys()],
+    defaultTab
+  );
+
+  useEffect(() => {
+    let fetchedResults = [];
+    const getResultsForTree = (treePage=1) => {
+      HttpClient.get([Settings.serverUrl, 'result'], {
+        filter: 'run_id=' + run_id,
+        pageSize: 500,
+        page: treePage
+      })
+        .then(response => HttpClient.handleResponse(response))
+        .then(data => {
+          fetchedResults = [...fetchedResults, ...data.results];
+          if (data.results.length === 500) {
+            // recursively fetch the next page
+            getResultsForTree(treePage + 1);
+          }
+          else {
+            setResultsTree(buildResultsTree(fetchedResults));
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching result data:', error);
+        });
     };
-  }, [handlePopState, run_id]);
+
+    if (activeTab === 'results-tree') {
+      getResultsForTree();
+    }
+
+  }, [activeTab, run_id]);
 
   let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0, not_run = 0;
   let created = 0;
@@ -647,6 +524,8 @@ const Run = () => {
   );
 };
 
-Run.propTypes = {};
+Run.propTypes = {
+  defaultTab: PropTypes.string,
+};
 
 export default Run;
