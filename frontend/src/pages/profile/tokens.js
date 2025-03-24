@@ -80,7 +80,8 @@ const UserTokens = () => {
   }, [page, pageSize, isAddTokenOpen, isDeleteTokenOpen]); // extra deps to trigger fetch on modal close
 
 
-  document.title = 'User Tokens | Ibutsu';
+  useEffect(() => { document.title = 'User Tokens | Ibutsu'; }, []);
+
   return (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>

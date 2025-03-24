@@ -22,7 +22,7 @@ const Result = () => {
   const id = params.result_id;
 
   useEffect(() => {
-    const fetchTestResult = async function () {
+    const fetchTestResult = async () => {
       if (!id) {
         return;
       }

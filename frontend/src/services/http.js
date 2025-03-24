@@ -1,28 +1,28 @@
 import { AuthService } from './auth';
 
 
-function trim (string) {
+const trim = (string) => {
   if (string.startsWith('/')) {
-    string = string.slice(1);
+    return string.slice(1);
   }
   if (string.endsWith('/')) {
-    string = string.slice(0, -1);
+    return string.slice(0, -1);
   }
   return string;
-}
+};
 
-function prepareUrl (url, params={}) {
+const prepareUrl = (url, params={}) => {
+  let newUrl = url;
   if (url instanceof Array) {
-    let newUrl = url[0];
+    newUrl = url[0];
     url.slice(1).forEach(fragment => {
       newUrl = [newUrl, trim(fragment)].join('/');
     });
-    url = newUrl;
   }
-  return buildUrl(url, params);
-}
+  return buildUrl(newUrl, params);
+};
 
-function addAuth (options) {
+const addAuth = (options) => {
   if (AuthService.isLoggedIn()) {
     const bearer = 'Bearer ' + AuthService.getToken();
     if (Object.keys(options).includes('headers')) {
@@ -33,9 +33,9 @@ function addAuth (options) {
     }
   }
   return options;
-}
+};
 
-export function buildUrl (url, params) {
+export const buildUrl = (url, params) => {
   // shorthand
   const esc = encodeURIComponent;
   let query = [];
@@ -56,7 +56,7 @@ export function buildUrl (url, params) {
   else {
     return url;
   }
-}
+};
 
 export class HttpClient {
   static get (url, params={}, options={}) {

@@ -37,7 +37,7 @@ import RunSummary from '../components/runsummary';
 import { OPERATIONS, ACCESSIBILITY_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 
-function runToRow (run, filterFunc, analysisViewId) {
+const runToRow = (run, filterFunc, analysisViewId) => {
   let badges = [];
   let created = 0;
   let badge;
@@ -79,18 +79,18 @@ function runToRow (run, filterFunc, analysisViewId) {
       {title: created.toLocaleString()}
     ]
   };
-}
+};
 
-function fieldToColumnName (fields) {
+const fieldToColumnName = (fields) => {
   // For each value in fields, changes from ex_ample to Ex Ample
   let results = [];
-  for (var i = 0; i < fields.length; i++) {
+  for (let i = 0; i < fields.length; i++) {
     let tmp_item = fields[i];
-    tmp_item = tmp_item.replace(/_/g, ' ').replace(/(?: |\b)(\w)/g, function (key) { return key.toUpperCase();});
+    tmp_item = tmp_item.replace(/_/g, ' ').replace(/(?: |\b)(\w)/g, (key) => key.toUpperCase());
     results.push(tmp_item);
   }
   return results;
-}
+};
 
 const AccessibilityDashboardView = (props) => {
   const {view} = props;

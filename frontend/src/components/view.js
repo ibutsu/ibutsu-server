@@ -41,7 +41,8 @@ const View = () => {
 
   }, [params]);
 
-  document.title = view ? view.title + ' | Ibutsu' : document.title;
+  useEffect(() => { if (view) {document.title = view.title + ' | Ibutsu';}}, [view]);
+
   const ViewComponent = view ? VIEW_MAP[view.widget] : null;
 
   return(

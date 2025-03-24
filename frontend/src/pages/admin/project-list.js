@@ -133,7 +133,8 @@ const ProjectList = () => {
     setFilterText('');
   };
 
-  document.title = 'Projects - Administration | Ibutsu';
+  useEffect(() => { document.title = 'Projects - Administration | Ibutsu'; }, []);
+
   return (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>

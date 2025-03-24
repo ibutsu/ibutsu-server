@@ -47,7 +47,7 @@ import { IbutsuContext } from '../services/context';
 import { useNavigate, useParams } from 'react-router-dom';
 import { setDocumentDarkTheme } from '../utilities';
 
-function IbutsuHeader () {
+const IbutsuHeader = () => {
   // hooks
   const context = useContext(IbutsuContext);
   const params = useParams();
@@ -103,7 +103,7 @@ function IbutsuHeader () {
     }
   }, [project_id, selectedProject, setDefaultDashboard, setPrimaryObject, setPrimaryType]);
 
-  function onProjectSelect (_, value) {
+  const onProjectSelect = (_, value) => {
     const {
       primaryObject,
       setPrimaryObject,
@@ -128,9 +128,9 @@ function IbutsuHeader () {
     setFilterValue('');
 
     navigate('/project/' + value?.id + '/dashboard/');
-  }
+  };
 
-  function onProjectClear () {
+  const onProjectClear = () => {
     const { setPrimaryObject } = context;
 
     setSelectedProject('');
@@ -141,12 +141,12 @@ function IbutsuHeader () {
     setPrimaryObject();
 
     navigate('/project');
-  }
+  };
 
-  function onProjectTextInputChange (_, value) {
+  const onProjectTextInputChange = (_, value) => {
     setInputValue(value);
     setFilterValue(value);
-  }
+  };
 
   const toggle = toggleRef => (
     <MenuToggle
@@ -331,6 +331,6 @@ function IbutsuHeader () {
       </Masthead>
     </React.Fragment>
   );
-}
+};
 
 export default IbutsuHeader;
