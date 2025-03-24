@@ -16,10 +16,10 @@ const UserDropdown = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  function logout () {
+  const logout = () => {
     AuthService.logout();
     window.location = '/';
-  }
+  };
 
   useEffect(() => {
     AuthService.isSuperAdmin().then(isSuperAdmin => setIsSuperAdmin(isSuperAdmin));

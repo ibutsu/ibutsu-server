@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 
 import { Navigate, Route, Routes } from 'react-router-dom';
@@ -15,7 +15,9 @@ import View from './components/view';
 import './app.css';
 
 const App = () => {
-  document.title = 'Ibutsu';
+
+  // apparently it's good practice to set this after render via effect
+  useEffect(() => { document.title = 'Ibutsu'; }, []);
 
   return (
     <Routes>

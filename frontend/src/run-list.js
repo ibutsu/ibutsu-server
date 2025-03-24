@@ -266,7 +266,8 @@ const RunList = () => {
     setFilteredFieldOptions(newSelectOptionsField);
   }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
 
-  document.title = 'Test Runs | Ibutsu';
+  useEffect(() => { document.title = 'Test Runs | Ibutsu'; }, []);
+
   const filterMode = getFilterMode(fieldSelection);
   const operationMode = getOperationMode(operationSelection);
   const operations = getOperationsFromField(fieldSelection);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import {
   Nav,
@@ -35,7 +35,7 @@ const AdminPage = () => {
     </PageSidebar>
   );
 
-  document.title = 'Administration | Ibutsu';
+  useEffect(() => { document.title = 'Administration | Ibutsu'; }, []);
 
   return (
     <React.Fragment>

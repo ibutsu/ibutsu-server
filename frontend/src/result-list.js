@@ -313,7 +313,7 @@ const ResultList = () => {
     setFilteredRuns(newSelectOptionsRun);
   }, [runFilterValue, runInputValue, isRunOpen, runs]);
 
-  document.title = 'Test Results | Ibutsu';
+  useEffect(() => { document.title = 'Test Results | Ibutsu'; }, []);
 
   const filterMode = getFilterMode(fieldSelection);
   const operationMode = getOperationMode(operationSelection);

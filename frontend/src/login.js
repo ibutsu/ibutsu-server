@@ -46,7 +46,7 @@ const getAlert = (location) => {
   return alert;
 };
 
-function getUser (location) {
+const getUser = (location) => {
   const userProperties = ['name', 'email', 'token'];
   const urlParams = new URLSearchParams(location.search);
   let user = null;
@@ -59,7 +59,7 @@ function getUser (location) {
     }
   });
   return user;
-}
+};
 
 const Login = () => {
   const location = useLocation();
