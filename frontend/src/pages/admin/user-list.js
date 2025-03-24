@@ -158,7 +158,7 @@ const UserList = () => {
               columns={COLUMNS}
               rows={!fetching ? filteredUsers.map((user) => userToRow(user)) : [getSpinnerRow(5)]}
               filters={[
-                <TextInput type="text" id="filter" placeholder="Search for user..." value={textFilter} onChange={(_event, value) => onFilterChange(value)} style={{height: 'inherit'}} key="textFilter"/>
+                <TextInput type="text" id="filter" placeholder="Search for user..." value={textFilter} onChange={(_, value) => onFilterChange(value)} style={{height: 'inherit'}} key="textFilter"/>
               ]}
               activeFilters={activeFilters}
               onRemoveFilter={onRemoveFilter}
@@ -169,8 +169,8 @@ const UserList = () => {
               }}
               isEmpty={filteredUsers.length === 0}
               isError={isError}
-              onSetPage={(_event, value) => setPage(value)}
-              onSetPageSize={(_event, value) => setPageSize(value)}
+              onSetPage={(_, value) => setPage(value)}
+              onSetPageSize={(_, value) => setPageSize(value)}
             />
           </CardBody>
         </Card>

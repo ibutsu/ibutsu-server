@@ -207,7 +207,7 @@ export class SignUp extends React.Component {
               validated={this.state.isValidEmail ? 'default' : 'error'}
               aria-describedby="email-helper"
               value={this.state.emailValue}
-              onChange={(_event, emailValue) => this.onEmailChange(emailValue)}
+              onChange={(_, emailValue) => this.onEmailChange(emailValue)}
             />
             <FormHelperText>
               <HelperText>
@@ -231,7 +231,7 @@ export class SignUp extends React.Component {
                 validated={this.state.isValidPassword ? 'default' : 'error'}
                 aria-describedby="password-helper"
                 value={this.state.passwordValue}
-                onChange={(_event, passwordValue) => this.onPasswordChange(passwordValue)} />
+                onChange={(_, passwordValue) => this.onPasswordChange(passwordValue)} />
               }
               {this.state.isPasswordVisible &&
               <TextInput
@@ -242,7 +242,7 @@ export class SignUp extends React.Component {
                 validated={this.state.isValidPassword ? 'default' : 'error'}
                 aria-describedby="password-helper"
                 value={this.state.passwordValue}
-                onChange={(_event, passwordValue) => this.onPasswordChange(passwordValue)} />}
+                onChange={(_, passwordValue) => this.onPasswordChange(passwordValue)} />}
               <InputGroupItem>
                 <Button variant="control" aria-label="Show password" onClick={this.onPasswordVisibleClick}>
                   {!this.state.isPasswordVisible && <EyeIcon/>}
@@ -262,8 +262,8 @@ export class SignUp extends React.Component {
             fieldId="confirm-password"
           >
             <InputGroup>
-              {!this.state.isConfirmPasswordVisible && <TextInput isRequired type="password" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={(_event, confirmPasswordValue) => this.onConfirmPasswordChange(confirmPasswordValue)} validated={this.state.confirmPasswordValidation} />}
-              {this.state.isConfirmPasswordVisible && <TextInput isRequired type="text" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={(_event, confirmPasswordValue) => this.onConfirmPasswordChange(confirmPasswordValue)} validated={this.state.confirmPasswordValidation} />}
+              {!this.state.isConfirmPasswordVisible && <TextInput isRequired type="password" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={(_, confirmPasswordValue) => this.onConfirmPasswordChange(confirmPasswordValue)} validated={this.state.confirmPasswordValidation} />}
+              {this.state.isConfirmPasswordVisible && <TextInput isRequired type="text" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={(_, confirmPasswordValue) => this.onConfirmPasswordChange(confirmPasswordValue)} validated={this.state.confirmPasswordValidation} />}
               <InputGroupItem>
                 <Button variant="control" aria-label="Show password" onClick={this.onConfirmPasswordVisibleClick}>
                   {!this.state.isConfirmPasswordVisible && <EyeIcon/>}

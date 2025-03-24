@@ -140,7 +140,7 @@ const NewWidgetWizard = ({ dashboard, saveCallback, closeCallback, isOpen }) => 
     return 'default';
   }, [params]);
 
-  const onNext = useCallback((_event, currentStep) => {
+  const onNext = useCallback((_, currentStep) => {
     if (currentStep.id === 3) {
       onParamChange('', null);
     }
@@ -195,7 +195,7 @@ const NewWidgetWizard = ({ dashboard, saveCallback, closeCallback, isOpen }) => 
         <Form isHorizontal>
           <Title headingLevel="h1" size="xl">Set widget information</Title>
           <FormGroup label="Title" fieldId="widget-title" isRequired>
-            <TextInput type="text" id="widget-title" name="widget-title" value={title} onChange={(_event, value) => onTitleChange(value)} validated={titleValid.toString()} isRequired />
+            <TextInput type="text" id="widget-title" name="widget-title" value={title} onChange={(_, value) => onTitleChange(value)} validated={titleValid.toString()} isRequired />
             {titleValid !== true && (
               <FormHelperText>
                 <HelperText>
@@ -207,7 +207,7 @@ const NewWidgetWizard = ({ dashboard, saveCallback, closeCallback, isOpen }) => 
             )}
           </FormGroup>
           <FormGroup label="Weight" fieldId="widget-weight">
-            <TextInput type="number" id="widget-weight" name="widget-weight" value={weight} onChange={(_event, value) => setWeight(value)} />
+            <TextInput type="number" id="widget-weight" name="widget-weight" value={weight} onChange={(_, value) => setWeight(value)} />
             <FormHelperText>
               <HelperText>
                 <HelperTextItem variant="default">

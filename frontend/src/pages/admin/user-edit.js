@@ -65,7 +65,7 @@ const UserEdit = () => {
     navigate(-1);
   };
 
-  const onProjectsSelect = (_event, value) => {
+  const onProjectsSelect = (_, value) => {
     // compareTo comes from the object from ProjecttoOption utility
     if (formProjects?.find(item => item.compareTo(value))) {
       setFormProjects(formProjects.filter(item => !item.compareTo(value)));
@@ -145,7 +145,7 @@ const UserEdit = () => {
         <TextInputGroupMain
           value={inputValue}
           onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-          onChange={(_event, value) => setInputValue(value)}
+          onChange={(_, value) => setInputValue(value)}
           id="multi-typeahead-select-input"
           autoComplete="off"
           placeholder="Select one or more projects"
@@ -210,7 +210,7 @@ const UserEdit = () => {
                   name="userName"
                   aria-describedby="The user's name"
                   value={formName}
-                  onChange={(_event, value) => setFormName(value)}
+                  onChange={(_, value) => setFormName(value)}
                 />
                 <FormHelperText>
                   <HelperText>
@@ -226,7 +226,7 @@ const UserEdit = () => {
                   name="userEmail"
                   aria-describedby="The user's e-mail address"
                   value={formEmail}
-                  onChange={(_event, value) => setFormEmail(value)}
+                  onChange={(_, value) => setFormEmail(value)}
                 />
                 <FormHelperText>
                   <HelperText>
@@ -241,7 +241,7 @@ const UserEdit = () => {
                   name="userIsActive"
                   aria-label="User is active"
                   isChecked={formActive}
-                  onChange={(_event, checked) => setFormActive(checked)}
+                  onChange={(_, checked) => setFormActive(checked)}
                 />
                 <Checkbox
                   label="Is administrator"
@@ -249,7 +249,7 @@ const UserEdit = () => {
                   name="userIsAdmin"
                   aria-label="User is administrator"
                   isChecked={formAdmin}
-                  onChange={(_event, checked) => setFormAdmin(checked)}
+                  onChange={(_, checked) => setFormAdmin(checked)}
                 />
               </FormGroup>
               <FormGroup label="Projects" fieldId="userProjects">

@@ -105,7 +105,7 @@ const ProjectEdit = () => {
       .catch((error) => console.error(error));
   };
 
-  const onOwnerInputChange = (_event, value) => {
+  const onOwnerInputChange = (_, value) => {
     setInputValueOwner(value);
     setFilterValueOwner(value);
   };
@@ -136,7 +136,7 @@ const ProjectEdit = () => {
     setFilterValueDashboard('');
   };
 
-  const onDashboardInputChange = (_event, value) => {
+  const onDashboardInputChange = (_, value) => {
     setInputValueDashboard(value);
     setFilterValueDashboard(value);
   };
@@ -331,7 +331,7 @@ const ProjectEdit = () => {
                   name="projectTitle"
                   aria-describedby="The project display name"
                   value={title}
-                  onChange={(_event, value) => setTitle(value)}
+                  onChange={(_, value) => setTitle(value)}
                   validated={titleValid ? ValidatedOptions.default : ValidatedOptions.error}
                 />
                 <FormHelperText>
@@ -348,7 +348,7 @@ const ProjectEdit = () => {
                   name="projectName"
                   aria-describedby="The project machine name"
                   value={name}
-                  onChange={(_event, value) => setName(value)}
+                  onChange={(_, value) => setName(value)}
                   validated={nameValid ? ValidatedOptions.default : ValidatedOptions.error}
                 />
                 <FormHelperText>

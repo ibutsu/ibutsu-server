@@ -44,7 +44,7 @@ const MetaFilter = (props) => {
   const [valueOptions, setValueOptions] = useState([]);
   const [fieldOptions, setFieldOptions] = useState([]);
 
-  const onFieldSelect = (_event, selection) => {
+  const onFieldSelect = (_, selection) => {
     // clear value state too, otherwise the old selection remains selected but is no longer visible
     setFieldSelection(selection);
     setIsFieldOpen(false);
@@ -52,7 +52,7 @@ const MetaFilter = (props) => {
     setIsValueOpen(false);
   };
 
-  const onValueSelect = (_event, selection) => {
+  const onValueSelect = (_, selection) => {
     // update state and call setFilter
     setFilter(id, fieldSelection, selection);
     onFieldClear();
@@ -127,7 +127,7 @@ const MetaFilter = (props) => {
             isOpen={isFieldOpen}
             selections={fieldSelection}
             maxHeight="1140%"
-            onToggle={(_event, change) => setIsFieldOpen(change)}
+            onToggle={(_, change) => setIsFieldOpen(change)}
             onSelect={onFieldSelect}
             onClear={onFieldClear}
             isCreatable={true}
@@ -144,7 +144,7 @@ const MetaFilter = (props) => {
             // selections prop empty because setFilter callback applies and adds the filter
             maxHeight="1140%"
             isDisabled={fieldSelection.length === 0 || (fieldSelection.length > 0 && !values_available) }
-            onToggle={(_event, isExpanded) => setIsValueOpen(isExpanded)}
+            onToggle={(_, isExpanded) => setIsValueOpen(isExpanded)}
             onSelect={onValueSelect}
             onClear={onValueClear}
           >

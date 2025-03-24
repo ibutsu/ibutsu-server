@@ -107,7 +107,7 @@ const ResultView = ({
     };
   }, [activeTab, getTestHistoryTable, handlePopState]);
 
-  const onTabSelect = (_event, tabIndex) => {
+  const onTabSelect = (_, tabIndex) => {
     if (location) {
       navigate(`${location.pathname}${location.search}#${tabIndex}`);
     }

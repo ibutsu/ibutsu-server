@@ -64,7 +64,7 @@ const NewDashboardModal = ({ project, saveCallback, closeCallback, isOpen }) => 
             id="dashboard-title"
             name="dashboard-title"
             value={title}
-            onChange={(_event, value) => setTitle(value)}
+            onChange={(_, value) => setTitle(value)}
             validated={isTitleValid.toString()}
             isRequired
           />
@@ -75,7 +75,7 @@ const NewDashboardModal = ({ project, saveCallback, closeCallback, isOpen }) => 
             id="dashboard-description"
             name="dashboard-description"
             value={description}
-            onChange={(_event, value) => setDescription(value)}
+            onChange={(_, value) => setDescription(value)}
           />
         </FormGroup>
       </Form>
