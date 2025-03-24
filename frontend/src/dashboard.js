@@ -131,7 +131,7 @@ const Dashboard = () => {
         .then(data => {
           setSelectedDB(data);
           setIsDBSelectorOpen(false);
-          setFilterDBValue();
+          setFilterDBValue(data?.title);
           setSelectDBInputValue(data?.title);
         })
         .catch(error => console.error(error));
@@ -143,7 +143,7 @@ const Dashboard = () => {
     // state update
     setSelectedDB(value);
     setIsDBSelectorOpen(false);
-    setFilterDBValue('');
+    setFilterDBValue(value.title);
     setSelectDBInputValue(value.title);
 
     navigate('/project/' + value.project_id + '/dashboard/' + value.id);
