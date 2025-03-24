@@ -1,6 +1,6 @@
 {/* TODO: Consider renaming to projects-page, maybe updates for static routing? */}
 
-import React, {useContext} from 'react';
+import React, {useContext, useEffect} from 'react';
 
 import { Outlet } from 'react-router-dom';
 
@@ -23,7 +23,7 @@ import { ALERT_TIMEOUT } from '../constants';
 const IbutsuPage = () => {
   const {primaryObject} = useContext(IbutsuContext);
 
-  document.title = 'Ibutsu';
+  useEffect(() => { document.title = 'Ibutsu'; }, []);
 
   return (
     <React.Fragment>

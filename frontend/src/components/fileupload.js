@@ -25,20 +25,20 @@ const FileUpload = (props) => {
   const name = props?.name ? props.name : 'file';
 
 
-  function onClick () {
+  const onClick = () => {
     inputRef.current.click();
-  }
+  };
 
-  function onFileChange (e) {
+  const onFileChange = (e) => {
     let files = e.target.files || e.dataTransfer.files;
     if (files.length > 0) {
       uploadFile(files[0]);
       // Clear the upload field
       inputRef.current.value = '';
     }
-  }
+  };
 
-  function checkImportStatus () {
+  const checkImportStatus = () => {
     const { primaryObject } = context;
     if(importId) {
       HttpClient.get([Settings.serverUrl, 'import', importId])
@@ -72,9 +72,9 @@ const FileUpload = (props) => {
           }
         });
     }
-  }
+  };
 
-  function uploadFile (file) {
+  const uploadFile = (file) => {
     const files = {};
     const { primaryObject } = context;
     files[name] = file;
@@ -114,7 +114,7 @@ const FileUpload = (props) => {
           }
         );
       });
-  }
+  };
 
   const {primaryObject} = context;
   return (

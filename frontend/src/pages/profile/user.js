@@ -89,7 +89,7 @@ const UserProfile = () => {
       .catch(error => console.error(error));
   };
 
-  document.title = 'Profile | Ibutsu';
+  useEffect(() => { document.title = 'Profile | Ibutsu'; }, []);
 
   return (
     <React.Fragment>

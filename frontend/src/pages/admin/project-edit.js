@@ -39,8 +39,8 @@ const userToOption = (user) => {
   }
   return {
     user: user,
-    toString: function () { return user.name; },
-    compareTo: function (value) {
+    toString: () => user.name,
+    compareTo: (value) => {
       if (value.user) {
         return user.id === value.user.id;
       }

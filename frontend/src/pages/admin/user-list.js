@@ -142,7 +142,7 @@ const UserList = () => {
     setTextFilter('');
   };
 
-  document.title = 'Users - Administration | Ibutsu';
+  useEffect(() => { document.title = 'Users - Administration | Ibutsu'; }, []);
 
   return (
     <React.Fragment>
@@ -156,7 +156,7 @@ const UserList = () => {
           <CardBody className="pf-u-p-0">
             <FilterTable
               columns={COLUMNS}
-              rows={!fetching ? filteredUsers.map((user) => userToRow(user)) : [getSpinnerRow(5)]}
+              rows={fetching ? [getSpinnerRow(5)] : filteredUsers.map((user) => userToRow(user))}
               filters={[
                 <TextInput type="text" id="filter" placeholder="Search for user..." value={textFilter} onChange={(_, value) => onFilterChange(value)} style={{height: 'inherit'}} key="textFilter"/>
               ]}
