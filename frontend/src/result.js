@@ -4,7 +4,8 @@ import {
   PageSection,
   PageSectionVariants,
   TextContent,
-  Text
+  Text,
+  Skeleton
 } from '@patternfly/react-core';
 
 import { HttpClient } from './services/http';
@@ -52,9 +53,13 @@ const Result = () => {
         </TextContent>
       </PageSection>
       <PageSection>
-        {isResultValid ?
-          <ResultView testResult={testResult} /> :
-          <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list"/>}
+        {!testResult ? (
+          <Skeleton />
+        ) : (
+          isResultValid ?
+            <ResultView testResult={testResult} /> :
+            <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list"/>
+        )}
       </PageSection>
     </React.Fragment>
   );
