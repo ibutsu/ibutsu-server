@@ -17,8 +17,6 @@ def get_keycloak_config(is_private=False):
     if not backend_url.endswith("/api"):
         backend_url += "/api"
     server_url = current_app.config["KEYCLOAK_BASE_URL"]
-    if not server_url.endswith("auth"):
-        server_url = build_url(server_url, "auth")
     realm = current_app.config.get("KEYCLOAK_REALM")
     realm_base_url = build_url(server_url, "realms", realm)
     config = {
