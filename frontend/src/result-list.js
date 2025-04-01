@@ -239,6 +239,7 @@ const ResultList = () => {
   useEffect(() => {
     const fetchData = async () => {
       setIsError(false);
+      setRows([getSpinnerRow(5)]);
       let apiParams = { filter: [] };
       let newFilters = { ...filters };
       if (primaryObject) {
