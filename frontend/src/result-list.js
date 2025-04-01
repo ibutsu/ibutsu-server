@@ -72,7 +72,7 @@ const ResultList = () => {
   const [runInputValue, setRunInputValue] = useState('');
   const [runFilterValue, setRunFilterValue] = useState('');
 
-  const [resultSelection, setResultSelection] = useState([]);
+  const [resultSelection, setResultSelection] = useState('');
   const [isResultOpen, setIsResultOpen] = useState(false);
 
   const [boolSelection, setBoolSelection] = useState(false);
@@ -164,7 +164,7 @@ const ResultList = () => {
   };
 
   const onResultClear = () => {
-    setResultSelection([]);
+    setResultSelection('');
     setIsResultOpen(false);
   };
 
@@ -188,7 +188,7 @@ const ResultList = () => {
       setRunInputValue('');
       setOperationSelection('eq');
       setTextFilter('');
-      setResultSelection([]);
+      setResultSelection('');
       setRunSelection([]);
       setBoolSelection(false);
       setInValues([]);
@@ -216,7 +216,7 @@ const ResultList = () => {
       setFieldSelection();
       setOperationSelection('eq');
       setTextFilter('');
-      setResultSelection([]);
+      setResultSelection('');
       setRunSelection([]);
       setBoolSelection(false);
       setInValues([]);
@@ -230,7 +230,7 @@ const ResultList = () => {
     setFieldSelection();
     setOperationSelection('eq');
     setTextFilter('');
-    setResultSelection([]);
+    setResultSelection('');
     setRunSelection([]);
     setBoolSelection(false);
     setInValues([]);
@@ -402,7 +402,7 @@ const ResultList = () => {
       placeholder="Select a result"
       ref={toggleRef}
     >
-      {resultSelection}
+      {resultSelection ? resultSelection : 'Select a result'}
     </MenuToggle>
   );
   const resultMultiToggle = toggleRef => (
