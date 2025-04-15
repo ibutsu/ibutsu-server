@@ -113,7 +113,7 @@ const ProjectEdit = () => {
   const onOwnerSelect = (event, value) => {
     setSelectedOwner(value.user);
     setIsOwnerOpen(false);
-    setFilterValueOwner('');
+    setFilterValueOwner(value.user.name);
     setInputValueOwner(value.user.name);
   };
 
@@ -126,7 +126,7 @@ const ProjectEdit = () => {
   const onDashboardSelect = (event, value) => {
     setSelectedDashboard(value.dashboard);
     setIsDashboardOpen(false);
-    setFilterValueDashboard('');
+    setFilterValueDashboard(value.dashboard.title);
     setInputValueDashboard(value.dashboard.title);
   };
 
@@ -191,7 +191,6 @@ const ProjectEdit = () => {
     if (id && id !== 'new') {
       HttpClient.get([Settings.serverUrl, 'dashboard'], {
         'project_id': id,
-        'pageSize': 10
       })
         .then(response => HttpClient.handleResponse(response))
         .then(data => {
@@ -365,6 +364,8 @@ const ProjectEdit = () => {
                   onSelect={onOwnerSelect}
                   onOpenChange={() => setIsOwnerOpen(false)}
                   toggle={toggleOwner}
+                  isScrollable={true}
+                  maxMenuHeight="300px"
                 >
                   <SelectList id="select-typeahead-listbox">
                     {filteredUsers?.map((user, index) => (
@@ -395,6 +396,8 @@ const ProjectEdit = () => {
                   onSelect={onDashboardSelect}
                   onOpenChange={() => setIsDashboardOpen(false)}
                   toggle={toggleDashboard}
+                  isScrollable={true}
+                  maxMenuHeight="300px"
                 >
                   <SelectList id="select-typeahead-listbox">
                     {filteredDashboards.map((dashboard, index) => (
