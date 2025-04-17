@@ -3,10 +3,10 @@ import { AuthService } from './auth';
 
 const trim = (string) => {
   if (string.startsWith('/')) {
-    return string.slice(1);
+    string = string.slice(1);
   }
   if (string.endsWith('/')) {
-    return string.slice(0, -1);
+    string = string.slice(0, -1);
   }
   return string;
 };
