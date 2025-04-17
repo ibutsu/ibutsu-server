@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import {
   Switch,
@@ -16,7 +16,8 @@ import FilterHeatmapWidget from '../widgets/filterheatmap';
 import { HEATMAP_MAX_BUILDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 import ParamDropdown from '../components/param-dropdown';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useTabHook } from '../components/tabHook';
 
 const DEFAULT_BAR = 8;
 
@@ -25,17 +26,14 @@ const LONG_BUILDS = [...SHORT_BUILDS, 70, 150];
 
 const PF_BACK_100 = 'var(--pf-v5-global--BackgroundColor--100)';
 
-const JenkinsJobAnalysisView =(props) => {
+const JenkinsJobAnalysisView =({view, defaultTab='heatmap'}) => {
   const context = useContext(IbutsuContext);
   const {primaryObject} = context;
-  const {view} = props;
-  const location = useLocation();
-  const navigate = useNavigate();
+
   const [searchParams] = useSearchParams();
 
   const [isAreaChart, setIsAreaChart] = useState(false);
   const [isLoading, setIsLoading] = useState();
-  const [activeTab, setActiveTab] = useState('heatmap');
 
   const [barWidth, setBarWidth] = useState(DEFAULT_BAR);
   const [builds, setBuilds] = useState(20);
@@ -44,6 +42,12 @@ const JenkinsJobAnalysisView =(props) => {
   const [heatmapParams, setHeatmapParams] = useState({'count_skips': countSkips});
   const [barchartParams, setBarchartParams] = useState({});
   const [linechartParams, setLinechartParams] = useState({});
+
+  // Tab state and navigation hooks/effects
+  const {activeTab, onTabSelect} = useTabHook(
+    ['heatmap', 'overall-health', 'build-durations'],
+    defaultTab
+  );
 
   useEffect(() => {
     // Fetch the widget parameters for heatmap, barchart and linechart
@@ -112,10 +116,35 @@ const JenkinsJobAnalysisView =(props) => {
     return color;
   };
 
-  const onTabSelect = (_, tabIndex) => {
-    navigate(`${location.pathname}${location.search}#${tabIndex}`);
-    setActiveTab(tabIndex);
-  };
+  const heatmapParam = useMemo(() => {
+    if (activeTab === 'heatmap') {
+      return(
+      <div style={{backgroundColor: PF_BACK_100, float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
+        <ParamDropdown
+          dropdownItems={['Yes', 'No']}
+          defaultValue={(countSkips ? 'Yes': 'No')}
+          handleSelect={(value) => setCountSkips(value === 'Yes')}
+          tooltip="Count skips as failure:"
+        />
+      </div>)
+    }
+  }, [activeTab]);
+
+  const overallSwitch = useMemo(() => {
+    if (activeTab === 'overall-health') {
+      return(
+        <div style={{backgroundColor: PF_BACK_100, float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em'}}>
+          <Switch
+            id="bar-chart-switch"
+            labelOff="Change to Area Chart"
+            label="Change to Bar Chart"
+            isChecked={isAreaChart}
+            onChange={(_, checked) => setIsAreaChart(checked)}
+          />
+        </div>
+      )
+    }
+  }, [activeTab]);
 
   return (
     <React.Fragment>
@@ -127,29 +156,10 @@ const JenkinsJobAnalysisView =(props) => {
           tooltip="Number of builds:"
         />
       </div>
-      {activeTab === 'heatmap' &&
-      <div style={{backgroundColor: PF_BACK_100, float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
-        <ParamDropdown
-          dropdownItems={['Yes', 'No']}
-          defaultValue={(countSkips ? 'Yes': 'No')}
-          handleSelect={(value) => setCountSkips(value === 'Yes')}
-          tooltip="Count skips as failure:"
-        />
-      </div>
-      }
-      {activeTab === 'overall-health' &&
-      <div style={{backgroundColor: PF_BACK_100, float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em'}}>
-        <Switch
-          id="bar-chart-switch"
-          labelOff="Change to Area Chart"
-          label="Change to Bar Chart"
-          isChecked={isAreaChart}
-          onChange={(_, checked) => setIsAreaChart(checked)}
-        />
-      </div>
-      }
+      {heatmapParam}
+      {overallSwitch}
       <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
-        <Tab eventKey='heatmap' title="Heatmap">
+        <Tab key='heatmap' eventKey='heatmap' title="Heatmap">
           {!isLoading && activeTab === 'heatmap' &&
         <FilterHeatmapWidget
           title={heatmapParams.job_name}
@@ -160,7 +170,7 @@ const JenkinsJobAnalysisView =(props) => {
         />
           }
         </Tab>
-        <Tab eventKey='overall-health' title="Overall Health">
+        <Tab key='overall-health' eventKey='overall-health' title="Overall Health">
           {!isLoading && !isAreaChart && activeTab === 'overall-health' &&
         <GenericBarWidget
           title={'Test counts for ' + barchartParams.job_name}
@@ -211,7 +221,7 @@ const JenkinsJobAnalysisView =(props) => {
         />
           }
         </Tab>
-        <Tab eventKey='build-durations' title="Build Duration">
+        <Tab key='build-durations' eventKey='build-durations' title="Build Duration">
           {!isLoading && activeTab === 'build-durations' &&
         <GenericAreaWidget
           title={'Durations for ' + linechartParams.job_name}
@@ -239,7 +249,8 @@ const JenkinsJobAnalysisView =(props) => {
 };
 
 JenkinsJobAnalysisView.propTypes = {
-  view: PropTypes.object
+  view: PropTypes.object,
+  defaultTab: PropTypes.string
 };
 
 export default JenkinsJobAnalysisView;

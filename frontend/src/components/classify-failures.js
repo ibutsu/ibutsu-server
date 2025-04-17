@@ -165,6 +165,7 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
                     hideSummary={hideSummary}
                     hideTestObject={hideTestObject}
                     testResult={rows[rowIndex].result}
+                    skipHash={true}
                   />
               }
             ]

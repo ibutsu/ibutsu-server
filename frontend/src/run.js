@@ -55,6 +55,7 @@ import ClassifyFailuresTable from './components/classify-failures';
 import ArtifactTab from './components/artifact-tab';
 import { IbutsuContext } from './services/context';
 import { useTabHook } from './components/tabHook';
+import PropTypes from 'prop-types';
 
 
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
@@ -238,7 +239,7 @@ const Run = ({defaultTab='summary'}) => {
         }
         {isRunValid &&
           <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
-            <Tab eventKey="summary" title={<TabTitle icon={<InfoCircleIcon />} text="Summary" />}>
+            <Tab key= "summary" eventKey="summary" title={<TabTitle icon={<InfoCircleIcon />} text="Summary" />}>
               <Card>
                 <CardBody style={{ padding: 0 }} id="run-detail">
                   <Grid>
@@ -432,7 +433,7 @@ const Run = ({defaultTab='summary'}) => {
                 </CardBody>
               </Card>
             </Tab>
-            <Tab eventKey="results-list" title={<TabTitle icon={<CatalogIcon />} text="Results List" />}>
+            <Tab key="results-list" eventKey="results-list" title={<TabTitle icon={<CatalogIcon />} text="Results List" />}>
               <Card className="pf-u-mt-lg">
                 <CardHeader>
                   <Flex style={{ width: '100%' }}>
@@ -489,7 +490,7 @@ const Run = ({defaultTab='summary'}) => {
                                 }
                               </CardHeader>
                               <CardBody style={{ backgroundColor: 'var(--pf-v5-c-card--BackgroundColor)', paddingTop: '1.2em' }}>
-                                <ResultView testResult={testResult} defaultTab='summary' />
+                                <ResultView testResult={testResult} skipHash={true} />
                               </CardBody>
                             </Card>
                           }

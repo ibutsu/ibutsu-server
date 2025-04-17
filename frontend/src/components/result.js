@@ -39,7 +39,8 @@ const ResultView = ({
   hideSummary=false,
   hideTestObject=false,
   hideTestHistory=false,
-  testResult
+  testResult,
+  skipHash=false
 }) => {
   const context = useContext(IbutsuContext);
   const { darkTheme } = context;
@@ -83,7 +84,8 @@ const ResultView = ({
   // Tab state and navigation hooks/effects
   const {activeTab, onTabSelect} = useTabHook(
     ['summary', 'testHistory', 'testObject', ...artifactKeys()],
-    defaultTab
+    defaultTab,
+    skipHash
   );
 
   useEffect(() => {
@@ -419,6 +421,7 @@ ResultView.propTypes = {
   hideTestObject: PropTypes.bool,
   hideTestHistory: PropTypes.bool,
   testResult: PropTypes.object,
+  skipHash: PropTypes.bool,
 };
 
 export default ResultView;
