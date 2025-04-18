@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useMemo } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Switch,
@@ -29,7 +29,6 @@ const PF_BACK_100 = 'var(--pf-v5-global--BackgroundColor--100)';
 const JenkinsJobAnalysisView =({view, defaultTab='heatmap'}) => {
   const context = useContext(IbutsuContext);
   const {primaryObject} = context;
-
   const [searchParams] = useSearchParams();
 
   const [isAreaChart, setIsAreaChart] = useState(false);
@@ -43,7 +42,6 @@ const JenkinsJobAnalysisView =({view, defaultTab='heatmap'}) => {
   const [barchartParams, setBarchartParams] = useState({});
   const [linechartParams, setLinechartParams] = useState({});
 
-  // Tab state and navigation hooks/effects
   const {activeTab, onTabSelect} = useTabHook(
     ['heatmap', 'overall-health', 'build-durations'],
     defaultTab
@@ -116,36 +114,6 @@ const JenkinsJobAnalysisView =({view, defaultTab='heatmap'}) => {
     return color;
   };
 
-  const heatmapParam = useMemo(() => {
-    if (activeTab === 'heatmap') {
-      return(
-      <div style={{backgroundColor: PF_BACK_100, float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
-        <ParamDropdown
-          dropdownItems={['Yes', 'No']}
-          defaultValue={(countSkips ? 'Yes': 'No')}
-          handleSelect={(value) => setCountSkips(value === 'Yes')}
-          tooltip="Count skips as failure:"
-        />
-      </div>)
-    }
-  }, [activeTab]);
-
-  const overallSwitch = useMemo(() => {
-    if (activeTab === 'overall-health') {
-      return(
-        <div style={{backgroundColor: PF_BACK_100, float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em'}}>
-          <Switch
-            id="bar-chart-switch"
-            labelOff="Change to Area Chart"
-            label="Change to Bar Chart"
-            isChecked={isAreaChart}
-            onChange={(_, checked) => setIsAreaChart(checked)}
-          />
-        </div>
-      )
-    }
-  }, [activeTab]);
-
   return (
     <React.Fragment>
       <div style={{backgroundColor: PF_BACK_100, float: 'right', clear: 'right', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
@@ -156,10 +124,29 @@ const JenkinsJobAnalysisView =({view, defaultTab='heatmap'}) => {
           tooltip="Number of builds:"
         />
       </div>
-      {heatmapParam}
-      {overallSwitch}
+      {activeTab === 'heatmap' &&
+      <div style={{backgroundColor: PF_BACK_100, float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.2em 1em', width: '30em'}}>
+        <ParamDropdown
+          dropdownItems={['Yes', 'No']}
+          defaultValue={(countSkips ? 'Yes': 'No')}
+          handleSelect={(value) => setCountSkips(value === 'Yes')}
+          tooltip="Count skips as failure:"
+        />
+      </div>
+      }
+      {activeTab === 'overall-health' &&
+      <div style={{backgroundColor: PF_BACK_100, float: 'right', clear: 'none', marginBottom: '-2em', padding: '0.5em 1em'}}>
+        <Switch
+          id="bar-chart-switch"
+          labelOff="Change to Area Chart"
+          label="Change to Bar Chart"
+          isChecked={isAreaChart}
+          onChange={(_, checked) => setIsAreaChart(checked)}
+        />
+      </div>
+      }
       <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
-        <Tab key='heatmap' eventKey='heatmap' title="Heatmap">
+        <Tab eventKey='heatmap' title="Heatmap">
           {!isLoading && activeTab === 'heatmap' &&
         <FilterHeatmapWidget
           title={heatmapParams.job_name}
@@ -170,7 +157,7 @@ const JenkinsJobAnalysisView =({view, defaultTab='heatmap'}) => {
         />
           }
         </Tab>
-        <Tab key='overall-health' eventKey='overall-health' title="Overall Health">
+        <Tab eventKey='overall-health' title="Overall Health">
           {!isLoading && !isAreaChart && activeTab === 'overall-health' &&
         <GenericBarWidget
           title={'Test counts for ' + barchartParams.job_name}
@@ -221,7 +208,7 @@ const JenkinsJobAnalysisView =({view, defaultTab='heatmap'}) => {
         />
           }
         </Tab>
-        <Tab key='build-durations' eventKey='build-durations' title="Build Duration">
+        <Tab eventKey='build-durations' title="Build Duration">
           {!isLoading && activeTab === 'build-durations' &&
         <GenericAreaWidget
           title={'Durations for ' + linechartParams.job_name}
