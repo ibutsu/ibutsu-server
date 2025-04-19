@@ -87,8 +87,7 @@ const IbutsuHeader = () => {
   }, [darkTheme]);
 
   useEffect(() => {
-    if (selectedProject?.id !== project_id) {
-
+    if (project_id && (selectedProject?.id !== project_id)) {
       HttpClient.get([Settings.serverUrl, '/project/', project_id])
         .then(response => HttpClient.handleResponse(response))
         .then((data) => {
@@ -99,7 +98,8 @@ const IbutsuHeader = () => {
           setFilterValue();
           setInputValue(data.title);
           setIsProjectSelectOpen(false);
-        });
+        })
+        .catch((error) => console.error(error));
     }
   }, [project_id, selectedProject, setDefaultDashboard, setPrimaryObject, setPrimaryType]);
 

@@ -39,7 +39,7 @@ const LastPassed = (props) => {
   return (
     <React.Fragment>
       {resultData &&
-            <Link target="_blank" rel="noopener noreferrer" to={`../results/${resultData.id}`} relative="Path">
+            <Link target="_blank" rel="noopener noreferrer" to={`../results/${resultData.id}#summary`} relative="Path">
               <Badge isRead>
                 {new Date(resultData.start_time).toLocaleString()}
               </Badge>
