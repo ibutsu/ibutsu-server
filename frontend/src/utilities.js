@@ -8,8 +8,10 @@ import {
 import {
   CheckCircleIcon,
   ChevronCircleRightIcon,
+  ChevronRightIcon,
   ClockIcon,
   ExclamationCircleIcon,
+  FileIcon,
   InfoAltIcon,
   QuestionCircleIcon,
   TimesCircleIcon
@@ -151,6 +153,91 @@ export function buildBadge (key, value, isRead, onClick) {
   }
 }
 
+export const buildResultsTree = (treeResults) => {
+  const getPassPercent = (stats) => {
+    let percent = 'N/A';
+    if (stats.count > 0) {
+      percent = Math.round(((stats.passed + stats.xfailed) / stats.count * 100));
+    }
+    return percent;
+  };
+
+  const getBadgeClass = (passPercent) => {
+    let className = 'failed';
+    if (passPercent > 75) {
+      className = 'error';
+    }
+    if (passPercent > 90) {
+      className = 'passed';
+    }
+    return className;
+  };
+
+  let treeStructure = [];
+  treeResults.forEach(testResult => {
+    const pathParts = processPyTestPath(cleanPath(testResult.metadata.fspath));
+    let children = treeStructure;
+    pathParts.forEach(dirName => {
+      let child = children.find(item => item.name == dirName);
+      if (!child) {
+        child = {
+          name: dirName,
+          id: dirName,
+          children: [],
+          hasBadge: true,
+          _stats: {
+            count: 0,
+            passed: 0,
+            failed: 0,
+            skipped: 0,
+            error: 0,
+            xpassed: 0,
+            xfailed: 0
+          },
+        };
+        if (dirName.endsWith('.py')) {
+          child.icon = <FileIcon />;
+          child.expandedIcon = <FileIcon />;
+        }
+        children.push(child);
+      }
+      child._stats[testResult.result] += 1;
+      child._stats.count += 1;
+      const passPercent = getPassPercent(child._stats);
+      const className = getBadgeClass(passPercent);
+      child.customBadgeContent = `${passPercent}%`;
+      child.badgeProps = { className: className };
+      children = child.children;
+    });
+    let icon = <QuestionCircleIcon />;
+    if (testResult.result === 'passed') {
+      icon = <CheckCircleIcon />;
+    }
+    else if (testResult.result === 'failed') {
+      icon = <TimesCircleIcon />;
+    }
+    else if (testResult.result === 'error') {
+      icon = <ExclamationCircleIcon />;
+    }
+    else if (testResult.result === 'skipped') {
+      icon = <ChevronRightIcon />;
+    }
+    else if (testResult.result === 'xfailed') {
+      icon = <CheckCircleIcon />;
+    }
+    else if (testResult.result === 'xpassed') {
+      icon = <TimesCircleIcon />;
+    }
+    children.push({
+      id: testResult.id,
+      name: testResult.test_id,
+      icon: <span className={testResult.result}>{icon}</span>,
+      _testResult: testResult
+    });
+  });
+  return treeStructure;
+};
+
 export function generateId (length) {
   let resultId = '';
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -199,14 +286,14 @@ export function resultToRow (result, filterFunc) {
     }
   }
   if (result.metadata && result.metadata.run) {
-    runLink = <Link to={`../runs/${result.run_id}`} relative="Path">{result.run_id}</Link>;
+    runLink = <Link to={`../runs/${result.run_id}#summary`} relative="Path">{result.run_id}</Link>;
   }
   if (result.metadata && result.metadata.classification) {
     classification = <Badge isRead>{result.metadata.classification.split('_')[0]}</Badge>;
   }
   return {
     'cells': [
-      {title: <React.Fragment><Link to={`../results/${result.id}`} relative="Path" key={result.id}>{result.test_id}</Link> {markers}</React.Fragment>},
+      {title: <React.Fragment><Link to={`../results/${result.id}#summary`} relative="Path" key={result.id}>{result.test_id}</Link> {markers}</React.Fragment>},
       {title: runLink},
       {title: <React.Fragment><span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span> {classification}</React.Fragment>},
       {title: round(result.duration) + 's'},
@@ -235,7 +322,7 @@ export function resultToComparisonRow (result, index) {
   }
 
   let cells = [];
-  cells.push({title: <React.Fragment><Link to={`../results/${result[0].id}`} relative="Path">{result[0].test_id}</Link> {markers}</React.Fragment>});
+  cells.push({title: <React.Fragment><Link to={`../results/${result[0].id}#summary`} relative="Path">{result[0].test_id}</Link> {markers}</React.Fragment>});
   result.forEach((result, index) => {
     cells.push({title: <span className={result.result}>{resultIcons[index]} {toTitleCase(result.result)}</span>});
   });

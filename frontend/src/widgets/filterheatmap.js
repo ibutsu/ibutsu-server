@@ -62,7 +62,7 @@ const FilterHeatmapWidget = (props) => {
   const getJenkinsAnalysisLink = () => {
     if (includeAnalysisLink && analysisViewId !== null) {
       return (
-        <Link to={`/project/${primaryObject?.id || params?.project}/view/${analysisViewId}?job_name=${params?.job_name}`}>
+        <Link to={`/project/${primaryObject?.id || params?.project}/view/${analysisViewId}?job_name=${params?.job_name}#heatmap`}>
           <Button variant="secondary" title="See analysis" aria-label="See analysis" isInline><ChartLineIcon/></Button>
         </Link>
       );
@@ -177,10 +177,10 @@ const FilterHeatmapWidget = (props) => {
             cellTitle += item.name + ': ' + item.value + '\n';
           }
         });
-        contents = <p title={cellTitle}><Link to={'/project/' + primaryObject.id + `/runs/${value[1]}`}>{Math.floor(value[0])}</Link></p>;
+        contents = <p title={cellTitle}><Link to={`/project/${primaryObject.id}/runs/${value[1]}#summary`}>{Math.floor(value[0])}</Link></p>;
       }
       else {
-        contents = <Link to={'/project/' + primaryObject.id + `/runs/${value[1]}`}>{Math.floor(value[0])}</Link>;
+        contents = <Link to={`/project/${primaryObject.id}/runs/${value[1]}#summary`}>{Math.floor(value[0])}</Link>;
       }
     }
     return <div style={style}>{contents}</div>;
@@ -198,7 +198,7 @@ const FilterHeatmapWidget = (props) => {
       renderData.push(values);
       values.forEach((item) => {
         if (!!item && (item.length > 2) && !!item[3]) {
-          newLabels.push(<Link to={'/project/' + (params?.project) +`/results?metadata.jenkins.build_number[eq]=${item[3]}&metadata.jenkins.job_name[eq]=` + params?.job_name} key={item[3]}>{item[3]}</Link>);
+          newLabels.push(<Link to={`/project/${params?.project}/results?metadata.jenkins.build_number[eq]=${item[3]}&metadata.jenkins.job_name[eq]=${params?.job_name}`} key={item[3]}>{item[3]}</Link>);
         }
       });
       if (newLabels.length > labels.length) {
