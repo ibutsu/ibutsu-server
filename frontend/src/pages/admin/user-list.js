@@ -4,29 +4,41 @@ import {
   Button,
   Card,
   CardBody,
+  CardHeader,
+  Flex,
+  FlexItem,
   Label,
   Modal,
   PageSection,
   PageSectionVariants,
+  Pagination,
+  PaginationVariant,
+  Skeleton,
   TextContent,
-  TextInput,
   Title
 } from '@patternfly/react-core';
-import { PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
+import { BanIcon, CheckIcon, LinuxIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { getSpinnerRow } from '../../utilities';
-import FilterTable from '../../components/filtertable';
+import { toAPIFilter } from '../../utilities';
+import useUserFilter from '../../components/user-filter';
+import { Table, TableText, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { TableEmptyState, TableErrorState } from '../../components/tablestates';
 
-
-const COLUMNS = ['Display Name', 'Email', 'Projects', 'Status', ''];
+const COLUMNS = {
+  name:'Display Name',
+  email:'Email',
+  projects:'Projects',
+  status:'Status',
+  edit:'Edit Action',
+  delete: 'Delete Action'
+};
 
 const UserList = () => {
 
   const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState();
 
   const [page, setPage] = useState(1);
@@ -37,72 +49,20 @@ const UserList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const [textFilter, setTextFilter] = useState('');
-  const [activeFilters, setActiveFilters] = useState({});
-
   const [fetching, setFetching] = useState(true);
 
-  const userToRow  = (user) => {
-    let userName = user.name;
-    if (user.is_superadmin) {
-      userName = [
-        user.name,
-        ' ',
-        <Label key="admin" className="super-admin-label" variant="filled" color="blue" isCompact>Administrator</Label>
-      ];
-    }
-    return {
-      'cells': [
-        {title: userName},
-        {title: user.email},
-        {title: user.projects ? user.projects.map(project => project.title).join(', ') : ''},
-        {title: user.is_active ? 'Active' : 'Inactive'},
-        {
-          title: (
-            <div style={{textAlign: 'right'}}>
-              <Button
-                variant="primary"
-                ouiaId={`admin-users-edit-${user.id}`}
-                component={(props) => <Link {...props} to={`/admin/users/${user.id}`} />}
-                size="sm"
-              >
-                <PencilAltIcon />
-              </Button>
-              &nbsp;
-              <Button
-                variant="danger"
-                ouiaId={`admin-users-delete-${user.id}`}
-                onClick={() => {
-                  setSelectedUser(user);
-                  setIsDeleteModalOpen(true);
-                }}
-                size="sm"
-              >
-                <TrashIcon />
-              </Button>
-            </div>
-          )
-        }
-      ]
-    };
-  };
+  const {filterComponents, activeFilterComponents, activeFilters } = useUserFilter();
 
-  useEffect(() => {
-    // filter fetched users
-    setActiveFilters(textFilter ? {'name': textFilter} : {});
-
-    let newUsers = [...users];
-    if (textFilter && users) {
-      newUsers = users.filter((u) => String(u.name).toLowerCase().includes(textFilter.toLowerCase()));
-    }
-
-    setFilteredUsers(newUsers);
-  }, [textFilter, users]);
 
   useEffect(() => {
     // fetch the users
     setFetching(true);
-    HttpClient.get([Settings.serverUrl, 'admin', 'user'], {page: page, pageSize: pageSize})
+    const apiParams = {
+      page: page,
+      pageSize: pageSize,
+      ...(Object.keys(activeFilters)?.length === 0 ? {} : {'filter': toAPIFilter(activeFilters)})
+    };
+    HttpClient.get([Settings.serverUrl, 'admin', 'user'], apiParams)
       .then(response => HttpClient.handleResponse(response))
       .then(data => {
         if (data?.users?.length > 0) {
@@ -110,18 +70,20 @@ const UserList = () => {
           setPage(data.pagination.page);
           setPageSize(data.pagination.pageSize);
           setTotalItems(data.pagination.totalItems);
+          setFetching(false);
         } else {
           setUsers([]);
+          setFetching(false);
         }
       })
       .catch((error) => {
         console.error('Error fetching users data:', error);
         setUsers([]);
         setIsError(true);
+        setFetching(false);
       });
 
-    setFetching(false);
-  }, [page, pageSize, isDeleting]); // isDeleteing so the users fetch after delete
+  }, [page, pageSize, isDeleting, activeFilters]); // isDeleteing so the users fetch after delete
 
 
   const onModalDeleteClick = () => {
@@ -134,43 +96,119 @@ const UserList = () => {
       });
   };
 
-  const onFilterChange = (value) => {
-    setTextFilter(value);
-  };
-
-  const onRemoveFilter = () => {
-    setTextFilter('');
-  };
-
-  useEffect(() => { document.title = 'Users - Administration | Ibutsu'; }, []);
+  useEffect(() => {document.title = 'Users - Administration | Ibutsu';}, []);
 
   return (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>
         <TextContent>
-          <Title headingLevel="h1" ouiaId="users">Users</Title>
+          <Title headingLevel="h1" ouiaId="users-title">Users</Title>
         </TextContent>
       </PageSection>
-      <PageSection className="pf-u-pb-0">
+      <PageSection>
         <Card>
-          <CardBody className="pf-u-p-0">
-            <FilterTable
-              columns={COLUMNS}
-              rows={fetching ? [getSpinnerRow(5)] : filteredUsers.map((user) => userToRow(user))}
-              filters={[
-                <TextInput type="text" id="filter" placeholder="Search for user..." value={textFilter} onChange={(_, value) => onFilterChange(value)} style={{height: 'inherit'}} key="textFilter"/>
-              ]}
-              activeFilters={activeFilters}
-              onRemoveFilter={onRemoveFilter}
-              pagination={{
-                pageSize: pageSize,
-                page: page,
-                totalItems: totalItems
-              }}
-              isEmpty={filteredUsers.length === 0}
-              isError={isError}
+          <CardHeader>
+            {filterComponents}
+            {activeFilterComponents}
+          </CardHeader>
+          <CardBody>
+            <Flex alignSelf={{default: 'alignSelfFlexEnd'}} direction={{default: 'column'}} align={{default: 'alignRight'}}>
+              <FlexItem>
+                <Pagination
+                  perPage={pageSize}
+                  page={page}
+                  variant={PaginationVariant.top}
+                  itemCount={totalItems}
+                  onSetPage={(_, value) => setPage(value)}
+                  onPerPageSelect={(_, value) => setPageSize(value)}
+                  isCompact
+                />
+              </FlexItem>
+            </Flex>
+            <Table>
+              <Thead>
+                <Tr>
+                  <Th width={20} dataLabel={COLUMNS.name}>{COLUMNS.name}</Th>
+                  <Th width={20} dataLabel={COLUMNS.name}>{COLUMNS.email}</Th>
+                  <Th width={40} dataLabel={COLUMNS.name}>{COLUMNS.projects}</Th>
+                  <Th width={10} dataLabel={COLUMNS.name}>{COLUMNS.status}</Th>
+                  <Th width={5} screenReaderText='Edit Action'/>
+                  <Th width={5} screenReaderText='Delete Action'/>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {!fetching && users?.length === 0 && <TableEmptyState />}
+                {!fetching && isError && <TableErrorState />}
+                {!fetching &&
+                  users.map((user) => {
+                    let userName = user.name;
+                    if (user.is_superadmin) {
+                      userName = [
+                        user.name,
+                        ' ',
+
+                      ];
+                    }
+                    return(
+                      <Tr key={user.id}>
+                        <Td dataLabel={COLUMNS.name}>{userName} </Td>
+                        <Td dataLabel={COLUMNS.email}>{user.email}</Td>
+                        <Td dataLabel={COLUMNS.projects} modifier='wrap'>{user.projects ? user.projects.map(project => project.title).join(', ') : ''}</Td>
+                        <Td dataLabel={COLUMNS.status}>
+                          {
+                            user.is_active
+                              ? <Label key="active" className="active" variant="filled" color="green" icon={<CheckIcon />}>Active</Label>
+                              : <Label key="inactive" className="active" variant="filled" color="red" icon={<BanIcon />}>Inactive</Label>}
+                          {user.is_superadmin
+                            ? <Label key="admin" className="super-admin-label" variant="outline" color="orange" icon={<LinuxIcon/>}>Administrator</Label>
+                            : '' }
+                        </Td>
+                        <Td dataLabel={COLUMNS.edit}>
+                          <TableText>
+                            <Button
+                              variant="primary"
+                              ouiaId={`admin-users-edit-${user.id}`}
+                              component={(props) => <Link {...props} to={`/admin/users/${user.id}`} />}
+                              size="sm"
+                              aria-label='Edit'
+                            >
+                              <PencilAltIcon />
+                            </Button>
+                          </TableText>
+                        </Td>
+                        <Td>
+                          <TableText>
+                            <Button
+                              variant="danger"
+                              ouiaId={`admin-users-delete-${user.id}`}
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setIsDeleteModalOpen(true);
+                              }}
+                              size="sm"
+                            >
+                              <TrashIcon />
+                            </Button>
+                          </TableText>
+                        </Td>
+                      </Tr>
+                    );
+                  })
+                }
+                {fetching && <Tr ><Td colSpan={6}><Skeleton/></Td></Tr>}
+              </Tbody>
+            </Table>
+
+            <Pagination
+              widgetId="pagination-options-menu-bottom"
+              perPage={pageSize}
+              page={page}
+              variant={PaginationVariant.top}
+              itemCount={totalItems}
+              dropDirection="up"
               onSetPage={(_, value) => setPage(value)}
-              onSetPageSize={(_, value) => setPageSize(value)}
+              onPerPageSelect={(_, value) => setPageSize(value)}
+              style={{marginTop: '1rem'}}
             />
           </CardBody>
         </Card>
