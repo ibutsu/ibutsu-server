@@ -7,7 +7,6 @@ import {
   CardHeader,
   Flex,
   FlexItem,
-  Label,
   Modal,
   PageSection,
   PageSectionVariants,
@@ -17,24 +16,15 @@ import {
   TextContent,
   Title
 } from '@patternfly/react-core';
-import { BanIcon, CheckIcon, LinuxIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
-import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import { toAPIFilter } from '../../utilities';
 import useUserFilter from '../../components/user-filter';
-import { Table, TableText, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import { USER_COLUMNS } from '../../constants';
+import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { TableEmptyState, TableErrorState } from '../../components/tablestates';
-
-const COLUMNS = {
-  name:'Display Name',
-  email:'Email',
-  projects:'Projects',
-  status:'Status',
-  edit:'Edit Action',
-  delete: 'Delete Action'
-};
+import UserRow from '../../components/user-row';
 
 const UserList = () => {
 
@@ -128,10 +118,10 @@ const UserList = () => {
             <Table>
               <Thead>
                 <Tr>
-                  <Th width={20} dataLabel={COLUMNS.name}>{COLUMNS.name}</Th>
-                  <Th width={20} dataLabel={COLUMNS.name}>{COLUMNS.email}</Th>
-                  <Th width={40} dataLabel={COLUMNS.name}>{COLUMNS.projects}</Th>
-                  <Th width={10} dataLabel={COLUMNS.name}>{COLUMNS.status}</Th>
+                  <Th width={20} dataLabel={USER_COLUMNS.name}>{USER_COLUMNS.name}</Th>
+                  <Th width={20} dataLabel={USER_COLUMNS.email}>{USER_COLUMNS.email}</Th>
+                  <Th width={40} dataLabel={USER_COLUMNS.projects}>{USER_COLUMNS.projects}</Th>
+                  <Th width={10} dataLabel={USER_COLUMNS.status}>{USER_COLUMNS.status}</Th>
                   <Th width={5} screenReaderText='Edit Action'/>
                   <Th width={5} screenReaderText='Delete Action'/>
                 </Tr>
@@ -140,60 +130,14 @@ const UserList = () => {
                 {!fetching && users?.length === 0 && <TableEmptyState />}
                 {!fetching && isError && <TableErrorState />}
                 {!fetching &&
-                  users.map((user) => {
-                    let userName = user.name;
-                    if (user.is_superadmin) {
-                      userName = [
-                        user.name,
-                        ' ',
-
-                      ];
-                    }
-                    return(
-                      <Tr key={user.id}>
-                        <Td dataLabel={COLUMNS.name}>{userName} </Td>
-                        <Td dataLabel={COLUMNS.email}>{user.email}</Td>
-                        <Td dataLabel={COLUMNS.projects} modifier='wrap'>{user.projects ? user.projects.map(project => project.title).join(', ') : ''}</Td>
-                        <Td dataLabel={COLUMNS.status}>
-                          {
-                            user.is_active
-                              ? <Label key="active" className="active" variant="filled" color="green" icon={<CheckIcon />}>Active</Label>
-                              : <Label key="inactive" className="active" variant="filled" color="red" icon={<BanIcon />}>Inactive</Label>}
-                          {user.is_superadmin
-                            ? <Label key="admin" className="super-admin-label" variant="outline" color="orange" icon={<LinuxIcon/>}>Administrator</Label>
-                            : '' }
-                        </Td>
-                        <Td dataLabel={COLUMNS.edit}>
-                          <TableText>
-                            <Button
-                              variant="primary"
-                              ouiaId={`admin-users-edit-${user.id}`}
-                              component={(props) => <Link {...props} to={`/admin/users/${user.id}`} />}
-                              size="sm"
-                              aria-label='Edit'
-                            >
-                              <PencilAltIcon />
-                            </Button>
-                          </TableText>
-                        </Td>
-                        <Td>
-                          <TableText>
-                            <Button
-                              variant="danger"
-                              ouiaId={`admin-users-delete-${user.id}`}
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setIsDeleteModalOpen(true);
-                              }}
-                              size="sm"
-                            >
-                              <TrashIcon />
-                            </Button>
-                          </TableText>
-                        </Td>
-                      </Tr>
-                    );
-                  })
+                  users.map((user) =>
+                    <UserRow
+                      user={user}
+                      key={user.id}
+                      setSelectedUser={setSelectedUser}
+                      setIsDeleteModalOpen={setIsDeleteModalOpen}
+                    />
+                  )
                 }
                 {fetching && <Tr ><Td colSpan={6}><Skeleton/></Td></Tr>}
               </Tbody>

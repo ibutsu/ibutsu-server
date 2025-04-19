@@ -113,6 +113,15 @@ export const STRING_USER_FIELDS = [
   'email'
 ];
 
+export const USER_COLUMNS = {
+  name:'Display Name',
+  email:'Email',
+  projects:'Projects',
+  status:'Status',
+  edit:'Edit Action',
+  delete: 'Delete Action'
+};
+
 export const CLASSIFICATION = {
   dependency_outage: 'Dependency Outage',
   environment_failure: 'Environment Failure',
