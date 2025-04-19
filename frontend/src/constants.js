@@ -107,6 +107,21 @@ export const NUMERIC_JJV_FIELDS = [
   'start_time',
 ];
 export const JJV_FIELDS = [...STRING_JJV_FIELDS, ...NUMERIC_JJV_FIELDS];
+
+export const STRING_USER_FIELDS = [
+  'name',
+  'email'
+];
+
+export const USER_COLUMNS = {
+  name:'Display Name',
+  email:'Email',
+  projects:'Projects',
+  status:'Status',
+  edit:'Edit Action',
+  delete: 'Delete Action'
+};
+
 export const CLASSIFICATION = {
   dependency_outage: 'Dependency Outage',
   environment_failure: 'Environment Failure',
