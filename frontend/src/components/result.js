@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext, useMemo } from 'react';
+import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -18,7 +18,7 @@ import {
 import { InfoCircleIcon, CodeIcon, SearchIcon, FileAltIcon } from '@patternfly/react-icons';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Linkify from 'react-linkify';
 
 import * as http from '../services/http';
@@ -30,89 +30,40 @@ import TabTitle from './tabs';
 import TestHistoryTable  from './test-history';
 import ArtifactTab from './artifact-tab';
 import { IbutsuContext } from '../services/context';
+import { useTabHook } from './tabHook';
 
 const ResultView = ({
   comparisonResults,
-  defaultTab,
+  defaultTab='summary',
   hideArtifact=false,
   hideSummary=false,
   hideTestObject=false,
   hideTestHistory=false,
-  testResult
+  testResult,
+  skipHash=false
 }) => {
   const context = useContext(IbutsuContext);
   const { darkTheme } = context;
 
   // State
   const [artifacts, setArtifacts] = useState([]);
-  const [testHistoryTable, setTestHistoryTable] = useState(null);
 
-  // Hooks
-  const navigate = useNavigate();
-  const location = useLocation();
+  // https://v5-archive.patternfly.org/components/tabs#tabs-linked-to-nav-elements
 
-  const getDefaultTab = () => {
-    if (defaultTab) {
-      return defaultTab;
-    }
-    else if (!hideSummary) {
-      return 'summary';
-    }
-    else if (!!artifactTabs.length > 0) {
-      return artifactTabs[0].key;
-    }
-    else {
-      return null;
-    }
-  };
-
-  const getTabIndex = useCallback((defaultValue) => (!!location && location.hash !== '') ? location.hash.substring(1) : defaultValue,[location]);
-
-  const getTestHistoryTable = useCallback(() => {
+  const testHistoryTable = useMemo(() => {
     if (comparisonResults !== undefined) {
-      setTestHistoryTable(
+      return(
         <TestHistoryTable
           comparisonResults={comparisonResults}
           testResult={testResult}
         />);
     } else {
-      setTestHistoryTable(
+      return(
         <TestHistoryTable testResult={testResult}/>);
     }
 
-  }, [setTestHistoryTable, comparisonResults, testResult]);
+  }, [comparisonResults, testResult]);
 
-  const [activeTab, setActiveTab] = useState(getTabIndex(getDefaultTab()));
-
-
-  useEffect(() => {
-    if (activeTab === 'test-history') {
-      getTestHistoryTable();
-    }
-  }, [activeTab, getTestHistoryTable]);
-
-  const handlePopState = useCallback(() => {
-    // Handle browser navigation buttons click
-    const tabIndex = getTabIndex('summary');
-    setActiveTab(tabIndex);
-  }, [getTabIndex, setActiveTab]);
-
-  useEffect(()=>{
-    if (activeTab === 'test-history') {
-      getTestHistoryTable();
-    }
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [activeTab, getTestHistoryTable, handlePopState]);
-
-  const onTabSelect = (_, tabIndex) => {
-    if (location) {
-      navigate(`${location.pathname}${location.search}#${tabIndex}`);
-    }
-    setActiveTab(tabIndex);
-  };
 
   const artifactTabs = useMemo(() => artifacts.map((art) => (
     <Tab
@@ -124,6 +75,18 @@ const ResultView = ({
     </Tab>
   )
   ), [artifacts]);
+
+  const artifactKeys = useCallback(() => {
+    if (artifactTabs && artifactTabs?.length !== 0) {return(artifactTabs.map((tab) => tab.key));}
+    else {return([]);}
+  }, [artifactTabs]);
+
+  // Tab state and navigation hooks/effects
+  const {activeTab, onTabSelect} = useTabHook(
+    ['summary', 'testHistory', 'testObject', ...artifactKeys()],
+    defaultTab,
+    skipHash
+  );
 
   useEffect(() => {
     // Get artifacts when the test result changes
@@ -137,9 +100,6 @@ const ResultView = ({
     }
   }, [testResult]);
 
-  if (activeTab === null) {
-    setActiveTab(getDefaultTab());
-  }
   let resultIcon = getIconForResult('pending');
   let startTime = new Date();
   let parameters = <div/>;
@@ -148,7 +108,7 @@ const ResultView = ({
     resultIcon = getIconForResult(testResult.result);
     startTime = new Date(testResult.start_time);
     parameters = Object.keys(testResult.params).map((key) => <div key={key}>{key} = {testResult.params[key]}</div>);
-    runLink = <Link to={`../runs/${testResult.run_id}`} relative="Path">{testResult.run_id}</Link>;
+    runLink = <Link to={`../runs/${testResult.run_id}#summary`} relative="Path">{testResult.run_id}</Link>;
   }
 
   const testJson = useMemo(() => JSON.stringify(testResult, null, '\t'), [testResult]);
@@ -425,15 +385,15 @@ const ResultView = ({
           </Card>
         </Tab>
         }
-        {!hideArtifact &&
-          artifactTabs}
         {!hideTestHistory &&
-        <Tab key="test-history" eventKey="test-history" title={<TabTitle icon={<SearchIcon/>} text="Test History"/>}>
+        <Tab key="testHistory" eventKey="testHistory" title={<TabTitle icon={<SearchIcon/>} text="Test History"/>}>
           {testHistoryTable}
         </Tab>
         }
+        {!hideArtifact &&
+          artifactTabs}
         {!hideTestObject && testJson &&
-        <Tab key="test-object" eventKey="test-object" title={<TabTitle icon={<CodeIcon/>} text="Test Object" />}>
+        <Tab key="testObject" eventKey="testObject" title={<TabTitle icon={<CodeIcon/>} text="Test Object"/>}>
           <Card>
             <CardBody id='object-card-body'>
               <CodeEditor
@@ -461,6 +421,7 @@ ResultView.propTypes = {
   hideTestObject: PropTypes.bool,
   hideTestHistory: PropTypes.bool,
   testResult: PropTypes.object,
+  skipHash: PropTypes.bool,
 };
 
 export default ResultView;

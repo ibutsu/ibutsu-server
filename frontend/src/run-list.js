@@ -77,7 +77,7 @@ const runToRow = (run, filterFunc) => {
   }
   return {
     'cells': [
-      {title: <React.Fragment><Link to={`${run.id}`}>{run.id}</Link> {badges}</React.Fragment>},
+      {title: <React.Fragment><Link to={`${run.id}#summary`}>{run.id}</Link> {badges}</React.Fragment>},
       {title: round(run.duration) + 's'},
       {title: <RunSummary summary={run.summary} />},
       {title: created.toLocaleString()},
@@ -442,7 +442,7 @@ const RunList = () => {
               onApplyFilter={applyFilter}
               onRemoveFilter={removeFilter}
               onClearFilters={clearFilters}
-              onApplyReport={() => navigate('/project/' + params.project_id + '/reports?' + buildParams(filters).join('&'))}
+              onApplyReport={() => navigate(`/project/${params.project_id}/reports?${buildParams(filters).join('&')}`)}
               onSetPage={setPage}
               onSetPageSize={setPageSize}
               hideFilters={['project_id']}

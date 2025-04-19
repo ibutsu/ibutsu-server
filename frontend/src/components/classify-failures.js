@@ -76,7 +76,7 @@ const resultToClassificationRow = (result, index, filterFunc) => {
       'isOpen': false,
       'result': result,
       'cells': [
-        {title: <React.Fragment><Link to={`../results/${result.id}`} relative="Path">{result.test_id}</Link> {markers}</React.Fragment>},
+        {title: <React.Fragment><Link to={`../results/${result.id}#summary`} relative="Path">{result.test_id}</Link> {markers}</React.Fragment>},
         {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
         {title: <React.Fragment>{exceptionBadge}</React.Fragment>},
         {title: <ClassificationDropdown testResult={result} />},
@@ -165,6 +165,7 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
                     hideSummary={hideSummary}
                     hideTestObject={hideTestObject}
                     testResult={rows[rowIndex].result}
+                    skipHash={true}
                   />
               }
             ]

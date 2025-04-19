@@ -16,7 +16,8 @@ import FilterHeatmapWidget from '../widgets/filterheatmap';
 import { HEATMAP_MAX_BUILDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 import ParamDropdown from '../components/param-dropdown';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useTabHook } from '../components/tabHook';
 
 const DEFAULT_BAR = 8;
 
@@ -25,17 +26,13 @@ const LONG_BUILDS = [...SHORT_BUILDS, 70, 150];
 
 const PF_BACK_100 = 'var(--pf-v5-global--BackgroundColor--100)';
 
-const JenkinsJobAnalysisView =(props) => {
+const JenkinsJobAnalysisView =({view, defaultTab='heatmap'}) => {
   const context = useContext(IbutsuContext);
   const {primaryObject} = context;
-  const {view} = props;
-  const location = useLocation();
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   const [isAreaChart, setIsAreaChart] = useState(false);
   const [isLoading, setIsLoading] = useState();
-  const [activeTab, setActiveTab] = useState('heatmap');
 
   const [barWidth, setBarWidth] = useState(DEFAULT_BAR);
   const [builds, setBuilds] = useState(20);
@@ -44,6 +41,11 @@ const JenkinsJobAnalysisView =(props) => {
   const [heatmapParams, setHeatmapParams] = useState({'count_skips': countSkips});
   const [barchartParams, setBarchartParams] = useState({});
   const [linechartParams, setLinechartParams] = useState({});
+
+  const {activeTab, onTabSelect} = useTabHook(
+    ['heatmap', 'overall-health', 'build-durations'],
+    defaultTab
+  );
 
   useEffect(() => {
     // Fetch the widget parameters for heatmap, barchart and linechart
@@ -110,11 +112,6 @@ const JenkinsJobAnalysisView =(props) => {
       color = 'var(--pf-v5-global--palette--purple-700)';
     }
     return color;
-  };
-
-  const onTabSelect = (_, tabIndex) => {
-    navigate(`${location.pathname}${location.search}#${tabIndex}`);
-    setActiveTab(tabIndex);
   };
 
   return (
@@ -239,7 +236,8 @@ const JenkinsJobAnalysisView =(props) => {
 };
 
 JenkinsJobAnalysisView.propTypes = {
-  view: PropTypes.object
+  view: PropTypes.object,
+  defaultTab: PropTypes.string
 };
 
 export default JenkinsJobAnalysisView;
