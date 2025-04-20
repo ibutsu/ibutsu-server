@@ -1,4 +1,4 @@
-import React, { Alert, Icon } from '@patternfly/react-core';
+import { Alert, Icon } from '@patternfly/react-core';
 import PropTypes from 'prop-types';
 
 

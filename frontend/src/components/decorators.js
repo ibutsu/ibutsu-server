@@ -1,4 +1,3 @@
-import React from 'react';
 
 // decorator for making Linkify links open in a new tab
 export const linkifyDecorator = (href, text, key) => (

@@ -3,7 +3,7 @@
 // MetaFilter removal isn't working right now
 // The Apply Filters button needs connection to table rendering
 // It would be great to better control the selectable fields in MetaFilter for this view as not all fields are relevant
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import {
   Card,

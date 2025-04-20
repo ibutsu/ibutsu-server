@@ -1,4 +1,4 @@
-import React, { Label, Button } from '@patternfly/react-core';
+import { Label, Button } from '@patternfly/react-core';
 import { Td, Tr, TableText } from '@patternfly/react-table';
 import { BanIcon, CheckIcon, LinuxIcon, PencilAltIcon, TrashIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';

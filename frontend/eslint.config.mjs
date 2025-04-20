@@ -16,17 +16,21 @@ export default defineConfig([
   pluginCypress.configs.recommended,
   reactHooksPlugin.configs['recommended-latest'],
   reactPlugin.configs.flat.recommended,
+  reactPlugin.configs.flat['jsx-runtime'],
   js.configs.recommended,
   pluginCypress.configs.recommended,
   // prettier.configs.recommended
   {
     plugins: {
       'unused-imports': unusedImports, // not flat config compatible
+      reactPlugin,
+      reactHooksPlugin,
     },
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
     },
     languageOptions: {
+      ...reactPlugin.configs.flat.recommended.languageOptions,
       globals: {
         ...globals.browser,
         ...globals.node,
