@@ -1,5 +1,5 @@
 
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 
 import { Link } from 'react-router-dom';
 import { IbutsuContext } from '../services/context';
