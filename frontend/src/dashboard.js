@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
   Button,
   EmptyState,
@@ -53,10 +53,11 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   // dashboard states
-  const [dashboards, setDashboards] = useState([]);
-  const [filteredDBs, setFilteredDBs] = useState([]);
-  const [selectedDB, setSelectedDB] = useState();
-  const [isDBSelectorOpen, setIsDBSelectorOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [dashboards, setDashboards] = useState();
+  const [filteredDashboards, setFilteredDashboards] = useState([]);
+  const [selectedDashboard, setSelectedDashboard] = useState();
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isNewDBOpen, setIsNewDBOpen] = useState(false);
   const [isDeleteDBOpen, setIsDeleteDBOpen] = useState(false);
 
@@ -69,109 +70,135 @@ const Dashboard = () => {
   const [currentWidget, setCurrentWidget] = useState();
 
   // typeahead input value states
-  const [selectDBInputValue, setSelectDBInputValue] = useState('');
-  const [filterDBValue, setFilterDBValue] = useState('');
+  const [selectInputValue, setSelectInputValue] = useState('');
+  const [selectFilterValue, setSelectFilterValue] = useState('');
+  const selectInputRef = useRef();
 
+  // update widgets
   useEffect(() => {
-    // update widgets
-    let api_params = {'type': 'widget'};
-    if (selectedDB) {
-      api_params['filter'] = 'dashboard_id=' + selectedDB.id;
-      HttpClient.get([Settings.serverUrl, 'widget-config'], api_params)
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          // set the widget project param
-          data.widgets.forEach(widget => {
-            widget.params['project'] = selectedDB.project_id;
-          });
-          setWidgets(data.widgets);
-        })
-        .catch(error => console.error(error));
+    const getWidgets = async () => {
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget-config'],
+          {'type': 'widget', 'filter': `dashboard_id=${selectedDashboard.id}`}
+        );
+        const data = await HttpClient.handleResponse(response);
+        data.widgets.forEach(widget => {
+          widget.params['project'] = selectedDashboard.project_id;
+        });
+        setWidgets(data.widgets);
+      } catch (error) { console.error(error); }
+    };
+    if (selectedDashboard) {
+      getWidgets();
     }
-  }, [selectedDB, isDeleteWidgetOpen, isEditModalOpen, isNewWidgetOpen]);
+  }, [selectedDashboard, isDeleteWidgetOpen, isEditModalOpen, isNewWidgetOpen]);
 
+  // Fetch all dashboards for the project
   useEffect(() => {
-    // update dashboards when the filter input changes
+    const fetchDashboards = async () => {
+      setSelectedDashboard();
+      setDashboards();
+      setSelectInputValue('');
+      try {
+        const response = await HttpClient.get([Settings.serverUrl, 'dashboard'], {
+          'project_id': primaryObject.id,
+          'pageSize': 100,
+        });
+        const data = (await HttpClient.handleResponse(response))['dashboards'];
+        setDashboards(data);
+        setLoading(false);
+        if (data && dashboard_id && (selectedDashboard?.id !== dashboard_id)) {
+          const paramDashboard = data.filter(dashboard => dashboard.id == dashboard_id).pop();
+          if (paramDashboard) {
+            console.log('setting default');
+            setSelectedDashboard(paramDashboard);
+            setIsDashboardOpen(false);
+            setSelectInputValue(paramDashboard.title);
+          } else {console.error('URL parameter dashboard ID not found');}
+        }
+      } catch (error) { console.error(error); }
+    };
     if (primaryObject) {
-      let api_params = {
-        'project_id': primaryObject?.id,
-        'pageSize': 10
-      };
-
-      if (filterDBValue) {
-        // api filter handles case, contains, and is a loose search on title
-        api_params['filter'] = ['title%' + filterDBValue];
-      }
-
-      HttpClient.get([Settings.serverUrl, 'dashboard'], api_params)
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          setDashboards(data['dashboards']);
-          setFilteredDBs(data['dashboards']);
-          if (defaultDashboard && !selectedDB) {
-            const default_db_item = data['dashboards'].filter(dash => dash.id == defaultDashboard).pop();
-            if (default_db_item) {
-              setSelectedDB(default_db_item);
-              setSelectDBInputValue(default_db_item.title);
-              navigate('/project/' + default_db_item.project_id + '/dashboard/' + default_db_item.id);
-            }
-          }
-        })
-        .catch(error => console.error(error));
+      fetchDashboards();
     }
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [primaryObject, defaultDashboard]);
 
-  }, [filterDBValue, defaultDashboard, primaryObject, navigate, selectedDB]);
-
+  // Apply the default dashboard
   useEffect(() => {
-    // sync the URL to the dashboard selection
-    if (dashboard_id && (selectedDB?.id !== dashboard_id)) {
-      HttpClient.get([Settings.serverUrl, 'dashboard', dashboard_id])
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          setSelectedDB(data);
-          setIsDBSelectorOpen(false);
-          setFilterDBValue(data?.title);
-          setSelectDBInputValue(data?.title);
-        })
-        .catch(error => console.error(error));
+  // selectedDashboard is undefined until user picks one or this sets it
+    if (dashboards?.length > 0 && defaultDashboard && (selectedDashboard === undefined)) {
+      const default_db = dashboards.filter(dash => dash.id == defaultDashboard).pop();
+      if (default_db) {
+        console.log('applying default dash');
+        setSelectedDashboard(default_db);
+        setSelectInputValue(default_db.title);
+        navigate(`/project/${default_db.project_id}/dashboard/${default_db.id}`);
+      }
     }
-  }, [dashboard_id, selectedDB]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!dashboards, !!selectedDashboard]); // only when they switch from undefined on first set
+
+  // Apply filter inputs
+  useEffect(() => {
+    let filteredOptions = dashboards;
+    if (selectFilterValue && dashboards) {
+      console.log('filter effect:  '+selectFilterValue);
+      filteredOptions = filteredOptions.filter(
+        dashboard => dashboard.title.toLowerCase().includes(selectFilterValue.toLowerCase())
+      );
+      if (!filteredOptions.length) {
+        filteredOptions = [{
+          isAriaDisabled: true,
+          children: `No dashboards matching "${selectFilterValue}"`
+        }];
+      }
+      if (!isDashboardOpen) {
+        setIsDashboardOpen(true);
+      }
+    }
+
+
+    setFilteredDashboards(filteredOptions);
+  }, [selectFilterValue, dashboards, isDashboardOpen]);
 
   const onDashboardSelect = (_, value) => {
-    // state update
-    setSelectedDB(value);
-    setIsDBSelectorOpen(false);
-    setFilterDBValue(value.title);
-    setSelectDBInputValue(value.title);
+    if (value) {
+      setSelectedDashboard(value);
+      setIsDashboardOpen(false);
+      setSelectFilterValue('');
+      setSelectInputValue(String(value.title));
 
-    navigate('/project/' + value.project_id + '/dashboard/' + value.id);
+      navigate(`/project/${value.project_id}/dashboard/${value.id}`);
+    }
   };
 
   const onDashboardClear = () => {
     // state update
-    setSelectedDB();
-    setIsDBSelectorOpen(false);
-    setSelectDBInputValue('');
-    setFilterDBValue('');
-
-    navigate('/project/' + project_id + '/dashboard/');
+    setSelectedDashboard();
+    setIsDashboardOpen(false);
+    setSelectInputValue('');
+    setSelectFilterValue('');
+    selectInputRef?.current?.focus();
+    navigate(`/project/${project_id}/dashboard/`);
   };
 
-  const handleDBFilterInput = (e) => {
-    setSelectDBInputValue(e.target.value);
-    setFilterDBValue(e.target.value);
+  const onDashboardFilterInput = (_, value) => {
+    setSelectInputValue(value);
+    setSelectFilterValue(value);
+    if(value !== selectedDashboard) { setSelectedDashboard(value); }
   };
 
-  const onNewDashboardSave = (newDashboard) => {
-    HttpClient.post([Settings.serverUrl, 'dashboard'], newDashboard)
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
-        setIsNewDBOpen(false);
-        onDashboardSelect(null, data);
-      })
-      .catch(error => console.error(error));
+  const onNewDashboardSave = async (newDashboard) => {
+    try {
+      const response = await HttpClient.post([Settings.serverUrl, 'dashboard'], newDashboard);
+      const data = await HttpClient.handleResponse(response);
+      setIsNewDBOpen(false);
+      onDashboardSelect(null, data);
+    } catch (error) { console.error(error); };
   };
 
   const onDeleteWidgetClick = (id) => {
@@ -221,33 +248,31 @@ const Dashboard = () => {
       ref={toggleRef}
       variant="typeahead"
       aria-label="Typeahead menu toggle"
-      onClick={() => {setIsDBSelectorOpen({isDBSelectorOpen: !isDBSelectorOpen});}}
-      isExpanded={isDBSelectorOpen}
+      onClick={() => {setIsDashboardOpen(!isDashboardOpen); selectInputRef?.current?.focus();}}
+      isExpanded={isDashboardOpen}
       isFullWidth
       isDisabled={!primaryObject}
     >
       <TextInputGroup isPlain>
         <TextInputGroupMain
-          value={selectDBInputValue}
-          onClick={() => {setIsDBSelectorOpen({isDBSelectorOpen: !isDBSelectorOpen});}}
-          onChange={handleDBFilterInput}
+          value={selectInputValue}
+          onClick={() => {setIsDashboardOpen(!isDashboardOpen);}}
+          onChange={onDashboardFilterInput}
           id="typeahead-select-input"
           autoComplete="off"
-          placeholder={selectedDB?.title || 'No active dashboard'}
+          placeholder={loading ? 'Loading Dashboards...' : 'No active dashboard'}
           role="combobox"
-          isExpanded={isDBSelectorOpen}
+          isExpanded={isDashboardOpen}
           aria-controls="select-typeahead-listbox"
         />
-        <TextInputGroupUtilities>
-          {!!selectDBInputValue && (
-            <Button
-              variant="plain"
-              onClick={onDashboardClear}
-              aria-label="Clear input value"
-            >
-              <TimesIcon aria-hidden />
-            </Button>
-          )}
+        <TextInputGroupUtilities {...!selectInputValue ? {style: {display: 'none'}} : {}}>
+          <Button
+            variant="plain"
+            onClick={onDashboardClear}
+            aria-label="Clear input value"
+          >
+            <TimesIcon aria-hidden />
+          </Button>
         </TextInputGroupUtilities>
       </TextInputGroup>
     </MenuToggle>
@@ -266,33 +291,23 @@ const Dashboard = () => {
             <FlexItem id="dashboard-selector" spacer={{ default: 'spacerNone' }}>
               <Select
                 id="typeahead-select"
-                isOpen={isDBSelectorOpen}
-                selected={selectedDB}
+                isScrollable={true}
+                isOpen={isDashboardOpen}
+                selected={selectedDashboard}
                 onSelect={onDashboardSelect}
                 onOpenChange={() => {
-                  setIsDBSelectorOpen(false);
+                  setIsDashboardOpen(false);
                 }}
                 toggle={
                   toggle
                 }
               >
-                <SelectList id="select-typeahead-listbox">
-                  {(dashboards.length === 0 && !filterDBValue) && (
-                    <SelectOption isDisabled={true}>
-                      No dashboards found
-                    </SelectOption>
-                  )}
-                  {(dashboards.length === 0 && !!filterDBValue) && (
-                    <SelectOption isDisabled={true}>
-                      {`No results found for "${filterDBValue}"`}
-                    </SelectOption>
-                  )}
-                  {filteredDBs?.map((dash, index) => (
+                <SelectList id="select-typeahead-listbox" scrolling='true'>
+                  {filteredDashboards?.map((dash) => (
                     <SelectOption
-                      key={dash.id || index}
-                      onClick={() => {setSelectedDB(dash);}}
+                      key={dash.id}
+                      onClick={() => {setSelectedDashboard(dash);}}
                       value={dash}
-                      {...dash}
                     >
                       {dash.title}
                     </SelectOption>
@@ -305,7 +320,7 @@ const Dashboard = () => {
                 aria-label="New dashboard"
                 variant="plain"
                 title="New dashboard"
-                isDisabled={isDBSelectorOpen}
+                isDisabled={isDashboardOpen}
                 onClick={() => {setIsNewDBOpen(true);}}
               >
                 <PlusCircleIcon />
@@ -316,7 +331,7 @@ const Dashboard = () => {
                 aria-label="Delete dashboard"
                 variant="plain"
                 title="Delete dashboard"
-                isDisabled={!selectedDB}
+                isDisabled={!selectedDashboard}
                 onClick={() => {setIsDeleteDBOpen(true);}}
               >
                 <TimesCircleIcon />
@@ -330,7 +345,7 @@ const Dashboard = () => {
                 aria-label="Add widget"
                 variant="secondary"
                 title="Add widget"
-                isDisabled={!selectedDB}
+                isDisabled={!selectedDashboard}
                 onClick={() => {setIsNewWidgetOpen(true);}}
               >
                 <PlusCircleIcon /> Add Widget
@@ -340,7 +355,7 @@ const Dashboard = () => {
         </Flex>
       </PageSection>
       <PageSection>
-        {(!!primaryObject && !!selectedDB && !!widgets) &&
+        {(!!primaryObject && !!selectedDashboard && !!widgets) &&
         <Grid hasGutter>
           {widgets?.map(widget => {
             if (KNOWN_WIDGETS.includes(widget.widget)) {
@@ -444,7 +459,7 @@ const Dashboard = () => {
           })}
         </Grid>
         }
-        { (!!primaryObject && !selectedDB) &&
+        { (!!primaryObject && !selectedDashboard) &&
         <EmptyState>
           <EmptyStateHeader titleText="No Dashboard Selected" icon={<EmptyStateIcon icon={TachometerAltIcon} />} headingLevel="h4" />
           <EmptyStateBody>
@@ -461,7 +476,7 @@ const Dashboard = () => {
           </EmptyStateFooter>
         </EmptyState>
         }
-        {(!!primaryObject && !!selectedDB && widgets.length === 0) &&
+        {(!!primaryObject && !!selectedDashboard && widgets.length === 0) &&
         <EmptyState>
           <EmptyStateHeader titleText="No Widgets" icon={<EmptyStateIcon icon={CubesIcon} />} headingLevel="h4" />
           <EmptyStateBody>
@@ -486,7 +501,7 @@ const Dashboard = () => {
         isOpen={isNewDBOpen}
       />
       <NewWidgetWizard
-        dashboard={selectedDB}
+        dashboard={selectedDashboard}
         isOpen={isNewWidgetOpen}
         saveCallback={onNewWidgetSave}
         closeCallback={() => {setIsNewWidgetOpen(false);}}
@@ -498,7 +513,7 @@ const Dashboard = () => {
         onDelete={onDashboardClear}
         onClose={() => {setIsDeleteDBOpen(false);}}
         toDeletePath={['dashboard']}
-        toDeleteId={selectedDB?.id}
+        toDeleteId={selectedDashboard?.id}
       />
       <DeleteModal
         title="Delete widget"
