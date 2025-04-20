@@ -65,7 +65,7 @@
     "build": "./bin/write-version-file.cjs && react-scripts build",
     "test": "./bin/write-version-file.cjs && react-scripts test --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
     "eject": "react-scripts eject",
-    "devserver": "./bin/write-version-file.cjs && CI=true react-scripts start",
+    "devserver": "./bin/write-version-file.cjs && CI=true DISABLE_ESLINT_PLUGIN=true react-scripts start",
     "lint": "eslint"
   },
   "browserslist": {
