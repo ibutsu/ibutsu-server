@@ -3,16 +3,13 @@ import reactPlugin from 'eslint-plugin-react';
 import unusedImports from 'eslint-plugin-unused-imports';
 import globals from 'globals';
 import babelParser from '@babel/eslint-parser';
-import {defineConfig} from 'eslint/config';
+import {defineConfig, globalIgnores} from 'eslint/config';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import js from '@eslint/js';
 import pluginCypress from 'eslint-plugin-cypress/flat';
 
 export default defineConfig([
-  {
-    files: ['src/*', 'cypress/*', 'bin/*'],
-    ignores: ['node_modules/*', 'build/*'],
-  },
+  globalIgnores(['build/**/*', 'node_modules/'], 'Ignore build dir and node_modules'),
   pluginCypress.configs.recommended,
   reactHooksPlugin.configs['recommended-latest'],
   reactPlugin.configs.flat.recommended,
@@ -21,10 +18,12 @@ export default defineConfig([
   pluginCypress.configs.recommended,
   // prettier.configs.recommended
   {
+    files: ['src/*', 'cypress/*', 'bin/*'],
     plugins: {
       'unused-imports': unusedImports, // not flat config compatible
       reactPlugin,
       reactHooksPlugin,
+      pluginCypress,
     },
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
@@ -69,15 +68,11 @@ export default defineConfig([
         },
       ],
       'react/react-in-jsx-scope': 'off',
-      'arrow-body-style': ['error', 'as-needed'],
       camelcase: 'off',
-      'spaced-comment': 'error',
       quotes: ['warn', 'single'],
       'no-duplicate-imports': 'error',
       'unused-imports/no-unused-imports': 'error',
-      'semi': ['error'],
-      'indent': ['error', 2],
-      'space-before-function-paren': ['error', 'always'],
+      'unused-imports/no-unused-vars': ['warn'],
     },
     settings: {
       react:{
