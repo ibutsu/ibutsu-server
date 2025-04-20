@@ -65,7 +65,13 @@ const IbutsuHeader = () => {
 
   // values from hooks
   const { project_id } = params;
-  const { setPrimaryObject, setPrimaryType, setDefaultDashboard, darkTheme, setDarkTheme } = context;
+  const {
+    setPrimaryObject,
+    setPrimaryType,
+    setDefaultDashboard,
+    darkTheme,
+    setDarkTheme
+  } = context;
 
   useEffect(() => {
     // update projects/portals when the filter input changes
@@ -104,18 +110,6 @@ const IbutsuHeader = () => {
   }, [project_id, selectedProject, setDefaultDashboard, setPrimaryObject, setPrimaryType]);
 
   const onProjectSelect = (_, value) => {
-    const {
-      primaryObject,
-      setPrimaryObject,
-      setPrimaryType,
-      setDefaultDashboard,
-    } = context;
-    if (primaryObject?.id === value?.id) {
-      setIsProjectSelectOpen(false);
-      setInputValue(value.title);
-      setFilterValue('');
-      return;
-    }
     // update context
     setPrimaryObject(value);
     setPrimaryType('project');
@@ -127,12 +121,10 @@ const IbutsuHeader = () => {
     setInputValue(value?.title);
     setFilterValue('');
 
-    navigate('/project/' + value?.id + '/dashboard/');
+    navigate(`/project/${value?.id}/dashboard/${value.default_dashboard_id || ''}`);
   };
 
   const onProjectClear = () => {
-    const { setPrimaryObject } = context;
-
     setSelectedProject('');
     setIsProjectSelectOpen(false);
     setInputValue('');
