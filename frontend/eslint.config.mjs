@@ -1,43 +1,36 @@
 // eslint.config.mjs
 import cypress from 'eslint-plugin-cypress';
-import react from 'eslint-plugin-react';
-import prettier from 'eslint-plugin-prettier';
+import reactPlugin from 'eslint-plugin-react';
 import unusedImports from 'eslint-plugin-unused-imports';
-import { fileURLToPath } from 'node:url';
 import globals from 'globals';
-import path from 'node:path';
+import babelParser from '@babel/eslint-parser';
+import {defineConfig} from 'eslint/config';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import js from '@eslint/js';
 import { FlatCompat } from '@eslint/eslintrc';
-import reactHooks from 'eslint-plugin-react-hooks';
-import pkg from '@babel/eslint-parser';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const compat = new FlatCompat({
-  baseDirectory: __dirname,
+  baseDirectory: import.meta.dirname,
   recommendedConfig: js.configs.recommended,
-  allConfig: js.configs.all,
 });
 
-export default [
+export default defineConfig([
+  ...compat.config(reactHooksPlugin.configs.recommended),
+  ...compat.config(reactPlugin.configs.recommended),
+  ...compat.config(js.configs.recommended),
+  ...compat.config(cypress.configs.recommended),
+  // ...compat.config(prettier.configs.recommended),
   {
     files: ['src/*', 'cypress/*', 'bin/*'],
     ignores: ['node_modules/*', 'build/*'],
   },
-  ...compat.extends(
-    'eslint:recommended',
-    'plugin:react/recommended',
-    'plugin:react-hooks/recommended',
-    'plugin:cypress/recommended',
-    'prettier',
-  ),
   {
     plugins: {
+      js,
+      reactPlugin,
+      reactHooksPlugin,
       cypress,
-      prettier,
-      react,
-      'unused-imports': unusedImports,
-      'react-hooks': reactHooks,
+      'unused-imports': unusedImports
     },
     languageOptions: {
       globals: {
@@ -46,9 +39,9 @@ export default [
         ...globals.cypress,
         es2020: true,
       },
-      parser: pkg,
+      parser: babelParser,
       parserOptions: {
-        ecmaVersion: 2020,
+        ecmaVersion: 'latest',
         sourceType: 'module',
         ecmaFeatures: {
           jsx: true,
@@ -103,4 +96,4 @@ export default [
       }
     },
   }
-];
+]);
