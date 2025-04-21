@@ -12,18 +12,12 @@ import {
   ChartTooltip,
   createContainer,
 } from '@patternfly/react-charts';
-import {
-  Card,
-  CardBody,
-  CardFooter,
-  Text,
-} from '@patternfly/react-core';
+import { Card, CardBody, CardFooter, Text } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
-
 
 const GenericAreaWidget = (props) => {
   const {
@@ -43,7 +37,7 @@ const GenericAreaWidget = (props) => {
     yLabel,
     onDeleteClick,
     onEditClick,
-    widgetEndpoint
+    widgetEndpoint,
   } = props;
 
   const [data, setData] = useState({});
@@ -57,7 +51,11 @@ const GenericAreaWidget = (props) => {
       const chartData = [];
       if (key !== 'filter') {
         for (const groupField of Object.keys(data[key])) {
-          chartData.push({name: toTitleCase(key), x: groupField, y: data[key][groupField]});
+          chartData.push({
+            name: toTitleCase(key),
+            x: groupField,
+            y: data[key][groupField],
+          });
         }
         if (chartData.length !== 0) {
           newAreaCharts.push(
@@ -67,8 +65,8 @@ const GenericAreaWidget = (props) => {
               sortKey={(datum) => `${datum.x}`}
               sortOrder={sortOrder || 'ascending'}
               interpolation={interpolation || 'monotoneX'}
-              style={getColors ? {data: { fill: getColors(key)}}: {}}
-            />
+              style={getColors ? { data: { fill: getColors(key) } } : {}}
+            />,
           );
         }
       }
@@ -76,17 +74,19 @@ const GenericAreaWidget = (props) => {
     setAreaCharts(newAreaCharts);
   }, [data, getColors, interpolation, sortOrder]);
 
-
   useEffect(() => {
     setIsLoading(true);
     setIsError(false);
-    HttpClient.get([Settings.serverUrl, 'widget', (widgetEndpoint || 'jenkins-line-chart')], (params || {}))
-      .then(response => HttpClient.handleResponse(response))
-      .then(responseData => {
+    HttpClient.get(
+      [Settings.serverUrl, 'widget', widgetEndpoint || 'jenkins-line-chart'],
+      params || {},
+    )
+      .then((response) => HttpClient.handleResponse(response))
+      .then((responseData) => {
         setData(responseData);
         setIsLoading(false);
       })
-      .catch(error => {
+      .catch((error) => {
         setIsError(true);
         console.error(error);
       });
@@ -98,78 +98,83 @@ const GenericAreaWidget = (props) => {
       return (
         <CursorVoronoiContainer
           cursorDimension="x"
-          labels={({datum}) => `${toTitleCase(datum.name, true)}: ${datum.y} ${percentData ? ' %' : ''}`}
-          labelComponent={<ChartTooltip style={{ fill: 'white', fontSize: fontSize-2 || 14}}/>}
+          labels={({ datum }) =>
+            `${toTitleCase(datum.name, true)}: ${datum.y} ${percentData ? ' %' : ''}`
+          }
+          labelComponent={
+            <ChartTooltip
+              style={{ fill: 'white', fontSize: fontSize - 2 || 14 }}
+            />
+          }
           mouseFollowTooltips
           voronoiDimension="x"
           voronoiPadding={50}
         />
       );
-    }
-    else {
-      return <ChartContainer/>;
+    } else {
+      return <ChartContainer />;
     }
   };
 
   return (
     <Card>
-      <WidgetHeader title={title || 'Generic Area Chart'} onEditClick={onEditClick} onDeleteClick={onDeleteClick}/>
+      <WidgetHeader
+        title={title || 'Generic Area Chart'}
+        onEditClick={onEditClick}
+        onDeleteClick={onDeleteClick}
+      />
       <CardBody data-id="generic-area">
-        {isError &&
-          <p>Error fetching data</p>
-        }
-        {(!isError && isLoading) &&
-        <Text component="h2">Loading ...</Text>
-        }
-        {(!isError && !isLoading) &&
-        <Chart
-          padding={ padding || {
-            bottom: 30,
-            left: 150,
-            right: 15,
-            top: 20
-          }}
-          domainPadding={{y: 10}}
-          height={height || 200}
-          themeColor={ChartThemeColor.multiUnordered}
-          containerComponent={getTooltip()}
-        >
-          <ChartStack>
-            {areaCharts}
-          </ChartStack>
-          <ChartAxis
-            label={xLabel || 'x'}
-            fixLabelOverlap
-            style={{
-              tickLabels: {fontSize: fontSize-2 || 14},
-              axisLabel: {fontSize: fontSize || 14}
-            }}
-          />
-          <ChartAxis
-            label={yLabel || 'y'}
-            dependentAxis
-            style={{
-              tickLabels: {fontSize: fontSize-2 || 14},
-              axisLabel: {fontSize: fontSize || 14}
-            }}
-          />
-        </Chart>
-        }
+        {isError && <p>Error fetching data</p>}
+        {!isError && isLoading && <Text component="h2">Loading ...</Text>}
+        {!isError && !isLoading && (
+          <Chart
+            padding={
+              padding || {
+                bottom: 30,
+                left: 150,
+                right: 15,
+                top: 20,
+              }
+            }
+            domainPadding={{ y: 10 }}
+            height={height || 200}
+            themeColor={ChartThemeColor.multiUnordered}
+            containerComponent={getTooltip()}
+          >
+            <ChartStack>{areaCharts}</ChartStack>
+            <ChartAxis
+              label={xLabel || 'x'}
+              fixLabelOverlap
+              style={{
+                tickLabels: { fontSize: fontSize - 2 || 14 },
+                axisLabel: { fontSize: fontSize || 14 },
+              }}
+            />
+            <ChartAxis
+              label={yLabel || 'y'}
+              dependentAxis
+              style={{
+                tickLabels: { fontSize: fontSize - 2 || 14 },
+                axisLabel: { fontSize: fontSize || 14 },
+              }}
+            />
+          </Chart>
+        )}
       </CardBody>
       <CardFooter>
         <ChartLegend
           height={30}
-          data={Object.keys(data).map((legend) => ({'name': toTitleCase(legend, true)}))}
+          data={Object.keys(data).map((legend) => ({
+            name: toTitleCase(legend, true),
+          }))}
           style={{
-            labels: {fontFamily: 'RedHatText', fontSize: fontSize-2 || 14},
-            title: {fontFamily: 'RedHatText'}
+            labels: { fontFamily: 'RedHatText', fontSize: fontSize - 2 || 14 },
+            title: { fontFamily: 'RedHatText' },
           }}
           colorScale={colorScale}
           themeColor={ChartThemeColor.multiUnordered}
         />
-        {varExplanation &&
-        <Text component="h3">{varExplanation}</Text>
-        }
+        {varExplanation && <Text component="h3">{varExplanation}</Text>}
       </CardFooter>
     </Card>
   );
@@ -194,7 +199,7 @@ GenericAreaWidget.propTypes = {
   xLabel: PropTypes.string,
   yLabel: PropTypes.string,
   onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func
+  onEditClick: PropTypes.func,
 };
 
 export default GenericAreaWidget;

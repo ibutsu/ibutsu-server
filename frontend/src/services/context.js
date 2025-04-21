@@ -1,9 +1,8 @@
-import {createContext, useState} from 'react';
+import { createContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { getDarkTheme } from '../utilities';
 
-
-const IbutsuContext = createContext({primaryType: 'project'});
+const IbutsuContext = createContext({ primaryType: 'project' });
 
 const IbutsuContextProvider = (props) => {
   const [primaryType, setPrimaryType] = useState();
@@ -21,8 +20,9 @@ const IbutsuContextProvider = (props) => {
         defaultDashboard: defaultDashboard,
         setDefaultDashboard: setDefaultDashboard,
         darkTheme: darkTheme,
-        setDarkTheme: setDarkTheme
-      }}>
+        setDarkTheme: setDarkTheme,
+      }}
+    >
       {props.children}
     </IbutsuContext.Provider>
   );
@@ -32,4 +32,4 @@ IbutsuContextProvider.propTypes = {
   children: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
 };
 
-export {IbutsuContext, IbutsuContextProvider};
+export { IbutsuContext, IbutsuContextProvider };

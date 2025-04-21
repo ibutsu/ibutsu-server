@@ -11,7 +11,9 @@ const AdminHome = () => (
   <React.Fragment>
     <PageSection id="page" variant={PageSectionVariants.light}>
       <TextContent>
-        <Text className="title" component="h1" ouiaId="admin">Administration</Text>
+        <Text className="title" component="h1" ouiaId="admin">
+          Administration
+        </Text>
       </TextContent>
     </PageSection>
     <PageSection />

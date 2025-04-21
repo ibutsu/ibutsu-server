@@ -13,7 +13,12 @@ const ArtifactTab = ({ artifact }) => {
 
   const fetchArtifact = useCallback(async () => {
     try {
-      const response = await HttpClient.get([Settings.serverUrl, 'artifact', artifact.id, 'view']);
+      const response = await HttpClient.get([
+        Settings.serverUrl,
+        'artifact',
+        artifact.id,
+        'view',
+      ]);
       const contentType = response.headers.get('Content-Type');
       if (contentType.includes('text')) {
         const text = await response.text();

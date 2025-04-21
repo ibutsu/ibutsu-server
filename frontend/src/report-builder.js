@@ -18,7 +18,7 @@ import {
   PageSectionVariants,
   Text,
   TextContent,
-  TextInput
+  TextInput,
 } from '@patternfly/react-core';
 import Linkify from 'react-linkify';
 
@@ -41,7 +41,7 @@ const COLUMNS = ['Report', 'Status', 'Actions'];
 
 const ReportBuilder = () => {
   const context = useContext(IbutsuContext);
-  const {primaryObject} = context;
+  const { primaryObject } = context;
 
   const [reportType, setReportType] = useState('html');
   const [reportSource, setReportSource] = useState('');
@@ -61,16 +61,15 @@ const ReportBuilder = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    let filters = [], filterString = '';
+    let filters = [],
+      filterString = '';
     if (params.toString() !== '') {
-      for(let pair of params) {
+      for (let pair of params) {
         if (pair[0] === 'page') {
           pagination_page.current = parseInt(pair[1]);
-        }
-        else if (pair[0] === 'pageSize') {
+        } else if (pair[0] === 'pageSize') {
           pagination_pageSize.current = parseInt(pair[1]);
-        }
-        else {
+        } else {
           const combo = parseFilter(pair[0]);
           filters.push(combo['key'] + OPERATIONS[combo['op']] + pair[1]);
         }
@@ -84,8 +83,8 @@ const ReportBuilder = () => {
 
   useEffect(() => {
     HttpClient.get([Settings.serverUrl, 'report', 'types'])
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => setReportTypes(data));
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => setReportTypes(data));
   }, []);
 
   useEffect(() => {
@@ -101,31 +100,44 @@ const ReportBuilder = () => {
         row_actions = 'Filter(s) returned no data';
       }
       if (reportStatus === 'done' && report.url) {
-        row_actions = <DownloadButton url={report.url} key={report.url}>Download</DownloadButton>;
-      }
-      else if (reportStatus === 'done' && report.download_url) {
-        row_actions = <DownloadButton url={report.download_url} key={report.download_url}>Download</DownloadButton>;
+        row_actions = (
+          <DownloadButton url={report.url} key={report.url}>
+            Download
+          </DownloadButton>
+        );
+      } else if (reportStatus === 'done' && report.download_url) {
+        row_actions = (
+          <DownloadButton url={report.download_url} key={report.download_url}>
+            Download
+          </DownloadButton>
+        );
       }
       return {
         cells: [
-          {title: reportName, data: report},
-          {title: <span className={reportStatus}>{statusIcon} {toTitleCase(reportStatus)}</span>},
-          {title: row_actions}
-        ]
+          { title: reportName, data: report },
+          {
+            title: (
+              <span className={reportStatus}>
+                {statusIcon} {toTitleCase(reportStatus)}
+              </span>
+            ),
+          },
+          { title: row_actions },
+        ],
       };
     };
 
     const getReports = () => {
       let params = {
         pageSize: pagination_pageSize.current,
-        page: pagination_page.current
+        page: pagination_page.current,
       };
       if (primaryObject) {
         params['project'] = primaryObject.id;
       }
       HttpClient.get([Settings.serverUrl, 'report'], params)
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
+        .then((response) => HttpClient.handleResponse(response))
+        .then((data) => {
           let row_data = data.reports.map((report) => reportToRow(report));
           setRows(row_data);
           setTotalItems(data.pagination.totalItems);
@@ -155,7 +167,7 @@ const ReportBuilder = () => {
     let params = {
       type: reportType,
       filter: reportFilter,
-      source: reportSource
+      source: reportSource,
     };
     if (primaryObject) {
       params['project'] = primaryObject.id;
@@ -163,7 +175,9 @@ const ReportBuilder = () => {
     HttpClient.post([Settings.serverUrl, 'report'], params);
   };
 
-  useEffect(() => { document.title = 'Report Builder | Ibutsu'; }, []);
+  useEffect(() => {
+    document.title = 'Report Builder | Ibutsu';
+  }, []);
 
   const pagination = {
     page: pagination_page.current,
@@ -183,8 +197,18 @@ const ReportBuilder = () => {
           <CardBody>
             <Form isHorizontal>
               <FormGroup isRequired label="Report Type" fieldId="report-type">
-                <FormSelect id="report-type" value={reportType} onChange={(_, change) => setReportType(change)}>
-                  {reportTypes.map((rpt) => <FormSelectOption key={rpt.type} value={rpt.type} label={rpt.name} />)}
+                <FormSelect
+                  id="report-type"
+                  value={reportType}
+                  onChange={(_, change) => setReportType(change)}
+                >
+                  {reportTypes.map((rpt) => (
+                    <FormSelectOption
+                      key={rpt.type}
+                      value={rpt.type}
+                      label={rpt.name}
+                    />
+                  ))}
                 </FormSelect>
                 <FormHelperText>
                   <HelperText>
@@ -193,15 +217,37 @@ const ReportBuilder = () => {
                 </FormHelperText>
               </FormGroup>
               <FormGroup label="Filter" fieldId="report-filter">
-                <TextInput type="text" id="report-filter" value={reportFilter} onChange={(_, change) => setReportFilter(change)} />
-                <ExpandableSection toggleText="Filter Help" onToggle={() => {setIsHelpExpanded(!isHelpExpanded);}} isExpanded={isHelpExpanded}>
+                <TextInput
+                  type="text"
+                  id="report-filter"
+                  value={reportFilter}
+                  onChange={(_, change) => setReportFilter(change)}
+                />
+                <ExpandableSection
+                  toggleText="Filter Help"
+                  onToggle={() => {
+                    setIsHelpExpanded(!isHelpExpanded);
+                  }}
+                  isExpanded={isHelpExpanded}
+                >
                   <TextContent>
-                    <p>The filter parameter takes a comma-separated list of filters to apply. <Linkify componentDecorator={linkifyDecorator}>https://docs.ibutsu-project.org/en/latest/user-guide/filter-help.html</Linkify></p>
+                    <p>
+                      The filter parameter takes a comma-separated list of
+                      filters to apply.{' '}
+                      <Linkify componentDecorator={linkifyDecorator}>
+                        https://docs.ibutsu-project.org/en/latest/user-guide/filter-help.html
+                      </Linkify>
+                    </p>
                   </TextContent>
                 </ExpandableSection>
               </FormGroup>
               <FormGroup label="Source" fieldId="report-source">
-                <TextInput type="text" id="report-source" value={reportSource} onChange={(_, change) => setReportSource(change)} />
+                <TextInput
+                  type="text"
+                  id="report-source"
+                  value={reportSource}
+                  onChange={(_, change) => setReportSource(change)}
+                />
                 <FormHelperText>
                   <HelperText>
                     <HelperTextItem>The source of report</HelperTextItem>
@@ -209,7 +255,9 @@ const ReportBuilder = () => {
                 </FormHelperText>
               </FormGroup>
               <ActionGroup>
-                <Button variant="primary" onClick={onRunReportClick}>Run Report</Button>
+                <Button variant="primary" onClick={onRunReportClick}>
+                  Run Report
+                </Button>
               </ActionGroup>
             </Form>
           </CardBody>
@@ -229,8 +277,12 @@ const ReportBuilder = () => {
               pagination={pagination}
               isEmpty={isEmpty}
               isError={isError}
-              onSetPage={(_, change) => {pagination_page.current = change;}}
-              onSetPageSize={(_, change) => {pagination_pageSize.current = change;}}
+              onSetPage={(_, change) => {
+                pagination_page.current = change;
+              }}
+              onSetPageSize={(_, change) => {
+                pagination_pageSize.current = change;
+              }}
             />
           </CardBody>
         </Card>
@@ -239,8 +291,6 @@ const ReportBuilder = () => {
   );
 };
 
-
-ReportBuilder.propTypes = {
-};
+ReportBuilder.propTypes = {};
 
 export default ReportBuilder;

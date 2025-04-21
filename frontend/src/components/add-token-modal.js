@@ -46,7 +46,10 @@ const AddTokenModal = ({ isOpen, onClose }) => {
     }
 
     try {
-      await HttpClient.post([Settings.serverUrl, 'user', 'token'], { name, expires: expiry.toISOString() });
+      await HttpClient.post([Settings.serverUrl, 'user', 'token'], {
+        name,
+        expires: expiry.toISOString(),
+      });
     } catch (error) {
       console.error('Error posting token:', error);
     }
@@ -70,23 +73,25 @@ const AddTokenModal = ({ isOpen, onClose }) => {
       isOpen={isOpen}
       onClose={localOnClose}
       actions={[
-        <Button key="save" variant="primary" onClick={onSave}>Save</Button>,
-        <Button key="cancel" variant="link" onClick={localOnClose}>Cancel</Button>
+        <Button key="save" variant="primary" onClick={onSave}>
+          Save
+        </Button>,
+        <Button key="cancel" variant="link" onClick={localOnClose}>
+          Cancel
+        </Button>,
       ]}
     >
       <Form>
-        <FormGroup
-          label="Name"
-          fieldId="token-name"
-          isRequired
-        >
+        <FormGroup label="Name" fieldId="token-name" isRequired>
           <TextInput
             type="text"
             id="token-name"
             name="token-name"
             value={name}
             onChange={(_, change) => setName(change)}
-            validated={isNameValid ? ValidatedOptions.default : ValidatedOptions.error}
+            validated={
+              isNameValid ? ValidatedOptions.default : ValidatedOptions.error
+            }
             isRequired
           />
           {isNameValid !== true && (
@@ -102,20 +107,26 @@ const AddTokenModal = ({ isOpen, onClose }) => {
         <FormGroup
           label="Expiry"
           fieldId="token-expiry-date"
-          validated={isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error}
+          validated={
+            isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error
+          }
           isRequired
         >
           <DatePicker
             appendTo={() => document.getElementById('add-token-modal')}
-            onChange={(_, change) => {setExpiryDate(change);}}
+            onChange={(_, change) => {
+              setExpiryDate(change);
+            }}
             value={expiryDate}
             inputProps={{
               id: 'token-expiry-date',
-              validated: isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error
+              validated: isExpiryValid
+                ? ValidatedOptions.default
+                : ValidatedOptions.error,
             }}
             popoverProps={{
               enableFlip: false,
-              position: 'bottom'
+              position: 'bottom',
             }}
           />
           {isExpiryValid !== true && (

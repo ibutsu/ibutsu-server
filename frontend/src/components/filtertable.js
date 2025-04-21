@@ -9,19 +9,16 @@ import {
   Flex,
   FlexItem,
   Pagination,
-  PaginationVariant
+  PaginationVariant,
 } from '@patternfly/react-core';
-
 
 import {
   Table,
   TableBody,
-  TableHeader
+  TableHeader,
 } from '@patternfly/react-table/deprecated';
 
-
-import {TableEmptyState, TableErrorState} from './tablestates';
-
+import { TableEmptyState, TableErrorState } from './tablestates';
 
 const FilterTable = (props) => {
   const {
@@ -35,7 +32,7 @@ const FilterTable = (props) => {
     onApplyReport,
     onSetPage,
     onSetPageSize,
-    variant
+    variant,
   } = props;
 
   let columns = props.columns || [];
@@ -44,24 +41,32 @@ const FilterTable = (props) => {
   let filters = props.filters || [];
   let hideFilters = props.hideFilters || [];
   let activeFilters = props.activeFilters || {};
-  let pagination = props.pagination || {page: 0, pageSize: 0, totalItems: 0};
+  let pagination = props.pagination || { page: 0, pageSize: 0, totalItems: 0 };
   let canSelectAll = props.canSelectAll || false;
   return (
     <React.Fragment>
       <Flex>
-        {(filters || onApplyFilter) &&
-        <Flex spaceItems={{default: 'spaceItemsXs'}} grow={{default: 'grow'}}>
-          {filters && filters.map((filter, index) => (
-            <FlexItem key={index}>{filter}</FlexItem>
-          ))}
-          {onApplyFilter &&
-          <FlexItem>
-            <Button onClick={onApplyFilter}>Apply Filter</Button>
-          </FlexItem>
-          }
-        </Flex>
-        }
-        <Flex alignSelf={{default: 'alignSelfFlexEnd'}} direction={{default: 'column'}} align={{default: 'alignRight'}}>
+        {(filters || onApplyFilter) && (
+          <Flex
+            spaceItems={{ default: 'spaceItemsXs' }}
+            grow={{ default: 'grow' }}
+          >
+            {filters &&
+              filters.map((filter, index) => (
+                <FlexItem key={index}>{filter}</FlexItem>
+              ))}
+            {onApplyFilter && (
+              <FlexItem>
+                <Button onClick={onApplyFilter}>Apply Filter</Button>
+              </FlexItem>
+            )}
+          </Flex>
+        )}
+        <Flex
+          alignSelf={{ default: 'alignSelfFlexEnd' }}
+          direction={{ default: 'column' }}
+          align={{ default: 'alignRight' }}
+        >
           <FlexItem>
             <Pagination
               perPage={pagination.pageSize}
@@ -75,40 +80,46 @@ const FilterTable = (props) => {
           </FlexItem>
         </Flex>
       </Flex>
-      {Object.keys(activeFilters).length > 0 &&
-      <Flex style={{marginTop: '1rem'}}>
-        <Flex>
-          <FlexItem>
-            Active filters
-          </FlexItem>
+      {Object.keys(activeFilters).length > 0 && (
+        <Flex style={{ marginTop: '1rem' }}>
+          <Flex>
+            <FlexItem>Active filters</FlexItem>
+          </Flex>
+          <Flex grow={{ default: 'grow' }}>
+            {Object.keys(activeFilters).map((key) => (
+              <FlexItem spacer={{ default: 'spacerXs' }} key={key}>
+                {!hideFilters.includes(key) && (
+                  <ChipGroup categoryName={key}>
+                    <Chip
+                      badge={
+                        <Badge isRead={true}>{activeFilters[key]['op']}</Badge>
+                      }
+                      onClick={() => onRemoveFilter(key)}
+                    >
+                      {typeof activeFilters[key] === 'object' && (
+                        <React.Fragment>
+                          {activeFilters[key]['val']}
+                        </React.Fragment>
+                      )}
+                      {typeof activeFilters[key] !== 'object' &&
+                        activeFilters[key]}
+                    </Chip>
+                  </ChipGroup>
+                )}
+              </FlexItem>
+            ))}
+          </Flex>
+          {onApplyReport && (
+            <Flex>
+              <FlexItem style={{ marginLeft: '0.75em' }}>
+                <Button onClick={onApplyReport} variant="secondary">
+                  Use Active Filters in Report
+                </Button>
+              </FlexItem>
+            </Flex>
+          )}
         </Flex>
-        <Flex grow={{default: 'grow'}}>
-          {Object.keys(activeFilters).map(key => (
-            <FlexItem spacer={{ default: 'spacerXs'}} key={key}>
-              {!hideFilters.includes(key) &&
-            <ChipGroup categoryName={key}>
-              <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={() => onRemoveFilter(key)}>
-                {(typeof activeFilters[key] === 'object') &&
-                  <React.Fragment>
-                    {activeFilters[key]['val']}
-                  </React.Fragment>
-                }
-                {(typeof activeFilters[key] !== 'object') && activeFilters[key]}
-              </Chip>
-            </ChipGroup>
-              }
-            </FlexItem>
-          ))}
-        </Flex>
-        {onApplyReport &&
-        <Flex>
-          <FlexItem style={{marginLeft: '0.75em'}}>
-            <Button onClick={onApplyReport} variant="secondary">Use Active Filters in Report</Button>
-          </FlexItem>
-        </Flex>
-        }
-      </Flex>
-      }
+      )}
       <Table
         cells={columns}
         rows={rows}
@@ -133,7 +144,7 @@ const FilterTable = (props) => {
         dropDirection="up"
         onSetPage={onSetPage}
         onPerPageSelect={onSetPageSize}
-        style={{marginTop: '1rem'}}
+        style={{ marginTop: '1rem' }}
       />
     </React.Fragment>
   );
@@ -158,7 +169,7 @@ FilterTable.propTypes = {
   onSetPage: PropTypes.func,
   onSetPageSize: PropTypes.func,
   onRowSelect: PropTypes.func,
-  variant: PropTypes.node
+  variant: PropTypes.node,
 };
 
 export default FilterTable;

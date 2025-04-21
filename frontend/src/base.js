@@ -1,5 +1,9 @@
-
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  Navigate,
+} from 'react-router-dom';
 import App from './app';
 import Admin from './admin';
 import Profile from './profile';
@@ -17,18 +21,31 @@ export const Base = () => (
         <Route path="login" element={<Login />} />
         <Route path="sign-up" element={<SignUp />} />
         <Route path="forgot-password" element={<ForgotPassword />} />
-        <Route path="reset-password/:activationCode" element={<ResetPassword />} />
+        <Route
+          path="reset-password/:activationCode"
+          element={<ResetPassword />}
+        />
         <Route
           path="profile/*"
-          element={AuthService.isLoggedIn() ? <Profile /> : <Navigate to="/login" />}
+          element={
+            AuthService.isLoggedIn() ? <Profile /> : <Navigate to="/login" />
+          }
         />
         <Route
           path="admin/*"
-          element={AuthService.isLoggedIn() && AuthService.isSuperAdmin() ? <Admin /> : <Navigate to="/login" />}
+          element={
+            AuthService.isLoggedIn() && AuthService.isSuperAdmin() ? (
+              <Admin />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
         <Route
           path="project/*"
-          element={AuthService.isLoggedIn() ? <App /> : <Navigate to="/login" />}
+          element={
+            AuthService.isLoggedIn() ? <App /> : <Navigate to="/login" />
+          }
         />
         <Route path="*" element={<Navigate to="project" replace />} />
       </Routes>

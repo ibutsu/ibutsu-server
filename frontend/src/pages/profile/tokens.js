@@ -26,7 +26,6 @@ import { ALERT_TIMEOUT } from '../../constants';
 const COLUMNS = ['Name', 'Token', 'Expires', ''];
 
 const UserTokens = () => {
-
   const [tokens, setTokens] = useState([]);
   const [fetching, setFetching] = useState(true);
   const [page, setPage] = useState(1);
@@ -37,30 +36,46 @@ const UserTokens = () => {
   const [isDeleteTokenOpen, setIsDeleteTokenOpen] = useState(false);
   const [tokenToDelete, setTokenToDelete] = useState();
 
-  const tokenToRow = (token) => (
-    {
-      'cells': [
-        {title: token.name},
-        {title: (
-          <ClipboardCopy isReadOnly hoverTip="Copy to clipboard" clickTip="Copied!">
+  const tokenToRow = (token) => ({
+    cells: [
+      { title: token.name },
+      {
+        title: (
+          <ClipboardCopy
+            isReadOnly
+            hoverTip="Copy to clipboard"
+            clickTip="Copied!"
+          >
             {token.token}
           </ClipboardCopy>
-        )},
-        {title: token.expires},
-        {title: <Button variant="danger" onClick={() => {
-          setTokenToDelete(token);
-          setIsDeleteTokenOpen(true);
-        }}>Delete</Button>}
-      ]
-    }
-  );
+        ),
+      },
+      { title: token.expires },
+      {
+        title: (
+          <Button
+            variant="danger"
+            onClick={() => {
+              setTokenToDelete(token);
+              setIsDeleteTokenOpen(true);
+            }}
+          >
+            Delete
+          </Button>
+        ),
+      },
+    ],
+  });
 
   useEffect(() => {
     setFetching(true);
 
-    HttpClient.get([Settings.serverUrl, 'user', 'token'], {page: page, pageSize: pageSize})
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+    HttpClient.get([Settings.serverUrl, 'user', 'token'], {
+      page: page,
+      pageSize: pageSize,
+    })
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
         if (data?.tokens?.length > 0) {
           setTokens(data.tokens);
           setPage(data.pagination.page);
@@ -79,8 +94,9 @@ const UserTokens = () => {
     setFetching(false);
   }, [page, pageSize, isAddTokenOpen, isDeleteTokenOpen]); // extra deps to trigger fetch on modal close
 
-
-  useEffect(() => { document.title = 'User Tokens | Ibutsu'; }, []);
+  useEffect(() => {
+    document.title = 'User Tokens | Ibutsu';
+  }, []);
 
   return (
     <React.Fragment>
@@ -108,16 +124,24 @@ const UserTokens = () => {
           <CardBody className="pf-u-p-0">
             <FilterTable
               columns={COLUMNS}
-              rows={!fetching ? tokens.map((t) => tokenToRow(t)) : [getSpinnerRow(4)]}
+              rows={
+                !fetching
+                  ? tokens.map((t) => tokenToRow(t))
+                  : [getSpinnerRow(4)]
+              }
               pagination={{
                 pageSize: pageSize,
                 page: page,
-                totalItems: totalItems
+                totalItems: totalItems,
               }}
               isEmpty={!fetching && tokens.length === 0}
               isError={isError}
-              onSetPage={(_, value) => {setPage(value);}}
-              onSetPageSize={(_, value) => {setPageSize(value);}}
+              onSetPage={(_, value) => {
+                setPage(value);
+              }}
+              onSetPageSize={(_, value) => {
+                setPageSize(value);
+              }}
             />
           </CardBody>
         </Card>
@@ -137,7 +161,7 @@ const UserTokens = () => {
           setIsDeleteTokenOpen(false);
         }}
       />
-      <ToastContainer autoClose={ALERT_TIMEOUT} stacked/>
+      <ToastContainer autoClose={ALERT_TIMEOUT} stacked />
     </React.Fragment>
   );
 };

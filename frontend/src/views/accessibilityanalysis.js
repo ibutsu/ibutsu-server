@@ -14,23 +14,23 @@ import {
   Tab,
   Tabs,
   TextContent,
-  Text
+  Text,
 } from '@patternfly/react-core';
 import {
   CatalogIcon,
   ChevronRightIcon,
   CodeIcon,
 } from '@patternfly/react-icons';
+import { ChartLegend, ChartDonut } from '@patternfly/react-charts';
 import {
-  ChartLegend,
-  ChartDonut
-} from '@patternfly/react-charts';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import {
-  resultToRow,
-} from '../utilities';
+import { resultToRow } from '../utilities';
 import FilterTable from '../components/filtertable';
 import { IbutsuContext } from '../services/context';
 import TabTitle from '../components/tabs';
@@ -39,11 +39,9 @@ import { CodeEditor, Language } from '@patternfly/react-code-editor';
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 
 const AccessibilityAnalysisView = (props) => {
-  const {
-    view
-  } = props;
+  const { view } = props;
   const context = useContext(IbutsuContext);
-  const {darkTheme} = context;
+  const { darkTheme } = context;
   const location = useLocation();
   const navigate = useNavigate();
   const params = useSearchParams();
@@ -71,13 +69,16 @@ const AccessibilityAnalysisView = (props) => {
   const [totalItems, setTotalItems] = useState(0);
   // const [testResult, setTestResult] = useState();
   // const [chartParams, setChartParams] = useState({});
-  const [pieData, setPieData] = useState([{x: '', y: 0}, {x: '', y: 0}, {total: 0}]);
+  const [pieData, setPieData] = useState([
+    { x: '', y: 0 },
+    { x: '', y: 0 },
+    { total: 0 },
+  ]);
 
   // const [treeSearch, setTreeSearch] = useState();
 
   const [, setRunList] = useState([]);
   const [countSkips] = useState(false);
-
 
   // TODO? search param sync
 
@@ -91,25 +92,22 @@ const AccessibilityAnalysisView = (props) => {
     if (view) {
       setIsError(false);
 
-      let viewParams = {...view.params};
+      let viewParams = { ...view.params };
       const { primaryObject } = context;
       if (primaryObject) {
         viewParams['project'] = primaryObject.id;
-      }
-      else {
+      } else {
         delete viewParams['project'];
       }
       // probably don't need this, but maybe something similar
       viewParams['run_list'] = filters.run_list?.val;
       HttpClient.get([Settings.serverUrl, 'widget', view.widget], viewParams)
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
+        .then((response) => HttpClient.handleResponse(response))
+        .then((data) => {
           setRunList(data.run_list);
         })
-        .catch(error => console.error(error));
-
+        .catch((error) => console.error(error));
     }
-
   }, [view, builds, countSkips, filters?.run_list?.val, context]);
 
   // TODO remove?
@@ -122,8 +120,6 @@ const AccessibilityAnalysisView = (props) => {
   //     onChange={(_, isChecked) => setAreaChart(isChecked)}
   //   />
   // );
-
-
 
   // const getColors = (key) => {
   //   let color = 'var(--pf-v5-global--success-color--100)';
@@ -200,7 +196,6 @@ const AccessibilityAnalysisView = (props) => {
     setActiveTab(tabIndex);
   };
 
-
   // TODO remove, use ArtifactTab. currentTest isn't even in state
   // const onToggle = (node) => {
   //   if (node.result) {
@@ -218,17 +213,16 @@ const AccessibilityAnalysisView = (props) => {
   //   }
   // };
 
-
   // Fetch the Run by ID
   useEffect(() => {
     if (id) {
       setIsError(false);
       HttpClient.get([Settings.serverUrl, 'run', id])
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
+        .then((response) => HttpClient.handleResponse(response))
+        .then((data) => {
           setRun(data);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error);
           setIsError(true);
         });
@@ -241,10 +235,10 @@ const AccessibilityAnalysisView = (props) => {
     HttpClient.get([Settings.serverUrl + '/result'], {
       filter: ['run_id=' + id, 'metadata.markers*accessibility'],
       page: page,
-      pageSize: pageSize
+      pageSize: pageSize,
     })
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
         setResults(data.results);
         setRows(data.results.map((result) => resultToRow(result))); // TODO move to render
         setPage(data.pagination.page);
@@ -260,32 +254,41 @@ const AccessibilityAnalysisView = (props) => {
   }, [page, pageSize, id]);
 
   useEffect(() => {
-    let {passes, violations} = run.metadata.accessibility_data;
+    let { passes, violations } = run.metadata.accessibility_data;
     let total = passes + violations;
     setPieData([
       {
         x: 'passes',
         y: passes,
-        ratio: Math.round(100 * passes/total, 2)
+        ratio: Math.round((100 * passes) / total, 2),
       },
       {
         x: 'violations',
         y: violations,
-        ratio: Math.round(100 * violations/total, 2)
+        ratio: Math.round((100 * violations) / total, 2),
       },
       {
-        total: total
-      }
+        total: total,
+      },
     ]);
   }, [run]);
-
 
   return (
     <React.Fragment>
       <PageSection>
         <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
-          <Tab eventKey="overview" title={<TabTitle icon={<CatalogIcon/>} text="Overview" />} style={{backgroundColor: 'white'}}>
-            <div style={{ height: '1000px', width: '1250px', backgroundColor: 'white' }}>
+          <Tab
+            eventKey="overview"
+            title={<TabTitle icon={<CatalogIcon />} text="Overview" />}
+            style={{ backgroundColor: 'white' }}
+          >
+            <div
+              style={{
+                height: '1000px',
+                width: '1250px',
+                backgroundColor: 'white',
+              }}
+            >
               <ChartDonut
                 ariaDesc="Accessibility results donut chart"
                 ariaTitle="Accessibility results"
@@ -294,28 +297,35 @@ const AccessibilityAnalysisView = (props) => {
                 constrainToVisibleArea={true}
                 data={pieData}
                 labels={({ datum }) => `${datum.x}: ${datum.ratio}%`}
-                legendData={[{name: 'Passes', color: 'red'}, {name: 'Violations'}]}
+                legendData={[
+                  { name: 'Passes', color: 'red' },
+                  { name: 'Violations' },
+                ]}
                 legendOrientation="vertical"
                 legendPosition="right"
-                legendComponent = {
+                legendComponent={
                   <ChartLegend
                     data={[
                       {
                         name: 'Passes: ' + pieData[0].y,
-                        symbol: { fill: 'var(--pf-v5-global--success-color--100)'}
+                        symbol: {
+                          fill: 'var(--pf-v5-global--success-color--100)',
+                        },
                       },
                       {
                         name: 'Violations: ' + pieData[1].y,
-                        symbol: { fill: 'var(--pf-v5-global--danger-color--100)'}
-                      }
+                        symbol: {
+                          fill: 'var(--pf-v5-global--danger-color--100)',
+                        },
+                      },
                     ]}
                   />
                 }
-                padding = {{
+                padding={{
                   bottom: 20,
                   left: 20,
                   right: 140,
-                  top: 0
+                  top: 0,
                 }}
                 colorScale={[
                   'var(--pf-v5-global--success-color--100)',
@@ -327,9 +337,13 @@ const AccessibilityAnalysisView = (props) => {
               />
             </div>
           </Tab>
-          <Tab eventKey="run-object" title={<TabTitle icon={<CodeIcon/>} text="Run Object" />} style={{backgroundColor: 'white'}}>
+          <Tab
+            eventKey="run-object"
+            title={<TabTitle icon={<CodeIcon />} text="Run Object" />}
+            style={{ backgroundColor: 'white' }}
+          >
             <Card>
-              <CardBody id='object-card-body'>
+              <CardBody id="object-card-body">
                 <CodeEditor
                   isReadOnly={true}
                   isDarkTheme={darkTheme}
@@ -340,17 +354,29 @@ const AccessibilityAnalysisView = (props) => {
               </CardBody>
             </Card>
           </Tab>
-          <Tab eventKey="results-list" title={<TabTitle icon={<CatalogIcon/>} text="Results List" />} style={{backgroundColor: 'white'}}>
+          <Tab
+            eventKey="results-list"
+            title={<TabTitle icon={<CatalogIcon />} text="Results List" />}
+            style={{ backgroundColor: 'white' }}
+          >
             <Card className="pf-u-mt-lg">
               <CardHeader>
                 <Flex style={{ width: '100%' }}>
                   <FlexItem grow={{ default: 'grow' }}>
                     <TextContent>
-                      <Text component="h2" className="pf-v5-c-title pf-m-xl">Test Results</Text>
+                      <Text component="h2" className="pf-v5-c-title pf-m-xl">
+                        Test Results
+                      </Text>
                     </TextContent>
                   </FlexItem>
                   <FlexItem>
-                    <Link to={`/results?run_id[eq]=${run?.id}`} className="pf-v5-c-button pf-m-primary" style={{marginLeft: '2px'}}>See all results <ChevronRightIcon /></Link>
+                    <Link
+                      to={`/results?run_id[eq]=${run?.id}`}
+                      className="pf-v5-c-button pf-m-primary"
+                      style={{ marginLeft: '2px' }}
+                    >
+                      See all results <ChevronRightIcon />
+                    </Link>
                   </FlexItem>
                 </Flex>
               </CardHeader>
@@ -358,11 +384,10 @@ const AccessibilityAnalysisView = (props) => {
                 <FilterTable
                   columns={COLUMNS}
                   rows={rows}
-
                   pagination={{
                     pageSize: pageSize,
                     page: page,
-                    totalItems: totalItems
+                    totalItems: totalItems,
                   }}
                   isEmpty={rows?.length === 0}
                   isError={isError}
@@ -380,7 +405,7 @@ const AccessibilityAnalysisView = (props) => {
 };
 
 AccessibilityAnalysisView.propTypes = {
-  view: PropTypes.object
+  view: PropTypes.object,
 };
 
 export default AccessibilityAnalysisView;

@@ -6,19 +6,13 @@ import {
   ChipGroup,
   TextInputGroup,
   TextInputGroupMain,
-  TextInputGroupUtilities
+  TextInputGroupUtilities,
 } from '@patternfly/react-core';
 
 import { TimesIcon } from '@patternfly/react-icons';
 
-
 const MultiValueInput = (props) => {
-  const {
-    onAddValue,
-    onRemoveValue,
-    onValuesChange,
-    style,
-  } = props;
+  const { onAddValue, onRemoveValue, onValuesChange, style } = props;
 
   const [values, setValues] = useState([]);
   const [value, setValue] = useState('');
@@ -28,12 +22,12 @@ const MultiValueInput = (props) => {
   };
 
   const handleItemRemove = (item) => {
-    const newValues = values.filter(v => v !== item);
+    const newValues = values.filter((v) => v !== item);
     setValues(newValues);
     if (onRemoveValue) {
       onRemoveValue(item);
     }
-    if (onValuesChange){
+    if (onValuesChange) {
       onValuesChange(newValues);
     }
   };
@@ -60,9 +54,9 @@ const MultiValueInput = (props) => {
 
   const handleKeyPress = (event) => {
     switch (event.key) {
-    case 'Enter':
-      handleEnter();
-      break;
+      case 'Enter':
+        handleEnter();
+        break;
     }
   };
 
@@ -74,15 +68,12 @@ const MultiValueInput = (props) => {
           placeholder="Type any value and hit <Enter>"
           onChange={handleTextInputChange}
           onKeyDown={handleKeyPress}
-          style={{...style, minWidth: '240px'}}
+          style={{ ...style, minWidth: '240px' }}
           type="text"
         >
           <ChipGroup aria-label="Current selections">
             {values.map((item, index) => (
-              <Chip
-                key={index}
-                onClick={() => handleItemRemove(item)}
-              >
+              <Chip key={index} onClick={() => handleItemRemove(item)}>
                 {item}
               </Chip>
             ))}
@@ -96,7 +87,8 @@ const MultiValueInput = (props) => {
                 setValues([]);
                 setValue('');
               }}
-              aria-label="Clear input value">
+              aria-label="Clear input value"
+            >
               <TimesIcon aria-hidden />
             </Button>
           )}
@@ -110,7 +102,7 @@ MultiValueInput.propTypes = {
   onAddValue: PropTypes.func,
   onRemoveValue: PropTypes.func,
   onValuesChange: PropTypes.func,
-  style: PropTypes.object
+  style: PropTypes.object,
 };
 
 export default MultiValueInput;

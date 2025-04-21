@@ -5,7 +5,7 @@ import {
   PageSectionVariants,
   TextContent,
   Text,
-  Skeleton
+  Skeleton,
 } from '@patternfly/react-core';
 
 import { HttpClient } from './services/http';
@@ -15,7 +15,6 @@ import ResultView from './components/result';
 import { useParams } from 'react-router-dom';
 
 const Result = () => {
-
   const params = useParams();
   const [isResultValid, setIsResultValid] = useState(false);
   const [testResult, setTestResult] = useState(null);
@@ -54,11 +53,18 @@ const Result = () => {
       </PageSection>
       <PageSection>
         {testResult ? (
-          isResultValid ?
-            <ResultView testResult={testResult} /> :
-            <EmptyObject headingText="Result not found" returnLink="/results" returnLinkText="Return to results list"/>
-        ) :
-          <Skeleton />}
+          isResultValid ? (
+            <ResultView testResult={testResult} />
+          ) : (
+            <EmptyObject
+              headingText="Result not found"
+              returnLink="/results"
+              returnLinkText="Return to results list"
+            />
+          )
+        ) : (
+          <Skeleton />
+        )}
       </PageSection>
     </React.Fragment>
   );
