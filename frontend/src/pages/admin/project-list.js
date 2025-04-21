@@ -11,9 +11,13 @@ import {
   PageSectionVariants,
   Text,
   TextContent,
-  TextInput
+  TextInput,
 } from '@patternfly/react-core';
-import { PencilAltIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
+import {
+  PencilAltIcon,
+  PlusCircleIcon,
+  TrashIcon,
+} from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
@@ -40,70 +44,77 @@ const ProjectList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const projectToRow = (project) => (
-    {
-      'cells': [
-        {title: project.title},
-        {title: project.name},
-        {title: project.owner && project.owner.name},
-        {
-          title: (
-            <div style={{textAlign: 'right'}}>
-              <Button
-                variant="primary"
-                ouiaId={`admin-projects-edit-${project.id}`}
-                component={(props) => <Link {...props} to={`/admin/projects/${project.id}`} />}
-                size="sm"
-              >
-                <PencilAltIcon />
-              </Button>
-              &nbsp;
-              <Button
-                variant="danger"
-                ouiaId={`admin-projects-delete-${project.id}`}
-                onClick={() => {
-                  setSelectedProject(project);
-                  setIsDeleteModalOpen(true);
-                }}
-                size="sm"
-              >
-                <TrashIcon />
-              </Button>
-            </div>
-          )
-        }
-      ]
-    }
-  );
+  const projectToRow = (project) => ({
+    cells: [
+      { title: project.title },
+      { title: project.name },
+      { title: project.owner && project.owner.name },
+      {
+        title: (
+          <div style={{ textAlign: 'right' }}>
+            <Button
+              variant="primary"
+              ouiaId={`admin-projects-edit-${project.id}`}
+              component={(props) => (
+                <Link {...props} to={`/admin/projects/${project.id}`} />
+              )}
+              size="sm"
+            >
+              <PencilAltIcon />
+            </Button>
+            &nbsp;
+            <Button
+              variant="danger"
+              ouiaId={`admin-projects-delete-${project.id}`}
+              onClick={() => {
+                setSelectedProject(project);
+                setIsDeleteModalOpen(true);
+              }}
+              size="sm"
+            >
+              <TrashIcon />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+  });
 
   const onModalDeleteClick = () => {
     setIsDeleting(true);
-    HttpClient.delete([Settings.serverUrl, 'admin', 'project', selectedProject.id])
-      .then(response => HttpClient.handleResponse(response))
+    HttpClient.delete([
+      Settings.serverUrl,
+      'admin',
+      'project',
+      selectedProject.id,
+    ])
+      .then((response) => HttpClient.handleResponse(response))
       .then(() => {
         setIsDeleteModalOpen(false);
         setIsDeleting(false);
-
       });
   };
 
   useEffect(() => {
     // handle input value changing for project filter
-    setActiveFilters(filterText ? {'title': filterText} : {});
+    setActiveFilters(filterText ? { title: filterText } : {});
 
     let newProjects = projects;
     if (filterText && projects) {
-      newProjects = projects.filter(p =>
-        String(p.title).toLowerCase().includes(filterText.toLowerCase())
+      newProjects = projects.filter((p) =>
+        String(p.title).toLowerCase().includes(filterText.toLowerCase()),
       );
     }
     setFilteredProjects(newProjects);
   }, [filterText, projects]);
 
   useEffect(() => {
-    HttpClient.get([Settings.serverUrl, 'admin', 'project'], {page: page, pageSize: pageSize})
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+    HttpClient.get([Settings.serverUrl, 'admin', 'project'], {
+      page: page,
+      pageSize: pageSize,
+    })
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
         setIsError(false);
         if (data?.projects) {
           setProjects(data.projects);
@@ -133,7 +144,9 @@ const ProjectList = () => {
     setFilterText('');
   };
 
-  useEffect(() => { document.title = 'Projects - Administration | Ibutsu'; }, []);
+  useEffect(() => {
+    document.title = 'Projects - Administration | Ibutsu';
+  }, []);
 
   return (
     <React.Fragment>
@@ -142,7 +155,9 @@ const ProjectList = () => {
           <Flex>
             <FlexItem spacer={{ default: 'spacerLg' }}>
               <TextContent>
-                <Text className="title" component="h1" ouiaId="admin-projects">Projects</Text>
+                <Text className="title" component="h1" ouiaId="admin-projects">
+                  Projects
+                </Text>
               </TextContent>
             </FlexItem>
           </Flex>
@@ -153,7 +168,9 @@ const ProjectList = () => {
                 variant="secondary"
                 title="Add project"
                 ouiaId="admin-projects-add"
-                component={(props) => <Link {...props} to="/admin/projects/new" />}
+                component={(props) => (
+                  <Link {...props} to="/admin/projects/new" />
+                )}
               >
                 <PlusCircleIcon /> Add Project
               </Button>
@@ -162,39 +179,54 @@ const ProjectList = () => {
         </Flex>
       </PageSection>
       <PageSection className="pf-u-pb-0">
-        {projects.length > 0 &&
-        <Card>
-          <CardBody className="pf-u-p-0">
-            <FilterTable
-              columns={COLUMNS}
-              rows={filteredProjects ? filteredProjects.map((p) => projectToRow(p)) : [getSpinnerRow(4)]}
-              activeFilters={activeFilters}
-              filters={[
-                <TextInput
-                  type="text"
-                  id="filter"
-                  placeholder="Search for project..."
-                  value={filterText}
-                  onChange={onFilterChange}
-                  style={{height: 'inherit'}}
-                  key="filterText"
-                />
-              ]}
-              pagination={{
-                pageSize: pageSize,
-                page: page,
-                totalItems: totalItems
-              }}
-              onRemoveFilter={onRemoveFilter}
-              isEmpty={filteredProjects.length === 0}
-              isError={isError}
-              onSetPage={(_, value) => {setPage(value);}}
-              onSetPageSize={(_, value) => {setPageSize(value);}}
-            />
-          </CardBody>
-        </Card>
-        }
-        {projects.length === 0 && <EmptyObject headingText='No Projects found' bodyText='Create your first project' returnLink='/admin/projects/new' returnLinkText='Add Project'/>}
+        {projects.length > 0 && (
+          <Card>
+            <CardBody className="pf-u-p-0">
+              <FilterTable
+                columns={COLUMNS}
+                rows={
+                  filteredProjects
+                    ? filteredProjects.map((p) => projectToRow(p))
+                    : [getSpinnerRow(4)]
+                }
+                activeFilters={activeFilters}
+                filters={[
+                  <TextInput
+                    type="text"
+                    id="filter"
+                    placeholder="Search for project..."
+                    value={filterText}
+                    onChange={onFilterChange}
+                    style={{ height: 'inherit' }}
+                    key="filterText"
+                  />,
+                ]}
+                pagination={{
+                  pageSize: pageSize,
+                  page: page,
+                  totalItems: totalItems,
+                }}
+                onRemoveFilter={onRemoveFilter}
+                isEmpty={filteredProjects.length === 0}
+                isError={isError}
+                onSetPage={(_, value) => {
+                  setPage(value);
+                }}
+                onSetPageSize={(_, value) => {
+                  setPageSize(value);
+                }}
+              />
+            </CardBody>
+          </Card>
+        )}
+        {projects.length === 0 && (
+          <EmptyObject
+            headingText="No Projects found"
+            bodyText="Create your first project"
+            returnLink="/admin/projects/new"
+            returnLinkText="Add Project"
+          />
+        )}
       </PageSection>
       <Modal
         title="Confirm Delete"
@@ -220,10 +252,12 @@ const ProjectList = () => {
             onClick={onDeleteClose}
           >
             Cancel
-          </Button>
+          </Button>,
         ]}
       >
-        Are you sure you want to delete &ldquo;{selectedProject && selectedProject.title}&rdquo;? This cannot be undone!
+        Are you sure you want to delete &ldquo;
+        {selectedProject && selectedProject.title}&rdquo;? This cannot be
+        undone!
       </Modal>
     </React.Fragment>
   );

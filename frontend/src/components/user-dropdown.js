@@ -4,7 +4,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownList,
-  MenuToggle
+  MenuToggle,
 } from '@patternfly/react-core';
 import { UserIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
@@ -22,8 +22,13 @@ const UserDropdown = () => {
   };
 
   useEffect(() => {
-    AuthService.isSuperAdmin().then(isSuperAdmin => setIsSuperAdmin(isSuperAdmin));
-    setDisplayName(AuthService.getUser() && (AuthService.getUser().name || AuthService.getUser().email));
+    AuthService.isSuperAdmin().then((isSuperAdmin) =>
+      setIsSuperAdmin(isSuperAdmin),
+    );
+    setDisplayName(
+      AuthService.getUser() &&
+        (AuthService.getUser().name || AuthService.getUser().email),
+    );
   }, []);
 
   return (
@@ -31,7 +36,7 @@ const UserDropdown = () => {
       isOpen={isDropdownOpen}
       onSelect={() => setIsDropdownOpen(false)}
       onOpenChange={() => setIsDropdownOpen(false)}
-      toggle={toggleRef => (
+      toggle={(toggleRef) => (
         <MenuToggle
           ref={toggleRef}
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -46,11 +51,11 @@ const UserDropdown = () => {
         <DropdownItem key="profile">
           <Link to="/profile/user">Profile</Link>
         </DropdownItem>
-        {!!isSuperAdmin &&
+        {!!isSuperAdmin && (
           <DropdownItem key="admin">
             <Link to="/admin/home">Administration</Link>
           </DropdownItem>
-        }
+        )}
         <DropdownItem key="logout" onClick={logout}>
           <Link>Logout</Link>
         </DropdownItem>

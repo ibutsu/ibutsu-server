@@ -14,7 +14,7 @@ import {
   PaginationVariant,
   Skeleton,
   TextContent,
-  Title
+  Title,
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../../services/http';
@@ -27,7 +27,6 @@ import { TableEmptyState, TableErrorState } from '../../components/tablestates';
 import UserRow from '../../components/user-row';
 
 const UserList = () => {
-
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState();
 
@@ -41,8 +40,8 @@ const UserList = () => {
 
   const [fetching, setFetching] = useState(true);
 
-  const {filterComponents, activeFilterComponents, activeFilters } = useUserFilter();
-
+  const { filterComponents, activeFilterComponents, activeFilters } =
+    useUserFilter();
 
   useEffect(() => {
     // fetch the users
@@ -50,11 +49,13 @@ const UserList = () => {
     const apiParams = {
       page: page,
       pageSize: pageSize,
-      ...(Object.keys(activeFilters)?.length === 0 ? {} : {'filter': toAPIFilter(activeFilters)})
+      ...(Object.keys(activeFilters)?.length === 0
+        ? {}
+        : { filter: toAPIFilter(activeFilters) }),
     };
     HttpClient.get([Settings.serverUrl, 'admin', 'user'], apiParams)
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
         if (data?.users?.length > 0) {
           setUsers(data.users);
           setPage(data.pagination.page);
@@ -72,27 +73,29 @@ const UserList = () => {
         setIsError(true);
         setFetching(false);
       });
-
   }, [page, pageSize, isDeleting, activeFilters]); // isDeleteing so the users fetch after delete
-
 
   const onModalDeleteClick = () => {
     setIsDeleting(true);
     HttpClient.delete([Settings.serverUrl, 'admin', 'user', selectedUser.id])
-      .then(response => HttpClient.handleResponse(response))
+      .then((response) => HttpClient.handleResponse(response))
       .then(() => {
         setIsDeleting(false);
         setIsDeleteModalOpen(false);
       });
   };
 
-  useEffect(() => {document.title = 'Users - Administration | Ibutsu';}, []);
+  useEffect(() => {
+    document.title = 'Users - Administration | Ibutsu';
+  }, []);
 
   return (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>
         <TextContent>
-          <Title headingLevel="h1" ouiaId="users-title">Users</Title>
+          <Title headingLevel="h1" ouiaId="users-title">
+            Users
+          </Title>
         </TextContent>
       </PageSection>
       <PageSection>
@@ -102,7 +105,11 @@ const UserList = () => {
             {activeFilterComponents}
           </CardHeader>
           <CardBody>
-            <Flex alignSelf={{default: 'alignSelfFlexEnd'}} direction={{default: 'column'}} align={{default: 'alignRight'}}>
+            <Flex
+              alignSelf={{ default: 'alignSelfFlexEnd' }}
+              direction={{ default: 'column' }}
+              align={{ default: 'alignRight' }}
+            >
               <FlexItem>
                 <Pagination
                   perPage={pageSize}
@@ -118,28 +125,41 @@ const UserList = () => {
             <Table>
               <Thead>
                 <Tr>
-                  <Th width={20} dataLabel={USER_COLUMNS.name}>{USER_COLUMNS.name}</Th>
-                  <Th width={20} dataLabel={USER_COLUMNS.email}>{USER_COLUMNS.email}</Th>
-                  <Th width={40} dataLabel={USER_COLUMNS.projects}>{USER_COLUMNS.projects}</Th>
-                  <Th width={10} dataLabel={USER_COLUMNS.status}>{USER_COLUMNS.status}</Th>
-                  <Th width={5} screenReaderText='Edit Action'/>
-                  <Th width={5} screenReaderText='Delete Action'/>
+                  <Th width={20} dataLabel={USER_COLUMNS.name}>
+                    {USER_COLUMNS.name}
+                  </Th>
+                  <Th width={20} dataLabel={USER_COLUMNS.email}>
+                    {USER_COLUMNS.email}
+                  </Th>
+                  <Th width={40} dataLabel={USER_COLUMNS.projects}>
+                    {USER_COLUMNS.projects}
+                  </Th>
+                  <Th width={10} dataLabel={USER_COLUMNS.status}>
+                    {USER_COLUMNS.status}
+                  </Th>
+                  <Th width={5} screenReaderText="Edit Action" />
+                  <Th width={5} screenReaderText="Delete Action" />
                 </Tr>
               </Thead>
               <Tbody>
                 {!fetching && users?.length === 0 && <TableEmptyState />}
                 {!fetching && isError && <TableErrorState />}
                 {!fetching &&
-                  users.map((user) =>
+                  users.map((user) => (
                     <UserRow
                       user={user}
                       key={user.id}
                       setSelectedUser={setSelectedUser}
                       setIsDeleteModalOpen={setIsDeleteModalOpen}
                     />
-                  )
-                }
-                {fetching && <Tr ><Td colSpan={6}><Skeleton/></Td></Tr>}
+                  ))}
+                {fetching && (
+                  <Tr>
+                    <Td colSpan={6}>
+                      <Skeleton />
+                    </Td>
+                  </Tr>
+                )}
               </Tbody>
             </Table>
 
@@ -152,7 +172,7 @@ const UserList = () => {
               dropDirection="up"
               onSetPage={(_, value) => setPage(value)}
               onPerPageSelect={(_, value) => setPageSize(value)}
-              style={{marginTop: '1rem'}}
+              style={{ marginTop: '1rem' }}
             />
           </CardBody>
         </Card>
@@ -163,15 +183,28 @@ const UserList = () => {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         actions={[
-          <Button key="delete" variant="danger" isLoading={isDeleting} isDisabled={isDeleting} onClick={onModalDeleteClick}>
+          <Button
+            key="delete"
+            variant="danger"
+            isLoading={isDeleting}
+            isDisabled={isDeleting}
+            onClick={onModalDeleteClick}
+          >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>,
-          <Button key="cancel" variant="secondary" isDisabled={isDeleting} onClick={() => setIsDeleteModalOpen(false)}>
+          <Button
+            key="cancel"
+            variant="secondary"
+            isDisabled={isDeleting}
+            onClick={() => setIsDeleteModalOpen(false)}
+          >
             Cancel
-          </Button>
+          </Button>,
         ]}
       >
-        Are you sure you want to delete &ldquo;{selectedUser && (selectedUser.name || selectedUser.email)}&rdquo;? This cannot be undone!
+        Are you sure you want to delete &ldquo;
+        {selectedUser && (selectedUser.name || selectedUser.email)}&rdquo;? This
+        cannot be undone!
       </Modal>
     </React.Fragment>
   );

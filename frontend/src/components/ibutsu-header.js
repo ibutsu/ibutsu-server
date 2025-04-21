@@ -1,4 +1,4 @@
-import React, {useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   AboutModal,
   Brand,
@@ -37,7 +37,6 @@ import ServerIcon from '@patternfly/react-icons/dist/esm/icons/server-icon';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import QuestionCircleIcon from '@patternfly/react-icons/dist/esm/icons/question-circle-icon';
 
-
 import FileUpload from './fileupload';
 import UserDropdown from './user-dropdown';
 import { VERSION } from '../constants';
@@ -70,21 +69,21 @@ const IbutsuHeader = () => {
     setPrimaryType,
     setDefaultDashboard,
     darkTheme,
-    setDarkTheme
+    setDarkTheme,
   } = context;
 
   useEffect(() => {
     // update projects/portals when the filter input changes
     // TODO: iterate over pages, fix controller filtering behavior to apply pageSize AFTER filter
-    let api_params = {pageSize: 20};
+    let api_params = { pageSize: 20 };
     if (filterValue) {
       api_params['filter'] = ['title%' + filterValue];
     }
     HttpClient.get([Settings.serverUrl, endpoint], api_params)
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
-        setProjects(data[endpoint+'s']);
-        setFilteredProjects(data[endpoint+'s']);
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
+        setProjects(data[endpoint + 's']);
+        setFilteredProjects(data[endpoint + 's']);
       });
   }, [filterValue, endpoint]);
 
@@ -93,9 +92,9 @@ const IbutsuHeader = () => {
   }, [darkTheme]);
 
   useEffect(() => {
-    if (project_id && (selectedProject?.id !== project_id)) {
+    if (project_id && selectedProject?.id !== project_id) {
       HttpClient.get([Settings.serverUrl, '/project/', project_id])
-        .then(response => HttpClient.handleResponse(response))
+        .then((response) => HttpClient.handleResponse(response))
         .then((data) => {
           setPrimaryObject(data);
           setPrimaryType('project');
@@ -107,7 +106,13 @@ const IbutsuHeader = () => {
         })
         .catch((error) => console.error(error));
     }
-  }, [project_id, selectedProject, setDefaultDashboard, setPrimaryObject, setPrimaryType]);
+  }, [
+    project_id,
+    selectedProject,
+    setDefaultDashboard,
+    setPrimaryObject,
+    setPrimaryType,
+  ]);
 
   const onProjectSelect = (_, value) => {
     // update context
@@ -121,7 +126,9 @@ const IbutsuHeader = () => {
     setInputValue(value?.title);
     setFilterValue('');
 
-    navigate(`/project/${value?.id}/dashboard/${value.default_dashboard_id || ''}`);
+    navigate(
+      `/project/${value?.id}/dashboard/${value.default_dashboard_id || ''}`,
+    );
   };
 
   const onProjectClear = () => {
@@ -140,10 +147,12 @@ const IbutsuHeader = () => {
     setFilterValue(value);
   };
 
-  const toggle = toggleRef => (
+  const toggle = (toggleRef) => (
     <MenuToggle
       variant="typeahead"
-      onClick={() => {setIsProjectSelectOpen(!isProjectSelectOpen);}}
+      onClick={() => {
+        setIsProjectSelectOpen(!isProjectSelectOpen);
+      }}
       isExpanded={isProjectSelectOpen}
       isFullWidth
       innerRef={toggleRef}
@@ -151,7 +160,9 @@ const IbutsuHeader = () => {
       <TextInputGroup isPlain>
         <TextInputGroupMain
           value={inputValue}
-          onClick={() => {setIsProjectSelectOpen(!isProjectSelectOpen);}}
+          onClick={() => {
+            setIsProjectSelectOpen(!isProjectSelectOpen);
+          }}
           onChange={onProjectTextInputChange}
           id="typeahead-select-input"
           autoComplete="off"
@@ -162,17 +173,21 @@ const IbutsuHeader = () => {
         />
         <TextInputGroupUtilities>
           {!!inputValue && (
-            <Button onClick={() => {
-              onProjectClear();
-            }} aria-label="Clear input value">
-              <Icon><TimesIcon aria-hidden /></Icon>
+            <Button
+              onClick={() => {
+                onProjectClear();
+              }}
+              aria-label="Clear input value"
+            >
+              <Icon>
+                <TimesIcon aria-hidden />
+              </Icon>
             </Button>
           )}
         </TextInputGroupUtilities>
       </TextInputGroup>
     </MenuToggle>
   );
-
 
   const projectSelect = (
     <Flex>
@@ -182,18 +197,21 @@ const IbutsuHeader = () => {
           isOpen={isProjectSelectOpen}
           selected={selectedProject}
           onSelect={onProjectSelect}
-          onOpenChange={(isOpen) => {setIsProjectSelectOpen(isOpen);}}
+          onOpenChange={(isOpen) => {
+            setIsProjectSelectOpen(isOpen);
+          }}
           toggle={toggle}
         >
           <SelectList id="select-typeahead-listbox">
-            {(projects.length === 0 && !filterValue) && (
+            {projects.length === 0 && !filterValue && (
               <SelectOption
                 isDisabled={true}
-                description="Ask Ibutsu admins to add you to a project">
+                description="Ask Ibutsu admins to add you to a project"
+              >
                 No projects available
               </SelectOption>
             )}
-            {(projects.length === 0 && !!filterValue) && (
+            {projects.length === 0 && !!filterValue && (
               <SelectOption isDisabled={true}>
                 {`No results found for "${filterValue}"`}
               </SelectOption>
@@ -201,10 +219,13 @@ const IbutsuHeader = () => {
             {filteredProjects.map((project, index) => (
               <SelectOption
                 key={project.id || index}
-                onClick={() => {setSelectedProject(project);}}
+                onClick={() => {
+                  setSelectedProject(project);
+                }}
                 value={project}
                 description={project.name}
-                isDisabled={project.isDisabled}>
+                isDisabled={project.isDisabled}
+              >
                 {project.title}
               </SelectOption>
             ))}
@@ -218,59 +239,83 @@ const IbutsuHeader = () => {
   );
 
   const headerTools = (
-    <Toolbar id="toolbar" isFullHeight isStatic style={{paddingLeft: '30px'}}>
+    <Toolbar id="toolbar" isFullHeight isStatic style={{ paddingLeft: '30px' }}>
       <ToolbarContent>
         <ToolbarGroup variant="filter-group">
-          <ToolbarItem>
-            {projectSelect}
-          </ToolbarItem>
+          <ToolbarItem>{projectSelect}</ToolbarItem>
         </ToolbarGroup>
         <ToolbarGroup
           variant="icon-button-group"
           align={{
-            default: 'alignRight'
+            default: 'alignRight',
           }}
         >
           <ToolbarItem spacer={{ default: 'spacerSm' }}>
             <Button
               aria-label="About"
-              onClick={() => {setIsAboutOpen(!isAboutOpen);}}
+              onClick={() => {
+                setIsAboutOpen(!isAboutOpen);
+              }}
               variant={ButtonVariant.plain}
-              icon={<Icon><QuestionCircleIcon /></Icon>} />
+              icon={
+                <Icon>
+                  <QuestionCircleIcon />
+                </Icon>
+              }
+            />
           </ToolbarItem>
           <ToolbarItem spacer={{ default: 'spacerSm' }}>
-            <FileUpload name="importFile"/>
+            <FileUpload name="importFile" />
           </ToolbarItem>
           <ToolbarItem spacer={{ default: 'spacerSm' }}>
             <Button
-              component='a'
+              component="a"
               href={Settings.serverUrl + '/ui/'}
               variant={ButtonVariant.tertiary}
               target="_blank"
               rel="noopener noreferrer"
-              icon={<Icon><ServerIcon/></Icon>}
-            > API</Button>
+              icon={
+                <Icon>
+                  <ServerIcon />
+                </Icon>
+              }
+            >
+              {' '}
+              API
+            </Button>
           </ToolbarItem>
           <ToolbarItem spacer={{ default: 'spacerSm' }}>
             <ToggleGroup>
               <ToggleGroupItem
-                aria-label='Light theme'
-                icon={<Icon><SunIcon /></Icon>}
-                buttonId='theme-toggle-light'
+                aria-label="Light theme"
+                icon={
+                  <Icon>
+                    <SunIcon />
+                  </Icon>
+                }
+                buttonId="theme-toggle-light"
                 isSelected={!darkTheme}
-                onChange={() => {setDarkTheme(false);}}
+                onChange={() => {
+                  setDarkTheme(false);
+                }}
               />
               <ToggleGroupItem
-                aria-label='Dark theme'
-                icon={<Icon><MoonIcon /></Icon>}
-                buttonId='theme-toggle-dark'
+                aria-label="Dark theme"
+                icon={
+                  <Icon>
+                    <MoonIcon />
+                  </Icon>
+                }
+                buttonId="theme-toggle-dark"
                 isSelected={darkTheme}
-                onChange={() => {setDarkTheme(true);}}
+                onChange={() => {
+                  setDarkTheme(true);
+                }}
               />
             </ToggleGroup>
           </ToolbarItem>
-          <ToolbarItem id="user-dropdown" >
-            <UserDropdown/>
+          <ToolbarItem id="user-dropdown">
+            <UserDropdown />
           </ToolbarItem>
         </ToolbarGroup>
       </ToolbarContent>
@@ -281,7 +326,9 @@ const IbutsuHeader = () => {
     <React.Fragment>
       <AboutModal
         isOpen={isAboutOpen}
-        onClose={() => {setIsAboutOpen(!isAboutOpen);}}
+        onClose={() => {
+          setIsAboutOpen(!isAboutOpen);
+        }}
         brandImageSrc="/images/ibutsu.svg"
         brandImageAlt="Ibutsu"
         productName="Ibutsu"
@@ -293,33 +340,59 @@ const IbutsuHeader = () => {
             <TextListItem component="dt">Version</TextListItem>
             <TextListItem component="dd">{VERSION}</TextListItem>
             <TextListItem component="dt">Source code</TextListItem>
-            <TextListItem component="dd"><a href="https://github.com/ibutsu/ibutsu-server" target="_blank" rel="noopener noreferrer">github.com/ibutsu/ibutsu-server</a></TextListItem>
+            <TextListItem component="dd">
+              <a
+                href="https://github.com/ibutsu/ibutsu-server"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                github.com/ibutsu/ibutsu-server
+              </a>
+            </TextListItem>
             <TextListItem component="dt">Documentation</TextListItem>
-            <TextListItem component="dd"><a href="https://docs.ibutsu-project.org/" target="_blank" rel="noopener noreferrer">docs.ibutsu-project.org</a></TextListItem>
+            <TextListItem component="dd">
+              <a
+                href="https://docs.ibutsu-project.org/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                docs.ibutsu-project.org
+              </a>
+            </TextListItem>
             <TextListItem component="dt">Report bugs</TextListItem>
-            <TextListItem component="dd"><a href="https://github.com/ibutsu/ibutsu-server/issues/new" target="_blank" rel="noopener noreferrer">Submit an issue</a></TextListItem>
+            <TextListItem component="dd">
+              <a
+                href="https://github.com/ibutsu/ibutsu-server/issues/new"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Submit an issue
+              </a>
+            </TextListItem>
           </TextList>
         </TextContent>
-        <p style={{marginTop: '2rem'}}>* Note: artifact files (screenshots, logs) are retained for 3 months</p>
+        <p style={{ marginTop: '2rem' }}>
+          * Note: artifact files (screenshots, logs) are retained for 3 months
+        </p>
       </AboutModal>
       <Masthead>
-        <MastheadToggle >
+        <MastheadToggle>
           <PageToggleButton
             variant="plain"
             aria-label="Global navigation"
             id="vertical-nav-toggle"
           >
-            <Icon><BarsIcon/></Icon>
+            <Icon>
+              <BarsIcon />
+            </Icon>
           </PageToggleButton>
         </MastheadToggle>
         <MastheadMain>
-          <MastheadBrand href='/'>
-            <Brand src="/images/ibutsu-wordart-164.png" alt="Ibutsu"/>
+          <MastheadBrand href="/">
+            <Brand src="/images/ibutsu-wordart-164.png" alt="Ibutsu" />
           </MastheadBrand>
         </MastheadMain>
-        <MastheadContent>
-          {headerTools}
-        </MastheadContent>
+        <MastheadContent>{headerTools}</MastheadContent>
       </Masthead>
     </React.Fragment>
   );

@@ -6,17 +6,11 @@ import {
   DropdownList,
   MenuToggle,
   Text,
-  Tooltip
+  Tooltip,
 } from '@patternfly/react-core';
 
-
 const ParamDropdown = (props) => {
-  const {
-    defaultValue,
-    handleSelect,
-    tooltip,
-    dropdownItems
-  } = props;
+  const { defaultValue, handleSelect, tooltip, dropdownItems } = props;
 
   const [isOpen, setIsOpen] = useState(false);
   const [value, setValue] = useState(defaultValue || 'Group data by?');
@@ -27,21 +21,21 @@ const ParamDropdown = (props) => {
     setValue(event.target.innerText);
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     setValue(defaultValue);
   }, [defaultValue, setValue]);
 
   return (
     // TODO this formatting of the dropdown labels is ugly as hell
     <React.Fragment>
-      <div data-id='widget-param-dropdown'>
-        <Text component='h3'>{tooltip}</Text>
+      <div data-id="widget-param-dropdown">
+        <Text component="h3">{tooltip}</Text>
         <Tooltip content={tooltip}>
           <Dropdown
             isOpen={isOpen}
             onSelect={dropOnSelect}
             onOpenChange={() => setIsOpen(false)}
-            toggle={toggleRef => (
+            toggle={(toggleRef) => (
               <MenuToggle
                 id="toggle-dropdown"
                 ref={toggleRef}
@@ -55,11 +49,12 @@ const ParamDropdown = (props) => {
             shouldFocusToggleOnSelect
           >
             <DropdownList>
-              {dropdownItems && dropdownItems.map((item) => (
-                <DropdownItem onClick={dropOnSelect} key={item}>
-                  {item}
-                </DropdownItem>
-              ))}
+              {dropdownItems &&
+                dropdownItems.map((item) => (
+                  <DropdownItem onClick={dropOnSelect} key={item}>
+                    {item}
+                  </DropdownItem>
+                ))}
               <></>
             </DropdownList>
           </Dropdown>
@@ -73,7 +68,7 @@ ParamDropdown.propTypes = {
   defaultValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   dropdownItems: PropTypes.array,
   handleSelect: PropTypes.func,
-  tooltip: PropTypes.string
+  tooltip: PropTypes.string,
 };
 
 export default ParamDropdown;

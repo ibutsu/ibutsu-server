@@ -13,7 +13,7 @@ import {
   InputGroupItem,
   LoginMainFooterBandItem,
   LoginPage,
-  TextInput
+  TextInput,
 } from '@patternfly/react-core';
 import { EyeIcon, EyeSlashIcon } from '@patternfly/react-icons';
 import { NavLink, useParams } from 'react-router-dom';
@@ -22,10 +22,10 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { AuthService } from './services/auth';
 
 // Lazy import the password strength indicator, it uses a very big library
-const PasswordStrengthBar = React.lazy(
-  () => import ('react-password-strength-bar').catch(
-    () => ({ default: () => <div>Failed to load password strength indicator</div> })
-  )
+const PasswordStrengthBar = React.lazy(() =>
+  import('react-password-strength-bar').catch(() => ({
+    default: () => <div>Failed to load password strength indicator</div>,
+  })),
 );
 
 const ResetPassword = () => {
@@ -40,8 +40,10 @@ const ResetPassword = () => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [confirmPasswordValue, setConfirmPasswordValue] = useState('');
   const [confirmPasswordHelpText, setConfirmPasswordHelpText] = useState('');
-  const [confirmPasswordValidation, setConfirmPasswordValidation] = useState('default');
-  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
+  const [confirmPasswordValidation, setConfirmPasswordValidation] =
+    useState('default');
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
+    useState(false);
 
   const validatePasswordMatch = useCallback(() => {
     if (confirmPasswordValue === '' && passwordValue === '') {
@@ -55,15 +57,21 @@ const ResetPassword = () => {
     }
   }, [passwordValue, confirmPasswordValue]);
 
-  const onPasswordChange = useCallback(passwordValue => {
-    setPasswordValue(passwordValue);
-    validatePasswordMatch();
-  }, [validatePasswordMatch]);
+  const onPasswordChange = useCallback(
+    (passwordValue) => {
+      setPasswordValue(passwordValue);
+      validatePasswordMatch();
+    },
+    [validatePasswordMatch],
+  );
 
-  const onConfirmPasswordChange = useCallback(confirmPasswordValue => {
-    setConfirmPasswordValue(confirmPasswordValue);
-    validatePasswordMatch();
-  }, [validatePasswordMatch]);
+  const onConfirmPasswordChange = useCallback(
+    (confirmPasswordValue) => {
+      setConfirmPasswordValue(confirmPasswordValue);
+      validatePasswordMatch();
+    },
+    [validatePasswordMatch],
+  );
 
   const onPasswordVisibleClick = useCallback(() => {
     setIsPasswordVisible(!isPasswordVisible);
@@ -73,15 +81,20 @@ const ResetPassword = () => {
     setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
   }, [isConfirmPasswordVisible]);
 
-  const onResetButtonClick = async event => {
+  const onResetButtonClick = async (event) => {
     event.preventDefault();
     const isValidPassword = !!passwordValue;
     setIsValidPassword(isValidPassword);
     if (isValidPassword) {
       try {
-        const isSuccess = await AuthService.resetPassword(activationCode, passwordValue);
+        const isSuccess = await AuthService.resetPassword(
+          activationCode,
+          passwordValue,
+        );
         if (isSuccess) {
-          setAlertText('Your password has been reset. You can now login with your new password');
+          setAlertText(
+            'Your password has been reset. You can now login with your new password',
+          );
           setAlertType('success');
           setShowAlert(true);
         } else {
@@ -101,18 +114,23 @@ const ResetPassword = () => {
     }
   };
 
-  const loginMessage = useMemo(() => (
-    <LoginMainFooterBandItem>
-      Already registered? <NavLink to="/login">Log in.</NavLink>
-    </LoginMainFooterBandItem>
-  ), []);
+  const loginMessage = useMemo(
+    () => (
+      <LoginMainFooterBandItem>
+        Already registered? <NavLink to="/login">Log in.</NavLink>
+      </LoginMainFooterBandItem>
+    ),
+    [],
+  );
 
-  const forgotCredentials = useMemo(() => (
-    <LoginMainFooterBandItem>
-      <NavLink to="/forgot-password">Forgot username or password?</NavLink>
-    </LoginMainFooterBandItem>
-  ), []);
-
+  const forgotCredentials = useMemo(
+    () => (
+      <LoginMainFooterBandItem>
+        <NavLink to="/forgot-password">Forgot username or password?</NavLink>
+      </LoginMainFooterBandItem>
+    ),
+    [],
+  );
 
   return (
     <LoginPage
@@ -124,7 +142,7 @@ const ResetPassword = () => {
         sm: '/images/pfbg_768.jpg',
         sm2x: '/images/pfbg_768@2x.jpg',
         xs: '/images/pfbg_576.jpg',
-        xs2x: '/images/pfbg_576@2x.jpg'
+        xs2x: '/images/pfbg_576@2x.jpg',
       }}
       textContent="Ibutsu is an open source test result aggregation. Collect and display your test results, view artifacts, and monitor tests."
       loginTitle="Reset your password"
@@ -133,11 +151,16 @@ const ResetPassword = () => {
       forgotCredentials={forgotCredentials}
     >
       <Form>
-        {showAlert &&
-        <FormAlert>
-          <Alert variant={alertType} title={alertText} aria-live="polite" isInline/>
-        </FormAlert>
-        }
+        {showAlert && (
+          <FormAlert>
+            <Alert
+              variant={alertType}
+              title={alertText}
+              aria-live="polite"
+              isInline
+            />
+          </FormAlert>
+        )}
         <FormGroup
           label="Password"
           isRequired
@@ -145,35 +168,44 @@ const ResetPassword = () => {
           validated={isValidPassword ? 'default' : 'error'}
         >
           <InputGroup>
-            {!isPasswordVisible &&
-            <TextInput
-              isRequired
-              type="password"
-              id="password"
-              name="password"
-              validated={isValidPassword ? 'default' : 'error'}
-              aria-describedby="password-helper"
-              value={passwordValue}
-              onChange={(_, passwordValue) => onPasswordChange(passwordValue)} />
-            }
-            {isPasswordVisible &&
-            <TextInput
-              isRequired
-              type="text"
-              id="password"
-              name="password"
-              validated={isValidPassword ? 'default' : 'error'}
-              aria-describedby="password-helper"
-              value={passwordValue}
-              onChange={(_, passwordValue) => onPasswordChange(passwordValue)} />}
-            <InputGroupItem><Button variant="control" aria-label="Show password" onClick={onPasswordVisibleClick}>
-              {!isPasswordVisible && <EyeIcon/>}
-              {isPasswordVisible && <EyeSlashIcon/>}
-            </Button></InputGroupItem>
+            {!isPasswordVisible && (
+              <TextInput
+                isRequired
+                type="password"
+                id="password"
+                name="password"
+                validated={isValidPassword ? 'default' : 'error'}
+                aria-describedby="password-helper"
+                value={passwordValue}
+                onChange={(_, passwordValue) => onPasswordChange(passwordValue)}
+              />
+            )}
+            {isPasswordVisible && (
+              <TextInput
+                isRequired
+                type="text"
+                id="password"
+                name="password"
+                validated={isValidPassword ? 'default' : 'error'}
+                aria-describedby="password-helper"
+                value={passwordValue}
+                onChange={(_, passwordValue) => onPasswordChange(passwordValue)}
+              />
+            )}
+            <InputGroupItem>
+              <Button
+                variant="control"
+                aria-label="Show password"
+                onClick={onPasswordVisibleClick}
+              >
+                {!isPasswordVisible && <EyeIcon />}
+                {isPasswordVisible && <EyeSlashIcon />}
+              </Button>
+            </InputGroupItem>
           </InputGroup>
           <ErrorBoundary fallback="Failed to load password strength indicator">
             <Suspense fallback="">
-              <PasswordStrengthBar password={passwordValue}/>
+              <PasswordStrengthBar password={passwordValue} />
             </Suspense>
           </ErrorBoundary>
         </FormGroup>
@@ -183,23 +215,57 @@ const ResetPassword = () => {
           fieldId="confirm-password"
         >
           <InputGroup>
-            {!isConfirmPasswordVisible && <TextInput isRequired type="password" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={confirmPasswordValue} onChange={(_, confirmPasswordValue) => onConfirmPasswordChange(confirmPasswordValue)} validated={confirmPasswordValidation} />}
-            {isConfirmPasswordVisible && <TextInput isRequired type="text" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={confirmPasswordValue} onChange={(_, confirmPasswordValue) => onConfirmPasswordChange(confirmPasswordValue)} validated={confirmPasswordValidation} />}
+            {!isConfirmPasswordVisible && (
+              <TextInput
+                isRequired
+                type="password"
+                id="confirm-password"
+                name="confirm-password"
+                aria-describedby="confirm-password-helper"
+                value={confirmPasswordValue}
+                onChange={(_, confirmPasswordValue) =>
+                  onConfirmPasswordChange(confirmPasswordValue)
+                }
+                validated={confirmPasswordValidation}
+              />
+            )}
+            {isConfirmPasswordVisible && (
+              <TextInput
+                isRequired
+                type="text"
+                id="confirm-password"
+                name="confirm-password"
+                aria-describedby="confirm-password-helper"
+                value={confirmPasswordValue}
+                onChange={(_, confirmPasswordValue) =>
+                  onConfirmPasswordChange(confirmPasswordValue)
+                }
+                validated={confirmPasswordValidation}
+              />
+            )}
             <InputGroupItem>
-              <Button variant="control" aria-label="Show password" onClick={onConfirmPasswordVisibleClick}>
-                {!isConfirmPasswordVisible && <EyeIcon/>}
-                {isConfirmPasswordVisible && <EyeSlashIcon/>}
+              <Button
+                variant="control"
+                aria-label="Show password"
+                onClick={onConfirmPasswordVisibleClick}
+              >
+                {!isConfirmPasswordVisible && <EyeIcon />}
+                {isConfirmPasswordVisible && <EyeSlashIcon />}
               </Button>
             </InputGroupItem>
           </InputGroup>
           <FormHelperText>
             <HelperText>
-              <HelperTextItem variant={confirmPasswordValidation}>{confirmPasswordHelpText}</HelperTextItem>
+              <HelperTextItem variant={confirmPasswordValidation}>
+                {confirmPasswordHelpText}
+              </HelperTextItem>
             </HelperText>
           </FormHelperText>
         </FormGroup>
         <ActionGroup>
-          <Button variant="primary" isBlock onClick={onResetButtonClick}>Reset Password</Button>
+          <Button variant="primary" isBlock onClick={onResetButtonClick}>
+            Reset Password
+          </Button>
         </ActionGroup>
       </Form>
     </LoginPage>
