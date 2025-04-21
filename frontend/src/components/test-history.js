@@ -64,9 +64,7 @@ const RESULT_STATES = {
 // Month is considered to be 30 days, and there are 86400*1000 ms in a day
 const millisecondsInMonth = 30 * 86400 * 1000;
 
-const TestHistoryTable = (props) => {
-  const { comparisonResults, filters, testResult } = props;
-
+const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
   const [rows, setRows] = useState([getSpinnerRow(5)]);
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
@@ -117,7 +115,7 @@ const TestHistoryTable = (props) => {
     });
   }, [testResult, filters]);
 
-  const onCollapse = (event, rowIndex, isOpen) => {
+  const onCollapse = (_, rowIndex, isOpen) => {
     // lazy-load the result view so we don't have to make a bunch of artifact requests
     // TODO with ResultView moving tab rendering and artifact fetching into ArtifactTab, this may not be necessary anymore
     setRows(
@@ -131,9 +129,8 @@ const TestHistoryTable = (props) => {
                   <ResultView
                     defaultTab="summary"
                     hideTestHistory={true}
-                    hideSummary={false}
-                    hideTestObject={false}
                     testResult={rows[rowIndex].result}
+                    skipHash={true}
                   />
                 ),
               },

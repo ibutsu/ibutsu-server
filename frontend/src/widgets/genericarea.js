@@ -19,27 +19,25 @@ import { Settings } from '../settings';
 import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 
-const GenericAreaWidget = (props) => {
-  const {
-    colorScale,
-    fontSize,
-    getColors,
-    height,
-    interpolation,
-    padding,
-    params,
-    percentData,
-    showTooltip,
-    sortOrder,
-    title,
-    varExplanation,
-    xLabel,
-    yLabel,
-    onDeleteClick,
-    onEditClick,
-    widgetEndpoint,
-  } = props;
-
+const GenericAreaWidget = ({
+  colorScale,
+  fontSize,
+  getColors,
+  height,
+  interpolation,
+  padding,
+  params,
+  percentData,
+  showTooltip,
+  sortOrder,
+  title,
+  varExplanation,
+  xLabel,
+  yLabel,
+  onDeleteClick,
+  onEditClick,
+  widgetEndpoint,
+}) => {
   const [data, setData] = useState({});
   const [areaCharts, setAreaCharts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

@@ -17,7 +17,7 @@ import ToastWrapper from './toast-wrapper';
 import { Settings } from '../settings';
 import { ALERT_TIMEOUT } from '../constants';
 
-const FileUpload = (props) => {
+const FileUpload = ({ name = 'file' }) => {
   const context = useContext(IbutsuContext);
 
   const [importId, setImportId] = useState();
@@ -25,8 +25,6 @@ const FileUpload = (props) => {
   const inputRef = useRef();
   const importToastRef = useRef();
   const intervalId = useRef();
-
-  const name = props?.name ? props.name : 'file';
 
   const onClick = () => {
     inputRef.current.click();

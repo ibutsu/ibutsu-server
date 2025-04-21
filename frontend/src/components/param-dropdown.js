@@ -9,9 +9,12 @@ import {
   Tooltip,
 } from '@patternfly/react-core';
 
-const ParamDropdown = (props) => {
-  const { defaultValue, handleSelect, tooltip, dropdownItems } = props;
-
+const ParamDropdown = ({
+  defaultValue,
+  handleSelect,
+  tooltip,
+  dropdownItems,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [value, setValue] = useState(defaultValue || 'Group data by?');
 

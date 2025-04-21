@@ -61,18 +61,22 @@ const ResultView = ({
 
   // https://v5-archive.patternfly.org/components/tabs#tabs-linked-to-nav-elements
 
-  const testHistoryTable = useMemo(() => {
-    if (comparisonResults !== undefined) {
+  const testHistoryTab = useMemo(() => {
+    if (!hideTestHistory) {
       return (
-        <TestHistoryTable
-          comparisonResults={comparisonResults}
-          testResult={testResult}
-        />
+        <Tab
+          key="testHistory"
+          eventKey="testHistory"
+          title={<TabTitle icon={<SearchIcon />} text="Test History" />}
+        >
+          <TestHistoryTable
+            comparisonResults={comparisonResults}
+            testResult={testResult}
+          />
+        </Tab>
       );
-    } else {
-      return <TestHistoryTable testResult={testResult} />;
     }
-  }, [comparisonResults, testResult]);
+  }, [comparisonResults, testResult, hideTestHistory]);
 
   const artifactTabs = useMemo(
     () =>
@@ -97,11 +101,16 @@ const ResultView = ({
   }, [artifactTabs]);
 
   // Tab state and navigation hooks/effects
-  const { activeTab, onTabSelect } = useTabHook(
-    ['summary', 'testHistory', 'testObject', ...artifactKeys()],
-    defaultTab,
-    skipHash,
-  );
+  const { activeTab, onTabSelect } = useTabHook({
+    validTabIndicies: [
+      'summary',
+      'testHistory',
+      'testObject',
+      ...artifactKeys(),
+    ],
+    defaultTab: defaultTab,
+    skipHash: skipHash,
+  });
 
   useEffect(() => {
     // Get artifacts when the test result changes
@@ -688,15 +697,7 @@ const ResultView = ({
               </Card>
             </Tab>
           )}
-          {!hideTestHistory && (
-            <Tab
-              key="testHistory"
-              eventKey="testHistory"
-              title={<TabTitle icon={<SearchIcon />} text="Test History" />}
-            >
-              {testHistoryTable}
-            </Tab>
-          )}
+          {testHistoryTab}
           {!hideArtifact && artifactTabs}
           {!hideTestObject && testJson && (
             <Tab
