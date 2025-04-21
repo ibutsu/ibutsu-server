@@ -26,19 +26,17 @@ import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 import { IbutsuContext } from '../services/context';
 
-const FilterHeatmapWidget = (props) => {
-  const {
-    title = 'Filter Heatmap',
-    params,
-    labelWidth = 200,
-    hideDropdown,
-    dropdownItems = [3, 5, 6, 7],
-    includeAnalysisLink,
-    onDeleteClick,
-    onEditClick,
-    type = 'filter',
-  } = props;
-
+const FilterHeatmapWidget = ({
+  title = 'Filter Heatmap',
+  params,
+  labelWidth = 200,
+  hideDropdown,
+  dropdownItems = [3, 5, 6, 7],
+  includeAnalysisLink,
+  onDeleteClick,
+  onEditClick,
+  type = 'filter',
+}) => {
   const [data, setData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);

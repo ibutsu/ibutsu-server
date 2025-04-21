@@ -17,32 +17,30 @@ import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 
-const GenericBarWidget = (props) => {
-  const {
-    barWidth = 20,
-    dropdownItems = ['component', 'env', 'metadata.jenkins.job_name'],
-    fontSize,
-    height,
-    hideDropdown,
-    horizontal,
-    padding = {
-      bottom: 30,
-      left: 150,
-      right: 15,
-      top: 20,
-    },
-    params = {},
-    percentData,
-    sortOrder = 'descending',
-    title = 'Recent Run Results',
-    widgetEndpoint = 'run-aggregator',
-    xLabel = '',
-    xLabelTooltip,
-    yLabel = '',
-    onDeleteClick,
-    onEditClick,
-  } = props;
-
+const GenericBarWidget = ({
+  barWidth = 20,
+  dropdownItems = ['component', 'env', 'metadata.jenkins.job_name'],
+  fontSize,
+  height,
+  hideDropdown,
+  horizontal,
+  padding = {
+    bottom: 30,
+    left: 150,
+    right: 15,
+    top: 20,
+  },
+  params = {},
+  percentData,
+  sortOrder = 'descending',
+  title = 'Recent Run Results',
+  widgetEndpoint = 'run-aggregator',
+  xLabel = '',
+  xLabelTooltip,
+  yLabel = '',
+  onDeleteClick,
+  onEditClick,
+}) => {
   const [data, setData] = useState({});
   const [barCharts, setBarCharts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

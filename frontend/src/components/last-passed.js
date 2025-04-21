@@ -7,9 +7,7 @@ import { Settings } from '../settings';
 
 import { buildParams, toAPIFilter } from '../utilities';
 
-const LastPassed = (props) => {
-  const { filters } = props;
-
+const LastPassed = ({ filters }) => {
   const [resultData, setResultData] = useState();
 
   useEffect(() => {

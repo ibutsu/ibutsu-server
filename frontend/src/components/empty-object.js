@@ -14,9 +14,7 @@ import { SearchIcon } from '@patternfly/react-icons';
 
 import { NavLink } from 'react-router-dom';
 
-const EmptyObject = (props) => {
-  const { headingText, bodyText, returnLink, returnLinkText } = props;
-
+const EmptyObject = ({ headingText, bodyText, returnLink, returnLinkText }) => {
   return (
     <React.Fragment>
       <EmptyState>

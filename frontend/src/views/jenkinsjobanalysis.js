@@ -39,10 +39,10 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
   const [barchartParams, setBarchartParams] = useState({});
   const [linechartParams, setLinechartParams] = useState({});
 
-  const { activeTab, onTabSelect } = useTabHook(
-    ['heatmap', 'overall-health', 'build-durations'],
-    defaultTab,
-  );
+  const { activeTab, onTabSelect } = useTabHook({
+    validTabIndicies: ['heatmap', 'overall-health', 'build-durations'],
+    defaultTab: defaultTab,
+  });
 
   useEffect(() => {
     // Fetch the widget parameters for heatmap, barchart and linechart

@@ -11,9 +11,12 @@ import {
 
 import { TimesIcon } from '@patternfly/react-icons';
 
-const MultiValueInput = (props) => {
-  const { onAddValue, onRemoveValue, onValuesChange, style } = props;
-
+const MultiValueInput = ({
+  onAddValue,
+  onRemoveValue,
+  onValuesChange,
+  style,
+}) => {
   const [values, setValues] = useState([]);
   const [value, setValue] = useState('');
 

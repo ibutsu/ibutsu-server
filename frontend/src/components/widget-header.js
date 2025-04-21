@@ -7,9 +7,14 @@ import {
   PencilAltIcon,
 } from '@patternfly/react-icons';
 
-const WidgetHeader = (props) => {
-  const { id, getDataFunc, onDeleteClick, title, actions, onEditClick } = props;
-
+const WidgetHeader = ({
+  id,
+  getDataFunc,
+  onDeleteClick,
+  title,
+  actions,
+  onEditClick,
+}) => {
   const headerActions = (
     <React.Fragment>
       {actions ? actions : []}
