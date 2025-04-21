@@ -7,6 +7,8 @@ import {defineConfig, globalIgnores} from 'eslint/config';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import js from '@eslint/js';
 import pluginCypress from 'eslint-plugin-cypress/flat';
+import eslintPluginJsxA11y from 'eslint-plugin-jsx-a11y';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
 export default defineConfig([
   globalIgnores(['build/**/*', 'node_modules/'], 'Ignore build dir and node_modules'),
@@ -16,13 +18,14 @@ export default defineConfig([
   reactPlugin.configs.flat['jsx-runtime'],
   js.configs.recommended,
   pluginCypress.configs.recommended,
-  // prettier.configs.recommended
+  eslintPluginJsxA11y.flatConfigs.recommended,
   {
     files: ['src/*', 'cypress/*', 'bin/*'],
     plugins: {
       'unused-imports': unusedImports, // not flat config compatible
       reactPlugin,
       reactHooksPlugin,
+      eslintPluginJsxA11y,
       pluginCypress,
     },
     linterOptions: {
@@ -79,5 +82,6 @@ export default defineConfig([
         version: 'detect',
       }
     },
-  }
+  },
+  eslintPluginPrettierRecommended,
 ]);
