@@ -190,7 +190,6 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
                 title: (
                   <ResultView
                     defaultTab={defaultTab}
-                    hideTestHistory={false}
                     hideSummary={hideSummary}
                     hideTestObject={hideTestObject}
                     testResult={rows[rowIndex].result}

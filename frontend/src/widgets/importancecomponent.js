@@ -12,9 +12,12 @@ import { Settings } from '../settings';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 
-const ImportanceComponentWidget = (props) => {
-  const { title, params, onDeleteClick, onEditClick } = props;
-
+const ImportanceComponentWidget = ({
+  title,
+  params,
+  onDeleteClick,
+  onEditClick,
+}) => {
   const [tableData, setTableData] = useState([]);
   const [dataError, setDataError] = useState(true);
   const [isLoading, setIsLoading] = useState(true);

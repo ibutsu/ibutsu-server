@@ -104,9 +104,7 @@ const fieldToColumnName = (fields) => {
   return results;
 };
 
-const AccessibilityDashboardView = (props) => {
-  const { view } = props;
-
+const AccessibilityDashboardView = ({ view }) => {
   const context = useContext(IbutsuContext);
   // const params = useSearchParams();
 

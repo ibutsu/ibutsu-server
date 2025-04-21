@@ -1,9 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const RunSummary = (props) => {
-  const { summary } = props;
-
+const RunSummary = ({ summary }) => {
   let passed = 0,
     failed = 0,
     errors = 0,

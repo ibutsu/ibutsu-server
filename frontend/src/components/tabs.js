@@ -1,8 +1,7 @@
 import PropTypes from 'prop-types';
 import { TabTitleIcon, TabTitleText } from '@patternfly/react-core';
 
-const TabTitle = (props) => {
-  const { icon, text } = props;
+const TabTitle = ({ icon, text }) => {
   return (
     <>
       <TabTitleIcon>{icon}</TabTitleIcon>

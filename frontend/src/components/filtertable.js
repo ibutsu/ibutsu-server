@@ -20,29 +20,27 @@ import {
 
 import { TableEmptyState, TableErrorState } from './tablestates';
 
-const FilterTable = (props) => {
-  const {
-    isEmpty,
-    isError,
-    onCollapse,
-    onRowSelect,
-    onApplyFilter,
-    onRemoveFilter,
-    onClearFilters,
-    onApplyReport,
-    onSetPage,
-    onSetPageSize,
-    variant,
-  } = props;
-
-  let columns = props.columns || [];
-  let rows = props.rows || [];
-  let actions = props.actions || [];
-  let filters = props.filters || [];
-  let hideFilters = props.hideFilters || [];
-  let activeFilters = props.activeFilters || {};
-  let pagination = props.pagination || { page: 0, pageSize: 0, totalItems: 0 };
-  let canSelectAll = props.canSelectAll || false;
+const FilterTable = ({
+  isEmpty,
+  isError,
+  onCollapse,
+  onRowSelect,
+  onApplyFilter,
+  onRemoveFilter,
+  onClearFilters,
+  onApplyReport,
+  onSetPage,
+  onSetPageSize,
+  variant,
+  columns = [],
+  rows = [],
+  actions = [],
+  filters = [],
+  hideFilters = [],
+  activeFilters = {},
+  pagination = { page: 0, pageSize: 0, totalItems: 0 },
+  canSelectAll = false,
+}) => {
   return (
     <React.Fragment>
       <Flex>

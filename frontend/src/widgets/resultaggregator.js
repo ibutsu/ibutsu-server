@@ -16,18 +16,16 @@ import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 
-const ResultAggregatorWidget = (props) => {
-  const {
-    title,
-    params,
-    chartType,
-    days,
-    groupField,
-    dropdownItems,
-    onDeleteClick,
-    onEditClick,
-  } = props;
-
+const ResultAggregatorWidget = ({
+  title,
+  params,
+  chartType,
+  days,
+  groupField,
+  dropdownItems,
+  onDeleteClick,
+  onEditClick,
+}) => {
   const [chartData, setChartData] = useState([]);
   const [legendData, setLegendData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

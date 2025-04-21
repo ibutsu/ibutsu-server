@@ -157,8 +157,8 @@ const Run = ({ defaultTab = 'summary' }) => {
   }, [artifactTabs]);
 
   // Tab state and navigation hooks/effects
-  const { activeTab, onTabSelect } = useTabHook(
-    [
+  const { activeTab, onTabSelect } = useTabHook({
+    validTabIndicies: [
       'summary',
       'results-list',
       'results-tree',
@@ -166,8 +166,9 @@ const Run = ({ defaultTab = 'summary' }) => {
       'run-object',
       ...artifactKeys(),
     ],
-    defaultTab,
-  );
+    defaultTab: defaultTab,
+    skipHash: false,
+  });
 
   useEffect(() => {
     let fetchedResults = [];

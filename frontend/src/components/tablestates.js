@@ -14,8 +14,7 @@ import { ErrorCircleOIcon, SearchIcon } from '@patternfly/react-icons';
 
 // TODO this could be one component with variable icons and textual content.
 
-const TableEmptyState = (props) => {
-  const { onClearFilters } = props;
+const TableEmptyState = ({ onClearFilters }) => {
   return (
     <Bullseye>
       <EmptyState>
