@@ -4,8 +4,7 @@ import { Button } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 
-const DownloadButton = (props) => {
-  let { url, filename, children, ...rest } = props;
+const DownloadButton = ({ url, filename, children, ...rest }) => {
   if (!filename) {
     filename = url.split('/').pop();
   }

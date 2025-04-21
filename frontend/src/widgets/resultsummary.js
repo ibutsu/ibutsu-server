@@ -9,9 +9,7 @@ import { Settings } from '../settings';
 import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 
-const ResultSummaryWidget = (props) => {
-  const { title, params, onDeleteClick, onEditClick } = props;
-
+const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
   const [summary, setSummary] = useState({
     passed: 0,
     failed: 0,
@@ -41,7 +39,7 @@ const ResultSummaryWidget = (props) => {
       .catch((error) => {
         setDataError(true);
         setIsLoading(false);
-        console.log(error);
+        console.error(error);
       });
   }, [params]);
 

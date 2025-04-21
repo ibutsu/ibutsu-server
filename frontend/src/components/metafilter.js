@@ -23,16 +23,15 @@ import { IbutsuContext } from '../services/context';
 
 // TODO Extend this to contain the filter handling functions, and better integrate filter state
 // with FilterTable. See https://github.com/ibutsu/ibutsu-server/issues/230
-const MetaFilter = (props) => {
-  const {
-    setFilter,
-    activeFilters,
-    hideFilters,
-    onRemoveFilter,
-    onApplyReport,
-    runId,
-    id,
-  } = props;
+const MetaFilter = ({
+  setFilter,
+  activeFilters,
+  hideFilters,
+  onRemoveFilter,
+  onApplyReport,
+  runId,
+  id,
+}) => {
   const context = useContext(IbutsuContext);
   const { primaryObject } = context;
 

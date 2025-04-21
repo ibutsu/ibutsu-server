@@ -38,8 +38,7 @@ import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 
-const AccessibilityAnalysisView = (props) => {
-  const { view } = props;
+const AccessibilityAnalysisView = ({ view }) => {
   const context = useContext(IbutsuContext);
   const { darkTheme } = context;
   const location = useLocation();

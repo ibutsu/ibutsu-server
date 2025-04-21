@@ -45,8 +45,7 @@ const COLUMNS = [
 ];
 const DEFAULT_OPERATION = 'eq';
 
-const JenkinsJobView = (props) => {
-  const { view } = props;
+const JenkinsJobView = ({ view }) => {
   const context = useContext(IbutsuContext);
   const { primaryObject } = context;
 
