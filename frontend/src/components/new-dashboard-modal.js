@@ -7,11 +7,16 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  TextInput
+  TextInput,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
-const NewDashboardModal = ({ project, saveCallback, closeCallback, isOpen }) => {
+const NewDashboardModal = ({
+  project,
+  saveCallback,
+  closeCallback,
+  isOpen,
+}) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isTitleValid, setIsTitleValid] = useState(false);
@@ -24,7 +29,7 @@ const NewDashboardModal = ({ project, saveCallback, closeCallback, isOpen }) => 
     const newDashboard = {
       title,
       description,
-      project_id: project?.id
+      project_id: project?.id,
     };
     saveCallback(newDashboard);
     setTitle('');
@@ -46,8 +51,12 @@ const NewDashboardModal = ({ project, saveCallback, closeCallback, isOpen }) => 
       isOpen={isOpen}
       onClose={closeCallback}
       actions={[
-        <Button key="save" variant="primary" onClick={modalOnSave}>Save</Button>,
-        <Button key="cancel" variant="link" onClick={modalOnClose}>Cancel</Button>
+        <Button key="save" variant="primary" onClick={modalOnSave}>
+          Save
+        </Button>,
+        <Button key="cancel" variant="link" onClick={modalOnClose}>
+          Cancel
+        </Button>,
       ]}
     >
       <Form>
@@ -87,7 +96,7 @@ NewDashboardModal.propTypes = {
   project: PropTypes.object,
   saveCallback: PropTypes.func,
   closeCallback: PropTypes.func,
-  isOpen: PropTypes.bool
+  isOpen: PropTypes.bool,
 };
 
 export default NewDashboardModal;

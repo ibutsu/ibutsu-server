@@ -1,21 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
-import {
-  Card,
-  CardBody,
-  CardFooter,
-  Text
-} from '@patternfly/react-core';
+import { Card, CardBody, CardFooter, Text } from '@patternfly/react-core';
 
-import {
-  Table,
-  Thead,
-  Th,
-  Tbody,
-  Tr,
-  Td
-} from '@patternfly/react-table';
+import { Table, Thead, Th, Tbody, Tr, Td } from '@patternfly/react-table';
 
 import { Link } from 'react-router-dom';
 
@@ -25,12 +13,7 @@ import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 
 const ImportanceComponentWidget = (props) => {
-  const {
-    title,
-    params,
-    onDeleteClick,
-    onEditClick
-  } = props;
+  const { title, params, onDeleteClick, onEditClick } = props;
 
   const [tableData, setTableData] = useState([]);
   const [dataError, setDataError] = useState(true);
@@ -39,20 +22,23 @@ const ImportanceComponentWidget = (props) => {
 
   const getData = useCallback(() => {
     setIsLoading(true);
-    HttpClient.get([Settings.serverUrl, 'widget', 'importance-component'], params)
-      .then(response => {
+    HttpClient.get(
+      [Settings.serverUrl, 'widget', 'importance-component'],
+      params,
+    )
+      .then((response) => {
         response = HttpClient.handleResponse(response, 'response');
         if (!response.ok) {
           throw Error(response.statusText);
         }
         return response.json();
       })
-      .then(data => {
+      .then((data) => {
         setTableData(data.table_data);
         setIsLoading(false);
         setDataError(false);
       })
-      .catch(error => {
+      .catch((error) => {
         setDataError(true);
         console.log(error);
       });
@@ -69,7 +55,7 @@ const ImportanceComponentWidget = (props) => {
   };
 
   const toPercent = (num) => {
-    if (typeof(num) === 'number') {
+    if (typeof num === 'number') {
       return Math.round(num * 100);
     }
     return num;
@@ -77,17 +63,24 @@ const ImportanceComponentWidget = (props) => {
 
   return (
     <Card>
-      <WidgetHeader title={title} getDataFunc={getData} onEditClick={onEditClick} onDeleteClick={onDeleteClick}/>
-      {(!dataError && isLoading) &&
+      <WidgetHeader
+        title={title}
+        getDataFunc={getData}
+        onEditClick={onEditClick}
+        onDeleteClick={onDeleteClick}
+      />
+      {!dataError && isLoading && (
         <CardBody>
           <Text component="h2">Loading ...</Text>
         </CardBody>
-      }
-      {(!dataError && !isLoading) &&
+      )}
+      {!dataError && !isLoading && (
         <CardBody>
-          {tableData.map(tdat => (
+          {tableData.map((tdat) => (
             <div key={tdat.component}>
-              <Text key={tdat.component} component="h2">{tdat.component}</Text>
+              <Text key={tdat.component} component="h2">
+                {tdat.component}
+              </Text>
               <Table aria-label="importance-component-table" variant="compact">
                 <Thead>
                   <Tr>
@@ -97,11 +90,23 @@ const ImportanceComponentWidget = (props) => {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {tdat.importances.map(importance => (
+                  {tdat.importances.map((importance) => (
                     <Tr key={importance}>
                       <Td>{importance}</Td>
-                      {tdat.bnums.map(buildnum => (
-                        <Td key={buildnum}><Link to={'/project/' + params.project + `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`}>{toPercent(tdat.data[buildnum][importance]['percentage'])}</Link></Td>
+                      {tdat.bnums.map((buildnum) => (
+                        <Td key={buildnum}>
+                          <Link
+                            to={
+                              '/project/' +
+                              params.project +
+                              `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`
+                            }
+                          >
+                            {toPercent(
+                              tdat.data[buildnum][importance]['percentage'],
+                            )}
+                          </Link>
+                        </Td>
                       ))}
                     </Tr>
                   ))}
@@ -110,7 +115,7 @@ const ImportanceComponentWidget = (props) => {
             </div>
           ))}
         </CardBody>
-      }
+      )}
       <CardFooter>
         <ParamDropdown
           dropdownItems={['Yes', 'No']}
@@ -127,7 +132,7 @@ ImportanceComponentWidget.propTypes = {
   title: PropTypes.string,
   params: PropTypes.object,
   onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func
+  onEditClick: PropTypes.func,
 };
 
 export default ImportanceComponentWidget;

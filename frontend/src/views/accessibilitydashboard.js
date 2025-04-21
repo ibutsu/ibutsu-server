@@ -15,7 +15,7 @@ import {
   TextInput,
   TextInputGroup,
   TextInputGroupMain,
-  TextInputGroupUtilities
+  TextInputGroupUtilities,
 } from '@patternfly/react-core';
 
 import { TimesIcon } from '@patternfly/react-icons';
@@ -43,18 +43,17 @@ const runToRow = (run, filterFunc, analysisViewId) => {
   let badge;
   if (run.start_time) {
     created = new Date(run.start_time);
-  }
-  else {
+  } else {
     created = new Date(run.created);
   }
 
   if (filterFunc) {
     if (run.component) {
-      badge = buildBadge('component', run.component, false,
-        () => filterFunc('component', run.component));
+      badge = buildBadge('component', run.component, false, () =>
+        filterFunc('component', run.component),
+      );
     }
-  }
-  else {
+  } else {
     badge = buildBadge('component', run.component, false);
   }
   badges.push(badge);
@@ -62,22 +61,33 @@ const runToRow = (run, filterFunc, analysisViewId) => {
   if (run.env) {
     let badge;
     if (filterFunc) {
-      badge = buildBadge(run.env, run.env, false,
-        () => filterFunc('env', run.env));
-    }
-    else {
+      badge = buildBadge(run.env, run.env, false, () =>
+        filterFunc('env', run.env),
+      );
+    } else {
       badge = buildBadge(run.env, run.env, false);
     }
     badges.push(badge);
   }
   return {
-    'cells': [
-      analysisViewId ? {title: <React.Fragment><Link to={`../view/${analysisViewId}?run_list=${run.id}`}>{run.id}</Link> {badges}</React.Fragment>} : run.id,
-      {title: <RunSummary summary={run.summary} />},
-      {title: run.source},
-      {title: run.env},
-      {title: created.toLocaleString()}
-    ]
+    cells: [
+      analysisViewId
+        ? {
+            title: (
+              <React.Fragment>
+                <Link to={`../view/${analysisViewId}?run_list=${run.id}`}>
+                  {run.id}
+                </Link>{' '}
+                {badges}
+              </React.Fragment>
+            ),
+          }
+        : run.id,
+      { title: <RunSummary summary={run.summary} /> },
+      { title: run.source },
+      { title: run.env },
+      { title: created.toLocaleString() },
+    ],
   };
 };
 
@@ -86,14 +96,16 @@ const fieldToColumnName = (fields) => {
   let results = [];
   for (let i = 0; i < fields.length; i++) {
     let tmp_item = fields[i];
-    tmp_item = tmp_item.replace(/_/g, ' ').replace(/(?: |\b)(\w)/g, (key) => key.toUpperCase());
+    tmp_item = tmp_item
+      .replace(/_/g, ' ')
+      .replace(/(?: |\b)(\w)/g, (key) => key.toUpperCase());
     results.push(tmp_item);
   }
   return results;
 };
 
 const AccessibilityDashboardView = (props) => {
-  const {view} = props;
+  const { view } = props;
 
   const context = useContext(IbutsuContext);
   // const params = useSearchParams();
@@ -102,7 +114,6 @@ const AccessibilityDashboardView = (props) => {
   const [pageSize, setPageSize] = useState(20);
   const [totalItems, setTotalItems] = useState();
   const [filters, setFilters] = useState({});
-
 
   // const combo = parseFilter(pair[0]);
   // filters[combo['key']] = {
@@ -117,10 +128,11 @@ const AccessibilityDashboardView = (props) => {
   const [isError, setIsError] = useState(false);
 
   const [fieldSelection, setFieldSelection] = useState();
-  const [filteredFieldOptions, setFilteredFieldOptions] = useState(ACCESSIBILITY_FIELDS);
+  const [filteredFieldOptions, setFilteredFieldOptions] =
+    useState(ACCESSIBILITY_FIELDS);
   const [fieldOptions] = useState(ACCESSIBILITY_FIELDS);
   const [fieldInputValue, setFieldInputValue] = useState('');
-  const [fieldFilterValue, setFieldFilterValue] = useState('');  // same as fieldInputValue?
+  const [fieldFilterValue, setFieldFilterValue] = useState(''); // same as fieldInputValue?
   const [isFieldOpen, setIsFieldOpen] = useState(false);
 
   const [operationSelection, setOperationSelection] = useState('eq');
@@ -139,8 +151,7 @@ const AccessibilityDashboardView = (props) => {
       setFieldSelection(fieldFilterValue);
       setFieldInputValue(fieldFilterValue);
       setOperationSelection('eq');
-    }
-    else {
+    } else {
       setFieldSelection(selection);
       setFieldInputValue(selection);
       setIsFieldOpen(false);
@@ -166,12 +177,11 @@ const AccessibilityDashboardView = (props) => {
   };
 
   const updateFilters = (name, operator, value, callback) => {
-    let newFilters = {...filters};
+    let newFilters = { ...filters };
     if (!value) {
       delete newFilters[name];
-    }
-    else {
-      newFilters[name] = {'op': operator, 'val': value};
+    } else {
+      newFilters[name] = { op: operator, val: value };
     }
 
     setFilters(filters);
@@ -184,9 +194,8 @@ const AccessibilityDashboardView = (props) => {
     const operationMode = getOperationMode(operationSelection);
     let value = '';
     if (operationMode === 'multi') {
-      value = inValues.join(';');  // translate list to ;-separated string for BE
-    }
-    else if (operationMode === 'bool') {
+      value = inValues.join(';'); // translate list to ;-separated string for BE
+    } else if (operationMode === 'bool') {
       value = boolSelection;
     } else {
       value = textFilter;
@@ -203,7 +212,7 @@ const AccessibilityDashboardView = (props) => {
     });
   };
 
-  const removeFilter = id => {
+  const removeFilter = (id) => {
     setPage(1);
     updateFilters(id, null, null, () => {});
   };
@@ -212,27 +221,32 @@ const AccessibilityDashboardView = (props) => {
     // First, show a spinner
     setIsError(false);
     let analysisViewId = '';
-    let httpParams = {filter: []};
-    let newFilters = {...filters};
+    let httpParams = { filter: [] };
+    let newFilters = { ...filters };
     const { primaryObject } = context;
     if (primaryObject) {
-      newFilters['project_id'] = {'val': primaryObject.id, 'op': 'eq'};
-    }
-    else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
+      newFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
+    } else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
       delete newFilters['project_id'];
     }
     // get the widget ID for the analysis view
-    HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=accessibility-analysis-view'})
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+    HttpClient.get([Settings.serverUrl, 'widget-config'], {
+      filter: 'widget=accessibility-analysis-view',
+    })
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
         analysisViewId = data.widgets[0]?.id;
-      }).catch(error => {
+      })
+      .catch((error) => {
         console.error(error);
       });
     httpParams.filter.push('metadata.accessibility@t');
     // Convert UI filters to API filters
     for (let key in newFilters) {
-      if (Object.prototype.hasOwnProperty.call(newFilters, key) && !!newFilters[key]) {
+      if (
+        Object.prototype.hasOwnProperty.call(newFilters, key) &&
+        !!newFilters[key]
+      ) {
         const val = newFilters[key]['val'];
         const op = OPERATIONS[newFilters[key]['op']];
         httpParams.filter.push(key + op + val);
@@ -241,9 +255,11 @@ const AccessibilityDashboardView = (props) => {
 
     httpParams.filter = httpParams.filter.join();
     HttpClient.get([Settings.serverUrl + '/run'], httpParams)
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
-        setRows(data.runs.map((run) => runToRow(run, setFilters, analysisViewId)));
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
+        setRows(
+          data.runs.map((run) => runToRow(run, setFilters, analysisViewId)),
+        );
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
@@ -256,12 +272,15 @@ const AccessibilityDashboardView = (props) => {
   }, [view, filters, context]);
 
   useEffect(() => {
-    let newSelectOptionsField = {...fieldOptions};
+    let newSelectOptionsField = { ...fieldOptions };
     if (fieldInputValue) {
-      newSelectOptionsField = fieldOptions.filter(menuItem =>
-        menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase())
+      newSelectOptionsField = fieldOptions.filter((menuItem) =>
+        menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase()),
       );
-      if (newSelectOptionsField.length !== 1 && !newSelectOptionsField.includes(fieldFilterValue) ) {
+      if (
+        newSelectOptionsField.length !== 1 &&
+        !newSelectOptionsField.includes(fieldFilterValue)
+      ) {
         newSelectOptionsField.push(`Create "${fieldFilterValue}"`);
       }
 
@@ -273,12 +292,11 @@ const AccessibilityDashboardView = (props) => {
     setFilteredFieldOptions(newSelectOptionsField);
   }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
 
-
   const filterMode = getFilterMode(fieldSelection);
   const operationMode = getOperationMode(operationSelection);
   const operations = getOperationsFromField(fieldSelection);
 
-  const fieldToggle = toggleRef => (
+  const fieldToggle = (toggleRef) => (
     <MenuToggle
       variant="typeahead"
       aria-label="Typeahead creatable menu toggle"
@@ -291,7 +309,10 @@ const AccessibilityDashboardView = (props) => {
         <TextInputGroupMain
           value={fieldInputValue}
           onClick={() => setIsFieldOpen(!isFieldOpen)}
-          onChange={(value) => {setFieldFilterValue(value); setFieldInputValue(value);}}
+          onChange={(value) => {
+            setFieldFilterValue(value);
+            setFieldInputValue(value);
+          }}
           id="create-typeahead-select-input"
           autoComplete="off"
           placeholder="Select a field"
@@ -303,7 +324,9 @@ const AccessibilityDashboardView = (props) => {
           {!!fieldInputValue && (
             <Button
               variant="plain"
-              onClick={() => {onFieldClear();}}
+              onClick={() => {
+                onFieldClear();
+              }}
               aria-label="Clear input value"
             >
               <TimesIcon aria-hidden />
@@ -314,7 +337,7 @@ const AccessibilityDashboardView = (props) => {
     </MenuToggle>
   );
 
-  const operationToggle = toggleRef => (
+  const operationToggle = (toggleRef) => (
     <MenuToggle
       onClick={() => setIsOperationOpen(!isOperationOpen)}
       isExpanded={isOperationOpen}
@@ -325,18 +348,22 @@ const AccessibilityDashboardView = (props) => {
     </MenuToggle>
   );
 
-  const boolToggle = toggleRef => (
+  const boolToggle = (toggleRef) => (
     <MenuToggle
-      onClick={() => {setIsBoolOpen(!isBoolOpen);}}
+      onClick={() => {
+        setIsBoolOpen(!isBoolOpen);
+      }}
       isExpanded={isBoolOpen}
       isFullWidth
       ref={toggleRef}
-      style={{maxHeight: '36px'}}
+      style={{ maxHeight: '36px' }}
     >
       <TextInputGroup isPlain>
         <TextInputGroupMain
           value={boolSelection}
-          onClick={() => {setIsBoolOpen(!isBoolOpen);}}
+          onClick={() => {
+            setIsBoolOpen(!isBoolOpen);
+          }}
           autoComplete="off"
           placeholder="Select True/False"
           role="combobox"
@@ -344,9 +371,13 @@ const AccessibilityDashboardView = (props) => {
         />
         <TextInputGroupUtilities>
           {!!boolSelection && (
-            <Button variant="plain" onClick={() => {
-              setBoolSelection();
-            }} aria-label="Clear input value">
+            <Button
+              variant="plain"
+              onClick={() => {
+                setBoolSelection();
+              }}
+              aria-label="Clear input value"
+            >
               <TimesIcon aria-hidden />
             </Button>
           )}
@@ -391,12 +422,14 @@ const AccessibilityDashboardView = (props) => {
       </SelectList>
     </Select>,
     <React.Fragment key="value">
-      {(operationMode === 'bool') &&
+      {operationMode === 'bool' && (
         <Select
           id="single-select"
           isOpen={isBoolOpen}
           selected={boolSelection}
-          onSelect={(selection) => {setBoolSelection(selection);}}
+          onSelect={(selection) => {
+            setBoolSelection(selection);
+          }}
           onOpenChange={() => setIsBoolOpen(false)}
           toggle={boolToggle}
         >
@@ -408,14 +441,24 @@ const AccessibilityDashboardView = (props) => {
             ))}
           </SelectList>
         </Select>
-      }
-      {(filterMode === 'text' && operationMode === 'single') &&
-        <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter} onChange={(_, value) => setTextFilter(value)} style={{height: 'inherit'}}/>
-      }
-      {(operationMode === 'multi') &&
-        <MultiValueInput onValuesChange={(_, values) => setInValues(values)} style={{height: 'inherit'}}/>
-      }
-    </React.Fragment>
+      )}
+      {filterMode === 'text' && operationMode === 'single' && (
+        <TextInput
+          type="text"
+          id="textSelection"
+          placeholder="Type in value"
+          value={textFilter}
+          onChange={(_, value) => setTextFilter(value)}
+          style={{ height: 'inherit' }}
+        />
+      )}
+      {operationMode === 'multi' && (
+        <MultiValueInput
+          onValuesChange={(_, values) => setInValues(values)}
+          style={{ height: 'inherit' }}
+        />
+      )}
+    </React.Fragment>,
   ];
 
   return (
@@ -428,7 +471,7 @@ const AccessibilityDashboardView = (props) => {
           pagination={{
             page: page,
             pageSize: pageSize,
-            totalItems: totalItems
+            totalItems: totalItems,
           }}
           isEmpty={rows.length === 0}
           isError={isError}
@@ -445,7 +488,7 @@ const AccessibilityDashboardView = (props) => {
 };
 
 AccessibilityDashboardView.propTypes = {
-  view: PropTypes.object
+  view: PropTypes.object,
 };
 
 export default AccessibilityDashboardView;

@@ -1,4 +1,4 @@
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 
 import { Navigate, Route, Routes } from 'react-router-dom';
 
@@ -11,7 +11,6 @@ import { AuthService } from './services/auth';
 
 import './app.css';
 import AdminPage from './components/admin-page';
-
 
 const Admin = () => {
   const [isSuper, setIsSuper] = useState();
@@ -29,17 +28,14 @@ const Admin = () => {
 
   return (
     <Routes>
-      <Route
-        path=""
-        element={<AdminPage/>}
-      >
-        <Route path="home" element={<AdminHome/>} />
+      <Route path="" element={<AdminPage />}>
+        <Route path="home" element={<AdminHome />} />
         <Route path="users" element={<UserList />} />
         <Route path="users/:id" element={<UserEdit />} />
-        <Route path="projects" element={<ProjectList/>} />
-        <Route path="projects/:id" element={<ProjectEdit/>} />
+        <Route path="projects" element={<ProjectList />} />
+        <Route path="projects/:id" element={<ProjectEdit />} />
       </Route>
-      <Route path="*" element={<Navigate to="" replace />}/>
+      <Route path="*" element={<Navigate to="" replace />} />
     </Routes>
   );
 };

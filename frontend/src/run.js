@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useContext, useMemo, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useMemo,
+  useCallback,
+} from 'react';
 import { useParams, Link } from 'react-router-dom';
 
 import {
@@ -24,7 +30,7 @@ import {
   Tabs,
   TextContent,
   Text,
-  TreeView
+  TreeView,
 } from '@patternfly/react-core';
 import {
   CatalogIcon,
@@ -35,7 +41,7 @@ import {
   FolderOpenIcon,
   InfoCircleIcon,
   MessagesIcon,
-  RepositoryIcon
+  RepositoryIcon,
 } from '@patternfly/react-icons';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
@@ -45,7 +51,7 @@ import {
   getSpinnerRow,
   resultToRow,
   round,
-  buildResultsTree
+  buildResultsTree,
 } from './utilities';
 import EmptyObject from './components/empty-object';
 import FilterTable from './components/filtertable';
@@ -57,14 +63,13 @@ import { IbutsuContext } from './services/context';
 import { useTabHook } from './components/tabHook';
 import PropTypes from 'prop-types';
 
-
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 
-const Run = ({defaultTab='summary'}) => {
+const Run = ({ defaultTab = 'summary' }) => {
   const { run_id } = useParams();
 
   const context = useContext(IbutsuContext);
-  const {darkTheme} = context;
+  const { darkTheme } = context;
 
   const [run, setRun] = useState({});
   const [testResult, setTestResult] = useState(null);
@@ -89,16 +94,18 @@ const Run = ({defaultTab='summary'}) => {
   };
 
   useEffect(() => {
-    if (!run_id) { return; }
+    if (!run_id) {
+      return;
+    }
     setIsError(false);
 
     HttpClient.get([Settings.serverUrl, 'result'], {
       filter: 'run_id=' + run_id,
       pageSize: pageSize,
-      page: page
+      page: page,
     })
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
         setRows(data.results.map((result) => resultToRow(result)));
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
@@ -112,60 +119,71 @@ const Run = ({defaultTab='summary'}) => {
   }, [page, pageSize, run_id]);
 
   useEffect(() => {
-    if (!run_id) { return; }
+    if (!run_id) {
+      return;
+    }
     HttpClient.get([Settings.serverUrl, 'run', run_id])
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
         setRun(data);
         setArtifacts(data.artifacts);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error);
         setIsRunValid(false);
       });
   }, [run_id]);
 
-  const artifactTabs = useMemo(() => (
-    artifacts?.map(artifact => (
-      <Tab
-        key={artifact.id}
-        eventKey={artifact.id}
-        title={
-          <TabTitle
-            icon={<FileAltIcon />}
-            text={artifact.filename} />
-        }>
-        <ArtifactTab artifact={artifact} />
-      </Tab>))
-  ), [artifacts]);
+  const artifactTabs = useMemo(
+    () =>
+      artifacts?.map((artifact) => (
+        <Tab
+          key={artifact.id}
+          eventKey={artifact.id}
+          title={<TabTitle icon={<FileAltIcon />} text={artifact.filename} />}
+        >
+          <ArtifactTab artifact={artifact} />
+        </Tab>
+      )),
+    [artifacts],
+  );
 
   const artifactKeys = useCallback(() => {
-    if (artifactTabs && artifactTabs?.length !== 0) {return(artifactTabs.map((tab) => tab.key));}
-    else {return([]);}
+    if (artifactTabs && artifactTabs?.length !== 0) {
+      return artifactTabs.map((tab) => tab.key);
+    } else {
+      return [];
+    }
   }, [artifactTabs]);
 
   // Tab state and navigation hooks/effects
-  const {activeTab, onTabSelect} = useTabHook(
-    ['summary', 'results-list', 'results-tree', 'classify-failures', 'run-object', ...artifactKeys()],
-    defaultTab
+  const { activeTab, onTabSelect } = useTabHook(
+    [
+      'summary',
+      'results-list',
+      'results-tree',
+      'classify-failures',
+      'run-object',
+      ...artifactKeys(),
+    ],
+    defaultTab,
   );
 
   useEffect(() => {
     let fetchedResults = [];
-    const getResultsForTree = (treePage=1) => {
+    const getResultsForTree = (treePage = 1) => {
       HttpClient.get([Settings.serverUrl, 'result'], {
         filter: 'run_id=' + run_id,
         pageSize: 500,
-        page: treePage
+        page: treePage,
       })
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
+        .then((response) => HttpClient.handleResponse(response))
+        .then((data) => {
           fetchedResults = [...fetchedResults, ...data.results];
           if (data.results.length === 500) {
             // recursively fetch the next page
             getResultsForTree(treePage + 1);
-          }
-          else {
+          } else {
             setResultsTree(buildResultsTree(fetchedResults));
           }
         })
@@ -177,17 +195,21 @@ const Run = ({defaultTab='summary'}) => {
     if (activeTab === 'results-tree') {
       getResultsForTree();
     }
-
   }, [activeTab, run_id]);
 
-  let passed = 0, failed = 0, errors = 0, xfailed = 0, xpassed = 0, skipped = 0, not_run = 0;
+  let passed = 0,
+    failed = 0,
+    errors = 0,
+    xfailed = 0,
+    xpassed = 0,
+    skipped = 0,
+    not_run = 0;
   let created = 0;
   let calculatePasses = true;
 
   if (run.start_time) {
     created = new Date(run.start_time);
-  }
-  else {
+  } else {
     created = new Date(run.created);
   }
   if (run?.summary) {
@@ -220,8 +242,7 @@ const Run = ({defaultTab='summary'}) => {
     }
     if (run.summary.not_run) {
       not_run = run.summary.not_run;
-    }
-    else if (run.summary.collected) {
+    } else if (run.summary.collected) {
       not_run = run.summary.collected - run.summary.tests;
     }
   }
@@ -230,27 +251,45 @@ const Run = ({defaultTab='summary'}) => {
     <React.Fragment>
       <PageSection variant={PageSectionVariants.light}>
         <TextContent>
-          <Text component="h1" className="pf-v5-c-title">Run {run.id}</Text>
+          <Text component="h1" className="pf-v5-c-title">
+            Run {run.id}
+          </Text>
         </TextContent>
       </PageSection>
       <PageSection>
-        {!isRunValid &&
-          <EmptyObject headingText="Run not found" returnLink="runs" returnLinkText="Return to runs list" />
-        }
-        {isRunValid &&
+        {!isRunValid && (
+          <EmptyObject
+            headingText="Run not found"
+            returnLink="runs"
+            returnLinkText="Return to runs list"
+          />
+        )}
+        {isRunValid && (
           <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
-            <Tab key= "summary" eventKey="summary" title={<TabTitle icon={<InfoCircleIcon />} text="Summary" />}>
+            <Tab
+              key="summary"
+              eventKey="summary"
+              title={<TabTitle icon={<InfoCircleIcon />} text="Summary" />}
+            >
               <Card>
                 <CardBody style={{ padding: 0 }} id="run-detail">
                   <Grid>
                     <GridItem span={6}>
-                      <DataList selectedDataListItemId={null} aria-label="Run properties" style={{ borderBottom: 'none', borderTop: 'none' }}>
+                      <DataList
+                        selectedDataListItemId={null}
+                        aria-label="Run properties"
+                        style={{ borderBottom: 'none', borderTop: 'none' }}
+                      >
                         <DataListItem aria-labelledby="Duration">
                           <DataListItemRow>
                             <DataListItemCells
                               dataListCells={[
-                                <DataListCell key={1} width={2}><strong>Duration:</strong></DataListCell>,
-                                <DataListCell key={2} width={4}>{round(run.duration)}s</DataListCell>
+                                <DataListCell key={1} width={2}>
+                                  <strong>Duration:</strong>
+                                </DataListCell>,
+                                <DataListCell key={2} width={4}>
+                                  {round(run.duration)}s
+                                </DataListCell>,
                               ]}
                             />
                           </DataListItemRow>
@@ -259,94 +298,147 @@ const Run = ({defaultTab='summary'}) => {
                           <DataListItemRow>
                             <DataListItemCells
                               dataListCells={[
-                                <DataListCell key={1} width={2}><strong>Started:</strong></DataListCell>,
-                                <DataListCell key={2} width={4}>{created.toLocaleString()}</DataListCell>
+                                <DataListCell key={1} width={2}>
+                                  <strong>Started:</strong>
+                                </DataListCell>,
+                                <DataListCell key={2} width={4}>
+                                  {created.toLocaleString()}
+                                </DataListCell>,
                               ]}
                             />
                           </DataListItemRow>
                         </DataListItem>
-                        {run.metadata && run.metadata.component &&
+                        {run.metadata && run.metadata.component && (
                           <DataListItem aria-labelledby="Component">
                             <DataListItemRow>
                               <DataListItemCells
                                 dataListCells={[
-                                  <DataListCell key={1} width={2}><strong>Component:</strong></DataListCell>,
-                                  <DataListCell key={2} width={4}>{run.metadata.component}</DataListCell>
+                                  <DataListCell key={1} width={2}>
+                                    <strong>Component:</strong>
+                                  </DataListCell>,
+                                  <DataListCell key={2} width={4}>
+                                    {run.metadata.component}
+                                  </DataListCell>,
                                 ]}
                               />
                             </DataListItemRow>
                           </DataListItem>
-                        }
-                        {run.metadata && run.metadata.env &&
+                        )}
+                        {run.metadata && run.metadata.env && (
                           <DataListItem aria-labelledby="Environment">
                             <DataListItemRow>
                               <DataListItemCells
                                 dataListCells={[
-                                  <DataListCell key={1} width={2}><strong>Environment:</strong></DataListCell>,
-                                  <DataListCell key={2} width={4}>{run.metadata.env}</DataListCell>
+                                  <DataListCell key={1} width={2}>
+                                    <strong>Environment:</strong>
+                                  </DataListCell>,
+                                  <DataListCell key={2} width={4}>
+                                    {run.metadata.env}
+                                  </DataListCell>,
                                 ]}
                               />
                             </DataListItemRow>
                           </DataListItem>
-                        }
-                        {run.metadata && run.metadata.tags &&
+                        )}
+                        {run.metadata && run.metadata.tags && (
                           <DataListItem aria-labelledby="tags-label">
                             <DataListItemRow>
                               <DataListItemCells
                                 dataListCells={[
-                                  <DataListCell key="tags-label" width={2}><strong>Tags:</strong></DataListCell>,
+                                  <DataListCell key="tags-label" width={2}>
+                                    <strong>Tags:</strong>
+                                  </DataListCell>,
                                   <DataListCell key="tags-data" width={4}>
                                     <Flex>
-                                      {run.metadata.tags.map((tag) => <FlexItem spacer={{ default: 'spacerXs' }} key={tag}><Label color="blue" variant="filled">{tag}</Label></FlexItem>)}
+                                      {run.metadata.tags.map((tag) => (
+                                        <FlexItem
+                                          spacer={{ default: 'spacerXs' }}
+                                          key={tag}
+                                        >
+                                          <Label color="blue" variant="filled">
+                                            {tag}
+                                          </Label>
+                                        </FlexItem>
+                                      ))}
                                     </Flex>
-                                  </DataListCell>
+                                  </DataListCell>,
                                 ]}
                               />
                             </DataListItemRow>
                           </DataListItem>
-                        }
-                        {run.metadata && run.metadata.jenkins && run.metadata.jenkins.job_name &&
-                          <DataListItem aria-labelledby="Jenkins Job Name">
-                            <DataListItemRow>
-                              <DataListItemCells
-                                dataListCells={[
-                                  <DataListCell key={1} width={2}><strong>Jenkins Job Name:</strong></DataListCell>,
-                                  <DataListCell key={2} width={4}>{run.metadata.jenkins.job_name}</DataListCell>
-                                ]}
-                              />
-                            </DataListItemRow>
-                          </DataListItem>
-                        }
-                        {run.source &&
+                        )}
+                        {run.metadata &&
+                          run.metadata.jenkins &&
+                          run.metadata.jenkins.job_name && (
+                            <DataListItem aria-labelledby="Jenkins Job Name">
+                              <DataListItemRow>
+                                <DataListItemCells
+                                  dataListCells={[
+                                    <DataListCell key={1} width={2}>
+                                      <strong>Jenkins Job Name:</strong>
+                                    </DataListCell>,
+                                    <DataListCell key={2} width={4}>
+                                      {run.metadata.jenkins.job_name}
+                                    </DataListCell>,
+                                  ]}
+                                />
+                              </DataListItemRow>
+                            </DataListItem>
+                          )}
+                        {run.source && (
                           <DataListItem aria-labelledby="Source">
                             <DataListItemRow>
                               <DataListItemCells
                                 dataListCells={[
-                                  <DataListCell key={1} width={2}><strong>Source:</strong></DataListCell>,
-                                  <DataListCell key={2} width={4}>{run.source}</DataListCell>
+                                  <DataListCell key={1} width={2}>
+                                    <strong>Source:</strong>
+                                  </DataListCell>,
+                                  <DataListCell key={2} width={4}>
+                                    {run.source}
+                                  </DataListCell>,
                                 ]}
                               />
                             </DataListItemRow>
                           </DataListItem>
-                        }
+                        )}
                       </DataList>
                     </GridItem>
                     <GridItem span={6}>
-                      <DataList selectedDataListItemId={null} aria-label="Summary properties" style={{ borderBottom: 0, borderTop: 0 }}>
+                      <DataList
+                        selectedDataListItemId={null}
+                        aria-label="Summary properties"
+                        style={{ borderBottom: 0, borderTop: 0 }}
+                      >
                         <DataListItem aria-labelledby="Summary">
                           <DataListItemRow>
                             <DataListItemCells
                               style={{ paddingBottom: 0 }}
                               dataListCells={[
-                                <DataListCell key={1} width={2}><strong>Summary:</strong></DataListCell>,
-                                <DataListCell key={2} width={4} style={{ paddingTop: 0 }}>
-                                  <DataList selectedDataListItemId={null} aria-label="Summary" style={{ borderBottom: 0, borderTop: 0 }}>
+                                <DataListCell key={1} width={2}>
+                                  <strong>Summary:</strong>
+                                </DataListCell>,
+                                <DataListCell
+                                  key={2}
+                                  width={4}
+                                  style={{ paddingTop: 0 }}
+                                >
+                                  <DataList
+                                    selectedDataListItemId={null}
+                                    aria-label="Summary"
+                                    style={{ borderBottom: 0, borderTop: 0 }}
+                                  >
                                     <DataListItem aria-labelledby="Total">
                                       <DataListItemRow>
                                         <DataListItemCells
                                           dataListCells={[
-                                            <DataListCell key={1}>Total:</DataListCell>,
-                                            <DataListCell key={2}>{run?.summary?.collected || run?.summary?.tests || 'Summary Error'}</DataListCell>
+                                            <DataListCell key={1}>
+                                              Total:
+                                            </DataListCell>,
+                                            <DataListCell key={2}>
+                                              {run?.summary?.collected ||
+                                                run?.summary?.tests ||
+                                                'Summary Error'}
+                                            </DataListCell>,
                                           ]}
                                         />
                                       </DataListItemRow>
@@ -355,8 +447,12 @@ const Run = ({defaultTab='summary'}) => {
                                       <DataListItemRow>
                                         <DataListItemCells
                                           dataListCells={[
-                                            <DataListCell key={1}>Passed:</DataListCell>,
-                                            <DataListCell key={2}>{passed}</DataListCell>
+                                            <DataListCell key={1}>
+                                              Passed:
+                                            </DataListCell>,
+                                            <DataListCell key={2}>
+                                              {passed}
+                                            </DataListCell>,
                                           ]}
                                         />
                                       </DataListItemRow>
@@ -365,8 +461,12 @@ const Run = ({defaultTab='summary'}) => {
                                       <DataListItemRow>
                                         <DataListItemCells
                                           dataListCells={[
-                                            <DataListCell key={1}>Failed:</DataListCell>,
-                                            <DataListCell key={2}>{failed}</DataListCell>
+                                            <DataListCell key={1}>
+                                              Failed:
+                                            </DataListCell>,
+                                            <DataListCell key={2}>
+                                              {failed}
+                                            </DataListCell>,
                                           ]}
                                         />
                                       </DataListItemRow>
@@ -375,8 +475,12 @@ const Run = ({defaultTab='summary'}) => {
                                       <DataListItemRow>
                                         <DataListItemCells
                                           dataListCells={[
-                                            <DataListCell key={1}>Error:</DataListCell>,
-                                            <DataListCell key={2}>{errors}</DataListCell>
+                                            <DataListCell key={1}>
+                                              Error:
+                                            </DataListCell>,
+                                            <DataListCell key={2}>
+                                              {errors}
+                                            </DataListCell>,
                                           ]}
                                         />
                                       </DataListItemRow>
@@ -385,8 +489,12 @@ const Run = ({defaultTab='summary'}) => {
                                       <DataListItemRow>
                                         <DataListItemCells
                                           dataListCells={[
-                                            <DataListCell key={1}>Xfailed:</DataListCell>,
-                                            <DataListCell key={2}>{xfailed}</DataListCell>
+                                            <DataListCell key={1}>
+                                              Xfailed:
+                                            </DataListCell>,
+                                            <DataListCell key={2}>
+                                              {xfailed}
+                                            </DataListCell>,
                                           ]}
                                         />
                                       </DataListItemRow>
@@ -395,8 +503,12 @@ const Run = ({defaultTab='summary'}) => {
                                       <DataListItemRow>
                                         <DataListItemCells
                                           dataListCells={[
-                                            <DataListCell key={1}>Xpassed:</DataListCell>,
-                                            <DataListCell key={2}>{xpassed}</DataListCell>
+                                            <DataListCell key={1}>
+                                              Xpassed:
+                                            </DataListCell>,
+                                            <DataListCell key={2}>
+                                              {xpassed}
+                                            </DataListCell>,
                                           ]}
                                         />
                                       </DataListItemRow>
@@ -405,8 +517,12 @@ const Run = ({defaultTab='summary'}) => {
                                       <DataListItemRow>
                                         <DataListItemCells
                                           dataListCells={[
-                                            <DataListCell key={1}>Skipped:</DataListCell>,
-                                            <DataListCell key={2}>{skipped}</DataListCell>
+                                            <DataListCell key={1}>
+                                              Skipped:
+                                            </DataListCell>,
+                                            <DataListCell key={2}>
+                                              {skipped}
+                                            </DataListCell>,
                                           ]}
                                         />
                                       </DataListItemRow>
@@ -415,14 +531,18 @@ const Run = ({defaultTab='summary'}) => {
                                       <DataListItemRow>
                                         <DataListItemCells
                                           dataListCells={[
-                                            <DataListCell key={1}>Not Run:</DataListCell>,
-                                            <DataListCell key={2}>{not_run}</DataListCell>
+                                            <DataListCell key={1}>
+                                              Not Run:
+                                            </DataListCell>,
+                                            <DataListCell key={2}>
+                                              {not_run}
+                                            </DataListCell>,
                                           ]}
                                         />
                                       </DataListItemRow>
                                     </DataListItem>
                                   </DataList>
-                                </DataListCell>
+                                </DataListCell>,
                               ]}
                             />
                           </DataListItemRow>
@@ -433,17 +553,30 @@ const Run = ({defaultTab='summary'}) => {
                 </CardBody>
               </Card>
             </Tab>
-            <Tab key="results-list" eventKey="results-list" title={<TabTitle icon={<CatalogIcon />} text="Results List" />}>
+            <Tab
+              key="results-list"
+              eventKey="results-list"
+              title={<TabTitle icon={<CatalogIcon />} text="Results List" />}
+            >
               <Card className="pf-u-mt-lg">
                 <CardHeader>
                   <Flex style={{ width: '100%' }}>
                     <FlexItem grow={{ default: 'grow' }}>
                       <TextContent>
-                        <Text component="h2" className="pf-v5-c-title pf-m-xl">Test results</Text>
+                        <Text component="h2" className="pf-v5-c-title pf-m-xl">
+                          Test results
+                        </Text>
                       </TextContent>
                     </FlexItem>
                     <FlexItem>
-                      <Link to={`../results?run_id[eq]=${run.id}`} relative="Path" className="pf-v5-c-button pf-m-primary" style={{ marginLeft: '2px' }}>See all results <ChevronRightIcon /></Link>
+                      <Link
+                        to={`../results?run_id[eq]=${run.id}`}
+                        relative="Path"
+                        className="pf-v5-c-button pf-m-primary"
+                        style={{ marginLeft: '2px' }}
+                      >
+                        See all results <ChevronRightIcon />
+                      </Link>
                     </FlexItem>
                   </Flex>
                 </CardHeader>
@@ -454,7 +587,7 @@ const Run = ({defaultTab='summary'}) => {
                     pagination={{
                       pageSize: pageSize,
                       page: page,
-                      totalItems: totalItems
+                      totalItems: totalItems,
                     }}
                     isEmpty={rows.length === 0}
                     isError={isError}
@@ -464,50 +597,86 @@ const Run = ({defaultTab='summary'}) => {
                 </CardBody>
               </Card>
             </Tab>
-            <Tab eventKey="results-tree" title={<TabTitle icon={<RepositoryIcon />} text="Results Tree" />}>
+            <Tab
+              eventKey="results-tree"
+              title={<TabTitle icon={<RepositoryIcon />} text="Results Tree" />}
+            >
               <Card className="pf-u-mt-lg">
                 <CardBody>
                   <Grid gutter="sm">
-                    {resultsTree.length === 0 &&
+                    {resultsTree.length === 0 && (
                       <GridItem span={12}>
-                        <Bullseye><center><Spinner size="xl" /></center></Bullseye>
+                        <Bullseye>
+                          <center>
+                            <Spinner size="xl" />
+                          </center>
+                        </Bullseye>
                       </GridItem>
-                    }
-                    {resultsTree.length !== 0 &&
+                    )}
+                    {resultsTree.length !== 0 && (
                       <React.Fragment>
                         <GridItem span={5}>
-                          <TreeView data={resultsTree} activeItems={activeItems} onSelect={onTreeItemSelect} icon={<FolderIcon />} expandedIcon={<FolderOpenIcon />} />
+                          <TreeView
+                            data={resultsTree}
+                            activeItems={activeItems}
+                            onSelect={onTreeItemSelect}
+                            icon={<FolderIcon />}
+                            expandedIcon={<FolderOpenIcon />}
+                          />
                         </GridItem>
                         <GridItem span={7}>
-                          {testResult &&
+                          {testResult && (
                             <Card className={testResult.result}>
                               <CardHeader>
                                 {testResult.test_id}
-                                {testResult.metadata.markers &&
+                                {testResult.metadata.markers && (
                                   <div style={{ float: 'right' }}>
-                                    {testResult.metadata.markers.map((marker) => <Badge isRead key={marker}>{marker}</Badge>)}
+                                    {testResult.metadata.markers.map(
+                                      (marker) => (
+                                        <Badge isRead key={marker}>
+                                          {marker}
+                                        </Badge>
+                                      ),
+                                    )}
                                   </div>
-                                }
+                                )}
                               </CardHeader>
-                              <CardBody style={{ backgroundColor: 'var(--pf-v5-c-card--BackgroundColor)', paddingTop: '1.2em' }}>
-                                <ResultView testResult={testResult} skipHash={true} />
+                              <CardBody
+                                style={{
+                                  backgroundColor:
+                                    'var(--pf-v5-c-card--BackgroundColor)',
+                                  paddingTop: '1.2em',
+                                }}
+                              >
+                                <ResultView
+                                  testResult={testResult}
+                                  skipHash={true}
+                                />
                               </CardBody>
                             </Card>
-                          }
+                          )}
                         </GridItem>
                       </React.Fragment>
-                    }
+                    )}
                   </Grid>
                 </CardBody>
               </Card>
             </Tab>
-            <Tab eventKey="classify-failures" title={<TabTitle icon={<MessagesIcon />} text="Classify Failures" />}>
+            <Tab
+              eventKey="classify-failures"
+              title={
+                <TabTitle icon={<MessagesIcon />} text="Classify Failures" />
+              }
+            >
               <ClassifyFailuresTable run_id={run_id} />
             </Tab>
             {artifactTabs}
-            <Tab eventKey="run-object" title={<TabTitle icon={<CodeIcon />} text="Run Object" />}>
+            <Tab
+              eventKey="run-object"
+              title={<TabTitle icon={<CodeIcon />} text="Run Object" />}
+            >
               <Card>
-                <CardBody id='object-card-body'>
+                <CardBody id="object-card-body">
                   <CodeEditor
                     isReadOnly={true}
                     isDarkTheme={darkTheme}
@@ -519,7 +688,7 @@ const Run = ({defaultTab='summary'}) => {
               </Card>
             </Tab>
           </Tabs>
-        }
+        )}
       </PageSection>
     </React.Fragment>
   );

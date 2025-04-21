@@ -7,32 +7,32 @@ export default {
       padding: 0,
       color: '#282d33',
       fontFamily: 'lucida grande ,tahoma,verdana,arial,sans-serif',
-      fontSize: '14px'
+      fontSize: '14px',
     },
     node: {
       base: {
-        position: 'relative'
+        position: 'relative',
       },
       link: {
         cursor: 'pointer',
         position: 'relative',
         padding: '0px 5px',
-        display: 'block'
+        display: 'block',
       },
       activeLink: {
         background: '#e5e5e5',
-        color: '#007bba'
+        color: '#007bba',
       },
       container: {
         link: {
           cursor: 'pointer',
           position: 'relative',
           padding: '0px 5px',
-          display: 'block'
+          display: 'block',
         },
         activeLink: {
           background: '#e5e5e5',
-          color: '#007bba'
+          color: '#007bba',
         },
       },
       toggle: {
@@ -42,27 +42,27 @@ export default {
           verticalAlign: 'top',
           marginLeft: '-5px',
           height: '10px',
-          width: '10px'
+          width: '10px',
         },
         wrapper: {
           position: 'absolute',
           top: '50%',
           left: '50%',
           margin: '-5px 0 0 -5px',
-          height: '10px'
+          height: '10px',
         },
         height: 10,
         width: 10,
         arrow: {
           fill: '#282d33',
-          strokeWidth: 0
-        }
+          strokeWidth: 0,
+        },
       },
       header: {
         base: {
           display: 'inline-block',
           verticalAlign: 'top',
-          color: '#282d33'
+          color: '#282d33',
         },
         connector: {
           width: '2px',
@@ -71,21 +71,21 @@ export default {
           borderBottom: 'solid 2px black',
           position: 'absolute',
           top: '0px',
-          left: '-21px'
+          left: '-21px',
         },
         title: {
           cursor: 'pointer',
           lineHeight: '24px',
-          verticalAlign: 'middle'
-        }
+          verticalAlign: 'middle',
+        },
       },
       subtree: {
         listStyle: 'none',
-        paddingLeft: '19px'
+        paddingLeft: '19px',
       },
       loading: {
-        color: '#E2C089'
-      }
-    }
-  }
+        color: '#E2C089',
+      },
+    },
+  },
 };

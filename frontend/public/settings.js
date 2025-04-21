@@ -2,5 +2,5 @@
 // at container runtime with ENV variables.
 window.settings = {
   serverUrl: 'http://127.0.0.1:8080/api',
-  environment: 'development'
+  environment: 'development',
 };

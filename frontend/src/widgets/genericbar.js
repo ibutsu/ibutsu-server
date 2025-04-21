@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -9,12 +9,7 @@ import {
   ChartStack,
   ChartTooltip,
 } from '@patternfly/react-charts';
-import {
-  Card,
-  CardBody,
-  CardFooter,
-  Text
-} from '@patternfly/react-core';
+import { Card, CardBody, CardFooter, Text } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
@@ -34,7 +29,7 @@ const GenericBarWidget = (props) => {
       bottom: 30,
       left: 150,
       right: 15,
-      top: 20
+      top: 20,
     },
     params = {},
     percentData,
@@ -52,24 +47,20 @@ const GenericBarWidget = (props) => {
   const [barCharts, setBarCharts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [genericBarError, setGenericBarError] = useState(false);
-  const[groupField, setGroupField] = useState(params.group_field);
-  const[weeks, setWeeks] = useState(params.weeks);
+  const [groupField, setGroupField] = useState(params.group_field);
+  const [weeks, setWeeks] = useState(params.weeks);
 
   const getBarStyle = (key) => {
     let color = 'var(--pf-v5-global--success-color--100)';
     if (key === 'failed') {
       color = 'var(--pf-v5-global--danger-color--100)';
-    }
-    else if (key === 'skipped') {
+    } else if (key === 'skipped') {
       color = 'var(--pf-v5-global--info-color--100)';
-    }
-    else if (key === 'error') {
+    } else if (key === 'error') {
       color = 'var(--pf-v5-global--warning-color--100)';
-    }
-    else if (key === 'xfailed') {
+    } else if (key === 'xfailed') {
       color = 'var(--pf-v5-global--palette--purple-400)';
-    }
-    else if (key === 'xpassed') {
+    } else if (key === 'xpassed') {
       color = 'var(--pf-v5-global--palette--purple-700)';
     }
     return color;
@@ -78,18 +69,18 @@ const GenericBarWidget = (props) => {
   useEffect(() => {
     setIsLoading(true);
     HttpClient.get([Settings.serverUrl, 'widget', widgetEndpoint], params)
-      .then(response => {
+      .then((response) => {
         response = HttpClient.handleResponse(response, 'response');
         if (!response.ok) {
           throw Error(response.statusText);
         }
         return response.json();
       })
-      .then(responseData => {
-        setData({...responseData});
+      .then((responseData) => {
+        setData({ ...responseData });
         setIsLoading(false);
       })
-      .catch(error => {
+      .catch((error) => {
         setGenericBarError(true);
         console.log(error);
       });
@@ -100,15 +91,13 @@ const GenericBarWidget = (props) => {
 
     const getLabels = () => {
       if (percentData) {
-        return ({datum}) => `${toTitleCase(datum.name)}: ${datum.y} %`;
-      }
-      else {
+        return ({ datum }) => `${toTitleCase(datum.name)}: ${datum.y} %`;
+      } else {
         if (xLabelTooltip) {
-          return ({datum}) => `${xLabelTooltip}: ${datum.x} \n ${toTitleCase(datum.name)}: ${datum.y}`;
-        }
-        else {
-          return ({datum}) => `${toTitleCase(datum.name)}: ${datum.y}`;
-
+          return ({ datum }) =>
+            `${xLabelTooltip}: ${datum.x} \n ${toTitleCase(datum.name)}: ${datum.y}`;
+        } else {
+          return ({ datum }) => `${toTitleCase(datum.name)}: ${datum.y}`;
         }
       }
     };
@@ -117,13 +106,17 @@ const GenericBarWidget = (props) => {
       if (test_state !== 'filter') {
         const barData = [];
         for (const group_field of Object.keys(data[test_state])) {
-          barData.push({name: toTitleCase(test_state), x: group_field, y: data[test_state][group_field]});
+          barData.push({
+            name: toTitleCase(test_state),
+            x: group_field,
+            y: data[test_state][group_field],
+          });
         }
         if (barData.length !== 0) {
           barCharts.push(
             <ChartBar
               key={test_state}
-              style={{data: {fill: getBarStyle(test_state)}}}
+              style={{ data: { fill: getBarStyle(test_state) } }}
               barWidth={barWidth}
               data={barData}
               sortKey={(datum) => `${datum.x}`}
@@ -134,22 +127,29 @@ const GenericBarWidget = (props) => {
                 <ChartTooltip
                   dx={horizontal ? -10 : 0}
                   dy={horizontal ? 0 : -10}
-                  style={{ fill: 'white', fontSize: fontSize-2 || 14}}
+                  style={{ fill: 'white', fontSize: fontSize - 2 || 14 }}
                 />
               }
-            />
+            />,
           );
         }
       }
     }
     setBarCharts(barCharts);
-  }, [data, barWidth, fontSize, horizontal, sortOrder, percentData, xLabelTooltip]);
+  }, [
+    data,
+    barWidth,
+    fontSize,
+    horizontal,
+    sortOrder,
+    percentData,
+    xLabelTooltip,
+  ]);
 
   const getChartHeight = (numBars) => {
     if (numBars > 10) {
-      return numBars*30;
-    }
-    else {
+      return numBars * 30;
+    } else {
       return 300;
     }
   };
@@ -157,8 +157,7 @@ const GenericBarWidget = (props) => {
   const getDropdowns = () => {
     if (hideDropdown) {
       return null;
-    }
-    else {
+    } else {
       return (
         <div>
           <ParamDropdown
@@ -180,52 +179,54 @@ const GenericBarWidget = (props) => {
 
   return (
     <Card>
-      <WidgetHeader title={title} onEditClick={onEditClick} onDeleteClick={onDeleteClick}/>
+      <WidgetHeader
+        title={title}
+        onEditClick={onEditClick}
+        onDeleteClick={onDeleteClick}
+      />
       <CardBody data-id="recent-runs">
-        {genericBarError &&
-          <p>Error fetching data</p>
-        }
-        {(!genericBarError && isLoading) &&
-        <Text component="h2">Loading ...</Text>
-        }
-        {(!genericBarError && !isLoading) &&
-        <Chart
-          domainPadding={ horizontal ? { x: 20 } : { y: 20} }
-          padding={padding}
-          height={height || getChartHeight(Object.keys(data['passed']).length)}
-        >
-          <ChartAxis
-            label={xLabel}
-            fixLabelOverlap={!horizontal}
-            style={{
-              tickLabels: {fontSize: fontSize-2 || 12},
-              axisLabel: {fontSize: fontSize || 12}
-            }}
-          />
-          <ChartAxis
-            label={yLabel}
-            dependentAxis
-            style={{
-              tickLabels: {fontSize: fontSize-2 || 12},
-              axisLabel: {fontSize: fontSize || 12}
-            }}
-          />
-          <ChartStack>
-            {barCharts}
-          </ChartStack>
-        </Chart>
-        }
+        {genericBarError && <p>Error fetching data</p>}
+        {!genericBarError && isLoading && (
+          <Text component="h2">Loading ...</Text>
+        )}
+        {!genericBarError && !isLoading && (
+          <Chart
+            domainPadding={horizontal ? { x: 20 } : { y: 20 }}
+            padding={padding}
+            height={
+              height || getChartHeight(Object.keys(data['passed']).length)
+            }
+          >
+            <ChartAxis
+              label={xLabel}
+              fixLabelOverlap={!horizontal}
+              style={{
+                tickLabels: { fontSize: fontSize - 2 || 12 },
+                axisLabel: { fontSize: fontSize || 12 },
+              }}
+            />
+            <ChartAxis
+              label={yLabel}
+              dependentAxis
+              style={{
+                tickLabels: { fontSize: fontSize - 2 || 12 },
+                axisLabel: { fontSize: fontSize || 12 },
+              }}
+            />
+            <ChartStack>{barCharts}</ChartStack>
+          </Chart>
+        )}
       </CardBody>
       <CardFooter>
         <ChartLegend
           height={30}
           data={[
-            {name: 'Passed'},
-            {name: 'Failed'},
-            {name: 'Skipped'},
-            {name: 'Error'},
-            {name: 'Xfailed'},
-            {name: 'Xpassed'}
+            { name: 'Passed' },
+            { name: 'Failed' },
+            { name: 'Skipped' },
+            { name: 'Error' },
+            { name: 'Xfailed' },
+            { name: 'Xpassed' },
           ]}
           colorScale={[
             'var(--pf-v5-global--success-color--100)',
@@ -236,15 +237,14 @@ const GenericBarWidget = (props) => {
             'var(--pf-v5-global--palette--purple-700)',
           ]}
           style={{
-            labels: {fontFamily: 'RedHatText', fontSize: fontSize-2 || 12},
-            title: {fontFamily: 'RedHatText'}
+            labels: { fontFamily: 'RedHatText', fontSize: fontSize - 2 || 12 },
+            title: { fontFamily: 'RedHatText' },
           }}
         />
         {getDropdowns()}
       </CardFooter>
     </Card>
   );
-
 };
 
 GenericBarWidget.propTypes = {

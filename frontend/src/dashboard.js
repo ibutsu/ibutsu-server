@@ -45,9 +45,8 @@ import ResultSummaryWidget from './widgets/resultsummary';
 import { IbutsuContext } from './services/context.js';
 import { useNavigate, useParams } from 'react-router-dom';
 
-
 const Dashboard = () => {
-  const {defaultDashboard, primaryObject } = useContext(IbutsuContext);
+  const { defaultDashboard, primaryObject } = useContext(IbutsuContext);
   const { dashboard_id, project_id } = useParams();
 
   const navigate = useNavigate();
@@ -80,14 +79,16 @@ const Dashboard = () => {
       try {
         const response = await HttpClient.get(
           [Settings.serverUrl, 'widget-config'],
-          {'type': 'widget', 'filter': `dashboard_id=${selectedDashboard.id}`}
+          { type: 'widget', filter: `dashboard_id=${selectedDashboard.id}` },
         );
         const data = await HttpClient.handleResponse(response);
-        data.widgets.forEach(widget => {
+        data.widgets.forEach((widget) => {
           widget.params['project'] = selectedDashboard.project_id;
         });
         setWidgets(data.widgets);
-      } catch (error) { console.error(error); }
+      } catch (error) {
+        console.error(error);
+      }
     };
     if (selectedDashboard) {
       getWidgets();
@@ -101,23 +102,31 @@ const Dashboard = () => {
       setDashboards();
       setSelectInputValue('');
       try {
-        const response = await HttpClient.get([Settings.serverUrl, 'dashboard'], {
-          'project_id': primaryObject.id,
-          'pageSize': 100,
-        });
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'dashboard'],
+          {
+            project_id: primaryObject.id,
+            pageSize: 100,
+          },
+        );
         const data = (await HttpClient.handleResponse(response))['dashboards'];
         setDashboards(data);
         setLoading(false);
-        if (data && dashboard_id && (selectedDashboard?.id !== dashboard_id)) {
-          const paramDashboard = data.filter(dashboard => dashboard.id == dashboard_id).pop();
+        if (data && dashboard_id && selectedDashboard?.id !== dashboard_id) {
+          const paramDashboard = data
+            .filter((dashboard) => dashboard.id == dashboard_id)
+            .pop();
           if (paramDashboard) {
-            console.log('setting default');
             setSelectedDashboard(paramDashboard);
             setIsDashboardOpen(false);
             setSelectInputValue(paramDashboard.title);
-          } else {console.error('URL parameter dashboard ID not found');}
+          } else {
+            console.error('URL parameter dashboard ID not found');
+          }
         }
-      } catch (error) { console.error(error); }
+      } catch (error) {
+        console.error(error);
+      }
     };
     if (primaryObject) {
       fetchDashboards();
@@ -128,39 +137,46 @@ const Dashboard = () => {
 
   // Apply the default dashboard
   useEffect(() => {
-  // selectedDashboard is undefined until user picks one or this sets it
-    if (dashboards?.length > 0 && defaultDashboard && (selectedDashboard === undefined)) {
-      const default_db = dashboards.filter(dash => dash.id == defaultDashboard).pop();
+    // selectedDashboard is undefined until user picks one or this sets it
+    if (
+      dashboards?.length > 0 &&
+      defaultDashboard &&
+      selectedDashboard === undefined
+    ) {
+      const default_db = dashboards
+        .filter((dash) => dash.id == defaultDashboard)
+        .pop();
       if (default_db) {
-        console.log('applying default dash');
         setSelectedDashboard(default_db);
         setSelectInputValue(default_db.title);
-        navigate(`/project/${default_db.project_id}/dashboard/${default_db.id}`);
+        navigate(
+          `/project/${default_db.project_id}/dashboard/${default_db.id}`,
+        );
       }
     }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [!!dashboards, !!selectedDashboard]); // only when they switch from undefined on first set
 
   // Apply filter inputs
   useEffect(() => {
     let filteredOptions = dashboards;
     if (selectFilterValue && dashboards) {
-      console.log('filter effect:  '+selectFilterValue);
-      filteredOptions = filteredOptions.filter(
-        dashboard => dashboard.title.toLowerCase().includes(selectFilterValue.toLowerCase())
+      filteredOptions = filteredOptions.filter((dashboard) =>
+        dashboard.title.toLowerCase().includes(selectFilterValue.toLowerCase()),
       );
       if (!filteredOptions.length) {
-        filteredOptions = [{
-          isAriaDisabled: true,
-          children: `No dashboards matching "${selectFilterValue}"`
-        }];
+        filteredOptions = [
+          {
+            isAriaDisabled: true,
+            children: `No dashboards matching "${selectFilterValue}"`,
+          },
+        ];
       }
       if (!isDashboardOpen) {
         setIsDashboardOpen(true);
       }
     }
-
 
     setFilteredDashboards(filteredOptions);
   }, [selectFilterValue, dashboards, isDashboardOpen]);
@@ -189,16 +205,23 @@ const Dashboard = () => {
   const onDashboardFilterInput = (_, value) => {
     setSelectInputValue(value);
     setSelectFilterValue(value);
-    if(value !== selectedDashboard) { setSelectedDashboard(value); }
+    if (value !== selectedDashboard) {
+      setSelectedDashboard(value);
+    }
   };
 
   const onNewDashboardSave = async (newDashboard) => {
     try {
-      const response = await HttpClient.post([Settings.serverUrl, 'dashboard'], newDashboard);
+      const response = await HttpClient.post(
+        [Settings.serverUrl, 'dashboard'],
+        newDashboard,
+      );
       const data = await HttpClient.handleResponse(response);
       setIsNewDBOpen(false);
       onDashboardSelect(null, data);
-    } catch (error) { console.error(error); };
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const onDeleteWidgetClick = (id) => {
@@ -211,17 +234,21 @@ const Dashboard = () => {
       widgetData.project_id = primaryObject.id;
     }
     HttpClient.post([Settings.serverUrl, 'widget-config'], widgetData)
-      .then(()=> setIsNewWidgetOpen(false))  // wait to close modal until widget is saved
-      .catch(error => console.error(error));
+      .then(() => setIsNewWidgetOpen(false)) // wait to close modal until widget is saved
+      .catch((error) => console.error(error));
   };
 
   const onEditWidgetSave = (editedData) => {
     if (!editedData.project_id && primaryObject) {
       editedData.project_id = primaryObject.id;
     }
-    HttpClient.put([Settings.serverUrl, 'widget-config', currentWidget], '', editedData)
-      .then(response => HttpClient.handleResponse(response))
-      .catch(error => console.error(error));
+    HttpClient.put(
+      [Settings.serverUrl, 'widget-config', currentWidget],
+      '',
+      editedData,
+    )
+      .then((response) => HttpClient.handleResponse(response))
+      .catch((error) => console.error(error));
     setIsEditModalOpen(false);
   };
 
@@ -229,26 +256,30 @@ const Dashboard = () => {
     setIsEditModalOpen(true);
 
     HttpClient.get([Settings.serverUrl, 'widget-config', id])
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
         setCurrentWidget(id);
         setEditWidgetData(data);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error);
         setIsEditModalOpen(false);
       });
-
   };
 
-  useEffect(() => { document.title = 'Dashboard | Ibutsu'; }, []);
+  useEffect(() => {
+    document.title = 'Dashboard | Ibutsu';
+  }, []);
 
-  const toggle = toggleRef => (
+  const toggle = (toggleRef) => (
     <MenuToggle
       ref={toggleRef}
       variant="typeahead"
       aria-label="Typeahead menu toggle"
-      onClick={() => {setIsDashboardOpen(!isDashboardOpen); selectInputRef?.current?.focus();}}
+      onClick={() => {
+        setIsDashboardOpen(!isDashboardOpen);
+        selectInputRef?.current?.focus();
+      }}
       isExpanded={isDashboardOpen}
       isFullWidth
       isDisabled={!primaryObject}
@@ -256,16 +287,22 @@ const Dashboard = () => {
       <TextInputGroup isPlain>
         <TextInputGroupMain
           value={selectInputValue}
-          onClick={() => {setIsDashboardOpen(!isDashboardOpen);}}
+          onClick={() => {
+            setIsDashboardOpen(!isDashboardOpen);
+          }}
           onChange={onDashboardFilterInput}
           id="typeahead-select-input"
           autoComplete="off"
-          placeholder={loading ? 'Loading Dashboards...' : 'No active dashboard'}
+          placeholder={
+            loading ? 'Loading Dashboards...' : 'No active dashboard'
+          }
           role="combobox"
           isExpanded={isDashboardOpen}
           aria-controls="select-typeahead-listbox"
         />
-        <TextInputGroupUtilities {...!selectInputValue ? {style: {display: 'none'}} : {}}>
+        <TextInputGroupUtilities
+          {...(!selectInputValue ? { style: { display: 'none' } } : {})}
+        >
           <Button
             variant="plain"
             onClick={onDashboardClear}
@@ -288,7 +325,10 @@ const Dashboard = () => {
                 <Text component="h1">Dashboard</Text>
               </TextContent>
             </FlexItem>
-            <FlexItem id="dashboard-selector" spacer={{ default: 'spacerNone' }}>
+            <FlexItem
+              id="dashboard-selector"
+              spacer={{ default: 'spacerNone' }}
+            >
               <Select
                 id="typeahead-select"
                 isScrollable={true}
@@ -298,15 +338,15 @@ const Dashboard = () => {
                 onOpenChange={() => {
                   setIsDashboardOpen(false);
                 }}
-                toggle={
-                  toggle
-                }
+                toggle={toggle}
               >
-                <SelectList id="select-typeahead-listbox" scrolling='true'>
+                <SelectList id="select-typeahead-listbox" scrolling="true">
                   {filteredDashboards?.map((dash) => (
                     <SelectOption
                       key={dash.id}
-                      onClick={() => {setSelectedDashboard(dash);}}
+                      onClick={() => {
+                        setSelectedDashboard(dash);
+                      }}
                       value={dash}
                     >
                       {dash.title}
@@ -321,7 +361,9 @@ const Dashboard = () => {
                 variant="plain"
                 title="New dashboard"
                 isDisabled={isDashboardOpen}
-                onClick={() => {setIsNewDBOpen(true);}}
+                onClick={() => {
+                  setIsNewDBOpen(true);
+                }}
               >
                 <PlusCircleIcon />
               </Button>
@@ -332,7 +374,9 @@ const Dashboard = () => {
                 variant="plain"
                 title="Delete dashboard"
                 isDisabled={!selectedDashboard}
-                onClick={() => {setIsDeleteDBOpen(true);}}
+                onClick={() => {
+                  setIsDeleteDBOpen(true);
+                }}
               >
                 <TimesCircleIcon />
               </Button>
@@ -346,7 +390,9 @@ const Dashboard = () => {
                 variant="secondary"
                 title="Add widget"
                 isDisabled={!selectedDashboard}
-                onClick={() => {setIsNewWidgetOpen(true);}}
+                onClick={() => {
+                  setIsNewWidgetOpen(true);
+                }}
               >
                 <PlusCircleIcon /> Add Widget
               </Button>
@@ -355,163 +401,228 @@ const Dashboard = () => {
         </Flex>
       </PageSection>
       <PageSection>
-        {(!!primaryObject && !!selectedDashboard && !!widgets) &&
-        <Grid hasGutter>
-          {widgets?.map(widget => {
-            if (KNOWN_WIDGETS.includes(widget.widget)) {
-              return (
-                <GridItem xl={4} lg={6} md={12} key={widget.id}>
-                  {(widget.type === 'widget' && widget.widget === 'jenkins-heatmap') &&
-                    <FilterHeatmapWidget
-                      title={widget.title}
-                      params={widget.params}
-                      includeAnalysisLink={true}
-                      type='jenkins'
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
-                      onEditClick={() => {onEditWidgetClick(widget.id);}}
-                    />
-                  }
-                  {(widget.type === 'widget' && widget.widget === 'filter-heatmap') &&
-                    <FilterHeatmapWidget
-                      title={widget.title}
-                      params={widget.params}
-                      includeAnalysisLink={true}
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
-                      onEditClick={() => {onEditWidgetClick(widget.id);}}
-                    />
-                  }
-                  {(widget.type === 'widget' && widget.widget === 'run-aggregator') &&
-                    <GenericBarWidget
-                      title={widget.title}
-                      params={widget.params}
-                      horizontal={true}
-                      percentData={true}
-                      barWidth={20}
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
-                      onEditClick={() => {onEditWidgetClick(widget.id);}}
-                    />
-                  }
-                  {(widget.type === 'widget' && widget.widget === 'result-summary') &&
-                    <ResultSummaryWidget
-                      title={widget.title}
-                      params={widget.params}
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
-                      onEditClick={() => {onEditWidgetClick(widget.id);}}
-                    />
-                  }
-                  {(widget.type === 'widget' && widget.widget === 'result-aggregator') &&
-                    <ResultAggregatorWidget
-                      title={widget.title}
-                      params={
-                        {
-                          project: widget.params.project,
-                          run_id: widget.params.run_id,
-                          additional_filters: widget.params.additional_filters
-                        }
-                      }
-                      chartType={widget.params.chart_type}
-                      days={widget.params.days}
-                      groupField={widget.params.group_field}
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
-                      onEditClick={() => {onEditWidgetClick(widget.id);}}
-                    />
-                  }
-                  {(widget.type === 'widget' && widget.widget === 'jenkins-line-chart') &&
-                    <GenericAreaWidget
-                      title={widget.title}
-                      params={widget.params}
-                      yLabel="Execution time"
-                      widgetEndpoint="jenkins-line-chart"
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
-                      onEditClick={() => {onEditWidgetClick(widget.id);}}
-                    />
-                  }
-                  {(widget.type === 'widget' && widget.widget === 'jenkins-bar-chart') &&
-                    <GenericBarWidget
-                      title={widget.title}
-                      params={widget.params}
-                      barWidth={20}
-                      horizontal={true}
-                      hideDropdown={true}
-                      widgetEndpoint="jenkins-bar-chart"
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
-                      onEditClick={() => {onEditWidgetClick(widget.id);}}
-                    />
-                  }
-                  {(widget.type === 'widget' && widget.widget === 'importance-component') &&
-                    <ImportanceComponentWidget
-                      title={widget.title}
-                      params={widget.params}
-                      barWidth={20}
-                      horizontal={true}
-                      hideDropdown={true}
-                      widgetEndpoint="importance-component"
-                      onDeleteClick={() => {onDeleteWidgetClick(widget.id);}}
-                      onEditClick={() => {onEditWidgetClick(widget.id);}}
-                    />
-                  }
-                </GridItem>
-              );
-            }
-            else {
-              return '';
-            }
-          })}
-        </Grid>
-        }
-        { (!!primaryObject && !selectedDashboard) &&
-        <EmptyState>
-          <EmptyStateHeader titleText="No Dashboard Selected" icon={<EmptyStateIcon icon={TachometerAltIcon} />} headingLevel="h4" />
-          <EmptyStateBody>
-            There is currently no dashboard selected. Please select a dashboard from the dropdown
-            in order to view widgets, or create a new dashboard.
-          </EmptyStateBody>
-          <EmptyStateFooter>
-            <Button
-              variant="primary"
-              onClick={() => {setIsNewDBOpen(true);}}
-            >
-              New Dashboard
-            </Button>
-          </EmptyStateFooter>
-        </EmptyState>
-        }
-        {(!!primaryObject && !!selectedDashboard && widgets.length === 0) &&
-        <EmptyState>
-          <EmptyStateHeader titleText="No Widgets" icon={<EmptyStateIcon icon={CubesIcon} />} headingLevel="h4" />
-          <EmptyStateBody>
-            This dashboard currently has no widgets defined.<br />Click on the &quot;Add Widget&quot; button
-            below to add a widget to this dashboard.
-          </EmptyStateBody>
-          <EmptyStateFooter>
-            <Button
-              variant="primary"
-              onClick={() => {setIsNewWidgetOpen(true);}}
-            >
-              Add Widget
-            </Button>
-          </EmptyStateFooter>
-        </EmptyState>
-        }
+        {!!primaryObject && !!selectedDashboard && !!widgets && (
+          <Grid hasGutter>
+            {widgets?.map((widget) => {
+              if (KNOWN_WIDGETS.includes(widget.widget)) {
+                return (
+                  <GridItem xl={4} lg={6} md={12} key={widget.id}>
+                    {widget.type === 'widget' &&
+                      widget.widget === 'jenkins-heatmap' && (
+                        <FilterHeatmapWidget
+                          title={widget.title}
+                          params={widget.params}
+                          includeAnalysisLink={true}
+                          type="jenkins"
+                          onDeleteClick={() => {
+                            onDeleteWidgetClick(widget.id);
+                          }}
+                          onEditClick={() => {
+                            onEditWidgetClick(widget.id);
+                          }}
+                        />
+                      )}
+                    {widget.type === 'widget' &&
+                      widget.widget === 'filter-heatmap' && (
+                        <FilterHeatmapWidget
+                          title={widget.title}
+                          params={widget.params}
+                          includeAnalysisLink={true}
+                          onDeleteClick={() => {
+                            onDeleteWidgetClick(widget.id);
+                          }}
+                          onEditClick={() => {
+                            onEditWidgetClick(widget.id);
+                          }}
+                        />
+                      )}
+                    {widget.type === 'widget' &&
+                      widget.widget === 'run-aggregator' && (
+                        <GenericBarWidget
+                          title={widget.title}
+                          params={widget.params}
+                          horizontal={true}
+                          percentData={true}
+                          barWidth={20}
+                          onDeleteClick={() => {
+                            onDeleteWidgetClick(widget.id);
+                          }}
+                          onEditClick={() => {
+                            onEditWidgetClick(widget.id);
+                          }}
+                        />
+                      )}
+                    {widget.type === 'widget' &&
+                      widget.widget === 'result-summary' && (
+                        <ResultSummaryWidget
+                          title={widget.title}
+                          params={widget.params}
+                          onDeleteClick={() => {
+                            onDeleteWidgetClick(widget.id);
+                          }}
+                          onEditClick={() => {
+                            onEditWidgetClick(widget.id);
+                          }}
+                        />
+                      )}
+                    {widget.type === 'widget' &&
+                      widget.widget === 'result-aggregator' && (
+                        <ResultAggregatorWidget
+                          title={widget.title}
+                          params={{
+                            project: widget.params.project,
+                            run_id: widget.params.run_id,
+                            additional_filters:
+                              widget.params.additional_filters,
+                          }}
+                          chartType={widget.params.chart_type}
+                          days={widget.params.days}
+                          groupField={widget.params.group_field}
+                          onDeleteClick={() => {
+                            onDeleteWidgetClick(widget.id);
+                          }}
+                          onEditClick={() => {
+                            onEditWidgetClick(widget.id);
+                          }}
+                        />
+                      )}
+                    {widget.type === 'widget' &&
+                      widget.widget === 'jenkins-line-chart' && (
+                        <GenericAreaWidget
+                          title={widget.title}
+                          params={widget.params}
+                          yLabel="Execution time"
+                          widgetEndpoint="jenkins-line-chart"
+                          onDeleteClick={() => {
+                            onDeleteWidgetClick(widget.id);
+                          }}
+                          onEditClick={() => {
+                            onEditWidgetClick(widget.id);
+                          }}
+                        />
+                      )}
+                    {widget.type === 'widget' &&
+                      widget.widget === 'jenkins-bar-chart' && (
+                        <GenericBarWidget
+                          title={widget.title}
+                          params={widget.params}
+                          barWidth={20}
+                          horizontal={true}
+                          hideDropdown={true}
+                          widgetEndpoint="jenkins-bar-chart"
+                          onDeleteClick={() => {
+                            onDeleteWidgetClick(widget.id);
+                          }}
+                          onEditClick={() => {
+                            onEditWidgetClick(widget.id);
+                          }}
+                        />
+                      )}
+                    {widget.type === 'widget' &&
+                      widget.widget === 'importance-component' && (
+                        <ImportanceComponentWidget
+                          title={widget.title}
+                          params={widget.params}
+                          barWidth={20}
+                          horizontal={true}
+                          hideDropdown={true}
+                          widgetEndpoint="importance-component"
+                          onDeleteClick={() => {
+                            onDeleteWidgetClick(widget.id);
+                          }}
+                          onEditClick={() => {
+                            onEditWidgetClick(widget.id);
+                          }}
+                        />
+                      )}
+                  </GridItem>
+                );
+              } else {
+                return '';
+              }
+            })}
+          </Grid>
+        )}
+        {!!primaryObject && !selectedDashboard && (
+          <EmptyState>
+            <EmptyStateHeader
+              titleText="No Dashboard Selected"
+              icon={<EmptyStateIcon icon={TachometerAltIcon} />}
+              headingLevel="h4"
+            />
+            <EmptyStateBody>
+              There is currently no dashboard selected. Please select a
+              dashboard from the dropdown in order to view widgets, or create a
+              new dashboard.
+            </EmptyStateBody>
+            <EmptyStateFooter>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setIsNewDBOpen(true);
+                }}
+              >
+                New Dashboard
+              </Button>
+            </EmptyStateFooter>
+          </EmptyState>
+        )}
+        {!!primaryObject && !!selectedDashboard && widgets.length === 0 && (
+          <EmptyState>
+            <EmptyStateHeader
+              titleText="No Widgets"
+              icon={<EmptyStateIcon icon={CubesIcon} />}
+              headingLevel="h4"
+            />
+            <EmptyStateBody>
+              This dashboard currently has no widgets defined.
+              <br />
+              Click on the &quot;Add Widget&quot; button below to add a widget
+              to this dashboard.
+            </EmptyStateBody>
+            <EmptyStateFooter>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setIsNewWidgetOpen(true);
+                }}
+              >
+                Add Widget
+              </Button>
+            </EmptyStateFooter>
+          </EmptyState>
+        )}
       </PageSection>
       <NewDashboardModal
         project={primaryObject}
         saveCallback={(newDashboard) => onNewDashboardSave(newDashboard)}
-        closeCallback={() => {setIsNewDBOpen(false);}}
+        closeCallback={() => {
+          setIsNewDBOpen(false);
+        }}
         isOpen={isNewDBOpen}
       />
       <NewWidgetWizard
         dashboard={selectedDashboard}
         isOpen={isNewWidgetOpen}
         saveCallback={onNewWidgetSave}
-        closeCallback={() => {setIsNewWidgetOpen(false);}}
+        closeCallback={() => {
+          setIsNewWidgetOpen(false);
+        }}
       />
       <DeleteModal
         title="Delete Dashboard"
-        body={<>Would you like to delete the current dashboard? <strong>ALL WIDGETS</strong> on the dashboard will also be deleted. <br/> <strong>This action cannot be undone.</strong></>}
+        body={
+          <>
+            Would you like to delete the current dashboard?{' '}
+            <strong>ALL WIDGETS</strong> on the dashboard will also be deleted.{' '}
+            <br /> <strong>This action cannot be undone.</strong>
+          </>
+        }
         isOpen={isDeleteDBOpen}
         onDelete={onDashboardClear}
-        onClose={() => {setIsDeleteDBOpen(false);}}
+        onClose={() => {
+          setIsDeleteDBOpen(false);
+        }}
         toDeletePath={['dashboard']}
         toDeleteId={selectedDashboard?.id}
       />
@@ -519,23 +630,28 @@ const Dashboard = () => {
         title="Delete widget"
         body="Would you like to delete the selected widget?"
         isOpen={isDeleteWidgetOpen}
-        onClose={() => {setIsDeleteWidgetOpen(false);}}
+        onClose={() => {
+          setIsDeleteWidgetOpen(false);
+        }}
         toDeletePath={['widget-config']}
         toDeleteId={currentWidget}
       />
-      {isEditModalOpen ?
+      {isEditModalOpen ? (
         <EditWidgetModal
           isOpen={isEditModalOpen}
           onSave={onEditWidgetSave}
-          onClose={() => {setIsEditModalOpen(false);}}
+          onClose={() => {
+            setIsEditModalOpen(false);
+          }}
           data={editWidgetData}
         />
-        : ''}
+      ) : (
+        ''
+      )}
     </React.Fragment>
   );
 };
 
-Dashboard.propTypes = {
-};
+Dashboard.propTypes = {};
 
 export default Dashboard;
