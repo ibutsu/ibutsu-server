@@ -1,4 +1,16 @@
-import { Badge, Button, Chip, ChipGroup, Flex, FlexItem, MenuToggle, Select, SelectList, SelectOption, TextInput } from '@patternfly/react-core';
+import {
+  Badge,
+  Button,
+  Chip,
+  ChipGroup,
+  Flex,
+  FlexItem,
+  MenuToggle,
+  Select,
+  SelectList,
+  SelectOption,
+  TextInput,
+} from '@patternfly/react-core';
 import { SelectVariant } from '@patternfly/react-core/deprecated';
 import React, { useCallback, useMemo, useState } from 'react';
 
@@ -21,11 +33,11 @@ const UserFilterComponent = ({
   filterValue,
   setIsFieldOpen,
   setIsOperationOpen,
-  setFilterValue
+  setFilterValue,
 }) => (
   <React.Fragment>
     <Flex>
-      <Flex columnGap={{default: 'columnGapSm'}}>
+      <Flex columnGap={{ default: 'columnGapSm' }}>
         <FlexItem>
           <Select
             key="user-filter"
@@ -38,7 +50,9 @@ const UserFilterComponent = ({
             onSelect={onFieldSelect}
           >
             {STRING_USER_FIELDS.map((option, index) => (
-              <SelectOption key={index} value={option}>{option}</SelectOption>
+              <SelectOption key={index} value={option}>
+                {option}
+              </SelectOption>
             ))}
           </Select>
         </FlexItem>
@@ -73,29 +87,30 @@ const UserFilterComponent = ({
         </FlexItem>
       </Flex>
 
-      {filterValue &&
-      <Flex>
-        <FlexItem>
-          <Button onClick={applyFilter}>Apply Filter</Button>
-        </FlexItem>
-      </Flex>}
+      {filterValue && (
+        <Flex>
+          <FlexItem>
+            <Button onClick={applyFilter}>Apply Filter</Button>
+          </FlexItem>
+        </Flex>
+      )}
     </Flex>
   </React.Fragment>
 );
 
 UserFilterComponent.propTypes = {
-  applyFilter:PropTypes.func,
-  isFieldOpen:PropTypes.bool,
-  fieldSelection:PropTypes.string,
-  userToggle:PropTypes.func,
-  onFieldSelect:PropTypes.func,
-  isOperationOpen:PropTypes.bool,
-  operationSelection:PropTypes.string,
-  onOperationSelect:PropTypes.func,
-  operationToggle:PropTypes.func,
-  filterValue:PropTypes.string,
-  setIsFieldOpen:PropTypes.func,
-  setIsOperationOpen:PropTypes.func,
+  applyFilter: PropTypes.func,
+  isFieldOpen: PropTypes.bool,
+  fieldSelection: PropTypes.string,
+  userToggle: PropTypes.func,
+  onFieldSelect: PropTypes.func,
+  isOperationOpen: PropTypes.bool,
+  operationSelection: PropTypes.string,
+  onOperationSelect: PropTypes.func,
+  operationToggle: PropTypes.func,
+  filterValue: PropTypes.string,
+  setIsFieldOpen: PropTypes.func,
+  setIsOperationOpen: PropTypes.func,
   setFilterValue: PropTypes.func,
 };
 
@@ -116,50 +131,65 @@ const useUserFilter = () => {
     setFieldSelection(selection);
     setFilterValue('');
     setIsFieldOpen(false);
-  },[]);
+  }, []);
 
   const onOperationSelect = useCallback((_, selection) => {
     setOperationSelection(selection);
     setIsOperationOpen(false);
   }, []);
 
-  const updateFilters = useCallback((name, operator, value, callback) => {
-    let newFilters = { ...activeFilters };
-    if (!value) {
-      delete newFilters[name];
-    } else {
-      newFilters[name] = { 'op': operator, 'val': value };
-    }
-    setActiveFilters(newFilters);
-    callback();
-  }, [activeFilters]);
+  const updateFilters = useCallback(
+    (name, operator, value, callback) => {
+      let newFilters = { ...activeFilters };
+      if (!value) {
+        delete newFilters[name];
+      } else {
+        newFilters[name] = { op: operator, val: value };
+      }
+      setActiveFilters(newFilters);
+      callback();
+    },
+    [activeFilters],
+  );
 
   const applyFilter = useCallback(() => {
-    updateFilters(fieldSelection, operationSelection, filterValue.trim(), () => {
-      setFieldSelection(DEFAULT_FIELD);
-      setOperationSelection(DEFAULT_OP);
-      setFilterValue('');
-    });
+    updateFilters(
+      fieldSelection,
+      operationSelection,
+      filterValue.trim(),
+      () => {
+        setFieldSelection(DEFAULT_FIELD);
+        setOperationSelection(DEFAULT_OP);
+        setFilterValue('');
+      },
+    );
   }, [fieldSelection, filterValue, operationSelection, updateFilters]);
 
-  const userToggle = useCallback(toggleRef =>
-    <MenuToggle
-      onClick={() => setIsFieldOpen(!isFieldOpen)}
-      isExpanded={isFieldOpen}
-      ref={toggleRef}
-    >
-      {fieldSelection}
-    </MenuToggle>, [fieldSelection, isFieldOpen]);
+  const userToggle = useCallback(
+    (toggleRef) => (
+      <MenuToggle
+        onClick={() => setIsFieldOpen(!isFieldOpen)}
+        isExpanded={isFieldOpen}
+        ref={toggleRef}
+      >
+        {fieldSelection}
+      </MenuToggle>
+    ),
+    [fieldSelection, isFieldOpen],
+  );
 
-  const operationToggle = useCallback(toggleRef =>
-    <MenuToggle
-      onClick={() => setIsOperationOpen(!isOperationOpen)}
-      isExpanded={isOperationOpen}
-      ref={toggleRef}
-    >
-      {operationSelection}
-    </MenuToggle>
-  ,[isOperationOpen, operationSelection]);
+  const operationToggle = useCallback(
+    (toggleRef) => (
+      <MenuToggle
+        onClick={() => setIsOperationOpen(!isOperationOpen)}
+        isExpanded={isOperationOpen}
+        ref={toggleRef}
+      >
+        {operationSelection}
+      </MenuToggle>
+    ),
+    [isOperationOpen, operationSelection],
+  );
 
   const filterComponents = (
     <UserFilterComponent
@@ -179,38 +209,51 @@ const useUserFilter = () => {
     />
   );
 
-  const activeFilterComponents = useMemo(() =>
-    <React.Fragment>
-      { Object.keys(activeFilters).length > 0 &&
-        <Flex style={{marginTop: '1rem', fontWeight: 'normal'}}>
-          <Flex>
-            <FlexItem style={{marginBottom: '0.5rem'}}>
-              Active filters
-            </FlexItem>
-          </Flex>
-          <Flex grow={{default: 'grow'}}>
-            {Object.keys(activeFilters).map(key => (
-              <FlexItem style={{marginBottom: '0.5rem'}} spacer={{ default: 'spacerXs'}} key={key}>
-                <ChipGroup categoryName={key}>
-                  <Chip badge={<Badge isRead={true}>{activeFilters[key]['op']}</Badge>} onClick={() => updateFilters(key, null, null, () => {})}>
-                    {(typeof activeFilters[key] === 'object') &&
-                  <React.Fragment>
-                    {activeFilters[key]['val']}
-                  </React.Fragment>
-                    }
-                    {(typeof activeFilters[key] !== 'object') && activeFilters[key]}
-                  </Chip>
-                </ChipGroup>
+  const activeFilterComponents = useMemo(
+    () => (
+      <React.Fragment>
+        {Object.keys(activeFilters).length > 0 && (
+          <Flex style={{ marginTop: '1rem', fontWeight: 'normal' }}>
+            <Flex>
+              <FlexItem style={{ marginBottom: '0.5rem' }}>
+                Active filters
               </FlexItem>
-            ))}
+            </Flex>
+            <Flex grow={{ default: 'grow' }}>
+              {Object.keys(activeFilters).map((key) => (
+                <FlexItem
+                  style={{ marginBottom: '0.5rem' }}
+                  spacer={{ default: 'spacerXs' }}
+                  key={key}
+                >
+                  <ChipGroup categoryName={key}>
+                    <Chip
+                      badge={
+                        <Badge isRead={true}>{activeFilters[key]['op']}</Badge>
+                      }
+                      onClick={() => updateFilters(key, null, null, () => {})}
+                    >
+                      {typeof activeFilters[key] === 'object' && (
+                        <React.Fragment>
+                          {activeFilters[key]['val']}
+                        </React.Fragment>
+                      )}
+                      {typeof activeFilters[key] !== 'object' &&
+                        activeFilters[key]}
+                    </Chip>
+                  </ChipGroup>
+                </FlexItem>
+              ))}
+            </Flex>
           </Flex>
-        </Flex>
-      }
-    </React.Fragment>
+        )}
+      </React.Fragment>
+    ),
 
-  , [activeFilters, updateFilters]);
+    [activeFilters, updateFilters],
+  );
 
-  return {filterComponents, activeFilterComponents, activeFilters};
+  return { filterComponents, activeFilterComponents, activeFilters };
 };
 
 export default useUserFilter;

@@ -1,18 +1,25 @@
 import PropTypes from 'prop-types';
 
-import {
-  Button,
-  Modal,
-  ModalVariant,
-  Text
-} from '@patternfly/react-core';
+import { Button, Modal, ModalVariant, Text } from '@patternfly/react-core';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
-const DeleteModal = ({ onDelete, onClose, toDeleteId, toDeletePath, title, isOpen, body }) => {
+const DeleteModal = ({
+  onDelete,
+  onClose,
+  toDeleteId,
+  toDeletePath,
+  title,
+  isOpen,
+  body,
+}) => {
   const localOnDelete = async () => {
     try {
-      const response = await HttpClient.delete([Settings.serverUrl, ...toDeletePath, toDeleteId]);
+      const response = await HttpClient.delete([
+        Settings.serverUrl,
+        ...toDeletePath,
+        toDeleteId,
+      ]);
       await HttpClient.handleResponse(response);
       onDelete?.();
     } catch (error) {
@@ -28,14 +35,17 @@ const DeleteModal = ({ onDelete, onClose, toDeleteId, toDeletePath, title, isOpe
       isOpen={isOpen}
       onClose={onClose}
       actions={[
-        <Button key="delete" variant="danger" onClick={localOnDelete}>Delete</Button>,
-        <Button key="cancel" variant="link" onClick={onClose}>Cancel</Button>
+        <Button key="delete" variant="danger" onClick={localOnDelete}>
+          Delete
+        </Button>,
+        <Button key="cancel" variant="link" onClick={onClose}>
+          Cancel
+        </Button>,
       ]}
     >
       <Text>{body}</Text>
     </Modal>
   );
-
 };
 
 DeleteModal.propTypes = {
@@ -45,7 +55,7 @@ DeleteModal.propTypes = {
   onDelete: PropTypes.func,
   onClose: PropTypes.func,
   isOpen: PropTypes.bool,
-  toDeletePath: PropTypes.array
+  toDeletePath: PropTypes.array,
 };
 
 export default DeleteModal;

@@ -6,13 +6,12 @@ import {
   Page,
   PageSidebar,
   PageSidebarBody,
-  NavItem
+  NavItem,
 } from '@patternfly/react-core';
 
 import { Link, Outlet } from 'react-router-dom';
 
 import IbutsuHeader from './ibutsu-header';
-
 
 const AdminPage = () => {
   const navigation = (
@@ -21,13 +20,19 @@ const AdminPage = () => {
         <Nav theme="dark" aria-label="Nav">
           <NavList>
             <NavItem>
-              <Link to="home" className="pf-v5-c-nav__link">Admin Home</Link>
+              <Link to="home" className="pf-v5-c-nav__link">
+                Admin Home
+              </Link>
             </NavItem>
             <NavItem>
-              <Link to="users" className="pf-v5-c-nav__link">Users</Link>
+              <Link to="users" className="pf-v5-c-nav__link">
+                Users
+              </Link>
             </NavItem>
             <NavItem>
-              <Link to="projects" className="pf-v5-c-nav__link">Projects</Link>
+              <Link to="projects" className="pf-v5-c-nav__link">
+                Projects
+              </Link>
             </NavItem>
           </NavList>
         </Nav>
@@ -35,7 +40,9 @@ const AdminPage = () => {
     </PageSidebar>
   );
 
-  useEffect(() => { document.title = 'Administration | Ibutsu'; }, []);
+  useEffect(() => {
+    document.title = 'Administration | Ibutsu';
+  }, []);
 
   return (
     <React.Fragment>

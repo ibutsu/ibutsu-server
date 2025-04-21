@@ -8,7 +8,9 @@ https://levelup.gitconnected.com/handling-multiple-environments-in-react-with-do
 export var Settings;
 
 // If no settings are defined in the window (i.e. in the tests), use defaults
-Settings = window.settings ? window.settings : {
-  serverUrl: 'http://localhost:8080/api',
-  environment: 'development'
-};
+Settings = window.settings
+  ? window.settings
+  : {
+      serverUrl: 'http://localhost:8080/api',
+      environment: 'development',
+    };

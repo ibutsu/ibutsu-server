@@ -11,7 +11,7 @@ import {
   HelperTextItem,
   LoginMainFooterBandItem,
   LoginPage,
-  TextInput
+  TextInput,
 } from '@patternfly/react-core';
 import { NavLink, useNavigate } from 'react-router-dom';
 
@@ -26,11 +26,11 @@ export const ForgotPassword = () => {
   const [emailValue, setEmailValue] = useState('');
   const [isValidEmail, setIsValidEmail] = useState(true);
 
-  const onEmailChange = useCallback(emailValue => {
+  const onEmailChange = useCallback((emailValue) => {
     setEmailValue(emailValue);
   }, []);
 
-  const onRecoverAccountClick = async event => {
+  const onRecoverAccountClick = async (event) => {
     event.preventDefault();
     const isValidEmail = !!emailValue;
     let showAlert = !emailValue;
@@ -48,7 +48,9 @@ export const ForgotPassword = () => {
       try {
         const isSuccess = await AuthService.recover(emailValue);
         if (isSuccess) {
-          setAlertText('Recovery successful! Check your e-mail for a recovery link.');
+          setAlertText(
+            'Recovery successful! Check your e-mail for a recovery link.',
+          );
           setAlertType('success');
           setShowAlert(true);
           setIsValidEmail(true);
@@ -78,7 +80,7 @@ export const ForgotPassword = () => {
         sm: '/images/pfbg_768.jpg',
         sm2x: '/images/pfbg_768@2x.jpg',
         xs: '/images/pfbg_576.jpg',
-        xs2x: '/images/pfbg_576@2x.jpg'
+        xs2x: '/images/pfbg_576@2x.jpg',
       }}
       textContent="Ibutsu is an open source test result aggregation. Collect and display your test results, view artifacts, and monitor tests."
       loginTitle="Recover your account"
@@ -95,16 +97,17 @@ export const ForgotPassword = () => {
       }
     >
       <Form>
-        {showAlert &&
-        <FormAlert>
-          <Alert variant={alertType} title={alertText} aria-live="polite" isInline/>
-        </FormAlert>
-        }
-        <FormGroup
-          label="Email address"
-          isRequired
-          fieldId="email"
-        >
+        {showAlert && (
+          <FormAlert>
+            <Alert
+              variant={alertType}
+              title={alertText}
+              aria-live="polite"
+              isInline
+            />
+          </FormAlert>
+        )}
+        <FormGroup label="Email address" isRequired fieldId="email">
           <TextInput
             isRequired
             type="email"
@@ -117,12 +120,16 @@ export const ForgotPassword = () => {
           />
           <FormHelperText>
             <HelperText>
-              <HelperTextItem>The e-mail address you signed up with</HelperTextItem>
+              <HelperTextItem>
+                The e-mail address you signed up with
+              </HelperTextItem>
             </HelperText>
           </FormHelperText>
         </FormGroup>
         <ActionGroup>
-          <Button variant="primary" isBlock onClick={onRecoverAccountClick}>Recover account</Button>
+          <Button variant="primary" isBlock onClick={onRecoverAccountClick}>
+            Recover account
+          </Button>
         </ActionGroup>
       </Form>
     </LoginPage>

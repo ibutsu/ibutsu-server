@@ -3,7 +3,7 @@ import reactPlugin from 'eslint-plugin-react';
 import unusedImports from 'eslint-plugin-unused-imports';
 import globals from 'globals';
 import babelParser from '@babel/eslint-parser';
-import {defineConfig, globalIgnores} from 'eslint/config';
+import { defineConfig, globalIgnores } from 'eslint/config';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import js from '@eslint/js';
 import pluginCypress from 'eslint-plugin-cypress/flat';
@@ -11,7 +11,10 @@ import eslintPluginJsxA11y from 'eslint-plugin-jsx-a11y';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
 export default defineConfig([
-  globalIgnores(['build/**/*', 'node_modules/'], 'Ignore build dir and node_modules'),
+  globalIgnores(
+    ['build/**/*', 'node_modules/'],
+    'Ignore build dir and node_modules',
+  ),
   pluginCypress.configs.recommended,
   reactHooksPlugin.configs['recommended-latest'],
   reactPlugin.configs.flat.recommended,
@@ -51,14 +54,14 @@ export default defineConfig([
           '@babel/plugin-transform-class-properties',
           '@babel/plugin-transform-private-methods',
           '@babel/plugin-syntax-jsx',
-          '@babel/plugin-syntax-flow'
+          '@babel/plugin-syntax-flow',
         ],
         babelOptions: {
           presets: [
             '@babel/preset-flow',
             '@babel/preset-env',
             '@babel/preset-react',
-          ]
+          ],
         },
       },
     },
@@ -78,9 +81,9 @@ export default defineConfig([
       'unused-imports/no-unused-vars': ['warn'],
     },
     settings: {
-      react:{
+      react: {
         version: 'detect',
-      }
+      },
     },
   },
   eslintPluginPrettierRecommended,

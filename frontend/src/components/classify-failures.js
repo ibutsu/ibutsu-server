@@ -12,10 +12,7 @@ import {
   Title,
   Badge,
 } from '@patternfly/react-core';
-import {
-  TableVariant,
-  expandable
-} from '@patternfly/react-table';
+import { TableVariant, expandable } from '@patternfly/react-table';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
@@ -28,7 +25,10 @@ import {
   toTitleCase,
   round,
 } from '../utilities';
-import { ClassificationDropdown, MultiClassificationDropdown } from './classification-dropdown';
+import {
+  ClassificationDropdown,
+  MultiClassificationDropdown,
+} from './classification-dropdown';
 import FilterTable from './filtertable';
 import MetaFilter from './metafilter';
 import ResultView from './result';
@@ -37,12 +37,12 @@ import { Link } from 'react-router-dom';
 const COLUMNS = [
   {
     title: 'Test',
-    cellFormatters: [expandable]
+    cellFormatters: [expandable],
   },
   'Result',
   'Exception Name',
   'Classification',
-  'Duration'
+  'Duration',
 ];
 
 const resultToClassificationRow = (result, index, filterFunc) => {
@@ -51,21 +51,35 @@ const resultToClassificationRow = (result, index, filterFunc) => {
   let exceptionBadge;
 
   if (filterFunc) {
-    exceptionBadge = buildBadge(`exception_name-${result.id}`, result.metadata.exception_name, false,
-      () => filterFunc('metadata.exception_name', result.metadata.exception_name));
-  }
-  else {
-    exceptionBadge = buildBadge(`exception_name-${result.id}`, result.metadata.exception_name, false);
+    exceptionBadge = buildBadge(
+      `exception_name-${result.id}`,
+      result.metadata.exception_name,
+      false,
+      () =>
+        filterFunc('metadata.exception_name', result.metadata.exception_name),
+    );
+  } else {
+    exceptionBadge = buildBadge(
+      `exception_name-${result.id}`,
+      result.metadata.exception_name,
+      false,
+    );
   }
 
   if (result.metadata && result.metadata.component) {
-    markers.push(<Badge key={`component-${result.id}`}>{result.metadata.component}</Badge>);
+    markers.push(
+      <Badge key={`component-${result.id}`}>{result.metadata.component}</Badge>,
+    );
   }
   if (result.metadata && result.metadata.markers) {
     for (const marker of result.metadata.markers) {
       // Don't add duplicate markers
-      if (markers.filter(m => m.key === marker.name).length === 0) {
-        markers.push(<Badge isRead key={`${marker.name}-${generateId(5)}`}>{marker.name}</Badge>);
+      if (markers.filter((m) => m.key === marker.name).length === 0) {
+        markers.push(
+          <Badge isRead key={`${marker.name}-${generateId(5)}`}>
+            {marker.name}
+          </Badge>,
+        );
       }
     }
   }
@@ -73,21 +87,36 @@ const resultToClassificationRow = (result, index, filterFunc) => {
   return [
     // parent row
     {
-      'isOpen': false,
-      'result': result,
-      'cells': [
-        {title: <React.Fragment><Link to={`../results/${result.id}#summary`} relative="Path">{result.test_id}</Link> {markers}</React.Fragment>},
-        {title: <span className={result.result}>{resultIcon} {toTitleCase(result.result)}</span>},
-        {title: <React.Fragment>{exceptionBadge}</React.Fragment>},
-        {title: <ClassificationDropdown testResult={result} />},
-        {title: round(result.duration) + 's'},
+      isOpen: false,
+      result: result,
+      cells: [
+        {
+          title: (
+            <React.Fragment>
+              <Link to={`../results/${result.id}#summary`} relative="Path">
+                {result.test_id}
+              </Link>{' '}
+              {markers}
+            </React.Fragment>
+          ),
+        },
+        {
+          title: (
+            <span className={result.result}>
+              {resultIcon} {toTitleCase(result.result)}
+            </span>
+          ),
+        },
+        { title: <React.Fragment>{exceptionBadge}</React.Fragment> },
+        { title: <ClassificationDropdown testResult={result} /> },
+        { title: round(result.duration) + 's' },
       ],
     },
     // child row (this is set in the onCollapse function for lazy-loading)
     {
-      'parent': 2*index,
-      'cells': [{title: <div/>}]
-    }
+      parent: 2 * index,
+      cells: [{ title: <div /> }],
+    },
   ];
 };
 
@@ -104,8 +133,8 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
   const [includeSkipped, setIncludeSkipped] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState({
     ...filters,
-    'result': {op: 'in', val: 'failed;error'},
-    'run_id': {op: 'eq', val: run_id}
+    result: { op: 'in', val: 'failed;error' },
+    run_id: { op: 'eq', val: run_id },
   });
 
   // Fetch and set filteredResults on filter and pagination updates
@@ -117,7 +146,7 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
         const response = await HttpClient.get([Settings.serverUrl, 'result'], {
           filter: toAPIFilter(appliedFilters),
           pageSize: pageSize,
-          page: page
+          page: page,
         });
         const data = await HttpClient.handleResponse(response);
         setFilteredResults(data.results);
@@ -137,7 +166,7 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
   const onCollapse = (_, rowIndex, isOpen) => {
     // handle row click opening the child row with ResultView
     if (isOpen) {
-      let {result} = rows[rowIndex];
+      let { result } = rows[rowIndex];
       let hideSummary = true;
       let hideTestObject = true;
       let defaultTab = 'test-history';
@@ -152,13 +181,13 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
         // set isOpen on the parent row items
         if (index === rowIndex) {
           newRow = { ...row, isOpen: isOpen };
-        } else if (index === (rowIndex + 1)) {
+        } else if (index === rowIndex + 1) {
           // set the ResultView on the child rows
           newRow = {
             ...row,
             cells: [
               {
-                title:
+                title: (
                   <ResultView
                     defaultTab={defaultTab}
                     hideTestHistory={false}
@@ -167,8 +196,9 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
                     testResult={rows[rowIndex].result}
                     skipHash={true}
                   />
-              }
-            ]
+                ),
+              },
+            ],
           };
         } else {
           newRow = { ...row };
@@ -178,7 +208,7 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
       setRows(updatedRows);
     } else {
       // handle updating isOpen on the clicked row (closing)
-      setRows(prevRows => {
+      setRows((prevRows) => {
         const updatedRows = [...prevRows];
         if (updatedRows[rowIndex]) {
           updatedRows[rowIndex] = { ...updatedRows[rowIndex], isOpen: isOpen };
@@ -190,22 +220,20 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
 
   const onTableRowSelect = (_, isSelected, rowId) => {
     // either set every row or single row selected state
-    let mutatedRows = rows.map(
-      (oneRow, index) => {
-        if ((index === rowId) || (rowId === -1)) { oneRow.selected = isSelected; }
-        return oneRow;
+    let mutatedRows = rows.map((oneRow, index) => {
+      if (index === rowId || rowId === -1) {
+        oneRow.selected = isSelected;
       }
-    );
+      return oneRow;
+    });
     setRows(mutatedRows);
 
     // filter to only pick parent rows
     let resultsToSelect = mutatedRows.filter(
-      (oneRow) => (oneRow.selected && oneRow.parent === undefined)
+      (oneRow) => oneRow.selected && oneRow.parent === undefined,
     );
     // map again to pull the result out of the row
-    resultsToSelect = resultsToSelect.map(
-      (oneRow) => oneRow.result
-    );
+    resultsToSelect = resultsToSelect.map((oneRow) => oneRow.result);
     setSelectedResults(resultsToSelect);
   };
 
@@ -213,36 +241,42 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
     setIncludeSkipped(checked);
     setAppliedFilters({
       ...appliedFilters,
-      'result': {
+      result: {
         ...appliedFilters.result,
-        'val': ('failed;error') + ((checked) ? ';skipped;xfailed' : '')
-      }
+        val: 'failed;error' + (checked ? ';skipped;xfailed' : ''),
+      },
     });
   };
 
   // METAFILTER FUNCTIONS
-  const updateFilters = useCallback((_filterId, name, operator, value) => {
-    let newFilters = { ...appliedFilters };
-    if ((value === null) || (value.length === 0)) {
-      delete newFilters[name];
-    }
-    else {
-      newFilters[name] = { 'op': operator, 'val': value };
-    }
+  const updateFilters = useCallback(
+    (_filterId, name, operator, value) => {
+      let newFilters = { ...appliedFilters };
+      if (value === null || value.length === 0) {
+        delete newFilters[name];
+      } else {
+        newFilters[name] = { op: operator, val: value };
+      }
 
-    setAppliedFilters(newFilters);
-    setPage(1);
-  }, [appliedFilters]);
+      setAppliedFilters(newFilters);
+      setPage(1);
+    },
+    [appliedFilters],
+  );
 
-  const setFilter = useCallback((filterId, field, value) => {
-    // maybe process values array to string format here instead of expecting caller to do it?
-    // TODO when value is an object (params field?) .includes blows up
-    let operator = (value.includes(';')) ? 'in' : 'eq';
-    updateFilters(filterId, field, operator, value);
-  }, [updateFilters]);
+  const setFilter = useCallback(
+    (filterId, field, value) => {
+      // maybe process values array to string format here instead of expecting caller to do it?
+      // TODO when value is an object (params field?) .includes blows up
+      let operator = value.includes(';') ? 'in' : 'eq';
+      updateFilters(filterId, field, operator, value);
+    },
+    [updateFilters],
+  );
 
   const removeFilter = (filterId, id) => {
-    if ((id !== 'result') && (id !== 'run_id')) {   // Don't allow removal of error/failure filter
+    if (id !== 'result' && id !== 'run_id') {
+      // Don't allow removal of error/failure filter
       updateFilters(filterId, id, null, null);
     }
   };
@@ -262,15 +296,15 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
   useEffect(() => {
     // set rows when filtered items update
     setRows(
-      filteredResults.flatMap(
-        (result, index) => resultToClassificationRow(result, index, setFilter)
-      )
+      filteredResults.flatMap((result, index) =>
+        resultToClassificationRow(result, index, setFilter),
+      ),
     );
   }, [filteredResults, setFilter]);
 
   return (
     // mt-lg == margin top large
-    <Card className='pf-u-mt-lg'>
+    <Card className="pf-u-mt-lg">
       <CardHeader>
         <Flex style={{ width: '100%' }}>
           <FlexItem grow={{ default: 'grow' }}>
@@ -280,7 +314,13 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
           </FlexItem>
           <FlexItem>
             <TextContent>
-              <Checkbox id="include-skips" label="Include skips, xfails" isChecked={includeSkipped} aria-label="include-skips-checkbox" onChange={(_, checked) => onSkipCheck(checked)} />
+              <Checkbox
+                id="include-skips"
+                label="Include skips, xfails"
+                isChecked={includeSkipped}
+                aria-label="include-skips-checkbox"
+                onChange={(_, checked) => onSkipCheck(checked)}
+              />
             </TextContent>
           </FlexItem>
           <FlexItem>
@@ -295,7 +335,7 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
           pagination={{
             pageSize: pageSize,
             page: page,
-            totalItems: totalItems
+            totalItems: totalItems,
           }}
           isEmpty={rows.length === 0}
           isError={isError}
@@ -314,7 +354,7 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
 
 ClassifyFailuresTable.propTypes = {
   filters: PropTypes.object,
-  run_id: PropTypes.string
+  run_id: PropTypes.string,
 };
 
 export default ClassifyFailuresTable;

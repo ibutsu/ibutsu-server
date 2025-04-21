@@ -18,7 +18,7 @@ import {
   TextInputGroup,
   TextInputGroupMain,
   TextInputGroupUtilities,
-  TextInput
+  TextInput,
 } from '@patternfly/react-core';
 
 import { TimesIcon } from '@patternfly/react-icons';
@@ -31,7 +31,7 @@ import {
   getOperationMode,
   getOperationsFromField,
   getSpinnerRow,
-  resultToRow
+  resultToRow,
 } from './utilities';
 import MultiValueInput from './components/multivalueinput';
 import FilterTable from './components/filtertable';
@@ -45,7 +45,7 @@ const ResultList = () => {
   const navigate = useNavigate();
 
   const context = useContext(IbutsuContext);
-  const {primaryObject} = context;
+  const { primaryObject } = context;
 
   const [rows, setRows] = useState([getSpinnerRow(5)]);
   const [runs, setRuns] = useState([]);
@@ -59,7 +59,8 @@ const ResultList = () => {
 
   const [fieldSelection, setFieldSelection] = useState();
   const [isFieldOpen, setIsFieldOpen] = useState(false);
-  const [filteredfieldOptions, setFilteredfieldOptions] = useState(RESULT_FIELDS);
+  const [filteredfieldOptions, setFilteredfieldOptions] =
+    useState(RESULT_FIELDS);
   const [fieldInputValue, setFieldInputValue] = useState('');
   const [fieldFilterValue, setFieldFilterValue] = useState('');
 
@@ -81,7 +82,6 @@ const ResultList = () => {
   const [isError, setIsError] = useState(false);
 
   const [inValues, setInValues] = useState([]);
-
 
   const onFieldSelect = (_, selection) => {
     if (selection === `Create "${fieldFilterValue}"`) {
@@ -124,7 +124,7 @@ const ResultList = () => {
       setRunFilterValue('');
       setIsRunOpen(false);
     } else if (runSelection.includes(selection)) {
-      setRunSelection([...runSelection].filter(item => item !== selection));
+      setRunSelection([...runSelection].filter((item) => item !== selection));
     } else {
       setRunSelection([...runSelection, selection]);
     }
@@ -157,7 +157,9 @@ const ResultList = () => {
       setResultSelection(selection);
       setIsResultOpen(false);
     } else if (resultSelection.includes(selection)) {
-      setResultSelection([...resultSelection].filter(item => item !== selection));
+      setResultSelection(
+        [...resultSelection].filter((item) => item !== selection),
+      );
     } else {
       setResultSelection([...resultSelection, selection]);
     }
@@ -173,11 +175,15 @@ const ResultList = () => {
     const operationMode = getOperationMode(operationSelection);
     let value = textFilter.trim();
     if (filterMode === 'result' && operationMode !== 'bool') {
-      value = (operationMode === 'multi') ? resultSelection?.join(';') : resultSelection;
+      value =
+        operationMode === 'multi'
+          ? resultSelection?.join(';')
+          : resultSelection;
     } else if (filterMode === 'run' && operationMode !== 'bool') {
-      value = (operationMode === 'multi') ? runSelection?.join(';') : runSelection;
+      value =
+        operationMode === 'multi' ? runSelection?.join(';') : runSelection;
     } else if (operationMode === 'multi') {
-      value = inValues.map(item => item.trim()).join(';');
+      value = inValues.map((item) => item.trim()).join(';');
     } else if (operationMode === 'bool') {
       value = boolSelection;
     }
@@ -196,32 +202,43 @@ const ResultList = () => {
   };
 
   const applyReport = () => {
-    navigate('/project/' + primaryObject.id + '/reports?' + buildParams(filters).join('&'));
+    navigate(
+      '/project/' +
+        primaryObject.id +
+        '/reports?' +
+        buildParams(filters).join('&'),
+    );
   };
 
-  const updateFilters = useCallback((name, operator, value, callback) => {
-    let newFilters = { ...filters };
-    if (!value) {
-      delete newFilters[name];
-    } else {
-      newFilters[name] = { 'op': operator, 'val': value };
-    }
-    setFilters(newFilters);
-    setPage(1);
-    callback();
-  }, [filters]);
+  const updateFilters = useCallback(
+    (name, operator, value, callback) => {
+      let newFilters = { ...filters };
+      if (!value) {
+        delete newFilters[name];
+      } else {
+        newFilters[name] = { op: operator, val: value };
+      }
+      setFilters(newFilters);
+      setPage(1);
+      callback();
+    },
+    [filters],
+  );
 
-  const setFilter = useCallback((field, value) => {
-    updateFilters(field, 'eq', value, () => {
-      setFieldSelection();
-      setOperationSelection('eq');
-      setTextFilter('');
-      setResultSelection([]);
-      setRunSelection([]);
-      setBoolSelection(false);
-      setInValues([]);
-    });
-  }, [updateFilters]);
+  const setFilter = useCallback(
+    (field, value) => {
+      updateFilters(field, 'eq', value, () => {
+        setFieldSelection();
+        setOperationSelection('eq');
+        setTextFilter('');
+        setResultSelection([]);
+        setRunSelection([]);
+        setBoolSelection(false);
+        setInValues([]);
+      });
+    },
+    [updateFilters],
+  );
 
   const clearFilters = () => {
     setFilters({});
@@ -243,22 +260,30 @@ const ResultList = () => {
       let apiParams = { filter: [] };
       let newFilters = { ...filters };
       if (primaryObject) {
-        newFilters['project_id'] = { 'val': primaryObject.id, 'op': 'eq' };
-      } else if (Object.prototype.hasOwnProperty.call(newFilters, 'project_id')) {
+        newFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
+      } else if (
+        Object.prototype.hasOwnProperty.call(newFilters, 'project_id')
+      ) {
         delete newFilters['project_id'];
       }
       apiParams['estimate'] = true;
       apiParams['pageSize'] = pageSize;
       apiParams['page'] = page;
       for (let key in newFilters) {
-        if (Object.prototype.hasOwnProperty.call(newFilters, key) && !!newFilters[key]) {
+        if (
+          Object.prototype.hasOwnProperty.call(newFilters, key) &&
+          !!newFilters[key]
+        ) {
           const val = newFilters[key]['val'];
           const op = OPERATIONS[newFilters[key]['op']];
           apiParams.filter.push(key + op + val);
         }
       }
       try {
-        const response = await HttpClient.get([Settings.serverUrl, 'result'], apiParams);
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'result'],
+          apiParams,
+        );
         const data = await HttpClient.handleResponse(response);
         setRows(data.results.map((result) => resultToRow(result, setFilter)));
         setPage(data.pagination.page);
@@ -278,7 +303,10 @@ const ResultList = () => {
   useEffect(() => {
     const fetchRuns = async () => {
       try {
-        const response = await HttpClient.get([Settings.serverUrl, 'run'], { pageSize: 500, estimate: true });
+        const response = await HttpClient.get([Settings.serverUrl, 'run'], {
+          pageSize: 500,
+          estimate: true,
+        });
         const data = await HttpClient.handleResponse(response);
         const runIds = data.runs.map((run) => run.id);
         setRuns(runIds);
@@ -294,10 +322,13 @@ const ResultList = () => {
   useEffect(() => {
     let newSelectOptionsField = RESULT_FIELDS;
     if (fieldInputValue) {
-      newSelectOptionsField = RESULT_FIELDS.filter(menuItem =>
-        menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase())
+      newSelectOptionsField = RESULT_FIELDS.filter((menuItem) =>
+        menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase()),
       );
-      if (newSelectOptionsField.length !== 1 && !newSelectOptionsField.includes(fieldFilterValue)) {
+      if (
+        newSelectOptionsField.length !== 1 &&
+        !newSelectOptionsField.includes(fieldFilterValue)
+      ) {
         newSelectOptionsField.push(`Create "${fieldFilterValue}"`);
       }
     }
@@ -307,20 +338,22 @@ const ResultList = () => {
   useEffect(() => {
     let newSelectOptionsRun = [...runs];
     if (runInputValue) {
-      newSelectOptionsRun = runs.filter(menuItem =>
-        menuItem.toLowerCase().includes(runFilterValue.toLowerCase())
+      newSelectOptionsRun = runs.filter((menuItem) =>
+        menuItem.toLowerCase().includes(runFilterValue.toLowerCase()),
       );
     }
     setFilteredRuns(newSelectOptionsRun);
   }, [runFilterValue, runInputValue, isRunOpen, runs]);
 
-  useEffect(() => { document.title = 'Test Results | Ibutsu'; }, []);
+  useEffect(() => {
+    document.title = 'Test Results | Ibutsu';
+  }, []);
 
   const filterMode = getFilterMode(fieldSelection);
   const operationMode = getOperationMode(operationSelection);
   const operations = getOperationsFromField(fieldSelection);
 
-  const fieldToggle = toggleRef => (
+  const fieldToggle = (toggleRef) => (
     <MenuToggle
       variant="typeahead"
       aria-label="Typeahead creatable menu toggle"
@@ -345,7 +378,9 @@ const ResultList = () => {
           {!!fieldInputValue && (
             <Button
               variant="plain"
-              onClick={() => {onFieldClear();}}
+              onClick={() => {
+                onFieldClear();
+              }}
               aria-label="Clear input value"
             >
               <TimesIcon aria-hidden />
@@ -355,7 +390,7 @@ const ResultList = () => {
       </TextInputGroup>
     </MenuToggle>
   );
-  const operationToggle = toggleRef => (
+  const operationToggle = (toggleRef) => (
     <MenuToggle
       onClick={() => setIsOperationOpen(!isOperationOpen)}
       isExpanded={isOperationOpen}
@@ -365,13 +400,13 @@ const ResultList = () => {
       {operationSelection}
     </MenuToggle>
   );
-  const boolToggle = toggleRef => (
+  const boolToggle = (toggleRef) => (
     <MenuToggle
       onClick={() => setIsBoolOpen(!isBoolOpen)}
       isExpanded={isBoolOpen}
       isFullWidth
       ref={toggleRef}
-      style={{maxHeight: '36px'}}
+      style={{ maxHeight: '36px' }}
     >
       <TextInputGroup isPlain>
         <TextInputGroupMain
@@ -384,9 +419,13 @@ const ResultList = () => {
         />
         <TextInputGroupUtilities>
           {!!boolSelection && (
-            <Button variant="plain" onClick={() => {
-              onBoolClear();
-            }} aria-label="Clear input value">
+            <Button
+              variant="plain"
+              onClick={() => {
+                onBoolClear();
+              }}
+              aria-label="Clear input value"
+            >
               <TimesIcon aria-hidden />
             </Button>
           )}
@@ -394,7 +433,7 @@ const ResultList = () => {
       </TextInputGroup>
     </MenuToggle>
   );
-  const resultToggle = toggleRef => (
+  const resultToggle = (toggleRef) => (
     <MenuToggle
       onClick={() => setIsResultOpen(!isResultOpen)}
       isExpanded={isResultOpen}
@@ -405,7 +444,7 @@ const ResultList = () => {
       {resultSelection.length !== 0 ? resultSelection : 'Select a result'}
     </MenuToggle>
   );
-  const resultMultiToggle = toggleRef => (
+  const resultMultiToggle = (toggleRef) => (
     <MenuToggle
       variant="typeahead"
       onClick={() => setIsResultOpen(!isResultOpen)}
@@ -424,7 +463,7 @@ const ResultList = () => {
             {resultSelection?.map((selection, index) => (
               <Chip
                 key={index}
-                onClick={ev => {
+                onClick={(ev) => {
                   ev.stopPropagation();
                   onResultSelect(ev, selection);
                 }}
@@ -438,7 +477,9 @@ const ResultList = () => {
           {!!resultSelection && (
             <Button
               variant="plain"
-              onClick={() => {onResultClear();}}
+              onClick={() => {
+                onResultClear();
+              }}
               aria-label="Clear input value"
             >
               <TimesIcon aria-hidden />
@@ -448,7 +489,7 @@ const ResultList = () => {
       </TextInputGroup>
     </MenuToggle>
   );
-  const runToggle = toggleRef => (
+  const runToggle = (toggleRef) => (
     <MenuToggle
       variant="typeahead"
       onClick={() => setIsRunOpen(!isRunOpen)}
@@ -468,9 +509,13 @@ const ResultList = () => {
         />
         <TextInputGroupUtilities>
           {!!runInputValue && (
-            <Button variant="plain" onClick={() => {
-              onRunClear();
-            }} aria-label="Clear input value">
+            <Button
+              variant="plain"
+              onClick={() => {
+                onRunClear();
+              }}
+              aria-label="Clear input value"
+            >
               <TimesIcon aria-hidden />
             </Button>
           )}
@@ -478,7 +523,7 @@ const ResultList = () => {
       </TextInputGroup>
     </MenuToggle>
   );
-  const runMultiToggle = toggleRef => (
+  const runMultiToggle = (toggleRef) => (
     <MenuToggle
       variant="typeahead"
       onClick={() => setIsRunOpen(!isRunOpen)}
@@ -500,7 +545,7 @@ const ResultList = () => {
             {runSelection?.map((selection, index) => (
               <Chip
                 key={index}
-                onClick={ev => {
+                onClick={(ev) => {
                   ev.stopPropagation();
                   onRunSelect(ev, selection);
                 }}
@@ -512,9 +557,13 @@ const ResultList = () => {
         </TextInputGroupMain>
         <TextInputGroupUtilities>
           {runSelection?.length > 0 && (
-            <Button variant="plain" onClick={() => {
-              onRunClear();
-            }} aria-label="Clear input value">
+            <Button
+              variant="plain"
+              onClick={() => {
+                onRunClear();
+              }}
+              aria-label="Clear input value"
+            >
               <TimesIcon aria-hidden />
             </Button>
           )}
@@ -532,7 +581,7 @@ const ResultList = () => {
       onOpenChange={() => setIsFieldOpen(false)}
       toggle={fieldToggle}
     >
-      <SelectList  id="select-typeahead-listbox">
+      <SelectList id="select-typeahead-listbox">
         {filteredfieldOptions.map((option, index) => (
           <SelectOption key={index} value={option}>
             {option}
@@ -558,31 +607,41 @@ const ResultList = () => {
       </SelectList>
     </Select>,
     <React.Fragment key="value">
-      {(operationMode === 'bool') &&
-      <Select
-        id="single-select"
-        isOpen={isBoolOpen}
-        selected={boolSelection}
-        onSelect={onBoolSelect}
-        onOpenChange={() => setIsBoolOpen(false)}
-        toggle={boolToggle}
-      >
-        <SelectList>
-          {['True', 'False'].map((option, index) => (
-            <SelectOption key={index} value={option}>
-              {option}
-            </SelectOption>
-          ))}
-        </SelectList>
-      </Select>
-      }
-      {(filterMode === 'text' && operationMode === 'single') &&
-        <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter} onChange={(_, newValue) => setTextFilter(newValue)} style={{height: 'inherit'}}/>
-      }
-      {(filterMode === 'text' && operationMode === 'multi') &&
-        <MultiValueInput onValuesChange={(values) => setInValues(values)} style={{height: 'inherit'}}/>
-      }
-      {(filterMode === 'run' && operationMode !== 'bool') &&
+      {operationMode === 'bool' && (
+        <Select
+          id="single-select"
+          isOpen={isBoolOpen}
+          selected={boolSelection}
+          onSelect={onBoolSelect}
+          onOpenChange={() => setIsBoolOpen(false)}
+          toggle={boolToggle}
+        >
+          <SelectList>
+            {['True', 'False'].map((option, index) => (
+              <SelectOption key={index} value={option}>
+                {option}
+              </SelectOption>
+            ))}
+          </SelectList>
+        </Select>
+      )}
+      {filterMode === 'text' && operationMode === 'single' && (
+        <TextInput
+          type="text"
+          id="textSelection"
+          placeholder="Type in value"
+          value={textFilter}
+          onChange={(_, newValue) => setTextFilter(newValue)}
+          style={{ height: 'inherit' }}
+        />
+      )}
+      {filterMode === 'text' && operationMode === 'multi' && (
+        <MultiValueInput
+          onValuesChange={(values) => setInValues(values)}
+          style={{ height: 'inherit' }}
+        />
+      )}
+      {filterMode === 'run' && operationMode !== 'bool' && (
         <Select
           id="typeahead-select"
           isOpen={isRunOpen}
@@ -604,8 +663,8 @@ const ResultList = () => {
             ))}
           </SelectList>
         </Select>
-      }
-      {(filterMode === 'result' && operationMode !== 'bool') &&
+      )}
+      {filterMode === 'result' && operationMode !== 'bool' && (
         <Select
           id="single-select"
           isOpen={isResultOpen}
@@ -615,23 +674,26 @@ const ResultList = () => {
           toggle={operationMode === 'multi' ? resultMultiToggle : resultToggle}
         >
           <SelectList>
-            {['passed', 'xpassed', 'failed', 'xfailed', 'skipped', 'error'].map((option, index) => (
-              <SelectOption key={index} value={option}>
-                {option}
-              </SelectOption>
-            ))}
+            {['passed', 'xpassed', 'failed', 'xfailed', 'skipped', 'error'].map(
+              (option, index) => (
+                <SelectOption key={index} value={option}>
+                  {option}
+                </SelectOption>
+              ),
+            )}
           </SelectList>
-
         </Select>
-      }
-    </React.Fragment>
+      )}
+    </React.Fragment>,
   ];
 
   return (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>
         <TextContent>
-          <Text className="title" component="h1">Test results</Text>
+          <Text className="title" component="h1">
+            Test results
+          </Text>
         </TextContent>
       </PageSection>
       <PageSection className="pf-u-pb-0">
@@ -645,12 +707,12 @@ const ResultList = () => {
               pagination={{
                 pageSize: pageSize,
                 page: page,
-                totalItems: totalItems
+                totalItems: totalItems,
               }}
               isEmpty={rows.length === 0}
               isError={isError}
               onApplyFilter={applyFilter}
-              onRemoveFilter={(id) => updateFilters(id, null, null, () => {}) }
+              onRemoveFilter={(id) => updateFilters(id, null, null, () => {})}
               onClearFilters={clearFilters}
               onApplyReport={applyReport}
               onSetPage={(_, value) => setPage(value)}
@@ -660,8 +722,9 @@ const ResultList = () => {
           </CardBody>
           <CardFooter>
             <Text className="disclaimer" component="h4">
-              * Note: for performance reasons, the total number of items is an approximation.
-              Use the API with &lsquo;estimate=false&rsquo; if you need an accurate count.
+              * Note: for performance reasons, the total number of items is an
+              approximation. Use the API with &lsquo;estimate=false&rsquo; if
+              you need an accurate count.
             </Text>
           </CardFooter>
         </Card>

@@ -22,7 +22,7 @@ import {
   TextInputGroupMain,
   TextInputGroupUtilities,
   Title,
-  ValidatedOptions
+  ValidatedOptions,
 } from '@patternfly/react-core';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
@@ -31,7 +31,6 @@ import { TimesIcon } from '@patternfly/react-icons';
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import { dashboardToOption } from '../../utilities.js';
-
 
 const userToOption = (user) => {
   if (!user) {
@@ -44,14 +43,15 @@ const userToOption = (user) => {
       if (value.user) {
         return user.id === value.user.id;
       }
-      return user.name.toLowerCase().includes(value.toLowerCase()) ||
-        user.email.includes(value.toLowerCase());
-    }
+      return (
+        user.name.toLowerCase().includes(value.toLowerCase()) ||
+        user.email.includes(value.toLowerCase())
+      );
+    },
   };
 };
 
 const ProjectEdit = () => {
-
   const params = useParams();
   const navigate = useNavigate();
 
@@ -62,7 +62,6 @@ const ProjectEdit = () => {
   const [titleValid, setTitleValid] = useState(false);
   const [name, setName] = useState('');
   const [nameValid, setNameValid] = useState(false);
-
 
   // owner selection state
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -95,12 +94,19 @@ const ProjectEdit = () => {
 
     let request = null;
     if (id === 'new') {
-      request = HttpClient.post([Settings.serverUrl, 'admin', 'project'], project);
+      request = HttpClient.post(
+        [Settings.serverUrl, 'admin', 'project'],
+        project,
+      );
+    } else {
+      request = HttpClient.put(
+        [Settings.serverUrl, 'admin', 'project', id],
+        {},
+        project,
+      );
     }
-    else {
-      request = HttpClient.put([Settings.serverUrl, 'admin', 'project', id], {}, project);
-    }
-    request.then(response => HttpClient.handleResponse(response))
+    request
+      .then((response) => HttpClient.handleResponse(response))
       .then(() => navigate(-1))
       .catch((error) => console.error(error));
   };
@@ -144,12 +150,12 @@ const ProjectEdit = () => {
   // fetch the admin users once
   useEffect(() => {
     HttpClient.get([Settings.serverUrl, 'admin', 'user'])
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
         setUsers(data.users);
         setFilteredUsers(data.users);
       })
-      .catch(error => console.error(error));
+      .catch((error) => console.error(error));
   }, []);
 
   // fetch the project if needed
@@ -159,8 +165,8 @@ const ProjectEdit = () => {
       setName('new-project');
     } else if (id) {
       HttpClient.get([Settings.serverUrl, 'admin', 'project', id])
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
+        .then((response) => HttpClient.handleResponse(response))
+        .then((data) => {
           setTitle(data.title);
           setCrumbTitle(data.title);
           setName(data.name);
@@ -169,7 +175,7 @@ const ProjectEdit = () => {
           setSelectedDashboard(data.defaultDashboard);
           setInputValueDashboard(data.defaultDashboard?.title);
         })
-        .catch(error => {
+        .catch((error) => {
           console.error(error);
           navigate('/admin/projects');
         });
@@ -190,14 +196,14 @@ const ProjectEdit = () => {
   useEffect(() => {
     if (id && id !== 'new') {
       HttpClient.get([Settings.serverUrl, 'dashboard'], {
-        'project_id': id,
+        project_id: id,
       })
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
+        .then((response) => HttpClient.handleResponse(response))
+        .then((data) => {
           setDashboards(data['dashboards']);
           setFilteredDashboards(data['dashboards']);
         })
-        .catch(error => console.error(error));
+        .catch((error) => console.error(error));
     }
   }, [id]);
 
@@ -205,15 +211,19 @@ const ProjectEdit = () => {
   useEffect(() => {
     let newSelectOptionsDashboard = [...dashboards];
     if (inputValueDashboard) {
-      newSelectOptionsDashboard = dashboards.filter(menuItem =>
-        String(menuItem.title).toLowerCase().includes(filterValueDashboard.toLowerCase())
+      newSelectOptionsDashboard = dashboards.filter((menuItem) =>
+        String(menuItem.title)
+          .toLowerCase()
+          .includes(filterValueDashboard.toLowerCase()),
       );
       if (newSelectOptionsDashboard.length === 0) {
-        newSelectOptionsDashboard = [{
-          isDisabled: true,
-          value: {},
-          title: `No results found for "${filterValueDashboard}"`,
-        }];
+        newSelectOptionsDashboard = [
+          {
+            isDisabled: true,
+            value: {},
+            title: `No results found for "${filterValueDashboard}"`,
+          },
+        ];
       }
     }
     setFilteredDashboards(newSelectOptionsDashboard);
@@ -223,15 +233,19 @@ const ProjectEdit = () => {
   useEffect(() => {
     let newSelectOptionsUser = [...users];
     if (inputValueOwner) {
-      newSelectOptionsUser = users.filter(menuItem =>
-        String(menuItem.name).toLowerCase().includes(filterValueOwner.toLowerCase())
+      newSelectOptionsUser = users.filter((menuItem) =>
+        String(menuItem.name)
+          .toLowerCase()
+          .includes(filterValueOwner.toLowerCase()),
       );
       if (newSelectOptionsUser.length === 0) {
-        newSelectOptionsUser = [{
-          isDisabled: true,
-          value: {},
-          name: `No results found for "${filterValueOwner}"`,
-        }];
+        newSelectOptionsUser = [
+          {
+            isDisabled: true,
+            value: {},
+            name: `No results found for "${filterValueOwner}"`,
+          },
+        ];
       }
     }
     setFilteredUsers(newSelectOptionsUser);
@@ -242,14 +256,18 @@ const ProjectEdit = () => {
       innerRef={toggleRef}
       variant="typeahead"
       aria-label="Typeahead menu toggle"
-      onClick={() => {setIsOwnerOpen(!isOwnerOpen);}}
+      onClick={() => {
+        setIsOwnerOpen(!isOwnerOpen);
+      }}
       isExpanded={isOwnerOpen}
       isFullWidth
     >
       <TextInputGroup isPlain>
         <TextInputGroupMain
           value={inputValueOwner}
-          onClick={() => {setIsOwnerOpen(!isOwnerOpen);}}
+          onClick={() => {
+            setIsOwnerOpen(!isOwnerOpen);
+          }}
           onChange={onOwnerInputChange}
           id="typeahead-select-input"
           autoComplete="off"
@@ -259,7 +277,7 @@ const ProjectEdit = () => {
           aria-controls="select-typeahead-listbox"
         />
         <TextInputGroupUtilities>
-          {(!!inputValueOwner) && (
+          {!!inputValueOwner && (
             <Button
               variant="plain"
               onClick={onOwnerClear}
@@ -278,15 +296,19 @@ const ProjectEdit = () => {
       innerRef={toggleRef}
       variant="typeahead"
       aria-label="Typeahead menu toggle"
-      onClick={() => {setIsDashboardOpen(!isDashboardOpen);}}
+      onClick={() => {
+        setIsDashboardOpen(!isDashboardOpen);
+      }}
       isExpanded={isDashboardOpen}
       isFullWidth
-      isDisabled={filteredDashboards.length === 0 ? true : false }
+      isDisabled={filteredDashboards.length === 0 ? true : false}
     >
       <TextInputGroup isPlain>
         <TextInputGroupMain
           value={inputValueDashboard}
-          onClick={() => {setIsDashboardOpen(!isDashboardOpen);}}
+          onClick={() => {
+            setIsDashboardOpen(!isDashboardOpen);
+          }}
           onChange={onDashboardInputChange}
           id="typeahead-select-input"
           autoComplete="off"
@@ -296,7 +318,7 @@ const ProjectEdit = () => {
           aria-controls="select-typeahead-listbox"
         />
         <TextInputGroupUtilities>
-          {(!!inputValueDashboard) && (
+          {!!inputValueDashboard && (
             <Button
               variant="plain"
               onClick={onDashboardClear}
@@ -313,7 +335,7 @@ const ProjectEdit = () => {
   return (
     <React.Fragment>
       <PageSection variant={PageSectionVariants.light}>
-        <Title headingLevel="h1" size='2xl' className="pf-v5-c-title">
+        <Title headingLevel="h1" size="2xl" className="pf-v5-c-title">
           Projects / {crumbTitle}
         </Title>
       </PageSection>
@@ -331,7 +353,11 @@ const ProjectEdit = () => {
                   aria-describedby="The project display name"
                   value={title}
                   onChange={(_, value) => setTitle(value)}
-                  validated={titleValid ? ValidatedOptions.default : ValidatedOptions.error}
+                  validated={
+                    titleValid
+                      ? ValidatedOptions.default
+                      : ValidatedOptions.error
+                  }
                 />
                 <FormHelperText>
                   <HelperText>
@@ -348,7 +374,11 @@ const ProjectEdit = () => {
                   aria-describedby="The project machine name"
                   value={name}
                   onChange={(_, value) => setName(value)}
-                  validated={nameValid ? ValidatedOptions.default : ValidatedOptions.error}
+                  validated={
+                    nameValid
+                      ? ValidatedOptions.default
+                      : ValidatedOptions.error
+                  }
                 />
                 <FormHelperText>
                   <HelperText>
@@ -384,7 +414,9 @@ const ProjectEdit = () => {
                 </Select>
                 <FormHelperText>
                   <HelperText>
-                    <HelperTextItem>The user who owns the project</HelperTextItem>
+                    <HelperTextItem>
+                      The user who owns the project
+                    </HelperTextItem>
                   </HelperText>
                 </FormHelperText>
               </FormGroup>
@@ -416,7 +448,9 @@ const ProjectEdit = () => {
                 </Select>
                 <FormHelperText>
                   <HelperText>
-                    <HelperTextItem>The default dashboard for the project</HelperTextItem>
+                    <HelperTextItem>
+                      The default dashboard for the project
+                    </HelperTextItem>
                   </HelperText>
                 </FormHelperText>
               </FormGroup>
@@ -432,7 +466,9 @@ const ProjectEdit = () => {
                 <Button
                   variant="secondary"
                   ouiaId="admin-project-edit-cancel"
-                  component={(props) => <Link {...props} to="/admin/projects" />}
+                  component={(props) => (
+                    <Link {...props} to="/admin/projects" />
+                  )}
                 >
                   Cancel
                 </Button>

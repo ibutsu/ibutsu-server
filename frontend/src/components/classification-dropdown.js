@@ -5,7 +5,7 @@ import {
   Dropdown,
   DropdownItem,
   DropdownList,
-  MenuToggle
+  MenuToggle,
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
@@ -16,23 +16,30 @@ const ClassificationDropdown = ({ testResult: initialTestResult }) => {
   const [testResult, setTestResult] = useState(initialTestResult);
   const [classificationOpen, setClassificationOpen] = useState(false);
 
-  const onClassificationSelect = useCallback(async (_, selection) => {
-    const updatedResult = {
-      ...testResult,
-      'metadata': {
-        ...testResult.metadata,
-        'classification': selection
+  const onClassificationSelect = useCallback(
+    async (_, selection) => {
+      const updatedResult = {
+        ...testResult,
+        metadata: {
+          ...testResult.metadata,
+          classification: selection,
+        },
+      };
+      setTestResult(updatedResult);
+      setClassificationOpen(!classificationOpen);
+      try {
+        await HttpClient.put(
+          [Settings.serverUrl, 'result', testResult['id']],
+          {},
+          updatedResult,
+        );
+        console.log('put classification');
+      } catch (error) {
+        console.error(error);
       }
-    };
-    setTestResult(updatedResult);
-    setClassificationOpen(!classificationOpen);
-    try {
-      await HttpClient.put([Settings.serverUrl, 'result', testResult['id']], {}, updatedResult);
-      console.log('put classification');
-    } catch (error) {
-      console.error(error);
-    }
-  }, [testResult, classificationOpen]);
+    },
+    [testResult, classificationOpen],
+  );
 
   useEffect(() => {
     setTestResult(initialTestResult);
@@ -44,7 +51,7 @@ const ClassificationDropdown = ({ testResult: initialTestResult }) => {
       isOpen={classificationOpen}
       onSelect={onClassificationSelect}
       onOpenChange={() => setClassificationOpen(false)}
-      toggle={toggleRef => (
+      toggle={(toggleRef) => (
         <MenuToggle
           ref={toggleRef}
           onClick={() => setClassificationOpen(!classificationOpen)}
@@ -72,28 +79,37 @@ ClassificationDropdown.propTypes = {
 const MultiClassificationDropdown = ({ selectedResults }) => {
   const [classificationOpen, setClassificationOpen] = useState(false);
 
-  const onClassificationSelect = useCallback(async (_, selection) => {
-    if (selectedResults.length === 0) {
-      setClassificationOpen(false);
-    } else {
-      try {
-        await Promise.all(selectedResults.map(result => {
-          result['metadata']['classification'] = selection;
-          return HttpClient.put([Settings.serverUrl, 'result', result['id']], {}, result);
-        }));
-      } catch (error) {
-        console.error('Error setting classification: ' + error);
+  const onClassificationSelect = useCallback(
+    async (_, selection) => {
+      if (selectedResults.length === 0) {
+        setClassificationOpen(false);
+      } else {
+        try {
+          await Promise.all(
+            selectedResults.map((result) => {
+              result['metadata']['classification'] = selection;
+              return HttpClient.put(
+                [Settings.serverUrl, 'result', result['id']],
+                {},
+                result,
+              );
+            }),
+          );
+        } catch (error) {
+          console.error('Error setting classification: ' + error);
+        }
+        setClassificationOpen(false);
       }
-      setClassificationOpen(false);
-    }
-  }, [selectedResults]);
+    },
+    [selectedResults],
+  );
 
   return (
     <Dropdown
       isOpen={classificationOpen}
       onSelect={onClassificationSelect}
       onOpenChange={() => setClassificationOpen(false)}
-      toggle={toggleRef => (
+      toggle={(toggleRef) => (
         <MenuToggle
           ref={toggleRef}
           isDisabled={selectedResults.length === 0}

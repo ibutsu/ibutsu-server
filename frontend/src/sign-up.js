@@ -14,7 +14,7 @@ import {
   InputGroupItem,
   LoginMainFooterBandItem,
   LoginPage,
-  TextInput
+  TextInput,
 } from '@patternfly/react-core';
 import { EyeIcon, EyeSlashIcon } from '@patternfly/react-icons';
 import { NavLink } from 'react-router-dom';
@@ -22,29 +22,30 @@ import { NavLink } from 'react-router-dom';
 import { AuthService } from './services/auth';
 
 // Lazy import the password strength indicator, it uses a very big library
-const PasswordStrengthBar = React.lazy(() => import ('react-password-strength-bar'));
-
+const PasswordStrengthBar = React.lazy(
+  () => import('react-password-strength-bar'),
+);
 
 // This catches any potential errors if the password strength indicator fails to load
 class PasswordErrorBoundary extends React.Component {
   static propTypes = {
-    children: PropTypes.node
+    children: PropTypes.node,
   };
 
-  constructor (props) {
+  constructor(props) {
     super(props);
     this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError () {
+  static getDerivedStateFromError() {
     return { hasError: true };
   }
 
-  componentDidCatch () {
+  componentDidCatch() {
     console.error('Failed to load password strength indicator');
   }
 
-  render () {
+  render() {
     if (this.state.hasError) {
       // Hide the components, we don't need to worry about it
       return '';
@@ -53,12 +54,10 @@ class PasswordErrorBoundary extends React.Component {
   }
 }
 
-
 export class SignUp extends React.Component {
-  static propTypes = {
-  };
+  static propTypes = {};
 
-  constructor (props) {
+  constructor(props) {
     super(props);
     this.state = {
       alertText: '',
@@ -72,91 +71,95 @@ export class SignUp extends React.Component {
       confirmPasswordValue: '',
       confirmPasswordHelpText: '',
       confirmPasswordValidation: 'default',
-      isConfirmPasswordVisible: false
+      isConfirmPasswordVisible: false,
     };
   }
 
   validatePasswordMatch = () => {
-    if (this.state.confirmPasswordValue === '' && this.state.passwordValue === '') {
+    if (
+      this.state.confirmPasswordValue === '' &&
+      this.state.passwordValue === ''
+    ) {
       this.setState({
         confirmPasswordHelpText: '',
-        confirmPasswordValidation: 'default'
+        confirmPasswordValidation: 'default',
       });
-    }
-    else if (this.state.passwordValue === this.state.confirmPasswordValue) {
+    } else if (this.state.passwordValue === this.state.confirmPasswordValue) {
       this.setState({
         confirmPasswordHelpText: 'Passwords match!',
-        confirmPasswordValidation: 'success'
+        confirmPasswordValidation: 'success',
       });
-    }
-    else if (this.state.passwordValue !== this.state.confirmPasswordValue) {
+    } else if (this.state.passwordValue !== this.state.confirmPasswordValue) {
       this.setState({
-        confirmPasswordValidation: 'error'
+        confirmPasswordValidation: 'error',
       });
     }
   };
 
-  onEmailChange = emailValue => {
+  onEmailChange = (emailValue) => {
     this.setState({ emailValue });
   };
 
-  onPasswordChange = passwordValue => {
+  onPasswordChange = (passwordValue) => {
     this.setState({ passwordValue }, this.validatePasswordMatch);
   };
 
-  onConfirmPasswordChange = confirmPasswordValue => {
+  onConfirmPasswordChange = (confirmPasswordValue) => {
     this.setState({ confirmPasswordValue }, this.validatePasswordMatch);
   };
 
   onPasswordVisibleClick = () => {
-    this.setState({isPasswordVisible: !this.state.isPasswordVisible});
+    this.setState({ isPasswordVisible: !this.state.isPasswordVisible });
   };
 
   onConfirmPasswordVisibleClick = () => {
-    this.setState({isConfirmPasswordVisible: !this.state.isConfirmPasswordVisible});
+    this.setState({
+      isConfirmPasswordVisible: !this.state.isConfirmPasswordVisible,
+    });
   };
 
-  onRegisterButtonClick = event => {
+  onRegisterButtonClick = (event) => {
     event.preventDefault();
     const isValidEmail = !!this.state.emailValue;
-    const isValidPassword = (!!this.state.passwordValue && this.state.passwordValue === this.state.confirmPasswordValue);
-    this.setState({isValidEmail, isValidPassword});
+    const isValidPassword =
+      !!this.state.passwordValue &&
+      this.state.passwordValue === this.state.confirmPasswordValue;
+    this.setState({ isValidEmail, isValidPassword });
     if (isValidEmail && isValidPassword) {
       AuthService.register(this.state.emailValue, this.state.passwordValue)
-        .then(isSuccess => {
+        .then((isSuccess) => {
           if (isSuccess) {
             this.setState({
-              alertText: 'Registration successful! Check your e-mail for a verification link.',
+              alertText:
+                'Registration successful! Check your e-mail for a verification link.',
               alertType: 'success',
-              showAlert: true
+              showAlert: true,
             });
-          }
-          else {
+          } else {
             this.setState({
               alertText: AuthService.registerError.message,
               alertType: 'danger',
-              showAlert: true
+              showAlert: true,
             });
           }
         })
-        .catch(error => {
+        .catch((error) => {
           this.setState({
             alertText: error,
             alertType: 'danger',
-            showAlert: true
+            showAlert: true,
           });
         });
-    }
-    else {
+    } else {
       this.setState({
         alertText: 'E-mail and/or password fields are empty',
         alertType: 'danger',
-        showAlert: true
+        showAlert: true,
       });
     }
   };
 
-  render () {
+  render() {
     const loginMessage = (
       <LoginMainFooterBandItem>
         Already registered? <NavLink to="/login">Log in.</NavLink>
@@ -173,7 +176,7 @@ export class SignUp extends React.Component {
       sm: '/images/pfbg_768.jpg',
       sm2x: '/images/pfbg_768@2x.jpg',
       xs: '/images/pfbg_576.jpg',
-      xs2x: '/images/pfbg_576@2x.jpg'
+      xs2x: '/images/pfbg_576@2x.jpg',
     };
 
     return (
@@ -189,16 +192,17 @@ export class SignUp extends React.Component {
         forgotCredentials={forgotCredentials}
       >
         <Form>
-          {this.state.showAlert &&
-          <FormAlert>
-            <Alert variant={this.state.alertType} title={this.state.alertText} aria-live="polite" isInline/>
-          </FormAlert>
-          }
-          <FormGroup
-            label="Email address"
-            isRequired
-            fieldId="email"
-          >
+          {this.state.showAlert && (
+            <FormAlert>
+              <Alert
+                variant={this.state.alertType}
+                title={this.state.alertText}
+                aria-live="polite"
+                isInline
+              />
+            </FormAlert>
+          )}
+          <FormGroup label="Email address" isRequired fieldId="email">
             <TextInput
               isRequired
               type="email"
@@ -211,7 +215,9 @@ export class SignUp extends React.Component {
             />
             <FormHelperText>
               <HelperText>
-                <HelperTextItem>The e-mail address you want to use to log in</HelperTextItem>
+                <HelperTextItem>
+                  The e-mail address you want to use to log in
+                </HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
@@ -222,37 +228,48 @@ export class SignUp extends React.Component {
             validated={this.state.isValidPassword ? 'default' : 'error'}
           >
             <InputGroup>
-              {!this.state.isPasswordVisible &&
-              <TextInput
-                isRequired
-                type="password"
-                id="password"
-                name="password"
-                validated={this.state.isValidPassword ? 'default' : 'error'}
-                aria-describedby="password-helper"
-                value={this.state.passwordValue}
-                onChange={(_, passwordValue) => this.onPasswordChange(passwordValue)} />
-              }
-              {this.state.isPasswordVisible &&
-              <TextInput
-                isRequired
-                type="text"
-                id="password"
-                name="password"
-                validated={this.state.isValidPassword ? 'default' : 'error'}
-                aria-describedby="password-helper"
-                value={this.state.passwordValue}
-                onChange={(_, passwordValue) => this.onPasswordChange(passwordValue)} />}
+              {!this.state.isPasswordVisible && (
+                <TextInput
+                  isRequired
+                  type="password"
+                  id="password"
+                  name="password"
+                  validated={this.state.isValidPassword ? 'default' : 'error'}
+                  aria-describedby="password-helper"
+                  value={this.state.passwordValue}
+                  onChange={(_, passwordValue) =>
+                    this.onPasswordChange(passwordValue)
+                  }
+                />
+              )}
+              {this.state.isPasswordVisible && (
+                <TextInput
+                  isRequired
+                  type="text"
+                  id="password"
+                  name="password"
+                  validated={this.state.isValidPassword ? 'default' : 'error'}
+                  aria-describedby="password-helper"
+                  value={this.state.passwordValue}
+                  onChange={(_, passwordValue) =>
+                    this.onPasswordChange(passwordValue)
+                  }
+                />
+              )}
               <InputGroupItem>
-                <Button variant="control" aria-label="Show password" onClick={this.onPasswordVisibleClick}>
-                  {!this.state.isPasswordVisible && <EyeIcon/>}
-                  {this.state.isPasswordVisible && <EyeSlashIcon/>}
+                <Button
+                  variant="control"
+                  aria-label="Show password"
+                  onClick={this.onPasswordVisibleClick}
+                >
+                  {!this.state.isPasswordVisible && <EyeIcon />}
+                  {this.state.isPasswordVisible && <EyeSlashIcon />}
                 </Button>
               </InputGroupItem>
             </InputGroup>
             <PasswordErrorBoundary>
               <Suspense fallback="">
-                <PasswordStrengthBar password={this.state.passwordValue}/>
+                <PasswordStrengthBar password={this.state.passwordValue} />
               </Suspense>
             </PasswordErrorBoundary>
           </FormGroup>
@@ -262,23 +279,61 @@ export class SignUp extends React.Component {
             fieldId="confirm-password"
           >
             <InputGroup>
-              {!this.state.isConfirmPasswordVisible && <TextInput isRequired type="password" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={(_, confirmPasswordValue) => this.onConfirmPasswordChange(confirmPasswordValue)} validated={this.state.confirmPasswordValidation} />}
-              {this.state.isConfirmPasswordVisible && <TextInput isRequired type="text" id="confirm-password" name="confirm-password" aria-describedby="confirm-password-helper" value={this.state.confirmPasswordValue} onChange={(_, confirmPasswordValue) => this.onConfirmPasswordChange(confirmPasswordValue)} validated={this.state.confirmPasswordValidation} />}
+              {!this.state.isConfirmPasswordVisible && (
+                <TextInput
+                  isRequired
+                  type="password"
+                  id="confirm-password"
+                  name="confirm-password"
+                  aria-describedby="confirm-password-helper"
+                  value={this.state.confirmPasswordValue}
+                  onChange={(_, confirmPasswordValue) =>
+                    this.onConfirmPasswordChange(confirmPasswordValue)
+                  }
+                  validated={this.state.confirmPasswordValidation}
+                />
+              )}
+              {this.state.isConfirmPasswordVisible && (
+                <TextInput
+                  isRequired
+                  type="text"
+                  id="confirm-password"
+                  name="confirm-password"
+                  aria-describedby="confirm-password-helper"
+                  value={this.state.confirmPasswordValue}
+                  onChange={(_, confirmPasswordValue) =>
+                    this.onConfirmPasswordChange(confirmPasswordValue)
+                  }
+                  validated={this.state.confirmPasswordValidation}
+                />
+              )}
               <InputGroupItem>
-                <Button variant="control" aria-label="Show password" onClick={this.onConfirmPasswordVisibleClick}>
-                  {!this.state.isConfirmPasswordVisible && <EyeIcon/>}
-                  {this.state.isConfirmPasswordVisible && <EyeSlashIcon/>}
+                <Button
+                  variant="control"
+                  aria-label="Show password"
+                  onClick={this.onConfirmPasswordVisibleClick}
+                >
+                  {!this.state.isConfirmPasswordVisible && <EyeIcon />}
+                  {this.state.isConfirmPasswordVisible && <EyeSlashIcon />}
                 </Button>
               </InputGroupItem>
             </InputGroup>
             <FormHelperText>
               <HelperText>
-                <HelperTextItem variant={this.state.confirmPasswordValidation}>{this.state.confirmPasswordHelpText}</HelperTextItem>
+                <HelperTextItem variant={this.state.confirmPasswordValidation}>
+                  {this.state.confirmPasswordHelpText}
+                </HelperTextItem>
               </HelperText>
             </FormHelperText>
           </FormGroup>
           <ActionGroup>
-            <Button variant="primary" isBlock onClick={this.onRegisterButtonClick}>Register</Button>
+            <Button
+              variant="primary"
+              isBlock
+              onClick={this.onRegisterButtonClick}
+            >
+              Register
+            </Button>
           </ActionGroup>
         </Form>
       </LoginPage>

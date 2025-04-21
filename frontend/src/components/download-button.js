@@ -12,8 +12,8 @@ const DownloadButton = (props) => {
 
   const handleClick = () => {
     HttpClient.get(url)
-      .then(response => response.blob())
-      .then(blob => {
+      .then((response) => response.blob())
+      .then((blob) => {
         const href = URL.createObjectURL(blob);
         const aElement = document.createElement('a');
         aElement.setAttribute('href', href);
@@ -24,13 +24,17 @@ const DownloadButton = (props) => {
       });
   };
 
-  return <Button onClick={handleClick} {...rest}>{children}</Button>;
+  return (
+    <Button onClick={handleClick} {...rest}>
+      {children}
+    </Button>
+  );
 };
 
 DownloadButton.propTypes = {
   url: PropTypes.string,
   filename: PropTypes.string,
-  children: PropTypes.node
+  children: PropTypes.node,
 };
 
 export default DownloadButton;

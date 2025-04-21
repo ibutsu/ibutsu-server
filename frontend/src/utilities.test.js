@@ -12,11 +12,10 @@ import {
   getIconForResult,
   getIconForStatus,
   toTitleCase,
-  processPyTestPath
+  processPyTestPath,
 } from './utilities';
 
 describe('getIconForResult', () => {
-
   it('should return a CheckCircleIcon for a passed result', () => {
     expect(getIconForResult('passed')).toEqual(<CheckCircleIcon />);
   });
@@ -32,12 +31,9 @@ describe('getIconForResult', () => {
   it('should return a ChevronCircleRightIcon for a skipped result', () => {
     expect(getIconForResult('skipped')).toEqual(<ChevronCircleRightIcon />);
   });
-
 });
 
-
 describe('getIconForStatus', () => {
-
   it('should return a CheckCircleIcon for a done status', () => {
     expect(getIconForStatus('done')).toEqual(<CheckCircleIcon />);
   });
@@ -57,9 +53,7 @@ describe('getIconForStatus', () => {
   it('should return an InfoAltIcon for an empty status', () => {
     expect(getIconForStatus('empty')).toEqual(<InfoAltIcon />);
   });
-
 });
-
 
 describe('toTitleCase', () => {
   it('should convert words to title case', () => {
@@ -98,13 +92,23 @@ describe('processPyTestPath', () => {
 
   it('should correctly parse a path with a normal parameter', () => {
     const PATH_TO_PROCESS = [TEST_PATH, TEST_NAME].join('/') + TEST_NORM_PARAM;
-    const EXPECTED_PATH = ['my_package', 'tests', 'test_ui.py', 'test_urls[hostname]'];
+    const EXPECTED_PATH = [
+      'my_package',
+      'tests',
+      'test_ui.py',
+      'test_urls[hostname]',
+    ];
     expect(processPyTestPath(PATH_TO_PROCESS)).toEqual(EXPECTED_PATH);
   });
 
   it('should correctly parse a path with a path parameter', () => {
     const PATH_TO_PROCESS = [TEST_PATH, TEST_NAME].join('/') + TEST_PATH_PARAM;
-    const EXPECTED_PATH = ['my_package', 'tests', 'test_ui.py', 'test_urls[api/object/method]'];
+    const EXPECTED_PATH = [
+      'my_package',
+      'tests',
+      'test_ui.py',
+      'test_urls[api/object/method]',
+    ];
     expect(processPyTestPath(PATH_TO_PROCESS)).toEqual(EXPECTED_PATH);
   });
 });

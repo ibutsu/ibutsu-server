@@ -12,7 +12,7 @@ import {
   TextInput,
   TextInputGroup,
   TextInputGroupMain,
-  TextInputGroupUtilities
+  TextInputGroupUtilities,
 } from '@patternfly/react-core';
 import { ChevronRightIcon, TimesIcon } from '@patternfly/react-icons';
 
@@ -25,7 +25,7 @@ import {
   getOperationMode,
   getOperationsFromField,
   getSpinnerRow,
-  toAPIFilter
+  toAPIFilter,
 } from '../utilities';
 
 import FilterTable from '../components/filtertable';
@@ -34,11 +34,19 @@ import RunSummary from '../components/runsummary';
 import { JJV_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 
-const COLUMNS = ['Job name', 'Build number', 'Summary', 'Source', 'Env', 'Started', ''];
+const COLUMNS = [
+  'Job name',
+  'Build number',
+  'Summary',
+  'Source',
+  'Env',
+  'Started',
+  '',
+];
 const DEFAULT_OPERATION = 'eq';
 
 const JenkinsJobView = (props) => {
-  const {view} = props;
+  const { view } = props;
   const context = useContext(IbutsuContext);
   const { primaryObject } = context;
 
@@ -58,10 +66,11 @@ const JenkinsJobView = (props) => {
   const [filteredFieldOptions, setFilteredFieldOptions] = useState(JJV_FIELDS);
   const [fieldOptions] = useState(JJV_FIELDS);
   const [fieldInputValue, setFieldInputValue] = useState('');
-  const [fieldFilterValue, setFieldFilterValue] = useState('');  // same as fieldInputValue?
+  const [fieldFilterValue, setFieldFilterValue] = useState(''); // same as fieldInputValue?
   const [isFieldOpen, setIsFieldOpen] = useState(false);
 
-  const [operationSelection, setOperationSelection] = useState(DEFAULT_OPERATION);
+  const [operationSelection, setOperationSelection] =
+    useState(DEFAULT_OPERATION);
   const [isOperationOpen, setIsOperationOpen] = useState(false);
 
   const [textFilter, setTextFilter] = useState('');
@@ -69,20 +78,17 @@ const JenkinsJobView = (props) => {
   const [boolSelection, setBoolSelection] = useState(false);
   const [isBoolOpen, setIsBoolOpen] = useState(false);
 
-
   const onFieldSelect = (_, selection) => {
     if (selection == `Create "${fieldFilterValue}"`) {
       setFilteredFieldOptions([...fieldOptions, fieldFilterValue]);
       setFieldSelection(fieldFilterValue);
       setFieldInputValue(fieldFilterValue);
-    }
-    else {
+    } else {
       setFieldSelection(selection);
       setFieldInputValue(selection);
     }
 
     setIsFieldOpen(false);
-
   };
 
   const onFieldTextInputChange = (_, value) => {
@@ -96,7 +102,7 @@ const JenkinsJobView = (props) => {
     setFieldInputValue('');
   };
 
-  const onOperationToggle = isExpanded => {
+  const onOperationToggle = (isExpanded) => {
     setIsOperationOpen(isExpanded);
   };
 
@@ -105,7 +111,7 @@ const JenkinsJobView = (props) => {
     setIsOperationOpen(false);
   };
 
-  const onTextChanged = newValue => {
+  const onTextChanged = (newValue) => {
     setTextFilter(newValue);
   };
 
@@ -124,9 +130,8 @@ const JenkinsJobView = (props) => {
     let value = textFilter.trim();
     if (operationMode === 'multi') {
       // translate list to ;-separated string for BE
-      value = inValues.map(item => item.trim()).join(';');
-    }
-    else if (operationMode === 'bool') {
+      value = inValues.map((item) => item.trim()).join(';');
+    } else if (operationMode === 'bool') {
       value = boolSelection;
     }
     updateFilters(fieldSelection, operationSelection, value, () => {
@@ -141,57 +146,85 @@ const JenkinsJobView = (props) => {
   };
 
   const updateFilters = (name, operator, value, callback) => {
-    const newFilters = {...filters};
+    const newFilters = { ...filters };
     if (!value) {
       delete newFilters[name];
-    }
-    else {
-      newFilters[name] = {'op': operator, 'val': value};
+    } else {
+      newFilters[name] = { op: operator, val: value };
     }
     setPage(1);
     setFilters(newFilters);
     callback();
   };
 
-  const removeFilter = id => {
+  const removeFilter = (id) => {
     updateFilters(id, null, null, () => {});
   };
 
-  useEffect(() =>{
+  useEffect(() => {
     // get the widget ID for the analysis view
-    HttpClient.get([Settings.serverUrl, 'widget-config'], {'filter': 'widget=jenkins-analysis-view'})
-      .then(response => HttpClient.handleResponse(response))
-      .then(data => {
+    HttpClient.get([Settings.serverUrl, 'widget-config'], {
+      filter: 'widget=jenkins-analysis-view',
+    })
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
         setAnalysisViewId(data.widgets[0]?.id);
-      }).catch(error => {
+      })
+      .catch((error) => {
         console.error(error);
       });
   }, []);
 
-  const jobToRow = useCallback((job) => (
-    {
+  const jobToRow = useCallback(
+    (job) => ({
       cells: [
-        analysisViewId ? {title: <Link to={`../view/${analysisViewId}?job_name=${job.job_name}`} relative='Path'>{job.job_name}</Link>} : job.job_name,
-        {title: <a href={job.build_url} target="_blank" rel="noopener noreferrer">{job.build_number}</a>},
-        {title: <RunSummary summary={job.summary} />},
+        analysisViewId
+          ? {
+              title: (
+                <Link
+                  to={`../view/${analysisViewId}?job_name=${job.job_name}`}
+                  relative="Path"
+                >
+                  {job.job_name}
+                </Link>
+              ),
+            }
+          : job.job_name,
+        {
+          title: (
+            <a href={job.build_url} target="_blank" rel="noopener noreferrer">
+              {job.build_number}
+            </a>
+          ),
+        },
+        { title: <RunSummary summary={job.summary} /> },
         job.source,
         job.env,
         new Date(job.start_time).toLocaleString(),
-        {title: <Link to={`../runs?metadata.jenkins.job_name[eq]=${job.job_name}&metadata.jenkins.build_number=${job.build_number}`} relative='Path'>See runs <ChevronRightIcon /></Link>}
-      ]
-    }
-  ), [analysisViewId]);
+        {
+          title: (
+            <Link
+              to={`../runs?metadata.jenkins.job_name[eq]=${job.job_name}&metadata.jenkins.build_number=${job.build_number}`}
+              relative="Path"
+            >
+              See runs <ChevronRightIcon />
+            </Link>
+          ),
+        },
+      ],
+    }),
+    [analysisViewId],
+  );
 
   useEffect(() => {
     if (view) {
       let analysisViewId = '';
-      let params = {...view.params};
+      let params = { ...view.params };
       setIsError(false);
 
       if (primaryObject) {
         params['project'] = primaryObject.id;
-      }
-      else {
+      } else {
         delete params['project'];
       }
       params['page_size'] = pageSize;
@@ -199,9 +232,9 @@ const JenkinsJobView = (props) => {
       params['filter'] = toAPIFilter(filters).join();
 
       HttpClient.get([Settings.serverUrl, 'widget', view.widget], params)
-        .then(response => HttpClient.handleResponse(response))
-        .then(data => {
-          setRows(data.jobs.map(job => jobToRow(job, analysisViewId)));
+        .then((response) => HttpClient.handleResponse(response))
+        .then((data) => {
+          setRows(data.jobs.map((job) => jobToRow(job, analysisViewId)));
           setTotalItems(data.pagination.totalItems);
         })
         .catch((error) => {
@@ -215,10 +248,13 @@ const JenkinsJobView = (props) => {
   useEffect(() => {
     let newSelectOptionsField = [...fieldOptions];
     if (fieldInputValue) {
-      newSelectOptionsField = fieldOptions.filter(menuItem =>
-        menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase())
+      newSelectOptionsField = fieldOptions.filter((menuItem) =>
+        menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase()),
       );
-      if (newSelectOptionsField.length !== 1 && !newSelectOptionsField.includes(fieldFilterValue) ) {
+      if (
+        newSelectOptionsField.length !== 1 &&
+        !newSelectOptionsField.includes(fieldFilterValue)
+      ) {
         newSelectOptionsField.push(`Create "${fieldFilterValue}"`);
       }
     }
@@ -226,8 +262,7 @@ const JenkinsJobView = (props) => {
     setFilteredFieldOptions(newSelectOptionsField);
   }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
 
-
-  const fieldToggle = toggleRef => (
+  const fieldToggle = (toggleRef) => (
     <MenuToggle
       variant="typeahead"
       aria-label="Typeahead creatable menu toggle"
@@ -252,7 +287,9 @@ const JenkinsJobView = (props) => {
           {!!fieldInputValue && (
             <Button
               variant="plain"
-              onClick={() => {onFieldClear();}}
+              onClick={() => {
+                onFieldClear();
+              }}
               aria-label="Clear input value"
             >
               <TimesIcon aria-hidden />
@@ -263,7 +300,7 @@ const JenkinsJobView = (props) => {
     </MenuToggle>
   );
 
-  const operationToggle = toggleRef => (
+  const operationToggle = (toggleRef) => (
     <MenuToggle
       onClick={onOperationToggle}
       isExpanded={isOperationOpen}
@@ -274,13 +311,13 @@ const JenkinsJobView = (props) => {
     </MenuToggle>
   );
 
-  const boolToggle = toggleRef => (
+  const boolToggle = (toggleRef) => (
     <MenuToggle
       onClick={(value) => setIsBoolOpen(value)}
       isExpanded={isBoolOpen}
       isFullWidth
       ref={toggleRef}
-      style={{maxHeight: '36px'}}
+      style={{ maxHeight: '36px' }}
     >
       <TextInputGroup isPlain>
         <TextInputGroupMain
@@ -293,7 +330,11 @@ const JenkinsJobView = (props) => {
         />
         <TextInputGroupUtilities>
           {!!boolSelection && (
-            <Button variant="plain" onClick={onBoolClear} aria-label="Clear input value">
+            <Button
+              variant="plain"
+              onClick={onBoolClear}
+              aria-label="Clear input value"
+            >
               <TimesIcon aria-hidden />
             </Button>
           )}
@@ -330,15 +371,17 @@ const JenkinsJobView = (props) => {
       toggle={operationToggle}
     >
       <SelectList>
-        {Object.keys(getOperationsFromField(fieldSelection)).map((option, index) => (
-          <SelectOption key={index} value={option}>
-            {option}
-          </SelectOption>
-        ))}
+        {Object.keys(getOperationsFromField(fieldSelection)).map(
+          (option, index) => (
+            <SelectOption key={index} value={option}>
+              {option}
+            </SelectOption>
+          ),
+        )}
       </SelectList>
     </Select>,
     <React.Fragment key="value">
-      {(getOperationMode(operationSelection) === 'bool') &&
+      {getOperationMode(operationSelection) === 'bool' && (
         <Select
           id="single-select"
           isOpen={isBoolOpen}
@@ -355,14 +398,25 @@ const JenkinsJobView = (props) => {
             ))}
           </SelectList>
         </Select>
-      }
-      {(getFilterMode(fieldSelection) === 'text' && getOperationMode(operationSelection) === 'single') &&
-        <TextInput type="text" id="textSelection" placeholder="Type in value" value={textFilter} onChange={(_, newValue) => onTextChanged(newValue)} style={{height: 'inherit'}}/>
-      }
-      {(getOperationMode(operationSelection) === 'multi') &&
-        <MultiValueInput onValuesChange={(values) => setInValues(values)} style={{height: 'inherit'}}/>
-      }
-    </React.Fragment>
+      )}
+      {getFilterMode(fieldSelection) === 'text' &&
+        getOperationMode(operationSelection) === 'single' && (
+          <TextInput
+            type="text"
+            id="textSelection"
+            placeholder="Type in value"
+            value={textFilter}
+            onChange={(_, newValue) => onTextChanged(newValue)}
+            style={{ height: 'inherit' }}
+          />
+        )}
+      {getOperationMode(operationSelection) === 'multi' && (
+        <MultiValueInput
+          onValuesChange={(values) => setInValues(values)}
+          style={{ height: 'inherit' }}
+        />
+      )}
+    </React.Fragment>,
   ];
 
   return (
@@ -375,7 +429,7 @@ const JenkinsJobView = (props) => {
           pagination={{
             page: page,
             pageSize: pageSize,
-            totalItems: totalItems
+            totalItems: totalItems,
           }}
           isEmpty={rows.length === 0}
           isError={isError}
@@ -391,7 +445,7 @@ const JenkinsJobView = (props) => {
 };
 
 JenkinsJobView.propTypes = {
-  view: PropTypes.object
+  view: PropTypes.object,
 };
 
 export default JenkinsJobView;
