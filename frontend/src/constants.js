@@ -100,7 +100,16 @@ export const STRING_JJV_FIELDS = ['job_name', 'source', 'build_number', 'env'];
 export const NUMERIC_JJV_FIELDS = ['start_time'];
 export const JJV_FIELDS = [...STRING_JJV_FIELDS, ...NUMERIC_JJV_FIELDS];
 
-export const STRING_USER_FIELDS = ['name', 'email'];
+export const STRING_USER_FIELDS = [
+  {
+    value: 'name',
+    children: 'Display Name',
+  },
+  {
+    value: 'email',
+    children: 'Email Address',
+  },
+];
 
 export const USER_COLUMNS = {
   name: 'Display Name',
