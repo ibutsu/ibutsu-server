@@ -44,14 +44,19 @@ const UserFilterComponent = ({
             aria-label="user-filter-field"
             variant={SelectVariant.single}
             isOpen={isFieldOpen}
-            selections={fieldSelection}
+            selected={fieldSelection}
             onToggle={(_, change) => setIsFieldOpen(change)}
             toggle={userToggle}
             onSelect={onFieldSelect}
           >
-            {STRING_USER_FIELDS.map((option, index) => (
-              <SelectOption key={index} value={option}>
-                {option}
+            {STRING_USER_FIELDS.map((option) => (
+              <SelectOption
+                key={option.value}
+                id={option.value}
+                value={option}
+                ref={null}
+              >
+                {option.children}
               </SelectOption>
             ))}
           </Select>
@@ -68,8 +73,8 @@ const UserFilterComponent = ({
             toggle={operationToggle}
           >
             <SelectList>
-              {Object.keys(STRING_OPERATIONS).map((option, index) => (
-                <SelectOption key={index} value={option}>
+              {Object.keys(STRING_OPERATIONS).map((option) => (
+                <SelectOption key={option} value={option}>
                   {option}
                 </SelectOption>
               ))}
@@ -90,7 +95,9 @@ const UserFilterComponent = ({
       {filterValue && (
         <Flex>
           <FlexItem>
-            <Button onClick={applyFilter}>Apply Filter</Button>
+            <Button onClick={applyFilter} variant="control">
+              Apply Filter
+            </Button>
           </FlexItem>
         </Flex>
       )}
@@ -154,7 +161,7 @@ const useUserFilter = () => {
 
   const applyFilter = useCallback(() => {
     updateFilters(
-      fieldSelection,
+      fieldSelection.value,
       operationSelection,
       filterValue.trim(),
       () => {
@@ -172,7 +179,7 @@ const useUserFilter = () => {
         isExpanded={isFieldOpen}
         ref={toggleRef}
       >
-        {fieldSelection}
+        {fieldSelection.children}
       </MenuToggle>
     ),
     [fieldSelection, isFieldOpen],
@@ -195,7 +202,7 @@ const useUserFilter = () => {
     <UserFilterComponent
       applyFilter={applyFilter}
       userToggle={userToggle}
-      fieldSelection={fieldSelection}
+      fieldSelection={fieldSelection.children}
       onFieldSelect={onFieldSelect}
       isFieldOpen={isFieldOpen}
       setIsFieldOpen={setIsFieldOpen}
