@@ -30,7 +30,8 @@ import { TimesIcon } from '@patternfly/react-icons';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { dashboardToOption } from '../../utilities.js';
+import { dashboardToOption, toAPIFilter } from '../../utilities.js';
+import useUserFilter from '../../components/user-filter.js';
 
 const userToOption = (user) => {
   if (!user) {
@@ -65,11 +66,8 @@ const ProjectEdit = () => {
 
   // owner selection state
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [users, setUsers] = useState([]);
   const [isOwnerOpen, setIsOwnerOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState({});
-  const [filterValueOwner, setFilterValueOwner] = useState('');
-  const [inputValueOwner, setInputValueOwner] = useState('');
 
   // dashboard selection state
   const [filteredDashboards, setFilteredDashboards] = useState([]);
@@ -88,8 +86,8 @@ const ProjectEdit = () => {
     let project = {
       title: title,
       name: name,
-      owner_id: selectedOwner ? selectedOwner.id : null,
-      default_dashboard_id: selectedDashboard ? selectedDashboard.id : null,
+      owner_id: selectedOwner?.id || null,
+      default_dashboard_id: selectedDashboard?.id || null,
     };
 
     let request = null;
@@ -111,25 +109,12 @@ const ProjectEdit = () => {
       .catch((error) => console.error(error));
   };
 
-  const onOwnerInputChange = (_, value) => {
-    setInputValueOwner(value);
-    setFilterValueOwner(value);
-  };
-
-  const onOwnerSelect = (event, value) => {
+  const onOwnerSelect = (_, value) => {
     setSelectedOwner(value.user);
     setIsOwnerOpen(false);
-    setFilterValueOwner(value.user.name);
-    setInputValueOwner(value.user.name);
   };
 
-  const onOwnerClear = () => {
-    setSelectedOwner(null);
-    setFilterValueOwner('');
-    setInputValueOwner('');
-  };
-
-  const onDashboardSelect = (event, value) => {
+  const onDashboardSelect = (_, value) => {
     setSelectedDashboard(value.dashboard);
     setIsDashboardOpen(false);
     setFilterValueDashboard(value.dashboard.title);
@@ -147,16 +132,22 @@ const ProjectEdit = () => {
     setFilterValueDashboard(value);
   };
 
-  // fetch the admin users once
+  const { filterComponents, activeFilterComponents, activeFilters } =
+    useUserFilter();
+
+  // fetch the admin users with the active filter
   useEffect(() => {
-    HttpClient.get([Settings.serverUrl, 'admin', 'user'])
+    HttpClient.get([Settings.serverUrl, 'admin', 'user'], {
+      ...(Object.keys(activeFilters)?.length === 0
+        ? {}
+        : { filter: toAPIFilter(activeFilters) }),
+    })
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
-        setUsers(data.users);
         setFilteredUsers(data.users);
       })
       .catch((error) => console.error(error));
-  }, []);
+  }, [activeFilters]);
 
   // fetch the project if needed
   useEffect(() => {
@@ -171,7 +162,6 @@ const ProjectEdit = () => {
           setCrumbTitle(data.title);
           setName(data.name);
           setSelectedOwner(data.owner);
-          setInputValueOwner(data.owner?.name);
           setSelectedDashboard(data.defaultDashboard);
           setInputValueDashboard(data.defaultDashboard?.title);
         })
@@ -229,65 +219,19 @@ const ProjectEdit = () => {
     setFilteredDashboards(newSelectOptionsDashboard);
   }, [dashboards, filterValueDashboard, inputValueDashboard, isDashboardOpen]);
 
-  // update owner filtering and selection items
-  useEffect(() => {
-    let newSelectOptionsUser = [...users];
-    if (inputValueOwner) {
-      newSelectOptionsUser = users.filter((menuItem) =>
-        String(menuItem.name)
-          .toLowerCase()
-          .includes(filterValueOwner.toLowerCase()),
-      );
-      if (newSelectOptionsUser.length === 0) {
-        newSelectOptionsUser = [
-          {
-            isDisabled: true,
-            value: {},
-            name: `No results found for "${filterValueOwner}"`,
-          },
-        ];
-      }
-    }
-    setFilteredUsers(newSelectOptionsUser);
-  }, [filterValueOwner, inputValueOwner, isOwnerOpen, users]);
-
   const toggleOwner = (toggleRef) => (
     <MenuToggle
       innerRef={toggleRef}
-      variant="typeahead"
-      aria-label="Typeahead menu toggle"
+      variant="secondary"
+      aria-label="Owner selection toggle"
       onClick={() => {
         setIsOwnerOpen(!isOwnerOpen);
       }}
       isExpanded={isOwnerOpen}
-      isFullWidth
     >
-      <TextInputGroup isPlain>
-        <TextInputGroupMain
-          value={inputValueOwner}
-          onClick={() => {
-            setIsOwnerOpen(!isOwnerOpen);
-          }}
-          onChange={onOwnerInputChange}
-          id="typeahead-select-input"
-          autoComplete="off"
-          placeholder="Select project owner"
-          role="combobox"
-          isExpanded={isOwnerOpen}
-          aria-controls="select-typeahead-listbox"
-        />
-        <TextInputGroupUtilities>
-          {!!inputValueOwner && (
-            <Button
-              variant="plain"
-              onClick={onOwnerClear}
-              aria-label="Clear input value"
-            >
-              <TimesIcon aria-hidden />
-            </Button>
-          )}
-        </TextInputGroupUtilities>
-      </TextInputGroup>
+      {selectedOwner?.name ||
+        selectedOwner?.email ||
+        'Use a filter to select an owner'}
     </MenuToggle>
   );
 
@@ -300,7 +244,6 @@ const ProjectEdit = () => {
         setIsDashboardOpen(!isDashboardOpen);
       }}
       isExpanded={isDashboardOpen}
-      isFullWidth
       isDisabled={filteredDashboards.length === 0 ? true : false}
     >
       <TextInputGroup isPlain>
@@ -335,7 +278,7 @@ const ProjectEdit = () => {
   return (
     <React.Fragment>
       <PageSection variant={PageSectionVariants.light}>
-        <Title headingLevel="h1" size="2xl" className="pf-v5-c-title">
+        <Title headingLevel="h1" size="2xl">
           Projects / {crumbTitle}
         </Title>
       </PageSection>
@@ -388,34 +331,36 @@ const ProjectEdit = () => {
               </FormGroup>
               <FormGroup fieldId="owner" label="Owner">
                 <Select
-                  id="typeahead-select-owner"
+                  id="projectOwner"
+                  ouiaId="project-edit-owner-select"
                   isOpen={isOwnerOpen}
                   selected={selectedOwner}
                   onSelect={onOwnerSelect}
                   onOpenChange={() => setIsOwnerOpen(false)}
                   toggle={toggleOwner}
                   isScrollable={true}
-                  maxMenuHeight="300px"
+                  variant="default"
                 >
-                  <SelectList id="select-typeahead-listbox">
-                    {filteredUsers?.map((user, index) => (
-                      <SelectOption
-                        key={user.id || index}
-                        onClick={() => setSelectedOwner(user)}
-                        value={userToOption(user)}
-                        description={user.email}
-                        isDisabled={user.isDisabled}
-                        ref={null}
-                      >
-                        {user.name}
-                      </SelectOption>
-                    ))}
-                  </SelectList>
+                  {filteredUsers?.map((user, index) => (
+                    <SelectOption
+                      key={user.id || index}
+                      onClick={() => setSelectedOwner(user)}
+                      value={userToOption(user)}
+                      description={user.email}
+                      isDisabled={user.isDisabled}
+                      ref={null}
+                    >
+                      {user.name || user.email}
+                    </SelectOption>
+                  ))}
                 </Select>
                 <FormHelperText>
                   <HelperText>
                     <HelperTextItem>
-                      The user who owns the project
+                      The user who owns the project. Use the filter to narrow
+                      the selection options above.
+                      {filterComponents}
+                      {activeFilterComponents}
                     </HelperTextItem>
                   </HelperText>
                 </FormHelperText>
@@ -429,7 +374,7 @@ const ProjectEdit = () => {
                   onOpenChange={() => setIsDashboardOpen(false)}
                   toggle={toggleDashboard}
                   isScrollable={true}
-                  maxMenuHeight="300px"
+                  variant="typeahead"
                 >
                   <SelectList id="select-typeahead-listbox">
                     {filteredDashboards.map((dashboard, index) => (

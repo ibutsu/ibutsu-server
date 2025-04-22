@@ -23,7 +23,7 @@ const DEFAULT_OP = Object.keys(STRING_OPERATIONS)[0];
 const UserFilterComponent = ({
   applyFilter,
   isFieldOpen,
-  fieldSelection,
+  selectedField,
   userToggle,
   onFieldSelect,
   isOperationOpen,
@@ -44,14 +44,19 @@ const UserFilterComponent = ({
             aria-label="user-filter-field"
             variant={SelectVariant.single}
             isOpen={isFieldOpen}
-            selections={fieldSelection}
+            selected={selectedField}
             onToggle={(_, change) => setIsFieldOpen(change)}
             toggle={userToggle}
             onSelect={onFieldSelect}
           >
-            {STRING_USER_FIELDS.map((option, index) => (
-              <SelectOption key={index} value={option}>
-                {option}
+            {STRING_USER_FIELDS.map((option) => (
+              <SelectOption
+                key={option.value}
+                id={option.value}
+                value={option}
+                ref={null}
+              >
+                {option.children}
               </SelectOption>
             ))}
           </Select>
@@ -68,8 +73,8 @@ const UserFilterComponent = ({
             toggle={operationToggle}
           >
             <SelectList>
-              {Object.keys(STRING_OPERATIONS).map((option, index) => (
-                <SelectOption key={index} value={option}>
+              {Object.keys(STRING_OPERATIONS).map((option) => (
+                <SelectOption key={option} value={option}>
                   {option}
                 </SelectOption>
               ))}
@@ -90,7 +95,9 @@ const UserFilterComponent = ({
       {filterValue && (
         <Flex>
           <FlexItem>
-            <Button onClick={applyFilter}>Apply Filter</Button>
+            <Button onClick={applyFilter} variant="control">
+              Apply Filter
+            </Button>
           </FlexItem>
         </Flex>
       )}
@@ -101,7 +108,7 @@ const UserFilterComponent = ({
 UserFilterComponent.propTypes = {
   applyFilter: PropTypes.func,
   isFieldOpen: PropTypes.bool,
-  fieldSelection: PropTypes.string,
+  selectedField: PropTypes.string,
   userToggle: PropTypes.func,
   onFieldSelect: PropTypes.func,
   isOperationOpen: PropTypes.bool,
@@ -117,7 +124,7 @@ UserFilterComponent.propTypes = {
 const useUserFilter = () => {
   // Provide a rich user filter, like meta filter but not as dynamic in the fields
 
-  const [fieldSelection, setFieldSelection] = useState(DEFAULT_FIELD);
+  const [selectedField, setSelectedField] = useState(DEFAULT_FIELD);
   const [isFieldOpen, setIsFieldOpen] = useState(false);
 
   const [operationSelection, setOperationSelection] = useState(DEFAULT_OP);
@@ -128,7 +135,7 @@ const useUserFilter = () => {
   const [activeFilters, setActiveFilters] = useState({});
 
   const onFieldSelect = useCallback((_, selection) => {
-    setFieldSelection(selection);
+    setSelectedField(selection);
     setFilterValue('');
     setIsFieldOpen(false);
   }, []);
@@ -154,16 +161,16 @@ const useUserFilter = () => {
 
   const applyFilter = useCallback(() => {
     updateFilters(
-      fieldSelection,
+      selectedField.value,
       operationSelection,
       filterValue.trim(),
       () => {
-        setFieldSelection(DEFAULT_FIELD);
+        setSelectedField(DEFAULT_FIELD);
         setOperationSelection(DEFAULT_OP);
         setFilterValue('');
       },
     );
-  }, [fieldSelection, filterValue, operationSelection, updateFilters]);
+  }, [selectedField, filterValue, operationSelection, updateFilters]);
 
   const userToggle = useCallback(
     (toggleRef) => (
@@ -172,10 +179,10 @@ const useUserFilter = () => {
         isExpanded={isFieldOpen}
         ref={toggleRef}
       >
-        {fieldSelection}
+        {selectedField.children}
       </MenuToggle>
     ),
-    [fieldSelection, isFieldOpen],
+    [selectedField, isFieldOpen],
   );
 
   const operationToggle = useCallback(
@@ -195,7 +202,7 @@ const useUserFilter = () => {
     <UserFilterComponent
       applyFilter={applyFilter}
       userToggle={userToggle}
-      fieldSelection={fieldSelection}
+      selectedField={selectedField.children}
       onFieldSelect={onFieldSelect}
       isFieldOpen={isFieldOpen}
       setIsFieldOpen={setIsFieldOpen}

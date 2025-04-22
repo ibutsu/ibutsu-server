@@ -48,7 +48,7 @@ const ProjectList = () => {
     cells: [
       { title: project.title },
       { title: project.name },
-      { title: project.owner && project.owner.name },
+      { title: project.owner?.name || project.owner?.email },
       {
         title: (
           <div style={{ textAlign: 'right' }}>
