@@ -7,7 +7,7 @@ import {
   MenuToggle,
 } from '@patternfly/react-core';
 import { UserIcon } from '@patternfly/react-icons';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { AuthService } from '../services/auth';
 
@@ -15,6 +15,7 @@ const UserDropdown = () => {
   const [displayName, setDisplayName] = useState('User');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const navigate = useNavigate();
 
   const logout = () => {
     AuthService.logout();
@@ -48,16 +49,16 @@ const UserDropdown = () => {
       )}
     >
       <DropdownList>
-        <DropdownItem key="profile">
-          <Link to="/profile/user">Profile</Link>
+        <DropdownItem key="profile" onClick={() => navigate('/profile/user')}>
+          Profile
         </DropdownItem>
         {!!isSuperAdmin && (
-          <DropdownItem key="admin">
-            <Link to="/admin/home">Administration</Link>
+          <DropdownItem key="admin" onClick={() => navigate('/admin/home')}>
+            Administration
           </DropdownItem>
         )}
         <DropdownItem key="logout" onClick={logout}>
-          <Link>Logout</Link>
+          Logout
         </DropdownItem>
       </DropdownList>
     </Dropdown>
