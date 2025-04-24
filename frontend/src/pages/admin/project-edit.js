@@ -56,6 +56,9 @@ const ProjectEdit = () => {
   const params = useParams();
   const navigate = useNavigate();
 
+  // is project new or existing
+  const [isNewProject, setIsNewProject] = useState(false);
+
   // project title and name states, required
   const [id, setId] = useState();
   const [title, setTitle] = useState('');
@@ -80,6 +83,7 @@ const ProjectEdit = () => {
   // sync URL and the state
   useEffect(() => {
     setId(params.id);
+    setIsNewProject(params.id === 'new');
   }, [params]);
 
   const onSubmitClick = () => {
@@ -91,7 +95,7 @@ const ProjectEdit = () => {
     };
 
     let request = null;
-    if (id === 'new') {
+    if (isNewProject) {
       request = HttpClient.post(
         [Settings.serverUrl, 'admin', 'project'],
         project,
@@ -228,6 +232,7 @@ const ProjectEdit = () => {
         setIsOwnerOpen(!isOwnerOpen);
       }}
       isExpanded={isOwnerOpen}
+      isDisabled={isNewProject}
     >
       {selectedOwner?.name ||
         selectedOwner?.email ||
@@ -279,7 +284,7 @@ const ProjectEdit = () => {
     <React.Fragment>
       <PageSection variant={PageSectionVariants.light}>
         <Title headingLevel="h1" size="2xl">
-          Projects / {crumbTitle}
+          {isNewProject ? 'Add Project' : 'Projects / ' + crumbTitle}
         </Title>
       </PageSection>
       <PageSection>
@@ -357,9 +362,10 @@ const ProjectEdit = () => {
                 <FormHelperText>
                   <HelperText>
                     <HelperTextItem>
-                      The user who owns the project. Use the filter to narrow
-                      the selection options above.
-                      {filterComponents}
+                      {isNewProject
+                        ? 'Owner of the new project is set to the user who created it. This can be changed later by editing the project.'
+                        : 'The user who owns the project. Use the filter to narrow the selection options above.'}
+                      {!isNewProject && filterComponents}
                       {activeFilterComponents}
                     </HelperTextItem>
                   </HelperText>
