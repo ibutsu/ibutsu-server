@@ -1,3 +1,22 @@
+Version 2.6.0
+==============
+
+* Fix bug with dashboard selection on back nav by @mshriver in https://github.com/ibutsu/ibutsu-server/pull/533
+* Update yarn.lock by @mshriver in https://github.com/ibutsu/ibutsu-server/pull/532
+* Use source instead of build number when filtering results in Importance by Component widget by @Fynardo in https://github.com/ibutsu/ibutsu-server/pull/526
+* Move eslint to github action, remove from precommit by @mshriver in https://github.com/ibutsu/ibutsu-server/pull/538
+* Node 20, ESLint 9 by @mshriver in https://github.com/ibutsu/ibutsu-server/pull/536
+* Added logic for different keycloak auth paths by @wcater803 in https://github.com/ibutsu/ibutsu-server/pull/567
+* Modified keycloak auth path logic by @wcater803 in https://github.com/ibutsu/ibutsu-server/pull/590
+* [Feature Branch] React Functional Conversions by @mshriver in https://github.com/ibutsu/ibutsu-server/pull/539
+* Bump http-proxy-middleware from 2.0.7 to 2.0.9 in /frontend by @dependabot in https://github.com/ibutsu/ibutsu-server/pull/631
+* Bump undici from 6.21.0 to 6.21.2 in /frontend by @dependabot in https://github.com/ibutsu/ibutsu-server/pull/632
+* Bump @babel/runtime from 7.26.0 to 7.27.0 in /frontend by @dependabot in https://github.com/ibutsu/ibutsu-server/pull/633
+* feat(IQE-3524): Remove option for selecting project owner in Add Project form by @hugohezel in https://github.com/ibutsu/ibutsu-server/pull/629
+
+
+**Full Changelog**: https://github.com/ibutsu/ibutsu-server/compare/v2.5.11...v2.6.0
+
 Version 2.5.11
 ==============
 
