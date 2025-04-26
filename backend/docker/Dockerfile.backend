@@ -1,5 +1,5 @@
 # hadolint global ignore=DL3013,DL3041,DL3059
-FROM registry.access.redhat.com/ubi9/python-39:1
+FROM registry.access.redhat.com/ubi9/python-39:9.5
 
 USER 0
 COPY . /app
@@ -9,8 +9,9 @@ WORKDIR /app
 RUN dnf install --nodocs -y --disableplugin=subscription-manager gcc libpq-devel && \
     dnf clean all
 
-RUN pip install -U --no-cache-dir setuptools pip wheel
-RUN pip install --no-cache-dir -U -r requirements-pinned.txt .
+RUN python -m pip install --no-cache-dir -U pip && \
+    pip install -U --no-cache-dir setuptools wheel && \
+    pip install --no-cache-dir -U -r requirements-pinned.txt .
 
 RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 
