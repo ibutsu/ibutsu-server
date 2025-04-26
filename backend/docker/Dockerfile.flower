@@ -14,8 +14,8 @@ USER 1001
 
 # Install dependencies
 WORKDIR /app
-RUN pip install --no-cache-dir -U --upgrade-strategy eager pip wheel setuptools && \
-    pip install --no-cache-dir  -r requirements-pinned.txt . && \
+RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
+    pip install --no-cache-dir -r requirements-pinned.txt . && \
     pip install --no-cache-dir flower
 
 # Run application

@@ -9,8 +9,7 @@ WORKDIR /app
 RUN dnf install --nodocs -y --disableplugin=subscription-manager gcc libpq-devel && \
     dnf clean all
 
-RUN python -m pip install --no-cache-dir -U pip && \
-    pip install -U --no-cache-dir setuptools wheel && \
+RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
     pip install --no-cache-dir -U -r requirements-pinned.txt .
 
 RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
