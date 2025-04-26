@@ -11,9 +11,10 @@ RUN dnf install --nodocs -y --disableplugin=subscription-manager gcc libpq-devel
 COPY . /app
 
 WORKDIR /app
-RUN pip install --no-cache-dir -U --upgrade-strategy eager pip wheel setuptools && \
-    pip install --no-cache-dir -r requirements-pinned.txt . && \
-    chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
+RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
+    pip install --no-cache-dir -r requirements-pinned.txt .
+
+RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 
 USER 1001
 
