@@ -10,7 +10,7 @@ CREATE_PROJECT=false
 POSTGRES_EXTRA_ARGS=
 REDIS_EXTRA_ARGS=
 BACKEND_EXTRA_ARGS=
-PYTHON_IMAGE=python:3.9
+PYTHON_IMAGE=registry.access.redhat.com/ubi8/python-39:latest
 
 function print_usage() {
     echo "Usage: ibutsu-pod.sh [-h|--help] [-p|--persistent] [-V|--use-volumes] [-A|--create-admin] [-P|--create-project] [POD_NAME]"
@@ -115,25 +115,30 @@ echo -n "Creating ibutsu pod:    "
 podman pod create -p 8080:8080 -p 3000:3000 --name $POD_NAME
 echo "done."
 echo -n "Adding postgres to the pod:    "
+set -x
 podman run -dt \
        --pod $POD_NAME \
-       -e POSTGRES_USER=ibutsu \
-       -e POSTGRES_DB=ibutsu \
-       -e POSTGRES_PASSWORD=ibutsu \
+       -e POSTGRESQL_USER=ibutsu \
+       -e POSTGRESQL_DATABASE=ibutsu \
+       -e POSTGRESQL_PASSWORD=ibutsu \
        $POSTGRES_EXTRA_ARGS \
        --name ibutsu-postgres \
        --rm \
-       postgres:12
+      registry.redhat.io/rhel8/postgresql-12
+set +x
 echo "done."
 echo -n "Adding redis to the pod:    "
+set -x
 podman run -dt \
        --pod $POD_NAME \
        $REDIS_EXTRA_ARGS \
        --name ibutsu-redis \
        --rm \
-       redis:latest
+       quay.io/fedora/redis-7
+set +x
 echo "done."
 echo -n "Adding backend to the pod:    "
+set -x
 podman run -d \
        --rm \
        --pod $POD_NAME \
@@ -150,10 +155,10 @@ podman run -d \
        -w /mnt \
        -v./backend:/mnt/:z \
        $PYTHON_IMAGE \
-       /bin/bash -c 'python -m venv .backend_env && source .backend_env/bin/activate &&
-                     pip install -U pip wheel &&
+       /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
                      pip install . &&
                      python -m ibutsu_server --host 0.0.0.0'
+set +x
 echo "done."
 echo -n "Waiting for backend to respond: "
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); do
@@ -163,6 +168,7 @@ done
 echo "backend up."
 # Note the COLUMNS=80 env var is for https://github.com/celery/celery/issues/5761
 echo -n "Adding celery worker to the pod:    "
+set -x
 podman run -d \
        --rm \
        --pod $POD_NAME \
@@ -181,8 +187,10 @@ podman run -d \
        /bin/bash -c 'pip install -U pip wheel &&
                      pip install . &&
                      ./celery_worker.sh'
+set +x
 echo "done."
 echo -n "Adding frontend to the pod:    "
+set -x
 podman run -d \
        --rm \
        --pod $POD_NAME \
@@ -193,6 +201,7 @@ podman run -d \
        /bin/bash -c "node --dns-result-order=ipv4first /usr/local/bin/npm install --no-save --no-package-lock yarn &&
          yarn install &&
          CI=1 yarn devserver"
+set +x
 echo "done."
 echo -n "Waiting for frontend to respond: "
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:3000); do
