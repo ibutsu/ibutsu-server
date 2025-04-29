@@ -7,7 +7,6 @@ import {
   Flex,
   FlexItem,
   Grid,
-  GridItem,
   PageSection,
   PageSectionVariants,
   Select,
@@ -30,24 +29,18 @@ import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle-icon';
 
 import { HttpClient } from './services/http';
-import { KNOWN_WIDGETS } from './constants';
 import { Settings } from './settings';
 import NewDashboardModal from './components/new-dashboard-modal.js';
 import NewWidgetWizard from './components/new-widget-wizard.js';
 import EditWidgetModal from './components/edit-widget-modal.js';
 import DeleteModal from './components/delete-modal.js';
-import GenericAreaWidget from './widgets/genericarea.js';
-import GenericBarWidget from './widgets/genericbar.js';
-import FilterHeatmapWidget from './widgets/filterheatmap';
-import ImportanceComponentWidget from './widgets/importancecomponent';
-import ResultAggregatorWidget from './widgets/resultaggregator';
-import ResultSummaryWidget from './widgets/resultsummary';
+import { useWidgets } from './components/widgetsHook.js';
 import { IbutsuContext } from './services/context.js';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const Dashboard = () => {
   const { defaultDashboard, primaryObject } = useContext(IbutsuContext);
-  const { dashboard_id, project_id } = useParams();
+  const { paramDashboardId, project_id } = useParams();
 
   const navigate = useNavigate();
 
@@ -61,7 +54,6 @@ const Dashboard = () => {
   const [isDeleteDBOpen, setIsDeleteDBOpen] = useState(false);
 
   // widget states
-  const [widgets, setWidgets] = useState([]);
   const [isNewWidgetOpen, setIsNewWidgetOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editWidgetData, setEditWidgetData] = useState({});
@@ -73,31 +65,36 @@ const Dashboard = () => {
   const [selectFilterValue, setSelectFilterValue] = useState('');
   const selectInputRef = useRef();
 
-  // update widgets
-  useEffect(() => {
-    const getWidgets = async () => {
-      try {
-        const response = await HttpClient.get(
-          [Settings.serverUrl, 'widget-config'],
-          { type: 'widget', filter: `dashboard_id=${selectedDashboard.id}` },
-        );
-        const data = await HttpClient.handleResponse(response);
-        data.widgets.forEach((widget) => {
-          widget.params['project'] = selectedDashboard.project_id;
-        });
-        setWidgets(data.widgets);
-      } catch (error) {
+  const onDeleteWidgetClick = (id) => {
+    setIsDeleteWidgetOpen(true);
+    setCurrentWidget(id);
+  };
+
+  const onEditWidgetClick = (id) => {
+    setIsEditModalOpen(true);
+
+    HttpClient.get([Settings.serverUrl, 'widget-config', id])
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
+        setCurrentWidget(id);
+        setEditWidgetData(data);
+      })
+      .catch((error) => {
         console.error(error);
-      }
-    };
-    if (selectedDashboard) {
-      getWidgets();
-    }
-  }, [selectedDashboard, isDeleteWidgetOpen, isEditModalOpen, isNewWidgetOpen]);
+        setIsEditModalOpen(false);
+      });
+  };
+
+  // update widgets
+  const { widgets, widgetComponents } = useWidgets({
+    dashboardId: selectedDashboard?.id,
+    editCallback: onEditWidgetClick,
+    deleteCallback: onDeleteWidgetClick,
+  });
 
   // Fetch all dashboards for the project
   useEffect(() => {
-    const fetchDashboards = async () => {
+    const fetchDashboards = async (page = 1) => {
       setSelectedDashboard();
       setDashboards();
       setSelectInputValue('');
@@ -106,15 +103,26 @@ const Dashboard = () => {
           [Settings.serverUrl, 'dashboard'],
           {
             project_id: primaryObject.id,
-            pageSize: 150,
+            pageSize: 10,
+            page,
           },
         );
-        const data = (await HttpClient.handleResponse(response))['dashboards'];
-        setDashboards(data);
-        setLoading(false);
-        if (data && dashboard_id && selectedDashboard?.id !== dashboard_id) {
-          const paramDashboard = data
-            .filter((dashboard) => dashboard.id == dashboard_id)
+        const data = await HttpClient.handleResponse(response);
+        const pagedDashboards = data['dashboards'];
+        const paginationData = data['pagination'];
+        console.dir(pagedDashboards);
+        console.dir(paginationData);
+        setDashboards((prevDashboards) => [
+          ...(prevDashboards ? prevDashboards : []),
+          ...pagedDashboards,
+        ]);
+        if (
+          pagedDashboards &&
+          paramDashboardId &&
+          selectedDashboard?.id !== paramDashboardId
+        ) {
+          const paramDashboard = pagedDashboards
+            .filter((db) => db.id == paramDashboardId)
             .pop();
           if (paramDashboard) {
             setSelectedDashboard(paramDashboard);
@@ -124,10 +132,16 @@ const Dashboard = () => {
             console.error('URL parameter dashboard ID not found');
           }
         }
+        if (page < paginationData['totalPages']) {
+          fetchDashboards(page + 1);
+        } else {
+          setLoading(false);
+        }
       } catch (error) {
         console.error(error);
       }
     };
+
     if (primaryObject) {
       fetchDashboards();
     }
@@ -161,6 +175,7 @@ const Dashboard = () => {
   // Apply filter inputs
   useEffect(() => {
     let filteredOptions = dashboards;
+    console.dir(filteredOptions);
     if (selectFilterValue && dashboards) {
       filteredOptions = filteredOptions.filter((dashboard) =>
         dashboard.title.toLowerCase().includes(selectFilterValue.toLowerCase()),
@@ -224,11 +239,6 @@ const Dashboard = () => {
     }
   };
 
-  const onDeleteWidgetClick = (id) => {
-    setIsDeleteWidgetOpen(true);
-    setCurrentWidget(id);
-  };
-
   const onNewWidgetSave = (widgetData) => {
     if (!widgetData.project_id && primaryObject) {
       widgetData.project_id = primaryObject.id;
@@ -250,21 +260,6 @@ const Dashboard = () => {
       .then((response) => HttpClient.handleResponse(response))
       .catch((error) => console.error(error));
     setIsEditModalOpen(false);
-  };
-
-  const onEditWidgetClick = (id) => {
-    setIsEditModalOpen(true);
-
-    HttpClient.get([Settings.serverUrl, 'widget-config', id])
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
-        setCurrentWidget(id);
-        setEditWidgetData(data);
-      })
-      .catch((error) => {
-        console.error(error);
-        setIsEditModalOpen(false);
-      });
   };
 
   useEffect(() => {
@@ -402,146 +397,7 @@ const Dashboard = () => {
       </PageSection>
       <PageSection>
         {!!primaryObject && !!selectedDashboard && !!widgets && (
-          <Grid hasGutter>
-            {widgets?.map((widget) => {
-              if (KNOWN_WIDGETS.includes(widget.widget)) {
-                return (
-                  <GridItem xl={4} lg={6} md={12} key={widget.id}>
-                    {widget.type === 'widget' &&
-                      widget.widget === 'jenkins-heatmap' && (
-                        <FilterHeatmapWidget
-                          title={widget.title}
-                          params={widget.params}
-                          includeAnalysisLink={true}
-                          type="jenkins"
-                          onDeleteClick={() => {
-                            onDeleteWidgetClick(widget.id);
-                          }}
-                          onEditClick={() => {
-                            onEditWidgetClick(widget.id);
-                          }}
-                        />
-                      )}
-                    {widget.type === 'widget' &&
-                      widget.widget === 'filter-heatmap' && (
-                        <FilterHeatmapWidget
-                          title={widget.title}
-                          params={widget.params}
-                          includeAnalysisLink={true}
-                          onDeleteClick={() => {
-                            onDeleteWidgetClick(widget.id);
-                          }}
-                          onEditClick={() => {
-                            onEditWidgetClick(widget.id);
-                          }}
-                        />
-                      )}
-                    {widget.type === 'widget' &&
-                      widget.widget === 'run-aggregator' && (
-                        <GenericBarWidget
-                          title={widget.title}
-                          params={widget.params}
-                          horizontal={true}
-                          percentData={true}
-                          barWidth={20}
-                          onDeleteClick={() => {
-                            onDeleteWidgetClick(widget.id);
-                          }}
-                          onEditClick={() => {
-                            onEditWidgetClick(widget.id);
-                          }}
-                        />
-                      )}
-                    {widget.type === 'widget' &&
-                      widget.widget === 'result-summary' && (
-                        <ResultSummaryWidget
-                          title={widget.title}
-                          params={widget.params}
-                          onDeleteClick={() => {
-                            onDeleteWidgetClick(widget.id);
-                          }}
-                          onEditClick={() => {
-                            onEditWidgetClick(widget.id);
-                          }}
-                        />
-                      )}
-                    {widget.type === 'widget' &&
-                      widget.widget === 'result-aggregator' && (
-                        <ResultAggregatorWidget
-                          title={widget.title}
-                          params={{
-                            project: widget.params.project,
-                            run_id: widget.params.run_id,
-                            additional_filters:
-                              widget.params.additional_filters,
-                          }}
-                          chartType={widget.params.chart_type}
-                          days={widget.params.days}
-                          groupField={widget.params.group_field}
-                          onDeleteClick={() => {
-                            onDeleteWidgetClick(widget.id);
-                          }}
-                          onEditClick={() => {
-                            onEditWidgetClick(widget.id);
-                          }}
-                        />
-                      )}
-                    {widget.type === 'widget' &&
-                      widget.widget === 'jenkins-line-chart' && (
-                        <GenericAreaWidget
-                          title={widget.title}
-                          params={widget.params}
-                          yLabel="Execution time"
-                          widgetEndpoint="jenkins-line-chart"
-                          onDeleteClick={() => {
-                            onDeleteWidgetClick(widget.id);
-                          }}
-                          onEditClick={() => {
-                            onEditWidgetClick(widget.id);
-                          }}
-                        />
-                      )}
-                    {widget.type === 'widget' &&
-                      widget.widget === 'jenkins-bar-chart' && (
-                        <GenericBarWidget
-                          title={widget.title}
-                          params={widget.params}
-                          barWidth={20}
-                          horizontal={true}
-                          hideDropdown={true}
-                          widgetEndpoint="jenkins-bar-chart"
-                          onDeleteClick={() => {
-                            onDeleteWidgetClick(widget.id);
-                          }}
-                          onEditClick={() => {
-                            onEditWidgetClick(widget.id);
-                          }}
-                        />
-                      )}
-                    {widget.type === 'widget' &&
-                      widget.widget === 'importance-component' && (
-                        <ImportanceComponentWidget
-                          title={widget.title}
-                          params={widget.params}
-                          barWidth={20}
-                          horizontal={true}
-                          hideDropdown={true}
-                          widgetEndpoint="importance-component"
-                          onDeleteClick={() => {
-                            onDeleteWidgetClick(widget.id);
-                          }}
-                          onEditClick={() => {
-                            onEditWidgetClick(widget.id);
-                          }}
-                        />
-                      )}
-                  </GridItem>
-                );
-              } else {
-                return '';
-              }
-            })}
-          </Grid>
+          <Grid hasGutter>{widgetComponents}</Grid>
         )}
         {!!primaryObject && !selectedDashboard && (
           <EmptyState>
