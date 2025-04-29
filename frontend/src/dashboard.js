@@ -106,7 +106,7 @@ const Dashboard = () => {
           [Settings.serverUrl, 'dashboard'],
           {
             project_id: primaryObject.id,
-            pageSize: 100,
+            pageSize: 150,
           },
         );
         const data = (await HttpClient.handleResponse(response))['dashboards'];
