@@ -24,7 +24,7 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
-import { IbutsuContext } from '../services/context';
+import { IbutsuContext } from '../components/contexts/ibutsuContext';
 
 const FilterHeatmapWidget = ({
   title = 'Filter Heatmap',

@@ -38,7 +38,7 @@ import { HttpClient } from './services/http';
 import { AuthService } from './services/auth';
 import { KeycloakService } from './services/keycloak';
 import { Settings } from './settings';
-import { IbutsuContext } from './services/context';
+import { IbutsuContext } from './components/contexts/ibutsuContext';
 
 const getLocationFrom = (location) => {
   let { from } = location.state || { from: { pathname: '/' } };
@@ -95,7 +95,6 @@ const Login = () => {
   const from = useMemo(() => getLocationFrom(location), [location]);
 
   useEffect(() => {
-    console.log('Login useEffect location');
     const user = getUser(location);
     if (user) {
       AuthService.setUser(user);
@@ -198,8 +197,6 @@ const Login = () => {
   }, []);
 
   useEffect(() => {
-    console.log('Login useEffect fetch support');
-
     const fetchLoginSupport = async () => {
       try {
         const response = await HttpClient.get([
@@ -389,7 +386,6 @@ const Login = () => {
     xs2x: '/images/pfbg_576@2x.jpg',
   };
 
-  console.log('Login render');
   return (
     <LoginPage
       footerListVariants="inline"

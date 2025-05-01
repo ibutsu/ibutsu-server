@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 
 import { Link } from 'react-router-dom';
-import { IbutsuContext } from '../services/context';
+import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import {
   PageSidebar,
   PageSidebarBody,
@@ -30,16 +30,16 @@ const IbutsuSidebar = () => {
     HttpClient.get([Settings.serverUrl, 'widget-config'], params)
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
-        data.widgets.forEach((widget) => {
-          if (primaryObject) {
+        data.widgets?.forEach((widget) => {
+          if (primaryObject && widget?.params) {
             widget.params['project'] = primaryObject.id;
-          } else {
+          } else if (widget?.params) {
             delete widget.params['project'];
           }
         });
         setViews(data.widgets);
       })
-      .catch((error) => console.log(error));
+      .catch((error) => console.error(error));
   }, [primaryObject]);
 
   useEffect(() => {

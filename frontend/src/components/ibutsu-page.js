@@ -15,7 +15,7 @@ import {
 } from '@patternfly/react-core';
 
 import IbutsuHeader from './ibutsu-header';
-import { IbutsuContext } from '../services/context';
+import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import IbutsuSidebar from './sidebar';
 import { ArchiveIcon } from '@patternfly/react-icons';
 import { ToastContainer } from 'react-toastify';

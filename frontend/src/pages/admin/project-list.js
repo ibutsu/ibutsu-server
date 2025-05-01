@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
 import {
   Button,
-  Card,
-  CardBody,
   Flex,
   FlexItem,
   Modal,
@@ -11,7 +9,6 @@ import {
   PageSectionVariants,
   Text,
   TextContent,
-  TextInput,
 } from '@patternfly/react-core';
 import {
   PencilAltIcon,
@@ -22,27 +19,28 @@ import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { getSpinnerRow } from '../../utilities';
-import FilterTable from '../../components/filtertable';
+import FilterTable from '../../components/filtering/filtered-table-card';
 import EmptyObject from '../../components/empty-object';
+import usePagination from '../../components/hooks/usePagination';
+import { FilterContext } from '../../components/contexts/filterContext';
+import AdminFilter from '../../components/filtering/admin-filter';
+import { filtersToAPIParams } from '../../utilities';
 
 const COLUMNS = ['Title', 'Name', 'Owner', ''];
 
 const ProjectList = () => {
-  const [filterText, setFilterText] = useState('');
-  const [activeFilters, setActiveFilters] = useState({});
+  const { page, setPage, pageSize, setPageSize, totalItems, setTotalItems } =
+    usePagination({});
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalItems, setTotalItems] = useState(0);
-
-  const [projects, setProjects] = useState([]);
+  const [anyProjects, setAnyProjects] = useState(true);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [selectedProject, setSelectedProject] = useState();
 
   const [isError, setIsError] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const { activeFilters, clearFilters } = useContext(FilterContext);
 
   const projectToRow = (project) => ({
     cells: [
@@ -96,33 +94,26 @@ const ProjectList = () => {
   };
 
   useEffect(() => {
-    // handle input value changing for project filter
-    setActiveFilters(filterText ? { title: filterText } : {});
-
-    let newProjects = projects;
-    if (filterText && projects) {
-      newProjects = projects.filter((p) =>
-        String(p.title).toLowerCase().includes(filterText.toLowerCase()),
-      );
-    }
-    setFilteredProjects(newProjects);
-  }, [filterText, projects]);
-
-  useEffect(() => {
-    HttpClient.get([Settings.serverUrl, 'admin', 'project'], {
+    const apiParams = {
       page: page,
       pageSize: pageSize,
-    })
+      filter: filtersToAPIParams(activeFilters),
+    };
+    HttpClient.get([Settings.serverUrl, 'admin', 'project'], apiParams)
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
         setIsError(false);
         if (data?.projects) {
-          setProjects(data.projects);
-          setPage(data.pagination.page);
-          setPageSize(data.pagination.pageSize);
+          if (activeFilters?.length === 0) {
+            // set total projects boolean only if we fetched with no filters
+            setAnyProjects(true);
+          }
+          setFilteredProjects(
+            data.projects.map((project) => projectToRow(project)),
+          );
+          setPage(data.pagination.page.toString());
+          setPageSize(data.pagination.pageSize.toString());
           setTotalItems(data.pagination.totalItems);
-        } else {
-          setProjects([]);
         }
       })
       .catch((error) => {
@@ -130,18 +121,18 @@ const ProjectList = () => {
         setFilteredProjects([]);
         setIsError(true);
       });
-  }, [page, pageSize, isDeleting]); // isDeleteing so the projects fetch after delete
-
-  const onFilterChange = (_, value) => {
-    setFilterText(value);
-  };
+  }, [
+    page,
+    pageSize,
+    isDeleting,
+    setPage,
+    setPageSize,
+    setTotalItems,
+    activeFilters,
+  ]); // isDeleteing so the projects fetch after delete
 
   const onDeleteClose = () => {
     setIsDeleteModalOpen(false);
-  };
-
-  const onRemoveFilter = () => {
-    setFilterText('');
   };
 
   useEffect(() => {
@@ -179,47 +170,21 @@ const ProjectList = () => {
         </Flex>
       </PageSection>
       <PageSection className="pf-u-pb-0">
-        {projects.length > 0 && (
-          <Card>
-            <CardBody className="pf-u-p-0">
-              <FilterTable
-                columns={COLUMNS}
-                rows={
-                  filteredProjects
-                    ? filteredProjects.map((p) => projectToRow(p))
-                    : [getSpinnerRow(4)]
-                }
-                activeFilters={activeFilters}
-                filters={[
-                  <TextInput
-                    type="text"
-                    id="filter"
-                    placeholder="Search for project..."
-                    value={filterText}
-                    onChange={onFilterChange}
-                    style={{ height: 'inherit' }}
-                    key="filterText"
-                  />,
-                ]}
-                pagination={{
-                  pageSize: pageSize,
-                  page: page,
-                  totalItems: totalItems,
-                }}
-                onRemoveFilter={onRemoveFilter}
-                isEmpty={filteredProjects.length === 0}
-                isError={isError}
-                onSetPage={(_, value) => {
-                  setPage(value);
-                }}
-                onSetPageSize={(_, value) => {
-                  setPageSize(value);
-                }}
-              />
-            </CardBody>
-          </Card>
+        {anyProjects && (
+          <FilterTable
+            columns={COLUMNS}
+            rows={filteredProjects}
+            filters={<AdminFilter />}
+            pageSize={pageSize}
+            page={page}
+            totalItems={totalItems}
+            isError={isError}
+            onClearFilters={clearFilters}
+            onSetPage={setPage}
+            onSetPageSize={setPageSize}
+          />
         )}
-        {projects.length === 0 && (
+        {!anyProjects && (
           <EmptyObject
             headingText="No Projects found"
             bodyText="Create your first project"

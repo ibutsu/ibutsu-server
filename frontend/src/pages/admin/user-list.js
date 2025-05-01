@@ -1,38 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
 import {
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  Flex,
-  FlexItem,
   Modal,
   PageSection,
   PageSectionVariants,
-  Pagination,
-  PaginationVariant,
-  Skeleton,
   TextContent,
   Title,
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { toAPIFilter } from '../../utilities';
-import useUserFilter from '../../components/user-filter';
+import { filtersToAPIParams, userToRow } from '../../utilities';
 import { USER_COLUMNS } from '../../constants';
-import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { TableEmptyState, TableErrorState } from '../../components/tablestates';
-import UserRow from '../../components/user-row';
+import usePagination from '../../components/hooks/usePagination';
+import FilterTable from '../../components/filtering/filtered-table-card';
+import { FilterContext } from '../../components/contexts/filterContext';
+import AdminFilter from '../../components/filtering/admin-filter';
+
+const COLUMNS = Object.values(USER_COLUMNS);
 
 const UserList = () => {
-  const [users, setUsers] = useState([]);
+  const [rows, setRows] = useState([]);
   const [selectedUser, setSelectedUser] = useState();
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalItems, setTotalItems] = useState(0);
+  const { page, setPage, pageSize, setPageSize, totalItems, setTotalItems } =
+    usePagination({});
 
   const [isError, setIsError] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -40,8 +33,7 @@ const UserList = () => {
 
   const [fetching, setFetching] = useState(true);
 
-  const { filterComponents, activeFilterComponents, activeFilters } =
-    useUserFilter();
+  const { activeFilters, clearFilters } = useContext(FilterContext);
 
   useEffect(() => {
     // fetch the users
@@ -49,31 +41,39 @@ const UserList = () => {
     const apiParams = {
       page: page,
       pageSize: pageSize,
-      ...(Object.keys(activeFilters)?.length === 0
-        ? {}
-        : { filter: toAPIFilter(activeFilters) }),
+      filter: filtersToAPIParams(activeFilters),
     };
+
     HttpClient.get([Settings.serverUrl, 'admin', 'user'], apiParams)
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
-        if (data?.users?.length > 0) {
-          setUsers(data.users);
-          setPage(data.pagination.page);
-          setPageSize(data.pagination.pageSize);
-          setTotalItems(data.pagination.totalItems);
-          setFetching(false);
-        } else {
-          setUsers([]);
-          setFetching(false);
-        }
+        setRows(
+          data.users
+            .map((user) =>
+              userToRow(user, setSelectedUser, setIsDeleteModalOpen),
+            )
+            .filter(Boolean),
+        );
+        setPage(data.pagination.page.toString());
+        setPageSize(data.pagination.pageSize.toString());
+        setTotalItems(data.pagination.totalItems.toString());
+        setFetching(false);
       })
       .catch((error) => {
         console.error('Error fetching users data:', error);
-        setUsers([]);
+        setRows([]);
         setIsError(true);
         setFetching(false);
       });
-  }, [page, pageSize, isDeleting, activeFilters]); // isDeleteing so the users fetch after delete
+  }, [
+    page,
+    pageSize,
+    isDeleting,
+    activeFilters,
+    setPage,
+    setPageSize,
+    setTotalItems,
+  ]); // isDeleteing so the users fetch after delete
 
   const onModalDeleteClick = () => {
     setIsDeleting(true);
@@ -99,83 +99,20 @@ const UserList = () => {
         </TextContent>
       </PageSection>
       <PageSection>
-        <Card>
-          <CardHeader>
-            {filterComponents}
-            {activeFilterComponents}
-          </CardHeader>
-          <CardBody>
-            <Flex
-              alignSelf={{ default: 'alignSelfFlexEnd' }}
-              direction={{ default: 'column' }}
-              align={{ default: 'alignRight' }}
-            >
-              <FlexItem>
-                <Pagination
-                  perPage={pageSize}
-                  page={page}
-                  variant={PaginationVariant.top}
-                  itemCount={totalItems}
-                  onSetPage={(_, value) => setPage(value)}
-                  onPerPageSelect={(_, value) => setPageSize(value)}
-                  isCompact
-                />
-              </FlexItem>
-            </Flex>
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th width={20} dataLabel={USER_COLUMNS.name}>
-                    {USER_COLUMNS.name}
-                  </Th>
-                  <Th width={20} dataLabel={USER_COLUMNS.email}>
-                    {USER_COLUMNS.email}
-                  </Th>
-                  <Th width={40} dataLabel={USER_COLUMNS.projects}>
-                    {USER_COLUMNS.projects}
-                  </Th>
-                  <Th width={10} dataLabel={USER_COLUMNS.status}>
-                    {USER_COLUMNS.status}
-                  </Th>
-                  <Th width={5} screenReaderText="Edit Action" />
-                  <Th width={5} screenReaderText="Delete Action" />
-                </Tr>
-              </Thead>
-              <Tbody>
-                {!fetching && users?.length === 0 && <TableEmptyState />}
-                {!fetching && isError && <TableErrorState />}
-                {!fetching &&
-                  users.map((user) => (
-                    <UserRow
-                      user={user}
-                      key={user.id}
-                      setSelectedUser={setSelectedUser}
-                      setIsDeleteModalOpen={setIsDeleteModalOpen}
-                    />
-                  ))}
-                {fetching && (
-                  <Tr>
-                    <Td colSpan={6}>
-                      <Skeleton />
-                    </Td>
-                  </Tr>
-                )}
-              </Tbody>
-            </Table>
-
-            <Pagination
-              widgetId="pagination-options-menu-bottom"
-              perPage={pageSize}
-              page={page}
-              variant={PaginationVariant.top}
-              itemCount={totalItems}
-              dropDirection="up"
-              onSetPage={(_, value) => setPage(value)}
-              onPerPageSelect={(_, value) => setPageSize(value)}
-              style={{ marginTop: '1rem' }}
-            />
-          </CardBody>
-        </Card>
+        <FilterTable
+          columns={COLUMNS}
+          rows={rows}
+          filters={<AdminFilter />}
+          isError={isError}
+          canSelectAll={false}
+          onSetPage={setPage}
+          onSetPageSize={setPageSize}
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          fetching={fetching}
+          onClearFilters={clearFilters}
+        />
       </PageSection>
       <Modal
         title="Confirm Delete"

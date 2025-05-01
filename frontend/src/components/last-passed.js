@@ -4,34 +4,44 @@ import { Link } from 'react-router-dom';
 import { Badge } from '@patternfly/react-core';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
+import { filtersToAPIParams } from '../utilities';
 
-import { buildParams, toAPIFilter } from '../utilities';
-
-const LastPassed = ({ filters }) => {
+const LastPassed = ({ filters = [] }) => {
   const [resultData, setResultData] = useState();
 
   useEffect(() => {
     // get the passed/failed/etc test summary
     // disregard result filter so we can filter on last passed
-    if (filters) {
-      const params = { ...filters };
-      delete params['result'];
-      delete params['start_time'];
-      params['result'] = { op: 'eq', val: 'passed' };
-      const apiParams = buildParams(filters);
-      apiParams['filter'] = toAPIFilter(filters);
-      apiParams['pageSize'] = 1;
-      apiParams['page'] = 1;
-      apiParams['estimate'] = 'true';
+    const fetchResults = async () => {
+      // drop result and start time filters
 
-      HttpClient.get([Settings.serverUrl, 'result'], apiParams)
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          setResultData(data.results[0]);
-        })
-        .catch((error) => {
-          console.error('Error fetching result data:', error);
-        });
+      const filtersForParam = filters.filter(
+        (f) => !['result', 'start_time'].includes(f.field),
+      );
+      filtersForParam.push({
+        field: 'result',
+        operator: 'eq',
+        value: 'passed',
+      });
+      const apiParams = {
+        estimate: true,
+        filter: filtersToAPIParams(filtersForParam),
+      };
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'result'],
+          apiParams,
+        );
+        const data = await HttpClient.handleResponse(response);
+
+        setResultData(data.results[0]);
+      } catch (error) {
+        console.error('Error fetching result data:', error);
+      }
+    };
+
+    if (filters.length) {
+      fetchResults();
     }
   }, [filters]);
 
@@ -55,7 +65,7 @@ const LastPassed = ({ filters }) => {
 };
 
 LastPassed.propTypes = {
-  filters: PropTypes.object,
+  filters: PropTypes.arrayOf(PropTypes.object),
 };
 
 export default LastPassed;

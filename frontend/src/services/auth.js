@@ -49,9 +49,9 @@ export class AuthService {
       .then((response) => response.json())
       .then(() => true) // returns for register
       .catch((error) => {
-        console.log(error);
+        console.error(error);
         AuthService.registerError = error;
-        return false;
+        return Promise.resolve(false);
       });
   }
 
@@ -73,7 +73,7 @@ export class AuthService {
         }
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
         AuthService.recoverError = error;
         return false;
       });
@@ -100,7 +100,7 @@ export class AuthService {
         }
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
         AuthService.resetError = error;
         return false;
       });
@@ -137,13 +137,24 @@ export class AuthService {
     if (!user) {
       return false;
     }
-    return fetch(Settings.serverUrl + '/user', {
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-        Authorization: 'Bearer ' + user.token,
-      },
-    })
-      .then((response) => response.json())
-      .then((json) => json.is_superadmin);
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(Settings.serverUrl + '/user', {
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: 'Bearer ' + user.token,
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`User request not ok: ${response.message}`);
+        }
+        const json = await response.json();
+        return json.is_superadmin;
+      } catch (error) {
+        console.error('Error checking admin for user: ', error);
+        return Promise.resolve(false);
+      }
+    };
+    return fetchUser();
   }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
 import {
   ActionGroup,
@@ -30,8 +30,9 @@ import { TimesIcon } from '@patternfly/react-icons';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { dashboardToOption, toAPIFilter } from '../../utilities.js';
-import useUserFilter from '../../components/user-filter.js';
+import { dashboardToOption, filtersToAPIParams } from '../../utilities';
+import { FilterContext } from '../../components/contexts/filterContext';
+import AdminFilter from '../../components/filtering/admin-filter';
 
 const userToOption = (user) => {
   if (!user) {
@@ -109,7 +110,7 @@ const ProjectEdit = () => {
     }
     request
       .then((response) => HttpClient.handleResponse(response))
-      .then(() => navigate(-1))
+      .then(() => navigate('/admin/projects', { replace: true }))
       .catch((error) => console.error(error));
   };
 
@@ -136,15 +137,14 @@ const ProjectEdit = () => {
     setFilterValueDashboard(value);
   };
 
-  const { filterComponents, activeFilterComponents, activeFilters } =
-    useUserFilter();
+  const { activeFilters } = useContext(FilterContext);
 
   // fetch the admin users with the active filter
   useEffect(() => {
     HttpClient.get([Settings.serverUrl, 'admin', 'user'], {
       ...(Object.keys(activeFilters)?.length === 0
         ? {}
-        : { filter: toAPIFilter(activeFilters) }),
+        : { filter: filtersToAPIParams(activeFilters) }),
     })
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
@@ -365,8 +365,7 @@ const ProjectEdit = () => {
                       {isNewProject
                         ? 'Owner of the new project is set to the user who created it. This can be changed later by editing the project.'
                         : 'The user who owns the project. Use the filter to narrow the selection options above.'}
-                      {!isNewProject && filterComponents}
-                      {activeFilterComponents}
+                      {!isNewProject && <AdminFilter />}
                     </HelperTextItem>
                   </HelperText>
                 </FormHelperText>

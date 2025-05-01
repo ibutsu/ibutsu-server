@@ -67,7 +67,7 @@ const UserEdit = () => {
       .catch((error) =>
         console.error('Error committing user update: ' + error),
       );
-    navigate(-1);
+    navigate('/admin/users', { replace: true });
   };
 
   const onProjectsSelect = (_, value) => {
@@ -303,7 +303,10 @@ const UserEdit = () => {
                   <Button variant="primary" onClick={onSubmitClick}>
                     Submit
                   </Button>
-                  <Button variant="secondary" onClick={() => navigate(-1)}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => navigate('/admin/users')}
+                  >
                     Cancel
                   </Button>
                 </ActionGroup>

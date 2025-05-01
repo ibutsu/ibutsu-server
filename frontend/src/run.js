@@ -47,40 +47,50 @@ import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import {
-  getSpinnerRow,
-  resultToRow,
-  round,
-  buildResultsTree,
-} from './utilities';
+import { resultToRow, round, buildResultsTree } from './utilities';
 import EmptyObject from './components/empty-object';
-import FilterTable from './components/filtertable';
-import ResultView from './components/result';
+import FilterTable from './components/filtering/filtered-table-card';
+import ResultView from './components/resultView';
 import TabTitle from './components/tabs';
 import ClassifyFailuresTable from './components/classify-failures';
 import ArtifactTab from './components/artifact-tab';
-import { IbutsuContext } from './services/context';
-import { useTabHook } from './components/tabHook';
+import { IbutsuContext } from './components/contexts/ibutsuContext';
+import { useTabHook } from './components/hooks/useTab';
+import usePagination from './components/hooks/usePagination';
 import PropTypes from 'prop-types';
+import { RESULT_FIELDS, RUN_RESULTS_COLUMNS } from './constants';
+import FilterProvider from './components/contexts/filterContext';
 
-const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
+const RUN_BLOCK = ['run_id', 'result'];
+const CLASSIFY_FIELDS = RESULT_FIELDS.filter(
+  (field) => !RUN_BLOCK.includes(field.value),
+);
 
 const Run = ({ defaultTab = 'summary' }) => {
   const { run_id } = useParams();
 
-  const context = useContext(IbutsuContext);
-  const { darkTheme } = context;
+  const { darkTheme, primaryObject } = useContext(IbutsuContext);
+  const { project_id } = useParams();
 
   const [run, setRun] = useState({});
   const [testResult, setTestResult] = useState(null);
-  const [rows, setRows] = useState([getSpinnerRow(5)]);
+  const [rows, setRows] = useState([]);
 
-  const [pageSize, setPageSize] = useState(10);
-  const [page, setPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const {
+    page,
+    setPage,
+    onSetPage,
+    pageSize,
+    setPageSize,
+    onSetPageSize,
+    totalItems,
+    setTotalItems,
+  } = usePagination({ setParams: false });
 
   const [isRunValid, setIsRunValid] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [fetching, setFetching] = useState(true);
+
   const [resultsTree, setResultsTree] = useState([]);
   const [activeItems, setActiveItems] = useState([]);
 
@@ -107,15 +117,19 @@ const Run = ({ defaultTab = 'summary' }) => {
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
         setRows(data.results.map((result) => resultToRow(result)));
-        setPage(data.pagination.page);
-        setPageSize(data.pagination.pageSize);
+        setPage(data.pagination.page.toString());
+        setPageSize(data.pagination.pageSize.toString());
         setTotalItems(data.pagination.totalItems);
+        setFetching(false);
       })
       .catch((error) => {
         console.error('Error fetching result data:', error);
         setRows([]);
         setIsError(true);
+        setFetching(false);
       });
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, run_id]);
 
   useEffect(() => {
@@ -559,44 +573,35 @@ const Run = ({ defaultTab = 'summary' }) => {
               eventKey="results-list"
               title={<TabTitle icon={<CatalogIcon />} text="Results List" />}
             >
-              <Card className="pf-u-mt-lg">
-                <CardHeader>
+              <FilterTable
+                headerChildren={
                   <Flex style={{ width: '100%' }}>
-                    <FlexItem grow={{ default: 'grow' }}>
-                      <TextContent>
-                        <Text component="h2" className="pf-v5-c-title pf-m-xl">
-                          Test results
-                        </Text>
-                      </TextContent>
-                    </FlexItem>
                     <FlexItem>
                       <Link
-                        to={`../results?run_id[eq]=${run.id}`}
-                        relative="Path"
-                        className="pf-v5-c-button pf-m-primary"
+                        to={{
+                          pathname: `/project/${primaryObject?.id || project_id}/results`,
+                          search: new URLSearchParams({
+                            run_id: `[eq]${run.id}`,
+                          }).toString(),
+                        }}
                         style={{ marginLeft: '2px' }}
                       >
-                        See all results <ChevronRightIcon />
+                        Apply more filters on the Test Results page
+                        <ChevronRightIcon />
                       </Link>
                     </FlexItem>
                   </Flex>
-                </CardHeader>
-                <CardBody>
-                  <FilterTable
-                    columns={COLUMNS}
-                    rows={rows}
-                    pagination={{
-                      pageSize: pageSize,
-                      page: page,
-                      totalItems: totalItems,
-                    }}
-                    isEmpty={rows.length === 0}
-                    isError={isError}
-                    onSetPage={(_, value) => setPage(value)}
-                    onSetPageSize={(_, value) => setPageSize(value)}
-                  />
-                </CardBody>
-              </Card>
+                }
+                fetching={fetching}
+                columns={RUN_RESULTS_COLUMNS}
+                rows={rows}
+                pageSize={pageSize}
+                page={page}
+                totalItems={totalItems}
+                isError={isError}
+                onSetPage={onSetPage}
+                onSetPageSize={onSetPageSize}
+              />
             </Tab>
             <Tab
               eventKey="results-tree"
@@ -669,7 +674,13 @@ const Run = ({ defaultTab = 'summary' }) => {
                 <TabTitle icon={<MessagesIcon />} text="Classify Failures" />
               }
             >
-              <ClassifyFailuresTable run_id={run_id} />
+              <FilterProvider
+                key="run"
+                blockRemove={RUN_BLOCK}
+                fieldOptions={CLASSIFY_FIELDS}
+              >
+                <ClassifyFailuresTable run_id={run_id} />
+              </FilterProvider>
             </Tab>
             {artifactTabs}
             <Tab

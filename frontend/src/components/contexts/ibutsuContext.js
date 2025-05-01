@@ -1,6 +1,6 @@
 import { createContext, useState } from 'react';
 import PropTypes from 'prop-types';
-import { getDarkTheme } from '../utilities';
+import { getDarkTheme } from '../../utilities';
 
 const IbutsuContext = createContext({ primaryType: 'project' });
 
