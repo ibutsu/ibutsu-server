@@ -42,7 +42,7 @@ import UserDropdown from './user-dropdown';
 import { VERSION } from '../constants';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { IbutsuContext } from '../services/context';
+import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import { setDocumentDarkTheme } from '../utilities';
 
@@ -165,6 +165,7 @@ const IbutsuHeader = () => {
           }}
           onChange={onProjectTextInputChange}
           id="typeahead-select-input"
+          name="project-select-input-toggle"
           autoComplete="off"
           placeholder="No active project"
           role="combobox"

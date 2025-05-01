@@ -12,7 +12,7 @@ import { SignUp } from './sign-up';
 import ForgotPassword from './forgot-password';
 import ResetPassword from './reset-password';
 import { AuthService } from './services/auth';
-import { IbutsuContextProvider } from './services/context';
+import { IbutsuContextProvider } from './components/contexts/ibutsuContext';
 
 export const Base = () => (
   <IbutsuContextProvider>

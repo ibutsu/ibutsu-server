@@ -77,7 +77,7 @@ const ResultAggregatorWidget = ({
       })
       .catch((error) => {
         setResultAggregatorError(true);
-        console.log(error);
+        console.error(error);
       });
   }, [filterDays, filterGroupField, filterChartType]);
 

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import UploadIcon from '@patternfly/react-icons/dist/esm/icons/upload-icon';
 
 import { HttpClient } from '../services/http';
-import { IbutsuContext } from '../services/context';
+import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import {
   AlertActionLink,
   Button,

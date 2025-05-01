@@ -12,6 +12,8 @@ import IbutsuPage from './components/ibutsu-page';
 import View from './components/view';
 
 import './app.css';
+import FilterProvider from './components/contexts/filterContext.js';
+import { RESULT_FIELDS, RUN_FIELDS } from './constants';
 
 const App = () => {
   // apparently it's good practice to set this after render via effect
@@ -27,10 +29,27 @@ const App = () => {
         <Route path="dashboard/:dashboard_id" element={<Dashboard />} />
         <Route path="dashboard/*" element={<Dashboard />} />
 
-        <Route path="runs" element={<RunList />} />
+        <Route
+          path="runs"
+          element={
+            // set key to force mount on FilterProviders
+            // RunList uses RunFilters
+            <FilterProvider key="runs" fieldOptions={RUN_FIELDS}>
+              <RunList />
+            </FilterProvider>
+          }
+        />
         <Route path="runs/:run_id" element={<Run />} />
 
-        <Route path="results" element={<ResultList />} />
+        <Route
+          path="results"
+          element={
+            // ResultList uses ResultFilters
+            <FilterProvider key="results" fieldOptions={RESULT_FIELDS}>
+              <ResultList />
+            </FilterProvider>
+          }
+        />
         <Route path="results/:result_id" element={<Result />} />
 
         <Route path="reports" element={<ReportBuilder />} />

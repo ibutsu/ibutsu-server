@@ -80,7 +80,7 @@ const GenericBarWidget = ({
       })
       .catch((error) => {
         setGenericBarError(true);
-        console.log(error);
+        console.error(error);
       });
   }, [widgetEndpoint, params]);
 

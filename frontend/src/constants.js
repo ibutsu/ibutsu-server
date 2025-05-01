@@ -34,57 +34,90 @@ export const ARRAY_OPERATIONS = {
   in: '*',
 };
 export const OPERATIONS = { ...STRING_OPERATIONS, ...NUMERIC_OPERATIONS };
-export const ARRAY_RESULT_FIELDS = ['metadata.tags', 'metadata.markers'];
+
+// TODO create groups of these for presentation layer SelectGroup
+export const ARRAY_RESULT_FIELDS = [
+  { value: 'metadata.tags', children: 'Metadata Tags' },
+  { value: 'metadata.markers', children: 'Metadata Markers' },
+];
+
 export const NUMERIC_RESULT_FIELDS = [
-  'duration',
-  'metadata.durations.call',
-  'metadata.durations.setup',
-  'metadata.durations.teardown',
-  'metadata.jenkins.build_number',
+  { value: 'duration', children: 'Duration' },
+  { value: 'metadata.durations.call', children: 'Metadata Call Duration' },
+  { value: 'metadata.durations.setup', children: 'Metadata Setup Duration' },
+  {
+    value: 'metadata.durations.teardown',
+    children: 'Metadata Teardown Duration',
+  },
+  {
+    value: 'metadata.jenkins.build_number',
+    children: 'Metadata Jenkins Build Number',
+  },
 ];
+
 export const STRING_RESULT_FIELDS = [
-  'env',
-  'component',
-  'run_id',
-  'project_id',
-  'metadata.assignee',
-  'metadata.team',
-  'metadata.caseautomation',
-  'metadata.fspath',
-  'metadata.jenkins.job_name',
-  'metadata.id',
-  'metadata.nodeid',
-  'metadata.params',
-  'metadata.project',
-  'metadata.title',
-  'metadata.endpoint',
-  'params',
-  'result',
-  'source',
-  'start_time', // TODO: handle this with a calendar widget?
-  'test_id',
+  { value: 'env', children: 'Environment' },
+  { value: 'component', children: 'Component' },
+  { value: 'run_id', children: 'Run ID' },
+  { value: 'project_id', children: 'Project ID' },
+  { value: 'metadata.assignee', children: 'Metadata Assignee' },
+  { value: 'metadata.team', children: 'Metadata Team' },
+  { value: 'metadata.caseautomation', children: 'Metadata Case Automation' },
+  { value: 'metadata.fspath', children: 'Metadata File Path' },
+  { value: 'metadata.jenkins.job_name', children: 'Metadata Jenkins Job Name' },
+  { value: 'metadata.id', children: 'Metadata ID' },
+  { value: 'metadata.nodeid', children: 'Metadata Node ID' },
+  { value: 'metadata.params', children: 'Metadata Parameters' },
+  { value: 'metadata.project', children: 'Metadata Project' },
+  { value: 'metadata.title', children: 'Metadata Title' },
+  { value: 'metadata.endpoint', children: 'Metadata Endpoint' },
+  { value: 'metadata.exception_name', children: 'Metadata Exception Name' },
+  { value: 'params', children: 'Params' },
+  { value: 'result', children: 'Result' },
+  { value: 'source', children: 'Source' },
+  { value: 'start_time', children: 'Start Time' },
+  { value: 'test_id', children: 'Test ID' },
 ];
-export const RESULT_FIELDS = [
+
+const RESULT_FIELDS = [
   ...NUMERIC_RESULT_FIELDS,
   ...STRING_RESULT_FIELDS,
   ...ARRAY_RESULT_FIELDS,
 ];
-export const ARRAY_RUN_FIELDS = ['metadata.tags'];
-export const NUMERIC_RUN_FIELDS = [
-  'duration',
-  'summary.errors',
-  'summary.failures',
-  'summary.skips',
-  'summary.xfailures',
-  'summary.xpasses',
-  'summary.tests',
+
+const SRF = [...RESULT_FIELDS].sort((a, b) => a.value.localeCompare(b.value));
+export { SRF as RESULT_FIELDS };
+
+export const ARRAY_RUN_FIELDS = [
+  { value: 'metadata.tags', children: 'Metadata Tags' },
 ];
-export const STRING_RUN_FIELDS = ['id', 'component', 'env', 'source'];
-export const RUN_FIELDS = [
+
+export const NUMERIC_RUN_FIELDS = [
+  { value: 'duration', children: 'Duration' },
+  { value: 'summary.errors', children: 'Summary Error Count' },
+  { value: 'summary.failures', children: 'Summary Failure Count' },
+  { value: 'summary.skips', children: 'Summary Skip Count' },
+  { value: 'summary.xfailures', children: 'Summary Xfailure Count' },
+  { value: 'summary.xpasses', children: 'Summary Xpasses Count' },
+  { value: 'summary.tests', children: 'Summary Total Count' },
+];
+
+export const STRING_RUN_FIELDS = [
+  { value: 'id', children: 'ID' },
+  { value: 'component', children: 'Component' },
+  { value: 'env', children: 'Env' },
+  { value: 'source', children: 'Source' },
+];
+
+const RUN_FIELDS = [
   ...NUMERIC_RUN_FIELDS,
   ...STRING_RUN_FIELDS,
   ...ARRAY_RUN_FIELDS,
 ];
+
+const SRUF = [...RUN_FIELDS].sort((a, b) => a.value.localeCompare(b.value));
+export { SRUF as RUN_FIELDS };
+
 export const STRING_ACCESSIBILITY_FIELDS = [
   'run_id',
   'summary',
@@ -100,15 +133,10 @@ export const STRING_JJV_FIELDS = ['job_name', 'source', 'build_number', 'env'];
 export const NUMERIC_JJV_FIELDS = ['start_time'];
 export const JJV_FIELDS = [...STRING_JJV_FIELDS, ...NUMERIC_JJV_FIELDS];
 
+// TODO more user filtering on active and admin
 export const STRING_USER_FIELDS = [
-  {
-    value: 'name',
-    children: 'Display Name',
-  },
-  {
-    value: 'email',
-    children: 'Email Address',
-  },
+  { value: 'name', children: 'Name' },
+  { value: 'email', children: 'Email' },
 ];
 
 export const USER_COLUMNS = {
@@ -119,6 +147,9 @@ export const USER_COLUMNS = {
   edit: 'Edit Action',
   delete: 'Delete Action',
 };
+
+// TODO more project filtering on owner and title
+export const STRING_PROJECT_FIELDS = [{ value: 'name', children: 'Name' }];
 
 export const CLASSIFICATION = {
   dependency_outage: 'Dependency Outage',
@@ -131,3 +162,29 @@ export const CLASSIFICATION = {
 export const HEATMAP_MAX_BUILDS = 40;
 
 export const THEME_KEY = 'theme';
+
+export const WEEKS = {
+  '1 Week': 0.25,
+  '2 Weeks': 0.5,
+  '1 Month': 1.0,
+  '2 Months': 2.0,
+  '3 Months': 3.0,
+  '5 Months': 5.0,
+};
+
+export const RESULT_STATES = {
+  passed: 'passes',
+  failed: 'failures',
+  error: 'errors',
+  skipped: 'skips',
+  xfailed: 'xfailures',
+  xpassed: 'xpasses',
+};
+
+export const RUN_RESULTS_COLUMNS = [
+  'Test',
+  'Result',
+  'Duration',
+  'Run',
+  'Started',
+];

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 
 import {
   PageSection,
@@ -15,6 +15,7 @@ import JenkinsJobView from '../views/jenkinsjob';
 import JenkinsJobAnalysisView from '../views/jenkinsjobanalysis';
 import AccessibilityAnalysisView from '../views/accessibilityanalysis';
 import CompareRunsView from '../views/compareruns';
+import FilterProvider from './contexts/filterContext';
 
 const VIEW_MAP = {
   'accessibility-dashboard-view': AccessibilityDashboardView,
@@ -25,17 +26,15 @@ const VIEW_MAP = {
 };
 
 const View = () => {
-  const location = useLocation();
   const params = useParams();
-  const navigate = useNavigate();
 
-  const [view, setView] = useState();
+  const [viewSpec, setViewSpec] = useState();
 
   useEffect(() => {
     if (params?.view_id) {
       HttpClient.get([Settings.serverUrl, 'widget-config', params.view_id])
         .then((response) => HttpClient.handleResponse(response))
-        .then((data) => setView(data))
+        .then((data) => setViewSpec(data))
         .catch((error) => {
           console.error(error);
         });
@@ -43,25 +42,27 @@ const View = () => {
   }, [params]);
 
   useEffect(() => {
-    if (view) {
-      document.title = view.title + ' | Ibutsu';
+    if (viewSpec) {
+      document.title = viewSpec.title + ' | Ibutsu';
     }
-  }, [view]);
+  }, [viewSpec]);
 
-  const ViewComponent = view ? VIEW_MAP[view.widget] : null;
+  const ViewComponent = viewSpec ? VIEW_MAP[viewSpec.widget] : null;
 
   return (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>
         <TextContent>
           <Title headingLevel="h1">
-            {(view && view.title) || 'Loading...'}
+            {(viewSpec && viewSpec.title) || 'Loading...'}
           </Title>
         </TextContent>
       </PageSection>
       <PageSection className="pf-u-pb-0">
         {!!ViewComponent && (
-          <ViewComponent view={view} location={location} navigate={navigate} />
+          <FilterProvider>
+            <ViewComponent view={viewSpec} />
+          </FilterProvider>
         )}
       </PageSection>
     </React.Fragment>

@@ -3,12 +3,9 @@
 // MetaFilter removal isn't working right now
 // The Apply Filters button needs connection to table rendering
 // It would be great to better control the selectable fields in MetaFilter for this view as not all fields are relevant
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
-  Card,
-  CardBody,
-  CardHeader,
   Flex,
   FlexItem,
   TextContent,
@@ -18,7 +15,7 @@ import {
 } from '@patternfly/react-core';
 import { TableVariant, expandable } from '@patternfly/react-table';
 
-import FilterTable from '../components/filtertable';
+import FilterTable from '../components/filtering/filtered-table-card';
 import MetaFilter from '../components/metafilter';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
@@ -27,8 +24,8 @@ import {
   getSpinnerRow,
   resultToComparisonRow,
 } from '../utilities';
-import { IbutsuContext } from '../services/context';
-import ResultView from '../components/result';
+import { IbutsuContext } from '../components/contexts/ibutsuContext';
+import ResultView from '../components/resultView';
 
 const COLUMNS = [
   { title: 'Test', cellFormatters: [expandable] },
@@ -41,11 +38,12 @@ const FEPSX = 'failed;error;passed;skipped;xfailed';
 const DEFAULT_FILTER = {
   // one for each run
   // TODO flatten this here and expand when fetch is made since they're kept in sync?
+  // TODO filters as array
   run0: {
-    result: { op: 'in', val: FEP },
+    result: { operator: 'in', val: FEP },
   },
   run1: {
-    result: { op: 'in', val: FEP },
+    result: { operator: 'in', val: FEP },
   },
 };
 
@@ -67,26 +65,27 @@ const CompareRunsView = () => {
 
   const [filters, setFilters] = useState(DEFAULT_FILTER);
 
-  const onSkipCheck = (checked) => {
-    setIncludeSkipped(checked);
+  const onSkipCheck = useCallback(
+    (checked) => {
+      setIncludeSkipped(checked);
 
-    // mutate to set the result value field
-    setFilters({
-      ...filters,
-      result: {
-        ...filters.result,
-        val: checked ? FEPSX : FEP,
-      },
-    });
-  };
+      // mutate to set the result value field
+      setFilters({
+        ...filters,
+        result: {
+          ...filters.result,
+          val: checked ? FEPSX : FEP,
+        },
+      });
+    },
+    [filters],
+  );
 
   const updateFilters = (filterId, name, operator, value) => {
     let newFilters = { ...filters };
     if (value === null || value.length === 0) {
-      console.log('removing filter');
       delete newFilters['run' + filterId][name];
     } else {
-      console.log('adding filter');
       newFilters['run' + filterId][name] = { op: operator, val: String(value) };
     }
 
@@ -99,6 +98,7 @@ const CompareRunsView = () => {
     updateFilters(filterId, field, value.includes(';') ? 'in' : 'eq', value);
   };
 
+  // TODO use block with useTableFilters
   const removeFilter = (filterId, id) => {
     if (id !== 'result' && id !== 'run_id') {
       // Don't allow removal of error/failure filter
@@ -137,8 +137,8 @@ const CompareRunsView = () => {
         .then((data) => {
           console.dir(data.results);
           setResults(data.results);
-          setPage(data.pagination.page);
-          setPageSize(data.pagination.pageSize);
+          setPage(data.pagination.page.toString());
+          setPageSize(data.pagination.pageSize.toString());
           setTotalItems(data.pagination.totalItems);
         })
         .catch((error) => {
@@ -248,65 +248,63 @@ const CompareRunsView = () => {
     );
   }, [results]);
 
+  const compareHeader = useMemo(() => {
+    return (
+      <Flex style={{ width: '100%' }}>
+        <FlexItem grow={{ default: 'grow' }}>
+          <TextContent>
+            <Text component="h2" className="pf-v5-c-title pf-m-xl">
+              Select Test Run metadata to compare
+            </Text>
+          </TextContent>
+        </FlexItem>
+        <FlexItem>
+          <TextContent>
+            <Checkbox
+              id="include-skips"
+              label="Include skips, xfails"
+              isChecked={includeSkipped}
+              aria-label="include-skips-checkbox"
+              onChange={(_, checked) => onSkipCheck(checked)}
+            />
+          </TextContent>
+        </FlexItem>
+        <FlexItem>
+          <Button variant="primary">
+            {isLoading ? 'Loading Results' : 'Apply Filters'}
+          </Button>
+        </FlexItem>
+        <FlexItem>
+          <Button variant="secondary" onClick={clearFilters} isDanger>
+            Clear Filters
+          </Button>
+        </FlexItem>
+      </Flex>
+    );
+  }, [includeSkipped, isLoading, onSkipCheck]);
+
   // Compare runs work only when project is selected
   // TODO Apply Filters button needs to trigger table render
   return (
     primaryObject && (
-      <Card>
-        <CardHeader>
-          <Flex style={{ width: '100%' }}>
-            <FlexItem grow={{ default: 'grow' }}>
-              <TextContent>
-                <Text component="h2" className="pf-v5-c-title pf-m-xl">
-                  Select Test Run metadata to compare
-                </Text>
-              </TextContent>
-            </FlexItem>
-            <FlexItem>
-              <TextContent>
-                <Checkbox
-                  id="include-skips"
-                  label="Include skips, xfails"
-                  isChecked={includeSkipped}
-                  aria-label="include-skips-checkbox"
-                  onChange={(_, checked) => onSkipCheck(checked)}
-                />
-              </TextContent>
-            </FlexItem>
-            <FlexItem>
-              <Button variant="primary">
-                {isLoading ? 'Loading Results' : 'Apply Filters'}
-              </Button>
-            </FlexItem>
-            <FlexItem>
-              <Button variant="secondary" onClick={clearFilters} isDanger>
-                Clear Filters
-              </Button>
-            </FlexItem>
-          </Flex>
-        </CardHeader>
-        <CardBody>
-          <FilterTable
-            columns={COLUMNS}
-            rows={rows}
-            pagination={{
-              pageSize: pageSize,
-              page: page,
-              totalItems: totalItems,
-            }}
-            isEmpty={results.length === 0}
-            isError={isError}
-            onCollapse={onCollapse}
-            onSetPage={(_, value) => setPage(value)}
-            onSetPageSize={(_, value) => setPageSize(value)}
-            canSelectAll={false}
-            variant={TableVariant.compact}
-            filters={resultFilters}
-            onRemoveFilter={removeFilter}
-            hideFilters={['project_id']}
-          />
-        </CardBody>
-      </Card>
+      <FilterTable
+        columns={COLUMNS}
+        rows={rows}
+        pageSize={pageSize}
+        page={page}
+        totalItems={totalItems}
+        isError={isError}
+        onCollapse={onCollapse}
+        onSetPage={(_, value) => setPage(value)}
+        onSetPageSize={(_, newPageSize, newPage) => {
+          setPageSize(newPageSize);
+          setPage(newPage);
+        }}
+        canSelectAll={false}
+        variant={TableVariant.compact}
+        filters={resultFilters}
+        headerChildren={compareHeader}
+      />
     )
   );
 };

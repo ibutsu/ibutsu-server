@@ -11,6 +11,8 @@ import { AuthService } from './services/auth';
 
 import './app.css';
 import AdminPage from './components/admin-page';
+import { STRING_PROJECT_FIELDS, STRING_USER_FIELDS } from './constants';
+import FilterProvider from './components/contexts/filterContext';
 
 const Admin = () => {
   const [isSuper, setIsSuper] = useState();
@@ -30,10 +32,35 @@ const Admin = () => {
     <Routes>
       <Route path="" element={<AdminPage />}>
         <Route path="home" element={<AdminHome />} />
-        <Route path="users" element={<UserList />} />
+        <Route
+          path="users"
+          element={
+            <FilterProvider key="users" fieldOptions={STRING_USER_FIELDS}>
+              <UserList />
+            </FilterProvider>
+          }
+        />
         <Route path="users/:id" element={<UserEdit />} />
-        <Route path="projects" element={<ProjectList />} />
-        <Route path="projects/:id" element={<ProjectEdit />} />
+        <Route
+          path="projects"
+          element={
+            <FilterProvider key="projects" fieldOptions={STRING_PROJECT_FIELDS}>
+              <ProjectList />
+            </FilterProvider>
+          }
+        />
+        <Route
+          path="projects/:id"
+          element={
+            // user filtering is available on project edit
+            <FilterProvider
+              key="project_edit"
+              fieldOptions={STRING_USER_FIELDS}
+            >
+              <ProjectEdit />
+            </FilterProvider>
+          }
+        />
       </Route>
       <Route path="*" element={<Navigate to="" replace />} />
     </Routes>

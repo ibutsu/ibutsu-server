@@ -19,10 +19,12 @@ import { Settings } from '../settings';
 import { HttpClient } from '../services/http';
 import { toAPIFilter } from '../utilities';
 
-import { IbutsuContext } from '../services/context';
+import { IbutsuContext } from '../components/contexts/ibutsuContext';
 
 // TODO Extend this to contain the filter handling functions, and better integrate filter state
 // with FilterTable. See https://github.com/ibutsu/ibutsu-server/issues/230
+
+// TODO use activeFilterHook
 const MetaFilter = ({
   setFilter,
   activeFilters,

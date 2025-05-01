@@ -11,36 +11,42 @@ import {
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import EmptyObject from './components/empty-object';
-import ResultView from './components/result';
+import ResultView from './components/resultView';
 import { useParams } from 'react-router-dom';
 
 const Result = () => {
-  const params = useParams();
+  const { result_id } = useParams();
+
   const [isResultValid, setIsResultValid] = useState(false);
   const [testResult, setTestResult] = useState(null);
-  const id = params.result_id;
+
+  const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
     const fetchTestResult = async () => {
-      if (!id) {
+      if (!result_id) {
         return;
-      }
-      try {
-        let response = await HttpClient.get([Settings.serverUrl, 'result', id]);
-        response = HttpClient.handleResponse(response, 'response');
-        if (response.ok) {
+      } else if (result_id !== testResult?.id) {
+        try {
+          setFetching(true);
+          const response = await HttpClient.get([
+            Settings.serverUrl,
+            'result',
+            result_id,
+          ]);
+          const data = await HttpClient.handleResponse(response);
           setIsResultValid(true);
-          const data = await response.json();
           setTestResult(data);
-        } else {
-          throw new Error('Failed with HTTP code ' + response.status);
+          setFetching(false);
+        } catch (error) {
+          console.error(error);
+          setIsResultValid(false);
+          setFetching(false);
         }
-      } catch (error) {
-        console.error(error);
       }
     };
     fetchTestResult();
-  }, [id]);
+  }, [result_id, testResult]);
 
   return (
     <React.Fragment>
@@ -52,19 +58,15 @@ const Result = () => {
         </TextContent>
       </PageSection>
       <PageSection>
-        {testResult ? (
-          isResultValid ? (
-            <ResultView testResult={testResult} />
-          ) : (
-            <EmptyObject
-              headingText="Result not found"
-              returnLink="/results"
-              returnLinkText="Return to results list"
-            />
-          )
-        ) : (
-          <Skeleton />
+        {!fetching && isResultValid && <ResultView testResult={testResult} />}
+        {!fetching && !isResultValid && (
+          <EmptyObject
+            headingText="Result not found"
+            returnLink="/results"
+            returnLinkText="Return to results list"
+          />
         )}
+        {fetching && <Skeleton />}
       </PageSection>
     </React.Fragment>
   );

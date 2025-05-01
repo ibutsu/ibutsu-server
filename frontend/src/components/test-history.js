@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Card,
-  CardHeader,
-  CardBody,
   Checkbox,
   Flex,
   FlexItem,
@@ -14,23 +11,25 @@ import {
   TextContent,
   Text,
   Title,
+  CardHeader,
+  CardBody,
 } from '@patternfly/react-core';
-import { TableVariant, expandable } from '@patternfly/react-table';
+import { expandable } from '@patternfly/react-table';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import {
-  buildParams,
-  toAPIFilter,
-  getSpinnerRow,
-  resultToTestHistoryRow,
-} from '../utilities';
-
-import FilterTable from './filtertable';
+import { resultToTestHistoryRow, filtersToAPIParams } from '../utilities';
+import { WEEKS, RESULT_STATES } from '../constants';
 
 import RunSummary from './runsummary';
 import LastPassed from './last-passed';
-import ResultView from './result';
+import ResultView from './resultView';
+import ActiveFilters from './filtering/active-filters';
+import usePagination from './hooks/usePagination';
+import FilterTable from './filtering/filtered-table-card';
+import { FilterContext } from './contexts/filterContext';
+
+const HIDE = ['project_id', 'test_id'];
 
 const COLUMNS = [
   {
@@ -43,203 +42,153 @@ const COLUMNS = [
   'Start Time',
 ];
 
-const WEEKS = {
-  '1 Week': 0.25,
-  '2 Weeks': 0.5,
-  '1 Month': 1.0,
-  '2 Months': 2.0,
-  '3 Months': 3.0,
-  '5 Months': 5.0,
-};
-
-const RESULT_STATES = {
-  passed: 'passes',
-  failed: 'failures',
-  error: 'errors',
-  skipped: 'skips',
-  xfailed: 'xfailures',
-  xpassed: 'xpasses',
-};
-
 // Month is considered to be 30 days, and there are 86400*1000 ms in a day
 const millisecondsInMonth = 30 * 86400 * 1000;
 
-const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
-  const [rows, setRows] = useState([getSpinnerRow(5)]);
-  const [pageSize, setPageSize] = useState(10);
-  const [page, setPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [isEmpty, setIsEmpty] = useState(false);
+const TestHistoryTable = ({ comparisonResults, testResult }) => {
+  const {
+    activeFilters,
+    updateFilters,
+    clearFilters,
+    setActiveFilters,
+    onRemoveFilter,
+  } = useContext(FilterContext);
+
+  const {
+    page,
+    setPage,
+    onSetPage,
+    pageSize,
+    setPageSize,
+    onSetPageSize,
+    totalItems,
+    setTotalItems,
+  } = usePagination({ setParams: false });
+
   const [isError, setIsError] = useState(false);
+  const [fetching, setFetching] = useState(false);
+
   const [isTimeRangeSelectOpen, setTimeRangeOpen] = useState(false);
   const [selectedTimeRange, setTimeRange] = useState('1 Week');
   const [onlyFailures, setOnlyFailures] = useState(false);
   const [historySummary, setHistorySummary] = useState();
-  const [filtersState, setFiltersState] = useState({});
+  const [rows, setRows] = useState([]);
 
+  // Set active filters for result, test_id, component, time, and env based on test result
   useEffect(() => {
-    const env_filter = {};
-    if (testResult?.env) {
-      env_filter['env'] = {
-        op: 'eq',
-        val: testResult.env,
-      };
-    }
-    const time_filter = {};
-    if (testResult?.start_time) {
+    if (testResult) {
+      const envFilter = testResult?.env
+        ? {
+            field: 'env',
+            operator: 'eq',
+            value: testResult.env,
+          }
+        : {};
+
       // default to filter only from 1 weeks ago to the most test's start_time.
-      time_filter['start_time'] = {
-        op: 'gt',
-        val: new Date(
-          new Date(testResult?.start_time).getTime() -
-            WEEKS['1 Week'] * millisecondsInMonth,
-        ).toISOString(),
-      };
+
+      const timeFilter = testResult?.start_time
+        ? {
+            field: 'start_time',
+            operator: 'gt',
+            value: new Date(
+              new Date(testResult?.start_time).getTime() -
+                WEEKS['1 Week'] * millisecondsInMonth,
+            ).toISOString(),
+          }
+        : {};
+
+      setActiveFilters((prevFilters) => [
+        {
+          field: 'result',
+          operator: 'in',
+          value: 'passed;skipped;failed;error;xpassed;xfailed',
+        },
+        {
+          field: 'test_id',
+          operator: 'eq',
+          value: testResult?.test_id,
+        },
+        {
+          field: 'component',
+          operator: 'eq',
+          value: testResult?.component,
+        },
+        timeFilter,
+        envFilter,
+        ...prevFilters.filter(
+          (f) =>
+            !['result', 'test_id', 'component', 'start_time', 'env'].includes(
+              f.field,
+            ),
+        ),
+      ]);
     }
-    setFiltersState({
-      ...filters,
-      result: {
-        op: 'in',
-        val: 'passed;skipped;failed;error;xpassed;xfailed',
-      },
-      test_id: {
-        op: 'eq',
-        val: testResult?.test_id,
-      },
-      component: {
-        op: 'eq',
-        val: testResult?.component,
-      },
-      ...time_filter,
-      ...env_filter,
-    });
-  }, [testResult, filters]);
+  }, [setActiveFilters, testResult]);
 
-  const onCollapse = (_, rowIndex, isOpen) => {
-    // lazy-load the result view so we don't have to make a bunch of artifact requests
-    // TODO with ResultView moving tab rendering and artifact fetching into ArtifactTab, this may not be necessary anymore
-    setRows(
-      rows.map((row, index) => {
-        if (index === rowIndex + 1) {
-          return {
-            ...row,
-            cells: [
-              {
-                title: (
-                  <ResultView
-                    defaultTab="summary"
-                    hideTestHistory={true}
-                    testResult={rows[rowIndex].result}
-                    skipHash={true}
-                  />
-                ),
-              },
-            ],
-          };
-        } else if (index === rowIndex) {
-          return {
-            ...row,
-            isOpen: isOpen,
-          };
-        } else {
-          return row;
-        }
-      }),
-    );
-  };
-
-  const updateFilters = useCallback(
-    (name, operator, value) => {
-      const updatedfilters = { ...filtersState };
-      if (value === null || value.length === 0) {
-        delete updatedfilters[name];
-      } else {
-        updatedfilters[name] = { op: operator, val: value };
-      }
-      setFiltersState(updatedfilters);
-      setPage(1);
-    },
-    [filtersState],
-  );
-
-  const setFilter = useCallback(
-    (field, value) => {
-      // maybe process values array to string format here instead of expecting caller to do it?
-      const operator = value.includes(';') ? 'in' : 'eq';
-      updateFilters(field, operator, value);
-    },
-    [updateFilters],
-  );
-
+  // fetch result data with active filters
   useEffect(() => {
-    if (comparisonResults !== undefined) {
-      // setResults(comparisonResultsState)
-      setRows(
-        comparisonResults
-          .map((result, index) =>
-            resultToTestHistoryRow(result, index, setFilter),
-          )
-          .flat(),
-      );
-    } else {
-      setRows([getSpinnerRow(4)]);
-      setIsEmpty(false);
+    const getResults = async () => {
       setIsError(false);
-      const params = buildParams(filtersState);
-      params['filter'] = toAPIFilter(filtersState);
-      params['pageSize'] = pageSize;
-      params['page'] = page;
-      params['estimate'] = 'true';
+      const apiParams = {
+        page: page,
+        pageSize: pageSize,
+        estimate: true,
+        filter: filtersToAPIParams(activeFilters),
+      };
 
-      setRows([['Loading...', '', '', '', '']]);
-      HttpClient.get([Settings.serverUrl, 'result'], params)
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          // setResults(data.results);
-          setRows(
-            data.results
-              .map((result, index) =>
-                resultToTestHistoryRow(result, index, setFilter),
-              )
-              .flat(),
-          );
-          setPage(data.pagination.page);
-          setPageSize(data.pagination.pageSize);
-          // setTotalPages(data.pagination.totalPages)
-          setTotalItems(data.pagination.totalItems);
-          setIsEmpty(data.pagination.totalItems === 0);
-        })
-        .catch((error) => {
-          console.error('Error fetching result data:', error);
-          setRows([]);
-          setIsEmpty(false);
-          setIsError(false);
-        });
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'result'],
+          apiParams,
+        );
+        const data = await HttpClient.handleResponse(response);
+        setRows(
+          data.results
+            .map((result, index) =>
+              resultToTestHistoryRow(result, index, updateFilters),
+            )
+            .flat(),
+        );
+
+        setPage(data.pagination.page.toString());
+        setPageSize(data.pagination.pageSize.toString());
+        setTotalItems(data.pagination.totalItems);
+        setFetching(false);
+      } catch (error) {
+        console.error('Error fetching result data:', error);
+        setRows([]);
+        setIsError(false);
+        setFetching(false);
+      }
+    };
+    if (comparisonResults !== undefined) {
+      setRows([...comparisonResults]);
+    } else {
+      setFetching(true);
+      getResults();
     }
   }, [
+    activeFilters,
+    comparisonResults,
     page,
     pageSize,
-    historySummary,
-    comparisonResults,
-    setFilter,
-    filtersState,
+    setPage,
+    setPageSize,
+    setTotalItems,
+    updateFilters,
   ]);
 
-  const removeFilter = (id) => {
-    if (id !== 'result' && id !== 'test_id') {
-      // Don't allow removal of error/failure filter
-      updateFilters(id, null, null);
-    }
-  };
-
+  // Compose result summary from all results
   useEffect(() => {
-    // get the passed/failed/etc test summary
-    if (JSON.stringify(filtersState) !== '{}') {
-      const historyFilters = { ...filtersState };
-      // disregard result filter (we want all results)
-      delete historyFilters['result'];
-      const api_filter = toAPIFilter(historyFilters).join();
-
+    if (
+      // only query summary when more than just the project_id filter is active
+      !(
+        Array.isArray(activeFilters) &&
+        activeFilters.length === 1 &&
+        activeFilters[0].field === 'project_id'
+      )
+    ) {
       const summary = {
         passes: 0,
         failures: 0,
@@ -249,54 +198,98 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
         xpasses: 0,
       };
 
-      HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], {
-        group_field: 'result',
-        additional_filters: api_filter,
-      })
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
+      const resultAggFetch = async () => {
+        // BUG TODO: It looks like the backend is dropping/ignoring the env filter
+        // ex: I have two results matching all other filters, but one has env=prod and the other has env=stage
+        // and the result aggregator is returning a count of 2 instead of 1 when the env filter is in additional_filters
+        try {
+          const apiParams = {
+            group_field: 'result',
+            additional_filters: filtersToAPIParams(
+              activeFilters.filter((filter) => {
+                if (filter.field !== 'result') {
+                  return filter;
+                } // drop result filter to get all for summary
+              }),
+            ),
+          };
+          const response = await HttpClient.get(
+            [Settings.serverUrl, 'widget', 'result-aggregator'],
+            apiParams,
+          );
+          const data = await HttpClient.handleResponse(response);
           data.forEach((item) => {
             summary[RESULT_STATES[item['_id']]] = item['count'];
           });
           setHistorySummary(summary);
-        });
+        } catch (error) {
+          console.error(error);
+        }
+      };
+
+      resultAggFetch();
     }
-  }, [filtersState]);
+  }, [activeFilters]);
 
-  const onFailuresCheck = (checked) => {
-    setFiltersState({
-      ...filtersState,
-      result: {
-        ...filtersState['result'],
-        val:
-          'failed;error' +
-          (checked ? ';skipped;xfailed' : ';skipped;xfailed;xpassed;passed'),
-      },
-    });
-    setOnlyFailures(checked);
-  };
-
-  const onTimeRangeSelect = (_, selection) => {
-    if (testResult?.start_time) {
-      const startTime = new Date(testResult?.start_time);
-      const selectionCoefficient = WEEKS[selection];
-      const timeRange = new Date(
-        startTime.getTime() - selectionCoefficient * millisecondsInMonth,
-      );
-      setFiltersState({
-        ...filtersState,
-        ['start_time']: { op: 'gt', val: timeRange.toISOString() },
+  // Handle checkbox for only failures
+  const onFailuresCheck = useCallback(
+    (_, checked) => {
+      const newFilters = activeFilters.map((filter) => {
+        if (filter.field === 'result') {
+          return {
+            ...filter,
+            value:
+              'failed;error' +
+              (checked
+                ? ';skipped;xfailed'
+                : ';skipped;xfailed;xpassed;passed'),
+          };
+        }
+        return filter;
       });
-      setTimeRangeOpen(false);
-      setTimeRange(selection);
-    }
-  };
-  const onTimeRangeToggleClick = () => {
-    setTimeRangeOpen(!isTimeRangeSelectOpen);
-  };
+      setActiveFilters(newFilters);
+      setOnlyFailures(checked);
+    },
+    [activeFilters, setActiveFilters],
+  );
 
-  return (
-    <Card className="pf-u-mt-lg">
+  // Handle time range select
+  const onTimeRangeSelect = useCallback(
+    (_, selection) => {
+      if (testResult?.start_time) {
+        const startTime = new Date(testResult?.start_time);
+        const selectionCoefficient = WEEKS[selection];
+        const timeRange = new Date(
+          startTime.getTime() - selectionCoefficient * millisecondsInMonth,
+        );
+        setActiveFilters(
+          activeFilters.map((filter) => {
+            if (filter.field === 'start_time') {
+              return {
+                ...filter,
+                operator: 'gt',
+                value: timeRange.toISOString(),
+              };
+            } else {
+              return filter;
+            }
+          }),
+        );
+        setTimeRangeOpen(false);
+        setTimeRange(selection);
+      }
+    },
+    [activeFilters, setActiveFilters, testResult?.start_time],
+  );
+
+  // Handle time range toggle
+  const onTimeRangeToggleClick = useCallback(() => {
+    setTimeRangeOpen(!isTimeRangeSelectOpen);
+  }, [isTimeRangeSelectOpen, setTimeRangeOpen]);
+
+  // Render card header with only failures checkbox and time range select
+  const historyHeader = useMemo(() => {
+    return (
       <CardHeader>
         <Flex style={{ width: '100%' }}>
           <FlexItem grow={{ default: 'grow' }}>
@@ -311,12 +304,12 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
                 label="Only show failures/errors"
                 isChecked={onlyFailures}
                 aria-label="only-failures-checkbox"
-                onChange={(_, checked) => onFailuresCheck(checked)}
+                onChange={onFailuresCheck}
               />
             </TextContent>
           </FlexItem>
           <FlexItem spacer={{ sm: 'spacerSm' }}>
-            <TextContent>Time range:</TextContent>
+            <TextContent>Time range prior to start_time:</TextContent>
           </FlexItem>
           <FlexItem>
             <Select
@@ -349,43 +342,115 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
           </FlexItem>
         </Flex>
       </CardHeader>
-      <CardBody>
-        <FilterTable
-          columns={COLUMNS}
-          rows={rows}
-          pagination={{
-            pageSize: pageSize,
-            page: page,
-            totalItems: totalItems,
-          }}
-          isEmpty={isEmpty}
-          isError={isError}
-          onCollapse={onCollapse}
-          onSetPage={(_, pageNumber) => setPage(pageNumber)}
-          onSetPageSize={(_, pageSizeValue) => setPageSize(pageSizeValue)}
-          canSelectAll={false}
-          variant={TableVariant.compact}
-          activeFilters={filtersState}
-          filters={[
-            <Text key="summary" component="h4">
-              Summary:&nbsp;
-              {historySummary && <RunSummary summary={historySummary} />}
-            </Text>,
-            <Text key="last-passed" component="h4">
-              Last passed:&nbsp;
-              <LastPassed filters={filtersState} />
-            </Text>,
-          ]}
-          onRemoveFilter={removeFilter}
-          hideFilters={['project_id', 'result', 'test_id', 'component']}
-        />
+    );
+  }, [
+    isTimeRangeSelectOpen,
+    onFailuresCheck,
+    onTimeRangeSelect,
+    onTimeRangeToggleClick,
+    onlyFailures,
+    selectedTimeRange,
+  ]);
+
+  // Render filter components with summary, last passed, and active filters
+  const filterComponents = useMemo(
+    () => (
+      <CardBody key="history-filters">
+        <Flex
+          alignSelf={{ default: 'alignSelfFlexEnd' }}
+          direction={{ default: 'column' }}
+          align={{ default: 'alignRight' }}
+        >
+          <Flex>
+            <FlexItem>
+              <Text key="summary" component="h4">
+                Summary:&nbsp;
+                <RunSummary summary={historySummary} />
+              </Text>
+            </FlexItem>
+            <FlexItem>
+              <Text key="last-passed" component="h4">
+                Last passed:&nbsp;
+                <LastPassed filters={activeFilters} />
+              </Text>
+            </FlexItem>
+          </Flex>
+          <Flex>
+            <FlexItem>
+              <ActiveFilters
+                key="active-filters"
+                activeFilters={activeFilters}
+                onRemoveFilter={onRemoveFilter}
+                hideFilters={HIDE}
+              />
+            </FlexItem>
+          </Flex>
+        </Flex>
       </CardBody>
-    </Card>
+    ),
+    [activeFilters, historySummary, onRemoveFilter],
+  );
+
+  // load individual result views on collapse to delay fetching artifacts
+  const onCollapse = useCallback((_, rowIndex, isOpen) => {
+    setRows((prevRows) => {
+      return prevRows.map((row, index) => {
+        if (index === rowIndex + 1) {
+          return {
+            ...row,
+            cells: [
+              {
+                title: (
+                  <ResultView
+                    defaultTab="summary"
+                    hideTestHistory={true}
+                    testResult={prevRows[rowIndex].result}
+                    skipHash={true}
+                  />
+                ),
+              },
+            ],
+          };
+        } else if (index === rowIndex) {
+          return {
+            ...row,
+            isOpen: isOpen,
+          };
+        } else {
+          return row;
+        }
+      });
+    });
+  }, []);
+
+  return (
+    <FilterTable
+      headerChildren={historyHeader}
+      onCollapse={onCollapse}
+      fetching={fetching}
+      columns={COLUMNS}
+      rows={rows}
+      filters={filterComponents}
+      activeFilters={activeFilters}
+      pageSize={pageSize}
+      page={page}
+      totalItems={totalItems}
+      isError={isError}
+      onClearFilters={clearFilters}
+      onSetPage={onSetPage}
+      onSetPageSize={onSetPageSize}
+      footerChildren={
+        <Text className="disclaimer" component="h4">
+          * Note: for performance reasons, the total number of items is an
+          estimate. Apply filters on the Test Results page to get precise
+          results.
+        </Text>
+      }
+    />
   );
 };
 
 TestHistoryTable.propTypes = {
-  filters: PropTypes.object,
   testResult: PropTypes.object,
   comparisonResults: PropTypes.array,
 };
