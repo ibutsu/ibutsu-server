@@ -113,7 +113,7 @@ echo ""
 # Get the pods up and running
 echo -n "Creating ibutsu pod:    "
 podman pod create -p 8080:8080 -p 3000:3000 --name $POD_NAME
-echo "done."
+echo "================================="
 echo -n "Adding postgres to the pod:    "
 set -x
 podman run -dt \
@@ -126,7 +126,7 @@ podman run -dt \
        --rm \
       registry.redhat.io/rhel8/postgresql-12
 set +x
-echo "done."
+echo "================================="
 echo -n "Adding redis to the pod:    "
 set -x
 podman run -dt \
@@ -136,7 +136,7 @@ podman run -dt \
        --rm \
        quay.io/fedora/redis-7
 set +x
-echo "done."
+echo "================================="
 echo -n "Adding backend to the pod:    "
 set -x
 podman run -d \
@@ -159,14 +159,13 @@ podman run -d \
                      pip install . &&
                      python -m ibutsu_server --host 0.0.0.0'
 set +x
-echo "done."
 echo -n "Waiting for backend to respond: "
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); do
   echo -n '.'
   sleep 5
 done
-echo "backend up."
 # Note the COLUMNS=80 env var is for https://github.com/celery/celery/issues/5761
+echo "================================="
 echo -n "Adding celery worker to the pod:    "
 set -x
 podman run -d \
@@ -188,7 +187,7 @@ podman run -d \
                      pip install . &&
                      ./celery_worker.sh'
 set +x
-echo "done."
+echo "================================="
 echo -n "Adding frontend to the pod:    "
 set -x
 podman run -d \

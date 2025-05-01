@@ -64,11 +64,14 @@ export const STRING_RESULT_FIELDS = [
   'start_time', // TODO: handle this with a calendar widget?
   'test_id',
 ];
-export const RESULT_FIELDS = [
+const RESULT_FIELDS = [
   ...NUMERIC_RESULT_FIELDS,
   ...STRING_RESULT_FIELDS,
   ...ARRAY_RESULT_FIELDS,
 ];
+RESULT_FIELDS.sort();
+export { RESULT_FIELDS };
+
 export const ARRAY_RUN_FIELDS = ['metadata.tags'];
 export const NUMERIC_RUN_FIELDS = [
   'duration',
@@ -80,11 +83,14 @@ export const NUMERIC_RUN_FIELDS = [
   'summary.tests',
 ];
 export const STRING_RUN_FIELDS = ['id', 'component', 'env', 'source'];
-export const RUN_FIELDS = [
+const RUN_FIELDS = [
   ...NUMERIC_RUN_FIELDS,
   ...STRING_RUN_FIELDS,
   ...ARRAY_RUN_FIELDS,
 ];
+RUN_FIELDS.sort();
+export { RUN_FIELDS };
+
 export const STRING_ACCESSIBILITY_FIELDS = [
   'run_id',
   'summary',
@@ -131,3 +137,29 @@ export const CLASSIFICATION = {
 export const HEATMAP_MAX_BUILDS = 40;
 
 export const THEME_KEY = 'theme';
+
+export const WEEKS = {
+  '1 Week': 0.25,
+  '2 Weeks': 0.5,
+  '1 Month': 1.0,
+  '2 Months': 2.0,
+  '3 Months': 3.0,
+  '5 Months': 5.0,
+};
+
+export const RESULT_STATES = {
+  passed: 'passes',
+  failed: 'failures',
+  error: 'errors',
+  skipped: 'skips',
+  xfailed: 'xfailures',
+  xpassed: 'xpasses',
+};
+
+export const RUN_RESULTS_COLUMNS = [
+  'Test',
+  'Result',
+  'Duration',
+  'Run',
+  'Started',
+];

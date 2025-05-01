@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 
 import { Link } from 'react-router-dom';
-import { IbutsuContext } from '../services/context';
+import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import {
   PageSidebar,
   PageSidebarBody,
@@ -39,7 +39,7 @@ const IbutsuSidebar = () => {
         });
         setViews(data.widgets);
       })
-      .catch((error) => console.log(error));
+      .catch((error) => console.error(error));
   }, [primaryObject]);
 
   useEffect(() => {

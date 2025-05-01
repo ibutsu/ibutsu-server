@@ -9,10 +9,10 @@ import GenericAreaWidget from '../widgets/genericarea';
 import GenericBarWidget from '../widgets/genericbar';
 import FilterHeatmapWidget from '../widgets/filterheatmap';
 import { HEATMAP_MAX_BUILDS } from '../constants';
-import { IbutsuContext } from '../services/context';
+import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import ParamDropdown from '../components/param-dropdown';
 import { useSearchParams } from 'react-router-dom';
-import { useTabHook } from '../components/tabHook';
+import { useTabHook } from '../components/hooks/useTab';
 
 const DEFAULT_BAR = 8;
 
