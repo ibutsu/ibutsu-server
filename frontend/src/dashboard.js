@@ -40,13 +40,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 const Dashboard = () => {
   const { defaultDashboard, primaryObject } = useContext(IbutsuContext);
-  const { paramDashboardId, project_id } = useParams();
+  const { dashboard_id, project_id } = useParams();
 
   const navigate = useNavigate();
 
   // dashboard states
   const [loading, setLoading] = useState(true);
-  const [dashboards, setDashboards] = useState();
+  const [dashboards, setDashboards] = useState([]);
   const [filteredDashboards, setFilteredDashboards] = useState([]);
   const [selectedDashboard, setSelectedDashboard] = useState();
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
@@ -73,16 +73,24 @@ const Dashboard = () => {
   const onEditWidgetClick = (id) => {
     setIsEditModalOpen(true);
 
-    HttpClient.get([Settings.serverUrl, 'widget-config', id])
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+    const fetchWidgetData = async (id) => {
+      try {
+        const response = await HttpClient.get([
+          Settings.serverUrl,
+          'widget-config',
+          id,
+        ]);
+        const data = await HttpClient.handleResponse(response);
         setCurrentWidget(id);
         setEditWidgetData(data);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error(error);
         setIsEditModalOpen(false);
-      });
+      }
+    };
+
+    // Call the function
+    fetchWidgetData(id);
   };
 
   // update widgets
@@ -94,35 +102,31 @@ const Dashboard = () => {
 
   // Fetch all dashboards for the project
   useEffect(() => {
+    setSelectedDashboard();
+    setDashboards([]);
+    setSelectInputValue('');
+    let fetchedDashboards = [];
     const fetchDashboards = async (page = 1) => {
-      setSelectedDashboard();
-      setDashboards();
-      setSelectInputValue('');
       try {
         const response = await HttpClient.get(
           [Settings.serverUrl, 'dashboard'],
           {
             project_id: primaryObject.id,
-            pageSize: 10,
+            pageSize: 50,
             page,
           },
         );
         const data = await HttpClient.handleResponse(response);
         const pagedDashboards = data['dashboards'];
         const paginationData = data['pagination'];
-        console.dir(pagedDashboards);
-        console.dir(paginationData);
-        setDashboards((prevDashboards) => [
-          ...(prevDashboards ? prevDashboards : []),
-          ...pagedDashboards,
-        ]);
+        fetchedDashboards = [...fetchedDashboards, ...pagedDashboards];
         if (
-          pagedDashboards &&
-          paramDashboardId &&
-          selectedDashboard?.id !== paramDashboardId
+          pagedDashboards.length &&
+          dashboard_id &&
+          selectedDashboard?.id !== dashboard_id
         ) {
           const paramDashboard = pagedDashboards
-            .filter((db) => db.id == paramDashboardId)
+            .filter((db) => db.id == dashboard_id)
             .pop();
           if (paramDashboard) {
             setSelectedDashboard(paramDashboard);
@@ -135,6 +139,7 @@ const Dashboard = () => {
         if (page < paginationData['totalPages']) {
           fetchDashboards(page + 1);
         } else {
+          setDashboards(fetchedDashboards);
           setLoading(false);
         }
       } catch (error) {
@@ -147,13 +152,13 @@ const Dashboard = () => {
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [primaryObject, defaultDashboard]);
+  }, [primaryObject]);
 
   // Apply the default dashboard
   useEffect(() => {
     // selectedDashboard is undefined until user picks one or this sets it
     if (
-      dashboards?.length > 0 &&
+      dashboards.length &&
       defaultDashboard &&
       selectedDashboard === undefined
     ) {
@@ -174,9 +179,10 @@ const Dashboard = () => {
 
   // Apply filter inputs
   useEffect(() => {
-    let filteredOptions = dashboards;
-    console.dir(filteredOptions);
-    if (selectFilterValue && dashboards) {
+    let filteredOptions = [...dashboards];
+    if (selectFilterValue && dashboards.length) {
+      filteredOptions = [...dashboards];
+
       filteredOptions = filteredOptions.filter((dashboard) =>
         dashboard.title.toLowerCase().includes(selectFilterValue.toLowerCase()),
       );
@@ -243,22 +249,39 @@ const Dashboard = () => {
     if (!widgetData.project_id && primaryObject) {
       widgetData.project_id = primaryObject.id;
     }
-    HttpClient.post([Settings.serverUrl, 'widget-config'], widgetData)
-      .then(() => setIsNewWidgetOpen(false)) // wait to close modal until widget is saved
-      .catch((error) => console.error(error));
+    const postWidget = async (widgetData) => {
+      try {
+        const response = await HttpClient.post(
+          [Settings.serverUrl, 'widget-config'],
+          widgetData,
+        );
+        await HttpClient.handleResponse(response);
+        setIsNewWidgetOpen(false); // wait to close modal until widget is saved
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    postWidget(widgetData);
   };
 
   const onEditWidgetSave = (editedData) => {
     if (!editedData.project_id && primaryObject) {
       editedData.project_id = primaryObject.id;
     }
-    HttpClient.put(
-      [Settings.serverUrl, 'widget-config', currentWidget],
-      '',
-      editedData,
-    )
-      .then((response) => HttpClient.handleResponse(response))
-      .catch((error) => console.error(error));
+    const putWidget = async (editedData) => {
+      try {
+        const response = await HttpClient.put(
+          [Settings.serverUrl, 'widget-config', currentWidget],
+          '',
+          editedData,
+        );
+        await HttpClient.handleResponse(response);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    putWidget(editedData);
     setIsEditModalOpen(false);
   };
 
