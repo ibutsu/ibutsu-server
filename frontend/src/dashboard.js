@@ -84,8 +84,8 @@ const Dashboard = () => {
         setCurrentWidget(id);
         setEditWidgetData(data);
       } catch (error) {
+        alert(`Widget GET failed on edit: ${error}`);
         console.error(error);
-        setIsEditModalOpen(false);
       }
     };
 
@@ -132,12 +132,10 @@ const Dashboard = () => {
             setSelectedDashboard(paramDashboard);
             setIsDashboardOpen(false);
             setSelectInputValue(paramDashboard.title);
-          } else {
-            console.error('URL parameter dashboard ID not found');
           }
         }
         if (page < paginationData['totalPages']) {
-          fetchDashboards(page + 1);
+          await fetchDashboards(page + 1);
         } else {
           setDashboards(fetchedDashboards);
           setLoading(false);
