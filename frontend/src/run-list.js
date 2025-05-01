@@ -26,7 +26,12 @@ import {
 } from '@patternfly/react-core';
 import { ChevronRightIcon, TimesIcon } from '@patternfly/react-icons';
 
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import {
+  Link,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
@@ -106,16 +111,24 @@ const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
 
 const RunList = () => {
   const navigate = useNavigate();
-  const params = useParams();
+  const { project_id } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { primaryObject } = useContext(IbutsuContext);
 
   const [rows, setRows] = useState([getSpinnerRow(5)]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [page, setPage] = useState(searchParams.get('page') || 1);
+  const [pageSize, setPageSize] = useState(searchParams.get('pageSize') || 100);
   const [totalItems, setTotalItems] = useState(0);
 
-  const [filters, setFilters] = useState({});
+  const [activeFilters, setActiveFilters] = useState(
+    Object.fromEntries(
+      Object.entries(Object.fromEntries(searchParams)).filter(
+        ([k]) => k !== 'page' && k !== 'pageSize',
+      ),
+    ),
+  );
+  console.log('activeFilters', activeFilters);
 
   const [fieldSelection, setFieldSelection] = useState(null);
   const [filteredFieldOptions, setFilteredFieldOptions] = useState(RUN_FIELDS);
@@ -135,7 +148,7 @@ const RunList = () => {
   const [isBoolOpen, setIsBoolOpen] = useState(false);
 
   const updateFilters = useCallback((name, operator, value, callback) => {
-    setFilters((prev) => {
+    setActiveFilters((prev) => {
       const newFilters = { ...prev };
       if (!value) {
         delete newFilters[name];
@@ -196,10 +209,12 @@ const RunList = () => {
     [updateFilters],
   );
 
+  // Fetch runs based on active filters
   useEffect(() => {
     setIsError(false);
     const apiParams = { filter: [] };
-    const apiFilters = { ...filters };
+    const apiFilters = { ...activeFilters };
+
     if (primaryObject) {
       apiFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
     } else if (Object.prototype.hasOwnProperty.call(apiFilters, 'project_id')) {
@@ -231,7 +246,7 @@ const RunList = () => {
         setRows([]);
         setIsError(true);
       });
-  }, [pageSize, page, primaryObject, setFilter, filters, boolSelection]);
+  }, [pageSize, page, primaryObject, setFilter, activeFilters, boolSelection]);
 
   const onFieldSelect = useCallback(
     (_, selection) => {
@@ -278,7 +293,7 @@ const RunList = () => {
   }, []);
 
   const clearFilters = useCallback(() => {
-    setFilters({});
+    setActiveFilters({});
     setPage(1);
     setPageSize(20);
     setFieldSelection(null);
@@ -303,6 +318,22 @@ const RunList = () => {
     }
     setFilteredFieldOptions(newSelectOptionsField);
   }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
+
+  // couple page and page size state to search params
+  useEffect(() => {
+    if (
+      page !== searchParams.get('page') ||
+      pageSize !== searchParams.get('pageSize')
+    ) {
+      console.log('setting page and size', [page, pageSize]);
+      setSearchParams({
+        ...searchParams,
+        pageSize: pageSize,
+        page: page,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize]);
 
   useEffect(() => {
     document.title = 'Test Runs | Ibutsu';
@@ -519,7 +550,7 @@ const RunList = () => {
               columns={COLUMNS}
               rows={rows}
               filters={filtersComponents}
-              activeFilters={filters}
+              activeFilters={activeFilters}
               pagination={pagination}
               isEmpty={rows.length === 0}
               isError={isError}
@@ -528,11 +559,16 @@ const RunList = () => {
               onClearFilters={clearFilters}
               onApplyReport={() =>
                 navigate(
-                  `/project/${params.project_id}/reports?${buildParams(filters).join('&')}`,
+                  `/project/${project_id}/reports?${buildParams(activeFilters).join('&')}`,
                 )
               }
-              onSetPage={setPage}
-              onSetPageSize={setPageSize}
+              onSetPage={(_, value) => {
+                setPage(value);
+              }}
+              onSetPageSize={(_, value, newPage) => {
+                setPageSize(value);
+                setPage(newPage);
+              }}
               hideFilters={['project_id']}
             />
           </CardBody>
