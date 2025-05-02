@@ -5,7 +5,7 @@ import { Badge } from '@patternfly/react-core';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
-import { buildParams, toAPIFilter } from '../utilities';
+import { buildApiParams, toAPIFilter } from '../utilities';
 
 const LastPassed = ({ filters }) => {
   const [resultData, setResultData] = useState();
@@ -18,7 +18,7 @@ const LastPassed = ({ filters }) => {
       delete params['result'];
       delete params['start_time'];
       params['result'] = { op: 'eq', val: 'passed' };
-      const apiParams = buildParams(filters);
+      const apiParams = buildApiParams(filters);
       apiParams['filter'] = toAPIFilter(filters);
       apiParams['pageSize'] = 1;
       apiParams['page'] = 1;

@@ -78,13 +78,13 @@ export function toTitleCase(str, convertToSpace = false) {
   });
 }
 
-export function buildParams(filters) {
+export function buildApiParams(filters) {
   let getParams = [];
   for (let key in filters) {
     if (!!filters[key] && !!filters[key]['val']) {
       const val = filters[key]['val'];
       const op = filters[key]['op'];
-      getParams.push(key + '[' + op + ']=' + val);
+      getParams.push(`${key}[${op}]=${val}`);
     }
   }
   return getParams;
@@ -109,6 +109,7 @@ export function buildUrl(url, params) {
 
 export function toAPIFilter(filters) {
   // Take UI style filter object with field/op/val keys and generate an array of filter strings for the API
+  // TODO rework for array of filters instead of keyed object
   let filter_strings = [];
   for (const key in filters) {
     if (
@@ -435,7 +436,20 @@ export function resultToTestHistoryRow(result, index, filterFunc) {
   ];
 }
 
-export function parseFilter(paramKey) {
+export const parseSearchToFilter = (searchParamTuple) => {
+  const re = /\[(?<op>.*?)\](?<value>.*)?/;
+  let match = re.exec(searchParamTuple[1]);
+  if (match) {
+    return {
+      field: searchParamTuple[0],
+      op: match.groups['op'],
+      value: match.groups['value'],
+    };
+  }
+  return null;
+};
+
+export const parseFilter = (paramKey) => {
   const re = /(.*?)\[(.*?)\]/;
   let match = re.exec(paramKey);
   if (match) {
@@ -449,7 +463,7 @@ export function parseFilter(paramKey) {
       op: 'eq',
     };
   }
-}
+};
 
 export function getSpinnerRow(columnCount) {
   return {

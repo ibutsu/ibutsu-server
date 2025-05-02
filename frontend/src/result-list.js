@@ -26,7 +26,6 @@ import { TimesIcon } from '@patternfly/react-icons';
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
-  buildParams,
   getFilterMode,
   getOperationMode,
   getOperationsFromField,
@@ -35,15 +34,13 @@ import {
 } from './utilities';
 import MultiValueInput from './components/multivalueinput';
 import FilterTable from './components/filtertable';
-import { OPERATIONS, RESULT_FIELDS } from './constants';
+import { RESULT_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
-import { useNavigate } from 'react-router-dom';
+import { useTableFilters } from './components/activeFilterHook';
 
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 
 const ResultList = () => {
-  const navigate = useNavigate();
-
   const context = useContext(IbutsuContext);
   const { primaryObject } = context;
 
@@ -55,7 +52,15 @@ const ResultList = () => {
   const [pageSize, setPageSize] = useState(20);
   const [totalItems, setTotalItems] = useState(0);
 
-  const [filters, setFilters] = useState({});
+  const {
+    activeFilters,
+    activeFilterComponents,
+    setActiveFilters,
+    updateFilters,
+    activeFiltersToObject,
+    activeFiltersToApiParams,
+    onApplyReport,
+  } = useTableFilters({ hideFilters: ['project_id'] });
 
   const [fieldSelection, setFieldSelection] = useState();
   const [isFieldOpen, setIsFieldOpen] = useState(false);
@@ -198,32 +203,9 @@ const ResultList = () => {
       setRunSelection([]);
       setBoolSelection(false);
       setInValues([]);
+      setPage(1);
     });
   };
-
-  const applyReport = () => {
-    navigate(
-      '/project/' +
-        primaryObject.id +
-        '/reports?' +
-        buildParams(filters).join('&'),
-    );
-  };
-
-  const updateFilters = useCallback(
-    (name, operator, value, callback) => {
-      let newFilters = { ...filters };
-      if (!value) {
-        delete newFilters[name];
-      } else {
-        newFilters[name] = { op: operator, val: value };
-      }
-      setFilters(newFilters);
-      setPage(1);
-      callback();
-    },
-    [filters],
-  );
 
   const setFilter = useCallback(
     (field, value) => {
@@ -241,7 +223,7 @@ const ResultList = () => {
   );
 
   const clearFilters = () => {
-    setFilters({});
+    setActiveFilters([]);
     setPage(1);
     setPageSize(20);
     setFieldSelection();
@@ -253,12 +235,13 @@ const ResultList = () => {
     setInValues([]);
   };
 
+  // fetch result data
   useEffect(() => {
     const fetchData = async () => {
       setIsError(false);
       setRows([getSpinnerRow(5)]);
       let apiParams = { filter: [] };
-      let newFilters = { ...filters };
+      let newFilters = activeFiltersToObject();
       if (primaryObject) {
         newFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
       } else if (
@@ -269,16 +252,7 @@ const ResultList = () => {
       apiParams['estimate'] = true;
       apiParams['pageSize'] = pageSize;
       apiParams['page'] = page;
-      for (let key in newFilters) {
-        if (
-          Object.prototype.hasOwnProperty.call(newFilters, key) &&
-          !!newFilters[key]
-        ) {
-          const val = newFilters[key]['val'];
-          const op = OPERATIONS[newFilters[key]['op']];
-          apiParams.filter.push(key + op + val);
-        }
-      }
+      apiParams['filter'] = activeFiltersToApiParams(newFilters);
       try {
         const response = await HttpClient.get(
           [Settings.serverUrl, 'result'],
@@ -298,8 +272,17 @@ const ResultList = () => {
     };
 
     fetchData();
-  }, [filters, page, pageSize, primaryObject, setFilter]);
+  }, [
+    activeFilters,
+    activeFiltersToApiParams,
+    activeFiltersToObject,
+    page,
+    pageSize,
+    primaryObject,
+    setFilter,
+  ]);
 
+  // fetch 500 runs with estimate on count
   useEffect(() => {
     const fetchRuns = async () => {
       try {
@@ -319,6 +302,7 @@ const ResultList = () => {
     fetchRuns();
   }, []);
 
+  // filter field options based on input
   useEffect(() => {
     let newSelectOptionsField = RESULT_FIELDS;
     if (fieldInputValue) {
@@ -335,6 +319,7 @@ const ResultList = () => {
     setFilteredfieldOptions(newSelectOptionsField);
   }, [fieldFilterValue, fieldInputValue, isFieldOpen]);
 
+  // filter run options based on input
   useEffect(() => {
     let newSelectOptionsRun = [...runs];
     if (runInputValue) {
@@ -703,21 +688,19 @@ const ResultList = () => {
               columns={COLUMNS}
               rows={rows}
               filters={filterSelects}
-              activeFilters={filters}
+              activeFilters={activeFilters}
+              activeFilterComponents={activeFilterComponents}
               pagination={{
                 pageSize: pageSize,
                 page: page,
                 totalItems: totalItems,
               }}
-              isEmpty={rows.length === 0}
               isError={isError}
               onApplyFilter={applyFilter}
-              onRemoveFilter={(id) => updateFilters(id, null, null, () => {})}
               onClearFilters={clearFilters}
-              onApplyReport={applyReport}
+              onApplyReport={onApplyReport}
               onSetPage={(_, value) => setPage(value)}
               onSetPageSize={(_, value) => setPageSize(value)}
-              hideFilters={['project_id']}
             />
           </CardBody>
           <CardFooter>
