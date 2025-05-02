@@ -8,9 +8,6 @@ import React, {
 
 import {
   Button,
-  Card,
-  CardBody,
-  CardFooter,
   MenuToggle,
   PageSection,
   PageSectionVariants,
@@ -30,7 +27,6 @@ import {
   Link,
   useLocation,
   useNavigate,
-  useParams,
   useSearchParams,
 } from 'react-router-dom';
 
@@ -38,7 +34,6 @@ import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
   buildBadge,
-  buildApiParams,
   getFilterMode,
   getOperationMode,
   getOperationsFromField,
@@ -114,7 +109,6 @@ const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
 const RunList = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { project_id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { primaryObject } = useContext(IbutsuContext);
@@ -123,14 +117,6 @@ const RunList = () => {
   const [page, setPage] = useState(searchParams.get('page') || 1);
   const [pageSize, setPageSize] = useState(searchParams.get('pageSize') || 100);
   const [totalItems, setTotalItems] = useState(0);
-
-  const {
-    activeFilters,
-    setActiveFilters,
-    updateFilters,
-    activeFiltersToObject,
-    activeFiltersToApiParams,
-  } = useActiveFilters();
 
   const [fieldSelection, setFieldSelection] = useState(null);
   const [filteredFieldOptions, setFilteredFieldOptions] = useState(RUN_FIELDS);
@@ -148,6 +134,15 @@ const RunList = () => {
   const [inValues, setInValues] = useState([]);
   const [boolSelection, setBoolSelection] = useState(null);
   const [isBoolOpen, setIsBoolOpen] = useState(false);
+
+  const {
+    activeFilters,
+    activeFilterComponents,
+    setActiveFilters,
+    updateFilters,
+    activeFiltersToObject,
+    activeFiltersToApiParams,
+  } = useActiveFilters({ hideFilters: ['project_id'] });
 
   const applyFilter = useCallback(() => {
     const field = fieldSelection;
@@ -191,13 +186,6 @@ const RunList = () => {
     [updateFilters],
   );
 
-  const removeFilter = useCallback(
-    (id) => {
-      updateFilters(id, null, null, () => {});
-    },
-    [updateFilters],
-  );
-
   // Fetch runs based on active filters
   useEffect(() => {
     setIsError(false);
@@ -226,16 +214,7 @@ const RunList = () => {
         setRows([]);
         setIsError(true);
       });
-  }, [
-    pageSize,
-    page,
-    primaryObject,
-    setFilter,
-    activeFilters,
-    boolSelection,
-    activeFiltersToObject,
-    activeFiltersToApiParams,
-  ]);
+  }, [pageSize, page, primaryObject, setFilter, activeFilters, boolSelection]);
 
   const onFieldSelect = useCallback(
     (_, selection) => {
@@ -536,42 +515,31 @@ const RunList = () => {
         </TextContent>
       </PageSection>
       <PageSection>
-        <Card>
-          <CardBody className="pf-u-p-0">
-            <FilterTable
-              columns={COLUMNS}
-              rows={rows}
-              filters={filtersComponents}
-              activeFilters={activeFilters}
-              pagination={pagination}
-              isEmpty={rows.length === 0}
-              isError={isError}
-              onApplyFilter={applyFilter}
-              onRemoveFilter={removeFilter}
-              onClearFilters={clearFilters}
-              onApplyReport={() =>
-                navigate(
-                  `/project/${project_id}/reports?${buildApiParams(activeFilters).join('&')}`,
-                )
-              }
-              onSetPage={(_, value) => {
-                setPage(value);
-              }}
-              onSetPageSize={(_, value, newPage) => {
-                setPageSize(value);
-                setPage(newPage);
-              }}
-              hideFilters={['project_id']}
-            />
-          </CardBody>
-          <CardFooter>
+        <FilterTable
+          columns={COLUMNS}
+          rows={rows}
+          filters={filtersComponents}
+          activeFilters={activeFilters}
+          activeFilterComponents={activeFilterComponents}
+          pagination={pagination}
+          isError={isError}
+          onApplyFilter={applyFilter}
+          onClearFilters={clearFilters}
+          onSetPage={(_, value) => {
+            setPage(value);
+          }}
+          onSetPageSize={(_, value, newPage) => {
+            setPageSize(value);
+            setPage(newPage);
+          }}
+          footerChildren={
             <Text className="disclaimer" component="h4">
               * Note: for performance reasons, the total number of items is an
               approximation. Use the API with &lsquo;estimate=false&rsquo; if
               you need an accurate count.
             </Text>
-          </CardFooter>
-        </Card>
+          }
+        />
       </PageSection>
     </React.Fragment>
   );

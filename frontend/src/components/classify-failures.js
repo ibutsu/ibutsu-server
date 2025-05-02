@@ -336,7 +336,6 @@ const ClassifyFailuresTable = ({ filters, run_id }) => {
             page: page,
             totalItems: totalItems,
           }}
-          isEmpty={rows.length === 0}
           isError={isError}
           onCollapse={onCollapse}
           onSetPage={(_, change) => setPage(change)}

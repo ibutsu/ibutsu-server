@@ -26,7 +26,6 @@ import { TimesIcon } from '@patternfly/react-icons';
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
-  buildApiParams,
   getFilterMode,
   getOperationMode,
   getOperationsFromField,
@@ -37,14 +36,11 @@ import MultiValueInput from './components/multivalueinput';
 import FilterTable from './components/filtertable';
 import { RESULT_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
-import { useNavigate } from 'react-router-dom';
 import { useActiveFilters } from './components/activeFilterHook';
 
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 
 const ResultList = () => {
-  const navigate = useNavigate();
-
   const context = useContext(IbutsuContext);
   const { primaryObject } = context;
 
@@ -58,11 +54,13 @@ const ResultList = () => {
 
   const {
     activeFilters,
+    activeFilterComponents,
     setActiveFilters,
     updateFilters,
     activeFiltersToObject,
     activeFiltersToApiParams,
-  } = useActiveFilters();
+    onApplyReport,
+  } = useActiveFilters({ hideFilters: ['project_id'] });
 
   const [fieldSelection, setFieldSelection] = useState();
   const [isFieldOpen, setIsFieldOpen] = useState(false);
@@ -209,15 +207,6 @@ const ResultList = () => {
     });
   };
 
-  const applyReport = () => {
-    navigate(
-      '/project/' +
-        primaryObject.id +
-        '/reports?' +
-        buildApiParams(activeFilters).join('&'),
-    );
-  };
-
   const setFilter = useCallback(
     (field, value) => {
       updateFilters(field, 'eq', value, () => {
@@ -246,6 +235,7 @@ const ResultList = () => {
     setInValues([]);
   };
 
+  // fetch result data
   useEffect(() => {
     const fetchData = async () => {
       setIsError(false);
@@ -292,6 +282,7 @@ const ResultList = () => {
     setFilter,
   ]);
 
+  // fetch 500 runs with estimate on count
   useEffect(() => {
     const fetchRuns = async () => {
       try {
@@ -311,6 +302,7 @@ const ResultList = () => {
     fetchRuns();
   }, []);
 
+  // filter field options based on input
   useEffect(() => {
     let newSelectOptionsField = RESULT_FIELDS;
     if (fieldInputValue) {
@@ -327,6 +319,7 @@ const ResultList = () => {
     setFilteredfieldOptions(newSelectOptionsField);
   }, [fieldFilterValue, fieldInputValue, isFieldOpen]);
 
+  // filter run options based on input
   useEffect(() => {
     let newSelectOptionsRun = [...runs];
     if (runInputValue) {
@@ -696,20 +689,18 @@ const ResultList = () => {
               rows={rows}
               filters={filterSelects}
               activeFilters={activeFilters}
+              activeFilterComponents={activeFilterComponents}
               pagination={{
                 pageSize: pageSize,
                 page: page,
                 totalItems: totalItems,
               }}
-              isEmpty={rows.length === 0}
               isError={isError}
               onApplyFilter={applyFilter}
-              onRemoveFilter={(id) => updateFilters(id, null, null, () => {})}
               onClearFilters={clearFilters}
-              onApplyReport={applyReport}
+              onApplyReport={onApplyReport}
               onSetPage={(_, value) => setPage(value)}
               onSetPageSize={(_, value) => setPageSize(value)}
-              hideFilters={['project_id']}
             />
           </CardBody>
           <CardFooter>

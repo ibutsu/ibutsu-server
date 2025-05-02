@@ -109,6 +109,7 @@ export function buildUrl(url, params) {
 
 export function toAPIFilter(filters) {
   // Take UI style filter object with field/op/val keys and generate an array of filter strings for the API
+  // TODO rework for array of filters instead of keyed object
   let filter_strings = [];
   for (const key in filters) {
     if (

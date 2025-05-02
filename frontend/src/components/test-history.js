@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Card,
-  CardHeader,
-  CardBody,
   Checkbox,
   Flex,
   FlexItem,
@@ -70,15 +67,20 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [isEmpty, setIsEmpty] = useState(false);
   const [isError, setIsError] = useState(false);
   const [isTimeRangeSelectOpen, setTimeRangeOpen] = useState(false);
   const [selectedTimeRange, setTimeRange] = useState('1 Week');
   const [onlyFailures, setOnlyFailures] = useState(false);
   const [historySummary, setHistorySummary] = useState();
-  const [filtersState, setFiltersState] = useState({});
 
-  const {updateFilters} = useActiveFilters();
+  const {
+    updateFilters,
+    activeFilters,
+    setActiveFilters,
+    activeFilterComponents,
+  } = useActiveFilters({
+    hideFilters: ['project_id', 'result', 'test_id', 'component'],
+  });
 
   useEffect(() => {
     const env_filter = {};
@@ -99,7 +101,7 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
         ).toISOString(),
       };
     }
-    setFiltersState({
+    setActiveFilters({
       ...filters,
       result: {
         op: 'in',
@@ -116,7 +118,7 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
       ...time_filter,
       ...env_filter,
     });
-  }, [testResult, filters]);
+  }, [testResult, filters, setActiveFilters]);
 
   const onCollapse = (_, rowIndex, isOpen) => {
     // lazy-load the result view so we don't have to make a bunch of artifact requests
@@ -172,10 +174,9 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
       );
     } else {
       setRows([getSpinnerRow(4)]);
-      setIsEmpty(false);
       setIsError(false);
-      const params = buildApiParams(filtersState);
-      params['filter'] = toAPIFilter(filtersState);
+      const params = buildApiParams(activeFilters);
+      params['filter'] = toAPIFilter(activeFilters);
       params['pageSize'] = pageSize;
       params['page'] = page;
       params['estimate'] = 'true';
@@ -196,12 +197,10 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
           setPageSize(data.pagination.pageSize);
           // setTotalPages(data.pagination.totalPages)
           setTotalItems(data.pagination.totalItems);
-          setIsEmpty(data.pagination.totalItems === 0);
         })
         .catch((error) => {
           console.error('Error fetching result data:', error);
           setRows([]);
-          setIsEmpty(false);
           setIsError(false);
         });
     }
@@ -211,20 +210,13 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
     historySummary,
     comparisonResults,
     setFilter,
-    filtersState,
+    activeFilters,
   ]);
-
-  const removeFilter = (id) => {
-    if (id !== 'result' && id !== 'test_id') {
-      // Don't allow removal of error/failure filter
-      updateFilters(id, null, null);
-    }
-  };
 
   useEffect(() => {
     // get the passed/failed/etc test summary
-    if (JSON.stringify(filtersState) !== '{}') {
-      const historyFilters = { ...filtersState };
+    if (JSON.stringify(activeFilters) !== '{}') {
+      const historyFilters = { ...activeFilters };
       // disregard result filter (we want all results)
       delete historyFilters['result'];
       const api_filter = toAPIFilter(historyFilters).join();
@@ -250,126 +242,139 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
           setHistorySummary(summary);
         });
     }
-  }, [filtersState]);
+  }, [activeFilters]);
 
-  const onFailuresCheck = (checked) => {
-    setFiltersState({
-      ...filtersState,
-      result: {
-        ...filtersState['result'], // keep the operator, replace val
-        val:
-          'failed;error' +
-          (checked ? ';skipped;xfailed' : ';skipped;xfailed;xpassed;passed'),
-      },
-    });
-    setOnlyFailures(checked);
-  };
-
-  const onTimeRangeSelect = (_, selection) => {
-    if (testResult?.start_time) {
-      const startTime = new Date(testResult?.start_time);
-      const selectionCoefficient = WEEKS[selection];
-      const timeRange = new Date(
-        startTime.getTime() - selectionCoefficient * millisecondsInMonth,
-      );
-      setFiltersState({
-        ...filtersState,
-        ['start_time']: { op: 'gt', val: timeRange.toISOString() },
+  const onFailuresCheck = useCallback(
+    // TODO rework for list of filters
+    (checked) => {
+      setActiveFilters({
+        ...activeFilters,
+        result: {
+          ...activeFilters['result'], // keep the operator, replace val
+          val:
+            'failed;error' +
+            (checked ? ';skipped;xfailed' : ';skipped;xfailed;xpassed;passed'),
+        },
       });
-      setTimeRangeOpen(false);
-      setTimeRange(selection);
-    }
-  };
-  const onTimeRangeToggleClick = () => {
+      setOnlyFailures(checked);
+    },
+    [activeFilters, setActiveFilters],
+  );
+
+  const onTimeRangeSelect = useCallback(
+    (_, selection) => {
+      if (testResult?.start_time) {
+        const startTime = new Date(testResult?.start_time);
+        const selectionCoefficient = WEEKS[selection];
+        const timeRange = new Date(
+          startTime.getTime() - selectionCoefficient * millisecondsInMonth,
+        );
+        setActiveFilters({
+          ...activeFilters,
+          ['start_time']: { op: 'gt', val: timeRange.toISOString() },
+        });
+        setTimeRangeOpen(false);
+        setTimeRange(selection);
+      }
+    },
+    [activeFilters, setActiveFilters, testResult?.start_time],
+  );
+
+  const onTimeRangeToggleClick = useCallback(() => {
     setTimeRangeOpen(!isTimeRangeSelectOpen);
-  };
+  }, [isTimeRangeSelectOpen, setTimeRangeOpen]);
+
+  const historyHeader = useMemo(() => {
+    <Flex style={{ width: '100%' }}>
+      <FlexItem grow={{ default: 'grow' }}>
+        <TextContent>
+          <Title headingLevel="h2">Test History</Title>
+        </TextContent>
+      </FlexItem>
+      <FlexItem>
+        <TextContent>
+          <Checkbox
+            id="only-failures"
+            label="Only show failures/errors"
+            isChecked={onlyFailures}
+            aria-label="only-failures-checkbox"
+            onChange={(_, checked) => onFailuresCheck(checked)}
+          />
+        </TextContent>
+      </FlexItem>
+      <FlexItem spacer={{ sm: 'spacerSm' }}>
+        <TextContent>Time range:</TextContent>
+      </FlexItem>
+      <FlexItem>
+        <Select
+          id="single-select"
+          isOpen={isTimeRangeSelectOpen}
+          selected={selectedTimeRange}
+          onSelect={onTimeRangeSelect}
+          onOpenChange={(isTimeRangeSelectOpen) =>
+            setTimeRangeOpen(isTimeRangeSelectOpen)
+          }
+          toggle={(toggleRef) => (
+            <MenuToggle
+              ref={toggleRef}
+              onClick={onTimeRangeToggleClick}
+              isExpanded={isTimeRangeSelectOpen}
+            >
+              {selectedTimeRange}
+            </MenuToggle>
+          )}
+          shouldFocusToggleOnSelect
+        >
+          <SelectList>
+            {Object.keys(WEEKS).map((key) => (
+              <SelectOption key={key} value={key}>
+                {key}
+              </SelectOption>
+            ))}
+          </SelectList>
+        </Select>
+      </FlexItem>
+    </Flex>;
+  }, [
+    isTimeRangeSelectOpen,
+    onFailuresCheck,
+    onTimeRangeSelect,
+    onTimeRangeToggleClick,
+    onlyFailures,
+    selectedTimeRange,
+  ]);
 
   return (
-    <Card className="pf-u-mt-lg">
-      <CardHeader>
-        <Flex style={{ width: '100%' }}>
-          <FlexItem grow={{ default: 'grow' }}>
-            <TextContent>
-              <Title headingLevel="h2">Test History</Title>
-            </TextContent>
-          </FlexItem>
-          <FlexItem>
-            <TextContent>
-              <Checkbox
-                id="only-failures"
-                label="Only show failures/errors"
-                isChecked={onlyFailures}
-                aria-label="only-failures-checkbox"
-                onChange={(_, checked) => onFailuresCheck(checked)}
-              />
-            </TextContent>
-          </FlexItem>
-          <FlexItem spacer={{ sm: 'spacerSm' }}>
-            <TextContent>Time range:</TextContent>
-          </FlexItem>
-          <FlexItem>
-            <Select
-              id="single-select"
-              isOpen={isTimeRangeSelectOpen}
-              selected={selectedTimeRange}
-              onSelect={onTimeRangeSelect}
-              onOpenChange={(isTimeRangeSelectOpen) =>
-                setTimeRangeOpen(isTimeRangeSelectOpen)
-              }
-              toggle={(toggleRef) => (
-                <MenuToggle
-                  ref={toggleRef}
-                  onClick={onTimeRangeToggleClick}
-                  isExpanded={isTimeRangeSelectOpen}
-                >
-                  {selectedTimeRange}
-                </MenuToggle>
-              )}
-              shouldFocusToggleOnSelect
-            >
-              <SelectList>
-                {Object.keys(WEEKS).map((key) => (
-                  <SelectOption key={key} value={key}>
-                    {key}
-                  </SelectOption>
-                ))}
-              </SelectList>
-            </Select>
-          </FlexItem>
-        </Flex>
-      </CardHeader>
-      <CardBody>
-        <FilterTable
-          columns={COLUMNS}
-          rows={rows}
-          pagination={{
-            pageSize: pageSize,
-            page: page,
-            totalItems: totalItems,
-          }}
-          isEmpty={isEmpty}
-          isError={isError}
-          onCollapse={onCollapse}
-          onSetPage={(_, pageNumber) => setPage(pageNumber)}
-          onSetPageSize={(_, pageSizeValue) => setPageSize(pageSizeValue)}
-          canSelectAll={false}
-          variant={TableVariant.compact}
-          activeFilters={filtersState}
-          filters={[
-            <Text key="summary" component="h4">
-              Summary:&nbsp;
-              {historySummary && <RunSummary summary={historySummary} />}
-            </Text>,
-            <Text key="last-passed" component="h4">
-              Last passed:&nbsp;
-              <LastPassed filters={filtersState} />
-            </Text>,
-          ]}
-          onRemoveFilter={removeFilter}
-          hideFilters={['project_id', 'result', 'test_id', 'component']}
-        />
-      </CardBody>
-    </Card>
+    <FilterTable
+      columns={COLUMNS}
+      rows={rows}
+      pagination={{
+        pageSize: pageSize,
+        page: page,
+        totalItems: totalItems,
+      }}
+      isError={isError}
+      onCollapse={onCollapse}
+      onSetPage={(_, pageNumber) => setPage(pageNumber)}
+      onSetPageSize={(_, pageSizeValue) => setPageSize(pageSizeValue)}
+      canSelectAll={false}
+      variant={TableVariant.compact}
+      activeFilters={activeFilters}
+      activeFilterComponents={activeFilterComponents}
+      filters={[
+        <Text key="summary" component="h4">
+          Summary:&nbsp;
+          {historySummary && <RunSummary summary={historySummary} />}
+        </Text>,
+        <Text key="last-passed" component="h4">
+          Last passed:&nbsp;
+          <LastPassed filters={activeFilters} />
+        </Text>,
+      ]}
+      headerChildren={historyHeader}
+      className="pf-u-mt-lg"
+      blockRemove={['result', 'test_id']}
+    />
   );
 };
 

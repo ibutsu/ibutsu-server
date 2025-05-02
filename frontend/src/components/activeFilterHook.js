@@ -1,5 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useContext,
+} from 'react';
+import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { OPERATIONS } from '../constants';
 import {
   Badge,
@@ -9,16 +15,21 @@ import {
   Flex,
   FlexItem,
 } from '@patternfly/react-core';
+import { buildApiParams } from '../utilities';
+import { IbutsuContext } from '../services/context';
 
 export const useActiveFilters = ({
-  initFilters = [],
   hideFilters = [],
-  onRemoveFilter = () => undefined,
-  onApplyReport = () => undefined,
+  applyReport = true,
+  blockRemove = [],
+  removeCallback = () => {},
 }) => {
   // caller must implement an applyFilter function to use updateFilters wiith it's state data
 
-  const [activeFilters, setActiveFilters] = useState(initFilters || []); // [{field, op, val}]
+  const navigate = useNavigate();
+  const params = useParams();
+  const { primaryObject } = useContext(IbutsuContext);
+  const [activeFilters, setActiveFilters] = useState([]); // [{field, op, val}]
   const [searchParams, setSearchParams] = useSearchParams();
 
   const updateFilters = useCallback(
@@ -40,18 +51,29 @@ export const useActiveFilters = ({
     [activeFilters],
   );
 
+  const onRemoveFilter = useCallback(
+    (id) => {
+      if (blockRemove.length && blockRemove.includes(id)) {
+        return;
+      }
+
+      updateFilters(id, null, null, removeCallback);
+    },
+    [blockRemove, removeCallback, updateFilters],
+  );
+
   const buildFilterSearchParam = (filter) => {
     return `[${filter.op}]${filter.value}`;
   };
 
-  const activeFiltersToObject = () => {
+  const activeFiltersToObject = useCallback(() => {
     return activeFilters.reduce(
       (acc, filter) => (acc[filter.field] = { op: filter.op, val: filter.val }),
       {},
     );
-  };
+  }, [activeFilters]);
 
-  const activeFiltersToApiParams = (filters) => {
+  const activeFiltersToApiParams = useCallback((filters) => {
     const apiParamArray = [];
     for (let key in filters) {
       if (
@@ -63,7 +85,7 @@ export const useActiveFilters = ({
         apiParamArray.push(key + op + val);
       }
     }
-  };
+  }, []);
 
   const filterParams = Object.fromEntries(
     Object.entries(Object.fromEntries(searchParams)).filter(
@@ -71,6 +93,14 @@ export const useActiveFilters = ({
     ),
   );
   console.log('filterParams', filterParams);
+
+  const onApplyReport = useCallback(
+    () =>
+      navigate(
+        `/project/${params?.project_id || primaryObject.id}/reports?${buildApiParams(activeFilters).join('&')}`,
+      ),
+    [activeFilters, navigate, params?.project_id, primaryObject.id],
+  );
 
   // couple active filters to search params
   useEffect(() => {
@@ -99,7 +129,7 @@ export const useActiveFilters = ({
                 spacer={{ default: 'spacerXs' }}
                 key={activeFilter?.field}
               >
-                {!hideFilters.includes(activeFilter?.field) && (
+                {!hideFilters?.includes(activeFilter?.field) && (
                   <ChipGroup categoryName={activeFilter?.field}>
                     <Chip
                       badge={<Badge isRead={true}>{activeFilter.op}</Badge>}
@@ -115,7 +145,7 @@ export const useActiveFilters = ({
               </FlexItem>
             ))}
           </Flex>
-          {onApplyReport && (
+          {applyReport && (
             <Flex>
               <FlexItem style={{ marginLeft: '0.75em' }}>
                 <Button onClick={onApplyReport} variant="secondary">
@@ -127,7 +157,7 @@ export const useActiveFilters = ({
         </Flex>
       );
     }
-  }, [activeFilters, onApplyReport, hideFilters, onRemoveFilter]);
+  }, [activeFilters, applyReport, hideFilters]);
 
   return {
     activeFilters,
@@ -137,5 +167,6 @@ export const useActiveFilters = ({
     activeFiltersToObject,
     activeFiltersToApiParams,
     activeFilterComponents,
+    onApplyReport,
   };
 };
