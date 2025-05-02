@@ -16,6 +16,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import { STRING_USER_FIELDS, STRING_OPERATIONS } from '../constants';
 import PropTypes from 'prop-types';
+import { useActiveFilters } from './activeFilterHook';
 
 const DEFAULT_FIELD = STRING_USER_FIELDS[0];
 const DEFAULT_OP = Object.keys(STRING_OPERATIONS)[0];
@@ -132,8 +133,6 @@ const useUserFilter = () => {
 
   const [filterValue, setFilterValue] = useState('');
 
-  const [activeFilters, setActiveFilters] = useState({});
-
   const onFieldSelect = useCallback((_, selection) => {
     setSelectedField(selection);
     setFilterValue('');
@@ -145,19 +144,7 @@ const useUserFilter = () => {
     setIsOperationOpen(false);
   }, []);
 
-  const updateFilters = useCallback(
-    (name, operator, value, callback) => {
-      let newFilters = { ...activeFilters };
-      if (!value) {
-        delete newFilters[name];
-      } else {
-        newFilters[name] = { op: operator, val: value };
-      }
-      setActiveFilters(newFilters);
-      callback();
-    },
-    [activeFilters],
-  );
+  const { activeFilters, updateFilters } = useActiveFilters();
 
   const applyFilter = useCallback(() => {
     updateFilters(

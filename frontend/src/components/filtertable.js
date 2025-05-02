@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { act } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -19,6 +19,7 @@ import {
 } from '@patternfly/react-table/deprecated';
 
 import { TableEmptyState, TableErrorState } from './tablestates';
+import { useActiveFilters } from './activeFilterHook';
 
 const FilterTable = ({
   isEmpty,
@@ -37,10 +38,17 @@ const FilterTable = ({
   actions = [],
   filters = [],
   hideFilters = [],
-  activeFilters = {},
+  activeFilters = [],
   pagination = { page: 0, pageSize: 0, totalItems: 0 },
   canSelectAll = false,
 }) => {
+  const { activeFilterComponents } = useActiveFilters({
+    initFilters: activeFilters,
+    hideFilters: hideFilters,
+    onApplyFilter: onApplyFilter,
+    onRemoveFilter: onRemoveFilter,
+    onApplyReport: onApplyReport,
+  });
   return (
     <React.Fragment>
       <Flex>
@@ -78,46 +86,7 @@ const FilterTable = ({
           </FlexItem>
         </Flex>
       </Flex>
-      {Object.keys(activeFilters).length > 0 && (
-        <Flex style={{ marginTop: '1rem' }}>
-          <Flex>
-            <FlexItem>Active filters</FlexItem>
-          </Flex>
-          <Flex grow={{ default: 'grow' }}>
-            {Object.keys(activeFilters).map((key) => (
-              <FlexItem spacer={{ default: 'spacerXs' }} key={key}>
-                {!hideFilters.includes(key) && (
-                  <ChipGroup categoryName={key}>
-                    <Chip
-                      badge={
-                        <Badge isRead={true}>{activeFilters[key]['op']}</Badge>
-                      }
-                      onClick={() => onRemoveFilter(key)}
-                    >
-                      {typeof activeFilters[key] === 'object' && (
-                        <React.Fragment>
-                          {activeFilters[key]['val']}
-                        </React.Fragment>
-                      )}
-                      {typeof activeFilters[key] !== 'object' &&
-                        activeFilters[key]}
-                    </Chip>
-                  </ChipGroup>
-                )}
-              </FlexItem>
-            ))}
-          </Flex>
-          {onApplyReport && (
-            <Flex>
-              <FlexItem style={{ marginLeft: '0.75em' }}>
-                <Button onClick={onApplyReport} variant="secondary">
-                  Use Active Filters in Report
-                </Button>
-              </FlexItem>
-            </Flex>
-          )}
-        </Flex>
-      )}
+      {activeFilterComponents}
       <Table
         cells={columns}
         rows={rows}
@@ -153,8 +122,8 @@ FilterTable.propTypes = {
   rows: PropTypes.array,
   actions: PropTypes.array,
   filters: PropTypes.array,
-  activeFilters: PropTypes.object,
-  hideFilters: PropTypes.array,
+  activeFilters: PropTypes.arrayOf(PropTypes.object),
+  hideFilters: PropTypes.arrayOf(PropTypes.string),
   pagination: PropTypes.object,
   isEmpty: PropTypes.bool,
   isError: PropTypes.bool,

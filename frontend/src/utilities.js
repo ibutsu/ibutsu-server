@@ -78,13 +78,13 @@ export function toTitleCase(str, convertToSpace = false) {
   });
 }
 
-export function buildParams(filters) {
+export function buildApiParams(filters) {
   let getParams = [];
   for (let key in filters) {
     if (!!filters[key] && !!filters[key]['val']) {
       const val = filters[key]['val'];
       const op = filters[key]['op'];
-      getParams.push(key + '[' + op + ']=' + val);
+      getParams.push(`${key}[${op}]=${val}`);
     }
   }
   return getParams;
@@ -435,7 +435,7 @@ export function resultToTestHistoryRow(result, index, filterFunc) {
   ];
 }
 
-export function parseFilter(paramKey) {
+export const parseFilter = (paramKey) => {
   const re = /(.*?)\[(.*?)\]/;
   let match = re.exec(paramKey);
   if (match) {
@@ -449,7 +449,7 @@ export function parseFilter(paramKey) {
       op: 'eq',
     };
   }
-}
+};
 
 export function getSpinnerRow(columnCount) {
   return {

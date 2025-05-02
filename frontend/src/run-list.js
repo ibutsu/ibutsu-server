@@ -28,6 +28,7 @@ import { ChevronRightIcon, TimesIcon } from '@patternfly/react-icons';
 
 import {
   Link,
+  useLocation,
   useNavigate,
   useParams,
   useSearchParams,
@@ -37,7 +38,7 @@ import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
   buildBadge,
-  buildParams,
+  buildApiParams,
   getFilterMode,
   getOperationMode,
   getOperationsFromField,
@@ -49,8 +50,9 @@ import FilterTable from './components/filtertable';
 
 import MultiValueInput from './components/multivalueinput';
 import RunSummary from './components/runsummary';
-import { OPERATIONS, RUN_FIELDS } from './constants';
+import { RUN_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
+import { useActiveFilters } from './components/activeFilterHook';
 
 const runToRow = (run, filterFunc) => {
   let badges = [];
@@ -110,6 +112,7 @@ const runToRow = (run, filterFunc) => {
 const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
 
 const RunList = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { project_id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -121,14 +124,13 @@ const RunList = () => {
   const [pageSize, setPageSize] = useState(searchParams.get('pageSize') || 100);
   const [totalItems, setTotalItems] = useState(0);
 
-  const [activeFilters, setActiveFilters] = useState(
-    Object.fromEntries(
-      Object.entries(Object.fromEntries(searchParams)).filter(
-        ([k]) => k !== 'page' && k !== 'pageSize',
-      ),
-    ),
-  );
-  console.log('activeFilters', activeFilters);
+  const {
+    activeFilters,
+    setActiveFilters,
+    updateFilters,
+    activeFiltersToObject,
+    activeFiltersToApiParams,
+  } = useActiveFilters();
 
   const [fieldSelection, setFieldSelection] = useState(null);
   const [filteredFieldOptions, setFilteredFieldOptions] = useState(RUN_FIELDS);
@@ -146,20 +148,6 @@ const RunList = () => {
   const [inValues, setInValues] = useState([]);
   const [boolSelection, setBoolSelection] = useState(null);
   const [isBoolOpen, setIsBoolOpen] = useState(false);
-
-  const updateFilters = useCallback((name, operator, value, callback) => {
-    setActiveFilters((prev) => {
-      const newFilters = { ...prev };
-      if (!value) {
-        delete newFilters[name];
-      } else {
-        newFilters[name] = { op: operator, val: value };
-      }
-      return newFilters;
-    });
-    setPage(1);
-    callback();
-  }, []);
 
   const applyFilter = useCallback(() => {
     const field = fieldSelection;
@@ -179,6 +167,7 @@ const RunList = () => {
       setTextFilter('');
       setInValues([]);
       setBoolSelection(null);
+      setPage(1);
     });
   }, [
     fieldSelection,
@@ -213,7 +202,7 @@ const RunList = () => {
   useEffect(() => {
     setIsError(false);
     const apiParams = { filter: [] };
-    const apiFilters = { ...activeFilters };
+    const apiFilters = activeFiltersToObject();
 
     if (primaryObject) {
       apiFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
@@ -223,16 +212,7 @@ const RunList = () => {
     apiParams['estimate'] = true;
     apiParams['pageSize'] = pageSize;
     apiParams['page'] = page;
-    for (let key in apiFilters) {
-      if (
-        Object.prototype.hasOwnProperty.call(apiFilters, key) &&
-        !!apiFilters[key]
-      ) {
-        const val = apiFilters[key]['val'];
-        const op = OPERATIONS[apiFilters[key]['op']];
-        apiParams.filter.push(key + op + val);
-      }
-    }
+    apiParams['filter'] = activeFiltersToApiParams(apiFilters);
     HttpClient.get([Settings.serverUrl, 'run'], apiParams)
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
@@ -246,7 +226,16 @@ const RunList = () => {
         setRows([]);
         setIsError(true);
       });
-  }, [pageSize, page, primaryObject, setFilter, activeFilters, boolSelection]);
+  }, [
+    pageSize,
+    page,
+    primaryObject,
+    setFilter,
+    activeFilters,
+    boolSelection,
+    activeFiltersToObject,
+    activeFiltersToApiParams,
+  ]);
 
   const onFieldSelect = useCallback(
     (_, selection) => {
@@ -292,8 +281,9 @@ const RunList = () => {
     setIsBoolOpen(false);
   }, []);
 
+  // Remove all filters and text input and reset pagination
   const clearFilters = useCallback(() => {
-    setActiveFilters({});
+    setActiveFilters([]);
     setPage(1);
     setPageSize(20);
     setFieldSelection(null);
@@ -301,8 +291,9 @@ const RunList = () => {
     setTextFilter('');
     setInValues([]);
     setBoolSelection(null);
-  }, []);
+  }, [setActiveFilters]);
 
+  // filter the field options on filter text input
   useEffect(() => {
     let newSelectOptionsField = fieldOptions;
     if (fieldInputValue) {
@@ -320,12 +311,13 @@ const RunList = () => {
   }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
 
   // couple page and page size state to search params
+  // state init reads param, this effect only operates one way
   useEffect(() => {
     if (
       page !== searchParams.get('page') ||
       pageSize !== searchParams.get('pageSize')
     ) {
-      console.log('setting page and size', [page, pageSize]);
+      navigate(`${location.pathname}/{$}`);
       setSearchParams({
         ...searchParams,
         pageSize: pageSize,
@@ -559,7 +551,7 @@ const RunList = () => {
               onClearFilters={clearFilters}
               onApplyReport={() =>
                 navigate(
-                  `/project/${project_id}/reports?${buildParams(activeFilters).join('&')}`,
+                  `/project/${project_id}/reports?${buildApiParams(activeFilters).join('&')}`,
                 )
               }
               onSetPage={(_, value) => {

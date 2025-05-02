@@ -20,7 +20,7 @@ import { TableVariant, expandable } from '@patternfly/react-table';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
-  buildParams,
+  buildApiParams,
   toAPIFilter,
   getSpinnerRow,
   resultToTestHistoryRow,
@@ -31,6 +31,7 @@ import FilterTable from './filtertable';
 import RunSummary from './runsummary';
 import LastPassed from './last-passed';
 import ResultView from './result';
+import { useActiveFilters } from './activeFilterHook';
 
 const COLUMNS = [
   {
@@ -76,6 +77,8 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
   const [onlyFailures, setOnlyFailures] = useState(false);
   const [historySummary, setHistorySummary] = useState();
   const [filtersState, setFiltersState] = useState({});
+
+  const {updateFilters} = useActiveFilters();
 
   useEffect(() => {
     const env_filter = {};
@@ -148,20 +151,6 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
     );
   };
 
-  const updateFilters = useCallback(
-    (name, operator, value) => {
-      const updatedfilters = { ...filtersState };
-      if (value === null || value.length === 0) {
-        delete updatedfilters[name];
-      } else {
-        updatedfilters[name] = { op: operator, val: value };
-      }
-      setFiltersState(updatedfilters);
-      setPage(1);
-    },
-    [filtersState],
-  );
-
   const setFilter = useCallback(
     (field, value) => {
       // maybe process values array to string format here instead of expecting caller to do it?
@@ -185,7 +174,7 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
       setRows([getSpinnerRow(4)]);
       setIsEmpty(false);
       setIsError(false);
-      const params = buildParams(filtersState);
+      const params = buildApiParams(filtersState);
       params['filter'] = toAPIFilter(filtersState);
       params['pageSize'] = pageSize;
       params['page'] = page;
@@ -267,7 +256,7 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
     setFiltersState({
       ...filtersState,
       result: {
-        ...filtersState['result'],
+        ...filtersState['result'], // keep the operator, replace val
         val:
           'failed;error' +
           (checked ? ';skipped;xfailed' : ';skipped;xfailed;xpassed;passed'),
