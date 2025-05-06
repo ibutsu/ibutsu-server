@@ -46,7 +46,11 @@ const FilterTable = ({
     <Card className={cardClass}>
       {headerChildren && <CardHeader>{headerChildren}</CardHeader>}
       <CardBody key="filters">
-        <Flex>
+        <Flex
+          alignSelf={{ default: 'alignSelfFlexEnd' }}
+          direction={{ default: 'column' }}
+          align={{ default: 'alignRight' }}
+        >
           {filters.length && (
             <Flex
               spaceItems={{ default: 'spaceItemsXs' }}

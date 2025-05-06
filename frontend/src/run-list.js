@@ -190,17 +190,11 @@ const RunList = () => {
   useEffect(() => {
     setIsError(false);
     const apiParams = { filter: [] };
-    const apiFilters = activeFiltersToObject();
-
-    if (primaryObject) {
-      apiFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
-    } else if (Object.prototype.hasOwnProperty.call(apiFilters, 'project_id')) {
-      delete apiFilters['project_id'];
-    }
     apiParams['estimate'] = true;
     apiParams['pageSize'] = pageSize;
     apiParams['page'] = page;
-    apiParams['filter'] = activeFiltersToApiParams(apiFilters);
+    apiParams['filter'] = activeFiltersToApiParams();
+    console.log('run list api filter: ', apiParams['filter']);
     HttpClient.get([Settings.serverUrl, 'run'], apiParams)
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
@@ -214,7 +208,8 @@ const RunList = () => {
         setRows([]);
         setIsError(true);
       });
-  }, [pageSize, page, primaryObject, setFilter, activeFilters, boolSelection]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageSize, page, primaryObject, setFilter]);
 
   const onFieldSelect = useCallback(
     (_, selection) => {
