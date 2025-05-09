@@ -16,6 +16,7 @@ import {
   FlexItem,
   HelperText,
   HelperTextItem,
+  Text,
 } from '@patternfly/react-core';
 import { buildApiParams } from '../utilities';
 import { IbutsuContext } from '../services/context';
@@ -36,12 +37,9 @@ export const useActiveFilters = ({
   const [activeFilters, setActiveFilters] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Apply the project_id filter to activeFilters automatically
   useEffect(() => {
     if (primaryObject?.id || params?.project_id) {
-      console.log('project effect: primaryObject: ', [
-        primaryObject.id,
-        activeFilters,
-      ]);
       setActiveFilters((prevActive) => {
         return prevActive?.length
           ? prevActive.map((filter) => {
@@ -49,7 +47,6 @@ export const useActiveFilters = ({
                 filter?.field === 'project_id' &&
                 filter?.value !== primaryObject.id
               ) {
-                console.log('setting project id in filter');
                 return { ...filter, value: primaryObject.id };
               } else {
                 return filter;
@@ -64,8 +61,6 @@ export const useActiveFilters = ({
             ];
       });
     }
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primaryObject, params.project_id]);
 
   const filterToSearchParam = (filter) => {
@@ -74,24 +69,28 @@ export const useActiveFilters = ({
 
   // couple active filters to search params
   useEffect(() => {
-    activeFilters?.map((filter) => {
-      console.log('search param effect: ', filter);
-      if (
-        !hideFilters.includes(filter?.field) &&
-        searchParams.get(filter?.field) !== `[${filter.op}]${filter.value}`
-      ) {
-        setSearchParams({
-          ...searchParams,
-          [filter.field]: filterToSearchParam(filter),
-        });
-      }
-    });
+    // TODO this is overwriting all search params instead of adding to it when new filters are added
+    if (activeFilters.length || searchParams.length) {
+      activeFilters?.map((filter) => {
+        console.log('param effect, activeFilter: ', filter);
+        if (
+          !hideFilters.includes(filter?.field) &&
+          searchParams.get(filter?.field) !== filterToSearchParam(filter)
+        ) {
+          console.log('param effect, setting search params: ', ...searchParams);
+          setSearchParams((prevParams) => {
+            prevParams.set([filter.field], filterToSearchParam(filter));
+            return prevParams;
+          });
+        }
+      });
+    }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFilters]);
 
   const updateFilters = useCallback(
     (field, operator, value, callback) => {
-      console.log('updateFilters', [field, operator, value, activeFilters]);
       let newFilters = [...activeFilters];
       const existingFilterIndex = newFilters.findIndex(
         (filter) => filter.field === field,
@@ -100,10 +99,8 @@ export const useActiveFilters = ({
         // the field exists in a filter already
         if (value === null || value?.length === 0) {
           // value is empty, splice the filter out
-          console.log('updateFilters removing: ', field);
           newFilters.splice(existingFilterIndex, 1);
         } else {
-          console.log('updateFilters updating: ', field);
           newFilters[existingFilterIndex] = {
             field: field,
             op: operator,
@@ -112,11 +109,9 @@ export const useActiveFilters = ({
         }
       } else {
         // the field doesn't exist yet
-        console.log('updateFilters adding: ', field);
         newFilters.push({ field: field, op: operator, value: value });
       }
 
-      console.log('new filters: ', newFilters);
       setActiveFilters(newFilters);
       callback();
     },
@@ -136,7 +131,6 @@ export const useActiveFilters = ({
 
   // TODO remove, convert everything to use the list
   const activeFiltersToObject = useCallback(() => {
-    console.log('activeFiltersToObject', activeFilters);
     return activeFilters?.reduce(
       (acc, filter) =>
         (acc[filter.field] = { op: filter.op, value: filter.value }),
@@ -159,12 +153,12 @@ export const useActiveFilters = ({
     }
   }, [activeFilters]);
 
-  const filterParams = Object.fromEntries(
-    Object.entries(Object.fromEntries(searchParams)).filter(
-      ([k]) => k !== 'page' && k !== 'pageSize',
-    ),
-  );
-  console.log('filterParams', filterParams);
+  // const filterParams = Object.fromEntries(
+  //   Object.entries(Object.fromEntries(searchParams)).filter(
+  //     ([k]) => k !== 'page' && k !== 'pageSize',
+  //   ),
+  // );
+  // console.log('filterParams', filterParams);
 
   const onApplyReport = useCallback(
     () =>
@@ -175,15 +169,29 @@ export const useActiveFilters = ({
   );
 
   const activeFilterComponents = useMemo(() => {
-    console.log('active filter components: ', activeFilters);
     if (
       activeFilters?.length &&
       activeFilters.filter((filter) => !hideFilters.includes(filter.field))
         .length
     ) {
       return (
-        <Flex style={{ marginTop: '1rem' }}>
-          <Flex grow={{ default: 'grow' }}>
+        <Flex style={{ marginTop: '.75rem' }} direction={{ default: 'column' }}>
+          {applyReport && (
+            <Flex>
+              <FlexItem>
+                <Button
+                  onClick={onApplyReport}
+                  variant="link"
+                  size="sm"
+                  type="button"
+                >
+                  Transfer active filters to Report Builder
+                </Button>
+              </FlexItem>
+            </Flex>
+          )}
+
+          <Flex direction={{ default: 'row' }}>
             {activeFilters?.map((activeFilter) => (
               <FlexItem
                 spacer={{ default: 'spacerXs' }}
@@ -205,15 +213,6 @@ export const useActiveFilters = ({
               </FlexItem>
             ))}
           </Flex>
-          {applyReport && (
-            <Flex>
-              <FlexItem style={{ marginLeft: '0.75em' }}>
-                <Button onClick={onApplyReport} variant="secondary">
-                  Use Active Filters in Report
-                </Button>
-              </FlexItem>
-            </Flex>
-          )}
         </Flex>
       );
     } else {
