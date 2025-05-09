@@ -590,7 +590,6 @@ const Run = ({ defaultTab = 'summary' }) => {
                       page: page,
                       totalItems: totalItems,
                     }}
-                    isEmpty={rows.length === 0}
                     isError={isError}
                     onSetPage={(_, value) => setPage(value)}
                     onSetPageSize={(_, value) => setPageSize(value)}

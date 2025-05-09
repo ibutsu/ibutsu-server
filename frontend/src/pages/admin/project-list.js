@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 
 import {
   Button,
-  Card,
-  CardBody,
   Flex,
   FlexItem,
   Modal,
@@ -22,15 +20,14 @@ import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { getSpinnerRow } from '../../utilities';
 import FilterTable from '../../components/filtertable';
 import EmptyObject from '../../components/empty-object';
+import { useTableFilters } from '../../components/activeFilterHook';
 
 const COLUMNS = ['Title', 'Name', 'Owner', ''];
 
 const ProjectList = () => {
   const [filterText, setFilterText] = useState('');
-  const [activeFilters, setActiveFilters] = useState({});
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -43,6 +40,9 @@ const ProjectList = () => {
   const [isError, setIsError] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const { activeFilters, setActiveFilters, activeFilterComponents } =
+    useTableFilters();
 
   const projectToRow = (project) => ({
     cells: [
@@ -106,7 +106,7 @@ const ProjectList = () => {
       );
     }
     setFilteredProjects(newProjects);
-  }, [filterText, projects]);
+  }, [filterText, projects, setActiveFilters]);
 
   useEffect(() => {
     HttpClient.get([Settings.serverUrl, 'admin', 'project'], {
@@ -138,10 +138,6 @@ const ProjectList = () => {
 
   const onDeleteClose = () => {
     setIsDeleteModalOpen(false);
-  };
-
-  const onRemoveFilter = () => {
-    setFilterText('');
   };
 
   useEffect(() => {
@@ -180,44 +176,36 @@ const ProjectList = () => {
       </PageSection>
       <PageSection className="pf-u-pb-0">
         {projects.length > 0 && (
-          <Card>
-            <CardBody className="pf-u-p-0">
-              <FilterTable
-                columns={COLUMNS}
-                rows={
-                  filteredProjects
-                    ? filteredProjects.map((p) => projectToRow(p))
-                    : [getSpinnerRow(4)]
-                }
-                activeFilters={activeFilters}
-                filters={[
-                  <TextInput
-                    type="text"
-                    id="filter"
-                    placeholder="Search for project..."
-                    value={filterText}
-                    onChange={onFilterChange}
-                    style={{ height: 'inherit' }}
-                    key="filterText"
-                  />,
-                ]}
-                pagination={{
-                  pageSize: pageSize,
-                  page: page,
-                  totalItems: totalItems,
-                }}
-                onRemoveFilter={onRemoveFilter}
-                isEmpty={filteredProjects.length === 0}
-                isError={isError}
-                onSetPage={(_, value) => {
-                  setPage(value);
-                }}
-                onSetPageSize={(_, value) => {
-                  setPageSize(value);
-                }}
-              />
-            </CardBody>
-          </Card>
+          <FilterTable
+            columns={COLUMNS}
+            rows={filteredProjects?.map((p) => projectToRow(p))}
+            activeFilters={activeFilters}
+            activeFilterComponents={activeFilterComponents}
+            filters={[
+              <TextInput
+                type="text"
+                id="filter"
+                placeholder="Search for project..."
+                value={filterText}
+                onChange={onFilterChange}
+                style={{ height: 'inherit' }}
+                key="filterText"
+              />,
+            ]}
+            pagination={{
+              pageSize: pageSize,
+              page: page,
+              totalItems: totalItems,
+            }}
+            isError={isError}
+            onSetPage={(_, value) => {
+              setPage(value);
+            }}
+            onSetPageSize={(_, value) => {
+              setPageSize(value);
+            }}
+            removeCallback={() => setFilterText('')}
+          />
         )}
         {projects.length === 0 && (
           <EmptyObject

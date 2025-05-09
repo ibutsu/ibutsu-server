@@ -6,8 +6,6 @@ import PropTypes from 'prop-types';
 
 import {
   Button,
-  Card,
-  CardBody,
   MenuToggle,
   Select,
   SelectList,
@@ -36,6 +34,7 @@ import MultiValueInput from '../components/multivalueinput';
 import RunSummary from '../components/runsummary';
 import { OPERATIONS, ACCESSIBILITY_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
+import { useTableFilters } from '../components/activeFilterHook';
 
 const runToRow = (run, filterFunc, analysisViewId) => {
   let badges = [];
@@ -174,19 +173,7 @@ const AccessibilityDashboardView = ({ view }) => {
     // isMultiSelect: selection === 'in',  Wasn't in state originally, is only set here and never read?
   };
 
-  const updateFilters = (name, operator, value, callback) => {
-    let newFilters = { ...filters };
-    if (!value) {
-      delete newFilters[name];
-    } else {
-      newFilters[name] = { op: operator, val: value };
-    }
-
-    setFilters(filters);
-    setPage(1);
-
-    callback();
-  };
+  const { updateFilters, activeFilterComponents } = useTableFilters();
 
   const applyFilter = () => {
     const operationMode = getOperationMode(operationSelection);
@@ -208,11 +195,6 @@ const AccessibilityDashboardView = ({ view }) => {
       setInValues([]);
       setBoolSelection();
     });
-  };
-
-  const removeFilter = (id) => {
-    setPage(1);
-    updateFilters(id, null, null, () => {});
   };
 
   useEffect(() => {
@@ -460,28 +442,24 @@ const AccessibilityDashboardView = ({ view }) => {
   ];
 
   return (
-    <Card>
-      <CardBody className="pf-u-p-0">
-        <FilterTable
-          columns={columns}
-          rows={rows}
-          filters={jsxFilters}
-          pagination={{
-            page: page,
-            pageSize: pageSize,
-            totalItems: totalItems,
-          }}
-          isEmpty={rows.length === 0}
-          isError={isError}
-          onSetPage={(_, value) => setPage(value)}
-          onSetPageSize={(_, value) => setPageSize(value)}
-          onApplyFilter={applyFilter}
-          onRemoveFilter={removeFilter}
-          onClearFilters={() => setTextFilter('')}
-          activeFilters={filters}
-        />
-      </CardBody>
-    </Card>
+    <FilterTable
+      columns={columns}
+      rows={rows}
+      filters={jsxFilters}
+      pagination={{
+        page: page,
+        pageSize: pageSize,
+        totalItems: totalItems,
+      }}
+      isError={isError}
+      onSetPage={(_, value) => setPage(value)}
+      onSetPageSize={(_, value) => setPageSize(value)}
+      onApplyFilter={applyFilter}
+      onClearFilters={() => setTextFilter('')}
+      activeFilters={filters}
+      activeFilterComponents={activeFilterComponents}
+      removeCallback={() => setPage(1)}
+    />
   );
 };
 

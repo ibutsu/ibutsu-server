@@ -50,7 +50,6 @@ const ReportBuilder = () => {
   const [rows, setRows] = useState([getSpinnerRow(3)]);
   const [totalItems, setTotalItems] = useState(0);
   const [isError, setIsError] = useState(false);
-  const [isEmpty, setIsEmpty] = useState(false);
   const [isHelpExpanded, setIsHelpExpanded] = useState(false);
 
   const location = useLocation();
@@ -141,7 +140,6 @@ const ReportBuilder = () => {
           let row_data = data.reports.map((report) => reportToRow(report));
           setRows(row_data);
           setTotalItems(data.pagination.totalItems);
-          setIsEmpty(data.pagination.totalItems === 0);
           setIsError(false);
           pagination_page.current = data.pagination.page;
           pagination_pageSize.current = data.pagination.pageSize;
@@ -149,7 +147,6 @@ const ReportBuilder = () => {
         .catch((error) => {
           console.error('Error fetching result data:', error);
           setRows([]);
-          setIsEmpty(false);
           setIsError(true);
         });
     };
@@ -275,7 +272,6 @@ const ReportBuilder = () => {
               columns={COLUMNS}
               rows={rows}
               pagination={pagination}
-              isEmpty={isEmpty}
               isError={isError}
               onSetPage={(_, change) => {
                 pagination_page.current = change;

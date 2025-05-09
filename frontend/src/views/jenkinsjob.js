@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 
 import {
   Button,
-  Card,
-  CardBody,
   MenuToggle,
   Select,
   SelectList,
@@ -33,6 +31,7 @@ import MultiValueInput from '../components/multivalueinput';
 import RunSummary from '../components/runsummary';
 import { JJV_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
+import { useTableFilters } from '../components/activeFilterHook';
 
 const COLUMNS = [
   'Job name',
@@ -54,8 +53,6 @@ const JenkinsJobView = ({ view }) => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [totalItems, setTotalItems] = useState(0);
-
-  const [filters, setFilters] = useState({});
 
   const [rows, setRows] = useState([getSpinnerRow(7)]);
 
@@ -124,6 +121,9 @@ const JenkinsJobView = ({ view }) => {
     setIsBoolOpen(false);
   };
 
+  const { activeFilters, updateFilters, activeFilterComponents } =
+    useTableFilters();
+
   const applyFilter = () => {
     const operationMode = getOperationMode(operationSelection);
     let value = textFilter.trim();
@@ -142,22 +142,6 @@ const JenkinsJobView = ({ view }) => {
       setInValues([]);
       setBoolSelection(false);
     });
-  };
-
-  const updateFilters = (name, operator, value, callback) => {
-    const newFilters = { ...filters };
-    if (!value) {
-      delete newFilters[name];
-    } else {
-      newFilters[name] = { op: operator, val: value };
-    }
-    setPage(1);
-    setFilters(newFilters);
-    callback();
-  };
-
-  const removeFilter = (id) => {
-    updateFilters(id, null, null, () => {});
   };
 
   useEffect(() => {
@@ -228,7 +212,7 @@ const JenkinsJobView = ({ view }) => {
       }
       params['page_size'] = pageSize;
       params['page'] = page;
-      params['filter'] = toAPIFilter(filters).join();
+      params['filter'] = toAPIFilter(activeFilters).join();
 
       HttpClient.get([Settings.serverUrl, 'widget', view.widget], params)
         .then((response) => HttpClient.handleResponse(response))
@@ -242,7 +226,7 @@ const JenkinsJobView = ({ view }) => {
           setRows([]);
         });
     }
-  }, [filters, page, pageSize, primaryObject, view, jobToRow]);
+  }, [activeFilters, page, pageSize, primaryObject, view, jobToRow]);
 
   useEffect(() => {
     let newSelectOptionsField = [...fieldOptions];
@@ -419,27 +403,22 @@ const JenkinsJobView = ({ view }) => {
   ];
 
   return (
-    <Card>
-      <CardBody className="pf-u-p-0">
-        <FilterTable
-          columns={COLUMNS}
-          rows={rows}
-          filters={filterElements}
-          pagination={{
-            page: page,
-            pageSize: pageSize,
-            totalItems: totalItems,
-          }}
-          isEmpty={rows.length === 0}
-          isError={isError}
-          onSetPage={(_, value) => setPage(value)}
-          onSetPageSize={(_, value) => setPageSize(value)}
-          onApplyFilter={applyFilter}
-          onRemoveFilter={removeFilter}
-          activeFilters={filters}
-        />
-      </CardBody>
-    </Card>
+    <FilterTable
+      columns={COLUMNS}
+      rows={rows}
+      filters={filterElements}
+      pagination={{
+        page: page,
+        pageSize: pageSize,
+        totalItems: totalItems,
+      }}
+      isError={isError}
+      onSetPage={(_, value) => setPage(value)}
+      onSetPageSize={(_, value) => setPageSize(value)}
+      onApplyFilter={applyFilter}
+      activeFilters={activeFilters}
+      activeFilterComponents={activeFilterComponents}
+    />
   );
 };
 

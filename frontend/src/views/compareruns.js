@@ -3,12 +3,9 @@
 // MetaFilter removal isn't working right now
 // The Apply Filters button needs connection to table rendering
 // It would be great to better control the selectable fields in MetaFilter for this view as not all fields are relevant
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
-  Card,
-  CardBody,
-  CardHeader,
   Flex,
   FlexItem,
   TextContent,
@@ -67,18 +64,21 @@ const CompareRunsView = () => {
 
   const [filters, setFilters] = useState(DEFAULT_FILTER);
 
-  const onSkipCheck = (checked) => {
-    setIncludeSkipped(checked);
+  const onSkipCheck = useCallback(
+    (checked) => {
+      setIncludeSkipped(checked);
 
-    // mutate to set the result value field
-    setFilters({
-      ...filters,
-      result: {
-        ...filters.result,
-        val: checked ? FEPSX : FEP,
-      },
-    });
-  };
+      // mutate to set the result value field
+      setFilters({
+        ...filters,
+        result: {
+          ...filters.result,
+          val: checked ? FEPSX : FEP,
+        },
+      });
+    },
+    [filters],
+  );
 
   const updateFilters = (filterId, name, operator, value) => {
     let newFilters = { ...filters };
@@ -248,65 +248,61 @@ const CompareRunsView = () => {
     );
   }, [results]);
 
+  const compareHeader = useMemo(() => {
+    <Flex style={{ width: '100%' }}>
+      <FlexItem grow={{ default: 'grow' }}>
+        <TextContent>
+          <Text component="h2" className="pf-v5-c-title pf-m-xl">
+            Select Test Run metadata to compare
+          </Text>
+        </TextContent>
+      </FlexItem>
+      <FlexItem>
+        <TextContent>
+          <Checkbox
+            id="include-skips"
+            label="Include skips, xfails"
+            isChecked={includeSkipped}
+            aria-label="include-skips-checkbox"
+            onChange={(_, checked) => onSkipCheck(checked)}
+          />
+        </TextContent>
+      </FlexItem>
+      <FlexItem>
+        <Button variant="primary">
+          {isLoading ? 'Loading Results' : 'Apply Filters'}
+        </Button>
+      </FlexItem>
+      <FlexItem>
+        <Button variant="secondary" onClick={clearFilters} isDanger>
+          Clear Filters
+        </Button>
+      </FlexItem>
+    </Flex>;
+  }, [includeSkipped, isLoading, onSkipCheck]);
+
   // Compare runs work only when project is selected
   // TODO Apply Filters button needs to trigger table render
   return (
     primaryObject && (
-      <Card>
-        <CardHeader>
-          <Flex style={{ width: '100%' }}>
-            <FlexItem grow={{ default: 'grow' }}>
-              <TextContent>
-                <Text component="h2" className="pf-v5-c-title pf-m-xl">
-                  Select Test Run metadata to compare
-                </Text>
-              </TextContent>
-            </FlexItem>
-            <FlexItem>
-              <TextContent>
-                <Checkbox
-                  id="include-skips"
-                  label="Include skips, xfails"
-                  isChecked={includeSkipped}
-                  aria-label="include-skips-checkbox"
-                  onChange={(_, checked) => onSkipCheck(checked)}
-                />
-              </TextContent>
-            </FlexItem>
-            <FlexItem>
-              <Button variant="primary">
-                {isLoading ? 'Loading Results' : 'Apply Filters'}
-              </Button>
-            </FlexItem>
-            <FlexItem>
-              <Button variant="secondary" onClick={clearFilters} isDanger>
-                Clear Filters
-              </Button>
-            </FlexItem>
-          </Flex>
-        </CardHeader>
-        <CardBody>
-          <FilterTable
-            columns={COLUMNS}
-            rows={rows}
-            pagination={{
-              pageSize: pageSize,
-              page: page,
-              totalItems: totalItems,
-            }}
-            isEmpty={results.length === 0}
-            isError={isError}
-            onCollapse={onCollapse}
-            onSetPage={(_, value) => setPage(value)}
-            onSetPageSize={(_, value) => setPageSize(value)}
-            canSelectAll={false}
-            variant={TableVariant.compact}
-            filters={resultFilters}
-            onRemoveFilter={removeFilter}
-            hideFilters={['project_id']}
-          />
-        </CardBody>
-      </Card>
+      <FilterTable
+        columns={COLUMNS}
+        rows={rows}
+        pagination={{
+          pageSize: pageSize,
+          page: page,
+          totalItems: totalItems,
+        }}
+        isError={isError}
+        onCollapse={onCollapse}
+        onSetPage={(_, value) => setPage(value)}
+        onSetPageSize={(_, value) => setPageSize(value)}
+        canSelectAll={false}
+        variant={TableVariant.compact}
+        filters={resultFilters}
+        headerChildren={compareHeader}
+        blockRemove={['run_id', 'result']}
+      />
     )
   );
 };
