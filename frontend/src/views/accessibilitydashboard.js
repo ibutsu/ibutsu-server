@@ -34,7 +34,7 @@ import MultiValueInput from '../components/multivalueinput';
 import RunSummary from '../components/runsummary';
 import { OPERATIONS, ACCESSIBILITY_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
-import { useActiveFilters } from '../components/activeFilterHook';
+import { useTableFilters } from '../components/activeFilterHook';
 
 const runToRow = (run, filterFunc, analysisViewId) => {
   let badges = [];
@@ -173,7 +173,7 @@ const AccessibilityDashboardView = ({ view }) => {
     // isMultiSelect: selection === 'in',  Wasn't in state originally, is only set here and never read?
   };
 
-  const { updateFilters, activeFilterComponents } = useActiveFilters();
+  const { updateFilters, activeFilterComponents } = useTableFilters();
 
   const applyFilter = () => {
     const operationMode = getOperationMode(operationSelection);

@@ -22,7 +22,7 @@ import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import FilterTable from '../../components/filtertable';
 import EmptyObject from '../../components/empty-object';
-import { useActiveFilters } from '../../components/activeFilterHook';
+import { useTableFilters } from '../../components/activeFilterHook';
 
 const COLUMNS = ['Title', 'Name', 'Owner', ''];
 
@@ -42,7 +42,7 @@ const ProjectList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const { activeFilters, setActiveFilters, activeFilterComponents } =
-    useActiveFilters();
+    useTableFilters();
 
   const projectToRow = (project) => ({
     cells: [

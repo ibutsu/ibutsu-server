@@ -36,7 +36,7 @@ import MultiValueInput from './components/multivalueinput';
 import FilterTable from './components/filtertable';
 import { RESULT_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
-import { useActiveFilters } from './components/activeFilterHook';
+import { useTableFilters } from './components/activeFilterHook';
 
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 
@@ -60,7 +60,7 @@ const ResultList = () => {
     activeFiltersToObject,
     activeFiltersToApiParams,
     onApplyReport,
-  } = useActiveFilters({ hideFilters: ['project_id'] });
+  } = useTableFilters({ hideFilters: ['project_id'] });
 
   const [fieldSelection, setFieldSelection] = useState();
   const [isFieldOpen, setIsFieldOpen] = useState(false);

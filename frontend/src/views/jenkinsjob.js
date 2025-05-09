@@ -31,7 +31,7 @@ import MultiValueInput from '../components/multivalueinput';
 import RunSummary from '../components/runsummary';
 import { JJV_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
-import { useActiveFilters } from '../components/activeFilterHook';
+import { useTableFilters } from '../components/activeFilterHook';
 
 const COLUMNS = [
   'Job name',
@@ -122,7 +122,7 @@ const JenkinsJobView = ({ view }) => {
   };
 
   const { activeFilters, updateFilters, activeFilterComponents } =
-    useActiveFilters();
+    useTableFilters();
 
   const applyFilter = () => {
     const operationMode = getOperationMode(operationSelection);

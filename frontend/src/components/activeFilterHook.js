@@ -16,12 +16,27 @@ import {
   FlexItem,
   HelperText,
   HelperTextItem,
-  Text,
+  MenuToggle,
+  Select,
+  SelectList,
+  SelectOption,
+  TextInput,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
 } from '@patternfly/react-core';
-import { buildApiParams } from '../utilities';
+import {
+  buildApiParams,
+  getFilterMode,
+  getOperationMode,
+  getOperationsFromField,
+} from '../utilities';
 import { IbutsuContext } from '../services/context';
+import { TimesIcon } from '@patternfly/react-icons';
+import MultiValueInput from './multivalueinput';
 
-export const useActiveFilters = ({
+export const useTableFilters = ({
+  fieldOptions = [],
   hideFilters = [], // hides it in the render, not in activeFilters
   applyReport = true,
   blockRemove = [],
@@ -33,6 +48,25 @@ export const useActiveFilters = ({
   const params = useParams();
   const { primaryObject } = useContext(IbutsuContext);
 
+  // Filter states: field
+  const [filteredFieldOptions, setFilteredFieldOptions] =
+    useState(fieldOptions);
+  const [isFieldOpen, setIsFieldOpen] = useState(false);
+  const [fieldInputValue, setFieldInputValue] = useState('');
+  const [fieldFilterValue, setFieldFilterValue] = useState('');
+  const [fieldSelection, setFieldSelection] = useState(null);
+
+  // Filter states: operation
+  const [isOperationOpen, setIsOperationOpen] = useState(false);
+  const [operationSelection, setOperationSelection] = useState('eq');
+
+  // Filter states: value
+  const [textFilter, setTextFilter] = useState('');
+  const [isBoolOpen, setIsBoolOpen] = useState(false);
+  const [inValues, setInValues] = useState([]);
+  const [boolSelection, setBoolSelection] = useState(null);
+
+  // Active Filter States
   // default the project_id if primaryObject is set in context
   const [activeFilters, setActiveFilters] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -63,31 +97,42 @@ export const useActiveFilters = ({
     }
   }, [primaryObject, params.project_id]);
 
+  // Compose the '[op]value' for search params
   const filterToSearchParam = (filter) => {
     return `[${filter.op}]${filter.value}`;
   };
 
+  // filter out the pagination from search params
+  const filterParams = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(Object.fromEntries(searchParams)).filter(
+          ([k]) => k !== 'page' && k !== 'pageSize',
+        ),
+      ),
+    [searchParams],
+  );
+
   // couple active filters to search params
   useEffect(() => {
     // TODO this is overwriting all search params instead of adding to it when new filters are added
-    if (activeFilters.length || searchParams.length) {
+    if (filterParams.length) {
+      console.log('filterParams: ', filterParams);
+      const newSearchParams = new URLSearchParams(params);
       activeFilters?.map((filter) => {
-        console.log('param effect, activeFilter: ', filter);
         if (
           !hideFilters.includes(filter?.field) &&
           searchParams.get(filter?.field) !== filterToSearchParam(filter)
         ) {
-          console.log('param effect, setting search params: ', ...searchParams);
-          setSearchParams((prevParams) => {
-            prevParams.set([filter.field], filterToSearchParam(filter));
-            return prevParams;
-          });
+          console.log('param effect, activefilter updating: ', filter);
+          newSearchParams.set([filter.field], filterToSearchParam(filter));
         }
       });
+      setSearchParams(newSearchParams);
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFilters]);
+  }, [filterParams]);
 
   const updateFilters = useCallback(
     (field, operator, value, callback) => {
@@ -117,6 +162,25 @@ export const useActiveFilters = ({
     },
     [activeFilters],
   );
+
+  // Apply the given filter
+  const applyFilter = useCallback(() => {
+    const operationMode = getOperationMode(operationSelection);
+    let value = textFilter.trim();
+    if (operationMode === 'multi') {
+      value = inValues.map((item) => item.trim()).join(';');
+    } else if (operationMode === 'bool') {
+      value = boolSelection;
+    }
+    updateFilters(fieldSelection, operationSelection, value);
+  }, [
+    operationSelection,
+    textFilter,
+    updateFilters,
+    fieldSelection,
+    inValues,
+    boolSelection,
+  ]);
 
   const onRemoveFilter = useCallback(
     (id) => {
@@ -152,13 +216,6 @@ export const useActiveFilters = ({
       return [];
     }
   }, [activeFilters]);
-
-  // const filterParams = Object.fromEntries(
-  //   Object.entries(Object.fromEntries(searchParams)).filter(
-  //     ([k]) => k !== 'page' && k !== 'pageSize',
-  //   ),
-  // );
-  // console.log('filterParams', filterParams);
 
   const onApplyReport = useCallback(
     () =>
@@ -230,14 +287,271 @@ export const useActiveFilters = ({
     }
   }, [activeFilters, applyReport, hideFilters, onApplyReport, onRemoveFilter]);
 
+  const onFieldSelect = useCallback(
+    (_, selection) => {
+      if (selection === `Create "${fieldFilterValue}"`) {
+        setFilteredFieldOptions((prev) => [...prev, fieldFilterValue]);
+        setFieldSelection(fieldFilterValue);
+        setFieldInputValue(fieldFilterValue);
+        setOperationSelection('eq');
+      } else {
+        setFieldSelection(selection);
+        setFieldInputValue(selection);
+      }
+
+      setIsFieldOpen(false);
+      setOperationSelection('eq');
+    },
+    [fieldFilterValue],
+  );
+
+  const onOperationSelect = useCallback((event, selection) => {
+    setOperationSelection(selection);
+    setIsOperationOpen(false);
+  }, []);
+
+  const onBoolSelect = useCallback((event, selection) => {
+    setBoolSelection(selection);
+    setIsBoolOpen(false);
+  }, []);
+
+  // filter the field options on filter text input
+  useEffect(() => {
+    let newSelectOptionsField = [...fieldOptions];
+    if (fieldInputValue) {
+      newSelectOptionsField = fieldOptions.filter((menuItem) =>
+        menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase()),
+      );
+      if (
+        newSelectOptionsField.length !== 1 &&
+        !newSelectOptionsField.includes(fieldFilterValue)
+      ) {
+        newSelectOptionsField.push(`Create "${fieldFilterValue}"`);
+      }
+    }
+    setFilteredFieldOptions(newSelectOptionsField);
+  }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
+
+  const filterMode = getFilterMode(fieldSelection);
+  const operationMode = getOperationMode(operationSelection);
+  const operations = getOperationsFromField(fieldSelection);
+  const onFieldTextInputChange = useCallback((_, value) => {
+    setFieldInputValue(value);
+    setFieldFilterValue(value);
+  }, []);
+
+  const onFieldClear = useCallback(() => {
+    setFieldSelection(null);
+    setFieldFilterValue('');
+    setFieldInputValue('');
+  }, []);
+
+  const onBoolClear = useCallback(() => {
+    setBoolSelection(null);
+    setIsBoolOpen(false);
+  }, []);
+  const fieldToggle = useCallback(
+    (toggleRef) => (
+      <MenuToggle
+        variant="typeahead"
+        aria-label="Typeahead creatable menu toggle"
+        onClick={() => setIsFieldOpen(!isFieldOpen)}
+        isExpanded={isFieldOpen}
+        isFullWidth
+        innerRef={toggleRef}
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={fieldInputValue}
+            onClick={() => setIsFieldOpen(!isFieldOpen)}
+            onChange={onFieldTextInputChange}
+            id="create-typeahead-select-input"
+            autoComplete="off"
+            placeholder="Select a field"
+            role="combobox"
+            isExpanded={isFieldOpen}
+            aria-controls="select-create-typeahead-listbox"
+          />
+          <TextInputGroupUtilities>
+            {!!fieldInputValue && (
+              <Button
+                variant="plain"
+                onClick={onFieldClear}
+                aria-label="Clear input value"
+              >
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    ),
+    [fieldInputValue, isFieldOpen, onFieldClear, onFieldTextInputChange],
+  );
+
+  const operationToggle = useCallback(
+    (toggleRef) => (
+      <MenuToggle
+        onClick={() => setIsOperationOpen(!isOperationOpen)}
+        isExpanded={isOperationOpen}
+        isFullWidth
+        ref={toggleRef}
+      >
+        {operationSelection}
+      </MenuToggle>
+    ),
+    [isOperationOpen, operationSelection],
+  );
+
+  const boolToggle = useCallback(
+    (toggleRef) => (
+      <MenuToggle
+        onClick={() => setIsBoolOpen(!isBoolOpen)}
+        isExpanded={isBoolOpen}
+        isFullWidth
+        ref={toggleRef}
+        style={{ maxHeight: '36px' }}
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={boolSelection}
+            onClick={() => setIsBoolOpen(!isBoolOpen)}
+            autoComplete="off"
+            placeholder="Select True/False"
+            role="combobox"
+            isExpanded={isBoolOpen}
+          />
+          <TextInputGroupUtilities>
+            {!!boolSelection && (
+              <Button
+                variant="plain"
+                onClick={onBoolClear}
+                aria-label="Clear input value"
+              >
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    ),
+    [boolSelection, isBoolOpen, onBoolClear],
+  );
+  const filterComponents = useMemo(
+    () => [
+      <Select
+        id="typeahead-select"
+        selected={fieldSelection}
+        isOpen={isFieldOpen}
+        onSelect={onFieldSelect}
+        key="field"
+        onOpenChange={() => setIsFieldOpen(false)}
+        toggle={fieldToggle}
+      >
+        <SelectList id="select-typeahead-listbox">
+          {filteredFieldOptions.map((option, index) => (
+            <SelectOption key={index} value={option}>
+              {option}
+            </SelectOption>
+          ))}
+        </SelectList>
+      </Select>,
+      <Select
+        id="single-select"
+        isOpen={isOperationOpen}
+        selected={operationSelection}
+        onSelect={onOperationSelect}
+        onOpenChange={() => setIsOperationOpen(false)}
+        key="operation"
+        toggle={operationToggle}
+      >
+        <SelectList>
+          {Object.keys(operations).map((option, index) => (
+            <SelectOption key={index} value={option}>
+              {option}
+            </SelectOption>
+          ))}
+        </SelectList>
+      </Select>,
+      <React.Fragment key="value">
+        {operationMode === 'bool' && (
+          <Select
+            id="single-select"
+            isOpen={isBoolOpen}
+            selected={boolSelection}
+            onSelect={onBoolSelect}
+            onOpenChange={() => setIsBoolOpen(false)}
+            toggle={boolToggle}
+          >
+            <SelectList>
+              {['True', 'False'].map((option, index) => (
+                <SelectOption key={index} value={option}>
+                  {option}
+                </SelectOption>
+              ))}
+            </SelectList>
+          </Select>
+        )}
+        {filterMode === 'text' && operationMode === 'single' && (
+          <TextInput
+            type="text"
+            id="textSelection"
+            placeholder="Type in value"
+            value={textFilter}
+            onChange={(_, newValue) => setTextFilter(newValue)}
+            style={{ height: 'inherit' }}
+          />
+        )}
+        {operationMode === 'multi' && (
+          <MultiValueInput
+            onValuesChange={(values) => setInValues(values)}
+            style={{ height: 'inherit' }}
+          />
+        )}
+      </React.Fragment>,
+    ],
+    [
+      fieldSelection,
+      isFieldOpen,
+      onFieldSelect,
+      fieldToggle,
+      filteredFieldOptions,
+      isOperationOpen,
+      operationSelection,
+      onOperationSelect,
+      operationToggle,
+      operations,
+      operationMode,
+      isBoolOpen,
+      boolSelection,
+      onBoolSelect,
+      boolToggle,
+      filterMode,
+      textFilter,
+      setInValues,
+    ],
+  );
+
   return {
     activeFilters,
     setActiveFilters,
+    boolSelection,
+    setBoolSelection,
+    fieldSelection,
+    setFieldSelection,
+    inValues,
+    setInValues,
+    operationSelection,
+    setOperationSelection,
+    textFilter,
+    setTextFilter,
     updateFilters,
+    applyFilter,
     filterToSearchParam,
     activeFiltersToObject,
     activeFiltersToApiParams,
     activeFilterComponents,
+    filterComponents,
     onApplyReport,
   };
 };

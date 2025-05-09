@@ -28,7 +28,7 @@ import FilterTable from './filtertable';
 import RunSummary from './runsummary';
 import LastPassed from './last-passed';
 import ResultView from './result';
-import { useActiveFilters } from './activeFilterHook';
+import { useTableFilters } from './activeFilterHook';
 
 const COLUMNS = [
   {
@@ -78,7 +78,7 @@ const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
     activeFilters,
     setActiveFilters,
     activeFilterComponents,
-  } = useActiveFilters({
+  } = useTableFilters({
     hideFilters: ['project_id', 'result', 'test_id', 'component'],
   });
 
