@@ -135,7 +135,7 @@ export const useTableFilters = ({
   }, [filterParams]);
 
   const updateFilters = useCallback(
-    (field, operator, value, callback) => {
+    ({ field, operator, value, callback = () => {} }) => {
       let newFilters = [...activeFilters];
       const existingFilterIndex = newFilters.findIndex(
         (filter) => filter.field === field,
@@ -163,6 +163,17 @@ export const useTableFilters = ({
     [activeFilters],
   );
 
+  const resetFilters = useCallback(() => {
+    setFieldFilterValue('');
+    setFieldInputValue('');
+    setFieldSelection();
+    setBoolSelection();
+    setIsBoolOpen(false);
+    setOperationSelection('eq');
+    setInValues([]);
+    setTextFilter('');
+  }, []);
+
   // Apply the given filter
   const applyFilter = useCallback(() => {
     const operationMode = getOperationMode(operationSelection);
@@ -172,12 +183,18 @@ export const useTableFilters = ({
     } else if (operationMode === 'bool') {
       value = boolSelection;
     }
-    updateFilters(fieldSelection, operationSelection, value);
+    updateFilters({
+      field: fieldSelection,
+      opeator: operationSelection,
+      value: value,
+      callback: resetFilters,
+    });
   }, [
     operationSelection,
     textFilter,
     updateFilters,
     fieldSelection,
+    resetFilters,
     inValues,
     boolSelection,
   ]);
@@ -188,10 +205,20 @@ export const useTableFilters = ({
         return;
       }
 
-      updateFilters(id, null, null, removeCallback);
+      updateFilters({
+        field: id,
+        operator: null,
+        value: null,
+        callback: removeCallback,
+      });
     },
     [blockRemove, removeCallback, updateFilters],
   );
+
+  const clearFilters = useCallback(() => {
+    setActiveFilters([]);
+    resetFilters();
+  }, []);
 
   // TODO remove, convert everything to use the list
   const activeFiltersToObject = useCallback(() => {
@@ -534,24 +561,25 @@ export const useTableFilters = ({
 
   return {
     activeFilters,
-    setActiveFilters,
+    activeFilterComponents,
     boolSelection,
-    setBoolSelection,
+    clearFilters,
     fieldSelection,
-    setFieldSelection,
+    filterComponents,
+    filterToSearchParam,
     inValues,
-    setInValues,
     operationSelection,
+    setActiveFilters,
+    setBoolSelection,
+    setFieldSelection,
+    setInValues,
     setOperationSelection,
-    textFilter,
     setTextFilter,
     updateFilters,
     applyFilter,
-    filterToSearchParam,
     activeFiltersToObject,
     activeFiltersToApiParams,
-    activeFilterComponents,
-    filterComponents,
     onApplyReport,
+    textFilter,
   };
 };

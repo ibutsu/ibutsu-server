@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useContext,
-  useCallback,
-  useMemo,
-} from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 
 import {
   PageSection,
@@ -45,7 +39,11 @@ const runToRow = (run, filterFunc) => {
   if (filterFunc) {
     if (run.component) {
       componentBadge = buildBadge('component', run.component, false, () =>
-        filterFunc('component', 'eq', run.component),
+        filterFunc({
+          field: 'component',
+          operator: 'eq',
+          value: run.component,
+        }),
       );
     }
   } else {
@@ -57,7 +55,7 @@ const runToRow = (run, filterFunc) => {
     let envBadge;
     if (filterFunc) {
       envBadge = buildBadge(run.env, run.env, false, () =>
-        filterFunc('env', 'eq', run.env),
+        filterFunc({ field: 'env', operator: 'eq', value: run.env }),
       );
     } else {
       envBadge = buildBadge(run.env, run.env, false);
@@ -106,16 +104,11 @@ const RunList = () => {
   const {
     activeFilters,
     activeFilterComponents,
-    setActiveFilters,
-    setFieldSelection,
-    setBoolSelection,
-    setInValues,
-    setOperationSelection,
-    setTextFilter,
     updateFilters,
     applyFilter,
     activeFiltersToApiParams,
     filterComponents,
+    clearFilters,
   } = useTableFilters({
     hideFilters: ['project_id'],
     fieldOptions: RUN_FIELDS,
@@ -147,23 +140,6 @@ const RunList = () => {
   }, [pageSize, page, primaryObject, updateFilters]);
 
   // Remove all filters and text input and reset pagination
-  const clearFilters = useCallback(() => {
-    setActiveFilters([]);
-    setPage(1);
-    setPageSize(20);
-    setFieldSelection(null);
-    setOperationSelection('eq');
-    setTextFilter('');
-    setInValues([]);
-    setBoolSelection(null);
-  }, [
-    setActiveFilters,
-    setBoolSelection,
-    setFieldSelection,
-    setInValues,
-    setOperationSelection,
-    setTextFilter,
-  ]);
 
   // couple page and page size state to search params
   // state init reads param, this effect only operates one way
