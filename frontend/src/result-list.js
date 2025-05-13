@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 
 import {
   Button,
-  Card,
-  CardBody,
-  CardFooter,
   Chip,
   ChipGroup,
   PageSection,
@@ -25,54 +22,28 @@ import { TimesIcon } from '@patternfly/react-icons';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import {
-  getFilterMode,
-  getOperationMode,
-  getOperationsFromField,
-  getSpinnerRow,
-  resultToRow,
-} from './utilities';
+import { getSpinnerRow, resultToRow } from './utilities';
 import MultiValueInput from './components/multivalueinput';
 import FilterTable from './components/filtertable';
 import { RESULT_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
 import { useTableFilters } from './components/activeFilterHook';
+import { useSearchParams } from 'react-router-dom';
 
-const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
+const COLUMNS = ['Test', 'Result', 'Duration', 'Run', 'Started'];
 
 const ResultList = () => {
-  const context = useContext(IbutsuContext);
-  const { primaryObject } = context;
+  const { primaryObject } = useContext(IbutsuContext);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [rows, setRows] = useState([getSpinnerRow(5)]);
   const [runs, setRuns] = useState([]);
   const [filteredRuns, setFilteredRuns] = useState([]);
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [page, setPage] = useState(searchParams.get('page') || 1);
+  const [pageSize, setPageSize] = useState(searchParams.get('pageSize') || 20);
   const [totalItems, setTotalItems] = useState(0);
 
-  const {
-    activeFilters,
-    activeFilterComponents,
-    setActiveFilters,
-    updateFilters,
-    activeFiltersToObject,
-    activeFiltersToApiParams,
-    onApplyReport,
-  } = useTableFilters({ hideFilters: ['project_id'] });
-
-  const [fieldSelection, setFieldSelection] = useState();
-  const [isFieldOpen, setIsFieldOpen] = useState(false);
-  const [filteredfieldOptions, setFilteredfieldOptions] =
-    useState(RESULT_FIELDS);
-  const [fieldInputValue, setFieldInputValue] = useState('');
-  const [fieldFilterValue, setFieldFilterValue] = useState('');
-
-  const [operationSelection, setOperationSelection] = useState('eq');
-  const [isOperationOpen, setIsOperationOpen] = useState(false);
-
-  const [textFilter, setTextFilter] = useState('');
   const [runSelection, setRunSelection] = useState([]);
   const [isRunOpen, setIsRunOpen] = useState(false);
   const [runInputValue, setRunInputValue] = useState('');
@@ -81,48 +52,47 @@ const ResultList = () => {
   const [resultSelection, setResultSelection] = useState([]);
   const [isResultOpen, setIsResultOpen] = useState(false);
 
-  const [boolSelection, setBoolSelection] = useState(false);
-  const [isBoolOpen, setIsBoolOpen] = useState(false);
-
   const [isError, setIsError] = useState(false);
 
-  const [inValues, setInValues] = useState([]);
+  const filtersToHide = useRef(['project_id']); // prevent rerenders with ref
 
-  const onFieldSelect = (_, selection) => {
-    if (selection === `Create "${fieldFilterValue}"`) {
-      setFilteredfieldOptions([...filteredfieldOptions, fieldFilterValue]);
-      setFieldSelection(fieldFilterValue);
-      setFieldInputValue(fieldFilterValue);
-    } else {
-      setFieldSelection(selection);
-      setFieldInputValue(selection);
-    }
-
-    setIsFieldOpen(false);
-    setOperationSelection('eq');
-  };
-
-  const onFieldTextInputChange = (_, value) => {
-    setFieldInputValue(value);
-    setFieldFilterValue(value);
-  };
-
-  const onFieldClear = () => {
-    setFieldSelection();
-    setFieldInputValue('');
-    setFieldFilterValue('');
-  };
-
-  const onOperationSelect = (event, selection) => {
-    setOperationSelection(selection);
-    setIsOperationOpen(false);
-    setResultSelection([]);
-    setRunSelection([]);
-    setBoolSelection(false);
-  };
+  const {
+    activeFilters,
+    activeFilterComponents,
+    filterMode,
+    fieldSelection,
+    updateFilters,
+    resetFilters,
+    activeFiltersToApiParams,
+    clearFilters,
+    onApplyReport,
+    onOperationSelect,
+    operationMode,
+    onBoolSelect,
+    onFieldSelect,
+    isFieldOpen,
+    setIsFieldOpen,
+    operationSelection,
+    isOperationOpen,
+    textFilter,
+    setTextFilter,
+    boolSelection,
+    isBoolOpen,
+    inValues,
+    setInValues,
+    setIsOperationOpen,
+    setIsBoolOpen,
+    fieldToggle,
+    operationToggle,
+    boolToggle,
+    filteredFieldOptions,
+    operations,
+  } = useTableFilters({
+    hideFilters: filtersToHide.current,
+    fieldOptions: RESULT_FIELDS,
+  });
 
   const onRunSelect = (_, selection) => {
-    const operationMode = getOperationMode(operationSelection);
     if (operationMode !== 'multi') {
       setRunSelection(selection);
       setRunInputValue(selection);
@@ -146,18 +116,7 @@ const ResultList = () => {
     setRunFilterValue('');
   };
 
-  const onBoolSelect = (_, selection) => {
-    setBoolSelection(selection);
-    setIsBoolOpen(false);
-  };
-
-  const onBoolClear = () => {
-    setBoolSelection(false);
-    setIsBoolOpen(false);
-  };
-
   const onResultSelect = (_, selection) => {
-    const operationMode = getOperationMode(operationSelection);
     if (operationMode !== 'multi') {
       setResultSelection(selection);
       setIsResultOpen(false);
@@ -175,9 +134,8 @@ const ResultList = () => {
     setIsResultOpen(false);
   };
 
+  // TODO difference with hook function with runselection/resultselection vars
   const applyFilter = () => {
-    const filterMode = getFilterMode(fieldSelection);
-    const operationMode = getOperationMode(operationSelection);
     let value = textFilter.trim();
     if (filterMode === 'result' && operationMode !== 'bool') {
       value =
@@ -192,74 +150,45 @@ const ResultList = () => {
     } else if (operationMode === 'bool') {
       value = boolSelection;
     }
-    updateFilters(fieldSelection, operationSelection, value, () => {
-      setFieldSelection();
-      setFieldInputValue('');
-      setFieldFilterValue('');
-      setRunInputValue('');
-      setOperationSelection('eq');
-      setTextFilter('');
-      setResultSelection([]);
-      setRunSelection([]);
-      setBoolSelection(false);
-      setInValues([]);
-      setPage(1);
+    updateFilters({
+      field: fieldSelection,
+      operator: operationSelection,
+      value: value,
+      callback: () => {
+        resetFilters();
+        setRunInputValue('');
+        setResultSelection([]);
+        setRunSelection([]);
+      },
     });
   };
 
-  const setFilter = useCallback(
-    (field, value) => {
-      updateFilters(field, 'eq', value, () => {
-        setFieldSelection();
-        setOperationSelection('eq');
-        setTextFilter('');
-        setResultSelection([]);
-        setRunSelection([]);
-        setBoolSelection(false);
-        setInValues([]);
-      });
-    },
-    [updateFilters],
-  );
-
-  const clearFilters = () => {
-    setActiveFilters([]);
-    setPage(1);
-    setPageSize(20);
-    setFieldSelection();
-    setOperationSelection('eq');
-    setTextFilter('');
+  // TODO try and flatten result/run selection?
+  const onClearFilters = () => {
+    clearFilters();
     setResultSelection([]);
     setRunSelection([]);
-    setBoolSelection(false);
-    setInValues([]);
   };
 
   // fetch result data
   useEffect(() => {
     const fetchData = async () => {
       setIsError(false);
-      setRows([getSpinnerRow(5)]);
-      let apiParams = { filter: [] };
-      let newFilters = activeFiltersToObject();
-      if (primaryObject) {
-        newFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
-      } else if (
-        Object.prototype.hasOwnProperty.call(newFilters, 'project_id')
-      ) {
-        delete newFilters['project_id'];
-      }
-      apiParams['estimate'] = true;
-      apiParams['pageSize'] = pageSize;
-      apiParams['page'] = page;
-      apiParams['filter'] = activeFiltersToApiParams(newFilters);
+      const apiParams = {
+        estimate: true,
+        page: page,
+        pageSize: pageSize,
+      };
+      apiParams['filter'] = activeFiltersToApiParams();
       try {
         const response = await HttpClient.get(
           [Settings.serverUrl, 'result'],
           apiParams,
         );
         const data = await HttpClient.handleResponse(response);
-        setRows(data.results.map((result) => resultToRow(result, setFilter)));
+        setRows(
+          data.results.map((result) => resultToRow(result, updateFilters)),
+        );
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
@@ -275,11 +204,10 @@ const ResultList = () => {
   }, [
     activeFilters,
     activeFiltersToApiParams,
-    activeFiltersToObject,
     page,
     pageSize,
     primaryObject,
-    setFilter,
+    updateFilters,
   ]);
 
   // fetch 500 runs with estimate on count
@@ -302,23 +230,6 @@ const ResultList = () => {
     fetchRuns();
   }, []);
 
-  // filter field options based on input
-  useEffect(() => {
-    let newSelectOptionsField = RESULT_FIELDS;
-    if (fieldInputValue) {
-      newSelectOptionsField = RESULT_FIELDS.filter((menuItem) =>
-        menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase()),
-      );
-      if (
-        newSelectOptionsField.length !== 1 &&
-        !newSelectOptionsField.includes(fieldFilterValue)
-      ) {
-        newSelectOptionsField.push(`Create "${fieldFilterValue}"`);
-      }
-    }
-    setFilteredfieldOptions(newSelectOptionsField);
-  }, [fieldFilterValue, fieldInputValue, isFieldOpen]);
-
   // filter run options based on input
   useEffect(() => {
     let newSelectOptionsRun = [...runs];
@@ -334,90 +245,6 @@ const ResultList = () => {
     document.title = 'Test Results | Ibutsu';
   }, []);
 
-  const filterMode = getFilterMode(fieldSelection);
-  const operationMode = getOperationMode(operationSelection);
-  const operations = getOperationsFromField(fieldSelection);
-
-  const fieldToggle = (toggleRef) => (
-    <MenuToggle
-      variant="typeahead"
-      aria-label="Typeahead creatable menu toggle"
-      onClick={() => setIsFieldOpen(!isFieldOpen)}
-      isExpanded={isFieldOpen}
-      isFullWidth
-      innerRef={toggleRef}
-    >
-      <TextInputGroup isPlain>
-        <TextInputGroupMain
-          value={fieldInputValue}
-          onClick={() => setIsFieldOpen(!isFieldOpen)}
-          onChange={onFieldTextInputChange}
-          id="create-typeahead-select-input"
-          autoComplete="off"
-          placeholder="Select a field"
-          role="combobox"
-          isExpanded={isFieldOpen}
-          aria-controls="select-create-typeahead-listbox"
-        />
-        <TextInputGroupUtilities>
-          {!!fieldInputValue && (
-            <Button
-              variant="plain"
-              onClick={() => {
-                onFieldClear();
-              }}
-              aria-label="Clear input value"
-            >
-              <TimesIcon aria-hidden />
-            </Button>
-          )}
-        </TextInputGroupUtilities>
-      </TextInputGroup>
-    </MenuToggle>
-  );
-  const operationToggle = (toggleRef) => (
-    <MenuToggle
-      onClick={() => setIsOperationOpen(!isOperationOpen)}
-      isExpanded={isOperationOpen}
-      isFullWidth
-      ref={toggleRef}
-    >
-      {operationSelection}
-    </MenuToggle>
-  );
-  const boolToggle = (toggleRef) => (
-    <MenuToggle
-      onClick={() => setIsBoolOpen(!isBoolOpen)}
-      isExpanded={isBoolOpen}
-      isFullWidth
-      ref={toggleRef}
-      style={{ maxHeight: '36px' }}
-    >
-      <TextInputGroup isPlain>
-        <TextInputGroupMain
-          value={boolSelection.toString()}
-          onClick={() => setIsBoolOpen(!isBoolOpen)}
-          autoComplete="off"
-          placeholder="Select True/False"
-          role="combobox"
-          isExpanded={isBoolOpen}
-        />
-        <TextInputGroupUtilities>
-          {!!boolSelection && (
-            <Button
-              variant="plain"
-              onClick={() => {
-                onBoolClear();
-              }}
-              aria-label="Clear input value"
-            >
-              <TimesIcon aria-hidden />
-            </Button>
-          )}
-        </TextInputGroupUtilities>
-      </TextInputGroup>
-    </MenuToggle>
-  );
   const resultToggle = (toggleRef) => (
     <MenuToggle
       onClick={() => setIsResultOpen(!isResultOpen)}
@@ -567,7 +394,7 @@ const ResultList = () => {
       toggle={fieldToggle}
     >
       <SelectList id="select-typeahead-listbox">
-        {filteredfieldOptions.map((option, index) => (
+        {filteredFieldOptions.map((option, index) => (
           <SelectOption key={index} value={option}>
             {option}
           </SelectOption>
@@ -578,7 +405,11 @@ const ResultList = () => {
       id="single-select"
       isOpen={isOperationOpen}
       selected={operationSelection}
-      onSelect={onOperationSelect}
+      onSelect={(_, value) => {
+        onOperationSelect(_, value);
+        setResultSelection([]);
+        setRunSelection([]);
+      }}
       onOpenChange={() => setIsOperationOpen(false)}
       key="operation"
       toggle={operationToggle}
@@ -672,6 +503,15 @@ const ResultList = () => {
     </React.Fragment>,
   ];
 
+  const pagination = useMemo(
+    () => ({
+      pageSize: pageSize,
+      page: page,
+      totalItems: totalItems,
+    }),
+    [pageSize, page, totalItems],
+  );
+
   return (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>
@@ -682,35 +522,40 @@ const ResultList = () => {
         </TextContent>
       </PageSection>
       <PageSection className="pf-u-pb-0">
-        <Card>
-          <CardBody className="pf-u-p-0">
-            <FilterTable
-              columns={COLUMNS}
-              rows={rows}
-              filters={filterSelects}
-              activeFilters={activeFilters}
-              activeFilterComponents={activeFilterComponents}
-              pagination={{
-                pageSize: pageSize,
-                page: page,
-                totalItems: totalItems,
-              }}
-              isError={isError}
-              onApplyFilter={applyFilter}
-              onClearFilters={clearFilters}
-              onApplyReport={onApplyReport}
-              onSetPage={(_, value) => setPage(value)}
-              onSetPageSize={(_, value) => setPageSize(value)}
-            />
-          </CardBody>
-          <CardFooter>
+        <FilterTable
+          columns={COLUMNS}
+          rows={rows}
+          filters={filterSelects}
+          activeFilters={activeFilters}
+          activeFilterComponents={activeFilterComponents}
+          pagination={pagination}
+          isError={isError}
+          onApplyFilter={applyFilter}
+          onClearFilters={onClearFilters}
+          onApplyReport={onApplyReport}
+          onSetPage={(_, value) => {
+            setPage(value);
+            setSearchParams((prevParams) => {
+              prevParams.set('page', value);
+              return prevParams;
+            });
+          }}
+          onSetPageSize={(_, value, newPage) => {
+            setPageSize(value);
+            setPage(newPage);
+            setSearchParams((prevParams) => {
+              prevParams.set('pageSize', value);
+              return prevParams;
+            });
+          }}
+          footerChildren={
             <Text className="disclaimer" component="h4">
               * Note: for performance reasons, the total number of items is an
               approximation. Use the API with &lsquo;estimate=false&rsquo; if
               you need an accurate count.
             </Text>
-          </CardFooter>
-        </Card>
+          }
+        />
       </PageSection>
     </React.Fragment>
   );

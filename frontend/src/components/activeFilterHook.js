@@ -119,8 +119,6 @@ export const useTableFilters = ({
         newSearchParams.set([field], filterToSearchParam(newFilter));
       }
 
-      console.log('updateFilters end, newSearchParams: ', [...newSearchParams]);
-
       setActiveFilters(newFilters);
       setSearchParams(newSearchParams);
 
@@ -201,7 +199,6 @@ export const useTableFilters = ({
       const apiFilters = [...activeFilters];
       const apiParamArray = apiFilters.map((filter) => {
         const apiOperation = OPERATIONS[filter.op];
-        console.log('filterConversion: ', [filter, apiOperation]);
         return `${filter.field}${apiOperation}${filter.value}`;
       });
       return apiParamArray;
@@ -299,12 +296,12 @@ export const useTableFilters = ({
     [fieldFilterValue],
   );
 
-  const onOperationSelect = useCallback((event, selection) => {
+  const onOperationSelect = useCallback((_, selection) => {
     setOperationSelection(selection);
     setIsOperationOpen(false);
   }, []);
 
-  const onBoolSelect = useCallback((event, selection) => {
+  const onBoolSelect = useCallback((_, selection) => {
     setBoolSelection(selection);
     setIsBoolOpen(false);
   }, []);
@@ -326,9 +323,19 @@ export const useTableFilters = ({
     setFilteredFieldOptions(newSelectOptionsField);
   }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
 
-  const filterMode = getFilterMode(fieldSelection);
-  const operationMode = getOperationMode(operationSelection);
-  const operations = getOperationsFromField(fieldSelection);
+  const filterMode = useMemo(
+    () => getFilterMode(fieldSelection),
+    [fieldSelection],
+  );
+  const operationMode = useMemo(
+    () => getOperationMode(operationSelection),
+    [operationSelection],
+  );
+  const operations = useMemo(
+    () => getOperationsFromField(fieldSelection),
+    [fieldSelection],
+  );
+
   const onFieldTextInputChange = useCallback((_, value) => {
     setFieldInputValue(value);
     setFieldFilterValue(value);
@@ -528,26 +535,49 @@ export const useTableFilters = ({
   );
 
   return {
+    // States
     activeFilters,
-    activeFilterComponents,
     boolSelection,
-    clearFilters,
     fieldSelection,
-    filterComponents,
-    filterToSearchParam,
+    filteredFieldOptions,
     inValues,
+    isFieldOpen,
+    isOperationOpen,
     operationSelection,
+    textFilter,
     setActiveFilters,
     setBoolSelection,
     setFieldSelection,
     setInValues,
     setOperationSelection,
     setTextFilter,
-    updateFilters,
-    applyFilter,
-    activeFiltersToObject,
+    setIsBoolOpen,
+    setIsOperationOpen,
+
+    // Functions
+
     activeFiltersToApiParams,
+    activeFiltersToObject,
+    applyFilter,
+    clearFilters,
+    filterToSearchParam,
     onApplyReport,
-    textFilter,
+    resetFilters,
+    updateFilters,
+    onBoolClear,
+    onBoolSelect,
+    onFieldSelect,
+    onOperationSelect,
+    onFieldTextInputChange,
+    fieldToggle,
+    operationToggle,
+    boolToggle,
+
+    // Memos
+    filterMode,
+    operationMode,
+    operations,
+    activeFilterComponents,
+    filterComponents,
   };
 };

@@ -27,12 +27,13 @@ import {
   NUMERIC_RUN_FIELDS,
   THEME_KEY,
 } from './constants';
+import RunSummary from './components/runsummary';
 
-export function getDateString() {
+export const getDateString = () => {
   return String(new Date().getTime());
-}
+};
 
-export function getIconForResult(result) {
+export const getIconForResult = (result) => {
   let resultIcon = '';
   if (result === 'passed') {
     resultIcon = <CheckCircleIcon />;
@@ -48,9 +49,9 @@ export function getIconForResult(result) {
     resultIcon = <TimesCircleIcon />;
   }
   return resultIcon;
-}
+};
 
-export function getIconForStatus(status) {
+export const getIconForStatus = (status) => {
   let statusIcon = '';
   if (status === 'done') {
     statusIcon = <CheckCircleIcon />;
@@ -64,9 +65,9 @@ export function getIconForStatus(status) {
     statusIcon = <InfoAltIcon />;
   }
   return statusIcon;
-}
+};
 
-export function toTitleCase(str, convertToSpace = false) {
+export const toTitleCase = (str, convertToSpace = false) => {
   if (!str) {
     return str;
   }
@@ -76,9 +77,9 @@ export function toTitleCase(str, convertToSpace = false) {
   return str.replace(/\w\S*/g, function (txt) {
     return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
   });
-}
+};
 
-export function buildApiParams(filters) {
+export const buildApiParams = (filters) => {
   let getParams = [];
   for (let key in filters) {
     if (!!filters[key] && !!filters[key]['val']) {
@@ -88,9 +89,9 @@ export function buildApiParams(filters) {
     }
   }
   return getParams;
-}
+};
 
-export function buildUrl(url, params) {
+export const buildUrl = (url, params) => {
   // shorthand
   const esc = encodeURIComponent;
   let query = [];
@@ -105,9 +106,9 @@ export function buildUrl(url, params) {
     }
   }
   return url + '?' + query.join('&');
-}
+};
 
-export function toAPIFilter(filters) {
+export const toAPIFilter = (filters) => {
   // Take UI style filter object with field/op/val keys and generate an array of filter strings for the API
   // TODO rework for array of filters instead of keyed object
   let filter_strings = [];
@@ -123,14 +124,14 @@ export function toAPIFilter(filters) {
     }
   }
   return filter_strings;
-}
+};
 
-export function round(number) {
+export const round = (number) => {
   let rounded = Math.round(number * 10);
   return rounded / 10;
-}
+};
 
-export function buildBadge(key, value, isRead, onClick) {
+export const buildBadge = (key, value, isRead, onClick) => {
   const badge = (
     <Badge key={key} isRead={isRead}>
       {value}
@@ -145,7 +146,7 @@ export function buildBadge(key, value, isRead, onClick) {
   } else {
     return badge;
   }
-}
+};
 
 export const buildResultsTree = (treeResults) => {
   const getPassPercent = (stats) => {
@@ -229,7 +230,7 @@ export const buildResultsTree = (treeResults) => {
   return treeStructure;
 };
 
-export function generateId(length) {
+export const generateId = (length) => {
   let resultId = '';
   const chars =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -240,9 +241,9 @@ export function generateId(length) {
     counter += 1;
   }
   return resultId;
-}
+};
 
-export function resultToRow(result, filterFunc) {
+export const resultToRow = (result, filterFunc) => {
   let resultIcon = getIconForResult(result.result);
   let markers = [];
   let runLink = '';
@@ -250,7 +251,7 @@ export function resultToRow(result, filterFunc) {
   let componentBadge;
   if (filterFunc) {
     componentBadge = buildBadge('component', result.component, false, () =>
-      filterFunc('component', result.component),
+      filterFunc({ field: 'component', op: 'eq', value: result.component }),
     );
   } else {
     componentBadge = buildBadge('component', result.component, false);
@@ -261,7 +262,7 @@ export function resultToRow(result, filterFunc) {
     let envBadge;
     if (filterFunc) {
       envBadge = buildBadge(result.env, result.env, false, () =>
-        filterFunc('env', result.env),
+        filterFunc({ field: 'env', op: 'eq', value: result.env }),
       );
     } else {
       envBadge = buildBadge(result.env, result.env, false);
@@ -309,7 +310,6 @@ export function resultToRow(result, filterFunc) {
           </React.Fragment>
         ),
       },
-      { title: runLink },
       {
         title: (
           <React.Fragment>
@@ -321,12 +321,13 @@ export function resultToRow(result, filterFunc) {
         ),
       },
       { title: round(result.duration) + 's' },
+      { title: runLink },
       { title: new Date(result.start_time).toLocaleString() },
     ],
   };
-}
+};
 
-export function resultToComparisonRow(result, index) {
+export const resultToComparisonRow = (result, index) => {
   let resultIcons = [];
   let markers = [];
   result.forEach((result) => {
@@ -387,9 +388,9 @@ export function resultToComparisonRow(result, index) {
       cells: [{ title: <div /> }],
     },
   ];
-}
+};
 
-export function resultToTestHistoryRow(result, index, filterFunc) {
+export const resultToTestHistoryRow = (result, index, filterFunc) => {
   let resultIcon = getIconForResult(result.result);
   let exceptionBadge;
 
@@ -434,7 +435,66 @@ export function resultToTestHistoryRow(result, index, filterFunc) {
       cells: [{ title: <div /> }],
     },
   ];
-}
+};
+
+export const runToRow = (run, filterFunc) => {
+  let badges = [];
+  let created = 0;
+  let componentBadge;
+  if (run.start_time) {
+    created = new Date(run.start_time);
+  } else {
+    created = new Date(run.created);
+  }
+
+  if (filterFunc) {
+    if (run.component) {
+      componentBadge = buildBadge('component', run.component, false, () =>
+        filterFunc({
+          field: 'component',
+          operator: 'eq',
+          value: run.component,
+        }),
+      );
+    }
+  } else {
+    componentBadge = buildBadge('component', run.component, false);
+  }
+  badges.push(componentBadge);
+
+  if (run.env) {
+    let envBadge;
+    if (filterFunc) {
+      envBadge = buildBadge(run.env, run.env, false, () =>
+        filterFunc({ field: 'env', operator: 'eq', value: run.env }),
+      );
+    } else {
+      envBadge = buildBadge(run.env, run.env, false);
+    }
+    badges.push(envBadge);
+  }
+  return {
+    cells: [
+      {
+        title: (
+          <React.Fragment>
+            <Link to={`${run.id}#summary`}>{run.id}</Link> {badges}
+          </React.Fragment>
+        ),
+      },
+      { title: round(run.duration) + 's' },
+      { title: <RunSummary summary={run.summary} /> },
+      { title: created.toLocaleString() },
+      {
+        title: (
+          <Link to={`../results?run_id=${run.id}`} relative="Path">
+            See results <ChevronRightIcon />
+          </Link>
+        ),
+      },
+    ],
+  };
+};
 
 export const parseSearchToFilter = (searchParamTuple) => {
   const re = /\[(?<op>.*?)\](?<value>.*)?/;
@@ -465,7 +525,7 @@ export const parseFilter = (paramKey) => {
   }
 };
 
-export function getSpinnerRow(columnCount) {
+export const getSpinnerRow = (columnCount) => {
   return {
     heightAuto: true,
     cells: [
@@ -481,9 +541,9 @@ export function getSpinnerRow(columnCount) {
       },
     ],
   };
-}
+};
 
-export function getFilterMode(field) {
+export const getFilterMode = (field) => {
   let filterMode = 'text';
   if (field === 'run_id') {
     filterMode = 'run';
@@ -491,9 +551,9 @@ export function getFilterMode(field) {
     filterMode = 'result';
   }
   return filterMode;
-}
+};
 
-export function getOperationMode(operation) {
+export const getOperationMode = (operation) => {
   let operationMode = 'single';
   if (operation === 'in') {
     operationMode = 'multi';
@@ -501,9 +561,9 @@ export function getOperationMode(operation) {
     operationMode = 'bool';
   }
   return operationMode;
-}
+};
 
-export function getOperationsFromField(field) {
+export const getOperationsFromField = (field) => {
   let operations = OPERATIONS; // default to all OPERATIONS
   if (ARRAY_RESULT_FIELDS.includes(field) || ARRAY_RUN_FIELDS.includes(field)) {
     operations = ARRAY_OPERATIONS;
@@ -521,9 +581,9 @@ export function getOperationsFromField(field) {
     operations = STRING_OPERATIONS;
   }
   return operations;
-}
+};
 
-export function projectToOption(project) {
+export const projectToOption = (project) => {
   if (!project) {
     return '';
   }
@@ -543,9 +603,9 @@ export function projectToOption(project) {
       }
     },
   };
-}
+};
 
-export function dashboardToOption(dashboard) {
+export const dashboardToOption = (dashboard) => {
   if (!dashboard) {
     return '';
   }
@@ -562,9 +622,9 @@ export function dashboardToOption(dashboard) {
       }
     },
   };
-}
+};
 
-export function processPyTestPath(path) {
+export const processPyTestPath = (path) => {
   if (path && path.indexOf('/') === 0) {
     path = path.substring(1);
   }
@@ -577,9 +637,9 @@ export function processPyTestPath(path) {
   let segment = path.substring(0, segEnd);
   let rest = path.substring(segEnd + 1);
   return [segment, ...processPyTestPath(rest)];
-}
+};
 
-export function convertDate(s) {
+export const convertDate = (s) => {
   let days = 0;
   let date = new Date(0);
   days = Math.floor(s / (24 * 60 * 60));
@@ -595,9 +655,9 @@ export function convertDate(s) {
     dayString = days + ' days, ';
   }
   return '[' + dayString + timeString + ']';
-}
+};
 
-export function cleanPath(path) {
+export const cleanPath = (path) => {
   if (!path) {
     // if xml imported results have no fspath
     return 'Tests';
@@ -611,9 +671,9 @@ export function cleanPath(path) {
     pathParts = pathParts.slice(1);
   }
   return pathParts.join('/');
-}
+};
 
-export function debounce(func, timeout = 500) {
+export const debounce = (func, timeout = 500) => {
   let timerId;
   return (...args) => {
     if (!timerId) {
@@ -624,9 +684,9 @@ export function debounce(func, timeout = 500) {
       timerId = undefined;
     }, timeout);
   };
-}
+};
 
-export function getDarkTheme() {
+export const getDarkTheme = () => {
   // check local storage and browser theme for a preference
   const local_theme = localStorage.getItem(THEME_KEY);
   if (local_theme) {
@@ -635,9 +695,9 @@ export function getDarkTheme() {
     let browser_preference = window.matchMedia('(prefers-color-scheme: dark)');
     return Boolean(browser_preference.matches);
   }
-}
+};
 
-export function setDocumentDarkTheme(theme = null) {
+export const setDocumentDarkTheme = (theme = null) => {
   // Sets light theme on false, dark theme on true
   let set_dark = theme !== null ? theme : getDarkTheme();
 
@@ -647,4 +707,4 @@ export function setDocumentDarkTheme(theme = null) {
   } else {
     document.firstElementChild.classList.remove('pf-v5-theme-dark');
   }
-}
+};
