@@ -22,7 +22,7 @@ import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import FilterTable from '../../components/filtertable';
 import EmptyObject from '../../components/empty-object';
-import { useTableFilters } from '../../components/activeFilterHook';
+import { useTableFilters } from '../../components/tableFilterHook';
 
 const COLUMNS = ['Title', 'Name', 'Owner', ''];
 

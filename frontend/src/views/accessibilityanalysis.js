@@ -82,7 +82,7 @@ const AccessibilityAnalysisView = ({ view }) => {
 
   // const combo = parseFilter(pair[0]);
   // filters[combo['key']] = {
-  //   'op': combo['op'],
+  //   'operator': combo['op'],
   //   'val': pair[1]
   // };
 

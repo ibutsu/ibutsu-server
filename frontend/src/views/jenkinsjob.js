@@ -31,7 +31,7 @@ import MultiValueInput from '../components/multivalueinput';
 import RunSummary from '../components/runsummary';
 import { JJV_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
-import { useTableFilters } from '../components/activeFilterHook';
+import { useTableFilters } from '../components/tableFilterHook';
 
 const COLUMNS = [
   'Job name',

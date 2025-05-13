@@ -1,49 +1,28 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useMemo,
-  useContext,
-} from 'react';
-import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
-import { OPERATIONS } from '../constants';
+import { useState, useEffect, useCallback, useMemo, useContext } from 'react';
+import { useSearchParams, useParams } from 'react-router-dom';
 import {
-  Badge,
   Button,
-  Chip,
-  ChipGroup,
-  Flex,
-  FlexItem,
-  HelperText,
-  HelperTextItem,
   MenuToggle,
-  Select,
-  SelectList,
-  SelectOption,
-  TextInput,
   TextInputGroup,
   TextInputGroupMain,
   TextInputGroupUtilities,
 } from '@patternfly/react-core';
 import {
-  buildApiParams,
   getFilterMode,
   getOperationMode,
   getOperationsFromField,
+  parseFilterValueToSearch,
   parseSearchToFilter,
 } from '../utilities';
 import { IbutsuContext } from '../services/context';
 import { TimesIcon } from '@patternfly/react-icons';
-import MultiValueInput from './multivalueinput';
 
 export const useTableFilters = ({
   fieldOptions = [],
   hideFilters = [], // hides it in the render, not in activeFilters
-  applyReport = true,
   blockRemove = [],
   removeCallback = () => {},
 }) => {
-  const navigate = useNavigate();
   const params = useParams();
   const { primaryObject } = useContext(IbutsuContext);
 
@@ -79,21 +58,16 @@ export const useTableFilters = ({
       }),
     {
       field: 'project_id',
-      op: 'eq',
+      operator: 'eq',
       value: primaryObject?.id || params?.project_id,
     },
   ]);
-
-  // Compose the '[op]value' for search params
-  const filterToSearchParam = (filter) => {
-    return `[${filter.op}]${filter.value}`;
-  };
 
   // Update activeFilters state and search params, handle removal when value is null/empty
   const updateFilters = useCallback(
     ({ field, operator, value, callback = () => {} }) => {
       const newFilters = [...activeFilters];
-      const newFilter = { field: field, op: operator, value: value };
+      const newFilter = { field: field, operator: operator, value: value };
       const newSearchParams = new URLSearchParams(searchParams);
 
       const existingFilterIndex = newFilters.findIndex(
@@ -110,17 +84,18 @@ export const useTableFilters = ({
 
           // Update search params too
           if (!hideFilters.includes(field)) {
-            newSearchParams.set(field, filterToSearchParam(newFilter));
+            newSearchParams.set(field, parseFilterValueToSearch(newFilter));
           }
         }
       } else {
         // the field doesn't exist yet
         newFilters.push(newFilter);
-        newSearchParams.set([field], filterToSearchParam(newFilter));
+        newSearchParams.set([field], parseFilterValueToSearch(newFilter));
       }
 
+      // TODO deduplicate newFilters by field
       setActiveFilters(newFilters);
-      setSearchParams(newSearchParams);
+      setSearchParams(newSearchParams.toString());
 
       callback();
     },
@@ -143,7 +118,7 @@ export const useTableFilters = ({
     const operationMode = getOperationMode(operationSelection);
     let value = textFilter.trim();
     if (operationMode === 'multi') {
-      value = inValues.map((item) => item.trim()).join(';');
+      value = inValues?.map((item) => item.trim()).join(';');
     } else if (operationMode === 'bool') {
       value = boolSelection;
     }
@@ -180,103 +155,12 @@ export const useTableFilters = ({
   );
 
   const clearFilters = useCallback(() => {
-    setActiveFilters([]);
-    resetFilters();
-  }, [resetFilters]);
-
-  // TODO remove, convert everything to use the list
-  const activeFiltersToObject = useCallback(() => {
-    return activeFilters?.reduce(
-      (acc, filter) =>
-        (acc[filter.field] = { op: filter.op, value: filter.value }),
-      {},
+    setActiveFilters((prevActive) =>
+      prevActive.filter((f) => f.field === 'project_id'),
     );
-  }, [activeFilters]);
-
-  // array of API formatted filter strings
-  const activeFiltersToApiParams = useCallback(() => {
-    if (activeFilters?.length) {
-      const apiFilters = [...activeFilters];
-      const apiParamArray = apiFilters.map((filter) => {
-        const apiOperation = OPERATIONS[filter.op];
-        return `${filter.field}${apiOperation}${filter.value}`;
-      });
-      return apiParamArray;
-    } else {
-      // empty array by default to appease API
-      return [];
-    }
-  }, [activeFilters]);
-
-  const onApplyReport = useCallback(
-    () =>
-      navigate(
-        `/project/${params?.project_id || primaryObject.id}/reports?${buildApiParams(activeFilters).join('&')}`,
-      ),
-    [activeFilters, navigate, params?.project_id, primaryObject.id],
-  );
-
-  const activeFilterComponents = useMemo(() => {
-    if (
-      activeFilters?.length &&
-      activeFilters.filter((filter) => !hideFilters.includes(filter.field))
-        .length
-    ) {
-      return (
-        <Flex style={{ marginTop: '.75rem' }} direction={{ default: 'column' }}>
-          {applyReport && (
-            <Flex>
-              <FlexItem>
-                <Button
-                  onClick={onApplyReport}
-                  variant="link"
-                  size="sm"
-                  type="button"
-                >
-                  Transfer active filters to Report Builder
-                </Button>
-              </FlexItem>
-            </Flex>
-          )}
-
-          <Flex direction={{ default: 'row' }}>
-            {activeFilters?.map((activeFilter) => (
-              <FlexItem
-                spacer={{ default: 'spacerXs' }}
-                key={activeFilter?.field}
-              >
-                {!hideFilters?.includes(activeFilter?.field) && (
-                  <ChipGroup categoryName={activeFilter?.field}>
-                    <Chip
-                      badge={<Badge isRead={true}>{activeFilter?.op}</Badge>}
-                      onClick={() => onRemoveFilter(activeFilter?.field)}
-                    >
-                      {typeof activeFilter === 'object' && (
-                        <React.Fragment>{activeFilter?.value}</React.Fragment>
-                      )}
-                      {typeof activeFilter !== 'object' && activeFilter}
-                    </Chip>
-                  </ChipGroup>
-                )}
-              </FlexItem>
-            ))}
-          </Flex>
-        </Flex>
-      );
-    } else {
-      return (
-        <Flex>
-          <FlexItem>
-            <HelperText>
-              <HelperTextItem>
-                Add filters to limit the table scope
-              </HelperTextItem>
-            </HelperText>
-          </FlexItem>
-        </Flex>
-      );
-    }
-  }, [activeFilters, applyReport, hideFilters, onApplyReport, onRemoveFilter]);
+    resetFilters();
+    setSearchParams();
+  }, [resetFilters, setSearchParams]);
 
   const onFieldSelect = useCallback(
     (_, selection) => {
@@ -308,29 +192,33 @@ export const useTableFilters = ({
 
   // filter the field options on filter text input
   useEffect(() => {
-    let newSelectOptionsField = [...fieldOptions];
-    if (fieldInputValue) {
-      newSelectOptionsField = fieldOptions.filter((menuItem) =>
+    let newFieldOptions = [...fieldOptions];
+    if (fieldInputValue.length > 0 && isFieldOpen) {
+      newFieldOptions = newFieldOptions.filter((menuItem) =>
         menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase()),
       );
       if (
-        newSelectOptionsField.length !== 1 &&
-        !newSelectOptionsField.includes(fieldFilterValue)
+        newFieldOptions.length !== 1 &&
+        !newFieldOptions.includes(fieldFilterValue)
       ) {
-        newSelectOptionsField.push(`Create "${fieldFilterValue}"`);
+        newFieldOptions.push(`Create "${fieldFilterValue}"`);
       }
     }
-    setFilteredFieldOptions(newSelectOptionsField);
+    setFilteredFieldOptions(newFieldOptions);
   }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
 
   const filterMode = useMemo(
     () => getFilterMode(fieldSelection),
     [fieldSelection],
   );
+
+  // Get the operation mode (single / multi / bool) for the selected operation
   const operationMode = useMemo(
     () => getOperationMode(operationSelection),
     [operationSelection],
   );
+
+  // Get the operations (string / numeric / array) for the selected field
   const operations = useMemo(
     () => getOperationsFromField(fieldSelection),
     [fieldSelection],
@@ -351,6 +239,7 @@ export const useTableFilters = ({
     setBoolSelection(null);
     setIsBoolOpen(false);
   }, []);
+
   const fieldToggle = useCallback(
     (toggleRef) => (
       <MenuToggle
@@ -439,129 +328,36 @@ export const useTableFilters = ({
     [boolSelection, isBoolOpen, onBoolClear],
   );
 
-  const filterComponents = useMemo(
-    () => [
-      <Select
-        id="typeahead-select"
-        selected={fieldSelection}
-        isOpen={isFieldOpen}
-        onSelect={onFieldSelect}
-        key="field"
-        onOpenChange={() => setIsFieldOpen(false)}
-        toggle={fieldToggle}
-      >
-        <SelectList id="select-typeahead-listbox">
-          {filteredFieldOptions.map((option, index) => (
-            <SelectOption key={index} value={option}>
-              {option}
-            </SelectOption>
-          ))}
-        </SelectList>
-      </Select>,
-      <Select
-        id="single-select"
-        isOpen={isOperationOpen}
-        selected={operationSelection}
-        onSelect={onOperationSelect}
-        onOpenChange={() => setIsOperationOpen(false)}
-        key="operation"
-        toggle={operationToggle}
-      >
-        <SelectList>
-          {Object.keys(operations).map((option, index) => (
-            <SelectOption key={index} value={option}>
-              {option}
-            </SelectOption>
-          ))}
-        </SelectList>
-      </Select>,
-      <React.Fragment key="value">
-        {operationMode === 'bool' && (
-          <Select
-            id="single-select"
-            isOpen={isBoolOpen}
-            selected={boolSelection}
-            onSelect={onBoolSelect}
-            onOpenChange={() => setIsBoolOpen(false)}
-            toggle={boolToggle}
-          >
-            <SelectList>
-              {['True', 'False'].map((option, index) => (
-                <SelectOption key={index} value={option}>
-                  {option}
-                </SelectOption>
-              ))}
-            </SelectList>
-          </Select>
-        )}
-        {filterMode === 'text' && operationMode === 'single' && (
-          <TextInput
-            type="text"
-            id="textSelection"
-            placeholder="Type in value"
-            value={textFilter}
-            onChange={(_, newValue) => setTextFilter(newValue)}
-            style={{ height: 'inherit' }}
-          />
-        )}
-        {operationMode === 'multi' && (
-          <MultiValueInput
-            onValuesChange={(values) => setInValues(values)}
-            style={{ height: 'inherit' }}
-          />
-        )}
-      </React.Fragment>,
-    ],
-    [
-      fieldSelection,
-      isFieldOpen,
-      onFieldSelect,
-      fieldToggle,
-      filteredFieldOptions,
-      isOperationOpen,
-      operationSelection,
-      onOperationSelect,
-      operationToggle,
-      operations,
-      operationMode,
-      isBoolOpen,
-      boolSelection,
-      onBoolSelect,
-      boolToggle,
-      filterMode,
-      textFilter,
-      setInValues,
-    ],
-  );
-
   return {
     // States
     activeFilters,
-    boolSelection,
-    fieldSelection,
-    filteredFieldOptions,
-    inValues,
-    isFieldOpen,
-    isOperationOpen,
-    operationSelection,
-    textFilter,
     setActiveFilters,
+    boolSelection,
     setBoolSelection,
+    fieldSelection,
     setFieldSelection,
+    filteredFieldOptions,
+    setFilteredFieldOptions,
+    inValues,
     setInValues,
-    setOperationSelection,
-    setTextFilter,
-    setIsBoolOpen,
+    isFieldOpen,
+    setIsFieldOpen,
+    isOperationOpen,
     setIsOperationOpen,
+    operationSelection,
+    setOperationSelection,
+    textFilter,
+    setTextFilter,
+    isBoolOpen,
+    setIsBoolOpen,
+    fieldInputValue,
+    setFieldInputValue,
+    fieldFilterValue,
+    setFieldFilterValue,
 
     // Functions
-
-    activeFiltersToApiParams,
-    activeFiltersToObject,
     applyFilter,
     clearFilters,
-    filterToSearchParam,
-    onApplyReport,
     resetFilters,
     updateFilters,
     onBoolClear,
@@ -572,12 +368,11 @@ export const useTableFilters = ({
     fieldToggle,
     operationToggle,
     boolToggle,
+    onRemoveFilter,
 
     // Memos
     filterMode,
     operationMode,
     operations,
-    activeFilterComponents,
-    filterComponents,
   };
 };

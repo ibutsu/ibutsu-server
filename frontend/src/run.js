@@ -47,12 +47,7 @@ import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import {
-  getSpinnerRow,
-  resultToRow,
-  round,
-  buildResultsTree,
-} from './utilities';
+import { resultToRow, round, buildResultsTree } from './utilities';
 import EmptyObject from './components/empty-object';
 import FilterTable from './components/filtertable';
 import ResultView from './components/result';
@@ -63,8 +58,6 @@ import { IbutsuContext } from './services/context';
 import { useTabHook } from './components/tabHook';
 import PropTypes from 'prop-types';
 
-const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
-
 const Run = ({ defaultTab = 'summary' }) => {
   const { run_id } = useParams();
 
@@ -73,7 +66,7 @@ const Run = ({ defaultTab = 'summary' }) => {
 
   const [run, setRun] = useState({});
   const [testResult, setTestResult] = useState(null);
-  const [rows, setRows] = useState([getSpinnerRow(5)]);
+  const [rows, setRows] = useState([]);
 
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
@@ -81,6 +74,8 @@ const Run = ({ defaultTab = 'summary' }) => {
 
   const [isRunValid, setIsRunValid] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [fetching, setFetching] = useState(true);
+
   const [resultsTree, setResultsTree] = useState([]);
   const [activeItems, setActiveItems] = useState([]);
 
@@ -110,11 +105,13 @@ const Run = ({ defaultTab = 'summary' }) => {
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
+        setFetching(false);
       })
       .catch((error) => {
         console.error('Error fetching result data:', error);
         setRows([]);
         setIsError(true);
+        setFetching(false);
       });
   }, [page, pageSize, run_id]);
 
@@ -559,43 +556,39 @@ const Run = ({ defaultTab = 'summary' }) => {
               eventKey="results-list"
               title={<TabTitle icon={<CatalogIcon />} text="Results List" />}
             >
-              <Card className="pf-u-mt-lg">
-                <CardHeader>
+              <FilterTable
+                headerChildren={
                   <Flex style={{ width: '100%' }}>
-                    <FlexItem grow={{ default: 'grow' }}>
-                      <TextContent>
-                        <Text component="h2" className="pf-v5-c-title pf-m-xl">
-                          Test results
-                        </Text>
-                      </TextContent>
-                    </FlexItem>
                     <FlexItem>
                       <Link
-                        to={`../results?run_id[eq]=${run.id}`}
+                        to={{
+                          pathname: '../results',
+                          search: new URLSearchParams({
+                            run_id: `[eq]${run.id}`,
+                          }).toString(),
+                        }}
                         relative="Path"
                         className="pf-v5-c-button pf-m-primary"
                         style={{ marginLeft: '2px' }}
                       >
-                        See all results <ChevronRightIcon />
+                        Apply more filters on the Test Results page
+                        <ChevronRightIcon />
                       </Link>
                     </FlexItem>
                   </Flex>
-                </CardHeader>
-                <CardBody>
-                  <FilterTable
-                    columns={COLUMNS}
-                    rows={rows}
-                    pagination={{
-                      pageSize: pageSize,
-                      page: page,
-                      totalItems: totalItems,
-                    }}
-                    isError={isError}
-                    onSetPage={(_, value) => setPage(value)}
-                    onSetPageSize={(_, value) => setPageSize(value)}
-                  />
-                </CardBody>
-              </Card>
+                }
+                fetching={fetching}
+                columns={['Test', 'Result', 'Duration', 'Run', 'Started']}
+                rows={rows}
+                pagination={{
+                  pageSize: pageSize,
+                  page: page,
+                  totalItems: totalItems,
+                }}
+                isError={isError}
+                onSetPage={(_, value) => setPage(value)}
+                onSetPageSize={(_, value) => setPageSize(value)}
+              />
             </Tab>
             <Tab
               eventKey="results-tree"

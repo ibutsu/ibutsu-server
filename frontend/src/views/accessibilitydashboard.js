@@ -34,7 +34,7 @@ import MultiValueInput from '../components/multivalueinput';
 import RunSummary from '../components/runsummary';
 import { OPERATIONS, ACCESSIBILITY_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
-import { useTableFilters } from '../components/activeFilterHook';
+import { useTableFilters } from '../components/tableFilterHook';
 
 const runToRow = (run, filterFunc, analysisViewId) => {
   let badges = [];
@@ -114,7 +114,7 @@ const AccessibilityDashboardView = ({ view }) => {
 
   // const combo = parseFilter(pair[0]);
   // filters[combo['key']] = {
-  //   'op': combo['op'],
+  //   'operator': combo['op'],
   //   'val': pair[1]
   // };
 
@@ -205,7 +205,8 @@ const AccessibilityDashboardView = ({ view }) => {
     let newFilters = { ...filters };
     const { primaryObject } = context;
     if (primaryObject) {
-      newFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
+      // todo array of filters
+      newFilters['project_id'] = { val: primaryObject.id, operator: 'eq' };
     } else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
       delete newFilters['project_id'];
     }

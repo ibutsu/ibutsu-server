@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useContext, useMemo, useRef } from 'react';
 
 import {
+  Button,
+  CardBody,
+  Flex,
+  FlexItem,
   PageSection,
   PageSectionVariants,
   Text,
@@ -11,13 +15,15 @@ import { useSearchParams } from 'react-router-dom';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import { getSpinnerRow, runToRow } from './utilities';
+import { runToRow, filtersToAPIParams } from './utilities';
 
 import FilterTable from './components/filtertable';
 
 import { RUN_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
-import { useTableFilters } from './components/activeFilterHook';
+import { useTableFilters } from './components/tableFilterHook';
+import RunFilter from './components/run-filter';
+import ActiveFilters from './components/active-filters';
 
 const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
 
@@ -26,7 +32,7 @@ const RunList = () => {
 
   const { primaryObject } = useContext(IbutsuContext);
 
-  const [rows, setRows] = useState([getSpinnerRow(5)]);
+  const [rows, setRows] = useState([]);
   // use state for pagination because it's a controlled input
   const [page, setPage] = useState(searchParams.get('page') || 1);
   const [pageSize, setPageSize] = useState(searchParams.get('pageSize') || 20);
@@ -39,12 +45,31 @@ const RunList = () => {
 
   const {
     activeFilters,
-    activeFilterComponents,
     updateFilters,
     applyFilter,
-    activeFiltersToApiParams,
-    filterComponents,
     clearFilters,
+    fieldSelection,
+    isFieldOpen,
+    onFieldSelect,
+    fieldToggle,
+    filteredFieldOptions,
+    isOperationOpen,
+    operationSelection,
+    onOperationSelect,
+    operationToggle,
+    operations,
+    operationMode,
+    isBoolOpen,
+    boolSelection,
+    onBoolSelect,
+    boolToggle,
+    filterMode,
+    textFilter,
+    setInValues,
+    setTextFilter,
+    setIsFieldOpen,
+    setIsBoolOpen,
+    onRemoveFilter,
   } = useTableFilters({
     hideFilters: filtersToHide.current,
     fieldOptions: RUN_FIELDS,
@@ -58,9 +83,8 @@ const RunList = () => {
         estimate: true,
         page: page,
         pageSize: pageSize,
+        filter: filtersToAPIParams(activeFilters),
       };
-
-      apiParams['filter'] = activeFiltersToApiParams();
       try {
         const response = await HttpClient.get(
           [Settings.serverUrl, 'run'],
@@ -81,7 +105,7 @@ const RunList = () => {
     };
 
     fetchData();
-  }, [pageSize, page, primaryObject, updateFilters, activeFiltersToApiParams]);
+  }, [pageSize, page, primaryObject, updateFilters, activeFilters]);
 
   // apparently this is better to do in an effect
   useEffect(() => {
@@ -95,6 +119,90 @@ const RunList = () => {
       totalItems: totalItems,
     }),
     [pageSize, page, totalItems],
+  );
+
+  const filterComponents = useMemo(
+    () => (
+      <React.Fragment>
+        <CardBody key="filters">
+          <Flex
+            alignSelf={{ default: 'alignSelfFlexEnd' }}
+            direction={{ default: 'column' }}
+            align={{ default: 'alignRight' }}
+          >
+            <Flex
+              grow={{ default: 'grow' }}
+              spaceItems={{ default: 'spaceItemsXs' }}
+            >
+              <RunFilter
+                fieldSelection={fieldSelection}
+                isFieldOpen={isFieldOpen}
+                onFieldSelect={onFieldSelect}
+                fieldToggle={fieldToggle}
+                filteredFieldOptions={filteredFieldOptions}
+                isOperationOpen={isOperationOpen}
+                operationSelection={operationSelection}
+                onOperationSelect={onOperationSelect}
+                operationToggle={operationToggle}
+                operations={operations}
+                operationMode={operationMode}
+                isBoolOpen={isBoolOpen}
+                boolSelection={boolSelection}
+                onBoolSelect={onBoolSelect}
+                boolToggle={boolToggle}
+                filterMode={filterMode}
+                textFilter={textFilter}
+                setInValues={setInValues}
+                setTextFilter={setTextFilter}
+                setIsBoolOpen={setIsBoolOpen}
+                setIsFieldOpen={setIsFieldOpen}
+              />
+              <FlexItem>
+                <Button
+                  ouiaId="filter-table-apply-button"
+                  onClick={applyFilter}
+                >
+                  Apply Filter
+                </Button>
+              </FlexItem>
+            </Flex>
+            <Flex>
+              <ActiveFilters
+                activeFilters={activeFilters}
+                onRemoveFilter={onRemoveFilter}
+                hideFilters={filtersToHide.current}
+              />
+            </Flex>
+          </Flex>
+        </CardBody>
+      </React.Fragment>
+    ),
+    [
+      fieldSelection,
+      isFieldOpen,
+      onFieldSelect,
+      fieldToggle,
+      filteredFieldOptions,
+      isOperationOpen,
+      operationSelection,
+      onOperationSelect,
+      operationToggle,
+      operations,
+      operationMode,
+      isBoolOpen,
+      boolSelection,
+      onBoolSelect,
+      boolToggle,
+      filterMode,
+      textFilter,
+      setInValues,
+      setTextFilter,
+      setIsBoolOpen,
+      setIsFieldOpen,
+      applyFilter,
+      activeFilters,
+      onRemoveFilter,
+    ],
   );
 
   return (
@@ -113,10 +221,8 @@ const RunList = () => {
           rows={rows}
           filters={filterComponents}
           activeFilters={activeFilters}
-          activeFilterComponents={activeFilterComponents}
           pagination={pagination}
           isError={isError}
-          onApplyFilter={applyFilter}
           onClearFilters={clearFilters}
           onSetPage={(_, value) => {
             setPage(value);

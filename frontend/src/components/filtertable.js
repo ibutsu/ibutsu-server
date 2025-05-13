@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 
 import {
-  Button,
   Card,
   CardBody,
   CardFooter,
@@ -20,21 +19,20 @@ import {
 
 import { TableEmptyState, TableErrorState } from './tablestates';
 import { getSpinnerRow } from '../utilities';
+import React from 'react';
 
 const FilterTable = ({
   isError,
   onCollapse,
   onRowSelect,
-  onApplyFilter,
   onClearFilters,
   onSetPage,
   onSetPageSize,
   variant,
   columns = [],
-  rows = [getSpinnerRow(1)],
+  rows = [],
   actions = [],
-  filters = [],
-  activeFilterComponents = null,
+  filters = <React.Fragment />,
   pagination = { page: 0, pageSize: 0, totalItems: 0 },
   canSelectAll = false,
   footerChildren = null,
@@ -45,36 +43,7 @@ const FilterTable = ({
   return (
     <Card ouiaId="filter-table-card" className={cardClass}>
       {headerChildren && <CardHeader>{headerChildren}</CardHeader>}
-      <CardBody key="filters">
-        <Flex
-          alignSelf={{ default: 'alignSelfFlexEnd' }}
-          direction={{ default: 'column' }}
-          align={{ default: 'alignRight' }}
-        >
-          {filters.length && (
-            <Flex
-              spaceItems={{ default: 'spaceItemsXs' }}
-              grow={{ default: 'grow' }}
-            >
-              {filters &&
-                filters.map((filter, index) => (
-                  <FlexItem key={index}>{filter}</FlexItem>
-                ))}
-              {onApplyFilter && (
-                <FlexItem>
-                  <Button
-                    ouiaId="filter-table-apply-button"
-                    onClick={onApplyFilter}
-                  >
-                    Apply Filter
-                  </Button>
-                </FlexItem>
-              )}
-            </Flex>
-          )}
-          {activeFilterComponents}
-        </Flex>
-      </CardBody>
+      {filters}
       {(rows?.length || fetching) && (
         <CardBody key="table">
           <Flex
@@ -98,7 +67,7 @@ const FilterTable = ({
           <Table
             ouiaId="filter-table-table"
             cells={columns}
-            rows={fetching ? [getSpinnerRow(columns.length)] : rows}
+            rows={fetching ? [getSpinnerRow(columns.length || 1)] : rows}
             actions={actions}
             aria-label="List"
             canSelectAll={canSelectAll}
@@ -141,13 +110,10 @@ FilterTable.propTypes = {
   columns: PropTypes.array,
   rows: PropTypes.array,
   actions: PropTypes.array,
-  filters: PropTypes.array,
-  activeFilters: PropTypes.arrayOf(PropTypes.object),
-  activeFilterComponents: PropTypes.node,
+  filters: PropTypes.node,
   pagination: PropTypes.object,
   isError: PropTypes.bool,
   canSelectAll: PropTypes.bool,
-  onApplyFilter: PropTypes.func,
   onCollapse: PropTypes.func,
   onClearFilters: PropTypes.func,
   onSetPage: PropTypes.func,

@@ -15,32 +15,32 @@ import ResultView from './components/result';
 import { useParams } from 'react-router-dom';
 
 const Result = () => {
-  const params = useParams();
+  const { result_id } = useParams();
+
   const [isResultValid, setIsResultValid] = useState(false);
   const [testResult, setTestResult] = useState(null);
-  const id = params.result_id;
 
   useEffect(() => {
     const fetchTestResult = async () => {
-      if (!id) {
+      if (!result_id) {
         return;
       }
       try {
-        let response = await HttpClient.get([Settings.serverUrl, 'result', id]);
-        response = HttpClient.handleResponse(response, 'response');
-        if (response.ok) {
-          setIsResultValid(true);
-          const data = await response.json();
-          setTestResult(data);
-        } else {
-          throw new Error('Failed with HTTP code ' + response.status);
-        }
+        const response = await HttpClient.get([
+          Settings.serverUrl,
+          'result',
+          result_id,
+        ]);
+        const data = await HttpClient.handleResponse(response);
+        setIsResultValid(true);
+        setTestResult(data);
       } catch (error) {
         console.error(error);
+        setIsResultValid(false);
       }
     };
     fetchTestResult();
-  }, [id]);
+  }, [result_id]);
 
   return (
     <React.Fragment>

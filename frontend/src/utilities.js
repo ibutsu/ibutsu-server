@@ -28,6 +28,7 @@ import {
   THEME_KEY,
 } from './constants';
 import RunSummary from './components/runsummary';
+import { ClassificationDropdown } from './components/classification-dropdown';
 
 export const getDateString = () => {
   return String(new Date().getTime());
@@ -79,16 +80,38 @@ export const toTitleCase = (str, convertToSpace = false) => {
   });
 };
 
+// TODO remove? filters should be an array now
 export const buildApiParams = (filters) => {
   let getParams = [];
   for (let key in filters) {
     if (!!filters[key] && !!filters[key]['val']) {
       const val = filters[key]['val'];
-      const op = filters[key]['op'];
+      const op = filters[key]['operator'];
       getParams.push(`${key}[${op}]=${val}`);
     }
   }
   return getParams;
+};
+
+export const filtersToAPIParams = (filters = []) => {
+  if (filters?.length) {
+    return filters.map((f) => {
+      const apiOperation = OPERATIONS[f.operator];
+      return `${f.field}${apiOperation}${f.value}`;
+    });
+  } else {
+    // empty array by default to appease API
+    return [];
+  }
+};
+
+export const filtersToSearchParams = (filters = []) => {
+  // Compose the '[op]value' for search params
+  const newSearchParams = new URLSearchParams();
+  filters.forEach((filter) => {
+    newSearchParams.set([filter.field], `[${filter.operator}]${filter.value}`);
+  });
+  return newSearchParams.toString();
 };
 
 export const buildUrl = (url, params) => {
@@ -119,7 +142,7 @@ export const toAPIFilter = (filters) => {
       key !== 'id'
     ) {
       const val = filters[key]['val'];
-      const op = OPERATIONS[filters[key]['op']];
+      const op = OPERATIONS[filters[key]['operator']];
       filter_strings.push(key + op + val);
     }
   }
@@ -251,7 +274,11 @@ export const resultToRow = (result, filterFunc) => {
   let componentBadge;
   if (filterFunc) {
     componentBadge = buildBadge('component', result.component, false, () =>
-      filterFunc({ field: 'component', op: 'eq', value: result.component }),
+      filterFunc({
+        field: 'component',
+        operator: 'eq',
+        value: result.component,
+      }),
     );
   } else {
     componentBadge = buildBadge('component', result.component, false);
@@ -262,7 +289,7 @@ export const resultToRow = (result, filterFunc) => {
     let envBadge;
     if (filterFunc) {
       envBadge = buildBadge(result.env, result.env, false, () =>
-        filterFunc({ field: 'env', op: 'eq', value: result.env }),
+        filterFunc({ field: 'env', operator: 'eq', value: result.env }),
       );
     } else {
       envBadge = buildBadge(result.env, result.env, false);
@@ -325,6 +352,85 @@ export const resultToRow = (result, filterFunc) => {
       { title: new Date(result.start_time).toLocaleString() },
     ],
   };
+};
+
+export const resultToClassificationRow = (result, index, filterFunc) => {
+  let resultIcon = getIconForResult(result.result);
+  let markers = [];
+  let exceptionBadge;
+
+  if (filterFunc) {
+    exceptionBadge = buildBadge(
+      `exception_name-${result.id}`,
+      result.metadata.exception_name,
+      false,
+      () =>
+        filterFunc({
+          field: 'metadata.exception_name',
+          operation: 'eq',
+          value: result.metadata.exception_name,
+        }),
+    );
+  } else {
+    exceptionBadge = buildBadge(
+      `exception_name-${result.id}`,
+      result.metadata.exception_name,
+      false,
+    );
+  }
+
+  if (result.metadata && result.metadata.component) {
+    markers.push(
+      <Badge key={`component-${result.id}`}>{result.metadata.component}</Badge>,
+    );
+  }
+  if (result.metadata && result.metadata.markers) {
+    for (const marker of result.metadata.markers) {
+      // Don't add duplicate markers
+      if (markers.filter((m) => m.key === marker.name).length === 0) {
+        markers.push(
+          <Badge isRead key={`${marker.name}-${generateId(5)}`}>
+            {marker.name}
+          </Badge>,
+        );
+      }
+    }
+  }
+
+  return [
+    // parent row
+    {
+      isOpen: false,
+      result: result,
+      cells: [
+        {
+          title: (
+            <React.Fragment>
+              <Link to={`../results/${result.id}#summary`} relative="Path">
+                {result.test_id}
+              </Link>{' '}
+              {markers}
+            </React.Fragment>
+          ),
+        },
+        {
+          title: (
+            <span className={result.result}>
+              {resultIcon} {toTitleCase(result.result)}
+            </span>
+          ),
+        },
+        { title: <React.Fragment>{exceptionBadge}</React.Fragment> },
+        { title: <ClassificationDropdown testResult={result} /> },
+        { title: round(result.duration) + 's' },
+      ],
+    },
+    // child row (this is set in the onCollapse function for lazy-loading)
+    {
+      parent: 2 * index,
+      cells: [{ title: <div /> }],
+    },
+  ];
 };
 
 export const resultToComparisonRow = (result, index) => {
@@ -400,7 +506,11 @@ export const resultToTestHistoryRow = (result, index, filterFunc) => {
       result.metadata.exception_name,
       false,
       () =>
-        filterFunc('metadata.exception_name', result.metadata.exception_name),
+        filterFunc({
+          field: 'metadata.exception_name',
+          operator: 'eq',
+          value: result.metadata.exception_name,
+        }),
     );
   } else {
     exceptionBadge = buildBadge(
@@ -497,16 +607,20 @@ export const runToRow = (run, filterFunc) => {
 };
 
 export const parseSearchToFilter = (searchParamTuple) => {
-  const re = /\[(?<op>.*?)\](?<value>.*)?/;
+  const re = /\[(?<operator>.*?)\](?<value>.*)?/;
   let match = re.exec(searchParamTuple[1]);
   if (match) {
     return {
       field: searchParamTuple[0],
-      op: match.groups['op'],
+      operator: match.groups['operator'],
       value: match.groups['value'],
     };
   }
   return null;
+};
+
+export const parseFilterValueToSearch = (filter) => {
+  return `[${filter.op}]${filter.value}`;
 };
 
 export const parseFilter = (paramKey) => {
@@ -515,12 +629,12 @@ export const parseFilter = (paramKey) => {
   if (match) {
     return {
       key: match[1],
-      op: match[2],
+      operator: match[2],
     };
   } else {
     return {
       key: paramKey,
-      op: 'eq',
+      operator: 'eq',
     };
   }
 };

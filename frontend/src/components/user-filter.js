@@ -16,7 +16,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 
 import { STRING_USER_FIELDS, STRING_OPERATIONS } from '../constants';
 import PropTypes from 'prop-types';
-import { useTableFilters } from './activeFilterHook';
+import { useTableFilters } from './tableFilterHook';
 
 const DEFAULT_FIELD = STRING_USER_FIELDS[0];
 const DEFAULT_OP = Object.keys(STRING_OPERATIONS)[0];

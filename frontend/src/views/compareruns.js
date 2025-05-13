@@ -38,11 +38,12 @@ const FEPSX = 'failed;error;passed;skipped;xfailed';
 const DEFAULT_FILTER = {
   // one for each run
   // TODO flatten this here and expand when fetch is made since they're kept in sync?
+  // TODO filters as array
   run0: {
-    result: { op: 'in', val: FEP },
+    result: { operator: 'in', val: FEP },
   },
   run1: {
-    result: { op: 'in', val: FEP },
+    result: { operator: 'in', val: FEP },
   },
 };
 
