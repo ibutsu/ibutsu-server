@@ -137,13 +137,23 @@ export class AuthService {
     if (!user) {
       return false;
     }
-    return fetch(Settings.serverUrl + '/user', {
-      headers: {
-        'Content-Type': 'application/json; charset=UTF-8',
-        Authorization: 'Bearer ' + user.token,
-      },
-    })
-      .then((response) => response.json())
-      .then((json) => json.is_superadmin);
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(Settings.serverUrl + '/user', {
+          headers: {
+            'Content-Type': 'application/json; charset=UTF-8',
+            Authorization: 'Bearer ' + user.token,
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`User request not ok: ${response.message}`);
+        }
+        const json = await response.json();
+        return json.is_superadmin;
+      } catch (error) {
+        console.error('Error checking admin for user: ', error);
+      }
+    };
+    return fetchUser();
   }
 }

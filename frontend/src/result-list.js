@@ -30,8 +30,6 @@ import { IbutsuContext } from './services/context';
 import { useTableFilters } from './components/activeFilterHook';
 import { useSearchParams } from 'react-router-dom';
 
-const COLUMNS = ['Test', 'Result', 'Duration', 'Run', 'Started'];
-
 const ResultList = () => {
   const { primaryObject } = useContext(IbutsuContext);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -523,7 +521,7 @@ const ResultList = () => {
       </PageSection>
       <PageSection className="pf-u-pb-0">
         <FilterTable
-          columns={COLUMNS}
+          columns={['Test', 'Result', 'Duration', 'Run', 'Started']}
           rows={rows}
           filters={filterSelects}
           activeFilters={activeFilters}

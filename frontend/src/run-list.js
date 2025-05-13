@@ -33,6 +33,7 @@ const RunList = () => {
   const [totalItems, setTotalItems] = useState(0);
 
   const [isError, setIsError] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
   const filtersToHide = useRef(['project_id']); // prevent rerenders with ref
 
@@ -76,6 +77,7 @@ const RunList = () => {
         setRows([]);
         setIsError(true);
       }
+      setFetching(false);
     };
 
     fetchData();
@@ -106,6 +108,7 @@ const RunList = () => {
       </PageSection>
       <PageSection>
         <FilterTable
+          fetching={fetching}
           columns={COLUMNS}
           rows={rows}
           filters={filterComponents}

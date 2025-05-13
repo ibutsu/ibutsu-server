@@ -43,7 +43,7 @@ const FilterTable = ({
   fetching = false,
 }) => {
   return (
-    <Card className={cardClass}>
+    <Card ouiaId="filter-table-card" className={cardClass}>
       {headerChildren && <CardHeader>{headerChildren}</CardHeader>}
       <CardBody key="filters">
         <Flex
@@ -62,7 +62,12 @@ const FilterTable = ({
                 ))}
               {onApplyFilter && (
                 <FlexItem>
-                  <Button onClick={onApplyFilter}>Apply Filter</Button>
+                  <Button
+                    ouiaId="filter-table-apply-button"
+                    onClick={onApplyFilter}
+                  >
+                    Apply Filter
+                  </Button>
                 </FlexItem>
               )}
             </Flex>
@@ -70,7 +75,7 @@ const FilterTable = ({
           {activeFilterComponents}
         </Flex>
       </CardBody>
-      {(rows.length || fetching) && (
+      {(rows?.length || fetching) && (
         <CardBody key="table">
           <Flex
             alignSelf={{ default: 'alignSelfFlexEnd' }}
@@ -79,6 +84,7 @@ const FilterTable = ({
           >
             <FlexItem>
               <Pagination
+                ouiaId="filter-table-pagination"
                 perPage={pagination.pageSize}
                 page={pagination.page}
                 variant={PaginationVariant.top}
@@ -90,8 +96,9 @@ const FilterTable = ({
             </FlexItem>
           </Flex>
           <Table
+            ouiaId="filter-table-table"
             cells={columns}
-            rows={fetching ? getSpinnerRow(columns.length) : rows}
+            rows={fetching ? [getSpinnerRow(columns.length)] : rows}
             actions={actions}
             aria-label="List"
             canSelectAll={canSelectAll}
