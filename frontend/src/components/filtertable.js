@@ -41,6 +41,7 @@ const FilterTable = ({
   cardClass = 'pf-u-p-0',
   fetching = false,
 }) => {
+  console.log('FilterTable', { page, pageSize, totalItems });
   return (
     <Card ouiaId="filter-table-card" className={cardClass}>
       {headerChildren && <CardHeader>{headerChildren}</CardHeader>}

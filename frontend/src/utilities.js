@@ -620,7 +620,7 @@ export const parseSearchToFilter = (searchParamTuple) => {
 };
 
 export const parseFilterValueToSearch = (filter) => {
-  return `[${filter.op}]${filter.value}`;
+  return `[${filter.operator}]${filter.value}`;
 };
 
 export const parseFilter = (paramKey) => {

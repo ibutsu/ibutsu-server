@@ -30,24 +30,30 @@ import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import { resultToRow, filtersToAPIParams } from './utilities';
 import FilterTable from './components/filtertable';
-import { RESULT_FIELDS } from './constants';
+import { RESULT_FIELDS, RUN_RESULTS_COLUMNS } from './constants';
 import { IbutsuContext } from './services/context';
-import { useTableFilters } from './components/tableFilterHook';
-import { useSearchParams } from 'react-router-dom';
+import useTableFilters from './components/hooks/useTableFilters';
+import usePagination from './components/hooks/usePagination';
 import ResultFilter from './components/result-filter';
 import ActiveFilters from './components/active-filters';
 
 const ResultList = () => {
   const { primaryObject } = useContext(IbutsuContext);
-  const [searchParams, setSearchParams] = useSearchParams();
 
   const [rows, setRows] = useState([]);
   const [runs, setRuns] = useState([]);
   const [filteredRuns, setFilteredRuns] = useState([]);
 
-  const [page, setPage] = useState(searchParams.get('page') || 1);
-  const [pageSize, setPageSize] = useState(searchParams.get('pageSize') || 20);
-  const [totalItems, setTotalItems] = useState(0);
+  const {
+    page,
+    setPage,
+    onSetPage,
+    pageSize,
+    setPageSize,
+    onSetPageSize,
+    totalItems,
+    setTotalItems,
+  } = usePagination({});
 
   const [runSelection, setRunSelection] = useState([]);
   const [isRunOpen, setIsRunOpen] = useState(false);
@@ -144,7 +150,6 @@ const ResultList = () => {
     setIsResultOpen(false);
   }, []);
 
-  // TODO difference with hook function with runselection/resultselection vars
   const applyFilter = useCallback(() => {
     let value = textFilter.trim();
     if (filterMode === 'result' && operationMode !== 'bool') {
@@ -185,7 +190,6 @@ const ResultList = () => {
     resetFilters,
   ]);
 
-  // TODO try and flatten result/run selection?
   const onClearFilters = () => {
     clearFilters();
     setResultSelection([]);
@@ -223,7 +227,16 @@ const ResultList = () => {
     };
 
     fetchData();
-  }, [activeFilters, page, pageSize, primaryObject, updateFilters]);
+  }, [
+    activeFilters,
+    page,
+    pageSize,
+    primaryObject,
+    setPage,
+    setPageSize,
+    setTotalItems,
+    updateFilters,
+  ]);
 
   // fetch 500 runs with estimate on count
   useEffect(() => {
@@ -538,7 +551,7 @@ const ResultList = () => {
       </PageSection>
       <PageSection className="pf-u-pb-0">
         <FilterTable
-          columns={['Test', 'Result', 'Duration', 'Run', 'Started']}
+          columns={RUN_RESULTS_COLUMNS}
           rows={rows}
           filters={filterComponents}
           activeFilters={activeFilters}
@@ -547,21 +560,8 @@ const ResultList = () => {
           totalItems={totalItems}
           isError={isError}
           onClearFilters={onClearFilters}
-          onSetPage={(_, value) => {
-            setPage(value);
-            setSearchParams((prevParams) => {
-              prevParams.set('page', value);
-              return prevParams;
-            });
-          }}
-          onSetPageSize={(_, value, newPage) => {
-            setPageSize(value);
-            setPage(newPage);
-            setSearchParams((prevParams) => {
-              prevParams.set('pageSize', value);
-              return prevParams;
-            });
-          }}
+          onSetPage={onSetPage}
+          onSetPageSize={onSetPageSize}
           footerChildren={
             <Text className="disclaimer" component="h4">
               * Note: for performance reasons, the total number of items is an

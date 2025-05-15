@@ -1,34 +1,53 @@
-import { useState } from 'react';
+import PropTypes from 'prop-types';
+import { useState, useEffect } from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
-const usePagination = ({}) => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+const DEFAULT_PAGE_SIZE = 20;
+const DEFAULT_PAGE = 1;
 
-  const handleChangePage = (_, newPage) => {
-    setPage(parseInt(newPage, 1));
+const usePagination = ({ setParams = true }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = useState(searchParams.get('page') || DEFAULT_PAGE);
+  const [pageSize, setPageSize] = useState(
+    searchParams.get('pageSize') || DEFAULT_PAGE_SIZE,
+  );
+  const [totalItems, setTotalItems] = useState(0);
+
+  useEffect(() => {
+    if (setParams) {
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.set('page', page);
+      newSearchParams.set('pageSize', pageSize);
+      setSearchParams(newSearchParams.toString());
+    }
+  }, [page, pageSize, setParams, searchParams, setSearchParams]);
+
+  const onSetPage = (_, newPage) => {
+    setPage(parseInt(newPage));
   };
 
-  const handleChangeRowsPerPage = (_, newPageSize, newPage) => {
-    setPageSize(parseInt(newPageSize, 20));
-    setPage(1);
+  const onSetPageSize = (_, newPageSize, newPage) => {
+    setPage(parseInt(newPage));
+    setPageSize(parseInt(newPageSize));
   };
 
   return {
     page,
-    rowsPerPage,
-    handleChangePage,
-    handleChangeRowsPerPage,
+    setPage,
+    onSetPage,
+
+    pageSize,
+    setPageSize,
+    onSetPageSize,
+
+    totalItems,
+    setTotalItems,
   };
 };
 
 usePagination.propTypes = {
-  page: PropTypes.number,
-  rowsPerPage: PropTypes.number,
-  handleChangePage: PropTypes.func,
-  handleChangeRowsPerPage: PropTypes.func,
+  setParams: PropTypes.bool,
 };
 
 export default usePagination;

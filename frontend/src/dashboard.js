@@ -34,7 +34,7 @@ import NewDashboardModal from './components/new-dashboard-modal.js';
 import NewWidgetWizard from './components/new-widget-wizard.js';
 import EditWidgetModal from './components/edit-widget-modal.js';
 import DeleteModal from './components/delete-modal.js';
-import { useWidgets } from './components/widgetsHook.js';
+import { useWidgets } from './components/hooks/useWidgets.js';
 import { IbutsuContext } from './services/context.js';
 import { useNavigate, useParams } from 'react-router-dom';
 

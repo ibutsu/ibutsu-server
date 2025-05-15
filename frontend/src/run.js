@@ -55,8 +55,10 @@ import TabTitle from './components/tabs';
 import ClassifyFailuresTable from './components/classify-failures';
 import ArtifactTab from './components/artifact-tab';
 import { IbutsuContext } from './services/context';
-import { useTabHook } from './components/tabHook';
+import { useTabHook } from './components/hooks/useTab';
+import usePagination from './components/hooks/usePagination';
 import PropTypes from 'prop-types';
+import { RUN_RESULTS_COLUMNS } from './constants';
 
 const Run = ({ defaultTab = 'summary' }) => {
   const { run_id } = useParams();
@@ -68,9 +70,16 @@ const Run = ({ defaultTab = 'summary' }) => {
   const [testResult, setTestResult] = useState(null);
   const [rows, setRows] = useState([]);
 
-  const [pageSize, setPageSize] = useState(10);
-  const [page, setPage] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
+  const {
+    page,
+    setPage,
+    onSetPage,
+    pageSize,
+    setPageSize,
+    onSetPageSize,
+    totalItems,
+    setTotalItems,
+  } = usePagination({});
 
   const [isRunValid, setIsRunValid] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -113,7 +122,7 @@ const Run = ({ defaultTab = 'summary' }) => {
         setIsError(true);
         setFetching(false);
       });
-  }, [page, pageSize, run_id]);
+  }, [page, pageSize, run_id, setPage, setPageSize, setTotalItems]);
 
   useEffect(() => {
     if (!run_id) {
@@ -578,17 +587,14 @@ const Run = ({ defaultTab = 'summary' }) => {
                   </Flex>
                 }
                 fetching={fetching}
-                columns={['Test', 'Result', 'Duration', 'Run', 'Started']}
+                columns={RUN_RESULTS_COLUMNS}
                 rows={rows}
                 pageSize={pageSize}
                 page={page}
                 totalItems={totalItems}
                 isError={isError}
-                onSetPage={(_, value) => setPage(value)}
-                onSetPageSize={(_, newPageSize, newPage) => {
-                  setPageSize(newPageSize);
-                  setPage(newPage);
-                }}
+                onSetPage={onSetPage}
+                onSetPageSize={onSetPageSize}
               />
             </Tab>
             <Tab

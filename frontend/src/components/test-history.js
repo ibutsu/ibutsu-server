@@ -24,8 +24,19 @@ import FilterTable from './filtertable';
 import RunSummary from './runsummary';
 import LastPassed from './last-passed';
 import ResultView from './result';
-import { useTableFilters } from './tableFilterHook';
+import useTableFilters from './hooks/useTableFilters';
 import ActiveFilters from './active-filters';
+
+const COLUMNS = [
+  {
+    title: 'Result',
+    cellFormatters: [expandable],
+  },
+  'Source',
+  'Exception Name',
+  'Duration',
+  'Start Time',
+];
 
 // Month is considered to be 30 days, and there are 86400*1000 ms in a day
 const millisecondsInMonth = 30 * 86400 * 1000;
@@ -375,16 +386,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   return (
     <FilterTable
       fetching={fetching}
-      columns={[
-        {
-          title: 'Result',
-          cellFormatters: [expandable],
-        },
-        'Source',
-        'Exception Name',
-        'Duration',
-        'Start Time',
-      ]}
+      columns={COLUMNS}
       rows={rows}
       pageSize={pageSize}
       page={page}

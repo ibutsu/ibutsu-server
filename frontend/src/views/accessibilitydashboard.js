@@ -34,7 +34,7 @@ import MultiValueInput from '../components/multivalueinput';
 import RunSummary from '../components/runsummary';
 import { OPERATIONS, ACCESSIBILITY_FIELDS } from '../constants';
 import { IbutsuContext } from '../services/context';
-import { useTableFilters } from '../components/tableFilterHook';
+import useTableFilters from '../components/hooks/useTableFilters';
 
 const runToRow = (run, filterFunc, analysisViewId) => {
   let badges = [];
@@ -103,6 +103,8 @@ const fieldToColumnName = (fields) => {
   return results;
 };
 
+const COLUMNS = [...fieldToColumnName(ACCESSIBILITY_FIELDS)];
+
 const AccessibilityDashboardView = ({ view }) => {
   const context = useContext(IbutsuContext);
   // const params = useSearchParams();
@@ -120,7 +122,6 @@ const AccessibilityDashboardView = ({ view }) => {
 
   // states
   const [rows, setRows] = useState();
-  const [columns] = useState([...fieldToColumnName(ACCESSIBILITY_FIELDS), '']); // doesn't need to be in state
 
   const [isError, setIsError] = useState(false);
 
@@ -173,7 +174,7 @@ const AccessibilityDashboardView = ({ view }) => {
     // isMultiSelect: selection === 'in',  Wasn't in state originally, is only set here and never read?
   };
 
-  const { updateFilters, activeFilterComponents } = useTableFilters();
+  const { updateFilters } = useTableFilters();
 
   const applyFilter = () => {
     const operationMode = getOperationMode(operationSelection);
@@ -444,7 +445,7 @@ const AccessibilityDashboardView = ({ view }) => {
 
   return (
     <FilterTable
-      columns={columns}
+      columns={COLUMNS}
       rows={rows}
       filters={jsxFilters}
       pageSize={pageSize}

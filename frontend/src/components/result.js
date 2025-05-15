@@ -42,7 +42,7 @@ import TabTitle from './tabs';
 import TestHistoryTable from './test-history';
 import ArtifactTab from './artifact-tab';
 import { IbutsuContext } from '../services/context';
-import { useTabHook } from './tabHook';
+import { useTabHook } from './hooks/useTab';
 
 const ResultView = ({
   comparisonResults,

@@ -13,11 +13,12 @@ import {
   getOperationsFromField,
   parseFilterValueToSearch,
   parseSearchToFilter,
-} from '../utilities';
-import { IbutsuContext } from '../services/context';
+} from '../../utilities';
+import { IbutsuContext } from '../../services/context';
 import { TimesIcon } from '@patternfly/react-icons';
+import PropTypes from 'prop-types';
 
-export const useTableFilters = ({
+const useTableFilters = ({
   fieldOptions = [],
   hideFilters = [], // hides it in the render, not in activeFilters
   blockRemove = [],
@@ -376,3 +377,12 @@ export const useTableFilters = ({
     operations,
   };
 };
+
+useTableFilters.propTypes = {
+  fieldOptions: PropTypes.arrayOf(PropTypes.string),
+  hideFilters: PropTypes.arrayOf(PropTypes.string),
+  blockRemove: PropTypes.arrayOf(PropTypes.string),
+  removeCallback: PropTypes.func,
+};
+
+export default useTableFilters;

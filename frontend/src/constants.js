@@ -149,3 +149,11 @@ export const RESULT_STATES = {
   xfailed: 'xfailures',
   xpassed: 'xpasses',
 };
+
+export const RUN_RESULTS_COLUMNS = [
+  'Test',
+  'Result',
+  'Duration',
+  'Run',
+  'Started',
+];

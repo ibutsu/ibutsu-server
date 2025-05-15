@@ -11,8 +11,6 @@ import {
   TextContent,
 } from '@patternfly/react-core';
 
-import { useSearchParams } from 'react-router-dom';
-
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import { runToRow, filtersToAPIParams } from './utilities';
@@ -21,22 +19,28 @@ import FilterTable from './components/filtertable';
 
 import { RUN_FIELDS } from './constants';
 import { IbutsuContext } from './services/context';
-import { useTableFilters } from './components/tableFilterHook';
+import useTableFilters from './components/hooks/useTableFilters';
 import RunFilter from './components/run-filter';
 import ActiveFilters from './components/active-filters';
+import usePagination from './components/hooks/usePagination';
 
 const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
 
 const RunList = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-
   const { primaryObject } = useContext(IbutsuContext);
 
   const [rows, setRows] = useState([]);
   // use state for pagination because it's a controlled input
-  const [page, setPage] = useState(searchParams.get('page') || 1);
-  const [pageSize, setPageSize] = useState(searchParams.get('pageSize') || 20);
-  const [totalItems, setTotalItems] = useState(0);
+  const {
+    page,
+    setPage,
+    onSetPage,
+    pageSize,
+    setPageSize,
+    onSetPageSize,
+    totalItems,
+    setTotalItems,
+  } = usePagination({});
 
   const [isError, setIsError] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -105,7 +109,16 @@ const RunList = () => {
     };
 
     fetchData();
-  }, [pageSize, page, primaryObject, updateFilters, activeFilters]);
+  }, [
+    pageSize,
+    page,
+    primaryObject,
+    updateFilters,
+    activeFilters,
+    setPage,
+    setPageSize,
+    setTotalItems,
+  ]);
 
   // apparently this is better to do in an effect
   useEffect(() => {
@@ -217,21 +230,8 @@ const RunList = () => {
           totalItems={totalItems}
           isError={isError}
           onClearFilters={clearFilters}
-          onSetPage={(_, value) => {
-            setPage(value);
-            setSearchParams((prevParams) => {
-              prevParams.set('page', value);
-              return prevParams;
-            });
-          }}
-          onSetPageSize={(_, value, newPage) => {
-            setPageSize(value);
-            setPage(newPage);
-            setSearchParams((prevParams) => {
-              prevParams.set('pageSize', value);
-              return prevParams;
-            });
-          }}
+          onSetPage={onSetPage}
+          onSetPageSize={onSetPageSize}
           footerChildren={
             <Text className="disclaimer" component="h4">
               * Note: for performance reasons, the total number of items is an

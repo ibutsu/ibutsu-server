@@ -25,6 +25,17 @@ import FilterTable from './filtertable';
 import MetaFilter from './metafilter';
 import ResultView from './result';
 
+const COLUMNS = [
+  {
+    title: 'Test',
+    cellFormatters: [expandable],
+  },
+  'Result',
+  'Exception Name',
+  'Classification',
+  'Duration',
+];
+
 const ClassifyFailuresTable = ({ filters = [], run_id }) => {
   // TODO filters is an array now
   const [rows, setRows] = useState([getSpinnerRow(5)]);
@@ -239,16 +250,7 @@ const ClassifyFailuresTable = ({ filters = [], run_id }) => {
       </CardHeader>
       <CardBody>
         <FilterTable
-          columns={[
-            {
-              title: 'Test',
-              cellFormatters: [expandable],
-            },
-            'Result',
-            'Exception Name',
-            'Classification',
-            'Duration',
-          ]}
+          columns={COLUMNS}
           rows={rows}
           pageSize={pageSize}
           page={page}
