@@ -250,15 +250,16 @@ const ClassifyFailuresTable = ({ filters = [], run_id }) => {
             'Duration',
           ]}
           rows={rows}
-          pagination={{
-            pageSize: pageSize,
-            page: page,
-            totalItems: totalItems,
-          }}
+          pageSize={pageSize}
+          page={page}
+          totalItems={totalItems}
           isError={isError}
           onCollapse={onCollapse}
           onSetPage={(_, change) => setPage(change)}
-          onSetPageSize={(_, change) => setPageSize(change)}
+          onSetPageSize={(_, newPageSize, newPage) => {
+            setPageSize(newPageSize);
+            setPage(newPage);
+          }}
           canSelectAll={true}
           onRowSelect={onTableRowSelect}
           variant={TableVariant.compact}

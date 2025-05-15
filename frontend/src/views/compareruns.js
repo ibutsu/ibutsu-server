@@ -289,20 +289,20 @@ const CompareRunsView = () => {
       <FilterTable
         columns={COLUMNS}
         rows={rows}
-        pagination={{
-          pageSize: pageSize,
-          page: page,
-          totalItems: totalItems,
-        }}
+        pageSize={pageSize}
+        page={page}
+        totalItems={totalItems}
         isError={isError}
         onCollapse={onCollapse}
         onSetPage={(_, value) => setPage(value)}
-        onSetPageSize={(_, value) => setPageSize(value)}
+        onSetPageSize={(_, newPageSize, newPage) => {
+          setPageSize(newPageSize);
+          setPage(newPage);
+        }}
         canSelectAll={false}
         variant={TableVariant.compact}
         filters={resultFilters}
         headerChildren={compareHeader}
-        blockRemove={['run_id', 'result']}
       />
     )
   );

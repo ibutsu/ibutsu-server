@@ -580,14 +580,15 @@ const Run = ({ defaultTab = 'summary' }) => {
                 fetching={fetching}
                 columns={['Test', 'Result', 'Duration', 'Run', 'Started']}
                 rows={rows}
-                pagination={{
-                  pageSize: pageSize,
-                  page: page,
-                  totalItems: totalItems,
-                }}
+                pageSize={pageSize}
+                page={page}
+                totalItems={totalItems}
                 isError={isError}
                 onSetPage={(_, value) => setPage(value)}
-                onSetPageSize={(_, value) => setPageSize(value)}
+                onSetPageSize={(_, newPageSize, newPage) => {
+                  setPageSize(newPageSize);
+                  setPage(newPage);
+                }}
               />
             </Tab>
             <Tab

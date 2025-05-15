@@ -107,36 +107,36 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   // }, [activeFilters, setActiveFilters, testResult]);
 
   // load individual result views on collapse to delay fetching artifacts
-  const onCollapse = (_, rowIndex, isOpen) => {
-    setRows(
-      rows.map((row, index) => {
-        if (index === rowIndex + 1) {
-          return {
-            ...row,
-            cells: [
-              {
-                title: (
-                  <ResultView
-                    defaultTab="summary"
-                    hideTestHistory={true}
-                    testResult={rows[rowIndex].result}
-                    skipHash={true}
-                  />
-                ),
-              },
-            ],
-          };
-        } else if (index === rowIndex) {
-          return {
-            ...row,
-            isOpen: isOpen,
-          };
-        } else {
-          return row;
-        }
-      }),
-    );
-  };
+  // const onCollapse = (_, rowIndex, isOpen) => {
+  //   setRows(
+  //     rows.map((row, index) => {
+  //       if (index === rowIndex + 1) {
+  //         return {
+  //           ...row,
+  //           cells: [
+  //             {
+  //               title: (
+  //                 <ResultView
+  //                   defaultTab="summary"
+  //                   hideTestHistory={true}
+  //                   testResult={rows[rowIndex].result}
+  //                   skipHash={true}
+  //                 />
+  //               ),
+  //             },
+  //           ],
+  //         };
+  //       } else if (index === rowIndex) {
+  //         return {
+  //           ...row,
+  //           isOpen: isOpen,
+  //         };
+  //       } else {
+  //         return row;
+  //       }
+  //     }),
+  //   );
+  // };
 
   // fetch result data with active filters
   // useEffect(() => {
@@ -254,121 +254,123 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   //   [activeFilters, setActiveFilters],
   // );
 
-  const onTimeRangeSelect = useCallback(
-    (_, selection) => {
-      if (testResult?.start_time) {
-        const startTime = new Date(testResult?.start_time);
-        const selectionCoefficient = WEEKS[selection];
-        const timeRange = new Date(
-          startTime.getTime() - selectionCoefficient * millisecondsInMonth,
-        );
-        setActiveFilters({
-          ...activeFilters,
-          ['start_time']: { op: 'gt', val: timeRange.toISOString() },
-        });
-        setTimeRangeOpen(false);
-        setTimeRange(selection);
-      }
-    },
-    [activeFilters, setActiveFilters, testResult?.start_time],
-  );
+  // const onTimeRangeSelect = useCallback(
+  //   (_, selection) => {
+  //     if (testResult?.start_time) {
+  //       const startTime = new Date(testResult?.start_time);
+  //       const selectionCoefficient = WEEKS[selection];
+  //       const timeRange = new Date(
+  //         startTime.getTime() - selectionCoefficient * millisecondsInMonth,
+  //       );
+  //       setActiveFilters({
+  //         ...activeFilters,
+  //         ['start_time']: { op: 'gt', val: timeRange.toISOString() },
+  //       });
+  //       setTimeRangeOpen(false);
+  //       setTimeRange(selection);
+  //     }
+  //   },
+  //   [activeFilters, setActiveFilters, testResult?.start_time],
+  // );
 
-  const onTimeRangeToggleClick = useCallback(() => {
-    setTimeRangeOpen(!isTimeRangeSelectOpen);
-  }, [isTimeRangeSelectOpen, setTimeRangeOpen]);
+  // const onTimeRangeToggleClick = useCallback(() => {
+  //   setTimeRangeOpen(!isTimeRangeSelectOpen);
+  // }, [isTimeRangeSelectOpen, setTimeRangeOpen]);
 
-  const historyHeader = useMemo(() => {
-    <Flex style={{ width: '100%' }}>
-      <FlexItem grow={{ default: 'grow' }}>
-        <TextContent>
-          <Title headingLevel="h2">Test History</Title>
-        </TextContent>
-      </FlexItem>
-      <FlexItem>
-        <TextContent>
-          <Checkbox
-            id="only-failures"
-            label="Only show failures/errors"
-            isChecked={onlyFailures}
-            aria-label="only-failures-checkbox"
-            onChange={() => {}}
-          />
-        </TextContent>
-      </FlexItem>
-      <FlexItem spacer={{ sm: 'spacerSm' }}>
-        <TextContent>Time range:</TextContent>
-      </FlexItem>
-      <FlexItem>
-        <Select
-          id="single-select"
-          isOpen={isTimeRangeSelectOpen}
-          selected={selectedTimeRange}
-          onSelect={onTimeRangeSelect}
-          onOpenChange={(isTimeRangeSelectOpen) =>
-            setTimeRangeOpen(isTimeRangeSelectOpen)
-          }
-          toggle={(toggleRef) => (
-            <MenuToggle
-              ref={toggleRef}
-              onClick={onTimeRangeToggleClick}
-              isExpanded={isTimeRangeSelectOpen}
-            >
-              {selectedTimeRange}
-            </MenuToggle>
-          )}
-          shouldFocusToggleOnSelect
-        >
-          <SelectList>
-            {Object.keys(WEEKS).map((key) => (
-              <SelectOption key={key} value={key}>
-                {key}
-              </SelectOption>
-            ))}
-          </SelectList>
-        </Select>
-      </FlexItem>
-    </Flex>;
-  }, [
-    isTimeRangeSelectOpen,
-    onTimeRangeSelect,
-    onTimeRangeToggleClick,
-    onlyFailures,
-    selectedTimeRange,
-  ]);
+  // const historyHeader = useMemo(() => {
+  //   return (
+  //     <Flex style={{ width: '100%' }}>
+  //       <FlexItem grow={{ default: 'grow' }}>
+  //         <TextContent>
+  //           <Title headingLevel="h2">Test History</Title>
+  //         </TextContent>
+  //       </FlexItem>
+  //       <FlexItem>
+  //         <TextContent>
+  //           <Checkbox
+  //             id="only-failures"
+  //             label="Only show failures/errors"
+  //             isChecked={onlyFailures}
+  //             aria-label="only-failures-checkbox"
+  //             onChange={() => {}}
+  //           />
+  //         </TextContent>
+  //       </FlexItem>
+  //       <FlexItem spacer={{ sm: 'spacerSm' }}>
+  //         <TextContent>Time range:</TextContent>
+  //       </FlexItem>
+  //       <FlexItem>
+  //         <Select
+  //           id="single-select"
+  //           isOpen={isTimeRangeSelectOpen}
+  //           selected={selectedTimeRange}
+  //           onSelect={onTimeRangeSelect}
+  //           onOpenChange={(isTimeRangeSelectOpen) =>
+  //             setTimeRangeOpen(isTimeRangeSelectOpen)
+  //           }
+  //           toggle={(toggleRef) => (
+  //             <MenuToggle
+  //               ref={toggleRef}
+  //               onClick={onTimeRangeToggleClick}
+  //               isExpanded={isTimeRangeSelectOpen}
+  //             >
+  //               {selectedTimeRange}
+  //             </MenuToggle>
+  //           )}
+  //           shouldFocusToggleOnSelect
+  //         >
+  //           <SelectList>
+  //             {Object.keys(WEEKS).map((key) => (
+  //               <SelectOption key={key} value={key}>
+  //                 {key}
+  //               </SelectOption>
+  //             ))}
+  //           </SelectList>
+  //         </Select>
+  //       </FlexItem>
+  //     </Flex>
+  //   );
+  // }, [
+  //   isTimeRangeSelectOpen,
+  //   onTimeRangeSelect,
+  //   onTimeRangeToggleClick,
+  //   onlyFailures,
+  //   selectedTimeRange,
+  // ]);
 
-  const filterComponents = useMemo(() => {
-    <Flex>
-      <FlexItem>
-        <Text key="summary" component="h4">
-          Summary:&nbsp;
-          {historySummary && <RunSummary summary={historySummary} />}
-        </Text>
-      </FlexItem>
-      <FlexItem>
-        <Text key="last-passed" component="h4">
-          Last passed:&nbsp;
-          <LastPassed filters={activeFilters} />
-        </Text>
-      </FlexItem>
-      <FlexItem>
-        <ActiveFilters
-          key="active-filters"
-          activeFilters={activeFilters}
-          onRemoveFilter={onRemoveFilter}
-          hideFilters={filtersToHide.current}
-        />
-      </FlexItem>
-    </Flex>;
-  }, [activeFilters, historySummary, onRemoveFilter]);
+  // const filterComponents = useMemo(() => {
+  //   return (
+  //     <Flex>
+  //       <FlexItem>
+  //         <Text key="summary" component="h4">
+  //           Summary:&nbsp;
+  //           {historySummary && <RunSummary summary={historySummary} />}
+  //         </Text>
+  //       </FlexItem>
+  //       <FlexItem>
+  //         <Text key="last-passed" component="h4">
+  //           Last passed:&nbsp;
+  //           <LastPassed filters={activeFilters} />
+  //         </Text>
+  //       </FlexItem>
+  //       <FlexItem>
+  //         <ActiveFilters
+  //           key="active-filters"
+  //           activeFilters={activeFilters}
+  //           onRemoveFilter={onRemoveFilter}
+  //           hideFilters={filtersToHide.current}
+  //         />
+  //       </FlexItem>
+  //     </Flex>
+  //   );
+  // }, []);
 
-  const pagination = useMemo(
-    () => ({
-      pageSize: pageSize,
-      page: page,
-      totalItems: totalItems,
-    }),
-    [pageSize, page, totalItems],
-  );
+  // const pagination = useMemo(
+  //   () => ({
+  //
+  //   }),
+  //   [pageSize, page, totalItems],
+  // );
 
   return (
     <FilterTable
@@ -384,16 +386,19 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         'Start Time',
       ]}
       rows={rows}
-      pagination={pagination}
+      pageSize={pageSize}
+      page={page}
+      totalItems={totalItems}
       isError={isError}
-      onCollapse={onCollapse}
       onSetPage={(_, pageNumber) => setPage(pageNumber)}
-      onSetPageSize={(_, pageSizeValue) => setPageSize(pageSizeValue)}
+      onSetPageSize={(_, newPageSize, newPage) => {
+        setPageSize(newPageSize);
+        setPage(newPage);
+      }}
       canSelectAll={false}
       variant={TableVariant.compact}
-      filters={filterComponents}
-      headerChildren={historyHeader}
-      className="pf-u-mt-lg"
+      //filters={filterComponents}
+      cardClass="pf-u-mt-lg"
     />
   );
 };

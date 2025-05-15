@@ -176,12 +176,6 @@ const ReportBuilder = () => {
     document.title = 'Report Builder | Ibutsu';
   }, []);
 
-  const pagination = {
-    page: pagination_page.current,
-    pageSize: pagination_pageSize.current,
-    totalItems: totalItems,
-  };
-
   return (
     <React.Fragment>
       <PageSection variant={PageSectionVariants.light}>
@@ -271,7 +265,9 @@ const ReportBuilder = () => {
             <FilterTable
               columns={COLUMNS}
               rows={rows}
-              pagination={pagination}
+              pageSize={pagination_pageSize.current}
+              page={pagination_page.current}
+              totalItems={totalItems}
               isError={isError}
               onSetPage={(_, change) => {
                 pagination_page.current = change;

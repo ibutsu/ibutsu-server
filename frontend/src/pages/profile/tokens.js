@@ -120,17 +120,16 @@ const UserTokens = () => {
         <FilterTable
           columns={COLUMNS}
           rows={tokens?.map((t) => tokenToRow(t))}
-          pagination={{
-            pageSize: pageSize,
-            page: page,
-            totalItems: totalItems,
-          }}
+          pageSize={pageSize}
+          page={page}
+          totalItems={totalItems}
           isError={isError}
           onSetPage={(_, value) => {
             setPage(value);
           }}
-          onSetPageSize={(_, value) => {
-            setPageSize(value);
+          onSetPageSize={(_, newPageSize, newPage) => {
+            setPageSize(newPageSize);
+            setPage(newPage);
           }}
           fetching={fetching}
         />

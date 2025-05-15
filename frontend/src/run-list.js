@@ -112,15 +112,6 @@ const RunList = () => {
     document.title = 'Test Runs | Ibutsu';
   }, []);
 
-  const pagination = useMemo(
-    () => ({
-      pageSize: pageSize,
-      page: page,
-      totalItems: totalItems,
-    }),
-    [pageSize, page, totalItems],
-  );
-
   const filterComponents = useMemo(
     () => (
       <React.Fragment>
@@ -221,7 +212,9 @@ const RunList = () => {
           rows={rows}
           filters={filterComponents}
           activeFilters={activeFilters}
-          pagination={pagination}
+          pageSize={pageSize}
+          page={page}
+          totalItems={totalItems}
           isError={isError}
           onClearFilters={clearFilters}
           onSetPage={(_, value) => {

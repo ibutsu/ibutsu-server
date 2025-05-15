@@ -527,15 +527,6 @@ const ResultList = () => {
     textFilter,
   ]);
 
-  const pagination = useMemo(
-    () => ({
-      pageSize: pageSize,
-      page: page,
-      totalItems: totalItems,
-    }),
-    [pageSize, page, totalItems],
-  );
-
   return (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>
@@ -551,7 +542,9 @@ const ResultList = () => {
           rows={rows}
           filters={filterComponents}
           activeFilters={activeFilters}
-          pagination={pagination}
+          pageSize={pageSize}
+          page={page}
+          totalItems={totalItems}
           isError={isError}
           onClearFilters={onClearFilters}
           onSetPage={(_, value) => {

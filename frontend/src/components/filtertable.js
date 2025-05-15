@@ -19,7 +19,6 @@ import {
 
 import { TableEmptyState, TableErrorState } from './tablestates';
 import { getSpinnerRow } from '../utilities';
-import React from 'react';
 
 const FilterTable = ({
   isError,
@@ -32,8 +31,10 @@ const FilterTable = ({
   columns = [],
   rows = [],
   actions = [],
-  filters = <React.Fragment />,
-  pagination = { page: 0, pageSize: 0, totalItems: 0 },
+  filters = [],
+  page = 1,
+  pageSize = 20,
+  totalItems = 0,
   canSelectAll = false,
   footerChildren = null,
   headerChildren = null,
@@ -54,10 +55,10 @@ const FilterTable = ({
             <FlexItem>
               <Pagination
                 ouiaId="filter-table-pagination"
-                perPage={pagination.pageSize}
-                page={pagination.page}
+                perPage={pageSize}
+                page={page}
                 variant={PaginationVariant.top}
-                itemCount={pagination.totalItems}
+                itemCount={totalItems}
                 onSetPage={onSetPage}
                 onPerPageSelect={onSetPageSize}
                 isCompact
@@ -80,10 +81,10 @@ const FilterTable = ({
           </Table>
           <Pagination
             widgetId="pagination-options-menu-bottom"
-            perPage={pagination.pageSize}
-            page={pagination.page}
+            perPage={pageSize}
+            page={page}
             variant={PaginationVariant.top}
-            itemCount={pagination.totalItems}
+            itemCount={totalItems}
             dropDirection="up"
             onSetPage={onSetPage}
             onPerPageSelect={onSetPageSize}
@@ -111,7 +112,6 @@ FilterTable.propTypes = {
   rows: PropTypes.array,
   actions: PropTypes.array,
   filters: PropTypes.node,
-  pagination: PropTypes.object,
   isError: PropTypes.bool,
   canSelectAll: PropTypes.bool,
   onCollapse: PropTypes.func,
@@ -124,6 +124,9 @@ FilterTable.propTypes = {
   headerChildren: PropTypes.node,
   cardClass: PropTypes.string,
   fetching: PropTypes.bool,
+  page: PropTypes.number,
+  pageSize: PropTypes.number,
+  totalItems: PropTypes.number,
 };
 
 export default FilterTable;

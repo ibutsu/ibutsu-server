@@ -447,18 +447,14 @@ const AccessibilityDashboardView = ({ view }) => {
       columns={columns}
       rows={rows}
       filters={jsxFilters}
-      pagination={{
-        page: page,
-        pageSize: pageSize,
-        totalItems: totalItems,
-      }}
+      pageSize={pageSize}
+      page={page}
+      totalItems={totalItems}
       isError={isError}
       onSetPage={(_, value) => setPage(value)}
       onSetPageSize={(_, value) => setPageSize(value)}
       onApplyFilter={applyFilter}
       onClearFilters={() => setTextFilter('')}
-      activeFilters={filters}
-      activeFilterComponents={activeFilterComponents}
       removeCallback={() => setPage(1)}
     />
   );
