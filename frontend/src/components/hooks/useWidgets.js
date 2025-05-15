@@ -1,15 +1,16 @@
 // Assisted by watsonx Code Assistant
 import { useState, useEffect, useMemo } from 'react';
-import { HttpClient } from '../services/http';
-import { KNOWN_WIDGETS } from '../constants';
-import { Settings } from '../settings';
 import { GridItem } from '@patternfly/react-core';
-import FilterHeatmapWidget from '../widgets/filterheatmap';
-import ResultAggregatorWidget from '../widgets/resultaggregator';
-import GenericAreaWidget from '../widgets/genericarea';
-import GenericBarWidget from '../widgets/genericbar';
-import ImportanceComponentWidget from '../widgets/importancecomponent';
-import ResultSummaryWidget from '../widgets/resultsummary';
+
+import { HttpClient } from '../../services/http';
+import { KNOWN_WIDGETS } from '../../constants';
+import { Settings } from '../../settings';
+import FilterHeatmapWidget from '../../widgets/filterheatmap';
+import ResultAggregatorWidget from '../../widgets/resultaggregator';
+import GenericAreaWidget from '../../widgets/genericarea';
+import GenericBarWidget from '../../widgets/genericbar';
+import ImportanceComponentWidget from '../../widgets/importancecomponent';
+import ResultSummaryWidget from '../../widgets/resultsummary';
 
 export const useWidgets = ({
   dashboardId = null,

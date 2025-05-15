@@ -1,11 +1,10 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
-  Badge,
-  Button,
-  Chip,
-  ChipGroup,
+  Card,
+  CardBody,
+  CardFooter,
+  CardHeader,
   Flex,
   FlexItem,
   Pagination,
@@ -19,16 +18,13 @@ import {
 } from '@patternfly/react-table/deprecated';
 
 import { TableEmptyState, TableErrorState } from './tablestates';
+import { getSpinnerRow } from '../utilities';
 
 const FilterTable = ({
-  isEmpty,
   isError,
   onCollapse,
   onRowSelect,
-  onApplyFilter,
-  onRemoveFilter,
   onClearFilters,
-  onApplyReport,
   onSetPage,
   onSetPageSize,
   variant,
@@ -36,115 +32,79 @@ const FilterTable = ({
   rows = [],
   actions = [],
   filters = [],
-  hideFilters = [],
-  activeFilters = {},
-  pagination = { page: 0, pageSize: 0, totalItems: 0 },
+  page = 1,
+  pageSize = 20,
+  totalItems = 0,
   canSelectAll = false,
+  footerChildren = null,
+  headerChildren = null,
+  cardClass = 'pf-u-p-0',
+  fetching = false,
 }) => {
+  console.log('FilterTable', { page, pageSize, totalItems });
   return (
-    <React.Fragment>
-      <Flex>
-        {(filters || onApplyFilter) && (
+    <Card ouiaId="filter-table-card" className={cardClass}>
+      {headerChildren && <CardHeader>{headerChildren}</CardHeader>}
+      {filters}
+      {(rows?.length || fetching) && (
+        <CardBody key="table">
           <Flex
-            spaceItems={{ default: 'spaceItemsXs' }}
-            grow={{ default: 'grow' }}
+            alignSelf={{ default: 'alignSelfFlexEnd' }}
+            direction={{ default: 'column' }}
+            align={{ default: 'alignRight' }}
           >
-            {filters &&
-              filters.map((filter, index) => (
-                <FlexItem key={index}>{filter}</FlexItem>
-              ))}
-            {onApplyFilter && (
-              <FlexItem>
-                <Button onClick={onApplyFilter}>Apply Filter</Button>
-              </FlexItem>
-            )}
+            <FlexItem>
+              <Pagination
+                ouiaId="filter-table-pagination"
+                perPage={pageSize}
+                page={page}
+                variant={PaginationVariant.top}
+                itemCount={totalItems}
+                onSetPage={onSetPage}
+                onPerPageSelect={onSetPageSize}
+                isCompact
+              />
+            </FlexItem>
           </Flex>
-        )}
-        <Flex
-          alignSelf={{ default: 'alignSelfFlexEnd' }}
-          direction={{ default: 'column' }}
-          align={{ default: 'alignRight' }}
-        >
-          <FlexItem>
-            <Pagination
-              perPage={pagination.pageSize}
-              page={pagination.page}
-              variant={PaginationVariant.top}
-              itemCount={pagination.totalItems}
-              onSetPage={onSetPage}
-              onPerPageSelect={onSetPageSize}
-              isCompact
-            />
-          </FlexItem>
-        </Flex>
-      </Flex>
-      {Object.keys(activeFilters).length > 0 && (
-        <Flex style={{ marginTop: '1rem' }}>
-          <Flex>
-            <FlexItem>Active filters</FlexItem>
-          </Flex>
-          <Flex grow={{ default: 'grow' }}>
-            {Object.keys(activeFilters).map((key) => (
-              <FlexItem spacer={{ default: 'spacerXs' }} key={key}>
-                {!hideFilters.includes(key) && (
-                  <ChipGroup categoryName={key}>
-                    <Chip
-                      badge={
-                        <Badge isRead={true}>{activeFilters[key]['op']}</Badge>
-                      }
-                      onClick={() => onRemoveFilter(key)}
-                    >
-                      {typeof activeFilters[key] === 'object' && (
-                        <React.Fragment>
-                          {activeFilters[key]['val']}
-                        </React.Fragment>
-                      )}
-                      {typeof activeFilters[key] !== 'object' &&
-                        activeFilters[key]}
-                    </Chip>
-                  </ChipGroup>
-                )}
-              </FlexItem>
-            ))}
-          </Flex>
-          {onApplyReport && (
-            <Flex>
-              <FlexItem style={{ marginLeft: '0.75em' }}>
-                <Button onClick={onApplyReport} variant="secondary">
-                  Use Active Filters in Report
-                </Button>
-              </FlexItem>
-            </Flex>
-          )}
-        </Flex>
+          <Table
+            ouiaId="filter-table-table"
+            cells={columns}
+            rows={fetching ? [getSpinnerRow(columns.length || 1)] : rows}
+            actions={actions}
+            aria-label="List"
+            canSelectAll={canSelectAll}
+            onCollapse={onCollapse}
+            onSelect={onRowSelect}
+            variant={variant}
+          >
+            <TableHeader />
+            <TableBody />
+          </Table>
+          <Pagination
+            widgetId="pagination-options-menu-bottom"
+            perPage={pageSize}
+            page={page}
+            variant={PaginationVariant.top}
+            itemCount={totalItems}
+            dropDirection="up"
+            onSetPage={onSetPage}
+            onPerPageSelect={onSetPageSize}
+            style={{ marginTop: '1rem' }}
+          />
+        </CardBody>
       )}
-      <Table
-        cells={columns}
-        rows={rows}
-        actions={actions}
-        aria-label="List"
-        canSelectAll={canSelectAll}
-        onCollapse={onCollapse}
-        onSelect={onRowSelect}
-        variant={variant}
-      >
-        <TableHeader />
-        <TableBody />
-      </Table>
-      {isEmpty && <TableEmptyState onClearFilters={onClearFilters} />}
-      {isError && <TableErrorState onClearFilters={onClearFilters} />}
-      <Pagination
-        widgetId="pagination-options-menu-bottom"
-        perPage={pagination.pageSize}
-        page={pagination.page}
-        variant={PaginationVariant.top}
-        itemCount={pagination.totalItems}
-        dropDirection="up"
-        onSetPage={onSetPage}
-        onPerPageSelect={onSetPageSize}
-        style={{ marginTop: '1rem' }}
-      />
-    </React.Fragment>
+      {!rows.length && !isError && !fetching && (
+        <CardBody key="empty-table">
+          <TableEmptyState onClearFilters={onClearFilters} />
+        </CardBody>
+      )}
+      {isError && (
+        <CardBody key="error-table">
+          <TableErrorState onClearFilters={onClearFilters} />
+        </CardBody>
+      )}
+      {footerChildren && <CardFooter key="footer">{footerChildren}</CardFooter>}
+    </Card>
   );
 };
 
@@ -152,22 +112,22 @@ FilterTable.propTypes = {
   columns: PropTypes.array,
   rows: PropTypes.array,
   actions: PropTypes.array,
-  filters: PropTypes.array,
-  activeFilters: PropTypes.object,
-  hideFilters: PropTypes.array,
-  pagination: PropTypes.object,
-  isEmpty: PropTypes.bool,
+  filters: PropTypes.node,
   isError: PropTypes.bool,
   canSelectAll: PropTypes.bool,
-  onApplyFilter: PropTypes.func,
   onCollapse: PropTypes.func,
-  onRemoveFilter: PropTypes.func,
   onClearFilters: PropTypes.func,
-  onApplyReport: PropTypes.func,
   onSetPage: PropTypes.func,
   onSetPageSize: PropTypes.func,
   onRowSelect: PropTypes.func,
   variant: PropTypes.node,
+  footerChildren: PropTypes.node,
+  headerChildren: PropTypes.node,
+  cardClass: PropTypes.string,
+  fetching: PropTypes.bool,
+  page: PropTypes.number,
+  pageSize: PropTypes.number,
+  totalItems: PropTypes.number,
 };
 
 export default FilterTable;

@@ -3,8 +3,6 @@ import { ToastContainer } from 'react-toastify';
 
 import {
   Button,
-  Card,
-  CardBody,
   ClipboardCopy,
   Flex,
   FlexItem,
@@ -17,7 +15,6 @@ import { PlusCircleIcon } from '@patternfly/react-icons';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { getSpinnerRow } from '../../utilities';
 import FilterTable from '../../components/filtertable';
 import AddTokenModal from '../../components/add-token-modal';
 import DeleteModal from '../../components/delete-modal';
@@ -120,31 +117,22 @@ const UserTokens = () => {
         </Flex>
       </PageSection>
       <PageSection>
-        <Card>
-          <CardBody className="pf-u-p-0">
-            <FilterTable
-              columns={COLUMNS}
-              rows={
-                !fetching
-                  ? tokens.map((t) => tokenToRow(t))
-                  : [getSpinnerRow(4)]
-              }
-              pagination={{
-                pageSize: pageSize,
-                page: page,
-                totalItems: totalItems,
-              }}
-              isEmpty={!fetching && tokens.length === 0}
-              isError={isError}
-              onSetPage={(_, value) => {
-                setPage(value);
-              }}
-              onSetPageSize={(_, value) => {
-                setPageSize(value);
-              }}
-            />
-          </CardBody>
-        </Card>
+        <FilterTable
+          columns={COLUMNS}
+          rows={tokens?.map((t) => tokenToRow(t))}
+          pageSize={pageSize}
+          page={page}
+          totalItems={totalItems}
+          isError={isError}
+          onSetPage={(_, value) => {
+            setPage(value);
+          }}
+          onSetPageSize={(_, newPageSize, newPage) => {
+            setPageSize(newPageSize);
+            setPage(newPage);
+          }}
+          fetching={fetching}
+        />
       </PageSection>
       <AddTokenModal
         isOpen={isAddTokenOpen}

@@ -131,3 +131,29 @@ export const CLASSIFICATION = {
 export const HEATMAP_MAX_BUILDS = 40;
 
 export const THEME_KEY = 'theme';
+
+export const WEEKS = {
+  '1 Week': 0.25,
+  '2 Weeks': 0.5,
+  '1 Month': 1.0,
+  '2 Months': 2.0,
+  '3 Months': 3.0,
+  '5 Months': 5.0,
+};
+
+export const RESULT_STATES = {
+  passed: 'passes',
+  failed: 'failures',
+  error: 'errors',
+  skipped: 'skips',
+  xfailed: 'xfailures',
+  xpassed: 'xpasses',
+};
+
+export const RUN_RESULTS_COLUMNS = [
+  'Test',
+  'Result',
+  'Duration',
+  'Run',
+  'Started',
+];

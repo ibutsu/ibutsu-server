@@ -12,7 +12,7 @@ import { HEATMAP_MAX_BUILDS } from '../constants';
 import { IbutsuContext } from '../services/context';
 import ParamDropdown from '../components/param-dropdown';
 import { useSearchParams } from 'react-router-dom';
-import { useTabHook } from '../components/tabHook';
+import { useTabHook } from '../components/hooks/useTab';
 
 const DEFAULT_BAR = 8;
 

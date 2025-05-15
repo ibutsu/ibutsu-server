@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Card,
-  CardHeader,
-  CardBody,
   Checkbox,
   Flex,
   FlexItem,
@@ -19,18 +16,16 @@ import { TableVariant, expandable } from '@patternfly/react-table';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import {
-  buildParams,
-  toAPIFilter,
-  getSpinnerRow,
-  resultToTestHistoryRow,
-} from '../utilities';
+import { resultToTestHistoryRow, filtersToAPIParams } from '../utilities';
+import { WEEKS, RESULT_STATES } from '../constants';
 
 import FilterTable from './filtertable';
 
 import RunSummary from './runsummary';
 import LastPassed from './last-passed';
 import ResultView from './result';
+import useTableFilters from './hooks/useTableFilters';
+import ActiveFilters from './active-filters';
 
 const COLUMNS = [
   {
@@ -43,349 +38,374 @@ const COLUMNS = [
   'Start Time',
 ];
 
-const WEEKS = {
-  '1 Week': 0.25,
-  '2 Weeks': 0.5,
-  '1 Month': 1.0,
-  '2 Months': 2.0,
-  '3 Months': 3.0,
-  '5 Months': 5.0,
-};
-
-const RESULT_STATES = {
-  passed: 'passes',
-  failed: 'failures',
-  error: 'errors',
-  skipped: 'skips',
-  xfailed: 'xfailures',
-  xpassed: 'xpasses',
-};
-
 // Month is considered to be 30 days, and there are 86400*1000 ms in a day
 const millisecondsInMonth = 30 * 86400 * 1000;
 
-const TestHistoryTable = ({ comparisonResults, filters, testResult }) => {
-  const [rows, setRows] = useState([getSpinnerRow(5)]);
+const TestHistoryTable = ({ comparisonResults, testResult }) => {
+  const [rows, setRows] = useState([]);
+
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [isEmpty, setIsEmpty] = useState(false);
+
   const [isError, setIsError] = useState(false);
+  const [fetching, setFetching] = useState(true);
+
   const [isTimeRangeSelectOpen, setTimeRangeOpen] = useState(false);
   const [selectedTimeRange, setTimeRange] = useState('1 Week');
   const [onlyFailures, setOnlyFailures] = useState(false);
   const [historySummary, setHistorySummary] = useState();
-  const [filtersState, setFiltersState] = useState({});
 
-  useEffect(() => {
-    const env_filter = {};
-    if (testResult?.env) {
-      env_filter['env'] = {
-        op: 'eq',
-        val: testResult.env,
-      };
-    }
-    const time_filter = {};
-    if (testResult?.start_time) {
-      // default to filter only from 1 weeks ago to the most test's start_time.
-      time_filter['start_time'] = {
-        op: 'gt',
-        val: new Date(
-          new Date(testResult?.start_time).getTime() -
-            WEEKS['1 Week'] * millisecondsInMonth,
-        ).toISOString(),
-      };
-    }
-    setFiltersState({
-      ...filters,
-      result: {
-        op: 'in',
-        val: 'passed;skipped;failed;error;xpassed;xfailed',
-      },
-      test_id: {
-        op: 'eq',
-        val: testResult?.test_id,
-      },
-      component: {
-        op: 'eq',
-        val: testResult?.component,
-      },
-      ...time_filter,
-      ...env_filter,
+  const filtersToHide = useRef(['project_id', 'result']); // prevent rerenders with ref
+
+  const { activeFilters, setActiveFilters, updateFilters, onRemoveFilter } =
+    useTableFilters({
+      hideFilters: filtersToHide.current,
+      blockRemove: ['result', 'test_id'],
     });
-  }, [testResult, filters]);
 
-  const onCollapse = (_, rowIndex, isOpen) => {
-    // lazy-load the result view so we don't have to make a bunch of artifact requests
-    // TODO with ResultView moving tab rendering and artifact fetching into ArtifactTab, this may not be necessary anymore
-    setRows(
-      rows.map((row, index) => {
-        if (index === rowIndex + 1) {
-          return {
-            ...row,
-            cells: [
-              {
-                title: (
-                  <ResultView
-                    defaultTab="summary"
-                    hideTestHistory={true}
-                    testResult={rows[rowIndex].result}
-                    skipHash={true}
-                  />
-                ),
-              },
-            ],
-          };
-        } else if (index === rowIndex) {
-          return {
-            ...row,
-            isOpen: isOpen,
-          };
-        } else {
-          return row;
-        }
-      }),
-    );
-  };
+  // TODO ACTIVEFILTERS IS AN ARRAY NOW
 
-  const updateFilters = useCallback(
-    (name, operator, value) => {
-      const updatedfilters = { ...filtersState };
-      if (value === null || value.length === 0) {
-        delete updatedfilters[name];
-      } else {
-        updatedfilters[name] = { op: operator, val: value };
-      }
-      setFiltersState(updatedfilters);
-      setPage(1);
-    },
-    [filtersState],
-  );
+  // useEffect(() => {
+  //   if (testResult) {
+  //     const envFilter = testResult?.env
+  //       ? {
+  //           field: 'env',
+  //           operator: 'eq',
+  //           value: testResult.env,
+  //         }
+  //       : {};
 
-  const setFilter = useCallback(
-    (field, value) => {
-      // maybe process values array to string format here instead of expecting caller to do it?
-      const operator = value.includes(';') ? 'in' : 'eq';
-      updateFilters(field, operator, value);
-    },
-    [updateFilters],
-  );
+  //     // default to filter only from 1 weeks ago to the most test's start_time.
 
-  useEffect(() => {
-    if (comparisonResults !== undefined) {
-      // setResults(comparisonResultsState)
-      setRows(
-        comparisonResults
-          .map((result, index) =>
-            resultToTestHistoryRow(result, index, setFilter),
-          )
-          .flat(),
-      );
-    } else {
-      setRows([getSpinnerRow(4)]);
-      setIsEmpty(false);
-      setIsError(false);
-      const params = buildParams(filtersState);
-      params['filter'] = toAPIFilter(filtersState);
-      params['pageSize'] = pageSize;
-      params['page'] = page;
-      params['estimate'] = 'true';
+  //     const timeFilter = testResult?.start_time
+  //       ? {
+  //           field: 'start_time',
+  //           operator: 'gt',
+  //           value: new Date(
+  //             new Date(testResult?.start_time).getTime() -
+  //               WEEKS['1 Week'] * millisecondsInMonth,
+  //           ).toISOString(),
+  //         }
+  //       : {};
 
-      setRows([['Loading...', '', '', '', '']]);
-      HttpClient.get([Settings.serverUrl, 'result'], params)
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          // setResults(data.results);
-          setRows(
-            data.results
-              .map((result, index) =>
-                resultToTestHistoryRow(result, index, setFilter),
-              )
-              .flat(),
-          );
-          setPage(data.pagination.page);
-          setPageSize(data.pagination.pageSize);
-          // setTotalPages(data.pagination.totalPages)
-          setTotalItems(data.pagination.totalItems);
-          setIsEmpty(data.pagination.totalItems === 0);
-        })
-        .catch((error) => {
-          console.error('Error fetching result data:', error);
-          setRows([]);
-          setIsEmpty(false);
-          setIsError(false);
-        });
-    }
-  }, [
-    page,
-    pageSize,
-    historySummary,
-    comparisonResults,
-    setFilter,
-    filtersState,
-  ]);
+  //     setActiveFilters([
+  //       {
+  //         field: 'result',
+  //         operator: 'in',
+  //         value: 'passed;skipped;failed;error;xpassed;xfailed',
+  //       },
+  //       {
+  //         field: 'test_id',
+  //         operator: 'eq',
+  //         value: testResult?.test_id,
+  //       },
+  //       {
+  //         field: 'component',
+  //         operator: 'eq',
+  //         value: testResult?.component,
+  //       },
+  //       timeFilter,
+  //       envFilter,
+  //       ...activeFilters.filter(
+  //         (f) =>
+  //           !['result', 'test_id', 'component', 'start_time', 'env'].includes(
+  //             f.field,
+  //           ),
+  //       ),
+  //     ]);
+  //   }
+  // }, [activeFilters, setActiveFilters, testResult]);
 
-  const removeFilter = (id) => {
-    if (id !== 'result' && id !== 'test_id') {
-      // Don't allow removal of error/failure filter
-      updateFilters(id, null, null);
-    }
-  };
+  // load individual result views on collapse to delay fetching artifacts
+  // const onCollapse = (_, rowIndex, isOpen) => {
+  //   setRows(
+  //     rows.map((row, index) => {
+  //       if (index === rowIndex + 1) {
+  //         return {
+  //           ...row,
+  //           cells: [
+  //             {
+  //               title: (
+  //                 <ResultView
+  //                   defaultTab="summary"
+  //                   hideTestHistory={true}
+  //                   testResult={rows[rowIndex].result}
+  //                   skipHash={true}
+  //                 />
+  //               ),
+  //             },
+  //           ],
+  //         };
+  //       } else if (index === rowIndex) {
+  //         return {
+  //           ...row,
+  //           isOpen: isOpen,
+  //         };
+  //       } else {
+  //         return row;
+  //       }
+  //     }),
+  //   );
+  // };
 
-  useEffect(() => {
-    // get the passed/failed/etc test summary
-    if (JSON.stringify(filtersState) !== '{}') {
-      const historyFilters = { ...filtersState };
-      // disregard result filter (we want all results)
-      delete historyFilters['result'];
-      const api_filter = toAPIFilter(historyFilters).join();
+  // fetch result data with active filters
+  // useEffect(() => {
+  //   const getResults = async () => {
+  //     setIsError(false);
+  //     setFetching(true);
+  //     const apiParams = {
+  //       page: page,
+  //       pageSize: pageSize,
+  //       estimate: true,
+  //       filter: filtersToAPIParams(activeFilters),
+  //     };
+  //     console.log('historyEffect, fetching: ', apiParams);
 
-      const summary = {
-        passes: 0,
-        failures: 0,
-        errors: 0,
-        skips: 0,
-        xfailures: 0,
-        xpasses: 0,
-      };
+  //     try {
+  //       const response = await HttpClient.get(
+  //         [Settings.serverUrl, 'result'],
+  //         apiParams,
+  //       );
+  //       const data = await HttpClient.handleResponse(response);
+  //       // setResults(data.results);
+  //       setRows(
+  //         data.results
+  //           .map((result, index) =>
+  //             resultToTestHistoryRow(result, index, updateFilters),
+  //           )
+  //           .flat(),
+  //       );
+  //       setPage(data.pagination.page);
+  //       setPageSize(data.pagination.pageSize);
+  //       setTotalItems(data.pagination.totalItems);
+  //       setFetching(false);
+  //     } catch (error) {
+  //       console.error('Error fetching result data:', error);
+  //       setRows([]);
+  //       setIsError(false);
+  //       setFetching(false);
+  //     }
+  //   };
+  //   if (comparisonResults !== undefined) {
+  //     setRows(
+  //       comparisonResults
+  //         .map((result, index) =>
+  //           resultToTestHistoryRow(result, index, updateFilters),
+  //         )
+  //         .flat(),
+  //     );
+  //   } else {
+  //     getResults();
+  //   }
+  // }, [
+  //   page,
+  //   pageSize,
+  //   historySummary,
+  //   comparisonResults,
+  //   activeFilters,
+  //   updateFilters,
+  // ]);
 
-      HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], {
-        group_field: 'result',
-        additional_filters: api_filter,
-      })
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          data.forEach((item) => {
-            summary[RESULT_STATES[item['_id']]] = item['count'];
-          });
-          setHistorySummary(summary);
-        });
-    }
-  }, [filtersState]);
+  // Compose result summary from all results
+  // useEffect(() => {
+  //   if (activeFilters?.length) {
+  //     const summary = {
+  //       passes: 0,
+  //       failures: 0,
+  //       errors: 0,
+  //       skips: 0,
+  //       xfailures: 0,
+  //       xpasses: 0,
+  //     };
 
-  const onFailuresCheck = (checked) => {
-    setFiltersState({
-      ...filtersState,
-      result: {
-        ...filtersState['result'],
-        val:
-          'failed;error' +
-          (checked ? ';skipped;xfailed' : ';skipped;xfailed;xpassed;passed'),
-      },
-    });
-    setOnlyFailures(checked);
-  };
+  //     const resultAggFetch = async () => {
+  //       try {
+  //         const apiParams = {
+  //           group_field: 'result',
+  //           additional_filters: filtersToAPIParams(activeFilters)
+  //             .filter((filter) => {
+  //               filter.field !== 'result'; // drop result filter to get all for summary
+  //             })
+  //             .join(),
+  //         };
+  //         const response = await HttpClient.get(
+  //           [Settings.serverUrl, 'widget', 'result-aggregator'],
+  //           apiParams,
+  //         );
+  //         const data = await HttpClient.handleResponse(response);
+  //         data.forEach((item) => {
+  //           summary[RESULT_STATES[item['_id']]] = item['count'];
+  //         });
+  //         setHistorySummary(summary);
+  //       } catch (error) {
+  //         console.error(error);
+  //       }
+  //     };
 
-  const onTimeRangeSelect = (_, selection) => {
-    if (testResult?.start_time) {
-      const startTime = new Date(testResult?.start_time);
-      const selectionCoefficient = WEEKS[selection];
-      const timeRange = new Date(
-        startTime.getTime() - selectionCoefficient * millisecondsInMonth,
-      );
-      setFiltersState({
-        ...filtersState,
-        ['start_time']: { op: 'gt', val: timeRange.toISOString() },
-      });
-      setTimeRangeOpen(false);
-      setTimeRange(selection);
-    }
-  };
-  const onTimeRangeToggleClick = () => {
-    setTimeRangeOpen(!isTimeRangeSelectOpen);
-  };
+  //     resultAggFetch();
+  //   }
+  // }, [activeFilters]);
+
+  // TODO rework for list of filters
+
+  // const onFailuresCheck = useCallback(
+  //   (checked) => {
+  //     setActiveFilters({
+  //       ...activeFilters,
+  //       result: {
+  //         ...activeFilters['result'], // keep the operator, replace val
+  //         val:
+  //           'failed;error' +
+  //           (checked ? ';skipped;xfailed' : ';skipped;xfailed;xpassed;passed'),
+  //       },
+  //     });
+  //     setOnlyFailures(checked);
+  //   },
+  //   [activeFilters, setActiveFilters],
+  // );
+
+  // const onTimeRangeSelect = useCallback(
+  //   (_, selection) => {
+  //     if (testResult?.start_time) {
+  //       const startTime = new Date(testResult?.start_time);
+  //       const selectionCoefficient = WEEKS[selection];
+  //       const timeRange = new Date(
+  //         startTime.getTime() - selectionCoefficient * millisecondsInMonth,
+  //       );
+  //       setActiveFilters({
+  //         ...activeFilters,
+  //         ['start_time']: { op: 'gt', val: timeRange.toISOString() },
+  //       });
+  //       setTimeRangeOpen(false);
+  //       setTimeRange(selection);
+  //     }
+  //   },
+  //   [activeFilters, setActiveFilters, testResult?.start_time],
+  // );
+
+  // const onTimeRangeToggleClick = useCallback(() => {
+  //   setTimeRangeOpen(!isTimeRangeSelectOpen);
+  // }, [isTimeRangeSelectOpen, setTimeRangeOpen]);
+
+  // const historyHeader = useMemo(() => {
+  //   return (
+  //     <Flex style={{ width: '100%' }}>
+  //       <FlexItem grow={{ default: 'grow' }}>
+  //         <TextContent>
+  //           <Title headingLevel="h2">Test History</Title>
+  //         </TextContent>
+  //       </FlexItem>
+  //       <FlexItem>
+  //         <TextContent>
+  //           <Checkbox
+  //             id="only-failures"
+  //             label="Only show failures/errors"
+  //             isChecked={onlyFailures}
+  //             aria-label="only-failures-checkbox"
+  //             onChange={() => {}}
+  //           />
+  //         </TextContent>
+  //       </FlexItem>
+  //       <FlexItem spacer={{ sm: 'spacerSm' }}>
+  //         <TextContent>Time range:</TextContent>
+  //       </FlexItem>
+  //       <FlexItem>
+  //         <Select
+  //           id="single-select"
+  //           isOpen={isTimeRangeSelectOpen}
+  //           selected={selectedTimeRange}
+  //           onSelect={onTimeRangeSelect}
+  //           onOpenChange={(isTimeRangeSelectOpen) =>
+  //             setTimeRangeOpen(isTimeRangeSelectOpen)
+  //           }
+  //           toggle={(toggleRef) => (
+  //             <MenuToggle
+  //               ref={toggleRef}
+  //               onClick={onTimeRangeToggleClick}
+  //               isExpanded={isTimeRangeSelectOpen}
+  //             >
+  //               {selectedTimeRange}
+  //             </MenuToggle>
+  //           )}
+  //           shouldFocusToggleOnSelect
+  //         >
+  //           <SelectList>
+  //             {Object.keys(WEEKS).map((key) => (
+  //               <SelectOption key={key} value={key}>
+  //                 {key}
+  //               </SelectOption>
+  //             ))}
+  //           </SelectList>
+  //         </Select>
+  //       </FlexItem>
+  //     </Flex>
+  //   );
+  // }, [
+  //   isTimeRangeSelectOpen,
+  //   onTimeRangeSelect,
+  //   onTimeRangeToggleClick,
+  //   onlyFailures,
+  //   selectedTimeRange,
+  // ]);
+
+  // const filterComponents = useMemo(() => {
+  //   return (
+  //     <Flex>
+  //       <FlexItem>
+  //         <Text key="summary" component="h4">
+  //           Summary:&nbsp;
+  //           {historySummary && <RunSummary summary={historySummary} />}
+  //         </Text>
+  //       </FlexItem>
+  //       <FlexItem>
+  //         <Text key="last-passed" component="h4">
+  //           Last passed:&nbsp;
+  //           <LastPassed filters={activeFilters} />
+  //         </Text>
+  //       </FlexItem>
+  //       <FlexItem>
+  //         <ActiveFilters
+  //           key="active-filters"
+  //           activeFilters={activeFilters}
+  //           onRemoveFilter={onRemoveFilter}
+  //           hideFilters={filtersToHide.current}
+  //         />
+  //       </FlexItem>
+  //     </Flex>
+  //   );
+  // }, []);
+
+  // const pagination = useMemo(
+  //   () => ({
+  //
+  //   }),
+  //   [pageSize, page, totalItems],
+  // );
 
   return (
-    <Card className="pf-u-mt-lg">
-      <CardHeader>
-        <Flex style={{ width: '100%' }}>
-          <FlexItem grow={{ default: 'grow' }}>
-            <TextContent>
-              <Title headingLevel="h2">Test History</Title>
-            </TextContent>
-          </FlexItem>
-          <FlexItem>
-            <TextContent>
-              <Checkbox
-                id="only-failures"
-                label="Only show failures/errors"
-                isChecked={onlyFailures}
-                aria-label="only-failures-checkbox"
-                onChange={(_, checked) => onFailuresCheck(checked)}
-              />
-            </TextContent>
-          </FlexItem>
-          <FlexItem spacer={{ sm: 'spacerSm' }}>
-            <TextContent>Time range:</TextContent>
-          </FlexItem>
-          <FlexItem>
-            <Select
-              id="single-select"
-              isOpen={isTimeRangeSelectOpen}
-              selected={selectedTimeRange}
-              onSelect={onTimeRangeSelect}
-              onOpenChange={(isTimeRangeSelectOpen) =>
-                setTimeRangeOpen(isTimeRangeSelectOpen)
-              }
-              toggle={(toggleRef) => (
-                <MenuToggle
-                  ref={toggleRef}
-                  onClick={onTimeRangeToggleClick}
-                  isExpanded={isTimeRangeSelectOpen}
-                >
-                  {selectedTimeRange}
-                </MenuToggle>
-              )}
-              shouldFocusToggleOnSelect
-            >
-              <SelectList>
-                {Object.keys(WEEKS).map((key) => (
-                  <SelectOption key={key} value={key}>
-                    {key}
-                  </SelectOption>
-                ))}
-              </SelectList>
-            </Select>
-          </FlexItem>
-        </Flex>
-      </CardHeader>
-      <CardBody>
-        <FilterTable
-          columns={COLUMNS}
-          rows={rows}
-          pagination={{
-            pageSize: pageSize,
-            page: page,
-            totalItems: totalItems,
-          }}
-          isEmpty={isEmpty}
-          isError={isError}
-          onCollapse={onCollapse}
-          onSetPage={(_, pageNumber) => setPage(pageNumber)}
-          onSetPageSize={(_, pageSizeValue) => setPageSize(pageSizeValue)}
-          canSelectAll={false}
-          variant={TableVariant.compact}
-          activeFilters={filtersState}
-          filters={[
-            <Text key="summary" component="h4">
-              Summary:&nbsp;
-              {historySummary && <RunSummary summary={historySummary} />}
-            </Text>,
-            <Text key="last-passed" component="h4">
-              Last passed:&nbsp;
-              <LastPassed filters={filtersState} />
-            </Text>,
-          ]}
-          onRemoveFilter={removeFilter}
-          hideFilters={['project_id', 'result', 'test_id', 'component']}
-        />
-      </CardBody>
-    </Card>
+    <FilterTable
+      fetching={fetching}
+      columns={COLUMNS}
+      rows={rows}
+      pageSize={pageSize}
+      page={page}
+      totalItems={totalItems}
+      isError={isError}
+      onSetPage={(_, pageNumber) => setPage(pageNumber)}
+      onSetPageSize={(_, newPageSize, newPage) => {
+        setPageSize(newPageSize);
+        setPage(newPage);
+      }}
+      canSelectAll={false}
+      variant={TableVariant.compact}
+      //filters={filterComponents}
+      cardClass="pf-u-mt-lg"
+    />
   );
 };
 
 TestHistoryTable.propTypes = {
-  filters: PropTypes.object,
   testResult: PropTypes.object,
   comparisonResults: PropTypes.array,
 };

@@ -2,12 +2,11 @@
 // and should not be implemented as a view type widget, but as a normal component
 // The class was converted to functional react, but needs additional work.
 // It's not in use in downstream environments at the moment
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Card,
   CardBody,
-  CardHeader,
   Flex,
   FlexItem,
   PageSection,
@@ -83,7 +82,7 @@ const AccessibilityAnalysisView = ({ view }) => {
 
   // const combo = parseFilter(pair[0]);
   // filters[combo['key']] = {
-  //   'op': combo['op'],
+  //   'operator': combo['op'],
   //   'val': pair[1]
   // };
 
@@ -272,6 +271,27 @@ const AccessibilityAnalysisView = ({ view }) => {
     ]);
   }, [run]);
 
+  const accessTableHeader = useMemo(() => {
+    <Flex style={{ width: '100%' }}>
+      <FlexItem grow={{ default: 'grow' }}>
+        <TextContent>
+          <Text component="h2" className="pf-v5-c-title pf-m-xl">
+            Test Results
+          </Text>
+        </TextContent>
+      </FlexItem>
+      <FlexItem>
+        <Link
+          to={`/results?run_id[eq]=${run?.id}`}
+          className="pf-v5-c-button pf-m-primary"
+          style={{ marginLeft: '2px' }}
+        >
+          See all results <ChevronRightIcon />
+        </Link>
+      </FlexItem>
+    </Flex>;
+  }, [run?.id]);
+
   return (
     <React.Fragment>
       <PageSection>
@@ -358,43 +378,21 @@ const AccessibilityAnalysisView = ({ view }) => {
             title={<TabTitle icon={<CatalogIcon />} text="Results List" />}
             style={{ backgroundColor: 'white' }}
           >
-            <Card className="pf-u-mt-lg">
-              <CardHeader>
-                <Flex style={{ width: '100%' }}>
-                  <FlexItem grow={{ default: 'grow' }}>
-                    <TextContent>
-                      <Text component="h2" className="pf-v5-c-title pf-m-xl">
-                        Test Results
-                      </Text>
-                    </TextContent>
-                  </FlexItem>
-                  <FlexItem>
-                    <Link
-                      to={`/results?run_id[eq]=${run?.id}`}
-                      className="pf-v5-c-button pf-m-primary"
-                      style={{ marginLeft: '2px' }}
-                    >
-                      See all results <ChevronRightIcon />
-                    </Link>
-                  </FlexItem>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <FilterTable
-                  columns={COLUMNS}
-                  rows={rows}
-                  pagination={{
-                    pageSize: pageSize,
-                    page: page,
-                    totalItems: totalItems,
-                  }}
-                  isEmpty={rows?.length === 0}
-                  isError={isError}
-                  onSetPage={(_, value) => setPage(value)}
-                  onSetPageSize={(_, value) => setPageSize(value)}
-                />
-              </CardBody>
-            </Card>
+            <FilterTable
+              columns={COLUMNS}
+              rows={rows}
+              pageSize={pageSize}
+              page={page}
+              totalItems={totalItems}
+              isError={isError}
+              onSetPage={(_, value) => setPage(value)}
+              onSetPageSize={(_, newPageSize, newPage) => {
+                setPageSize(newPageSize);
+                setPage(newPage);
+              }}
+              headerChildren={accessTableHeader}
+              cardClass="pf-u-mt-lg"
+            />
           </Tab>
           {artifactTabs}
         </Tabs>

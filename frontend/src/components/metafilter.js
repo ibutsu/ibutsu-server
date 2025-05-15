@@ -23,6 +23,8 @@ import { IbutsuContext } from '../services/context';
 
 // TODO Extend this to contain the filter handling functions, and better integrate filter state
 // with FilterTable. See https://github.com/ibutsu/ibutsu-server/issues/230
+
+// TODO use activeFilterHook
 const MetaFilter = ({
   setFilter,
   activeFilters,

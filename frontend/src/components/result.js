@@ -20,6 +20,7 @@ import {
   Label,
   Tabs,
   Tab,
+  Button,
 } from '@patternfly/react-core';
 import {
   InfoCircleIcon,
@@ -29,19 +30,19 @@ import {
 } from '@patternfly/react-icons';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import Linkify from 'react-linkify';
 
-import * as http from '../services/http';
+import { HttpClient } from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
 import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
-import { getIconForResult, round } from '../utilities';
+import { filtersToSearchParams, getIconForResult, round } from '../utilities';
 import TabTitle from './tabs';
 import TestHistoryTable from './test-history';
 import ArtifactTab from './artifact-tab';
 import { IbutsuContext } from '../services/context';
-import { useTabHook } from './tabHook';
+import { useTabHook } from './hooks/useTab';
 
 const ResultView = ({
   comparisonResults,
@@ -53,8 +54,8 @@ const ResultView = ({
   testResult,
   skipHash = false,
 }) => {
-  const context = useContext(IbutsuContext);
-  const { darkTheme } = context;
+  const { darkTheme } = useContext(IbutsuContext);
+  const { project_id } = useParams();
 
   // State
   const [artifacts, setArtifacts] = useState([]);
@@ -114,38 +115,112 @@ const ResultView = ({
 
   useEffect(() => {
     // Get artifacts when the test result changes
-    if (testResult) {
-      http.HttpClient.get([Settings.serverUrl, 'artifact'], {
-        resultId: testResult.id,
-      })
-        .then((response) => http.HttpClient.handleResponse(response))
-        .then((data) => {
-          setArtifacts(data['artifacts']);
-        })
-        .catch((error) => console.error(error));
-    } else {
-      setArtifacts([]);
+    const fetchArtifacts = async () => {
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'artifact'],
+          {
+            resultId: testResult.id,
+          },
+        );
+        const data = await HttpClient.handleResponse(response);
+        setArtifacts(data['artifacts']);
+      } catch (error) {
+        console.error('Error fetching artifacts:', error);
+      }
+    };
+
+    if (testResult && testResult.id) {
+      fetchArtifacts();
     }
   }, [testResult]);
 
-  let resultIcon = getIconForResult('pending');
-  let startTime = new Date();
-  let parameters = <div />;
-  let runLink = '';
-  if (testResult) {
-    resultIcon = getIconForResult(testResult.result);
-    startTime = new Date(testResult.start_time);
-    parameters = Object.keys(testResult.params).map((key) => (
-      <div key={key}>
-        {key} = {testResult.params[key]}
-      </div>
-    ));
-    runLink = (
+  const resultIcon = useMemo(() => {
+    return testResult?.result
+      ? getIconForResult(testResult.result)
+      : getIconForResult('pending');
+  }, [testResult]);
+
+  const runLink = useMemo(() => {
+    return testResult.run_id ? (
       <Link to={`../runs/${testResult.run_id}#summary`} relative="Path">
         {testResult.run_id}
       </Link>
+    ) : (
+      <Button disabled variant="link">
+        No run_id
+      </Button>
     );
-  }
+  }, [testResult]);
+
+  const componentLink = useMemo(() => {
+    const componentSearch = filtersToSearchParams([
+      {
+        field: 'component',
+        operator: 'eq',
+        value: testResult.component,
+      },
+    ]);
+    return testResult.component ? (
+      <Link
+        to={{
+          pathname: `/project/${project_id}/results`,
+          search: componentSearch,
+        }}
+      >
+        {testResult.component}
+      </Link>
+    ) : (
+      <Button disabled variant="link">
+        No component
+      </Button>
+    );
+  }, [testResult, project_id]);
+
+  const sourceLink = useMemo(() => {
+    const sourceSearch = filtersToSearchParams([
+      {
+        field: 'source',
+        operator: 'eq',
+        value: testResult.source,
+      },
+    ]);
+    return testResult.source ? (
+      <Link
+        to={{
+          pathname: `/project/${project_id}/results`,
+          search: sourceSearch,
+        }}
+        relative="Path"
+      >
+        {testResult.source}
+      </Link>
+    ) : (
+      <Button disabled variant="link">
+        No source
+      </Button>
+    );
+  }, [testResult, project_id]);
+
+  const resultParameters = useMemo(() => {
+    return testResult.params?.length ? (
+      Object.keys(testResult.params).map((key) => (
+        <div key={key}>
+          {key} = {testResult.params[key]}
+        </div>
+      ))
+    ) : (
+      <div />
+    );
+  }, [testResult]);
+
+  const startTime = useMemo(() => {
+    return testResult.start_time
+      ? new Date(testResult.start_time)
+      : testResult.startTime
+        ? new Date(testResult.startTime)
+        : new Date();
+  }, [testResult]);
 
   const testJson = useMemo(
     () => JSON.stringify(testResult, null, '\t'),
@@ -211,12 +286,7 @@ const ResultView = ({
                                 <strong>Component:</strong>
                               </DataListCell>,
                               <DataListCell key="component-data" width={4}>
-                                <Link
-                                  to={`../results?component[eq]=${testResult.component}`}
-                                  relative="Path"
-                                >
-                                  {testResult.component}
-                                </Link>
+                                {componentLink}
                               </DataListCell>,
                             ]}
                           />
@@ -634,18 +704,13 @@ const ResultView = ({
                               <strong>Source:</strong>
                             </DataListCell>,
                             <DataListCell key="source-data" width={4}>
-                              <Link
-                                to={`../results?source[eq]=${testResult.source}`}
-                                relative="Path"
-                              >
-                                {testResult.source}
-                              </Link>
+                              {sourceLink}
                             </DataListCell>,
                           ]}
                         />
                       </DataListItemRow>
                     </DataListItem>
-                    {parameters.length > 0 && (
+                    {resultParameters.length > 0 && (
                       <DataListItem aria-labelledby="params-label">
                         <DataListItemRow>
                           <DataListItemCells
@@ -654,7 +719,7 @@ const ResultView = ({
                                 <strong>Parameters:</strong>
                               </DataListCell>,
                               <DataListCell key="params-data" width={4}>
-                                {parameters}
+                                {resultParameters}
                               </DataListCell>,
                             ]}
                           />
