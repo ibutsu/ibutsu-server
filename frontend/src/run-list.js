@@ -531,8 +531,8 @@ const RunList = () => {
                   `/project/${params.project_id}/reports?${buildParams(filters).join('&')}`,
                 )
               }
-              onSetPage={setPage}
-              onSetPageSize={setPageSize}
+              onSetPage={(_, value) => setPage(value)}
+              onSetPageSize={(_, value) => setPageSize(value)}
               hideFilters={['project_id']}
             />
           </CardBody>
