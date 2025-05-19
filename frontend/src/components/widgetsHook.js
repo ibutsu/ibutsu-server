@@ -1,5 +1,5 @@
 // Assisted by watsonx Code Assistant
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useContext } from 'react';
 import { HttpClient } from '../services/http';
 import { KNOWN_WIDGETS } from '../constants';
 import { Settings } from '../settings';
@@ -10,12 +10,14 @@ import GenericAreaWidget from '../widgets/genericarea';
 import GenericBarWidget from '../widgets/genericbar';
 import ImportanceComponentWidget from '../widgets/importancecomponent';
 import ResultSummaryWidget from '../widgets/resultsummary';
+import { IbutsuContext } from '../services/context';
 
 export const useWidgets = ({
   dashboardId = null,
   editCallback = () => {},
   deleteCallback = () => {},
 }) => {
+  const { primaryObject } = useContext(IbutsuContext);
   const [widgets, setWidgets] = useState([]);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export const useWidgets = ({
         );
         const data = await HttpClient.handleResponse(response);
         data.widgets.forEach((widget) => {
-          widget.params['project'] = dashboardId;
+          widget.params['project'] = primaryObject.id;
         });
         setWidgets(data.widgets);
       } catch (error) {
@@ -38,7 +40,7 @@ export const useWidgets = ({
     if (dashboardId) {
       getWidgets();
     }
-  }, [dashboardId]);
+  }, [dashboardId, primaryObject]);
 
   const widgetComponents = useMemo(() => {
     return widgets?.map((widget) => {
