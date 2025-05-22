@@ -18,7 +18,6 @@ import usePagination from '../../components/hooks/usePagination';
 import FilterTable from '../../components/filtertable';
 
 const COLUMNS = Object.values(USER_COLUMNS);
-console.log('COLUMNS', COLUMNS);
 
 const UserList = () => {
   const [rows, setRows] = useState([]);
@@ -43,7 +42,6 @@ const UserList = () => {
       pageSize: pageSize,
       filter: filtersToAPIParams(activeFilters),
     };
-    console.log('Fetching users', apiParams);
 
     HttpClient.get([Settings.serverUrl, 'admin', 'user'], apiParams)
       .then((response) => HttpClient.handleResponse(response))
@@ -89,8 +87,6 @@ const UserList = () => {
   useEffect(() => {
     document.title = 'Users - Administration | Ibutsu';
   }, []);
-
-  console.log('UserList rows', rows);
 
   return (
     <React.Fragment>

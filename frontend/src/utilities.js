@@ -589,10 +589,6 @@ export const runToRow = (run, filterFunc) => {
 };
 
 export const userToRow = (user, setSelectedUser, setIsDeleteModalOpen) => {
-  if (!user) {
-    console.log('empty user?', user);
-    return;
-  }
   let userName = user.name;
   if (user.is_superadmin) {
     userName = `${user.name}`;
