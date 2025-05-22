@@ -588,10 +588,14 @@ export const runToRow = (run, filterFunc) => {
   };
 };
 
-export const userToRow = ({ user, setSelectedUser, setIsDeleteModalOpen }) => {
+export const userToRow = (user, setSelectedUser, setIsDeleteModalOpen) => {
+  if (!user) {
+    console.log('empty user?', user);
+    return;
+  }
   let userName = user.name;
   if (user.is_superadmin) {
-    userName = [user.name, ' '];
+    userName = `${user.name}`;
   }
   return {
     cells: [
@@ -661,21 +665,6 @@ export const userToRow = ({ user, setSelectedUser, setIsDeleteModalOpen }) => {
               <PencilAltIcon />
             </Button>
           </TableText>
-        ),
-      },
-      {
-        title: (
-          <Button
-            variant="primary"
-            ouiaId={`admin-users-edit-${user.id}`}
-            component={(props) => (
-              <Link {...props} to={`/admin/users/${user.id}`} />
-            )}
-            size="sm"
-            aria-label="Edit"
-          >
-            <PencilAltIcon />
-          </Button>
         ),
       },
       {

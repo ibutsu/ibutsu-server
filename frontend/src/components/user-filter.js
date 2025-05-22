@@ -10,7 +10,7 @@ import {
   TextInput,
 } from '@patternfly/react-core';
 import { SelectVariant } from '@patternfly/react-core/deprecated';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 
 import { STRING_USER_FIELDS, STRING_OPERATIONS } from '../constants';
 import PropTypes from 'prop-types';
@@ -32,31 +32,10 @@ const UserFilter = ({
   setIsFieldOpen,
   setIsOperationOpen,
   setFilterValue,
+  operationToggle,
+  fieldToggle,
+  filteredFieldOptions,
 }) => {
-  const userToggle = useCallback(
-    (toggleRef) => (
-      <MenuToggle
-        onClick={() => setIsFieldOpen(!isFieldOpen)}
-        isExpanded={isFieldOpen}
-        ref={toggleRef}
-      >
-        {selectedField}
-      </MenuToggle>
-    ),
-    [isFieldOpen, selectedField, setIsFieldOpen],
-  );
-  const operationToggle = useCallback(
-    (toggleRef) => (
-      <MenuToggle
-        onClick={() => setIsOperationOpen(!isOperationOpen)}
-        isExpanded={isOperationOpen}
-        ref={toggleRef}
-      >
-        {operationSelection}
-      </MenuToggle>
-    ),
-    [isOperationOpen, operationSelection, setIsOperationOpen],
-  );
   return (
     <Flex grow={{ default: 'grow' }} spaceItems={{ default: 'spaceItemsXs' }}>
       <Flex spaceItems={{ default: 'spaceItemsXs' }}>
@@ -68,11 +47,10 @@ const UserFilter = ({
             isOpen={isFieldOpen}
             selected={selectedField}
             onToggle={(_, change) => setIsFieldOpen(change)}
-            toggle={userToggle}
+            toggle={fieldToggle}
             onSelect={onFieldSelect}
-            defaultValue={DEFAULT_FIELD}
           >
-            {STRING_USER_FIELDS.map((option, index) => (
+            {filteredFieldOptions?.map((option, index) => (
               <SelectOption key={index} value={option}>
                 {option}
               </SelectOption>
@@ -136,6 +114,8 @@ UserFilter.propTypes = {
   setIsFieldOpen: PropTypes.func,
   setIsOperationOpen: PropTypes.func,
   setFilterValue: PropTypes.func,
+  fieldToggle: PropTypes.func,
+  filteredFieldOptions: PropTypes.array,
 };
 
 const useUserFilter = () => {
@@ -155,6 +135,9 @@ const useUserFilter = () => {
     isOperationOpen,
     setIsOperationOpen,
     applyFilter,
+    fieldToggle,
+    operationToggle,
+    filteredFieldOptions,
   } = useTableFilters({ fieldOptions: STRING_USER_FIELDS });
 
   useEffect(() => {
@@ -183,6 +166,9 @@ const useUserFilter = () => {
           setIsOperationOpen={setIsOperationOpen}
           filterValue={filterValue}
           setFilterValue={setFilterValue}
+          fieldToggle={fieldToggle}
+          operationToggle={operationToggle}
+          filteredFieldOptions={filteredFieldOptions}
         />
       </Flex>
       <Flex>

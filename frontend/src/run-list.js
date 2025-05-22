@@ -93,6 +93,8 @@ const RunList = () => {
     return <RunFilter hideFilters={HIDE} />;
   }, []);
 
+  console.log('RunList rows', rows);
+
   return (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>

@@ -11,17 +11,17 @@ import {
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { filtersToAPIParams, toAPIFilter, userToRow } from '../../utilities';
+import { filtersToAPIParams, userToRow } from '../../utilities';
 import useUserFilter from '../../components/user-filter';
 import { USER_COLUMNS } from '../../constants';
-import UserRow from '../../components/user-row';
 import usePagination from '../../components/hooks/usePagination';
 import FilterTable from '../../components/filtertable';
 
 const COLUMNS = Object.values(USER_COLUMNS);
+console.log('COLUMNS', COLUMNS);
 
 const UserList = () => {
-  const [users, setUsers] = useState([]);
+  const [rows, setRows] = useState([]);
   const [selectedUser, setSelectedUser] = useState();
 
   const { page, setPage, pageSize, setPageSize, totalItems, setTotalItems } =
@@ -48,20 +48,21 @@ const UserList = () => {
     HttpClient.get([Settings.serverUrl, 'admin', 'user'], apiParams)
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
-        if (data?.users?.length > 0) {
-          setUsers(data.users);
-          setPage(data.pagination.page.toString());
-          setPageSize(data.pagination.pageSize.toString());
-          setTotalItems(data.pagination.totalItems.toString());
-          setFetching(false);
-        } else {
-          setUsers([]);
-          setFetching(false);
-        }
+        setRows(
+          data.users
+            .map((user) =>
+              userToRow(user, setSelectedUser, setIsDeleteModalOpen),
+            )
+            .filter(Boolean),
+        );
+        setPage(data.pagination.page.toString());
+        setPageSize(data.pagination.pageSize.toString());
+        setTotalItems(data.pagination.totalItems.toString());
+        setFetching(false);
       })
       .catch((error) => {
         console.error('Error fetching users data:', error);
-        setUsers([]);
+        setRows([]);
         setIsError(true);
         setFetching(false);
       });
@@ -89,13 +90,8 @@ const UserList = () => {
     document.title = 'Users - Administration | Ibutsu';
   }, []);
 
-  const userRows = useMemo(() => {
-    return users.map((user) => {
-      return userToRow(user, setSelectedUser, setIsDeleteModalOpen);
-    });
-  }, [users]);
+  console.log('UserList rows', rows);
 
-  console.log('UserList userRows: ', userRows);
   return (
     <React.Fragment>
       <PageSection id="page" variant={PageSectionVariants.light}>
@@ -108,7 +104,7 @@ const UserList = () => {
       <PageSection>
         <FilterTable
           columns={COLUMNS}
-          rows={userRows}
+          rows={rows}
           filters={filterComponents}
           isError={isError}
           canSelectAll={false}
