@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
 import {
   Button,
@@ -22,16 +22,16 @@ import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
 import FilterTable from '../../components/filtertable';
 import EmptyObject from '../../components/empty-object';
-import useTableFilters from '../../components/hooks/useTableFilters';
+import usePagination from '../../components/hooks/usePagination';
+import { FilterContext } from '../../components/contexts/filterContext';
 
 const COLUMNS = ['Title', 'Name', 'Owner', ''];
 
 const ProjectList = () => {
   const [filterText, setFilterText] = useState('');
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalItems, setTotalItems] = useState(0);
+  const { page, setPage, pageSize, setPageSize, totalItems, setTotalItems } =
+    usePagination();
 
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
@@ -41,8 +41,7 @@ const ProjectList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const { activeFilters, setActiveFilters, activeFilterComponents } =
-    useTableFilters();
+  const { activeFilters, setActiveFilters } = useContext(FilterContext);
 
   const projectToRow = (project) => ({
     cells: [
@@ -118,8 +117,8 @@ const ProjectList = () => {
         setIsError(false);
         if (data?.projects) {
           setProjects(data.projects);
-          setPage(data.pagination.page);
-          setPageSize(data.pagination.pageSize);
+          setPage(data.pagination.page.toString());
+          setPageSize(data.pagination.pageSize.toString());
           setTotalItems(data.pagination.totalItems);
         } else {
           setProjects([]);
@@ -180,7 +179,7 @@ const ProjectList = () => {
             columns={COLUMNS}
             rows={filteredProjects?.map((p) => projectToRow(p))}
             activeFilters={activeFilters}
-            activeFilterComponents={activeFilterComponents}
+            //activeFilterComponents={activeFilterComponents}
             filters={[
               <TextInput
                 type="text"

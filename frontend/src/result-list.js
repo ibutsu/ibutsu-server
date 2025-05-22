@@ -62,8 +62,8 @@ const ResultList = () => {
         setRows(
           data.results.map((result) => resultToRow(result, updateFilters)),
         );
-        setPage(data.pagination.page);
-        setPageSize(data.pagination.pageSize);
+        setPage(data.pagination.page.toString());
+        setPageSize(data.pagination.pageSize.toString());
         setTotalItems(data.pagination.totalItems);
         setIsError(false);
         setFetching(false);

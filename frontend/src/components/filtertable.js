@@ -1,4 +1,4 @@
-import PropTypes from 'prop-types';
+import PropTypes, { bool } from 'prop-types';
 
 import {
   Card,
@@ -43,14 +43,14 @@ const FilterTable = ({
   // boolean for JSX control, if done fetching check the array length
   const populatedRows = fetching
     ? false // still fetching
-    : Array.isArray(rows)
+    : rows
       ? rows.length !== 0
       : false;
 
   return (
     <Card ouiaId="filter-table-card" className={cardClass}>
       {headerChildren ? <CardHeader>{headerChildren}</CardHeader> : null}
-      {filters ? filters : null}
+      {filters || null}
       {populatedRows && !isError && !fetching && (
         <CardBody key="table">
           <Flex
@@ -89,7 +89,7 @@ const FilterTable = ({
             widgetId="pagination-options-menu-bottom"
             perPage={pageSize}
             page={page}
-            variant={PaginationVariant.top}
+            variant={PaginationVariant.bottom}
             itemCount={totalItems}
             dropDirection="up"
             onSetPage={onSetPage}

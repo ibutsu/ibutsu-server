@@ -118,8 +118,8 @@ const Run = ({ defaultTab = 'summary' }) => {
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
         setRows(data.results.map((result) => resultToRow(result)));
-        setPage(data.pagination.page);
-        setPageSize(data.pagination.pageSize);
+        setPage(data.pagination.page.toString());
+        setPageSize(data.pagination.pageSize.toString());
         setTotalItems(data.pagination.totalItems);
         setFetching(false);
       })

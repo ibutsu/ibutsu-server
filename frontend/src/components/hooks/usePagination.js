@@ -3,8 +3,8 @@ import { useState, useEffect, useCallback } from 'react';
 
 import { useSearchParams } from 'react-router-dom';
 
-const DEFAULT_PAGE_SIZE = 20;
-const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = '20';
+const DEFAULT_PAGE = '1';
 
 const usePagination = ({ setParams = true }) => {
   const [searchParams, setSearchParams] = useSearchParams();

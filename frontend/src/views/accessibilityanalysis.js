@@ -239,8 +239,8 @@ const AccessibilityAnalysisView = ({ view }) => {
       .then((data) => {
         setResults(data.results);
         setRows(data.results.map((result) => resultToRow(result))); // TODO move to render
-        setPage(data.pagination.page);
-        setPageSize(data.pagination.pageSize);
+        setPage(data.pagination.page.toString());
+        setPageSize(data.pagination.pageSize.toString());
         setTotalItems(data.pagination.totalItems);
       })
       .catch((error) => {
@@ -272,24 +272,26 @@ const AccessibilityAnalysisView = ({ view }) => {
   }, [run]);
 
   const accessTableHeader = useMemo(() => {
-    <Flex style={{ width: '100%' }}>
-      <FlexItem grow={{ default: 'grow' }}>
-        <TextContent>
-          <Text component="h2" className="pf-v5-c-title pf-m-xl">
-            Test Results
-          </Text>
-        </TextContent>
-      </FlexItem>
-      <FlexItem>
-        <Link
-          to={`/results?run_id[eq]=${run?.id}`}
-          className="pf-v5-c-button pf-m-primary"
-          style={{ marginLeft: '2px' }}
-        >
-          See all results <ChevronRightIcon />
-        </Link>
-      </FlexItem>
-    </Flex>;
+    return (
+      <Flex style={{ width: '100%' }}>
+        <FlexItem grow={{ default: 'grow' }}>
+          <TextContent>
+            <Text component="h2" className="pf-v5-c-title pf-m-xl">
+              Test Results
+            </Text>
+          </TextContent>
+        </FlexItem>
+        <FlexItem>
+          <Link
+            to={`/results?run_id[eq]=${run?.id}`}
+            className="pf-v5-c-button pf-m-primary"
+            style={{ marginLeft: '2px' }}
+          >
+            See all results <ChevronRightIcon />
+          </Link>
+        </FlexItem>
+      </Flex>
+    );
   }, [run?.id]);
 
   return (

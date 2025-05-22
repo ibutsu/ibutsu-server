@@ -150,8 +150,8 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
             .flat(),
         );
 
-        setPage(data.pagination.page);
-        setPageSize(data.pagination.pageSize);
+        setPage(data.pagination.page.toString());
+        setPageSize(data.pagination.pageSize.toString());
         setTotalItems(data.pagination.totalItems);
         setFetching(false);
       } catch (error) {

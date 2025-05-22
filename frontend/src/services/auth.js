@@ -152,6 +152,7 @@ export class AuthService {
         return json.is_superadmin;
       } catch (error) {
         console.error('Error checking admin for user: ', error);
+        return Promise.resolve(false);
       }
     };
     return fetchUser();

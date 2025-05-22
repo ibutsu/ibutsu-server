@@ -1,5 +1,5 @@
 import { Label, Button } from '@patternfly/react-core';
-import { Td, Tr, TableText } from '@patternfly/react-table';
+import { TableText } from '@patternfly/react-table';
 import {
   BanIcon,
   CheckIcon,
@@ -9,61 +9,86 @@ import {
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
-import { USER_COLUMNS } from '../constants';
 import PropTypes from 'prop-types';
+import React from 'react';
 
 const UserRow = ({ user, setSelectedUser, setIsDeleteModalOpen }) => {
   let userName = user.name;
   if (user.is_superadmin) {
     userName = [user.name, ' '];
   }
-  return (
-    <Tr key={user.id}>
-      <Td dataLabel={USER_COLUMNS.name}>{userName} </Td>
-      <Td dataLabel={USER_COLUMNS.email}>{user.email}</Td>
-      <Td dataLabel={USER_COLUMNS.projects} modifier="wrap">
-        {user.projects
+  return {
+    cells: [
+      {
+        title: userName,
+      },
+      {
+        title: user.email,
+      },
+      {
+        title: user.projects
           ? user.projects.map((project) => project.title).join(', ')
-          : ''}
-      </Td>
-      <Td dataLabel={USER_COLUMNS.status}>
-        {user.is_active ? (
-          <Label
-            key="active"
-            className="active"
-            variant="filled"
-            color="green"
-            icon={<CheckIcon />}
-          >
-            Active
-          </Label>
-        ) : (
-          <Label
-            key="inactive"
-            className="active"
-            variant="filled"
-            color="red"
-            icon={<BanIcon />}
-          >
-            Inactive
-          </Label>
-        )}
-        {user.is_superadmin ? (
-          <Label
-            key="admin"
-            className="super-admin-label"
-            variant="outline"
-            color="orange"
-            icon={<LinuxIcon />}
-          >
-            Administrator
-          </Label>
-        ) : (
-          ''
-        )}
-      </Td>
-      <Td dataLabel={USER_COLUMNS.edit}>
-        <TableText>
+          : '',
+      },
+      {
+        title: (
+          <React.Fragment>
+            {user.is_active ? (
+              <Label
+                key="active"
+                className="active"
+                variant="filled"
+                color="green"
+                icon={<CheckIcon />}
+              >
+                Active
+              </Label>
+            ) : (
+              <Label
+                key="inactive"
+                className="active"
+                variant="filled"
+                color="red"
+                icon={<BanIcon />}
+              >
+                Inactive
+              </Label>
+            )}
+            {user.is_superadmin ? (
+              <Label
+                key="admin"
+                className="super-admin-label"
+                variant="outline"
+                color="orange"
+                icon={<LinuxIcon />}
+              >
+                Administrator
+              </Label>
+            ) : (
+              ''
+            )}
+          </React.Fragment>
+        ),
+      },
+      {
+        title: (
+          <TableText>
+            <Button
+              variant="primary"
+              ouiaId={`admin-users-edit-${user.id}`}
+              component={(props) => (
+                <Link {...props} to={`/admin/users/${user.id}`} />
+              )}
+              size="sm"
+              aria-label="Edit"
+            >
+              <PencilAltIcon />
+            </Button>
+          </TableText>
+        ),
+      },
+      {
+        title: (
           <Button
             variant="primary"
             ouiaId={`admin-users-edit-${user.id}`}
@@ -75,25 +100,27 @@ const UserRow = ({ user, setSelectedUser, setIsDeleteModalOpen }) => {
           >
             <PencilAltIcon />
           </Button>
-        </TableText>
-      </Td>
-      <Td>
-        <TableText>
-          <Button
-            variant="danger"
-            ouiaId={`admin-users-delete-${user.id}`}
-            onClick={() => {
-              setSelectedUser(user);
-              setIsDeleteModalOpen(true);
-            }}
-            size="sm"
-          >
-            <TrashIcon />
-          </Button>
-        </TableText>
-      </Td>
-    </Tr>
-  );
+        ),
+      },
+      {
+        title: (
+          <TableText>
+            <Button
+              variant="danger"
+              ouiaId={`admin-users-delete-${user.id}`}
+              onClick={() => {
+                setSelectedUser(user);
+                setIsDeleteModalOpen(true);
+              }}
+              size="sm"
+            >
+              <TrashIcon />
+            </Button>
+          </TableText>
+        ),
+      },
+    ],
+  };
 };
 
 UserRow.propTypes = {

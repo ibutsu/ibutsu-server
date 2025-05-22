@@ -52,6 +52,7 @@ const RunList = () => {
         pageSize: pageSize,
         filter: filtersToAPIParams(activeFilters),
       };
+      console.log('Fetching runs', apiParams);
       try {
         const response = await HttpClient.get(
           [Settings.serverUrl, 'run'],
@@ -59,9 +60,9 @@ const RunList = () => {
         );
         const data = await HttpClient.handleResponse(response);
         setRows(data.runs.map((run) => runToRow(run, updateFilters)));
-        setPage(data.pagination.page);
-        setPageSize(data.pagination.pageSize);
-        setTotalItems(data.pagination.totalItems);
+        setPage(data.pagination.page.toString());
+        setPageSize(data.pagination.pageSize.toString());
+        setTotalItems(data.pagination.totalItems.toString());
         setIsError(false);
       } catch (error) {
         console.error('Error fetching run data:', error);

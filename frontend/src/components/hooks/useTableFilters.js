@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useContext } from 'react';
+import { useState, useCallback, useMemo, useContext, useEffect } from 'react';
 import {
   useSearchParams,
   useParams,
@@ -67,12 +67,22 @@ const useTableFilters = ({
       .map(([searchKey, searchValue]) => {
         return parseSearchToFilter([searchKey, searchValue]);
       }),
-    {
-      field: 'project_id',
-      operator: 'eq',
-      value: primaryObject?.id || project_id,
-    },
   ]);
+
+  useEffect(() => {
+    if (project_id) {
+      setActiveFilters((prevActive) =>
+        prevActive
+          .filter((f) => f.field !== 'project_id')
+          .concat({
+            field: 'project_id',
+            operator: 'eq',
+            value: primaryObject?.id || project_id,
+          }),
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!project_id]);
 
   // Update activeFilters state and search params, handle removal when value is null/empty
   const updateFilters = useCallback(

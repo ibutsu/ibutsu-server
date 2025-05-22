@@ -69,8 +69,8 @@ const RESULT_FIELDS = [
   ...STRING_RESULT_FIELDS,
   ...ARRAY_RESULT_FIELDS,
 ];
-RESULT_FIELDS.sort();
-export { RESULT_FIELDS };
+const SRF = [...RESULT_FIELDS].sort();
+export { SRF as RESULT_FIELDS };
 
 export const ARRAY_RUN_FIELDS = ['metadata.tags'];
 export const NUMERIC_RUN_FIELDS = [
@@ -88,8 +88,8 @@ const RUN_FIELDS = [
   ...STRING_RUN_FIELDS,
   ...ARRAY_RUN_FIELDS,
 ];
-RUN_FIELDS.sort();
-export { RUN_FIELDS };
+const SRUF = [...RUN_FIELDS].sort();
+export { SRUF as RUN_FIELDS };
 
 export const STRING_ACCESSIBILITY_FIELDS = [
   'run_id',

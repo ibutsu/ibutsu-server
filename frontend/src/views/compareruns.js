@@ -137,8 +137,8 @@ const CompareRunsView = () => {
         .then((data) => {
           console.dir(data.results);
           setResults(data.results);
-          setPage(data.pagination.page);
-          setPageSize(data.pagination.pageSize);
+          setPage(data.pagination.page.toString());
+          setPageSize(data.pagination.pageSize.toString());
           setTotalItems(data.pagination.totalItems);
         })
         .catch((error) => {
@@ -249,36 +249,38 @@ const CompareRunsView = () => {
   }, [results]);
 
   const compareHeader = useMemo(() => {
-    <Flex style={{ width: '100%' }}>
-      <FlexItem grow={{ default: 'grow' }}>
-        <TextContent>
-          <Text component="h2" className="pf-v5-c-title pf-m-xl">
-            Select Test Run metadata to compare
-          </Text>
-        </TextContent>
-      </FlexItem>
-      <FlexItem>
-        <TextContent>
-          <Checkbox
-            id="include-skips"
-            label="Include skips, xfails"
-            isChecked={includeSkipped}
-            aria-label="include-skips-checkbox"
-            onChange={(_, checked) => onSkipCheck(checked)}
-          />
-        </TextContent>
-      </FlexItem>
-      <FlexItem>
-        <Button variant="primary">
-          {isLoading ? 'Loading Results' : 'Apply Filters'}
-        </Button>
-      </FlexItem>
-      <FlexItem>
-        <Button variant="secondary" onClick={clearFilters} isDanger>
-          Clear Filters
-        </Button>
-      </FlexItem>
-    </Flex>;
+    return (
+      <Flex style={{ width: '100%' }}>
+        <FlexItem grow={{ default: 'grow' }}>
+          <TextContent>
+            <Text component="h2" className="pf-v5-c-title pf-m-xl">
+              Select Test Run metadata to compare
+            </Text>
+          </TextContent>
+        </FlexItem>
+        <FlexItem>
+          <TextContent>
+            <Checkbox
+              id="include-skips"
+              label="Include skips, xfails"
+              isChecked={includeSkipped}
+              aria-label="include-skips-checkbox"
+              onChange={(_, checked) => onSkipCheck(checked)}
+            />
+          </TextContent>
+        </FlexItem>
+        <FlexItem>
+          <Button variant="primary">
+            {isLoading ? 'Loading Results' : 'Apply Filters'}
+          </Button>
+        </FlexItem>
+        <FlexItem>
+          <Button variant="secondary" onClick={clearFilters} isDanger>
+            Clear Filters
+          </Button>
+        </FlexItem>
+      </Flex>
+    );
   }, [includeSkipped, isLoading, onSkipCheck]);
 
   // Compare runs work only when project is selected

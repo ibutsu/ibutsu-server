@@ -75,8 +75,8 @@ const UserTokens = () => {
       .then((data) => {
         if (data?.tokens?.length > 0) {
           setTokens(data.tokens);
-          setPage(data.pagination.page);
-          setPageSize(data.pagination.pageSize);
+          setPage(data.pagination.page.toString());
+          setPageSize(data.pagination.pageSize.toString());
           setTotalItems(data.pagination.totalItems);
         } else {
           setTokens([]);

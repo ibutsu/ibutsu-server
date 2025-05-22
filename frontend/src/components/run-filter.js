@@ -70,12 +70,11 @@ const RunFilter = ({ hideFilters }) => {
                 toggle={fieldToggle}
               >
                 <SelectList id="select-typeahead-listbox">
-                  {Array.isArray(filteredFieldOptions) &&
-                    filteredFieldOptions?.map((option, index) => (
-                      <SelectOption key={index} value={option}>
-                        {option}
-                      </SelectOption>
-                    ))}
+                  {filteredFieldOptions?.map((option, index) => (
+                    <SelectOption key={index} value={option}>
+                      {option}
+                    </SelectOption>
+                  ))}
                 </SelectList>
               </Select>
             </FlexItem>
