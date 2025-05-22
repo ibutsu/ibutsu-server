@@ -27,16 +27,16 @@ import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-i
 import TachometerAltIcon from '@patternfly/react-icons/dist/esm/icons/tachometer-alt-icon';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle-icon';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import NewDashboardModal from './components/new-dashboard-modal.js';
-import NewWidgetWizard from './components/new-widget-wizard.js';
-import EditWidgetModal from './components/edit-widget-modal.js';
-import DeleteModal from './components/delete-modal.js';
-import { useWidgets } from './components/widgetsHook.js';
-import { IbutsuContext } from './services/context.js';
-import { useNavigate, useParams } from 'react-router-dom';
+import NewDashboardModal from './components/new-dashboard-modal';
+import NewWidgetWizard from './components/new-widget-wizard';
+import EditWidgetModal from './components/edit-widget-modal';
+import DeleteModal from './components/delete-modal';
+import { useWidgets } from './components/hooks/useWidgets';
+import { IbutsuContext } from './components/contexts/ibutsuContext';
 
 const Dashboard = () => {
   const { defaultDashboard, primaryObject } = useContext(IbutsuContext);

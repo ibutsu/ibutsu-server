@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
 import {
   Button,
-  Card,
-  CardBody,
   Flex,
   FlexItem,
   Modal,
@@ -22,19 +20,18 @@ import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { getSpinnerRow } from '../../utilities';
 import FilterTable from '../../components/filtertable';
 import EmptyObject from '../../components/empty-object';
+import usePagination from '../../components/hooks/usePagination';
+import { FilterContext } from '../../components/contexts/filterContext';
 
 const COLUMNS = ['Title', 'Name', 'Owner', ''];
 
 const ProjectList = () => {
   const [filterText, setFilterText] = useState('');
-  const [activeFilters, setActiveFilters] = useState({});
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalItems, setTotalItems] = useState(0);
+  const { page, setPage, pageSize, setPageSize, totalItems, setTotalItems } =
+    usePagination();
 
   const [projects, setProjects] = useState([]);
   const [filteredProjects, setFilteredProjects] = useState([]);
@@ -43,6 +40,8 @@ const ProjectList = () => {
   const [isError, setIsError] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const { activeFilters, setActiveFilters } = useContext(FilterContext);
 
   const projectToRow = (project) => ({
     cells: [
@@ -106,7 +105,7 @@ const ProjectList = () => {
       );
     }
     setFilteredProjects(newProjects);
-  }, [filterText, projects]);
+  }, [filterText, projects, setActiveFilters]);
 
   useEffect(() => {
     HttpClient.get([Settings.serverUrl, 'admin', 'project'], {
@@ -118,8 +117,8 @@ const ProjectList = () => {
         setIsError(false);
         if (data?.projects) {
           setProjects(data.projects);
-          setPage(data.pagination.page);
-          setPageSize(data.pagination.pageSize);
+          setPage(data.pagination.page.toString());
+          setPageSize(data.pagination.pageSize.toString());
           setTotalItems(data.pagination.totalItems);
         } else {
           setProjects([]);
@@ -138,10 +137,6 @@ const ProjectList = () => {
 
   const onDeleteClose = () => {
     setIsDeleteModalOpen(false);
-  };
-
-  const onRemoveFilter = () => {
-    setFilterText('');
   };
 
   useEffect(() => {
@@ -180,44 +175,35 @@ const ProjectList = () => {
       </PageSection>
       <PageSection className="pf-u-pb-0">
         {projects.length > 0 && (
-          <Card>
-            <CardBody className="pf-u-p-0">
-              <FilterTable
-                columns={COLUMNS}
-                rows={
-                  filteredProjects
-                    ? filteredProjects.map((p) => projectToRow(p))
-                    : [getSpinnerRow(4)]
-                }
-                activeFilters={activeFilters}
-                filters={[
-                  <TextInput
-                    type="text"
-                    id="filter"
-                    placeholder="Search for project..."
-                    value={filterText}
-                    onChange={onFilterChange}
-                    style={{ height: 'inherit' }}
-                    key="filterText"
-                  />,
-                ]}
-                pagination={{
-                  pageSize: pageSize,
-                  page: page,
-                  totalItems: totalItems,
-                }}
-                onRemoveFilter={onRemoveFilter}
-                isEmpty={filteredProjects.length === 0}
-                isError={isError}
-                onSetPage={(_, value) => {
-                  setPage(value);
-                }}
-                onSetPageSize={(_, value) => {
-                  setPageSize(value);
-                }}
-              />
-            </CardBody>
-          </Card>
+          <FilterTable
+            columns={COLUMNS}
+            rows={filteredProjects?.map((p) => projectToRow(p))}
+            activeFilters={activeFilters}
+            //activeFilterComponents={activeFilterComponents}
+            filters={[
+              <TextInput
+                type="text"
+                id="filter"
+                placeholder="Search for project..."
+                value={filterText}
+                onChange={onFilterChange}
+                style={{ height: 'inherit' }}
+                key="filterText"
+              />,
+            ]}
+            pageSize={pageSize}
+            page={page}
+            totalItems={totalItems}
+            isError={isError}
+            onSetPage={(_, value) => {
+              setPage(value);
+            }}
+            onSetPageSize={(_, newPageSize, newPage) => {
+              setPageSize(newPageSize);
+              setPage(newPage);
+            }}
+            removeCallback={() => setFilterText('')}
+          />
         )}
         {projects.length === 0 && (
           <EmptyObject

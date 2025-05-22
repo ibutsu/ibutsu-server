@@ -43,7 +43,7 @@ const ImportanceComponentWidget = ({
       })
       .catch((error) => {
         setDataError(true);
-        console.log(error);
+        console.error(error);
       });
   }, [params]);
 

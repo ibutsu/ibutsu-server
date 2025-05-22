@@ -33,7 +33,6 @@ const ClassificationDropdown = ({ testResult: initialTestResult }) => {
           {},
           updatedResult,
         );
-        console.log('put classification');
       } catch (error) {
         console.error(error);
       }
