@@ -24,8 +24,16 @@ const UserList = () => {
   const [rows, setRows] = useState([]);
   const [selectedUser, setSelectedUser] = useState();
 
-  const { page, setPage, pageSize, setPageSize, totalItems, setTotalItems } =
-    usePagination({});
+  const {
+    page,
+    setPage,
+    onSetPage,
+    pageSize,
+    setPageSize,
+    onSetPageSize,
+    totalItems,
+    setTotalItems,
+  } = usePagination({});
 
   const [isError, setIsError] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -54,9 +62,9 @@ const UserList = () => {
             )
             .filter(Boolean),
         );
-        setPage(data.pagination.page.toString());
-        setPageSize(data.pagination.pageSize.toString());
-        setTotalItems(data.pagination.totalItems.toString());
+        setPage(data.pagination.page);
+        setPageSize(data.pagination.pageSize);
+        setTotalItems(data.pagination.totalItems);
         setFetching(false);
       })
       .catch((error) => {
@@ -105,8 +113,8 @@ const UserList = () => {
           filters={<AdminFilter />}
           isError={isError}
           canSelectAll={false}
-          onSetPage={setPage}
-          onSetPageSize={setPageSize}
+          onSetPage={onSetPage}
+          onSetPageSize={onSetPageSize}
           page={page}
           pageSize={pageSize}
           totalItems={totalItems}

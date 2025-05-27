@@ -26,6 +26,7 @@ import {
 } from '../utilities';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import ResultView from '../components/resultView';
+import usePagination from '../components/hooks/usePagination';
 
 const COLUMNS = [
   { title: 'Test', cellFormatters: [expandable] },
@@ -55,9 +56,16 @@ const CompareRunsView = () => {
 
   const [results, setResults] = useState([]);
   const [rows, setRows] = useState([getSpinnerRow(3)]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalItems, setTotalItems] = useState(0);
+  const {
+    page,
+    setPage,
+    onSetPage,
+    pageSize,
+    onSetPageSize,
+    setPageSize,
+    totalItems,
+    setTotalItems,
+  } = usePagination({});
 
   const [isError, setIsError] = useState(false);
   const [includeSkipped, setIncludeSkipped] = useState(false);
@@ -148,7 +156,7 @@ const CompareRunsView = () => {
     }
 
     setIsLoading(false);
-  }, [filters, primaryObject]);
+  }, [filters, primaryObject, setPage, setPageSize, setTotalItems]);
 
   const onCollapse = (_, rowIndex, isOpen) => {
     // handle row expansion with ResultView
@@ -205,11 +213,11 @@ const CompareRunsView = () => {
   };
 
   // Remove all active filters and clear table
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters(DEFAULT_FILTER);
     setPage(1);
     setTotalItems(0);
-  };
+  }, [setPage, setTotalItems]);
 
   const resultFilters = [
     <Flex
@@ -281,7 +289,7 @@ const CompareRunsView = () => {
         </FlexItem>
       </Flex>
     );
-  }, [includeSkipped, isLoading, onSkipCheck]);
+  }, [clearFilters, includeSkipped, isLoading, onSkipCheck]);
 
   // Compare runs work only when project is selected
   // TODO Apply Filters button needs to trigger table render
@@ -295,11 +303,8 @@ const CompareRunsView = () => {
         totalItems={totalItems}
         isError={isError}
         onCollapse={onCollapse}
-        onSetPage={(_, value) => setPage(value)}
-        onSetPageSize={(_, newPageSize, newPage) => {
-          setPageSize(newPageSize);
-          setPage(newPage);
-        }}
+        onSetPage={onSetPage}
+        onSetPageSize={onSetPageSize}
         canSelectAll={false}
         variant={TableVariant.compact}
         filters={resultFilters}

@@ -29,8 +29,16 @@ import { filtersToAPIParams } from '../../utilities';
 const COLUMNS = ['Title', 'Name', 'Owner', ''];
 
 const ProjectList = () => {
-  const { page, setPage, pageSize, setPageSize, totalItems, setTotalItems } =
-    usePagination({});
+  const {
+    page,
+    setPage,
+    onSetPage,
+    pageSize,
+    setPageSize,
+    onSetPageSize,
+    totalItems,
+    setTotalItems,
+  } = usePagination({});
 
   const [anyProjects, setAnyProjects] = useState(true);
   const [filteredProjects, setFilteredProjects] = useState([]);
@@ -180,8 +188,8 @@ const ProjectList = () => {
             totalItems={totalItems}
             isError={isError}
             onClearFilters={clearFilters}
-            onSetPage={setPage}
-            onSetPageSize={setPageSize}
+            onSetPage={onSetPage}
+            onSetPageSize={onSetPageSize}
           />
         )}
         {!anyProjects && (
