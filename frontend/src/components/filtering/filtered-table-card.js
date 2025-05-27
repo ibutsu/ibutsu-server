@@ -51,7 +51,7 @@ const FilterTable = ({
     <Card ouiaId="filter-table-card" className={cardClass}>
       {headerChildren ? <CardHeader>{headerChildren}</CardHeader> : null}
       {filters || null}
-      {populatedRows && !isError && !fetching && (
+      {populatedRows && !isError && (
         <CardBody key="table">
           <Flex
             alignSelf={{ default: 'alignSelfFlexEnd' }}
@@ -98,7 +98,7 @@ const FilterTable = ({
           />
         </CardBody>
       )}
-      {!populatedRows && !isError && (
+      {!populatedRows && !isError && !fetching && (
         <CardBody key="empty-table">
           <TableEmptyState onClearFilters={onClearFilters} />
         </CardBody>
