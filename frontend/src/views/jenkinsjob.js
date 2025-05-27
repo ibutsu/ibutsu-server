@@ -139,6 +139,7 @@ const JenkinsJobView = ({ view }) => {
         filter: filtersToAPIParams(activeFilters),
       };
       setIsError(false);
+      setFetching(true);
 
       if (primaryObject) {
         params['project'] = primaryObject.id;
