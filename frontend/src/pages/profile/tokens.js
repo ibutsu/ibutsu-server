@@ -19,19 +19,29 @@ import FilterTable from '../../components/filtering/filtered-table-card';
 import AddTokenModal from '../../components/add-token-modal';
 import DeleteModal from '../../components/delete-modal';
 import { ALERT_TIMEOUT } from '../../constants';
+import usePagination from '../../components/hooks/usePagination';
 
 const COLUMNS = ['Name', 'Token', 'Expires', ''];
 
 const UserTokens = () => {
-  const [tokens, setTokens] = useState([]);
+  const [rows, setRows] = useState([]);
   const [fetching, setFetching] = useState(true);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalItems, setTotalItems] = useState(0);
+
   const [isError, setIsError] = useState(false);
   const [isAddTokenOpen, setIsAddTokenOpen] = useState(false);
   const [isDeleteTokenOpen, setIsDeleteTokenOpen] = useState(false);
   const [tokenToDelete, setTokenToDelete] = useState();
+
+  const {
+    page,
+    setPage,
+    onSetPage,
+    pageSize,
+    setPageSize,
+    onSetPageSize,
+    totalItems,
+    setTotalItems,
+  } = usePagination({});
 
   const tokenToRow = (token) => ({
     cells: [
@@ -65,31 +75,47 @@ const UserTokens = () => {
   });
 
   useEffect(() => {
-    setFetching(true);
+    const fetchTokens = async () => {
+      setFetching(true);
 
-    HttpClient.get([Settings.serverUrl, 'user', 'token'], {
-      page: page,
-      pageSize: pageSize,
-    })
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'user', 'token'],
+          {
+            page: page,
+            pageSize: pageSize,
+          },
+        );
+        const data = await HttpClient.handleResponse(response);
         if (data?.tokens?.length > 0) {
-          setTokens(data.tokens);
-          setPage(data.pagination.page.toString());
-          setPageSize(data.pagination.pageSize.toString());
+          setRows(data.tokens.map((t) => tokenToRow(t)));
+          setFetching(false);
+
+          setPage(data.pagination.page);
+          setPageSize(data.pagination.pageSize);
           setTotalItems(data.pagination.totalItems);
         } else {
-          setTokens([]);
+          setRows([]);
+          setFetching(false);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error fetching token data:', error);
-        setTokens([]);
+        setRows([]);
         setIsError(true);
-      });
+        setFetching(false);
+      }
+    };
 
-    setFetching(false);
-  }, [page, pageSize, isAddTokenOpen, isDeleteTokenOpen]); // extra deps to trigger fetch on modal close
+    fetchTokens();
+  }, [
+    page,
+    pageSize,
+    isAddTokenOpen,
+    isDeleteTokenOpen,
+    setPage,
+    setPageSize,
+    setTotalItems,
+  ]); // extra deps to trigger fetch on modal close
 
   useEffect(() => {
     document.title = 'User Tokens | Ibutsu';
@@ -119,18 +145,13 @@ const UserTokens = () => {
       <PageSection>
         <FilterTable
           columns={COLUMNS}
-          rows={tokens?.map((t) => tokenToRow(t))}
+          rows={rows}
           pageSize={pageSize}
           page={page}
           totalItems={totalItems}
           isError={isError}
-          onSetPage={(_, value) => {
-            setPage(value);
-          }}
-          onSetPageSize={(_, newPageSize, newPage) => {
-            setPageSize(newPageSize);
-            setPage(newPage);
-          }}
+          onSetPage={onSetPage}
+          onSetPageSize={onSetPageSize}
           fetching={fetching}
         />
       </PageSection>

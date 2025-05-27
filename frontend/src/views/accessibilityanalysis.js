@@ -34,6 +34,7 @@ import FilterTable from '../components/filtering/filtered-table-card';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import TabTitle from '../components/tabs';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
+import usePagination from '../components/hooks/usePagination';
 
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 
@@ -44,8 +45,8 @@ const AccessibilityAnalysisView = ({ view }) => {
   const navigate = useNavigate();
   const params = useSearchParams();
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const { page, setPage, onSetPage, pageSize, setPageSize, onSetPageSize } =
+    usePagination({});
   const [filters] = useState({});
 
   const [run, setRun] = useState();
@@ -238,9 +239,9 @@ const AccessibilityAnalysisView = ({ view }) => {
       .then((response) => HttpClient.handleResponse(response))
       .then((data) => {
         setResults(data.results);
-        setRows(data.results.map((result) => resultToRow(result))); // TODO move to render
-        setPage(data.pagination.page.toString());
-        setPageSize(data.pagination.pageSize.toString());
+        setRows(data.results?.map((result) => resultToRow(result))); // TODO move to render
+        setPage(data.pagination.page);
+        setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
       })
       .catch((error) => {
@@ -249,7 +250,7 @@ const AccessibilityAnalysisView = ({ view }) => {
         setResults([]);
         setIsError(true);
       });
-  }, [page, pageSize, id]);
+  }, [page, pageSize, id, setPage, setPageSize]);
 
   useEffect(() => {
     let { passes, violations } = run.metadata.accessibility_data;
@@ -387,11 +388,8 @@ const AccessibilityAnalysisView = ({ view }) => {
               page={page}
               totalItems={totalItems}
               isError={isError}
-              onSetPage={(_, value) => setPage(value)}
-              onSetPageSize={(_, newPageSize, newPage) => {
-                setPageSize(newPageSize);
-                setPage(newPage);
-              }}
+              onSetPage={onSetPage}
+              onSetPageSize={onSetPageSize}
               headerChildren={accessTableHeader}
               cardClass="pf-u-mt-lg"
             />
