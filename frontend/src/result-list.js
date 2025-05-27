@@ -75,7 +75,10 @@ const ResultList = () => {
       }
     };
 
-    fetchData();
+    const debouncer = setTimeout(() => {
+      fetchData();
+    }, 250);
+    return () => clearTimeout(debouncer);
   }, [
     activeFilters,
     page,

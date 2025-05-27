@@ -71,7 +71,10 @@ const RunList = () => {
       setFetching(false);
     };
 
-    fetchData();
+    const debouncer = setTimeout(() => {
+      fetchData();
+    }, 250);
+    return () => clearTimeout(debouncer);
   }, [
     pageSize,
     page,
