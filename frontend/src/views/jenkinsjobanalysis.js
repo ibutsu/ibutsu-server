@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Switch, Tab, Tabs } from '@patternfly/react-core';
 
@@ -11,8 +11,8 @@ import FilterHeatmapWidget from '../widgets/filterheatmap';
 import { HEATMAP_MAX_BUILDS } from '../constants';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import ParamDropdown from '../components/param-dropdown';
-import { useSearchParams } from 'react-router-dom';
 import { useTabHook } from '../components/hooks/useTab';
+import { FilterContext } from '../components/contexts/filterContext';
 
 const DEFAULT_BAR = 8;
 
@@ -22,9 +22,8 @@ const LONG_BUILDS = [...SHORT_BUILDS, 70, 150];
 const PF_BACK_100 = 'var(--pf-v5-global--BackgroundColor--100)';
 
 const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
-  const context = useContext(IbutsuContext);
-  const { primaryObject } = context;
-  const [searchParams] = useSearchParams();
+  const { primaryObject } = useContext(IbutsuContext);
+  const { activeFilters } = useContext(FilterContext);
 
   const [isAreaChart, setIsAreaChart] = useState(false);
   const [isLoading, setIsLoading] = useState();
@@ -33,9 +32,7 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
   const [builds, setBuilds] = useState(20);
   const [countSkips, setCountSkips] = useState(true);
 
-  const [heatmapParams, setHeatmapParams] = useState({
-    count_skips: countSkips,
-  });
+  const [widgetParams, setWidgetParams] = useState({});
   const [barchartParams, setBarchartParams] = useState({});
   const [linechartParams, setLinechartParams] = useState({});
 
@@ -48,23 +45,18 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
     // Fetch the widget parameters for heatmap, barchart and linechart
     if (view) {
       setIsLoading(true);
+      let params = {
+        ...view.params,
+        project: primaryObject?.id,
+        job_name: activeFilters.filter((f) => f.field === 'job_name')[0]?.value,
+      };
 
-      let params = { ...view.params };
-      if (primaryObject) {
-        params['project'] = primaryObject.id;
-      } else {
-        delete params['project'];
-      }
-      if (searchParams.get('job_name')) {
-        params['job_name'] = searchParams.get('job_name');
-      }
       params['builds'] = builds;
       HttpClient.get([Settings.serverUrl, 'widget', view.widget], params)
         .then((response) => HttpClient.handleResponse(response))
         .then((data) => {
-          setHeatmapParams({
+          setWidgetParams({
             ...data.heatmap_params,
-            count_skips: countSkips,
           });
           setBarchartParams(data.barchart_params);
           setLinechartParams(data.linechart_params);
@@ -75,7 +67,7 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
           setIsLoading(false);
         });
     }
-  }, [builds, countSkips, primaryObject, view, searchParams]);
+  }, [builds, countSkips, primaryObject, view, activeFilters]);
 
   useEffect(() => {
     let newWidth = DEFAULT_BAR;
@@ -104,6 +96,13 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
     }
     return color;
   };
+
+  const heatmapParams = useMemo(() => {
+    return {
+      ...widgetParams,
+      count_skips: countSkips,
+    };
+  }, [countSkips, widgetParams]);
 
   return (
     <React.Fragment>
@@ -174,10 +173,8 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
         <Tab eventKey="heatmap" title="Heatmap">
           {!isLoading && activeTab === 'heatmap' && (
             <FilterHeatmapWidget
-              title={heatmapParams.job_name}
               params={heatmapParams}
               hideDropdown={true}
-              abelWidth={400}
               type="jenkins"
             />
           )}

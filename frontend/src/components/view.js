@@ -60,7 +60,7 @@ const View = () => {
       </PageSection>
       <PageSection className="pf-u-pb-0">
         {!!ViewComponent && (
-          <FilterProvider>
+          <FilterProvider key={viewSpec.id}>
             <ViewComponent view={viewSpec} />
           </FilterProvider>
         )}
