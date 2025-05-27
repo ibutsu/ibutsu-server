@@ -25,7 +25,6 @@ const usePagination = ({ setParams = true }) => {
   }, [page, pageSize, setParams, searchParams, setSearchParams]);
 
   const onSetPage = useCallback((_, newPage) => {
-    console.log('Setting page to:', newPage);
     setPage(newPage);
   }, []);
 

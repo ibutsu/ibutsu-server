@@ -145,8 +145,8 @@ const JenkinsJobView = ({ view }) => {
         }
         setRows(data.jobs.map((job) => jobToRow(job)));
         setTotalItems(data.pagination.totalItems);
-        setPage(data.pagination.page.toString());
-        setPageSize(data.pagination.pageSize.toString());
+        setPage(data.pagination.page);
+        setPageSize(data.pagination.pageSize);
         setFetching(false);
       } catch (error) {
         console.error('Error fetching Jenkins data:', error);
