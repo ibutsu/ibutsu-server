@@ -46,7 +46,7 @@ const JenkinsJobView = ({ view }) => {
     setTotalItems,
   } = usePagination({});
 
-  const { activeFilters, updateFilters } = useContext(FilterContext);
+  const { activeFilters } = useContext(FilterContext);
 
   useEffect(() => {
     HttpClient.get([Settings.serverUrl, 'widget-config'], {
@@ -75,13 +75,25 @@ const JenkinsJobView = ({ view }) => {
           value: job.build_number,
         },
       ];
+      const searchString = new URLSearchParams(
+        filtersToSearchParams([
+          {
+            field: 'job_name',
+            operator: 'eq',
+            value: job.job_name,
+          },
+        ]),
+      ).toString();
       return {
         cells: [
           analysisViewId
             ? {
                 title: (
                   <Link
-                    to={`../view/${analysisViewId}?job_name=${job.job_name}`}
+                    to={{
+                      pathname: `../view/${analysisViewId}`,
+                      search: searchString,
+                    }}
                     relative="Path"
                   >
                     {job.job_name}
@@ -186,7 +198,6 @@ const JenkinsJobView = ({ view }) => {
       isError={isError}
       onSetPage={onSetPage}
       onSetPageSize={onSetPageSize}
-      onApplyFilter={updateFilters}
     />
   );
 };

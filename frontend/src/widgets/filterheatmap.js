@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -25,9 +25,10 @@ import { Settings } from '../settings';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
+import { filtersToSearchParams } from '../utilities';
 
 const FilterHeatmapWidget = ({
-  title = 'Filter Heatmap',
+  title,
   params,
   labelWidth = 200,
   hideDropdown,
@@ -62,9 +63,22 @@ const FilterHeatmapWidget = ({
 
   const getJenkinsAnalysisLink = () => {
     if (includeAnalysisLink && analysisViewId !== null) {
+      const searchString = new URLSearchParams(
+        filtersToSearchParams([
+          {
+            field: 'job_name',
+            operator: 'eq',
+            value: params?.job_name,
+          },
+        ]),
+      ).toString();
       return (
         <Link
-          to={`/project/${primaryObject?.id || params?.project}/view/${analysisViewId}?job_name=${params?.job_name}#heatmap`}
+          to={{
+            pathname: `/project/${primaryObject?.id || params?.project}/view/${analysisViewId}`,
+            search: searchString,
+            hash: 'heatmap',
+          }}
         >
           <Button
             variant="secondary"
@@ -199,6 +213,8 @@ const FilterHeatmapWidget = ({
   const renderData = [];
   let labels = [];
   if (data && data?.heatmap) {
+    // TODO The response from backend is keyed on incomplete job name, truncating at `/`
+    // Update response to include full job name. Current use of the widget is with one job name only, and thus one entry in yLabels
     for (const key of Object.keys(data.heatmap)) {
       const newLabels = [];
       const values = data.heatmap[key];
@@ -210,9 +226,26 @@ const FilterHeatmapWidget = ({
       renderData.push(values);
       values.forEach((item) => {
         if (!!item && item.length > 2 && !!item[3]) {
+          const newSearchParams = new URLSearchParams(
+            filtersToSearchParams([
+              {
+                field: 'metadata.jenkins.build_number',
+                operator: 'eq',
+                value: item[3],
+              },
+              {
+                field: 'metadata.jenkins.job_name',
+                operator: 'eq',
+                value: params?.job_name,
+              },
+            ]),
+          );
           newLabels.push(
             <Link
-              to={`/project/${params?.project}/results?metadata.jenkins.build_number[eq]=${item[3]}&metadata.jenkins.job_name[eq]=${params?.job_name}`}
+              to={{
+                pathname: `/project/${params?.project}/results`,
+                search: newSearchParams.toString(),
+              }}
               key={item[3]}
             >
               {item[3]}
@@ -229,10 +262,21 @@ const FilterHeatmapWidget = ({
   labels.forEach((item) => xLabels.push(item));
   const jenkins_analysis_link = getJenkinsAnalysisLink();
 
+  const titleMemo = useMemo(() => {
+    if (title) {
+      return title;
+    }
+    if (params?.job_name) {
+      return `Heatmap for ${params.job_name}`;
+    } else {
+      return 'Heatmap';
+    }
+  }, [params.job_name, title]);
+
   return (
     <Card>
       <WidgetHeader
-        title={title || 'Filter Heatmap'}
+        title={titleMemo}
         actions={[jenkins_analysis_link].filter((a) => a !== null)}
         onEditClick={onEditClick}
         onDeleteClick={onDeleteClick}
