@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import {
   ActionGroup,
@@ -50,66 +50,107 @@ const UserEdit = () => {
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
 
-  const onSubmitClick = () => {
-    let userData = {
-      name: formName,
-      email: formEmail,
-      is_active: formActive,
-      is_superadmin: formAdmin,
-      projects: formProjects?.map((projectOption) => projectOption.project),
+  const onSubmitClick = useCallback(() => {
+    const submitCall = async () => {
+      try {
+        await HttpClient.put(
+          [Settings.serverUrl, 'admin', 'user', params?.id],
+          {},
+          {
+            name: formName,
+            email: formEmail,
+            is_active: formActive,
+            is_superadmin: formAdmin,
+            projects: formProjects?.map(
+              (projectOption) => projectOption.project,
+            ),
+          },
+        );
+        navigate('/admin/users', { replace: true });
+      } catch (error) {
+        console.error('Error updating user: ', error);
+      }
     };
-    HttpClient.put(
-      [Settings.serverUrl, 'admin', 'user', params?.id],
-      {},
-      userData,
-    )
-      .then((response) => HttpClient.handleResponse(response, 'response'))
-      .catch((error) =>
-        console.error('Error committing user update: ' + error),
-      );
-    navigate('/admin/users', { replace: true });
-  };
 
-  const onProjectsSelect = (_, value) => {
-    // compareTo comes from the object from ProjecttoOption utility
-    if (formProjects?.find((item) => item.compareTo(value))) {
-      setFormProjects(formProjects.filter((item) => !item.compareTo(value)));
-    } else {
-      setFormProjects([...formProjects, value]);
-    }
-  };
+    submitCall();
+  }, [
+    formActive,
+    formAdmin,
+    formEmail,
+    formName,
+    formProjects,
+    navigate,
+    params?.id,
+  ]);
 
-  const onProjectsClear = () => {
+  const onProjectsSelect = useCallback(
+    (_, value) => {
+      // compareTo comes from the object from ProjecttoOption utility
+      if (formProjects?.find((item) => item.compareTo(value))) {
+        setFormProjects((prevProjects) =>
+          prevProjects.filter((item) => !item.compareTo(value)),
+        );
+      } else {
+        setFormProjects((prevProjects) => [...prevProjects, value]);
+      }
+    },
+    [formProjects],
+  );
+
+  const onProjectsClear = useCallback(() => {
     setFormProjects([]);
     setIsProjectsOpen(false);
     setInputValue('');
-  };
+  }, []);
 
   useEffect(() => {
     // get user once
-    if (params?.id) {
-      HttpClient.get([Settings.serverUrl, 'admin', 'user', params?.id])
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
+    const getUser = async () => {
+      try {
+        const response = await HttpClient.get([
+          Settings.serverUrl,
+          'admin',
+          'user',
+          params?.id,
+        ]);
+        const data = await HttpClient.handleResponse(response);
+        if (data) {
           setFormName(data.name || '');
           setFormEmail(data.email || '');
           setFormActive(data.is_active);
           setFormAdmin(data.is_superadmin);
           setFormProjects(data.projects?.map(projectToOption) || []);
           setUserLoaded(true);
-        })
-        .catch((error) => console.error(error));
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setUserLoaded(false);
+      }
+    };
+    if (params?.id) {
+      getUser();
     }
   }, [params.id]);
 
   useEffect(() => {
     // fetch projects once
-    HttpClient.get([Settings.serverUrl, 'admin', 'project'])
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
-        setProjects(data.projects);
-      })
-      .catch((error) => console.error(error));
+    const fetchProjects = async () => {
+      try {
+        const response = await HttpClient.get([
+          Settings.serverUrl,
+          'admin',
+          'project',
+        ]);
+        const data = await HttpClient.handleResponse(response);
+        if (data && data.projects) {
+          setProjects(data.projects);
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        setProjects([]);
+      }
+    };
+    fetchProjects();
   }, []);
 
   useEffect(() => {
@@ -137,54 +178,63 @@ const UserEdit = () => {
     setFilteredProjects(newProjectOptions);
   }, [inputValue, projects, isProjectsOpen]);
 
-  const toggle = (toggleRef) => (
-    <MenuToggle
-      variant="typeahead"
-      aria-label="Multi typeahead menu toggle"
-      onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-      innerRef={toggleRef}
-      isExpanded={isProjectsOpen}
-      isFullWidth
-    >
-      <TextInputGroup isPlain>
-        <TextInputGroupMain
-          value={inputValue}
-          onClick={() => setIsProjectsOpen(!isProjectsOpen)}
-          onChange={(_, value) => setInputValue(value)}
-          id="multi-typeahead-select-input"
-          autoComplete="off"
-          placeholder="Select one or more projects"
-          role="combobox"
-          isExpanded={isProjectsOpen}
-          aria-controls="select-multi-typeahead-listbox"
-        >
-          <ChipGroup aria-label="Current selections">
-            {formProjects?.map((userProject, index) => (
-              <Chip
-                key={index}
-                onClick={(ev) => {
-                  ev.stopPropagation();
-                  onProjectsSelect(ev, userProject);
-                }}
+  const toggle = useCallback(
+    (toggleRef) => (
+      <MenuToggle
+        variant="typeahead"
+        aria-label="Multi typeahead menu toggle"
+        onClick={() => setIsProjectsOpen(!isProjectsOpen)}
+        innerRef={toggleRef}
+        isExpanded={isProjectsOpen}
+        isFullWidth
+      >
+        <TextInputGroup isPlain>
+          <TextInputGroupMain
+            value={inputValue}
+            onClick={() => setIsProjectsOpen(!isProjectsOpen)}
+            onChange={(_, value) => setInputValue(value)}
+            id="multi-typeahead-select-input"
+            autoComplete="off"
+            placeholder="Select one or more projects"
+            role="combobox"
+            isExpanded={isProjectsOpen}
+            aria-controls="select-multi-typeahead-listbox"
+          >
+            <ChipGroup aria-label="Current selections">
+              {formProjects?.map((userProject, index) => (
+                <Chip
+                  key={index}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    onProjectsSelect(ev, userProject);
+                  }}
+                >
+                  {userProject.project.title}
+                </Chip>
+              ))}
+            </ChipGroup>
+          </TextInputGroupMain>
+          <TextInputGroupUtilities>
+            {(formProjects?.length > 0 || inputValue !== '') && (
+              <Button
+                variant="plain"
+                onClick={onProjectsClear}
+                aria-label="Clear input value"
               >
-                {userProject.project.title}
-              </Chip>
-            ))}
-          </ChipGroup>
-        </TextInputGroupMain>
-        <TextInputGroupUtilities>
-          {(formProjects?.length > 0 || inputValue !== '') && (
-            <Button
-              variant="plain"
-              onClick={onProjectsClear}
-              aria-label="Clear input value"
-            >
-              <TimesIcon aria-hidden />
-            </Button>
-          )}
-        </TextInputGroupUtilities>
-      </TextInputGroup>
-    </MenuToggle>
+                <TimesIcon aria-hidden />
+              </Button>
+            )}
+          </TextInputGroupUtilities>
+        </TextInputGroup>
+      </MenuToggle>
+    ),
+    [
+      formProjects,
+      inputValue,
+      isProjectsOpen,
+      onProjectsClear,
+      onProjectsSelect,
+    ],
   );
 
   const handleProjectClick = (value) => {
