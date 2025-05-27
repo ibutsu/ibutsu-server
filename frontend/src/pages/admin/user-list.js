@@ -1,4 +1,10 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import {
   Button,
@@ -44,20 +50,22 @@ const UserList = () => {
   const { activeFilters, clearFilters } = useContext(FilterContext);
 
   useEffect(() => {
-    // fetch the users
-    setFetching(true);
-    const apiParams = {
-      page: page,
-      pageSize: pageSize,
-      filter: filtersToAPIParams(activeFilters),
-    };
-
-    HttpClient.get([Settings.serverUrl, 'admin', 'user'], apiParams)
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+    const fetchUsers = async () => {
+      setFetching(true);
+      setIsError(false);
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'admin', 'user'],
+          {
+            page: page,
+            pageSize: pageSize,
+            filter: filtersToAPIParams(activeFilters),
+          },
+        );
+        const data = await HttpClient.handleResponse(response);
         setRows(
-          data.users
-            .map((user) =>
+          data?.users
+            ?.map((user) =>
               userToRow(user, setSelectedUser, setIsDeleteModalOpen),
             )
             .filter(Boolean),
@@ -66,13 +74,15 @@ const UserList = () => {
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
         setFetching(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error fetching users data:', error);
         setRows([]);
         setIsError(true);
         setFetching(false);
-      });
+      }
+    };
+
+    fetchUsers();
   }, [
     page,
     pageSize,
@@ -81,47 +91,37 @@ const UserList = () => {
     setPage,
     setPageSize,
     setTotalItems,
-  ]); // isDeleteing so the users fetch after delete
+  ]);
 
-  const onModalDeleteClick = () => {
-    setIsDeleting(true);
-    HttpClient.delete([Settings.serverUrl, 'admin', 'user', selectedUser.id])
-      .then((response) => HttpClient.handleResponse(response))
-      .then(() => {
-        setIsDeleting(false);
-        setIsDeleteModalOpen(false);
-      });
-  };
+  const onModalDeleteClick = useCallback(() => {
+    const deleteCall = async () => {
+      setIsDeleting(true);
+      if (selectedUser) {
+        try {
+          const response = await HttpClient.delete([
+            Settings.serverUrl,
+            'admin',
+            'user',
+            selectedUser.id,
+          ]);
+          await HttpClient.handleResponse(response);
+          setIsDeleting(false);
+          setIsDeleteModalOpen(false);
+        } catch (error) {
+          console.error('Error deleting user:', error);
+          setIsDeleting(false);
+        }
+      }
+    };
+    deleteCall();
+  }, [selectedUser]);
 
   useEffect(() => {
     document.title = 'Users - Administration | Ibutsu';
   }, []);
 
-  return (
-    <React.Fragment>
-      <PageSection id="page" variant={PageSectionVariants.light}>
-        <TextContent>
-          <Title headingLevel="h1" ouiaId="users-title">
-            Users
-          </Title>
-        </TextContent>
-      </PageSection>
-      <PageSection>
-        <FilterTable
-          columns={COLUMNS}
-          rows={rows}
-          filters={<AdminFilter />}
-          isError={isError}
-          canSelectAll={false}
-          onSetPage={onSetPage}
-          onSetPageSize={onSetPageSize}
-          page={page}
-          pageSize={pageSize}
-          totalItems={totalItems}
-          fetching={fetching}
-          onClearFilters={clearFilters}
-        />
-      </PageSection>
+  const deleteModal = useMemo(() => {
+    return (
       <Modal
         title="Confirm Delete"
         variant="small"
@@ -151,6 +151,35 @@ const UserList = () => {
         {selectedUser && (selectedUser.name || selectedUser.email)}&rdquo;? This
         cannot be undone!
       </Modal>
+    );
+  }, [isDeleteModalOpen, isDeleting, selectedUser, onModalDeleteClick]);
+
+  return (
+    <React.Fragment>
+      <PageSection id="page" variant={PageSectionVariants.light}>
+        <TextContent>
+          <Title headingLevel="h1" ouiaId="users-title">
+            Users
+          </Title>
+        </TextContent>
+      </PageSection>
+      <PageSection>
+        <FilterTable
+          columns={COLUMNS}
+          rows={rows}
+          filters={<AdminFilter />}
+          isError={isError}
+          canSelectAll={false}
+          onSetPage={onSetPage}
+          onSetPageSize={onSetPageSize}
+          page={page}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          fetching={fetching}
+          onClearFilters={clearFilters}
+        />
+      </PageSection>
+      {deleteModal}
     </React.Fragment>
   );
 };
