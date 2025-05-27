@@ -20,17 +20,18 @@ const usePagination = ({ setParams = true }) => {
       newSearchParams.set('page', page);
       newSearchParams.set('pageSize', pageSize);
       setSearchParams(newSearchParams.toString());
-      // maintain window hash for Run and Result pages to have pagination params on multiple tabs
+      // TODO maintain window hash for Run and Result pages to have pagination params on multiple tabs
     }
   }, [page, pageSize, setParams, searchParams, setSearchParams]);
 
   const onSetPage = useCallback((_, newPage) => {
-    setPage(parseInt(newPage));
+    console.log('Setting page to:', newPage);
+    setPage(newPage);
   }, []);
 
   const onSetPageSize = useCallback((_, newPageSize, newPage) => {
-    setPage(parseInt(newPage));
-    setPageSize(parseInt(newPageSize));
+    setPageSize(newPageSize);
+    setPage(newPage);
   }, []);
 
   return {
