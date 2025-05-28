@@ -10,7 +10,7 @@ CREATE_PROJECT=false
 POSTGRES_EXTRA_ARGS=
 REDIS_EXTRA_ARGS=
 BACKEND_EXTRA_ARGS=
-PYTHON_IMAGE=registry.access.redhat.com/ubi8/python-39:latest
+PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-39:latest
 
 function print_usage() {
     echo "Usage: ibutsu-pod.sh [-h|--help] [-p|--persistent] [-V|--use-volumes] [-A|--create-admin] [-P|--create-project] [POD_NAME]"
