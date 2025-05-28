@@ -39,8 +39,8 @@ const RunList = () => {
     setTotalItems,
   } = usePagination({});
 
-  const [isError, setIsError] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   // Fetch runs based on active filters
   useEffect(() => {

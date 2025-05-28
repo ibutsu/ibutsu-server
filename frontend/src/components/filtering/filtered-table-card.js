@@ -9,6 +9,7 @@ import {
   FlexItem,
   Pagination,
   PaginationVariant,
+  Skeleton,
 } from '@patternfly/react-core';
 
 import {
@@ -51,7 +52,12 @@ const FilterTable = ({
     <Card ouiaId="filter-table-card" className={cardClass}>
       {headerChildren ? <CardHeader>{headerChildren}</CardHeader> : null}
       {filters || null}
-      {populatedRows && !isError && (
+      {fetching && (
+        <CardBody key="loading-table">
+          <Skeleton />
+        </CardBody>
+      )}
+      {!fetching && !isError && populatedRows && (
         <CardBody key="table">
           <Flex
             alignSelf={{ default: 'alignSelfFlexEnd' }}
@@ -98,17 +104,17 @@ const FilterTable = ({
           />
         </CardBody>
       )}
-      {!populatedRows && !isError && !fetching && (
+      {!fetching && !isError && !populatedRows && (
         <CardBody key="empty-table">
           <TableEmptyState onClearFilters={onClearFilters} />
         </CardBody>
       )}
-      {isError && (
+      {!fetching && isError && (
         <CardBody key="error-table">
           <TableErrorState onClearFilters={onClearFilters} />
         </CardBody>
       )}
-      {footerChildren ? (
+      {!fetching && footerChildren ? (
         <CardFooter key="footer">{footerChildren}</CardFooter>
       ) : null}
     </Card>
