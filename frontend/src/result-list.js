@@ -28,6 +28,7 @@ const ResultList = () => {
   const [runs, setRuns] = useState([]);
 
   const [fetching, setFetching] = useState(true);
+  const [isError, setIsError] = useState(false);
 
   const {
     page,
@@ -40,13 +41,10 @@ const ResultList = () => {
     setTotalItems,
   } = usePagination({});
 
-  const [isError, setIsError] = useState(false);
-
   // fetch result data
   useEffect(() => {
     const fetchData = async () => {
       setIsError(false);
-      setFetching(true);
       const apiParams = {
         estimate: true,
         page: page,
@@ -66,13 +64,12 @@ const ResultList = () => {
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
         setIsError(false);
-        setFetching(false);
       } catch (error) {
         console.error('Error fetching result data:', error);
         setRows([]);
         setIsError(true);
-        setFetching(false);
       }
+      setFetching(false);
     };
 
     const debouncer = setTimeout(() => {

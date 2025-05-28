@@ -49,16 +49,28 @@ const JenkinsJobView = ({ view }) => {
   const { activeFilters } = useContext(FilterContext);
 
   useEffect(() => {
-    HttpClient.get([Settings.serverUrl, 'widget-config'], {
-      filter: 'widget=jenkins-analysis-view',
-    })
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
-        setAnalysisViewId(data.widgets[0]?.id);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    const getViewId = async () => {
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget-config'],
+          {
+            filter: 'widget=jenkins-analysis-view',
+          },
+        );
+        const data = await HttpClient.handleResponse(response);
+
+        if (!data.widgets[0]?.id) {
+          console.error(
+            'No analysis view ID found for jenkins-analysis-view widget',
+          );
+        } else {
+          setAnalysisViewId(data.widgets[0]?.id);
+        }
+      } catch (error) {
+        console.error('Error fetching analysis view ID:', error);
+      }
+    };
+    getViewId();
   }, []);
 
   const jobToRow = useCallback(
@@ -139,7 +151,6 @@ const JenkinsJobView = ({ view }) => {
         filter: filtersToAPIParams(activeFilters),
       };
       setIsError(false);
-      setFetching(true);
 
       if (primaryObject) {
         params['project'] = primaryObject.id;
@@ -160,13 +171,12 @@ const JenkinsJobView = ({ view }) => {
         setTotalItems(data.pagination.totalItems);
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
-        setFetching(false);
       } catch (error) {
         console.error('Error fetching Jenkins data:', error);
         setIsError(true);
         setRows([]);
-        setFetching(false);
       }
+      setFetching(false);
     };
 
     if (view && activeFilters?.length) {
