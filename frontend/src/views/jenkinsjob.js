@@ -31,9 +31,11 @@ const JenkinsJobView = ({ view }) => {
   const { primaryObject } = useContext(IbutsuContext);
   const { project_id } = useParams();
   const [analysisViewId, setAnalysisViewId] = useState();
-  const [rows, setRows] = useState([]);
-  const [isError, setIsError] = useState(false);
+
   const [fetching, setFetching] = useState(true);
+  const [isError, setIsError] = useState(false);
+
+  const [rows, setRows] = useState([]);
 
   const {
     page,
@@ -180,7 +182,6 @@ const JenkinsJobView = ({ view }) => {
     };
 
     if (view && activeFilters?.length) {
-      setFetching(true);
       fetchData();
     }
   }, [
