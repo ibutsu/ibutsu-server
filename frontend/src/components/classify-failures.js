@@ -110,8 +110,8 @@ const ClassifyFailuresTable = () => {
         );
         const data = await HttpClient.handleResponse(response);
         setFilteredResults(data.results);
-        setPage(data.pagination.page.toString());
-        setPageSize(data.pagination.pageSize.toString());
+        setPage(data.pagination.page);
+        setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
         setFetching(false);
       } catch (error) {

@@ -141,8 +141,8 @@ const ReportBuilder = () => {
           setRows(row_data);
           setTotalItems(data.pagination.totalItems);
           setIsError(false);
-          pagination_page.current = data.pagination.page.toString();
-          pagination_pageSize.current = data.pagination.pageSize.toString();
+          pagination_page.current = data.pagination.page;
+          pagination_pageSize.current = data.pagination.pageSize;
         })
         .catch((error) => {
           console.error('Error fetching result data:', error);

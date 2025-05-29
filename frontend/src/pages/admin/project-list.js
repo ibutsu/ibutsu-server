@@ -119,8 +119,8 @@ const ProjectList = () => {
           setFilteredProjects(
             data.projects.map((project) => projectToRow(project)),
           );
-          setPage(data.pagination.page.toString());
-          setPageSize(data.pagination.pageSize.toString());
+          setPage(data.pagination.page);
+          setPageSize(data.pagination.pageSize);
           setTotalItems(data.pagination.totalItems);
         }
       })

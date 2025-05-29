@@ -143,10 +143,9 @@ const CompareRunsView = () => {
       })
         .then((response) => HttpClient.handleResponse(response))
         .then((data) => {
-          console.dir(data.results);
           setResults(data.results);
-          setPage(data.pagination.page.toString());
-          setPageSize(data.pagination.pageSize.toString());
+          setPage(data.pagination.page);
+          setPageSize(data.pagination.pageSize);
           setTotalItems(data.pagination.totalItems);
         })
         .catch((error) => {
