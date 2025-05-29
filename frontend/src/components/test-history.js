@@ -175,7 +175,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
     } else {
       const debouncer = setTimeout(() => {
         getResults();
-      }, 200);
+      }, 150);
       return () => {
         clearTimeout(debouncer);
       };
@@ -240,7 +240,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
       };
       const debouncer = setTimeout(() => {
         resultAggFetch();
-      }, 200);
+      }, 150);
       return () => {
         clearTimeout(debouncer);
       };

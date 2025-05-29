@@ -82,7 +82,10 @@ const UserList = () => {
       }
     };
 
-    fetchUsers();
+    const debouncer = setTimeout(() => {
+      fetchUsers();
+    }, 150);
+    return () => clearTimeout(debouncer);
   }, [
     page,
     pageSize,
@@ -113,7 +116,10 @@ const UserList = () => {
         }
       }
     };
-    deleteCall();
+    const debouncer = setTimeout(() => {
+      deleteCall();
+    }, 150);
+    return () => clearTimeout(debouncer);
   }, [selectedUser]);
 
   useEffect(() => {
