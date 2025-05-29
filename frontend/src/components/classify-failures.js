@@ -122,7 +122,10 @@ const ClassifyFailuresTable = () => {
       }
     };
 
-    fetchData();
+    const debouncer = setTimeout(() => {
+      fetchData();
+    }, 150);
+    return () => clearTimeout(debouncer);
   }, [
     page,
     pageSize,

@@ -146,7 +146,10 @@ const Dashboard = () => {
     };
 
     if (primaryObject) {
-      fetchDashboards();
+      const debouncer = setTimeout(() => {
+        fetchDashboards();
+      }, 150);
+      return () => clearTimeout(debouncer);
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

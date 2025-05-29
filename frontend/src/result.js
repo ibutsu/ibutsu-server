@@ -24,9 +24,7 @@ const Result = () => {
 
   useEffect(() => {
     const fetchTestResult = async () => {
-      if (!result_id) {
-        return;
-      } else if (result_id !== testResult?.id) {
+      if (result_id !== testResult?.id) {
         try {
           setFetching(true);
           const response = await HttpClient.get([
@@ -45,7 +43,12 @@ const Result = () => {
         }
       }
     };
-    fetchTestResult();
+    if (result_id) {
+      const debouncer = setTimeout(() => {
+        fetchTestResult();
+      }, 150);
+      return () => clearTimeout(debouncer);
+    }
   }, [result_id, testResult]);
 
   return (
