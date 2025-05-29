@@ -22,6 +22,9 @@ import MultiValueInput from '../multivalueinput';
 import ActiveFilters from './active-filters';
 
 import { FilterContext } from '../contexts/filterContext';
+import { RESULT_STATES } from '../../constants';
+
+const RESULT_SELECT_OPTIONS = Object.keys(RESULT_STATES);
 
 const ResultFilter = ({ hideFilters, runs }) => {
   const {
@@ -475,14 +478,7 @@ const ResultFilter = ({ hideFilters, runs }) => {
                   }
                 >
                   <SelectList>
-                    {[
-                      'passed',
-                      'xpassed',
-                      'failed',
-                      'xfailed',
-                      'skipped',
-                      'error',
-                    ].map((option, index) => (
+                    {RESULT_SELECT_OPTIONS.map((option, index) => (
                       <SelectOption key={index} value={option}>
                         {option}
                       </SelectOption>

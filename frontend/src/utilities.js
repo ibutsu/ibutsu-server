@@ -21,6 +21,7 @@ import {
   QuestionCircleIcon,
   TimesCircleIcon,
   TrashIcon,
+  FlagIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import {
@@ -60,6 +61,8 @@ export const getIconForResult = (result) => {
     resultIcon = <CheckCircleIcon />;
   } else if (result === 'xpassed') {
     resultIcon = <TimesCircleIcon />;
+  } else if (result === 'manual') {
+    resultIcon = <FlagIcon />;
   }
   return resultIcon;
 };
@@ -211,20 +214,8 @@ export const buildResultsTree = (treeResults) => {
       child.badgeProps = { className: className };
       children = child.children;
     });
-    let icon = <QuestionCircleIcon />;
-    if (testResult.result === 'passed') {
-      icon = <CheckCircleIcon />;
-    } else if (testResult.result === 'failed') {
-      icon = <TimesCircleIcon />;
-    } else if (testResult.result === 'error') {
-      icon = <ExclamationCircleIcon />;
-    } else if (testResult.result === 'skipped') {
-      icon = <ChevronRightIcon />;
-    } else if (testResult.result === 'xfailed') {
-      icon = <CheckCircleIcon />;
-    } else if (testResult.result === 'xpassed') {
-      icon = <TimesCircleIcon />;
-    }
+    let icon = getIconForResult(testResult.result);
+
     children.push({
       id: testResult.id,
       name: testResult.test_id,
