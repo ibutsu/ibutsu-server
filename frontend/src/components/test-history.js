@@ -105,7 +105,11 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         {
           field: 'result',
           operator: 'in',
-          value: 'passed;skipped;failed;error;xpassed;xfailed',
+          value:
+            'failed;error;manual' +
+            (onlyFailures
+              ? ';skipped;xfailed'
+              : ';skipped;xfailed;xpassed;passed'),
         },
         {
           field: 'test_id',
@@ -127,7 +131,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         ),
       ]);
     }
-  }, [setActiveFilters, testResult]);
+  }, [onlyFailures, setActiveFilters, testResult]);
 
   // fetch result data with active filters
   useEffect(() => {
@@ -234,29 +238,9 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   }, [activeFilters]);
 
   // Handle checkbox for only failures
-  const onFailuresCheck = useCallback(
-    (_, checked) => {
-      setActiveFilters((prevFilters) => {
-        // If the onlyFailures filter is already present, update it
-        return prevFilters.map((filter) => {
-          if (filter.field === 'result') {
-            return {
-              ...filter,
-              value:
-                'failed;error' +
-                (checked
-                  ? ';skipped;xfailed'
-                  : ';skipped;xfailed;xpassed;passed'),
-            };
-          } else {
-            return filter;
-          }
-        });
-      });
-      setOnlyFailures(checked);
-    },
-    [setActiveFilters],
-  );
+  const onFailuresCheck = useCallback((_, checked) => {
+    setOnlyFailures(checked);
+  }, []);
 
   // Handle time range select
   const onTimeRangeSelect = useCallback(

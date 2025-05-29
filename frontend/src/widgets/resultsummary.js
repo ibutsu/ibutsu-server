@@ -18,29 +18,34 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
     xfailed: 0,
     xpassed: 0,
     other: 0,
+    manual: 0,
     total: 0,
   });
 
-  const [dataError, setDataError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
-    HttpClient.get([Settings.serverUrl, 'widget', 'result-summary'], params)
-      .then((response) => {
-        response = HttpClient.handleResponse(response, 'response');
-        return response.json();
-      })
-      .then((data) => {
+    setIsError(false);
+    const fetchSummary = async () => {
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget', 'result-summary'],
+          params,
+        );
+        const data = await HttpClient.handleResponse(response);
+        console.log('Result Summary Data:', data);
         setSummary(data);
-        setIsLoading(false);
-        setDataError(false);
-      })
-      .catch((error) => {
-        setDataError(true);
-        setIsLoading(false);
+        setIsError(false);
+      } catch (error) {
+        setIsError(true);
         console.error(error);
-      });
+      }
+      setFetching(false);
+    };
+    if (params) {
+      fetchSummary();
+    }
   }, [params]);
 
   const themeColors = [
@@ -61,9 +66,9 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
         onDeleteClick={onDeleteClick}
       />
       <CardBody>
-        {dataError && <p>Error fetching data</p>}
-        {!dataError && isLoading && <Text component="h2">Loading ...</Text>}
-        {!dataError && !isLoading && (
+        {isError && <p>Error fetching data</p>}
+        {!isError && fetching && <Text component="h2">Loading ...</Text>}
+        {!isError && !fetching && (
           <div>
             <ChartDonut
               constrainToVisibleArea={true}
@@ -74,6 +79,7 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
                 { x: 'Error', y: summary.error },
                 { x: 'Xfailed', y: summary.xfailed },
                 { x: 'Xpassed', y: summary.xpassed },
+                { x: 'Manual', y: summary?.manual }, // TODO result-summary data needs it
               ]}
               labels={({ datum }) => `${toTitleCase(datum.x)}: ${datum.y}`}
               height={200}
@@ -89,15 +95,16 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
         )}
       </CardBody>
       <CardFooter>
-        {!dataError && !isLoading && (
+        {!isError && !fetching && (
           <ChartLegend
             data={[
-              { name: 'Passed (' + summary.passed + ')' },
-              { name: 'Failed (' + summary.failed + ')' },
-              { name: 'Skipped (' + summary.skipped + ')' },
-              { name: 'Error (' + summary.error + ')' },
-              { name: 'Xfailed (' + summary.xfailed + ')' },
-              { name: 'Xpassed (' + summary.xpassed + ')' },
+              { name: `Passed (${summary.passed})` },
+              { name: `Failed (${summary.failed})` },
+              { name: `Skipped (${summary.skipped})` },
+              { name: `Error (${summary.error})` },
+              { name: `xFailed (${summary.xfailed})` },
+              { name: `xPassed (${summary.xpassed})` },
+              { name: `Manual (${summary.manual || 'N/A'})` },
             ]}
             height={120}
             orientation="horizontal"

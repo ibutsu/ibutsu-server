@@ -37,18 +37,11 @@ export const OPERATIONS = { ...STRING_OPERATIONS, ...NUMERIC_OPERATIONS };
 
 // TODO create groups of these for presentation layer SelectGroup
 export const ARRAY_RESULT_FIELDS = [
-  { value: 'metadata.tags', children: 'Metadata Tags' },
   { value: 'metadata.markers', children: 'Metadata Markers' },
 ];
 
 export const NUMERIC_RESULT_FIELDS = [
   { value: 'duration', children: 'Duration' },
-  { value: 'metadata.durations.call', children: 'Metadata Call Duration' },
-  { value: 'metadata.durations.setup', children: 'Metadata Setup Duration' },
-  {
-    value: 'metadata.durations.teardown',
-    children: 'Metadata Teardown Duration',
-  },
   {
     value: 'metadata.jenkins.build_number',
     children: 'Metadata Jenkins Build Number',
@@ -59,24 +52,25 @@ export const STRING_RESULT_FIELDS = [
   { value: 'env', children: 'Environment' },
   { value: 'component', children: 'Component' },
   { value: 'run_id', children: 'Run ID' },
-  { value: 'project_id', children: 'Project ID' },
-  { value: 'metadata.assignee', children: 'Metadata Assignee' },
-  { value: 'metadata.team', children: 'Metadata Team' },
-  { value: 'metadata.caseautomation', children: 'Metadata Case Automation' },
-  { value: 'metadata.fspath', children: 'Metadata File Path' },
-  { value: 'metadata.jenkins.job_name', children: 'Metadata Jenkins Job Name' },
-  { value: 'metadata.id', children: 'Metadata ID' },
-  { value: 'metadata.nodeid', children: 'Metadata Node ID' },
-  { value: 'metadata.params', children: 'Metadata Parameters' },
-  { value: 'metadata.project', children: 'Metadata Project' },
-  { value: 'metadata.title', children: 'Metadata Title' },
-  { value: 'metadata.endpoint', children: 'Metadata Endpoint' },
-  { value: 'metadata.exception_name', children: 'Metadata Exception Name' },
   { value: 'params', children: 'Params' },
   { value: 'result', children: 'Result' },
   { value: 'source', children: 'Source' },
   { value: 'start_time', children: 'Start Time' },
   { value: 'test_id', children: 'Test ID' },
+  { value: 'metadata.assignee', children: 'Metadata Assignee' },
+  {
+    value: 'metadata.automation_status',
+    children: 'Metadata Automation Status',
+  },
+  { value: 'metadata.team', children: 'Metadata Team' },
+  { value: 'metadata.caseautomation', children: 'Metadata Case Automation' },
+  { value: 'metadata.jenkins.job_name', children: 'Metadata Jenkins Job Name' },
+  { value: 'metadata.importance', children: 'Metadata Importance' },
+  { value: 'metadata.interface_type', children: 'Metadata Interface Type' },
+  { value: 'metadata.project', children: 'Metadata Project' },
+  { value: 'metadata.title', children: 'Metadata Title' },
+  { value: 'metadata.endpoint', children: 'Metadata Endpoint' },
+  { value: 'metadata.exception_name', children: 'Metadata Exception Name' },
 ];
 
 const RESULT_FIELDS = [
@@ -179,6 +173,7 @@ export const RESULT_STATES = {
   skipped: 'skips',
   xfailed: 'xfailures',
   xpassed: 'xpasses',
+  manual: 'manual',
 };
 
 export const RUN_RESULTS_COLUMNS = [
