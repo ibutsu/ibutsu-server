@@ -43,10 +43,6 @@ import TestHistoryTable from './test-history';
 import ArtifactTab from './artifact-tab';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import { useTabHook } from './hooks/useTab';
-import FilterProvider from './contexts/filterContext';
-import { RESULT_FIELDS } from '../constants';
-
-const FILTER_BLOCK = ['result', 'component', 'start_time', 'env'];
 
 const ResultView = ({
   comparisonResults,
@@ -72,16 +68,10 @@ const ResultView = ({
           eventKey="testHistory"
           title={<TabTitle icon={<SearchIcon />} text="Test History" />}
         >
-          <FilterProvider
-            key="test-history"
-            blockRemove={FILTER_BLOCK}
-            fieldOptions={RESULT_FIELDS}
-          >
-            <TestHistoryTable
-              comparisonResults={comparisonResults}
-              testResult={testResult}
-            />
-          </FilterProvider>
+          <TestHistoryTable
+            comparisonResults={comparisonResults}
+            testResult={testResult}
+          />
         </Tab>
       );
     }

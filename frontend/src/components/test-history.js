@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Checkbox,
@@ -27,9 +27,10 @@ import ResultView from './resultView';
 import ActiveFilters from './filtering/active-filters';
 import usePagination from './hooks/usePagination';
 import FilterTable from './filtering/filtered-table-card';
-import { FilterContext } from './contexts/filterContext';
+import useTableFilters from './hooks/useTableFilters';
 
 const HIDE = ['project_id', 'test_id'];
+const BLOCK = ['result', 'component', 'start_time', 'env'];
 
 const COLUMNS = [
   {
@@ -52,7 +53,9 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
     clearFilters,
     setActiveFilters,
     onRemoveFilter,
-  } = useContext(FilterContext);
+  } = useTableFilters({
+    blockRemove: BLOCK,
+  });
 
   const {
     page,
@@ -66,10 +69,10 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   } = usePagination({ setParams: false });
 
   const [isError, setIsError] = useState(false);
-  const [fetching, setFetching] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
   const [isTimeRangeSelectOpen, setTimeRangeOpen] = useState(false);
-  const [selectedTimeRange, setTimeRange] = useState('1 Week');
+  const [selectedTimeRange, setSelectedTimeRange] = useState('1 Week');
   const [onlyFailures, setOnlyFailures] = useState(false);
   const [historySummary, setHistorySummary] = useState();
   const [rows, setRows] = useState([]);
@@ -154,18 +157,17 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         setPage(data.pagination.page.toString());
         setPageSize(data.pagination.pageSize.toString());
         setTotalItems(data.pagination.totalItems);
-        setFetching(false);
       } catch (error) {
         console.error('Error fetching result data:', error);
         setRows([]);
         setIsError(false);
-        setFetching(false);
       }
+      setFetching(false);
     };
     if (comparisonResults !== undefined) {
       setRows([...comparisonResults]);
+      setFetching(false);
     } else {
-      setFetching(true);
       getResults();
     }
   }, [
@@ -234,23 +236,26 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   // Handle checkbox for only failures
   const onFailuresCheck = useCallback(
     (_, checked) => {
-      const newFilters = activeFilters.map((filter) => {
-        if (filter.field === 'result') {
-          return {
-            ...filter,
-            value:
-              'failed;error' +
-              (checked
-                ? ';skipped;xfailed'
-                : ';skipped;xfailed;xpassed;passed'),
-          };
-        }
-        return filter;
+      setActiveFilters((prevFilters) => {
+        // If the onlyFailures filter is already present, update it
+        return prevFilters.map((filter) => {
+          if (filter.field === 'result') {
+            return {
+              ...filter,
+              value:
+                'failed;error' +
+                (checked
+                  ? ';skipped;xfailed'
+                  : ';skipped;xfailed;xpassed;passed'),
+            };
+          } else {
+            return filter;
+          }
+        });
       });
-      setActiveFilters(newFilters);
       setOnlyFailures(checked);
     },
-    [activeFilters, setActiveFilters],
+    [setActiveFilters],
   );
 
   // Handle time range select
@@ -262,8 +267,8 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         const timeRange = new Date(
           startTime.getTime() - selectionCoefficient * millisecondsInMonth,
         );
-        setActiveFilters(
-          activeFilters.map((filter) => {
+        setActiveFilters((prevFilters) => {
+          return prevFilters.map((filter) => {
             if (filter.field === 'start_time') {
               return {
                 ...filter,
@@ -273,13 +278,13 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
             } else {
               return filter;
             }
-          }),
-        );
+          });
+        });
         setTimeRangeOpen(false);
-        setTimeRange(selection);
+        setSelectedTimeRange(selection);
       }
     },
-    [activeFilters, setActiveFilters, testResult?.start_time],
+    [setActiveFilters, testResult?.start_time],
   );
 
   // Handle time range toggle
@@ -431,7 +436,6 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
       columns={COLUMNS}
       rows={rows}
       filters={filterComponents}
-      activeFilters={activeFilters}
       pageSize={pageSize}
       page={page}
       totalItems={totalItems}
