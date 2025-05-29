@@ -202,7 +202,7 @@ ResultAggregatorWidget.propTypes = {
   title: PropTypes.string,
   params: PropTypes.object,
   chartType: PropTypes.string,
-  days: PropTypes.string,
+  days: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   groupField: PropTypes.string,
   dropdownItems: PropTypes.array,
   onDeleteClick: PropTypes.func,
