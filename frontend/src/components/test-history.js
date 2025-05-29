@@ -96,7 +96,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
             operator: 'gt',
             value: new Date(
               new Date(testResult?.start_time).getTime() -
-                WEEKS['1 Week'] * millisecondsInMonth,
+                WEEKS[selectedTimeRange] * millisecondsInMonth,
             ).toISOString(),
           }
         : {};
@@ -131,7 +131,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         ),
       ]);
     }
-  }, [onlyFailures, setActiveFilters, testResult]);
+  }, [onlyFailures, setActiveFilters, testResult, selectedTimeRange]);
 
   // fetch result data with active filters
   useEffect(() => {
@@ -158,8 +158,8 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
             .flat(),
         );
 
-        setPage(data.pagination.page.toString());
-        setPageSize(data.pagination.pageSize.toString());
+        setPage(data.pagination.page);
+        setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
       } catch (error) {
         console.error('Error fetching result data:', error);
@@ -168,11 +168,17 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
       }
       setFetching(false);
     };
+
     if (comparisonResults !== undefined) {
       setRows([...comparisonResults]);
       setFetching(false);
     } else {
-      getResults();
+      const debouncer = setTimeout(() => {
+        getResults();
+      }, 200);
+      return () => {
+        clearTimeout(debouncer);
+      };
     }
   }, [
     activeFilters,
@@ -232,8 +238,12 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
           console.error(error);
         }
       };
-
-      resultAggFetch();
+      const debouncer = setTimeout(() => {
+        resultAggFetch();
+      }, 200);
+      return () => {
+        clearTimeout(debouncer);
+      };
     }
   }, [activeFilters]);
 
@@ -245,30 +255,12 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   // Handle time range select
   const onTimeRangeSelect = useCallback(
     (_, selection) => {
-      if (testResult?.start_time) {
-        const startTime = new Date(testResult?.start_time);
-        const selectionCoefficient = WEEKS[selection];
-        const timeRange = new Date(
-          startTime.getTime() - selectionCoefficient * millisecondsInMonth,
-        );
-        setActiveFilters((prevFilters) => {
-          return prevFilters.map((filter) => {
-            if (filter.field === 'start_time') {
-              return {
-                ...filter,
-                operator: 'gt',
-                value: timeRange.toISOString(),
-              };
-            } else {
-              return filter;
-            }
-          });
-        });
+      if (Object.hasOwn(testResult, 'start_time')) {
         setTimeRangeOpen(false);
         setSelectedTimeRange(selection);
       }
     },
-    [setActiveFilters, testResult?.start_time],
+    [testResult],
   );
 
   // Handle time range toggle

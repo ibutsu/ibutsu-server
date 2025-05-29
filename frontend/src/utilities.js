@@ -869,19 +869,6 @@ export const cleanPath = (path) => {
   return pathParts.join('/');
 };
 
-export const debounce = (func, timeout = 500) => {
-  let timerId;
-  return (...args) => {
-    if (!timerId) {
-      func.apply(this, args);
-    }
-    clearTimeout(timerId);
-    timerId = setTimeout(() => {
-      timerId = undefined;
-    }, timeout);
-  };
-};
-
 export const getDarkTheme = () => {
   // check local storage and browser theme for a preference
   const local_theme = localStorage.getItem(THEME_KEY);

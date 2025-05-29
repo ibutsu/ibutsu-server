@@ -242,8 +242,8 @@ const AccessibilityDashboardView = ({ view }) => {
         setRows(
           data.runs.map((run) => runToRow(run, setFilters, analysisViewId)),
         );
-        setPage(data.pagination.page.toString());
-        setPageSize(data.pagination.pageSize.toString());
+        setPage(data.pagination.page);
+        setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
       })
       .catch((error) => {
