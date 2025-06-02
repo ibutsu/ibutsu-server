@@ -34,7 +34,6 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
           params,
         );
         const data = await HttpClient.handleResponse(response);
-        console.log('Result Summary Data:', data);
         setSummary(data);
         setIsError(false);
       } catch (error) {
@@ -68,7 +67,7 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
       <CardBody>
         {isError && <p>Error fetching data</p>}
         {!isError && fetching && <Text component="h2">Loading ...</Text>}
-        {!isError && !fetching && (
+        {!isError && !fetching && Object.keys(summary || {}).length && (
           <div>
             <ChartDonut
               constrainToVisibleArea={true}
