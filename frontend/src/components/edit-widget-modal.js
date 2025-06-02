@@ -86,7 +86,12 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
         }
       });
     };
-    fetchWidgetTypes();
+    const debouncer = setTimeout(() => {
+      fetchWidgetTypes();
+    }, 100);
+    return () => {
+      clearTimeout(debouncer);
+    };
   }, [data.widget]);
 
   const widgetParams = useMemo(

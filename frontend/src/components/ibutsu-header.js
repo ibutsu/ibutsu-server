@@ -48,7 +48,13 @@ import { setDocumentDarkTheme } from '../utilities';
 
 const IbutsuHeader = () => {
   // hooks
-  const context = useContext(IbutsuContext);
+  const {
+    setPrimaryObject,
+    setPrimaryType,
+    setDefaultDashboard,
+    darkTheme,
+    setDarkTheme,
+  } = useContext(IbutsuContext);
   const params = useParams();
   const navigate = useNavigate();
 
@@ -64,27 +70,28 @@ const IbutsuHeader = () => {
 
   // values from hooks
   const { project_id } = params;
-  const {
-    setPrimaryObject,
-    setPrimaryType,
-    setDefaultDashboard,
-    darkTheme,
-    setDarkTheme,
-  } = context;
 
   useEffect(() => {
     // update projects/portals when the filter input changes
     // TODO: iterate over pages, fix controller filtering behavior to apply pageSize AFTER filter
-    let api_params = { pageSize: 20 };
-    if (filterValue) {
-      api_params['filter'] = ['title%' + filterValue];
-    }
-    HttpClient.get([Settings.serverUrl, endpoint], api_params)
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
-        setProjects(data[endpoint + 's']);
-        setFilteredProjects(data[endpoint + 's']);
-      });
+    const fetchPrimary = async () => {
+      let api_params = { pageSize: 20 };
+      if (filterValue) {
+        api_params['filter'] = [`title%${filterValue}`];
+      }
+      const response = await HttpClient.get(
+        [Settings.serverUrl, endpoint],
+        api_params,
+      );
+      const data = await HttpClient.handleResponse(response);
+      setProjects(data[endpoint + 's']);
+      setFilteredProjects(data[endpoint + 's']);
+    };
+
+    const debouncer = setTimeout(() => {
+      fetchPrimary();
+    }, 50);
+    return () => clearTimeout(debouncer);
   }, [filterValue, endpoint]);
 
   useEffect(() => {
@@ -92,19 +99,32 @@ const IbutsuHeader = () => {
   }, [darkTheme]);
 
   useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const response = await HttpClient.get([
+          Settings.serverUrl,
+          '/project/',
+          project_id,
+        ]);
+        const data = await HttpClient.handleResponse(response);
+        setPrimaryObject(data);
+        setPrimaryType('project');
+        setDefaultDashboard(data.default_dashboard_id);
+        setSelectedProject(data);
+        setFilterValue();
+        setInputValue(data.title);
+        setIsProjectSelectOpen(false);
+      } catch (error) {
+        console.error('Error fetching project:', error);
+      }
+    };
+
     if (project_id && selectedProject?.id !== project_id) {
-      HttpClient.get([Settings.serverUrl, '/project/', project_id])
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          setPrimaryObject(data);
-          setPrimaryType('project');
-          setDefaultDashboard(data.default_dashboard_id);
-          setSelectedProject(data);
-          setFilterValue();
-          setInputValue(data.title);
-          setIsProjectSelectOpen(false);
-        })
-        .catch((error) => console.error(error));
+      const debouncer = setTimeout(() => {
+        fetchProject();
+      }, 50);
+
+      return () => clearTimeout(debouncer);
     }
   }, [
     project_id,
@@ -132,14 +152,15 @@ const IbutsuHeader = () => {
   };
 
   const onProjectClear = () => {
-    setSelectedProject('');
-    setIsProjectSelectOpen(false);
+    setPrimaryObject();
+    setDefaultDashboard();
+
+    setSelectedProject();
     setInputValue('');
     setFilterValue('');
+    setIsProjectSelectOpen(false);
 
-    setPrimaryObject();
-
-    navigate('/project');
+    navigate('/project/', { replace: true });
   };
 
   const onProjectTextInputChange = (_, value) => {
@@ -174,12 +195,7 @@ const IbutsuHeader = () => {
         />
         <TextInputGroupUtilities>
           {!!inputValue && (
-            <Button
-              onClick={() => {
-                onProjectClear();
-              }}
-              aria-label="Clear input value"
-            >
+            <Button onClick={onProjectClear} aria-label="Clear input value">
               <Icon>
                 <TimesIcon aria-hidden />
               </Icon>

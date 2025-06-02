@@ -81,9 +81,28 @@ const ReportBuilder = () => {
   }, [location]);
 
   useEffect(() => {
-    HttpClient.get([Settings.serverUrl, 'report', 'types'])
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => setReportTypes(data));
+    const fetchReportTypes = async () => {
+      try {
+        const response = await HttpClient.get([
+          Settings.serverUrl,
+          'report',
+          'types',
+        ]);
+        const data = await HttpClient.handleResponse(response);
+        setReportTypes(data);
+      } catch (error) {
+        console.error('Error fetching report types:', error);
+        setReportTypes([]);
+      }
+    };
+
+    const debouncer = setTimeout(() => {
+      fetchReportTypes();
+    }, 50);
+
+    return () => {
+      clearTimeout(debouncer);
+    };
   }, []);
 
   useEffect(() => {
@@ -126,7 +145,7 @@ const ReportBuilder = () => {
       };
     };
 
-    const getReports = () => {
+    const getReports = async () => {
       let params = {
         pageSize: pagination_pageSize.current,
         page: pagination_page.current,
@@ -134,21 +153,24 @@ const ReportBuilder = () => {
       if (primaryObject) {
         params['project'] = primaryObject.id;
       }
-      HttpClient.get([Settings.serverUrl, 'report'], params)
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          let row_data = data.reports.map((report) => reportToRow(report));
-          setRows(row_data);
-          setTotalItems(data.pagination.totalItems);
-          setIsError(false);
-          pagination_page.current = data.pagination.page;
-          pagination_pageSize.current = data.pagination.pageSize;
-        })
-        .catch((error) => {
-          console.error('Error fetching result data:', error);
-          setRows([]);
-          setIsError(true);
-        });
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'report'],
+          params,
+        );
+        const data = await HttpClient.handleResponse(response);
+
+        let row_data = data?.reports?.map((report) => reportToRow(report));
+        setRows(row_data);
+        setTotalItems(data?.pagination?.totalItems);
+        setIsError(false);
+        pagination_page.current = data?.pagination?.page || 1;
+        pagination_pageSize.current = data?.pagination?.pageSize || 20;
+      } catch (error) {
+        console.error('Error fetching result data:', error);
+        setRows([]);
+        setIsError(true);
+      }
     };
 
     getReports();

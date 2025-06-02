@@ -103,7 +103,10 @@ const ResultList = () => {
       }
     };
 
-    fetchRuns();
+    const debouncer = setTimeout(() => {
+      fetchRuns();
+    }, 100);
+    return () => clearTimeout(debouncer);
   }, []);
 
   useEffect(() => {

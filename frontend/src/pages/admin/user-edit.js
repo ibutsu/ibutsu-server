@@ -150,7 +150,11 @@ const UserEdit = () => {
         setProjects([]);
       }
     };
-    fetchProjects();
+
+    const debouncer = setTimeout(() => {
+      fetchProjects();
+    }, 100);
+    return () => clearTimeout(debouncer);
   }, []);
 
   useEffect(() => {

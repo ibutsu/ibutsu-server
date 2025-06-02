@@ -193,6 +193,44 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
 
   // Compose result summary from all results
   useEffect(() => {
+    const resultAggFetch = async (summary) => {
+      // BUG TODO: It looks like the backend is dropping/ignoring the env filter
+      // ex: I have two results matching all other filters, but one has env=prod and the other has env=stage
+      // and the result aggregator is returning a count of 2 instead of 1 when the env filter is in additional_filters
+      try {
+        const apiParams = {
+          group_field: 'result',
+          additional_filters: filtersToAPIParams(
+            activeFilters.filter((filter) => {
+              if (filter.field !== 'result') {
+                return filter;
+              } // drop result filter to get all for summary
+            }),
+          ),
+        };
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget', 'result-aggregator'],
+          apiParams,
+        );
+        const data = await HttpClient.handleResponse(response);
+        data?.forEach((item) => {
+          summary[RESULT_STATES[item['_id']]] = item['count'];
+        });
+        setHistorySummary(summary);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const summary = {
+      passes: 0,
+      failures: 0,
+      errors: 0,
+      skips: 0,
+      xfailures: 0,
+      xpasses: 0,
+    };
+
     if (
       // only query summary when more than just the project_id filter is active
       !(
@@ -201,46 +239,9 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         activeFilters[0].field === 'project_id'
       )
     ) {
-      const summary = {
-        passes: 0,
-        failures: 0,
-        errors: 0,
-        skips: 0,
-        xfailures: 0,
-        xpasses: 0,
-      };
-
-      const resultAggFetch = async () => {
-        // BUG TODO: It looks like the backend is dropping/ignoring the env filter
-        // ex: I have two results matching all other filters, but one has env=prod and the other has env=stage
-        // and the result aggregator is returning a count of 2 instead of 1 when the env filter is in additional_filters
-        try {
-          const apiParams = {
-            group_field: 'result',
-            additional_filters: filtersToAPIParams(
-              activeFilters.filter((filter) => {
-                if (filter.field !== 'result') {
-                  return filter;
-                } // drop result filter to get all for summary
-              }),
-            ),
-          };
-          const response = await HttpClient.get(
-            [Settings.serverUrl, 'widget', 'result-aggregator'],
-            apiParams,
-          );
-          const data = await HttpClient.handleResponse(response);
-          data.forEach((item) => {
-            summary[RESULT_STATES[item['_id']]] = item['count'];
-          });
-          setHistorySummary(summary);
-        } catch (error) {
-          console.error(error);
-        }
-      };
       const debouncer = setTimeout(() => {
-        resultAggFetch();
-      }, 150);
+        resultAggFetch(summary);
+      }, 100);
       return () => {
         clearTimeout(debouncer);
       };

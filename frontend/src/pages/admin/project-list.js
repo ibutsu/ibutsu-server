@@ -101,15 +101,20 @@ const ProjectList = () => {
       });
   };
 
+  // Fetch projects data from the API
   useEffect(() => {
-    const apiParams = {
-      page: page,
-      pageSize: pageSize,
-      filter: filtersToAPIParams(activeFilters),
-    };
-    HttpClient.get([Settings.serverUrl, 'admin', 'project'], apiParams)
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+    const fetchProjects = async () => {
+      try {
+        const apiParams = {
+          page: page,
+          pageSize: pageSize,
+          filter: filtersToAPIParams(activeFilters),
+        };
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'admin', 'project'],
+          apiParams,
+        );
+        const data = await HttpClient.handleResponse(response);
         setIsError(false);
         if (data?.projects) {
           if (activeFilters?.length === 0) {
@@ -123,12 +128,17 @@ const ProjectList = () => {
           setPageSize(data.pagination.pageSize);
           setTotalItems(data.pagination.totalItems);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error fetching projects data:', error);
         setFilteredProjects([]);
         setIsError(true);
-      });
+      }
+    };
+
+    const debouncer = setTimeout(() => {
+      fetchProjects();
+    }, 100);
+    return () => clearTimeout(debouncer);
   }, [
     page,
     pageSize,

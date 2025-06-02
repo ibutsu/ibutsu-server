@@ -43,29 +43,39 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
 
   useEffect(() => {
     // Fetch the widget parameters for heatmap, barchart and linechart
-    if (view) {
-      setIsLoading(true);
-      let params = {
-        ...view.params,
-        project: primaryObject?.id,
-        job_name: activeFilters.filter((f) => f.field === 'job_name')[0]?.value,
-      };
+    const fetchWidgetParams = async () => {
+      try {
+        setIsLoading(true);
+        let params = {
+          ...view.params,
+          project: primaryObject?.id,
+          job_name: activeFilters.filter((f) => f.field === 'job_name')[0]
+            ?.value,
+        };
 
-      params['builds'] = builds;
-      HttpClient.get([Settings.serverUrl, 'widget', view.widget], params)
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          setWidgetParams({
-            ...data.heatmap_params,
-          });
-          setBarchartParams(data.barchart_params);
-          setLinechartParams(data.linechart_params);
-          setIsLoading(false);
-        })
-        .catch((error) => {
-          console.error(error);
-          setIsLoading(false);
+        params['builds'] = builds;
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget', view.widget],
+          params,
+        );
+        const data = await HttpClient.handleResponse(response);
+        setWidgetParams({
+          ...data.heatmap_params,
         });
+        setBarchartParams(data.barchart_params);
+        setLinechartParams(data.linechart_params);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error fetching widget parameters:', error);
+        setIsLoading(false);
+      }
+    };
+
+    if (view) {
+      const debouncer = setTimeout(() => {
+        fetchWidgetParams();
+      }, 50);
+      return () => clearTimeout(debouncer);
     }
   }, [builds, countSkips, primaryObject, view, activeFilters]);
 
