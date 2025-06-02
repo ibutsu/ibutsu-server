@@ -182,7 +182,10 @@ const JenkinsJobView = ({ view }) => {
     };
 
     if (view && activeFilters?.length) {
-      fetchData();
+      const debouncer = setTimeout(() => {
+        fetchData();
+      }, 100);
+      return () => clearTimeout(debouncer);
     }
   }, [
     activeFilters,

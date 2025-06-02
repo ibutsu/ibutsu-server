@@ -90,7 +90,12 @@ const Dashboard = () => {
     };
 
     // Call the function
-    fetchWidgetData(id);
+    const debouncer = setTimeout(() => {
+      fetchWidgetData(id);
+    }, 100);
+    return () => {
+      clearTimeout(debouncer);
+    };
   };
 
   // update widgets
@@ -148,8 +153,11 @@ const Dashboard = () => {
     if (primaryObject) {
       const debouncer = setTimeout(() => {
         fetchDashboards();
-      }, 150);
-      return () => clearTimeout(debouncer);
+      }, 100);
+
+      return () => {
+        clearTimeout(debouncer);
+      };
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

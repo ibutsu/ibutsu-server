@@ -129,7 +129,12 @@ const ResultView = ({
     };
 
     if (testResult && testResult.id) {
-      fetchArtifacts();
+      const debouncer = setTimeout(() => {
+        fetchArtifacts();
+      }, 100);
+      return () => {
+        clearTimeout(debouncer);
+      };
     }
   }, [testResult]);
 

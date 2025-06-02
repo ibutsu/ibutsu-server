@@ -95,7 +95,7 @@ const MultiClassificationDropdown = ({ selectedResults }) => {
             }),
           );
         } catch (error) {
-          console.error('Error setting classification: ' + error);
+          console.error('Error setting classification: ', error);
         }
         setClassificationOpen(false);
       }

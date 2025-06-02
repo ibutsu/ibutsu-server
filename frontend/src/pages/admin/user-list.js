@@ -84,7 +84,7 @@ const UserList = () => {
 
     const debouncer = setTimeout(() => {
       fetchUsers();
-    }, 150);
+    }, 100);
     return () => clearTimeout(debouncer);
   }, [
     page,
@@ -96,30 +96,24 @@ const UserList = () => {
     setTotalItems,
   ]);
 
-  const onModalDeleteClick = useCallback(() => {
-    const deleteCall = async () => {
-      setIsDeleting(true);
-      if (selectedUser) {
-        try {
-          const response = await HttpClient.delete([
-            Settings.serverUrl,
-            'admin',
-            'user',
-            selectedUser.id,
-          ]);
-          await HttpClient.handleResponse(response);
-          setIsDeleting(false);
-          setIsDeleteModalOpen(false);
-        } catch (error) {
-          console.error('Error deleting user:', error);
-          setIsDeleting(false);
-        }
+  const onModalDeleteClick = useCallback(async () => {
+    setIsDeleting(true);
+    if (selectedUser) {
+      try {
+        const response = await HttpClient.delete([
+          Settings.serverUrl,
+          'admin',
+          'user',
+          selectedUser.id,
+        ]);
+        await HttpClient.handleResponse(response);
+        setIsDeleting(false);
+        setIsDeleteModalOpen(false);
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        setIsDeleting(false);
       }
-    };
-    const debouncer = setTimeout(() => {
-      deleteCall();
-    }, 150);
-    return () => clearTimeout(debouncer);
+    }
   }, [selectedUser]);
 
   useEffect(() => {

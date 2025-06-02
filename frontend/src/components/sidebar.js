@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import { Link } from 'react-router-dom';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
@@ -17,19 +17,23 @@ const IbutsuSidebar = () => {
 
   const [views, setViews] = useState();
 
-  const setProjectViews = useCallback(() => {
-    if (!primaryObject) {
-      return;
-    }
+  useEffect(() => {
+    // When the project selection changes, fetch views to include unique sidebar items.
+    const fetchViews = async () => {
+      if (!primaryObject) {
+        return;
+      }
 
-    let params = { filter: ['type=view', 'navigable=true'] };
+      let params = { filter: ['type=view', 'navigable=true'] };
 
-    // read selected project from location
-    params['filter'].push('project_id=' + primaryObject.id);
-
-    HttpClient.get([Settings.serverUrl, 'widget-config'], params)
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+      // read selected project from location
+      params['filter'].push('project_id=' + primaryObject.id);
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget-config'],
+          params,
+        );
+        const data = await HttpClient.handleResponse(response);
         data.widgets?.forEach((widget) => {
           if (primaryObject && widget?.params) {
             widget.params['project'] = primaryObject.id;
@@ -38,14 +42,19 @@ const IbutsuSidebar = () => {
           }
         });
         setViews(data.widgets);
-      })
-      .catch((error) => console.error(error));
+      } catch (error) {
+        console.error('Error fetching project views:', error);
+      }
+    };
+    if (primaryObject) {
+      const debouncer = setTimeout(() => {
+        fetchViews();
+      }, 100);
+      return () => {
+        clearTimeout(debouncer);
+      };
+    }
   }, [primaryObject]);
-
-  useEffect(() => {
-    // When the project selection changes, fetch views to include unique sidebar items.
-    setProjectViews();
-  }, [primaryObject, setProjectViews]);
 
   if (primaryType == 'project' && primaryObject) {
     return (

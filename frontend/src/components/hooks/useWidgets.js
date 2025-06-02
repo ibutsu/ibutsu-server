@@ -38,7 +38,12 @@ export const useWidgets = ({
     };
 
     if (dashboardId) {
-      getWidgets();
+      const debouncer = setTimeout(() => {
+        getWidgets();
+      }, 100);
+      return () => {
+        clearTimeout(debouncer);
+      };
     }
   }, [dashboardId, primaryObject]);
 

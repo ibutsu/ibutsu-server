@@ -47,7 +47,12 @@ import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import { resultToRow, round, buildResultsTree } from './utilities';
+import {
+  resultToRow,
+  round,
+  buildResultsTree,
+  filtersToAPIParams,
+} from './utilities';
 import EmptyObject from './components/empty-object';
 import FilterTable from './components/filtering/filtered-table-card';
 import ResultView from './components/resultView';
@@ -65,6 +70,7 @@ const RUN_BLOCK = ['run_id', 'result'];
 const CLASSIFY_FIELDS = RESULT_FIELDS.filter(
   (field) => !RUN_BLOCK.includes(field.value),
 );
+const MAX_PAGE = 300;
 
 const Run = ({ defaultTab = 'summary' }) => {
   const { run_id } = useParams();
@@ -104,48 +110,69 @@ const Run = ({ defaultTab = 'summary' }) => {
   };
 
   useEffect(() => {
-    if (!run_id) {
-      return;
-    }
-    setIsError(false);
-
-    HttpClient.get([Settings.serverUrl, 'result'], {
-      filter: 'run_id=' + run_id,
-      pageSize: pageSize,
-      page: page,
-    })
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+    const fetchResults = async () => {
+      try {
+        setIsError(false);
+        setFetching(true);
+        const filterParams = filtersToAPIParams([
+          {
+            field: 'run_id',
+            operator: 'eq',
+            value: run_id,
+          },
+        ]);
+        const response = await HttpClient.get([Settings.serverUrl, 'result'], {
+          filter: filterParams,
+          pageSize: pageSize,
+          page: page,
+        });
+        const data = await HttpClient.handleResponse(response);
         setRows(data.results.map((result) => resultToRow(result)));
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
         setFetching(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error fetching result data:', error);
         setRows([]);
         setIsError(true);
         setFetching(false);
-      });
+      }
+    };
+
+    if (run_id) {
+      const debouncer = setTimeout(() => {
+        fetchResults();
+      }, 50);
+      return () => clearTimeout(debouncer);
+    }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, run_id]);
 
   useEffect(() => {
-    if (!run_id) {
-      return;
-    }
-    HttpClient.get([Settings.serverUrl, 'run', run_id])
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+    const fetchRun = async () => {
+      try {
+        const response = await HttpClient.get([
+          Settings.serverUrl,
+          'run',
+          run_id,
+        ]);
+        const data = await HttpClient.handleResponse(response);
+
         setRun(data);
         setArtifacts(data.artifacts);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error(error);
         setIsRunValid(false);
-      });
+      }
+    };
+    if (run_id) {
+      const debouncer = setTimeout(() => {
+        fetchRun();
+      }, 50);
+      return () => clearTimeout(debouncer);
+    }
   }, [run_id]);
 
   const artifactTabs = useMemo(
@@ -187,24 +214,33 @@ const Run = ({ defaultTab = 'summary' }) => {
   useEffect(() => {
     let fetchedResults = [];
     const getResultsForTree = (treePage = 1) => {
-      HttpClient.get([Settings.serverUrl, 'result'], {
-        filter: 'run_id=' + run_id,
-        pageSize: 500,
-        page: treePage,
-      })
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
+      const fetchResults = async () => {
+        try {
+          const response = await HttpClient.get(
+            [Settings.serverUrl, 'result'],
+            {
+              filter: `run_id=${run_id}`,
+              pageSize: MAX_PAGE,
+              page: treePage,
+            },
+          );
+          const data = await HttpClient.handleResponse(response);
           fetchedResults = [...fetchedResults, ...data.results];
-          if (data.results.length === 500) {
+          if (data.results.length === MAX_PAGE) {
             // recursively fetch the next page
             getResultsForTree(treePage + 1);
           } else {
             setResultsTree(buildResultsTree(fetchedResults));
           }
-        })
-        .catch((error) => {
-          console.error('Error fetching result data:', error);
-        });
+        } catch (error) {
+          console.error('Error fetching results for tree:', error);
+        }
+      };
+
+      const debouncer = setTimeout(() => {
+        fetchResults();
+      }, 50);
+      return () => clearTimeout(debouncer);
     };
 
     if (activeTab === 'results-tree') {

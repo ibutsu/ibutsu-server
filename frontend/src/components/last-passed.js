@@ -41,7 +41,12 @@ const LastPassed = ({ filters = [] }) => {
     };
 
     if (filters.length) {
-      fetchResults();
+      const debouncer = setTimeout(() => {
+        fetchResults();
+      }, 100);
+      return () => {
+        clearTimeout(debouncer);
+      };
     }
   }, [filters]);
 

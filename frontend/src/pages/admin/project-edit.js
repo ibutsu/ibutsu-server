@@ -25,6 +25,7 @@ import {
   ValidatedOptions,
 } from '@patternfly/react-core';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { nanoid } from 'nanoid/non-secure';
 
 import { TimesIcon } from '@patternfly/react-icons';
 
@@ -87,7 +88,7 @@ const ProjectEdit = () => {
     setIsNewProject(params.id === 'new');
   }, [params]);
 
-  const onSubmitClick = () => {
+  const onSubmitClick = async () => {
     let project = {
       title: title,
       name: name,
@@ -96,22 +97,24 @@ const ProjectEdit = () => {
     };
 
     let request = null;
-    if (isNewProject) {
-      request = HttpClient.post(
-        [Settings.serverUrl, 'admin', 'project'],
-        project,
-      );
-    } else {
-      request = HttpClient.put(
-        [Settings.serverUrl, 'admin', 'project', id],
-        {},
-        project,
-      );
+    try {
+      if (isNewProject) {
+        request = await HttpClient.post(
+          [Settings.serverUrl, 'admin', 'project'],
+          project,
+        );
+      } else {
+        request = await HttpClient.put(
+          [Settings.serverUrl, 'admin', 'project', id],
+          {},
+          project,
+        );
+      }
+      await HttpClient.handleResponse(request);
+    } catch (error) {
+      console.error('Failed to POST/PUT project: ', error);
     }
-    request
-      .then((response) => HttpClient.handleResponse(response))
-      .then(() => navigate('/admin/projects', { replace: true }))
-      .catch((error) => console.error(error));
+    navigate('/admin/projects', { replace: true });
   };
 
   const onOwnerSelect = (_, value) => {
@@ -141,38 +144,59 @@ const ProjectEdit = () => {
 
   // fetch the admin users with the active filter
   useEffect(() => {
-    HttpClient.get([Settings.serverUrl, 'admin', 'user'], {
-      ...(Object.keys(activeFilters)?.length === 0
-        ? {}
-        : { filter: filtersToAPIParams(activeFilters) }),
-    })
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+    const fetchUsers = async () => {
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'admin', 'user'],
+          {
+            ...(Object.keys(activeFilters)?.length === 0
+              ? {}
+              : { filter: filtersToAPIParams(activeFilters) }),
+          },
+        );
+        const data = await HttpClient.handleResponse(response);
         setFilteredUsers(data.users);
-      })
-      .catch((error) => console.error(error));
+      } catch (error) {
+        console.error('Failed to fetch users: ', error);
+      }
+    };
+
+    const debouncer = setTimeout(() => {
+      fetchUsers();
+    }, 100);
+    return () => {
+      clearTimeout(debouncer);
+    };
   }, [activeFilters]);
 
   // fetch the project if needed
   useEffect(() => {
+    const fetchProjectAdmin = async () => {
+      try {
+        const response = await HttpClient.get([
+          Settings.serverUrl,
+          'admin',
+          'project',
+          id,
+        ]);
+        const data = await HttpClient.handleResponse(response);
+        setTitle(data.title);
+        setCrumbTitle(data.title);
+        setName(data.name);
+        setSelectedOwner(data.owner);
+        setSelectedDashboard(data.defaultDashboard);
+        setInputValueDashboard(data.defaultDashboard?.title);
+      } catch (error) {
+        console.error('Failed to fetch project: ', error);
+        navigate('/admin/projects');
+      }
+    };
+    // if the project is new, set the title and name
     if (id === 'new') {
       setTitle('New project');
-      setName('new-project');
+      setName(`new-project-${nanoid(6)}`);
     } else if (id) {
-      HttpClient.get([Settings.serverUrl, 'admin', 'project', id])
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          setTitle(data.title);
-          setCrumbTitle(data.title);
-          setName(data.name);
-          setSelectedOwner(data.owner);
-          setSelectedDashboard(data.defaultDashboard);
-          setInputValueDashboard(data.defaultDashboard?.title);
-        })
-        .catch((error) => {
-          console.error(error);
-          navigate('/admin/projects');
-        });
+      fetchProjectAdmin();
     }
   }, [id, navigate]);
 
@@ -188,16 +212,27 @@ const ProjectEdit = () => {
 
   // get dashboards for the project
   useEffect(() => {
+    const fetchDashboards = async () => {
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'dashboard'],
+          { project_id: id },
+        );
+        const data = await HttpClient.handleResponse(response);
+        setDashboards(data['dashboards']);
+        setFilteredDashboards(data['dashboards']);
+      } catch (error) {
+        console.error('Failed to fetch dashboards: ', error);
+      }
+    };
+
     if (id && id !== 'new') {
-      HttpClient.get([Settings.serverUrl, 'dashboard'], {
-        project_id: id,
-      })
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          setDashboards(data['dashboards']);
-          setFilteredDashboards(data['dashboards']);
-        })
-        .catch((error) => console.error(error));
+      const debouncer = setTimeout(() => {
+        fetchDashboards();
+      }, 100);
+      return () => {
+        clearTimeout(debouncer);
+      };
     }
   }, [id]);
 

@@ -31,13 +31,27 @@ const View = () => {
   const [viewSpec, setViewSpec] = useState();
 
   useEffect(() => {
+    const fetchViewSpec = async () => {
+      try {
+        const response = await HttpClient.get([
+          Settings.serverUrl,
+          'widget-config',
+          params.view_id,
+        ]);
+        const data = await HttpClient.handleResponse(response);
+        setViewSpec(data);
+      } catch (error) {
+        console.error('Error fetching view spec:', error);
+      }
+    };
+
     if (params?.view_id) {
-      HttpClient.get([Settings.serverUrl, 'widget-config', params.view_id])
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => setViewSpec(data))
-        .catch((error) => {
-          console.error(error);
-        });
+      const debouncer = setTimeout(() => {
+        fetchViewSpec();
+      }, 100);
+      return () => {
+        clearTimeout(debouncer);
+      };
     }
   }, [params]);
 
