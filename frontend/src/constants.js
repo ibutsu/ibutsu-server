@@ -183,3 +183,14 @@ export const RUN_RESULTS_COLUMNS = [
   'Run',
   'Started',
 ];
+
+export const CHART_COLOR_MAP = {
+  passed: 'var(--pf-v5-chart-color-green-300)',
+  failed: 'var(--pf-v5-chart-color-red-200)',
+  error: 'var(--pf-v5-chart-color-orange-200)',
+  skipped: 'var(--pf-v5-chart-color-gold-400)',
+  xfailed: 'var(--pf-v5-chart-color-purple-200)',
+  xpassed: 'var(--pf-v5-chart-color-blue-100)',
+  manual: 'var(--pf-v5-chart-color-cyan-500)',
+  default: 'var(--pf-v5-chart-color-organge-500)',
+};

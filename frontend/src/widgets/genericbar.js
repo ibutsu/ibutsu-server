@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -16,9 +16,10 @@ import { Settings } from '../settings';
 import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
+import { CHART_COLOR_MAP } from '../constants';
 
 const GenericBarWidget = ({
-  barWidth = 20,
+  barWidth = 30,
   dropdownItems = ['component', 'env', 'metadata.jenkins.job_name'],
   fontSize,
   height,
@@ -48,41 +49,39 @@ const GenericBarWidget = ({
   const [groupField, setGroupField] = useState(params.group_field);
   const [weeks, setWeeks] = useState(params.weeks);
 
-  const getBarStyle = (key) => {
-    let color = 'var(--pf-v5-global--success-color--100)';
-    if (key === 'failed') {
-      color = 'var(--pf-v5-global--danger-color--100)';
-    } else if (key === 'skipped') {
-      color = 'var(--pf-v5-global--info-color--100)';
-    } else if (key === 'error') {
-      color = 'var(--pf-v5-global--warning-color--100)';
-    } else if (key === 'xfailed') {
-      color = 'var(--pf-v5-global--palette--purple-400)';
-    } else if (key === 'xpassed') {
-      color = 'var(--pf-v5-global--palette--purple-700)';
-    }
-    return color;
-  };
-
   useEffect(() => {
-    setIsLoading(true);
-    HttpClient.get([Settings.serverUrl, 'widget', widgetEndpoint], params)
-      .then((response) => {
-        response = HttpClient.handleResponse(response, 'response');
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response.json();
-      })
-      .then((responseData) => {
-        setData({ ...responseData });
+    const fetchJobData = async () => {
+      setIsLoading(true);
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget', widgetEndpoint],
+          params,
+        );
+        const responseData = await HttpClient.handleResponse(response);
+
+        setData(responseData);
         setIsLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         setGenericBarError(true);
         console.error(error);
-      });
+      }
+    };
+    if (widgetEndpoint && params) {
+      const debouncer = setTimeout(() => {
+        fetchJobData();
+      }, 50);
+      return () => clearTimeout(debouncer);
+    }
   }, [widgetEndpoint, params]);
+
+  const legendData = useMemo(() => {
+    return Object.keys(data || {}).map((key) => ({
+      name: toTitleCase(key),
+      symbol: {
+        fill: CHART_COLOR_MAP[key] || CHART_COLOR_MAP.default,
+      },
+    }));
+  }, [data]);
 
   useEffect(() => {
     const barCharts = [];
@@ -114,9 +113,14 @@ const GenericBarWidget = ({
           barCharts.push(
             <ChartBar
               key={test_state}
-              style={{ data: { fill: getBarStyle(test_state) } }}
               barWidth={barWidth}
               data={barData}
+              legendData={legendData}
+              style={{
+                data: {
+                  fill: CHART_COLOR_MAP[test_state] || CHART_COLOR_MAP.default,
+                },
+              }}
               sortKey={(datum) => `${datum.x}`}
               sortOrder={sortOrder}
               horizontal={horizontal}
@@ -142,6 +146,7 @@ const GenericBarWidget = ({
     sortOrder,
     percentData,
     xLabelTooltip,
+    legendData,
   ]);
 
   const getChartHeight = (numBars) => {
@@ -218,22 +223,7 @@ const GenericBarWidget = ({
       <CardFooter>
         <ChartLegend
           height={30}
-          data={[
-            { name: 'Passed' },
-            { name: 'Failed' },
-            { name: 'Skipped' },
-            { name: 'Error' },
-            { name: 'Xfailed' },
-            { name: 'Xpassed' },
-          ]}
-          colorScale={[
-            'var(--pf-v5-global--success-color--100)',
-            'var(--pf-v5-global--danger-color--100)',
-            'var(--pf-v5-global--info-color--100)',
-            'var(--pf-v5-global--warning-color--100)',
-            'var(--pf-v5-global--palette--purple-400)',
-            'var(--pf-v5-global--palette--purple-700)',
-          ]}
+          data={legendData}
           style={{
             labels: { fontFamily: 'RedHatText', fontSize: fontSize - 2 || 12 },
             title: { fontFamily: 'RedHatText' },

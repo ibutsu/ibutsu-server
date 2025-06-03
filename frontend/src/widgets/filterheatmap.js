@@ -26,6 +26,12 @@ import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import { filtersToSearchParams } from '../utilities';
+import { CHART_COLOR_MAP } from '../constants';
+
+const HEATMAP_TYPES = {
+  filter: 'filter-heatmap',
+  jenkins: 'jenkins-heatmap',
+};
 
 const FilterHeatmapWidget = ({
   title,
@@ -33,36 +39,48 @@ const FilterHeatmapWidget = ({
   labelWidth = 200,
   hideDropdown,
   dropdownItems = [3, 5, 6, 7],
-  includeAnalysisLink,
   onDeleteClick,
   onEditClick,
-  type = 'filter',
+  type = HEATMAP_TYPES.filter,
 }) => {
   const [data, setData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
-  const [analysisViewId, setAnalysisViewId] = useState();
-
   const [countSkips, setCountSkips] = useState(
     params?.count_skips !== undefined ? params.count_skips : true,
   );
   const [builds, setBuilds] = useState(params?.builds);
+  const [analysisViewId, setAnalysisViewId] = useState(null);
 
   const context = useContext(IbutsuContext);
   const { primaryObject } = context;
 
-  const getJenkinsAnalysisViewId = () => {
-    HttpClient.get([Settings.serverUrl, 'widget-config'], {
-      filter: 'widget=jenkins-analysis-view',
-    })
-      .then((response) => HttpClient.handleResponse(response))
-      .then((responseData) => setAnalysisViewId(responseData.widgets[0]?.id))
-      .catch((error) => console.error(error));
-  };
+  // Fetch the analysis view ID separately from the rendering
+  useEffect(() => {
+    const fetchId = async () => {
+      if (type === HEATMAP_TYPES.jenkins) {
+        try {
+          const response = await HttpClient.get(
+            [Settings.serverUrl, 'widget-config'],
+            { filter: 'widget=jenkins-analysis-view' },
+          );
+          const responseData = await HttpClient.handleResponse(response);
+          setAnalysisViewId(responseData.widgets[0]?.id || null);
+        } catch (error) {
+          console.error(error);
+          setAnalysisViewId(null);
+        }
+      }
+    };
+    const debouncer = setTimeout(() => {
+      fetchId();
+    }, 50);
+    return () => clearTimeout(debouncer);
+  }, [type]);
 
-  const getJenkinsAnalysisLink = () => {
-    if (includeAnalysisLink && analysisViewId !== null) {
+  const jenkinsAnalysisLink = useMemo(() => {
+    if (type === HEATMAP_TYPES.jenkins && analysisViewId !== null) {
       const searchString = new URLSearchParams(
         filtersToSearchParams([
           {
@@ -93,7 +111,13 @@ const FilterHeatmapWidget = ({
     } else {
       return null;
     }
-  };
+  }, [
+    analysisViewId,
+    params?.job_name,
+    params?.project,
+    primaryObject?.id,
+    type,
+  ]);
 
   useEffect(() => {
     // Fetch widget data
@@ -103,36 +127,31 @@ const FilterHeatmapWidget = ({
       ...(builds ? { builds: builds } : {}),
     };
 
+    const fetchWidget = async (type, apiParams) => {
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget', type],
+          apiParams,
+        );
+        const responseData = await HttpClient.handleResponse(response);
+        setData(responseData);
+        setIsLoading(false);
+        setIsError(false);
+      } catch (error) {
+        setIsError(true);
+        setIsLoading(false);
+        console.error('Error fetching heatmap data:', error);
+      }
+    };
+
     if (widgetParams.builds && widgetParams.group_field) {
-      if (type === 'jenkins' && widgetParams.job_name) {
-        getJenkinsAnalysisViewId();
-        HttpClient.get([Settings.serverUrl, 'widget', 'jenkins-heatmap'], {
+      if (type === HEATMAP_TYPES.jenkins && widgetParams.job_name) {
+        fetchWidget(HEATMAP_TYPES.jenkins, {
           ...widgetParams,
           count_skips: countSkips, // only accepted for jenkins-heatmap type
-        })
-          .then((response) => HttpClient.handleResponse(response))
-          .then((responseData) => {
-            setData(responseData);
-            setIsLoading(false);
-          })
-          .catch((error) => {
-            setIsError(true);
-            console.error(error);
-          });
+        });
       } else {
-        HttpClient.get(
-          [Settings.serverUrl, 'widget', 'filter-heatmap'],
-          widgetParams,
-        )
-          .then((response) => HttpClient.handleResponse(response))
-          .then((responseData) => {
-            setData(responseData);
-            setIsLoading(false);
-          })
-          .catch((error) => {
-            setIsError(true);
-            console.error(error);
-          });
+        fetchWidget(HEATMAP_TYPES.filter, widgetParams);
       }
     }
   }, [countSkips, builds, params, params.count_skips, type]);
@@ -141,23 +160,23 @@ const FilterHeatmapWidget = ({
     let style = { paddingTop: '-8.10811px' };
     if (x === 0 && !!value) {
       if (value[0] < 0) {
-        style.background = 'var(--pf-v5-global--danger-color--100)';
+        style.background = CHART_COLOR_MAP.failed;
       } else if (value[0] <= 1 && value[0] >= 0) {
-        style.background = 'var(--pf-v5-global--warning-color--100)';
+        style.background = CHART_COLOR_MAP.skipped;
       } else if (value[0] > 1) {
-        style.background = 'var(--pf-v5-global--success-color--100)';
+        style.background = CHART_COLOR_MAP.passed;
       } else {
-        style.background = 'none';
+        style.background = CHART_COLOR_MAP.default;
       }
     } else if (value) {
       if (value[0] < 50) {
-        style.background = 'var(--pf-v5-global--danger-color--100)';
+        style.background = CHART_COLOR_MAP.failed;
       } else if (value[0] <= 85 && value[0] >= 50) {
-        style.background = 'var(--pf-v5-global--warning-color--100)';
+        style.background = CHART_COLOR_MAP.skipped;
       } else if (value[0] > 85) {
-        style.background = 'var(--pf-v5-global--success-color--100)';
+        style.background = CHART_COLOR_MAP.passed;
       } else if (isNaN(value[0])) {
-        style.background = 'var(--pf-v5-global--info-color--100)';
+        style.background = CHART_COLOR_MAP.default;
       }
       // handle annotations, add a border for cells with annotations
       if (value[2]) {
@@ -260,7 +279,6 @@ const FilterHeatmapWidget = ({
   }
 
   labels.forEach((item) => xLabels.push(item));
-  const jenkins_analysis_link = getJenkinsAnalysisLink();
 
   const titleMemo = useMemo(() => {
     if (title) {
@@ -277,7 +295,7 @@ const FilterHeatmapWidget = ({
     <Card>
       <WidgetHeader
         title={titleMemo}
-        actions={[jenkins_analysis_link].filter((a) => a !== null)}
+        actions={[jenkinsAnalysisLink].filter((a) => a !== null)}
         onEditClick={onEditClick}
         onDeleteClick={onDeleteClick}
       />
@@ -319,7 +337,7 @@ const FilterHeatmapWidget = ({
             defaultValue={builds}
             tooltip="Number of builds:"
           />
-          {type === 'jenkins' && (
+          {type === HEATMAP_TYPES.jenkins && (
             <ParamDropdown
               dropdownItems={['Yes', 'No']}
               handleSelect={(value) => setCountSkips(value === 'Yes')}
@@ -339,10 +357,9 @@ FilterHeatmapWidget.propTypes = {
   labelWidth: PropTypes.number,
   hideDropdown: PropTypes.bool,
   dropdownItems: PropTypes.array,
-  includeAnalysisLink: PropTypes.bool,
   onDeleteClick: PropTypes.func,
   onEditClick: PropTypes.func,
   type: PropTypes.string,
 };
 
-export default FilterHeatmapWidget;
+export { FilterHeatmapWidget, HEATMAP_TYPES };

@@ -7,7 +7,7 @@ import { Settings } from '../settings';
 
 import GenericAreaWidget from '../widgets/genericarea';
 import GenericBarWidget from '../widgets/genericbar';
-import FilterHeatmapWidget from '../widgets/filterheatmap';
+import { FilterHeatmapWidget, HEATMAP_TYPES } from '../widgets/filterheatmap';
 import { HEATMAP_MAX_BUILDS } from '../constants';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import ParamDropdown from '../components/param-dropdown';
@@ -91,22 +91,6 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
     setBarWidth(newWidth);
   }, [builds]);
 
-  const getColors = (key) => {
-    let color = 'var(--pf-v5-global--success-color--100)';
-    if (key === 'failed') {
-      color = 'var(--pf-v5-global--danger-color--100)';
-    } else if (key === 'skipped') {
-      color = 'var(--pf-v5-global--info-color--100)';
-    } else if (key === 'error') {
-      color = 'var(--pf-v5-global--warning-color--100)';
-    } else if (key === 'xfailed') {
-      color = 'var(--pf-v5-global--palette--purple-400)';
-    } else if (key === 'xpassed') {
-      color = 'var(--pf-v5-global--palette--purple-700)';
-    }
-    return color;
-  };
-
   const heatmapParams = useMemo(() => {
     return {
       ...widgetParams,
@@ -185,7 +169,7 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
             <FilterHeatmapWidget
               params={heatmapParams}
               hideDropdown={true}
-              type="jenkins"
+              type={HEATMAP_TYPES.jenkins}
             />
           )}
         </Tab>
@@ -217,19 +201,12 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
               title={'Test counts for ' + barchartParams.job_name}
               params={barchartParams}
               hideDropdown={true}
-              getColors={getColors}
               widgetEndpoint="jenkins-bar-chart"
               height={180}
               yLabel="Test counts"
               xLabel="Build number"
               sortOrder="ascending"
               showTooltip={false}
-              colorScale={[
-                'var(--pf-v5-global--warning-color--100)',
-                'var(--pf-v5-global--danger-color--100)',
-                'var(--pf-v5-global--success-color--100)',
-                'var(--pf-v5-global--info-color--100)',
-              ]}
               padding={{
                 bottom: 50,
                 left: 50,

@@ -224,7 +224,7 @@ WIDGET_TYPES = {
             },
             {
                 "name": "chart_type",
-                "description": "Type of chart with which to display results, e.g. 'pie' or 'bar'",
+                "description": "Type of chart with which to display results, e.g. 'pie' or 'donut'",
                 "type": "string",
                 "required": False,
                 "default": "pie",

@@ -38,6 +38,8 @@ import DeleteModal from './components/delete-modal';
 import { useWidgets } from './components/hooks/useWidgets';
 import { IbutsuContext } from './components/contexts/ibutsuContext';
 
+import { nanoid } from 'nanoid/non-secure';
+
 const Dashboard = () => {
   const { defaultDashboard, primaryObject } = useContext(IbutsuContext);
   const { dashboard_id, project_id } = useParams();
@@ -64,6 +66,7 @@ const Dashboard = () => {
   const [selectInputValue, setSelectInputValue] = useState('');
   const [selectFilterValue, setSelectFilterValue] = useState('');
   const selectInputRef = useRef();
+  const [loadKey, setLoadKey] = useState(nanoid(6));
 
   const onDeleteWidgetClick = (id) => {
     setIsDeleteWidgetOpen(true);
@@ -103,6 +106,7 @@ const Dashboard = () => {
     dashboardId: selectedDashboard?.id,
     editCallback: onEditWidgetClick,
     deleteCallback: onDeleteWidgetClick,
+    loadKey,
   });
 
   // Fetch all dashboards for the project
@@ -272,6 +276,7 @@ const Dashboard = () => {
     };
 
     postWidget(widgetData);
+    setLoadKey(nanoid(6)); // reset load key to re-fetch widgets
   };
 
   const onEditWidgetSave = (editedData) => {
@@ -291,6 +296,7 @@ const Dashboard = () => {
       }
     };
     putWidget(editedData);
+    setLoadKey(nanoid(6)); // reset load key to re-fetch widgets
     setIsEditModalOpen(false);
   };
 
@@ -520,6 +526,7 @@ const Dashboard = () => {
         isOpen={isDeleteWidgetOpen}
         onClose={() => {
           setIsDeleteWidgetOpen(false);
+          setLoadKey(nanoid(6)); // reset load key to re-fetch widgets
         }}
         toDeletePath={['widget-config']}
         toDeleteId={currentWidget}
@@ -530,6 +537,7 @@ const Dashboard = () => {
           onSave={onEditWidgetSave}
           onClose={() => {
             setIsEditModalOpen(false);
+            setLoadKey(nanoid(6)); // reset load key to re-fetch widgets
           }}
           data={editWidgetData}
         />
