@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -18,11 +18,10 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
+import { CHART_COLOR_MAP } from '../constants';
 
 const GenericAreaWidget = ({
-  colorScale,
   fontSize,
-  getColors,
   height,
   interpolation,
   padding,
@@ -45,7 +44,7 @@ const GenericAreaWidget = ({
 
   useEffect(() => {
     const newAreaCharts = [];
-    for (const [index, key] of Object.keys(data).entries()) {
+    for (const [index, key] of Object.keys(data || {}).entries()) {
       const chartData = [];
       if (key !== 'filter') {
         for (const groupField of Object.keys(data[key])) {
@@ -59,38 +58,55 @@ const GenericAreaWidget = ({
           newAreaCharts.push(
             <ChartArea
               data={chartData}
+              style={{
+                data: {
+                  fill: CHART_COLOR_MAP[key] || ChartThemeColor.default,
+                },
+              }}
               key={index}
               sortKey={(datum) => `${datum.x}`}
               sortOrder={sortOrder || 'ascending'}
               interpolation={interpolation || 'monotoneX'}
-              style={getColors ? { data: { fill: getColors(key) } } : {}}
             />,
           );
         }
       }
     }
     setAreaCharts(newAreaCharts);
-  }, [data, getColors, interpolation, sortOrder]);
+  }, [data, interpolation, sortOrder]);
 
   useEffect(() => {
-    setIsLoading(true);
-    setIsError(false);
-    HttpClient.get(
-      [Settings.serverUrl, 'widget', widgetEndpoint || 'jenkins-line-chart'],
-      params || {},
-    )
-      .then((response) => HttpClient.handleResponse(response))
-      .then((responseData) => {
+    const fetchLine = async () => {
+      try {
+        setIsLoading(true);
+        setIsError(false);
+        const response = await HttpClient.get(
+          [
+            Settings.serverUrl,
+            'widget',
+            widgetEndpoint || 'jenkins-line-chart',
+          ],
+          params || {},
+        );
+        const responseData = await HttpClient.handleResponse(response);
+
         setData(responseData);
         setIsLoading(false);
-      })
-      .catch((error) => {
+      } catch (error) {
         setIsError(true);
         console.error(error);
-      });
+      }
+    };
+
+    if (Object.keys(params || {}).length) {
+      const debouncer = setTimeout(() => {
+        fetchLine();
+      }, 50);
+      return () => clearTimeout(debouncer);
+    }
   }, [params, widgetEndpoint]);
 
-  const getTooltip = () => {
+  const toolTip = useMemo(() => {
     const CursorVoronoiContainer = createContainer('cursor', 'voronoi');
     if (showTooltip) {
       return (
@@ -112,7 +128,7 @@ const GenericAreaWidget = ({
     } else {
       return <ChartContainer />;
     }
-  };
+  }, [fontSize, percentData, showTooltip]);
 
   return (
     <Card>
@@ -136,8 +152,7 @@ const GenericAreaWidget = ({
             }
             domainPadding={{ y: 10 }}
             height={height || 200}
-            themeColor={ChartThemeColor.multiUnordered}
-            containerComponent={getTooltip()}
+            containerComponent={toolTip}
           >
             <ChartStack>{areaCharts}</ChartStack>
             <ChartAxis
@@ -169,8 +184,6 @@ const GenericAreaWidget = ({
             labels: { fontFamily: 'RedHatText', fontSize: fontSize - 2 || 14 },
             title: { fontFamily: 'RedHatText' },
           }}
-          colorScale={colorScale}
-          themeColor={ChartThemeColor.multiUnordered}
         />
         {varExplanation && <Text component="h3">{varExplanation}</Text>}
       </CardFooter>
@@ -179,10 +192,8 @@ const GenericAreaWidget = ({
 };
 
 GenericAreaWidget.propTypes = {
-  colorScale: PropTypes.array,
   dropdownItems: PropTypes.array,
   fontSize: PropTypes.number,
-  getColors: PropTypes.func,
   height: PropTypes.number,
   hideDropdown: PropTypes.bool,
   interpolation: PropTypes.string,

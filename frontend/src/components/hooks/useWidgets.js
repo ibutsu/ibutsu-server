@@ -4,7 +4,10 @@ import { HttpClient } from '../../services/http';
 import { KNOWN_WIDGETS } from '../../constants';
 import { Settings } from '../../settings';
 import { GridItem } from '@patternfly/react-core';
-import FilterHeatmapWidget from '../../widgets/filterheatmap';
+import {
+  FilterHeatmapWidget,
+  HEATMAP_TYPES,
+} from '../../widgets/filterheatmap';
 import ResultAggregatorWidget from '../../widgets/resultaggregator';
 import GenericAreaWidget from '../../widgets/genericarea';
 import GenericBarWidget from '../../widgets/genericbar';
@@ -16,6 +19,7 @@ export const useWidgets = ({
   dashboardId = null,
   editCallback = () => {},
   deleteCallback = () => {},
+  loadKey,
 }) => {
   const { primaryObject } = useContext(IbutsuContext);
   const [widgets, setWidgets] = useState([]);
@@ -28,10 +32,10 @@ export const useWidgets = ({
           { type: 'widget', filter: `dashboard_id=${dashboardId}` },
         );
         const data = await HttpClient.handleResponse(response);
-        data.widgets.forEach((widget) => {
+        data?.widgets.forEach((widget) => {
           widget.params['project'] = primaryObject.id;
         });
-        setWidgets(data.widgets);
+        setWidgets(data?.widgets);
       } catch (error) {
         console.error(error);
       }
@@ -45,20 +49,19 @@ export const useWidgets = ({
         clearTimeout(debouncer);
       };
     }
-  }, [dashboardId, primaryObject]);
+  }, [dashboardId, primaryObject, loadKey]);
 
   const widgetComponents = useMemo(() => {
     return widgets?.map((widget) => {
       if (KNOWN_WIDGETS.includes(widget.widget)) {
         return (
-          <GridItem xl={4} lg={6} md={12} key={widget.id}>
+          <GridItem xl={4} lg={6} md={12} key={`${widget.id}-${loadKey}`}>
             {widget.type === 'widget' &&
               widget.widget === 'jenkins-heatmap' && (
                 <FilterHeatmapWidget
                   title={widget.title}
                   params={widget.params}
-                  includeAnalysisLink={true}
-                  type="jenkins"
+                  type={HEATMAP_TYPES.jenkins}
                   onDeleteClick={() => {
                     deleteCallback(widget.id);
                   }}
@@ -71,7 +74,6 @@ export const useWidgets = ({
               <FilterHeatmapWidget
                 title={widget.title}
                 params={widget.params}
-                includeAnalysisLink={true}
                 onDeleteClick={() => {
                   deleteCallback(widget.id);
                 }}
@@ -180,7 +182,7 @@ export const useWidgets = ({
         );
       }
     });
-  }, [deleteCallback, editCallback, widgets]);
+  }, [deleteCallback, editCallback, loadKey, widgets]);
 
   return { widgets, widgetComponents };
 };

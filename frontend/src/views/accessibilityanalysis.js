@@ -20,7 +20,11 @@ import {
   ChevronRightIcon,
   CodeIcon,
 } from '@patternfly/react-icons';
-import { ChartLegend, ChartDonut } from '@patternfly/react-charts';
+import {
+  ChartLegend,
+  ChartDonut,
+  ChartThemeColor,
+} from '@patternfly/react-charts';
 import {
   Link,
   useLocation,
@@ -327,6 +331,7 @@ const AccessibilityAnalysisView = ({ view }) => {
                 legendPosition="right"
                 legendComponent={
                   <ChartLegend
+                    themeColor={ChartThemeColor.multiOrdered}
                     data={[
                       {
                         name: 'Passes: ' + pieData[0].y,
@@ -349,12 +354,7 @@ const AccessibilityAnalysisView = ({ view }) => {
                   right: 140,
                   top: 0,
                 }}
-                colorScale={[
-                  'var(--pf-v5-global--success-color--100)',
-                  'var(--pf-v5-global--danger-color--100)',
-                  'var(--pf-v5-global--warning-color--100)',
-                  'var(--pf-v5-global--info-color--100)',
-                ]}
+                themeColor={ChartThemeColor.multiOrdered}
                 width={300}
               />
             </div>

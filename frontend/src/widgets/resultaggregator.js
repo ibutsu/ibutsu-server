@@ -5,7 +5,6 @@ import {
   ChartDonut,
   ChartLegend,
   ChartPie,
-  ChartThemeColor,
   ChartTooltip,
 } from '@patternfly/react-charts';
 import { Card, CardBody, CardFooter, Title } from '@patternfly/react-core';
@@ -15,6 +14,7 @@ import { Settings } from '../settings';
 import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
+import { CHART_COLOR_MAP } from '../constants';
 
 const ResultAggregatorWidget = ({
   title,
@@ -40,31 +40,33 @@ const ResultAggregatorWidget = ({
 
   useEffect(() => {
     setIsLoading(true);
-    const _params = {
-      days: filterDays,
-      group_field: filterGroupField,
-      chart_type: filterChartType.current,
-      project: project.current,
-      additional_filters: additionalFilters.current,
-      run_id: runId.current,
-    };
-
-    HttpClient.get([Settings.serverUrl, 'widget', 'result-aggregator'], _params)
-      .then((response) => {
-        response = HttpClient.handleResponse(response, 'response');
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response.json();
-      })
-      .then((data) => {
+    const fetchAggregated = async () => {
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget', 'result-aggregator'],
+          {
+            days: filterDays,
+            group_field: filterGroupField,
+            chart_type: filterChartType.current,
+            project: project.current,
+            additional_filters: additionalFilters.current,
+            run_id: runId.current,
+          },
+        );
+        const data = await HttpClient.handleResponse(response);
         let _chartData = [];
         let _legendData = [];
         let _total = 0;
         data.forEach((datum) => {
-          _chartData.push({ x: datum._id, y: datum.count });
+          _chartData.push({
+            x: datum._id,
+            y: datum.count,
+          });
           _legendData.push({
             name: toTitleCase(datum._id) + ': ' + datum.count,
+            symbol: {
+              fill: CHART_COLOR_MAP[datum._id] || CHART_COLOR_MAP.default,
+            },
           });
           _total = _total + datum.count;
         });
@@ -74,11 +76,13 @@ const ResultAggregatorWidget = ({
 
         setIsLoading(false);
         setResultAggregatorError(false);
-      })
-      .catch((error) => {
+      } catch (error) {
+        setIsLoading(false);
         setResultAggregatorError(true);
-        console.error(error);
-      });
+        console.error('Error fetching result aggregator data:', error);
+      }
+    };
+    fetchAggregated();
   }, [filterDays, filterGroupField, filterChartType]);
 
   const onGroupFieldSelect = (value) => {
@@ -88,14 +92,6 @@ const ResultAggregatorWidget = ({
   const onDaySelect = (value) => {
     setFilterDays(value);
   };
-
-  const themeColors = [
-    'var(--pf-v5-global--success-color--100)',
-    'var(--pf-v5-global--danger-color--100)',
-    'var(--pf-v5-global--warning-color--100)',
-    'var(--pf-v5-global--info-color--100)',
-    'var(--pf-v5-global--primary-color--100)',
-  ];
 
   return (
     <Card>
@@ -120,6 +116,12 @@ const ResultAggregatorWidget = ({
               constrainToVisibleArea={true}
               data={chartData}
               legendData={legendData}
+              style={{
+                data: {
+                  fill: ({ datum }) =>
+                    CHART_COLOR_MAP[datum.x] || CHART_COLOR_MAP.default,
+                },
+              }}
               labels={({ datum }) => `${toTitleCase(datum.x)}: ${datum.y}`}
               labelComponent={
                 <ChartTooltip
@@ -135,7 +137,6 @@ const ResultAggregatorWidget = ({
                 right: 20,
                 top: 20,
               }}
-              themeColor={ChartThemeColor.multi}
             />
           )}
         {!resultAggregatorError &&
@@ -153,9 +154,12 @@ const ResultAggregatorWidget = ({
               title={total}
               subTitle="total results"
               style={{
+                data: {
+                  fill: ({ datum }) =>
+                    CHART_COLOR_MAP[datum.x] || CHART_COLOR_MAP.default,
+                },
                 labels: { fontFamily: 'RedHatText' },
               }}
-              colorScale={themeColors}
             />
           )}
       </CardBody>
@@ -167,7 +171,6 @@ const ResultAggregatorWidget = ({
             orientation="horizontal"
             responsive={false}
             itemsPerRow={2}
-            colorScale={themeColors}
             style={{
               labels: { fontFamily: 'RedHatText' },
               title: { fontFamily: 'RedHatText' },
@@ -188,7 +191,7 @@ const ResultAggregatorWidget = ({
           tooltip="Group data by:"
         />
         <ParamDropdown
-          dropdownItems={[3, 5, 10, 14]}
+          dropdownItems={[3, 5, 10, 14, 90]}
           handleSelect={onDaySelect}
           defaultValue={filterDays}
           tooltip="Set days to:"

@@ -8,6 +8,7 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
+import { CHART_COLOR_MAP } from '../constants';
 
 const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
   const [summary, setSummary] = useState({
@@ -47,15 +48,53 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
     }
   }, [params]);
 
-  const themeColors = [
-    'var(--pf-v5-global--success-color--100)',
-    'var(--pf-v5-global--danger-color--100)',
-    'var(--pf-v5-global--info-color--100)',
-    'var(--pf-v5-global--warning-color--100)',
-    'var(--pf-v5-global--palette--purple-400)',
-    'var(--pf-v5-global--palette--purple-700)',
-    'var(--pf-v5-global--primary-color--100)',
-  ];
+  // Create chart data and legend data with appropriate color mapping
+  const chartData =
+    !isError && !fetching && Object.keys(summary || {}).length
+      ? [
+          { x: 'Passed', y: summary.passed },
+          { x: 'Failed', y: summary.failed },
+          { x: 'Skipped', y: summary.skipped },
+          { x: 'Error', y: summary.error },
+          { x: 'Xfailed', y: summary.xfailed },
+          { x: 'Xpassed', y: summary.xpassed },
+          { x: 'Manual', y: summary?.manual || 0 },
+        ]
+      : [];
+
+  const legendData =
+    !isError && !fetching && Object.keys(summary || {}).length
+      ? [
+          {
+            name: `Passed (${summary.passed})`,
+            symbol: { fill: CHART_COLOR_MAP.passed },
+          },
+          {
+            name: `Failed (${summary.failed})`,
+            symbol: { fill: CHART_COLOR_MAP.failed },
+          },
+          {
+            name: `Skipped (${summary.skipped})`,
+            symbol: { fill: CHART_COLOR_MAP.skipped },
+          },
+          {
+            name: `Error (${summary.error})`,
+            symbol: { fill: CHART_COLOR_MAP.error },
+          },
+          {
+            name: `xFailed (${summary.xfailed})`,
+            symbol: { fill: CHART_COLOR_MAP.xfailed },
+          },
+          {
+            name: `xPassed (${summary.xpassed})`,
+            symbol: { fill: CHART_COLOR_MAP.xpassed },
+          },
+          {
+            name: `Manual (${summary.manual || 'N/A'})`,
+            symbol: { fill: CHART_COLOR_MAP.manual },
+          },
+        ]
+      : [];
 
   return (
     <Card>
@@ -71,45 +110,28 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
           <div>
             <ChartDonut
               constrainToVisibleArea={true}
-              data={[
-                { x: 'Passed', y: summary.passed },
-                { x: 'Failed', y: summary.failed },
-                { x: 'Skipped', y: summary.skipped },
-                { x: 'Error', y: summary.error },
-                { x: 'Xfailed', y: summary.xfailed },
-                { x: 'Xpassed', y: summary.xpassed },
-                { x: 'Manual', y: summary?.manual }, // TODO result-summary data needs it
-              ]}
+              data={chartData}
               labels={({ datum }) => `${toTitleCase(datum.x)}: ${datum.y}`}
               height={200}
               title={summary.total}
               subTitle="total results"
+              colorScale={Object.values(CHART_COLOR_MAP)}
               style={{
                 labels: { fontFamily: 'RedHatText' },
               }}
-              colorScale={themeColors}
             />
             <p className="pf-u-pt-sm">Total number of tests: {summary.total}</p>
           </div>
         )}
       </CardBody>
       <CardFooter>
-        {!isError && !fetching && (
+        {!isError && !fetching && Object.keys(summary || {}).length > 0 && (
           <ChartLegend
-            data={[
-              { name: `Passed (${summary.passed})` },
-              { name: `Failed (${summary.failed})` },
-              { name: `Skipped (${summary.skipped})` },
-              { name: `Error (${summary.error})` },
-              { name: `xFailed (${summary.xfailed})` },
-              { name: `xPassed (${summary.xpassed})` },
-              { name: `Manual (${summary.manual || 'N/A'})` },
-            ]}
-            height={120}
+            data={legendData}
+            height={90}
             orientation="horizontal"
             responsive={false}
             itemsPerRow={2}
-            colorScale={themeColors}
             style={{
               labels: { fontFamily: 'RedHatText' },
               title: { fontFamily: 'RedHatText' },
