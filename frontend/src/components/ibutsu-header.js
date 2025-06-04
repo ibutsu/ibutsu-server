@@ -282,7 +282,7 @@ const IbutsuHeader = () => {
             />
           </ToolbarItem>
           <ToolbarItem spacer={{ default: 'spacerSm' }}>
-            <FileUpload name="importFile" />
+            <FileUpload />
           </ToolbarItem>
           <ToolbarItem spacer={{ default: 'spacerSm' }}>
             <Button
