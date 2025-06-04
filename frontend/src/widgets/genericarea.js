@@ -38,11 +38,10 @@ const GenericAreaWidget = ({
   widgetEndpoint,
 }) => {
   const [data, setData] = useState({});
-  const [areaCharts, setAreaCharts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
-  useEffect(() => {
+  const areaCharts = useMemo(() => {
     const newAreaCharts = [];
     for (const [index, key] of Object.keys(data || {}).entries()) {
       const chartData = [];
@@ -63,6 +62,14 @@ const GenericAreaWidget = ({
                   fill: CHART_COLOR_MAP[key] || ChartThemeColor.default,
                 },
               }}
+              legendData={[
+                {
+                  name: toTitleCase(key, true),
+                  symbol: {
+                    fill: CHART_COLOR_MAP[key] || ChartThemeColor.default,
+                  },
+                },
+              ]}
               key={index}
               sortKey={(datum) => `${datum.x}`}
               sortOrder={sortOrder || 'ascending'}
@@ -72,7 +79,7 @@ const GenericAreaWidget = ({
         }
       }
     }
-    setAreaCharts(newAreaCharts);
+    return newAreaCharts;
   }, [data, interpolation, sortOrder]);
 
   useEffect(() => {
