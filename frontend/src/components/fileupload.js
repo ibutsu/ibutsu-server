@@ -15,9 +15,9 @@ import { getDarkTheme } from '../utilities';
 import { toast } from 'react-toastify';
 import ToastWrapper from './toast-wrapper';
 import { Settings } from '../settings';
-import { ALERT_TIMEOUT } from '../constants';
+import { ALERT_TIMEOUT, FILE_IMPORT_KEY } from '../constants';
 
-const FileUpload = ({ name = 'file' }) => {
+const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
   const context = useContext(IbutsuContext);
 
   const [importId, setImportId] = useState();

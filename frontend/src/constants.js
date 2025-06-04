@@ -194,3 +194,5 @@ export const CHART_COLOR_MAP = {
   manual: 'var(--pf-v5-chart-color-cyan-500)',
   default: 'var(--pf-v5-chart-color-organge-500)',
 };
+
+export const FILE_IMPORT_KEY = 'importFile';
