@@ -339,22 +339,71 @@ if [[ $CREATE_PROJECT = true ]]; then
     echo "Creating Jenkins views... "
 
     # Create first widget config - Jenkins Jobs View
-    JENKINS_JOBS_WIDGET=$(curl --no-progress-meter --header "Content-Type: application/json" \
+    JENKINS_JOBS_VIEW=$(curl --no-progress-meter --header "Content-Type: application/json" \
         --header "Authorization: Bearer ${LOGIN_TOKEN}" \
         --request POST \
         --data "{\"params\": {}, \"project_id\": \"${PROJECT_ID}\", \"title\": \"Jenkins Jobs\", \"type\": \"view\", \"widget\": \"jenkins-job-view\"}" \
         http://127.0.0.1:8080/api/widget-config | jq -r '.id')
 
-    echo "  Jenkins Jobs ID: ${JENKINS_JOBS_WIDGET}"
+    echo "  Jenkins Jobs ID: ${JENKINS_JOBS_VIEW}"
 
     # Create second widget config - Jenkins analysis View
-    JENKINS_ANALYSIS_WIDGET=$(curl --no-progress-meter --header "Content-Type: application/json" \
+    JENKINS_ANALYSIS_VIEW=$(curl --no-progress-meter --header "Content-Type: application/json" \
         --header "Authorization: Bearer ${LOGIN_TOKEN}" \
         --request POST \
         --data "{\"params\": {}, \"project_id\": \"${PROJECT_ID}\", \"title\": \"Jenkins Analysis\", \"type\": \"view\", \"widget\": \"jenkins-analysis-view\"}" \
         http://127.0.0.1:8080/api/widget-config | jq -r '.id')
 
-    echo "  Jenkins Analysis ID: ${JENKINS_ANALYSIS_WIDGET}"
+    echo "  Jenkins Analysis ID: ${JENKINS_ANALYSIS_VIEW}"
+
+    # create a dashboard
+    echo "Creating default dashboard... "
+    DASHBOARD_ID=$(curl --no-progress-meter --header "Content-Type: application/json" \
+        --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+        --request POST \
+        --data "{\"description\": \"Auto Dashboard\", \"title\": \"Auto Dashboard\", \"project_id\": \"${PROJECT_ID}\"}" \
+        http://127.0.0.1:8080/api/dashboard | jq -r '.id')
+
+    if [[ -z "$DASHBOARD_ID" ]]; then
+        echo "Failed to create dashboard."
+    else
+        echo "Dashboard created with ID: ${DASHBOARD_ID}"
+
+        # set dashboard as default for the project
+        PROJECT_PUT=$(curl --no-progress-meter --header "Content-Type: application/json" \
+            --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            --request PUT \
+            --data "{\"default_dashboard_id\": \"${DASHBOARD_ID}\"}" \
+            http://127.0.0.1:8080/api/project/${PROJECT_ID} | jq -r '.default_dashboard_id')
+        if [[ "$PROJECT_PUT" != "$DASHBOARD_ID" ]]; then
+            echo "Failed to set dashboard as default for the project."
+        else
+            echo "Dashboard set as default for the project."
+        fi
+
+        # Add widgets to the dashboard
+        echo "Adding widgets to the dashboard..."
+        RUN_COMPONENT=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            http://127.0.0.1:8080/api/run | jq -r '.runs[0].component' | sort -u |tr -d '[:space:]')
+
+        echo "Found unique components: ${RUN_COMPONENT}"
+
+        FILTERED_HEATMAP=$(curl --no-progress-meter --header "Content-Type: application/json" \
+            --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            --request POST \
+            --data "{\"dashboard_id\": \"${DASHBOARD_ID}\", \
+                    \"project_id\": \"${PROJECT_ID}\", \
+                    \"title\": \"FilteredHeatmap\", \
+                    \"type\": \"widget\", \
+                    \"widget\": \"filter-heatmap\", \
+                    \"params\": {\"filters\": \"component=${RUN_COMPONENT}\", \
+                               \"group_field\": \"component\", \
+                               \"builds\": 5}}" \
+            http://127.0.0.1:8080/api/widget-config | jq -r '.id')
+        echo "  Filtered Heatmap ID: ${FILTERED_HEATMAP}"
+
+    fi
+
 fi
 
 echo "================================="
