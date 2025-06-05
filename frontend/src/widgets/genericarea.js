@@ -41,6 +41,15 @@ const GenericAreaWidget = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
 
+  const legendData = useMemo(() => {
+    return Object.keys(data).map((key) => ({
+      name: toTitleCase(key, true),
+      symbol: {
+        fill: CHART_COLOR_MAP[key] || ChartThemeColor.default,
+      },
+    }));
+  }, [data]);
+
   const areaCharts = useMemo(() => {
     const newAreaCharts = [];
     for (const [index, key] of Object.keys(data || {}).entries()) {
@@ -62,15 +71,8 @@ const GenericAreaWidget = ({
                   fill: CHART_COLOR_MAP[key] || ChartThemeColor.default,
                 },
               }}
-              legendData={[
-                {
-                  name: toTitleCase(key, true),
-                  symbol: {
-                    fill: CHART_COLOR_MAP[key] || ChartThemeColor.default,
-                  },
-                },
-              ]}
-              key={index}
+              legendData={legendData}
+              key={key}
               sortKey={(datum) => `${datum.x}`}
               sortOrder={sortOrder || 'ascending'}
               interpolation={interpolation || 'monotoneX'}
@@ -80,7 +82,7 @@ const GenericAreaWidget = ({
       }
     }
     return newAreaCharts;
-  }, [data, interpolation, sortOrder]);
+  }, [data, interpolation, legendData, sortOrder]);
 
   useEffect(() => {
     const fetchLine = async () => {
@@ -184,9 +186,7 @@ const GenericAreaWidget = ({
       <CardFooter>
         <ChartLegend
           height={30}
-          data={Object.keys(data).map((legend) => ({
-            name: toTitleCase(legend, true),
-          }))}
+          data={legendData}
           style={{
             labels: { fontFamily: 'RedHatText', fontSize: fontSize - 2 || 14 },
             title: { fontFamily: 'RedHatText' },
