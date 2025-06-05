@@ -1,5 +1,5 @@
 [project]
-version = "2.6.8"
+version = "2.6.9"
 name = "ibutsu_server"
 description = "A system to store and query test results and artifacts"
 authors = [
