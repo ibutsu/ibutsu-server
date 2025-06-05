@@ -52,7 +52,7 @@ const GenericAreaWidget = ({
 
   const areaCharts = useMemo(() => {
     const newAreaCharts = [];
-    for (const [index, key] of Object.keys(data || {}).entries()) {
+    for (const key of Object.keys(data || {})) {
       const chartData = [];
       if (key !== 'filter') {
         for (const groupField of Object.keys(data[key])) {

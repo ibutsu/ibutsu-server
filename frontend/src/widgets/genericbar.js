@@ -66,7 +66,7 @@ const GenericBarWidget = ({
         console.error(error);
       }
     };
-    if (widgetEndpoint && params) {
+    if (widgetEndpoint && Object.keys(params || {}).length) {
       const debouncer = setTimeout(() => {
         fetchJobData();
       }, 50);
