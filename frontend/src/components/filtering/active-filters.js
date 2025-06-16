@@ -8,11 +8,17 @@ import {
   Text,
 } from '@patternfly/react-core';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { filtersToSearchParams } from '../../utilities';
+import { filtersToSearchParams, toTitleCase } from '../../utilities';
+import { ChevronRightIcon } from '@patternfly/react-icons';
 
-const ActiveFilters = ({ activeFilters, onRemoveFilter, hideFilters }) => {
+const ActiveFilters = ({
+  activeFilters,
+  onRemoveFilter,
+  hideFilters,
+  transferTarget = 'reports',
+}) => {
   const params = useParams();
   const navigate = useNavigate();
 
@@ -20,26 +26,45 @@ const ActiveFilters = ({ activeFilters, onRemoveFilter, hideFilters }) => {
     (filter) => !hideFilters?.includes(filter.field),
   );
 
+  // Get the proper button text based on transfer_target
+  const transferText = useMemo(() => {
+    switch (transferTarget) {
+      case 'reports':
+        return 'Transfer active filters to Report Builder';
+      case undefined:
+      case null:
+        return null;
+      default:
+        return `Customize filters on the ${toTitleCase(transferTarget)} page`;
+    }
+  }, [transferTarget]);
+
   return (
     <Flex style={{ marginTop: '.75rem' }} direction={{ default: 'column' }}>
       {shownFilters?.length > 0 && (
         <Flex>
-          <FlexItem>
-            <Button
-              onClick={() =>
-                // TODO pass state?
-                navigate({
-                  pathname: `/project/${params.project_id}/reports`,
-                  search: filtersToSearchParams(activeFilters),
-                })
-              }
-              variant="tertiary"
-              size="sm"
-              type="button"
-            >
-              Transfer active filters to Report Builder
-            </Button>
-          </FlexItem>
+          {transferText && (
+            <FlexItem>
+              <Button
+                onClick={() =>
+                  navigate({
+                    pathname: `/project/${params.project_id}/${transferTarget}`,
+                    search: filtersToSearchParams(
+                      activeFilters.filter(
+                        (filter) => filter.field !== 'project_id',
+                      ),
+                    ),
+                  })
+                }
+                variant="tertiary"
+                size="sm"
+                type="button"
+              >
+                {transferText}
+                <ChevronRightIcon />
+              </Button>
+            </FlexItem>
+          )}
         </Flex>
       )}
 
@@ -78,6 +103,7 @@ ActiveFilters.propTypes = {
   ),
   onRemoveFilter: PropTypes.func,
   hideFilters: PropTypes.arrayOf(PropTypes.string),
+  transferTarget: PropTypes.string,
 };
 
 export default ActiveFilters;
