@@ -150,6 +150,7 @@ const RunFilter = ({ hideFilters }) => {
             activeFilters={activeFilters}
             onRemoveFilter={onRemoveFilter}
             hideFilters={hideFilters}
+            transferTarget="reports"
           />
         </Flex>
       </Flex>

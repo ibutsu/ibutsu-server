@@ -364,6 +364,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
                 activeFilters={activeFilters}
                 onRemoveFilter={onRemoveFilter}
                 hideFilters={HIDE}
+                transferTarget="results"
               />
             </FlexItem>
           </Flex>

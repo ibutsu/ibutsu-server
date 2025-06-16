@@ -499,6 +499,7 @@ const ResultFilter = ({ hideFilters, runs }) => {
             activeFilters={activeFilters}
             onRemoveFilter={onRemoveFilter}
             hideFilters={hideFilters}
+            transferTarget="reports"
           />
         </Flex>
       </Flex>

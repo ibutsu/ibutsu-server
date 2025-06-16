@@ -109,6 +109,7 @@ const AdminFilter = () => {
         <ActiveFilters
           activeFilters={activeFilters}
           onRemoveFilter={onRemoveFilter}
+          transferTarget={null}
         />
       </Flex>
     </CardBody>
