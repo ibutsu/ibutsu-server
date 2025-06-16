@@ -40,7 +40,6 @@ import {
   THEME_KEY,
 } from './constants';
 import RunSummary from './components/runsummary';
-import { ClassificationDropdown } from './components/classification-dropdown';
 import { TableText } from '@patternfly/react-table';
 
 export const getDateString = () => {
@@ -296,117 +295,30 @@ export const resultToRow = (result, filterFunc) => {
   }
   return {
     cells: [
-      {
-        title: (
-          <React.Fragment>
-            <Link
-              to={`../results/${result.id}#summary`}
-              relative="Path"
-              key={result.id}
-            >
-              {result.test_id}
-            </Link>{' '}
-            {markers}
-          </React.Fragment>
-        ),
-      },
-      {
-        title: (
-          <React.Fragment>
-            <span className={result.result}>
-              {resultIcon} {toTitleCase(result.result)}
-            </span>{' '}
-            {classification}
-          </React.Fragment>
-        ),
-      },
-      { title: round(result.duration) + 's' },
-      { title: runLink },
-      { title: new Date(result.start_time).toLocaleString() },
+      <React.Fragment key={result.id}>
+        <Link
+          to={`../results/${result.id}#summary`}
+          relative="Path"
+          key={result.id}
+        >
+          {result.test_id}
+        </Link>{' '}
+        {markers}
+      </React.Fragment>,
+      <React.Fragment key="result">
+        <span className={result.result}>
+          {resultIcon} {toTitleCase(result.result)}
+        </span>{' '}
+        {classification}
+      </React.Fragment>,
+      round(result.duration) + 's',
+      runLink,
+      new Date(result.start_time).toLocaleString(),
     ],
   };
 };
 
-export const resultToClassificationRow = (result, index, filterFunc) => {
-  let resultIcon = getIconForResult(result.result);
-  let markers = [];
-  let exceptionBadge;
-
-  if (filterFunc) {
-    exceptionBadge = buildBadge(
-      `exception_name-${result.id}`,
-      result.metadata.exception_name,
-      false,
-      () =>
-        filterFunc({
-          field: 'metadata.exception_name',
-          operation: 'eq',
-          value: result.metadata.exception_name,
-        }),
-    );
-  } else {
-    exceptionBadge = buildBadge(
-      `exception_name-${result.id}`,
-      result.metadata.exception_name,
-      false,
-    );
-  }
-
-  if (result.metadata && result.metadata.component) {
-    markers.push(
-      <Badge key={`component-${result.id}`}>{result.metadata.component}</Badge>,
-    );
-  }
-  if (result.metadata && result.metadata.markers) {
-    for (const marker of result.metadata.markers) {
-      // Don't add duplicate markers
-      if (markers.filter((m) => m.key === marker.name).length === 0) {
-        markers.push(
-          <Badge isRead key={`${marker.name}-${generateId(5)}`}>
-            {marker.name}
-          </Badge>,
-        );
-      }
-    }
-  }
-
-  return [
-    // parent row
-    {
-      isOpen: false,
-      result: result,
-      cells: [
-        {
-          title: (
-            <React.Fragment>
-              <Link to={`../results/${result.id}#summary`} relative="Path">
-                {result.test_id}
-              </Link>{' '}
-              {markers}
-            </React.Fragment>
-          ),
-        },
-        {
-          title: (
-            <span className={result.result}>
-              {resultIcon} {toTitleCase(result.result)}
-            </span>
-          ),
-        },
-        { title: <React.Fragment>{exceptionBadge}</React.Fragment> },
-        { title: <ClassificationDropdown testResult={result} /> },
-        { title: round(result.duration) + 's' },
-      ],
-    },
-    // child row (this is set in the onCollapse function for lazy-loading)
-    {
-      parent: 2 * index,
-      cells: [{ title: <div /> }],
-    },
-  ];
-};
-
-export const resultToComparisonRow = (result, index) => {
+export const resultToComparisonRow = (result) => {
   let resultIcons = [];
   let markers = [];
   result.forEach((result) => {
@@ -434,90 +346,27 @@ export const resultToComparisonRow = (result, index) => {
   }
 
   let cells = [];
-  cells.push({
-    title: (
-      <React.Fragment>
-        <Link to={`../results/${result[0].id}#summary`} relative="Path">
-          {result[0].test_id}
-        </Link>{' '}
-        {markers}
-      </React.Fragment>
-    ),
-  });
+  cells.push(
+    <React.Fragment key="test">
+      <Link to={`../results/${result[0].id}#summary`} relative="Path">
+        {result[0].test_id}
+      </Link>{' '}
+      {markers}
+    </React.Fragment>,
+  );
   result.forEach((result, index) => {
-    cells.push({
-      title: (
-        <span className={result.result}>
-          {resultIcons[index]} {toTitleCase(result.result)}
-        </span>
-      ),
-    });
+    cells.push(
+      <span key={`result-${index}`} className={result.result}>
+        {resultIcons[index]} {toTitleCase(result.result)}
+      </span>,
+    );
   });
 
-  return [
-    // parent row
-    {
-      isOpen: false,
-      result: result,
-      cells: cells,
-    },
-    // child row (this is set in the onCollapse function for lazy-loading)
-    {
-      parent: 2 * index,
-      cells: [{ title: <div /> }],
-    },
-  ];
-};
-
-export const resultToTestHistoryRow = (result, index, filterFunc) => {
-  let resultIcon = getIconForResult(result.result);
-  let exceptionBadge;
-
-  if (filterFunc) {
-    exceptionBadge = buildBadge(
-      'exception_name',
-      result.metadata.exception_name,
-      false,
-      () =>
-        filterFunc({
-          field: 'metadata.exception_name',
-          operator: 'eq',
-          value: result.metadata.exception_name,
-        }),
-    );
-  } else {
-    exceptionBadge = buildBadge(
-      'exception_name',
-      result.metadata.exception_name,
-      false,
-    );
-  }
-
-  return [
-    // parent row
-    {
-      isOpen: false,
-      result: result,
-      cells: [
-        {
-          title: (
-            <span className={result.result}>
-              {resultIcon} {toTitleCase(result.result)}
-            </span>
-          ),
-        },
-        { title: <span className={result.source}>{result.source}</span> },
-        { title: <React.Fragment>{exceptionBadge}</React.Fragment> },
-        { title: round(result.duration) + 's' },
-        { title: new Date(result.start_time).toLocaleString() },
-      ],
-    },
-    // child row (this is set in the onCollapse function for lazy-loading)
-    {
-      parent: 2 * index,
-      cells: [{ title: <div /> }],
-    },
-  ];
+  return {
+    id: result[0].id,
+    result: result,
+    cells: cells,
+  };
 };
 
 export const runToRow = (run, filterFunc) => {
@@ -558,31 +407,24 @@ export const runToRow = (run, filterFunc) => {
   }
   return {
     cells: [
-      {
-        title: (
-          <React.Fragment>
-            <Link to={`${run.id}#summary`}>{run.id}</Link> {badges}
-          </React.Fragment>
-        ),
-      },
-      { title: round(run.duration) + 's' },
-      { title: <RunSummary summary={run.summary} /> },
-      { title: created.toLocaleString() },
-      {
-        title: (
-          <Link
-            to={{
-              pathname: '../results',
-              search: filtersToSearchParams([
-                { field: 'run_id', operator: 'eq', value: run.id },
-              ]),
-            }}
-            relative="Path"
-          >
-            See results <ChevronRightIcon />
-          </Link>
-        ),
-      },
+      <React.Fragment key="run">
+        <Link to={`${run.id}#summary`}>{run.id}</Link> {badges}
+      </React.Fragment>,
+      round(run.duration) + 's',
+      <RunSummary key="summary" summary={run.summary} />,
+      created.toLocaleString(),
+      <Link
+        key="see-results"
+        to={{
+          pathname: '../results',
+          search: filtersToSearchParams([
+            { field: 'run_id', operator: 'eq', value: run.id },
+          ]),
+        }}
+        relative="Path"
+      >
+        See results <ChevronRightIcon />
+      </Link>,
     ],
   };
 };
@@ -594,91 +436,73 @@ export const userToRow = (user, setSelectedUser, setIsDeleteModalOpen) => {
   }
   return {
     cells: [
-      {
-        title: userName,
-      },
-      {
-        title: user.email,
-      },
-      {
-        title: user.projects
-          ? user.projects.map((project) => project.title).join(', ')
-          : '',
-      },
-      {
-        title: (
-          <React.Fragment>
-            {user.is_active ? (
-              <Label
-                key="active"
-                className="active"
-                variant="filled"
-                color="green"
-                icon={<CheckIcon />}
-              >
-                Active
-              </Label>
-            ) : (
-              <Label
-                key="inactive"
-                className="active"
-                variant="filled"
-                color="red"
-                icon={<BanIcon />}
-              >
-                Inactive
-              </Label>
-            )}
-            {user.is_superadmin ? (
-              <Label
-                key="admin"
-                className="super-admin-label"
-                variant="outline"
-                color="orange"
-                icon={<LinuxIcon />}
-              >
-                Administrator
-              </Label>
-            ) : (
-              ''
-            )}
-          </React.Fragment>
-        ),
-      },
-      {
-        title: (
-          <TableText>
-            <Button
-              variant="primary"
-              ouiaId={`admin-users-edit-${user.id}`}
-              component={(props) => (
-                <Link {...props} to={`/admin/users/${user.id}`} />
-              )}
-              size="sm"
-              aria-label="Edit"
-            >
-              <PencilAltIcon />
-            </Button>
-          </TableText>
-        ),
-      },
-      {
-        title: (
-          <TableText>
-            <Button
-              variant="danger"
-              ouiaId={`admin-users-delete-${user.id}`}
-              onClick={() => {
-                setSelectedUser(user);
-                setIsDeleteModalOpen(true);
-              }}
-              size="sm"
-            >
-              <TrashIcon />
-            </Button>
-          </TableText>
-        ),
-      },
+      userName,
+      user.email,
+      user.projects
+        ? user.projects.map((project) => project.title).join(', ')
+        : '',
+      <React.Fragment key="status">
+        {user.is_active ? (
+          <Label
+            key="active"
+            className="active"
+            variant="filled"
+            color="green"
+            icon={<CheckIcon />}
+          >
+            Active
+          </Label>
+        ) : (
+          <Label
+            key="inactive"
+            className="active"
+            variant="filled"
+            color="red"
+            icon={<BanIcon />}
+          >
+            Inactive
+          </Label>
+        )}
+        {user.is_superadmin ? (
+          <Label
+            key="admin"
+            className="super-admin-label"
+            variant="outline"
+            color="orange"
+            icon={<LinuxIcon />}
+          >
+            Administrator
+          </Label>
+        ) : (
+          ''
+        )}
+      </React.Fragment>,
+      <TableText key="edit">
+        <Button
+          variant="primary"
+          ouiaId={`admin-users-edit-${user.id}`}
+          component={(props) => (
+            <Link {...props} to={`/admin/users/${user.id}`} />
+          )}
+          size="sm"
+          aria-label="Edit"
+        >
+          <PencilAltIcon />
+        </Button>
+      </TableText>,
+      <TableText key="delete">
+        <Button
+          variant="danger"
+          ouiaId={`admin-users-delete-${user.id}`}
+          onClick={() => {
+            setSelectedUser(user);
+            setIsDeleteModalOpen(true);
+          }}
+          size="sm"
+        >
+          <TrashIcon />
+        </Button>
+      </TableText>,
     ],
   };
 };

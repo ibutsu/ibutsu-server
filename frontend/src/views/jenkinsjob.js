@@ -115,29 +115,27 @@ const JenkinsJobView = ({ view }) => {
                 ),
               }
             : job.job_name,
-          {
-            title: (
-              <a href={job.build_url} target="_blank" rel="noopener noreferrer">
-                {job.build_number}
-              </a>
-            ),
-          },
-          { title: <RunSummary summary={job.summary} /> },
+          <a
+            key="build"
+            href={job.build_url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {job.build_number}
+          </a>,
+          <RunSummary key="summary" summary={job.summary} />,
           job.source,
           job.env,
           new Date(job.start_time).toLocaleString(),
-          {
-            title: (
-              <Link
-                to={{
-                  pathname: `/project/${project_id}/runs`,
-                  search: `${filtersToSearchParams(runFilters)}`,
-                }}
-              >
-                See runs <ChevronRightIcon />
-              </Link>
-            ),
-          },
+          <Link
+            key="see-runs"
+            to={{
+              pathname: `/project/${project_id}/runs`,
+              search: `${filtersToSearchParams(runFilters)}`,
+            }}
+          >
+            See runs <ChevronRightIcon />
+          </Link>,
         ],
       };
     },

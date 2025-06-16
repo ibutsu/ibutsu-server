@@ -1,21 +1,20 @@
 import {
-	Button,
-	CardBody,
-	Chip,
-	ChipGroup,
-	Flex,
-	FlexItem,
-	MenuToggle,
-	SelectList,
-	TextInput,
-	TextInputGroup,
-	TextInputGroupMain,
-	TextInputGroupUtilities
+  Button,
+  CardBody,
+  Chip,
+  ChipGroup,
+  Flex,
+  FlexItem,
+  MenuToggle,
+  Select,
+  SelectList,
+  SelectOption,
+  TextInput,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+
 import PropTypes from 'prop-types';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { TimesIcon } from '@patternfly/react-icons';
@@ -51,9 +50,6 @@ const ResultFilter = ({ hideFilters, runs }) => {
     onBoolSelect,
     onFieldSelect,
     onOperationSelect,
-    fieldToggle,
-    operationToggle,
-    boolToggle,
     onRemoveFilter,
     updateFilters,
     resetFilters,
@@ -62,6 +58,9 @@ const ResultFilter = ({ hideFilters, runs }) => {
     filterMode,
     operationMode,
     operations,
+    fieldToggle,
+    operationToggle,
+    boolToggle,
   } = useContext(FilterContext);
 
   const [runSelection, setRunSelection] = useState([]);

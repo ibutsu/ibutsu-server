@@ -2,41 +2,29 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import {
-	Checkbox,
-	Form,
-	FormGroup,
-	FormHelperText,
-	Grid,
-	GridItem,
-	HelperText,
-	HelperTextItem,
-	Modal,
-	ModalVariant,
-	Radio,
-	Stack,
-	StackItem,
-	Text,
-	TextArea,
-	TextContent,
-	TextInput,
-	Title
+  Checkbox,
+  Form,
+  FormGroup,
+  FormHelperText,
+  Grid,
+  GridItem,
+  HelperText,
+  HelperTextItem,
+  Modal,
+  ModalVariant,
+  Radio,
+  Stack,
+  StackItem,
+  Text,
+  TextArea,
+  TextContent,
+  TextInput,
+  Title,
 } from '@patternfly/react-core';
-import {
-	Wizard,
-	WizardHeader,
-	WizardStep
-} from '@patternfly/react-core/deprecated';
+import { Wizard, WizardHeader, WizardStep } from '@patternfly/react-core';
 
-import {
-	Tbody,
-	Td,
-	Th,
-	Thead,
-	Tr
-} from '@patternfly/react-table';
-import {
-	Table
-} from '@patternfly/react-table/deprecated';
+import { Tbody, Td, Th, Thead, Tr, Table } from '@patternfly/react-table';
+
 import Linkify from 'react-linkify';
 import { linkifyDecorator } from './decorators';
 
@@ -147,7 +135,7 @@ const NewWidgetWizard = ({
     setTitleValid(value !== '');
   }, []);
 
-  const onParamChange = useCallback((value, event) => {
+  const onParamChange = useCallback((event, value) => {
     if (event) {
       setParams((prevParams) => ({
         ...prevParams,
@@ -169,7 +157,7 @@ const NewWidgetWizard = ({
   const onNext = useCallback(
     (_, currentStep) => {
       if (currentStep.id === 3) {
-        onParamChange('', null);
+        onParamChange(null, '');
       }
       setStepIdReached((prevStepId) => Math.max(prevStepId, currentStep.id));
     },
@@ -308,7 +296,7 @@ const NewWidgetWizard = ({
                         id={param.name}
                         aria-describedby={`${param.name}-helper`}
                         name={param.name}
-                        onChange={(event, value) => onParamChange(value, event)}
+                        onChange={(event, value) => onParamChange(event, value)}
                         isRequired={param.required}
                         validated={handleRequiredParam(param)}
                       />
@@ -332,7 +320,7 @@ const NewWidgetWizard = ({
                     >
                       <Checkbox
                         isChecked={params[param.name]}
-                        onChange={(event, value) => onParamChange(value, event)}
+                        onChange={(event, value) => onParamChange(event, value)}
                         id={param.name}
                         name={param.name}
                         label={param.description}
@@ -340,19 +328,22 @@ const NewWidgetWizard = ({
                     </FormGroup>
                   )}
                   {param.type === 'list' && (
-                    <FormGroup
-                      label={param.name}
-                      fieldId={param.name}
-                      helperText={`${param.description}. Place items on separate lines.`}
-                    >
+                    <FormGroup label={param.name} fieldId={param.name}>
                       <TextArea
                         id={param.name}
                         name={param.name}
                         isRequired={param.required}
                         value={params[param.name]}
-                        onChange={(event, value) => onParamChange(value, event)}
+                        onChange={(event, value) => onParamChange(event, value)}
                         resizeOrientation="vertical"
                       />
+                      <FormHelperText>
+                        <HelperText>
+                          <HelperTextItem variant="default">
+                            {`${param.description}. Place items on separate lines.`}
+                          </HelperTextItem>
+                        </HelperText>
+                      </FormHelperText>
                     </FormGroup>
                   )}
                 </React.Fragment>

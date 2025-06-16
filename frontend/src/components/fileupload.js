@@ -23,6 +23,7 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
   const [importId, setImportId] = useState();
 
   const inputRef = useRef();
+  const toolTipRef = useRef();
   const importToastRef = useRef();
   const intervalId = useRef();
 
@@ -121,20 +122,25 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
         onChange={onFileChange}
         ref={inputRef}
       />
-      <Tooltip content="Upload xUnit XML or Ibutsuresult archive to the selected project.">
-        <Button
-          variant={ButtonVariant.tertiary}
-          icon={
-            <Icon>
-              <UploadIcon />
-            </Icon>
-          }
-          onClick={onClick}
-          isAriaDisabled={!primaryObject}
-        >
-          Import
-        </Button>
-      </Tooltip>
+      <Button
+        variant={ButtonVariant.tertiary}
+        icon={
+          <Icon>
+            <UploadIcon />
+          </Icon>
+        }
+        onClick={onClick}
+        isAriaDisabled={!primaryObject}
+        ref={toolTipRef}
+        aria-describedby="file-upload-tip"
+      >
+        Import
+      </Button>
+      <Tooltip
+        content="Upload xUnit XML or Ibutsuresult archive to the selected project."
+        triggerRef={toolTipRef}
+        id="file-upload-tip"
+      />
     </React.Fragment>
   );
 };

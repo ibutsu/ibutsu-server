@@ -65,7 +65,6 @@ const NewDashboardModal = ({
           fieldId="dashboard-title"
           helpertextinvalid="A dashboard title is required"
           helpertextinvalidicon={<ExclamationCircleIcon />}
-          validated={isTitleValid.toString()}
           isRequired
         >
           <TextInput

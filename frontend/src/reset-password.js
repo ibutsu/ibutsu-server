@@ -137,13 +137,6 @@ const ResetPassword = () => {
       footerListVariants="inline"
       brandImgSrc="/images/ibutsu-wordart-164.png"
       brandImgAlt="Ibutsu"
-      backgroundImgSrc={{
-        lg: '/images/pfbg_1200.jpg',
-        sm: '/images/pfbg_768.jpg',
-        sm2x: '/images/pfbg_768@2x.jpg',
-        xs: '/images/pfbg_576.jpg',
-        xs2x: '/images/pfbg_576@2x.jpg',
-      }}
       textContent="Ibutsu is an open source test result aggregation. Collect and display your test results, view artifacts, and monitor tests."
       loginTitle="Reset your password"
       loginSubtitle="Please type in a secure password"
@@ -161,12 +154,7 @@ const ResetPassword = () => {
             />
           </FormAlert>
         )}
-        <FormGroup
-          label="Password"
-          isRequired
-          fieldId="password"
-          validated={isValidPassword ? 'default' : 'error'}
-        >
+        <FormGroup label="Password" isRequired fieldId="password">
           <InputGroup>
             {!isPasswordVisible && (
               <TextInput

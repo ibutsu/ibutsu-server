@@ -1,33 +1,31 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 import {
-	ActionGroup,
-	Alert,
-	Button,
-	Card,
-	CardBody,
-	Checkbox,
-	Chip,
-	ChipGroup,
-	Form,
-	FormGroup,
-	FormHelperText,
-	HelperText,
-	HelperTextItem,
-	Label,
-	MenuToggle,
-	PageSection,
-	PageSectionVariants,
-	TextInput,
-	TextInputGroup,
-	TextInputGroupMain,
-	TextInputGroupUtilities,
-	Title
+  ActionGroup,
+  Alert,
+  Button,
+  Card,
+  CardBody,
+  Checkbox,
+  Chip,
+  ChipGroup,
+  Form,
+  FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
+  Label,
+  MenuToggle,
+  PageSection,
+  PageSectionVariants,
+  SelectList,
+  TextInput,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
+  Title,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core';
 
 import { TimesIcon } from '@patternfly/react-icons';
 
@@ -327,25 +325,27 @@ const UserEdit = () => {
                     toggle={toggle}
                     variant="multi-typeahead-select"
                   >
-                    {projects?.length === 0 && inputValue === '' && (
-                      <SelectOption
-                        isDisabled={true}
-                        description="To create your first project, navigate to projects and click on 'Add project'"
-                      >
-                        No projects exists
-                      </SelectOption>
-                    )}
-                    {filteredProjects?.map((project, index) => (
-                      <SelectOption
-                        key={index}
-                        value={projectToOption(project)}
-                        description={project.name}
-                        isDisabled={project.isDisabled}
-                        ref={null}
-                      >
-                        {project.title}
-                      </SelectOption>
-                    ))}
+                    <SelectList>
+                      {projects?.length === 0 && inputValue === '' && (
+                        <SelectOption
+                          isDisabled={true}
+                          description="To create your first project, navigate to projects and click on 'Add project'"
+                        >
+                          No projects exists
+                        </SelectOption>
+                      )}
+                      {filteredProjects?.map((project, index) => (
+                        <SelectOption
+                          key={index}
+                          value={projectToOption(project)}
+                          description={project.name}
+                          isDisabled={project.isDisabled}
+                          ref={null}
+                        >
+                          {project.title}
+                        </SelectOption>
+                      ))}
+                    </SelectList>
                   </Select>
                   <FormHelperText>
                     <HelperText>

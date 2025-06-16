@@ -104,14 +104,7 @@ const AddTokenModal = ({ isOpen, onClose }) => {
             </FormHelperText>
           )}
         </FormGroup>
-        <FormGroup
-          label="Expiry"
-          fieldId="token-expiry-date"
-          validated={
-            isExpiryValid ? ValidatedOptions.default : ValidatedOptions.error
-          }
-          isRequired
-        >
+        <FormGroup label="Expiry" fieldId="token-expiry-date" isRequired>
           <DatePicker
             appendTo={() => document.getElementById('add-token-modal')}
             onChange={(_, change) => {
@@ -129,15 +122,15 @@ const AddTokenModal = ({ isOpen, onClose }) => {
               position: 'bottom',
             }}
           />
-          {isExpiryValid !== true && (
-            <FormHelperText>
-              <HelperText>
-                <HelperTextItem variant="error">
-                  A valid epiry date is required
-                </HelperTextItem>
-              </HelperText>
-            </FormHelperText>
-          )}
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem variant={isExpiryValid ? 'default' : 'error'}>
+                {isExpiryValid
+                  ? 'Enter the expiry date for this token'
+                  : 'A valid expiry date is required'}
+              </HelperTextItem>
+            </HelperText>
+          </FormHelperText>
         </FormGroup>
       </Form>
     </Modal>

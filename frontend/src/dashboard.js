@@ -1,28 +1,26 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
-	Button,
-	EmptyState,
-	EmptyStateIcon,
-	EmptyStateBody,
-	Flex,
-	FlexItem,
-	Grid,
-	PageSection,
-	PageSectionVariants,
-	TextContent,
-	Text,
-	EmptyStateHeader,
-	EmptyStateFooter,
-	MenuToggle,
-	SelectList,
-	TextInputGroup,
-	TextInputGroupMain,
-	TextInputGroupUtilities
+  Button,
+  EmptyState,
+  EmptyStateIcon,
+  EmptyStateBody,
+  Flex,
+  FlexItem,
+  Grid,
+  PageSection,
+  PageSectionVariants,
+  TextContent,
+  Text,
+  EmptyStateHeader,
+  EmptyStateFooter,
+  MenuToggle,
+  Select,
+  SelectList,
+  SelectOption,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
 
 import CubesIcon from '@patternfly/react-icons/dist/esm/icons/cubes-icon';
 import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-icon';
@@ -67,6 +65,7 @@ const Dashboard = () => {
   // typeahead input value states
   const [selectInputValue, setSelectInputValue] = useState('');
   const [selectFilterValue, setSelectFilterValue] = useState('');
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
   const selectInputRef = useRef();
   const [loadKey, setLoadKey] = useState(nanoid(6));
 
@@ -153,10 +152,12 @@ const Dashboard = () => {
         }
       } catch (error) {
         console.error(error);
+        setLoading(false);
       }
     };
 
     if (primaryObject) {
+      setLoading(true);
       const debouncer = setTimeout(() => {
         fetchDashboards();
       }, 100);
@@ -217,15 +218,13 @@ const Dashboard = () => {
     setFilteredDashboards(filteredOptions);
   }, [selectFilterValue, dashboards, isDashboardOpen]);
 
-  const onDashboardSelect = (_, value) => {
-    if (value) {
-      setSelectedDashboard(value);
-      setIsDashboardOpen(false);
-      setSelectFilterValue('');
-      setSelectInputValue(String(value.title));
-
-      navigate(`/project/${value.project_id}/dashboard/${value.id}`);
-    }
+  const onDashboardSelect = (_event, selection) => {
+    const selected = dashboards.find((d) => d.id === selection);
+    setSelectInputValue(selected.title);
+    setSelectFilterValue('');
+    setSelectedDashboard(selected);
+    setIsSelectOpen(false);
+    navigate(`/project/${project_id}/dashboard/${selected.id}`);
   };
 
   const onDashboardClear = () => {
@@ -306,48 +305,69 @@ const Dashboard = () => {
     document.title = 'Dashboard | Ibutsu';
   }, []);
 
-  const toggle = (toggleRef) => (
-    <MenuToggle
-      ref={toggleRef}
-      variant="typeahead"
-      aria-label="Typeahead menu toggle"
-      onClick={() => {
-        setIsDashboardOpen(!isDashboardOpen);
-        selectInputRef?.current?.focus();
-      }}
-      isExpanded={isDashboardOpen}
-      isFullWidth
-      isDisabled={!primaryObject}
-    >
-      <TextInputGroup isPlain>
-        <TextInputGroupMain
-          value={selectInputValue}
-          onClick={() => {
-            setIsDashboardOpen(!isDashboardOpen);
-          }}
-          onChange={onDashboardFilterInput}
-          id="typeahead-select-input"
-          autoComplete="off"
-          placeholder={
-            loading ? 'Loading Dashboards...' : 'No active dashboard'
-          }
-          role="combobox"
-          isExpanded={isDashboardOpen}
-          aria-controls="select-typeahead-listbox"
-        />
-        <TextInputGroupUtilities
-          {...(!selectInputValue ? { style: { display: 'none' } } : {})}
+  const onDashboardToggle = () => {
+    setIsSelectOpen(!isSelectOpen);
+    selectInputRef?.current?.focus();
+  };
+
+  const dashboardSelect = (
+    <Select
+      id="dashboard-select"
+      isOpen={isSelectOpen}
+      selected={selectedDashboard?.id}
+      onSelect={onDashboardSelect}
+      onOpenChange={(isOpen) => setIsSelectOpen(isOpen)}
+      toggle={(toggleRef) => (
+        <MenuToggle
+          ref={toggleRef}
+          variant="typeahead"
+          onClick={onDashboardToggle}
+          isExpanded={isSelectOpen}
+          isFullWidth
         >
-          <Button
-            variant="plain"
-            onClick={onDashboardClear}
-            aria-label="Clear input value"
+          <TextInputGroup isPlain>
+            <TextInputGroupMain
+              value={selectInputValue}
+              onClick={onDashboardToggle}
+              onChange={onDashboardFilterInput}
+              id="typeahead-select-input"
+              autoComplete="off"
+              placeholder="Select a dashboard"
+            />
+            {!!selectInputValue && (
+              <TextInputGroupUtilities>
+                <Button
+                  variant="plain"
+                  onClick={onDashboardClear}
+                  aria-label="Clear input value"
+                >
+                  <TimesIcon aria-hidden />
+                </Button>
+              </TextInputGroupUtilities>
+            )}
+          </TextInputGroup>
+        </MenuToggle>
+      )}
+      ouiaId="dashboard-select"
+    >
+      <SelectList>
+        {filteredDashboards.map((dashboard, index) => (
+          <SelectOption
+            key={dashboard.id || index}
+            value={dashboard.id}
+            description={dashboard.id}
           >
-            <TimesIcon aria-hidden />
-          </Button>
-        </TextInputGroupUtilities>
-      </TextInputGroup>
-    </MenuToggle>
+            {dashboard.title}
+          </SelectOption>
+        ))}
+      </SelectList>
+    </Select>
+  );
+
+  const dashboardTitle = (
+    <TextContent>
+      <Text component="h1">Dashboard</Text>
+    </TextContent>
   );
 
   return (
@@ -356,40 +376,16 @@ const Dashboard = () => {
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <Flex>
             <FlexItem spacer={{ default: 'spacerLg' }}>
-              <TextContent>
-                <Text component="h1">Dashboard</Text>
-              </TextContent>
+              {dashboardTitle}
             </FlexItem>
-            <FlexItem
-              id="dashboard-selector"
-              spacer={{ default: 'spacerNone' }}
-            >
-              <Select
-                id="typeahead-select"
-                isScrollable={true}
-                isOpen={isDashboardOpen}
-                selected={selectedDashboard}
-                onSelect={onDashboardSelect}
-                onOpenChange={() => {
-                  setIsDashboardOpen(false);
-                }}
-                toggle={toggle}
+            {!loading && (
+              <FlexItem
+                id="dashboard-selector"
+                spacer={{ default: 'spacerNone' }}
               >
-                <SelectList id="select-typeahead-listbox" scrolling="true">
-                  {filteredDashboards?.map((dash) => (
-                    <SelectOption
-                      key={dash.id}
-                      onClick={() => {
-                        setSelectedDashboard(dash);
-                      }}
-                      value={dash}
-                    >
-                      {dash.title}
-                    </SelectOption>
-                  ))}
-                </SelectList>
-              </Select>
-            </FlexItem>
+                {dashboardSelect}
+              </FlexItem>
+            )}
             <FlexItem spacer={{ default: 'spacerNone' }}>
               <Button
                 aria-label="New dashboard"

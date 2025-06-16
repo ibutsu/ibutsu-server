@@ -1,16 +1,13 @@
 import {
-	Button,
-	CardBody,
-	Flex,
-	FlexItem,
-	SelectList,
-	TextInput
+  Button,
+  CardBody,
+  Flex,
+  FlexItem,
+  Select,
+  SelectList,
+  SelectOption,
+  TextInput,
 } from '@patternfly/react-core';
-import {
-	SelectVariant,
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
 
 import { STRING_OPERATIONS } from '../../constants';
 import ActiveFilters from './active-filters';
@@ -30,11 +27,11 @@ const AdminFilter = () => {
     setIsFieldOpen,
     setIsOperationOpen,
     setTextFilter,
-    operationToggle,
-    fieldToggle,
     filteredFieldOptions,
     activeFilters,
     onRemoveFilter,
+    fieldToggle,
+    operationToggle,
   } = useContext(FilterContext);
   return (
     <CardBody key="filters">
@@ -52,22 +49,23 @@ const AdminFilter = () => {
               <Select
                 key="user-filter"
                 aria-label="user-filter-field"
-                variant={SelectVariant.single}
                 isOpen={isFieldOpen}
                 selected={selectedField}
-                onToggle={(_event, _, change) => setIsFieldOpen(change)}
+                onOpenChange={(isOpen) => setIsFieldOpen(isOpen)}
                 toggle={fieldToggle}
                 onSelect={onFieldSelect}
               >
-                {filteredFieldOptions?.map((option) => (
-                  <SelectOption
-                    key={option.value}
-                    value={option.value}
-                    description={option.value}
-                  >
-                    {option.children}
-                  </SelectOption>
-                ))}
+                <SelectList>
+                  {filteredFieldOptions?.map((option) => (
+                    <SelectOption
+                      key={option.value}
+                      value={option.value}
+                      description={option.value}
+                    >
+                      {option.children}
+                    </SelectOption>
+                  ))}
+                </SelectList>
               </Select>
             </FlexItem>
             <FlexItem>

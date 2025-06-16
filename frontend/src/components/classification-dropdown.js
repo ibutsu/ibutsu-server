@@ -2,13 +2,11 @@ import { useEffect, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import {
-	DropdownList,
-	MenuToggle
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
 } from '@patternfly/react-core';
-import {
-	Dropdown,
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';

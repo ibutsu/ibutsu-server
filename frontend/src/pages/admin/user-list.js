@@ -84,7 +84,7 @@ const UserList = () => {
 
     const debouncer = setTimeout(() => {
       fetchUsers();
-    }, 100);
+    }, 50);
     return () => clearTimeout(debouncer);
   }, [
     page,
@@ -169,7 +169,6 @@ const UserList = () => {
           rows={rows}
           filters={<AdminFilter />}
           isError={isError}
-          canSelectAll={false}
           onSetPage={onSetPage}
           onSetPageSize={onSetPageSize}
           page={page}

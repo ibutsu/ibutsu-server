@@ -52,37 +52,33 @@ const ProjectList = () => {
 
   const projectToRow = (project) => ({
     cells: [
-      { title: project.title },
-      { title: project.name },
-      { title: project.owner?.name || project.owner?.email },
-      {
-        title: (
-          <div style={{ textAlign: 'right' }}>
-            <Button
-              variant="primary"
-              ouiaId={`admin-projects-edit-${project.id}`}
-              component={(props) => (
-                <Link {...props} to={`/admin/projects/${project.id}`} />
-              )}
-              size="sm"
-            >
-              <PencilAltIcon />
-            </Button>
-            &nbsp;
-            <Button
-              variant="danger"
-              ouiaId={`admin-projects-delete-${project.id}`}
-              onClick={() => {
-                setSelectedProject(project);
-                setIsDeleteModalOpen(true);
-              }}
-              size="sm"
-            >
-              <TrashIcon />
-            </Button>
-          </div>
-        ),
-      },
+      project.title,
+      project.name,
+      project.owner?.name || project.owner?.email,
+      <div style={{ textAlign: 'right' }} key="actions">
+        <Button
+          variant="primary"
+          ouiaId={`admin-projects-edit-${project.id}`}
+          component={(props) => (
+            <Link {...props} to={`/admin/projects/${project.id}`} />
+          )}
+          size="sm"
+        >
+          <PencilAltIcon />
+        </Button>
+        &nbsp;
+        <Button
+          variant="danger"
+          ouiaId={`admin-projects-delete-${project.id}`}
+          onClick={() => {
+            setSelectedProject(project);
+            setIsDeleteModalOpen(true);
+          }}
+          size="sm"
+        >
+          <TrashIcon />
+        </Button>
+      </div>,
     ],
   });
 

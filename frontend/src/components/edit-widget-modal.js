@@ -155,12 +155,7 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
     >
       {componentLoaded ? (
         <Form>
-          <FormGroup
-            label="Title"
-            fieldId="widget-title"
-            validated={isTitleValid.toString()}
-            isRequired
-          >
+          <FormGroup label="Title" fieldId="widget-title" isRequired>
             <TextInput
               type="text"
               id="widget-title"

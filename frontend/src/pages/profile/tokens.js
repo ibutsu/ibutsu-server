@@ -45,32 +45,26 @@ const UserTokens = () => {
 
   const tokenToRow = (token) => ({
     cells: [
-      { title: token.name },
-      {
-        title: (
-          <ClipboardCopy
-            isReadOnly
-            hoverTip="Copy to clipboard"
-            clickTip="Copied!"
-          >
-            {token.token}
-          </ClipboardCopy>
-        ),
-      },
-      { title: token.expires },
-      {
-        title: (
-          <Button
-            variant="danger"
-            onClick={() => {
-              setTokenToDelete(token);
-              setIsDeleteTokenOpen(true);
-            }}
-          >
-            Delete
-          </Button>
-        ),
-      },
+      token.name,
+      <ClipboardCopy
+        key="token"
+        isReadOnly
+        hoverTip="Copy to clipboard"
+        clickTip="Copied!"
+      >
+        {token.token}
+      </ClipboardCopy>,
+      token.expires,
+      <Button
+        key="delete"
+        variant="danger"
+        onClick={() => {
+          setTokenToDelete(token);
+          setIsDeleteTokenOpen(true);
+        }}
+      >
+        Delete
+      </Button>,
     ],
   });
 

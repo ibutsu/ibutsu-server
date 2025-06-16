@@ -1,15 +1,13 @@
 import {
-	Button,
-	CardBody,
-	Flex,
-	FlexItem,
-	SelectList,
-	TextInput
+  Button,
+  CardBody,
+  Flex,
+  FlexItem,
+  Select,
+  SelectList,
+  SelectOption,
+  TextInput,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
 import PropTypes from 'prop-types';
 import { useContext } from 'react';
 
@@ -39,9 +37,6 @@ const RunFilter = ({ hideFilters }) => {
     onBoolSelect,
     onFieldSelect,
     onOperationSelect,
-    fieldToggle,
-    operationToggle,
-    boolToggle,
     onRemoveFilter,
     applyFilter,
 
@@ -49,6 +44,9 @@ const RunFilter = ({ hideFilters }) => {
     filterMode,
     operationMode,
     operations,
+    fieldToggle,
+    operationToggle,
+    boolToggle,
   } = useContext(FilterContext);
   return (
     <CardBody key="filters">
