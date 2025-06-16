@@ -5,16 +5,18 @@ import React, { useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
-  Button,
-  MenuToggle,
-  Select,
-  SelectList,
-  SelectOption,
-  TextInput,
-  TextInputGroup,
-  TextInputGroupMain,
-  TextInputGroupUtilities,
+	Button,
+	MenuToggle,
+	SelectList,
+	TextInput,
+	TextInputGroup,
+	TextInputGroupMain,
+	TextInputGroupUtilities
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { TimesIcon } from '@patternfly/react-icons';
 

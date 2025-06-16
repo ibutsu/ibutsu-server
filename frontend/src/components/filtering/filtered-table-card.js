@@ -37,7 +37,7 @@ const FilterTable = ({
   canSelectAll = false,
   footerChildren = null,
   headerChildren = null,
-  cardClass = 'pf-u-p-0',
+  cardClass = 'pf-v5-u-p-0',
   fetching = false,
   filters,
 }) => {

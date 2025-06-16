@@ -187,7 +187,7 @@ const ProjectList = () => {
           </Flex>
         </Flex>
       </PageSection>
-      <PageSection className="pf-u-pb-0">
+      <PageSection className="pf-v5-u-pb-0">
         {anyProjects && (
           <FilterTable
             columns={COLUMNS}

@@ -233,7 +233,7 @@ const ClassifyFailuresTable = () => {
 
   return (
     // mt-lg == margin top large
-    <Card className="pf-u-mt-lg">
+    <Card className="pf-v5-u-mt-lg">
       <CardHeader>
         <Flex style={{ width: '100%' }}>
           <FlexItem grow={{ default: 'grow' }}>

@@ -1,31 +1,33 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
 import {
-  ActionGroup,
-  Alert,
-  Button,
-  Card,
-  CardBody,
-  Checkbox,
-  Chip,
-  ChipGroup,
-  Form,
-  FormGroup,
-  FormHelperText,
-  HelperText,
-  HelperTextItem,
-  Label,
-  MenuToggle,
-  PageSection,
-  PageSectionVariants,
-  TextInput,
-  TextInputGroup,
-  TextInputGroupMain,
-  TextInputGroupUtilities,
-  Title,
-  Select,
-  SelectOption,
+	ActionGroup,
+	Alert,
+	Button,
+	Card,
+	CardBody,
+	Checkbox,
+	Chip,
+	ChipGroup,
+	Form,
+	FormGroup,
+	FormHelperText,
+	HelperText,
+	HelperTextItem,
+	Label,
+	MenuToggle,
+	PageSection,
+	PageSectionVariants,
+	TextInput,
+	TextInputGroup,
+	TextInputGroupMain,
+	TextInputGroupUtilities,
+	Title
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { TimesIcon } from '@patternfly/react-icons';
 
