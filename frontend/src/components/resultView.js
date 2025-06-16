@@ -435,7 +435,7 @@ const ResultView = ({
                                 {(testResult.start_time ||
                                   testResult.starttime) > 0 && (
                                   <DataListItem
-                                    className="pf-u-p-0"
+                                    className="pf-v5-u-p-0"
                                     aria-labelledby="started-label"
                                   >
                                     <DataListItemRow>
@@ -443,13 +443,13 @@ const ResultView = ({
                                         dataListCells={[
                                           <DataListCell
                                             key="started-label"
-                                            className="pf-u-p-sm"
+                                            className="pf-v5-u-p-sm"
                                           >
                                             Started at:
                                           </DataListCell>,
                                           <DataListCell
                                             key="started-data"
-                                            className="pf-u-p-sm"
+                                            className="pf-v5-u-p-sm"
                                           >
                                             {startTime.toLocaleString()}
                                           </DataListCell>,
@@ -459,7 +459,7 @@ const ResultView = ({
                                   </DataListItem>
                                 )}
                                 <DataListItem
-                                  className="pf-u-p-0"
+                                  className="pf-v5-u-p-0"
                                   aria-labelledby="total-label"
                                 >
                                   <DataListItemRow>
@@ -467,13 +467,13 @@ const ResultView = ({
                                       dataListCells={[
                                         <DataListCell
                                           key="total-label"
-                                          className="pf-u-p-sm"
+                                          className="pf-v5-u-p-sm"
                                         >
                                           Total:
                                         </DataListCell>,
                                         <DataListCell
                                           key="total-data"
-                                          className="pf-u-p-sm"
+                                          className="pf-v5-u-p-sm"
                                         >
                                           {round(testResult.duration)}s
                                         </DataListCell>,
@@ -486,7 +486,7 @@ const ResultView = ({
                                     <React.Fragment>
                                       {testResult.metadata.durations.setup && (
                                         <DataListItem
-                                          className="pf-u-p-0"
+                                          className="pf-v5-u-p-0"
                                           aria-labelledby="setup-label"
                                         >
                                           <DataListItemRow>
@@ -494,13 +494,13 @@ const ResultView = ({
                                               dataListCells={[
                                                 <DataListCell
                                                   key="setup-label"
-                                                  className="pf-u-p-sm"
+                                                  className="pf-v5-u-p-sm"
                                                 >
                                                   Set up:
                                                 </DataListCell>,
                                                 <DataListCell
                                                   key="setup-data"
-                                                  className="pf-u-p-sm"
+                                                  className="pf-v5-u-p-sm"
                                                 >
                                                   {round(
                                                     testResult.metadata
@@ -515,7 +515,7 @@ const ResultView = ({
                                       )}
                                       {testResult.metadata.durations.call && (
                                         <DataListItem
-                                          className="pf-u-p-0"
+                                          className="pf-v5-u-p-0"
                                           aria-labelledby="call-label"
                                         >
                                           <DataListItemRow>
@@ -523,13 +523,13 @@ const ResultView = ({
                                               dataListCells={[
                                                 <DataListCell
                                                   key="call-label"
-                                                  className="pf-u-p-sm"
+                                                  className="pf-v5-u-p-sm"
                                                 >
                                                   Call:
                                                 </DataListCell>,
                                                 <DataListCell
                                                   key="call-data"
-                                                  className="pf-u-p-sm"
+                                                  className="pf-v5-u-p-sm"
                                                 >
                                                   {round(
                                                     testResult.metadata
@@ -545,7 +545,7 @@ const ResultView = ({
                                       {testResult.metadata.durations
                                         .teardown && (
                                         <DataListItem
-                                          className="pf-u-p-0"
+                                          className="pf-v5-u-p-0"
                                           aria-labelledby="teardown-label"
                                         >
                                           <DataListItemRow>
@@ -553,13 +553,13 @@ const ResultView = ({
                                               dataListCells={[
                                                 <DataListCell
                                                   key="teardown-label"
-                                                  className="pf-u-p-sm"
+                                                  className="pf-v5-u-p-sm"
                                                 >
                                                   Tear down:
                                                 </DataListCell>,
                                                 <DataListCell
                                                   key="teardown-data"
-                                                  className="pf-u-p-sm"
+                                                  className="pf-v5-u-p-sm"
                                                 >
                                                   {round(
                                                     testResult.metadata
@@ -604,7 +604,7 @@ const ResultView = ({
                                 >
                                   {testResult.metadata.statuses.setup && (
                                     <DataListItem
-                                      className="pf-u-p-0"
+                                      className="pf-v5-u-p-0"
                                       aria-labelledby="setup-label"
                                     >
                                       <DataListItemRow>
@@ -612,13 +612,13 @@ const ResultView = ({
                                           dataListCells={[
                                             <DataListCell
                                               key="setup-label"
-                                              className="pf-u-p-sm"
+                                              className="pf-v5-u-p-sm"
                                             >
                                               Set up:
                                             </DataListCell>,
                                             <DataListCell
                                               key="setup-data"
-                                              className="pf-u-p-sm"
+                                              className="pf-v5-u-p-sm"
                                             >
                                               {
                                                 testResult.metadata.statuses
@@ -634,7 +634,7 @@ const ResultView = ({
                                   )}
                                   {testResult.metadata.statuses.call && (
                                     <DataListItem
-                                      className="pf-u-p-0"
+                                      className="pf-v5-u-p-0"
                                       aria-labelledby="call-label"
                                     >
                                       <DataListItemRow>
@@ -642,13 +642,13 @@ const ResultView = ({
                                           dataListCells={[
                                             <DataListCell
                                               key="call-label"
-                                              className="pf-u-p-sm"
+                                              className="pf-v5-u-p-sm"
                                             >
                                               Call:
                                             </DataListCell>,
                                             <DataListCell
                                               key="call-data"
-                                              className="pf-u-p-sm"
+                                              className="pf-v5-u-p-sm"
                                             >
                                               {
                                                 testResult.metadata.statuses
@@ -664,7 +664,7 @@ const ResultView = ({
                                   )}
                                   {testResult.metadata.statuses.teardown && (
                                     <DataListItem
-                                      className="pf-u-p-0"
+                                      className="pf-v5-u-p-0"
                                       aria-labelledby="teardown-label"
                                     >
                                       <DataListItemRow>
@@ -672,13 +672,13 @@ const ResultView = ({
                                           dataListCells={[
                                             <DataListCell
                                               key="teardown-label"
-                                              className="pf-u-p-sm"
+                                              className="pf-v5-u-p-sm"
                                             >
                                               Tear down:
                                             </DataListCell>,
                                             <DataListCell
                                               key="teardown-data"
-                                              className="pf-u-p-sm"
+                                              className="pf-v5-u-p-sm"
                                             >
                                               {
                                                 testResult.metadata.statuses

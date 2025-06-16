@@ -643,7 +643,7 @@ const Run = ({ defaultTab = 'summary' }) => {
               eventKey="results-tree"
               title={<TabTitle icon={<RepositoryIcon />} text="Results Tree" />}
             >
-              <Card className="pf-u-mt-lg">
+              <Card className="pf-v5-u-mt-lg">
                 <CardBody>
                   <Grid gutter="sm">
                     {resultsTree.length === 0 && (

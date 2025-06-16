@@ -1,13 +1,15 @@
 import {
-  Button,
-  CardBody,
-  Flex,
-  FlexItem,
-  Select,
-  SelectList,
-  SelectOption,
-  TextInput,
+	Button,
+	CardBody,
+	Flex,
+	FlexItem,
+	SelectList,
+	TextInput
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import PropTypes from 'prop-types';
 import { useContext } from 'react';
 

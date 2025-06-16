@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Dropdown,
-  DropdownItem,
-  DropdownList,
-  MenuToggle,
-  Text,
-  Tooltip,
+	DropdownList,
+	MenuToggle,
+	Text,
+	Tooltip
 } from '@patternfly/react-core';
+import {
+	Dropdown,
+	DropdownItem
+} from '@patternfly/react-core/deprecated';
 
 const ParamDropdown = ({
   defaultValue,

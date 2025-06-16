@@ -3,7 +3,16 @@ import PropTypes from 'prop-types';
 
 import { Card, CardBody, CardFooter, Text } from '@patternfly/react-core';
 
-import { Table, Thead, Th, Tbody, Tr, Td } from '@patternfly/react-table';
+import {
+	Thead,
+	Th,
+	Tbody,
+	Tr,
+	Td
+} from '@patternfly/react-table';
+import {
+	Table
+} from '@patternfly/react-table/deprecated';
 
 import { Link } from 'react-router-dom';
 

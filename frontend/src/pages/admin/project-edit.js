@@ -1,29 +1,31 @@
 import React, { useContext, useEffect, useState } from 'react';
 
 import {
-  ActionGroup,
-  Alert,
-  Button,
-  Card,
-  CardBody,
-  Form,
-  FormGroup,
-  FormHelperText,
-  HelperText,
-  HelperTextItem,
-  MenuToggle,
-  PageSection,
-  PageSectionVariants,
-  Select,
-  SelectList,
-  SelectOption,
-  TextInput,
-  TextInputGroup,
-  TextInputGroupMain,
-  TextInputGroupUtilities,
-  Title,
-  ValidatedOptions,
+	ActionGroup,
+	Alert,
+	Button,
+	Card,
+	CardBody,
+	Form,
+	FormGroup,
+	FormHelperText,
+	HelperText,
+	HelperTextItem,
+	MenuToggle,
+	PageSection,
+	PageSectionVariants,
+	SelectList,
+	TextInput,
+	TextInputGroup,
+	TextInputGroupMain,
+	TextInputGroupUtilities,
+	Title,
+	ValidatedOptions
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid/non-secure';
 

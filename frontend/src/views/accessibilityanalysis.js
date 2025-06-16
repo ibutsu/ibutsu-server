@@ -391,7 +391,7 @@ const AccessibilityAnalysisView = ({ view }) => {
               onSetPage={onSetPage}
               onSetPageSize={onSetPageSize}
               headerChildren={accessTableHeader}
-              cardClass="pf-u-mt-lg"
+              cardClass="pf-v5-u-mt-lg"
             />
           </Tab>
           {artifactTabs}

@@ -2,30 +2,41 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import {
-  Checkbox,
-  Form,
-  FormGroup,
-  FormHelperText,
-  Grid,
-  GridItem,
-  HelperText,
-  HelperTextItem,
-  Modal,
-  ModalVariant,
-  Radio,
-  Stack,
-  StackItem,
-  Text,
-  TextArea,
-  TextContent,
-  TextInput,
-  Title,
-  Wizard,
-  WizardHeader,
-  WizardStep,
+	Checkbox,
+	Form,
+	FormGroup,
+	FormHelperText,
+	Grid,
+	GridItem,
+	HelperText,
+	HelperTextItem,
+	Modal,
+	ModalVariant,
+	Radio,
+	Stack,
+	StackItem,
+	Text,
+	TextArea,
+	TextContent,
+	TextInput,
+	Title
 } from '@patternfly/react-core';
+import {
+	Wizard,
+	WizardHeader,
+	WizardStep
+} from '@patternfly/react-core/deprecated';
 
-import { Tbody, Table, Td, Th, Thead, Tr } from '@patternfly/react-table';
+import {
+	Tbody,
+	Td,
+	Th,
+	Thead,
+	Tr
+} from '@patternfly/react-table';
+import {
+	Table
+} from '@patternfly/react-table/deprecated';
 import Linkify from 'react-linkify';
 import { linkifyDecorator } from './decorators';
 

@@ -1,26 +1,28 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
-  Button,
-  EmptyState,
-  EmptyStateIcon,
-  EmptyStateBody,
-  Flex,
-  FlexItem,
-  Grid,
-  PageSection,
-  PageSectionVariants,
-  Select,
-  TextContent,
-  Text,
-  EmptyStateHeader,
-  EmptyStateFooter,
-  MenuToggle,
-  SelectList,
-  SelectOption,
-  TextInputGroup,
-  TextInputGroupMain,
-  TextInputGroupUtilities,
+	Button,
+	EmptyState,
+	EmptyStateIcon,
+	EmptyStateBody,
+	Flex,
+	FlexItem,
+	Grid,
+	PageSection,
+	PageSectionVariants,
+	TextContent,
+	Text,
+	EmptyStateHeader,
+	EmptyStateFooter,
+	MenuToggle,
+	SelectList,
+	TextInputGroup,
+	TextInputGroupMain,
+	TextInputGroupUtilities
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import CubesIcon from '@patternfly/react-icons/dist/esm/icons/cubes-icon';
 import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-icon';

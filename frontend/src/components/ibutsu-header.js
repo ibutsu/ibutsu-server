@@ -1,35 +1,37 @@
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  AboutModal,
-  Brand,
-  Button,
-  ButtonVariant,
-  Icon,
-  Flex,
-  FlexItem,
-  Masthead,
-  MastheadMain,
-  MastheadBrand,
-  MastheadToggle,
-  MastheadContent,
-  PageToggleButton,
-  MenuToggle,
-  Select,
-  SelectList,
-  SelectOption,
-  TextContent,
-  Toolbar,
-  ToolbarContent,
-  ToolbarGroup,
-  ToolbarItem,
-  TextList,
-  TextListItem,
-  TextInputGroup,
-  TextInputGroupMain,
-  TextInputGroupUtilities,
-  ToggleGroup,
-  ToggleGroupItem,
+	AboutModal,
+	Brand,
+	Button,
+	ButtonVariant,
+	Icon,
+	Flex,
+	FlexItem,
+	Masthead,
+	MastheadMain,
+	MastheadBrand,
+	MastheadToggle,
+	MastheadContent,
+	PageToggleButton,
+	MenuToggle,
+	SelectList,
+	TextContent,
+	Toolbar,
+	ToolbarContent,
+	ToolbarGroup,
+	ToolbarItem,
+	TextList,
+	TextListItem,
+	TextInputGroup,
+	TextInputGroupMain,
+	TextInputGroupUtilities,
+	ToggleGroup,
+	ToggleGroupItem
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import BarsIcon from '@patternfly/react-icons/dist/esm/icons/bars-icon';
 import MoonIcon from '@patternfly/react-icons/dist/esm/icons/moon-icon';
 import SunIcon from '@patternfly/react-icons/dist/esm/icons/sun-icon';
@@ -405,7 +407,7 @@ const IbutsuHeader = () => {
           </PageToggleButton>
         </MastheadToggle>
         <MastheadMain>
-          <MastheadBrand href="/">
+          <MastheadBrand component="a" href="/">
             <Brand src="/images/ibutsu-wordart-164.png" alt="Ibutsu" />
           </MastheadBrand>
         </MastheadMain>

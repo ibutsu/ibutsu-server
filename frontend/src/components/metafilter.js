@@ -133,7 +133,7 @@ const MetaFilter = ({
             isOpen={isFieldOpen}
             selections={fieldSelection}
             maxHeight="1140%"
-            onToggle={(_, change) => setIsFieldOpen(change)}
+            onToggle={(_event, _, change) => setIsFieldOpen(change)}
             onSelect={onFieldSelect}
             onClear={onFieldClear}
             isCreatable={true}
@@ -154,7 +154,7 @@ const MetaFilter = ({
               fieldSelection.length === 0 ||
               (fieldSelection.length > 0 && !values_available)
             }
-            onToggle={(_, isExpanded) => setIsValueOpen(isExpanded)}
+            onToggle={(_event, _, isExpanded) => setIsValueOpen(isExpanded)}
             onSelect={onValueSelect}
             onClear={onValueClear}
           >

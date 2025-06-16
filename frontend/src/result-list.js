@@ -126,7 +126,7 @@ const ResultList = () => {
           </Text>
         </TextContent>
       </PageSection>
-      <PageSection className="pf-u-pb-0">
+      <PageSection className="pf-v5-u-pb-0">
         <FilterTable
           fetching={fetching}
           columns={RUN_RESULTS_COLUMNS}

@@ -1,14 +1,16 @@
 import {
-  Button,
-  CardBody,
-  Flex,
-  FlexItem,
-  Select,
-  SelectList,
-  SelectOption,
-  TextInput,
+	Button,
+	CardBody,
+	Flex,
+	FlexItem,
+	SelectList,
+	TextInput
 } from '@patternfly/react-core';
-import { SelectVariant } from '@patternfly/react-core/deprecated';
+import {
+	SelectVariant,
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 
 import { STRING_OPERATIONS } from '../../constants';
 import ActiveFilters from './active-filters';
@@ -53,7 +55,7 @@ const AdminFilter = () => {
                 variant={SelectVariant.single}
                 isOpen={isFieldOpen}
                 selected={selectedField}
-                onToggle={(_, change) => setIsFieldOpen(change)}
+                onToggle={(_event, _, change) => setIsFieldOpen(change)}
                 toggle={fieldToggle}
                 onSelect={onFieldSelect}
               >

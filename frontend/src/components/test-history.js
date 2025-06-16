@@ -1,19 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Checkbox,
-  Flex,
-  FlexItem,
-  Select,
-  SelectOption,
-  SelectList,
-  MenuToggle,
-  TextContent,
-  Text,
-  Title,
-  CardHeader,
-  CardBody,
+	Checkbox,
+	Flex,
+	FlexItem,
+	SelectList,
+	MenuToggle,
+	TextContent,
+	Text,
+	Title,
+	CardHeader,
+	CardBody
 } from '@patternfly/react-core';
+import {
+	Select,
+	SelectOption
+} from '@patternfly/react-core/deprecated';
 import { expandable } from '@patternfly/react-table';
 
 import { HttpClient } from '../services/http';

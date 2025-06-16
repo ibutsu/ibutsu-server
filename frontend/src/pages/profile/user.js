@@ -226,7 +226,7 @@ const UserProfile = () => {
                                 projects.map((project) => (
                                   <DataListCell
                                     key={project.name}
-                                    className="pf-u-p-sm"
+                                    className="pf-v5-u-p-sm"
                                   >
                                     <span> {project.title} </span>
                                     {project.owner_id === user.id && (
