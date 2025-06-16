@@ -292,31 +292,29 @@ const useTableFilters = ({
   const fieldToggle = useCallback(
     (toggleRef) => (
       <MenuToggle
+        ref={toggleRef}
         variant="typeahead"
-        aria-label="Typeahead creatable menu toggle"
+        aria-label="Field selection menu toggle"
         onClick={() => setIsFieldOpen(!isFieldOpen)}
         isExpanded={isFieldOpen}
         isFullWidth
-        innerRef={toggleRef}
       >
         <TextInputGroup isPlain>
           <TextInputGroupMain
             value={fieldInputValue}
-            onClick={() => setIsFieldOpen(!isFieldOpen)}
             onChange={onFieldTextInputChange}
-            id="create-typeahead-select-input"
-            name="filter-field-select"
             autoComplete="off"
             placeholder="Select a field"
-            role="combobox"
-            isExpanded={isFieldOpen}
-            aria-controls="select-create-typeahead-listbox"
+            aria-label="Field selection typeahead input"
           />
           <TextInputGroupUtilities>
             {!!fieldInputValue && (
               <Button
                 variant="plain"
-                onClick={onFieldClear}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onFieldClear();
+                }}
                 aria-label="Clear input value"
               >
                 <TimesIcon aria-hidden />
@@ -332,12 +330,14 @@ const useTableFilters = ({
   const operationToggle = useCallback(
     (toggleRef) => (
       <MenuToggle
+        ref={toggleRef}
         onClick={() => setIsOperationOpen(!isOperationOpen)}
         isExpanded={isOperationOpen}
         isFullWidth
-        ref={toggleRef}
       >
-        {operationSelection}
+        {typeof operationSelection === 'object' && operationSelection !== null
+          ? operationSelection.title || 'Select operation'
+          : operationSelection || 'Select operation'}
       </MenuToggle>
     ),
     [isOperationOpen, operationSelection],
@@ -346,36 +346,17 @@ const useTableFilters = ({
   const boolToggle = useCallback(
     (toggleRef) => (
       <MenuToggle
+        ref={toggleRef}
         onClick={() => setIsBoolOpen(!isBoolOpen)}
         isExpanded={isBoolOpen}
         isFullWidth
-        ref={toggleRef}
-        style={{ maxHeight: '36px' }}
       >
-        <TextInputGroup isPlain>
-          <TextInputGroupMain
-            value={boolSelection}
-            onClick={() => setIsBoolOpen(!isBoolOpen)}
-            autoComplete="off"
-            placeholder="Select True/False"
-            role="combobox"
-            isExpanded={isBoolOpen}
-          />
-          <TextInputGroupUtilities>
-            {!!boolSelection && (
-              <Button
-                variant="plain"
-                onClick={onBoolClear}
-                aria-label="Clear input value"
-              >
-                <TimesIcon aria-hidden />
-              </Button>
-            )}
-          </TextInputGroupUtilities>
-        </TextInputGroup>
+        {typeof boolSelection === 'object' && boolSelection !== null
+          ? boolSelection.title || 'Select True/False'
+          : boolSelection || 'Select True/False'}
       </MenuToggle>
     ),
-    [boolSelection, isBoolOpen, onBoolClear],
+    [boolSelection, isBoolOpen],
   );
 
   return {

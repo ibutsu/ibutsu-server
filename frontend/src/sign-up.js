@@ -171,20 +171,11 @@ export class SignUp extends React.Component {
       </LoginMainFooterBandItem>
     );
 
-    const backgroundImages = {
-      lg: '/images/pfbg_1200.jpg',
-      sm: '/images/pfbg_768.jpg',
-      sm2x: '/images/pfbg_768@2x.jpg',
-      xs: '/images/pfbg_576.jpg',
-      xs2x: '/images/pfbg_576@2x.jpg',
-    };
-
     return (
       <LoginPage
         footerListVariants="inline"
         brandImgSrc="/images/ibutsu-wordart-164.png"
         brandImgAlt="Ibutsu"
-        backgroundImgSrc={backgroundImages}
         textContent="Ibutsu is an open source test result aggregation. Collect and display your test results, view artifacts, and monitor tests."
         loginTitle="Register a new account"
         loginSubtitle="Please type in your e-mail address and a secure password"
@@ -221,12 +212,7 @@ export class SignUp extends React.Component {
               </HelperText>
             </FormHelperText>
           </FormGroup>
-          <FormGroup
-            label="Password"
-            isRequired
-            fieldId="password"
-            validated={this.state.isValidPassword ? 'default' : 'error'}
-          >
+          <FormGroup label="Password" isRequired fieldId="password">
             <InputGroup>
               {!this.state.isPasswordVisible && (
                 <TextInput

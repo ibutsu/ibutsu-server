@@ -132,15 +132,11 @@ const ReportBuilder = () => {
       }
       return {
         cells: [
-          { title: reportName, data: report },
-          {
-            title: (
-              <span className={reportStatus}>
-                {statusIcon} {toTitleCase(reportStatus)}
-              </span>
-            ),
-          },
-          { title: row_actions },
+          reportName,
+          <span key="status" className={reportStatus}>
+            {statusIcon} {toTitleCase(reportStatus)}
+          </span>,
+          row_actions,
         ],
       };
     };

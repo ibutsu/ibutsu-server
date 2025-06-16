@@ -180,6 +180,7 @@ const Run = ({ defaultTab = 'summary' }) => {
       artifacts?.map((artifact) => (
         <Tab
           key={artifact.id}
+          label={artifact.filename}
           eventKey={artifact.id}
           title={<TabTitle icon={<FileAltIcon />} text={artifact.filename} />}
         >
@@ -190,7 +191,7 @@ const Run = ({ defaultTab = 'summary' }) => {
   );
 
   const artifactKeys = useCallback(() => {
-    if (artifactTabs && artifactTabs?.length !== 0) {
+    if (artifactTabs && artifactTabs.length > 0) {
       return artifactTabs.map((tab) => tab.key);
     } else {
       return [];
@@ -718,7 +719,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                 <ClassifyFailuresTable run_id={run_id} />
               </FilterProvider>
             </Tab>
-            {artifactTabs}
+            {artifactTabs && artifactTabs.length > 0 ? artifactTabs : null}
             <Tab
               eventKey="run-object"
               title={<TabTitle icon={<CodeIcon />} text="Run Object" />}

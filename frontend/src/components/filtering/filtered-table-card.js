@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import React, { useState } from 'react';
 
 import {
   Card,
@@ -13,28 +14,32 @@ import {
 } from '@patternfly/react-core';
 
 import {
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  ExpandableRowContent,
   Table,
-  TableBody,
-  TableHeader,
-} from '@patternfly/react-table/deprecated';
+} from '@patternfly/react-table';
 
 import { TableEmptyState, TableErrorState } from '../tablestates';
 
 const FilterTable = ({
+  selectable = false,
+  expandable = false,
   isError,
   onCollapse,
-  onRowSelect,
+  onRowSelectCallback,
   onClearFilters,
   onSetPage,
   onSetPageSize,
   variant,
   columns,
   rows,
-  actions,
   page,
   pageSize,
   totalItems,
-  canSelectAll = false,
   footerChildren = null,
   headerChildren = null,
   cardClass = 'pf-v5-u-p-0',
@@ -47,6 +52,143 @@ const FilterTable = ({
     : rows
       ? rows.length !== 0
       : false;
+
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [expandedRows, setExpandedRows] = useState([]);
+
+  // Handle setting a single row as selected/unselected
+  const setRowSelected = (row, isSelected = true) => {
+    if (isSelected) {
+      setSelectedRows((prev) => [...prev, row.id]);
+    } else {
+      setSelectedRows((prev) => prev.filter((id) => id !== row.id));
+    }
+  };
+
+  // Handle select/unselect all rows
+  const selectAllRows = (event, isSelected) => {
+    if (!rows) return;
+
+    if (isSelected) {
+      setSelectedRows(rows.map((row) => row.id));
+    } else {
+      setSelectedRows([]);
+    }
+
+    // Callback to parent with all rows selection state
+    onRowSelectCallback && onRowSelectCallback(event, isSelected, -1);
+  };
+
+  // Compare rows.length to selectedRows.length and check if every row id is included
+  const areAllRowsSelected =
+    rows?.length > 0 &&
+    rows?.length === selectedRows?.length &&
+    rows.every((row) => selectedRows.includes(row.id));
+
+  // Handle individual row selection
+  const onSelectRow = (event, isSelected, rowIndex) => {
+    const row = rows[rowIndex];
+    setRowSelected(row, isSelected);
+    onRowSelectCallback && onRowSelectCallback(event, isSelected, rowIndex);
+  };
+
+  // Check if a row is expanded
+  const isRowExpanded = (row) => expandedRows.includes(row.id);
+
+  // Handle row expansion
+  const setRowExpanded = (row, isExpanding = true) => {
+    setExpandedRows((prevExpanded) => {
+      const otherExpandedRows = prevExpanded.filter((id) => id !== row.id);
+      return isExpanding ? [...otherExpandedRows, row.id] : otherExpandedRows;
+    });
+  };
+
+  // Handle expand toggle
+  const handleToggle = (event, rowIndex) => {
+    const row = rows[rowIndex];
+    const isExpanding = !isRowExpanded(row);
+    setRowExpanded(row, isExpanding);
+
+    // Call parent callback if provided
+    if (onCollapse) {
+      onCollapse(event, rowIndex, isExpanding);
+    }
+  };
+
+  const renderTableRows = () => {
+    if (!rows) {
+      return null;
+    }
+
+    return rows.map((row, rowIndex) => {
+      const isExpanded = isRowExpanded(row);
+      const isSelected = row.selected || selectedRows.includes(row.id);
+
+      return (
+        <Tbody key={row.id} isExpanded={isExpanded}>
+          <Tr>
+            {selectable && (
+              <Td
+                select={{
+                  onSelect: (e, s) => onSelectRow(e, s, rowIndex),
+                  isSelected: isSelected,
+                  rowIndex,
+                }}
+              />
+            )}
+            {expandable && (
+              <Td
+                expand={{
+                  rowIndex,
+                  isExpanded: isExpanded,
+                  onToggle: handleToggle,
+                  expandId: `expandable-row-${row.id}`,
+                }}
+              />
+            )}
+
+            {row.cells &&
+              row.cells.map((cell, cellIndex) => {
+                // Handle different cell formats properly
+                let cellContent;
+                if (cell === null || cell === undefined) {
+                  cellContent = null;
+                } else if (typeof cell === 'string') {
+                  cellContent = cell;
+                } else if (typeof cell === 'object') {
+                  // React elements can be directly rendered
+                  if (React.isValidElement(cell)) {
+                    cellContent = cell;
+                  }
+                  // Objects with title property (PatternFly table cell format)
+                  else if ('title' in cell) {
+                    cellContent = cell.title;
+                  }
+                  // Fallback for other object types
+                  else {
+                    cellContent = cell;
+                  }
+                } else {
+                  cellContent = cell;
+                }
+
+                return <Td key={cellIndex}>{cellContent}</Td>;
+              })}
+          </Tr>
+          {expandable && row.expandedContent && isExpanded && (
+            <Tr isExpanded={isExpanded}>
+              {selectable && <Td />}
+              <Td colSpan={columns.length + (expandable ? 1 : 0)} noPadding>
+                <ExpandableRowContent>
+                  {row.expandedContent}
+                </ExpandableRowContent>
+              </Td>
+            </Tr>
+          )}
+        </Tbody>
+      );
+    });
+  };
 
   return (
     <Card ouiaId="filter-table-card" className={cardClass}>
@@ -79,17 +221,59 @@ const FilterTable = ({
           </Flex>
           <Table
             ouiaId="filter-table-table"
-            cells={columns}
-            rows={rows}
-            actions={actions}
             aria-label="List"
-            canSelectAll={canSelectAll}
-            onCollapse={onCollapse}
-            onSelect={onRowSelect}
             variant={variant}
           >
-            <TableHeader />
-            <TableBody />
+            <Thead>
+              <Tr>
+                {selectable && (
+                  <Th
+                    select={{
+                      onSelect: selectAllRows,
+                      isSelected: areAllRowsSelected,
+                      isDisabled: !rows || rows.length === 0,
+                    }}
+                  />
+                )}
+                {expandable && <Th screenReaderText="Row expansion" />}
+                {columns.map((column, columnIndex) => (
+                  <Th key={columnIndex}>
+                    {typeof column === 'string' ? column : column?.title}
+                  </Th>
+                ))}
+              </Tr>
+            </Thead>
+            {!rows && (
+              <Tbody>
+                <Tr>
+                  <Td
+                    colSpan={
+                      columns.length +
+                      (selectable ? 1 : 0) +
+                      (expandable ? 1 : 0)
+                    }
+                  >
+                    No rows data
+                  </Td>
+                </Tr>
+              </Tbody>
+            )}
+            {rows && rows.length === 0 && (
+              <Tbody>
+                <Tr>
+                  <Td
+                    colSpan={
+                      columns.length +
+                      (selectable ? 1 : 0) +
+                      (expandable ? 1 : 0)
+                    }
+                  >
+                    Empty rows array
+                  </Td>
+                </Tr>
+              </Tbody>
+            )}
+            {rows && rows.length > 0 && renderTableRows()}
           </Table>
           <Pagination
             widgetId="pagination-options-menu-bottom"
@@ -124,15 +308,13 @@ const FilterTable = ({
 FilterTable.propTypes = {
   columns: PropTypes.array,
   rows: PropTypes.array,
-  actions: PropTypes.array,
   filters: PropTypes.node,
   isError: PropTypes.bool,
-  canSelectAll: PropTypes.bool,
   onCollapse: PropTypes.func,
   onClearFilters: PropTypes.func,
   onSetPage: PropTypes.func,
   onSetPageSize: PropTypes.func,
-  onRowSelect: PropTypes.func,
+  onRowSelectCallback: PropTypes.func,
   variant: PropTypes.node,
   footerChildren: PropTypes.node,
   headerChildren: PropTypes.node,
@@ -141,6 +323,8 @@ FilterTable.propTypes = {
   page: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   pageSize: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   totalItems: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  selectable: PropTypes.bool,
+  expandable: PropTypes.bool,
 };
 
 export default FilterTable;

@@ -5,20 +5,12 @@ import React, { useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
-	Button,
-	MenuToggle,
-	SelectList,
-	TextInput,
-	TextInputGroup,
-	TextInputGroupMain,
-	TextInputGroupUtilities
+  MenuToggle,
+  Select,
+  SelectList,
+  SelectOption,
+  TextInput,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
-
-import { TimesIcon } from '@patternfly/react-icons';
 
 import { Link } from 'react-router-dom';
 
@@ -72,22 +64,20 @@ const runToRow = (run, filterFunc, analysisViewId) => {
   }
   return {
     cells: [
-      analysisViewId
-        ? {
-            title: (
-              <React.Fragment>
-                <Link to={`../view/${analysisViewId}?run_list=${run.id}`}>
-                  {run.id}
-                </Link>{' '}
-                {badges}
-              </React.Fragment>
-            ),
-          }
-        : run.id,
-      { title: <RunSummary summary={run.summary} /> },
-      { title: run.source },
-      { title: run.env },
-      { title: created.toLocaleString() },
+      analysisViewId ? (
+        <React.Fragment key="run">
+          <Link to={`../view/${analysisViewId}?run_list=${run.id}`}>
+            {run.id}
+          </Link>{' '}
+          {badges}
+        </React.Fragment>
+      ) : (
+        run.id
+      ),
+      <RunSummary key="summary" summary={run.summary} />,
+      run.source,
+      run.env,
+      created.toLocaleString(),
     ],
   };
 };
@@ -159,11 +149,11 @@ const AccessibilityDashboardView = ({ view }) => {
     }
   };
 
-  const onFieldClear = () => {
-    setFieldSelection();
-    setFieldInputValue('');
-    setFieldFilterValue('');
-  };
+  // const onFieldClear = () => {
+  //   setFieldSelection();
+  //   setFieldInputValue('');
+  //   setFieldFilterValue('');
+  // };
 
   // const onFieldCreate = newValue => {
   //   this.setState({filteredFieldOptions: [...this.state.filteredFieldOptions, newValue]});
@@ -280,96 +270,6 @@ const AccessibilityDashboardView = ({ view }) => {
   const operationMode = getOperationMode(operationSelection);
   const operations = getOperationsFromField(fieldSelection);
 
-  const fieldToggle = (toggleRef) => (
-    <MenuToggle
-      variant="typeahead"
-      aria-label="Typeahead creatable menu toggle"
-      onClick={() => setIsFieldOpen(!isFieldOpen)}
-      isExpanded={isFieldOpen}
-      isFullWidth
-      innerRef={toggleRef}
-    >
-      <TextInputGroup isPlain>
-        <TextInputGroupMain
-          value={fieldInputValue}
-          onClick={() => setIsFieldOpen(!isFieldOpen)}
-          onChange={(value) => {
-            setFieldFilterValue(value);
-            setFieldInputValue(value);
-          }}
-          id="create-typeahead-select-input"
-          autoComplete="off"
-          placeholder="Select a field"
-          role="combobox"
-          isExpanded={isFieldOpen}
-          aria-controls="select-create-typeahead-listbox"
-        />
-        <TextInputGroupUtilities>
-          {!!fieldInputValue && (
-            <Button
-              variant="plain"
-              onClick={() => {
-                onFieldClear();
-              }}
-              aria-label="Clear input value"
-            >
-              <TimesIcon aria-hidden />
-            </Button>
-          )}
-        </TextInputGroupUtilities>
-      </TextInputGroup>
-    </MenuToggle>
-  );
-
-  const operationToggle = (toggleRef) => (
-    <MenuToggle
-      onClick={() => setIsOperationOpen(!isOperationOpen)}
-      isExpanded={isOperationOpen}
-      isFullWidth
-      ref={toggleRef}
-    >
-      {operationSelection}
-    </MenuToggle>
-  );
-
-  const boolToggle = (toggleRef) => (
-    <MenuToggle
-      onClick={() => {
-        setIsBoolOpen(!isBoolOpen);
-      }}
-      isExpanded={isBoolOpen}
-      isFullWidth
-      ref={toggleRef}
-      style={{ maxHeight: '36px' }}
-    >
-      <TextInputGroup isPlain>
-        <TextInputGroupMain
-          value={boolSelection}
-          onClick={() => {
-            setIsBoolOpen(!isBoolOpen);
-          }}
-          autoComplete="off"
-          placeholder="Select True/False"
-          role="combobox"
-          isExpanded={isBoolOpen}
-        />
-        <TextInputGroupUtilities>
-          {!!boolSelection && (
-            <Button
-              variant="plain"
-              onClick={() => {
-                setBoolSelection();
-              }}
-              aria-label="Clear input value"
-            >
-              <TimesIcon aria-hidden />
-            </Button>
-          )}
-        </TextInputGroupUtilities>
-      </TextInputGroup>
-    </MenuToggle>
-  );
-
   const jsxFilters = [
     <Select
       id="multi-typeahead-select"
@@ -378,7 +278,15 @@ const AccessibilityDashboardView = ({ view }) => {
       onSelect={onFieldSelect}
       key="field"
       onOpenChange={() => setIsFieldOpen(false)}
-      toggle={fieldToggle}
+      toggle={(toggleRef) => (
+        <MenuToggle
+          ref={toggleRef}
+          onClick={() => setIsFieldOpen(!isFieldOpen)}
+          isExpanded={isFieldOpen}
+        >
+          {fieldSelection || 'Select field'}
+        </MenuToggle>
+      )}
     >
       <SelectList id="select-typeahead-listbox">
         {filteredFieldOptions.map((option, index) => (
@@ -395,7 +303,15 @@ const AccessibilityDashboardView = ({ view }) => {
       onSelect={onOperationSelect}
       onOpenChange={() => setIsOperationOpen(false)}
       key="operation"
-      toggle={operationToggle}
+      toggle={(toggleRef) => (
+        <MenuToggle
+          ref={toggleRef}
+          onClick={() => setIsOperationOpen(!isOperationOpen)}
+          isExpanded={isOperationOpen}
+        >
+          {operationSelection || 'Select operation'}
+        </MenuToggle>
+      )}
     >
       <SelectList>
         {Object.keys(operations).map((option, index) => (
@@ -415,7 +331,15 @@ const AccessibilityDashboardView = ({ view }) => {
             setBoolSelection(selection);
           }}
           onOpenChange={() => setIsBoolOpen(false)}
-          toggle={boolToggle}
+          toggle={(toggleRef) => (
+            <MenuToggle
+              ref={toggleRef}
+              onClick={() => setIsBoolOpen(!isBoolOpen)}
+              isExpanded={isBoolOpen}
+            >
+              {boolSelection || 'Select value'}
+            </MenuToggle>
+          )}
         >
           <SelectList>
             {['True', 'False'].map((option, index) => (

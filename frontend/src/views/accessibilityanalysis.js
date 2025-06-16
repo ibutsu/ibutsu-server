@@ -394,7 +394,7 @@ const AccessibilityAnalysisView = ({ view }) => {
               cardClass="pf-v5-u-mt-lg"
             />
           </Tab>
-          {artifactTabs}
+          {artifactTabs && artifactTabs.length > 0 ? artifactTabs : null}
         </Tabs>
       </PageSection>
     </React.Fragment>

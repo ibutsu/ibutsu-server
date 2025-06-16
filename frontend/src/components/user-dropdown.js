@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 
 import {
-	DropdownList,
-	MenuToggle
+  Dropdown,
+  DropdownItem,
+  DropdownList,
+  MenuToggle,
 } from '@patternfly/react-core';
-import {
-	Dropdown,
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
+
 import { UserIcon } from '@patternfly/react-icons';
 import { useNavigate } from 'react-router-dom';
 

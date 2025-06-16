@@ -1,31 +1,28 @@
 import React, { useContext, useEffect, useState } from 'react';
 
 import {
-	ActionGroup,
-	Alert,
-	Button,
-	Card,
-	CardBody,
-	Form,
-	FormGroup,
-	FormHelperText,
-	HelperText,
-	HelperTextItem,
-	MenuToggle,
-	PageSection,
-	PageSectionVariants,
-	SelectList,
-	TextInput,
-	TextInputGroup,
-	TextInputGroupMain,
-	TextInputGroupUtilities,
-	Title,
-	ValidatedOptions
+  ActionGroup,
+  Alert,
+  Button,
+  Card,
+  CardBody,
+  Form,
+  FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
+  MenuToggle,
+  PageSection,
+  PageSectionVariants,
+  SelectList,
+  TextInput,
+  TextInputGroup,
+  TextInputGroupMain,
+  TextInputGroupUtilities,
+  Title,
+  ValidatedOptions,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
+import { Select, SelectOption } from '@patternfly/react-core';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid/non-secure';
 
@@ -383,18 +380,20 @@ const ProjectEdit = () => {
                   isScrollable={true}
                   variant="default"
                 >
-                  {filteredUsers?.map((user, index) => (
-                    <SelectOption
-                      key={user.id || index}
-                      onClick={() => setSelectedOwner(user)}
-                      value={userToOption(user)}
-                      description={user.email}
-                      isDisabled={user.isDisabled}
-                      ref={null}
-                    >
-                      {user.name || user.email}
-                    </SelectOption>
-                  ))}
+                  <SelectList>
+                    {filteredUsers?.map((user, index) => (
+                      <SelectOption
+                        key={user.id || index}
+                        onClick={() => setSelectedOwner(user)}
+                        value={userToOption(user)}
+                        description={user.email}
+                        isDisabled={user.isDisabled}
+                        ref={null}
+                      >
+                        {user.name || user.email}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
                 </Select>
                 <FormHelperText>
                   <HelperText>

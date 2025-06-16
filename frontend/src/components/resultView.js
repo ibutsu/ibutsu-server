@@ -60,23 +60,6 @@ const ResultView = ({
   // State
   const [artifacts, setArtifacts] = useState([]);
 
-  const testHistoryTab = useMemo(() => {
-    if (!hideTestHistory) {
-      return (
-        <Tab
-          key="testHistory"
-          eventKey="testHistory"
-          title={<TabTitle icon={<SearchIcon />} text="Test History" />}
-        >
-          <TestHistoryTable
-            comparisonResults={comparisonResults}
-            testResult={testResult}
-          />
-        </Tab>
-      );
-    }
-  }, [hideTestHistory, comparisonResults, testResult]);
-
   const artifactTabs = useMemo(
     () =>
       artifacts.map((art) => (
@@ -92,7 +75,7 @@ const ResultView = ({
   );
 
   const artifactKeys = useCallback(() => {
-    if (artifactTabs && artifactTabs?.length !== 0) {
+    if (artifactTabs && artifactTabs.length > 0) {
       return artifactTabs.map((tab) => tab.key);
     } else {
       return [];
@@ -765,8 +748,21 @@ const ResultView = ({
               </Card>
             </Tab>
           )}
-          {testHistoryTab}
-          {!hideArtifact && artifactTabs}
+          {!hideTestHistory && (
+            <Tab
+              key="testHistory"
+              eventKey="testHistory"
+              title={<TabTitle icon={<SearchIcon />} text="Test History" />}
+            >
+              <TestHistoryTable
+                comparisonResults={comparisonResults}
+                testResult={testResult}
+              />
+            </Tab>
+          )}
+          {!hideArtifact && artifactTabs && artifactTabs.length > 0
+            ? artifactTabs
+            : null}
           {!hideTestObject && testJson && (
             <Tab
               key="testObject"

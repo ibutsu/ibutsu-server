@@ -8,12 +8,11 @@ import {
   ChipGroup,
   Flex,
   FlexItem,
-} from '@patternfly/react-core';
-import {
+  MenuToggle,
   Select,
+  SelectList,
   SelectOption,
-  SelectVariant,
-} from '@patternfly/react-core/deprecated';
+} from '@patternfly/react-core';
 
 import { Settings } from '../settings';
 import { HttpClient } from '../services/http';
@@ -63,11 +62,6 @@ const MetaFilter = ({
     setIsFieldOpen(false);
     setIsValueOpen(false);
     setValueOptions([]);
-  };
-
-  const onValueClear = () => {
-    setIsValueOpen(false);
-    setFilter(id, fieldSelection, []);
   };
 
   useEffect(() => {
@@ -128,43 +122,64 @@ const MetaFilter = ({
           <Select
             key="metafield_select"
             aria-label="metadata-field-filter"
-            placeholderText="Select metadata field"
-            variant={SelectVariant.typeaheadMulti}
             isOpen={isFieldOpen}
-            selections={fieldSelection}
-            maxHeight="1140%"
-            onToggle={(_event, _, change) => setIsFieldOpen(change)}
+            selected={fieldSelection}
+            onOpenChange={(isOpen) => setIsFieldOpen(isOpen)}
+            toggle={(toggleRef) => (
+              <MenuToggle
+                ref={toggleRef}
+                onClick={() => setIsFieldOpen(!isFieldOpen)}
+                isExpanded={isFieldOpen}
+              >
+                Filter by...
+              </MenuToggle>
+            )}
             onSelect={onFieldSelect}
-            onClear={onFieldClear}
-            isCreatable={true}
           >
-            {fieldOptions.map((option, index) => (
-              <SelectOption key={index} value={option} />
-            ))}
+            <SelectList>
+              {fieldOptions.map((option, index) => (
+                <SelectOption key={index} value={option}>
+                  {option}
+                </SelectOption>
+              ))}
+            </SelectList>
           </Select>
           <Select
             key="metavalue_select"
-            typeAheadAriaLabel={valuePlaceholder}
-            placeholderText={valuePlaceholder}
-            variant={SelectVariant.typeaheadMulti}
+            aria-label={valuePlaceholder}
             isOpen={isValueOpen}
             // selections prop empty because setFilter callback applies and adds the filter
-            maxHeight="1140%"
             isDisabled={
               fieldSelection.length === 0 ||
               (fieldSelection.length > 0 && !values_available)
             }
-            onToggle={(_event, _, isExpanded) => setIsValueOpen(isExpanded)}
+            onOpenChange={(isOpen) => setIsValueOpen(isOpen)}
             onSelect={onValueSelect}
-            onClear={onValueClear}
+            toggle={(toggleRef) => (
+              <MenuToggle
+                ref={toggleRef}
+                onClick={() => setIsValueOpen(!isValueOpen)}
+                isExpanded={isValueOpen}
+                isDisabled={
+                  fieldSelection.length === 0 ||
+                  (fieldSelection.length > 0 && !values_available)
+                }
+              >
+                {valuePlaceholder}
+              </MenuToggle>
+            )}
           >
-            {valueOptions.map((option, index) => (
-              <SelectOption
-                key={index}
-                value={option._id}
-                description={option.count + ' results'}
-              />
-            ))}
+            <SelectList>
+              {valueOptions.map((option, index) => (
+                <SelectOption
+                  key={index}
+                  value={option._id}
+                  description={option.count + ' results'}
+                >
+                  {option._id}
+                </SelectOption>
+              ))}
+            </SelectList>
           </Select>
         </FlexItem>
       </Flex>

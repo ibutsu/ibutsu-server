@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-	DropdownList,
-	MenuToggle,
-	Text,
-	Tooltip
+  MenuToggle,
+  Text,
+  SelectList,
+  SelectOption,
+  Select,
 } from '@patternfly/react-core';
-import {
-	Dropdown,
-	DropdownItem
-} from '@patternfly/react-core/deprecated';
 
 const ParamDropdown = ({
   defaultValue,
@@ -20,10 +17,10 @@ const ParamDropdown = ({
   const [isOpen, setIsOpen] = useState(false);
   const [value, setValue] = useState(defaultValue || 'Group data by?');
 
-  const dropOnSelect = (event) => {
-    setIsOpen(!isOpen);
-    handleSelect(event.target.innerText);
-    setValue(event.target.innerText);
+  const dropOnSelect = (_event, itemId) => {
+    setIsOpen(false);
+    handleSelect(itemId);
+    setValue(itemId);
   };
 
   useEffect(() => {
@@ -31,39 +28,32 @@ const ParamDropdown = ({
   }, [defaultValue, setValue]);
 
   return (
-    // TODO this formatting of the dropdown labels is ugly as hell
     <React.Fragment>
       <div data-id="widget-param-dropdown">
         <Text component="h3">{tooltip}</Text>
-        <Tooltip content={tooltip}>
-          <Dropdown
-            isOpen={isOpen}
-            onSelect={dropOnSelect}
-            onOpenChange={() => setIsOpen(false)}
-            toggle={(toggleRef) => (
-              <MenuToggle
-                id="toggle-dropdown"
-                ref={toggleRef}
-                onClick={() => setIsOpen(!isOpen)}
-                isExpanded={isOpen}
-              >
-                {value}
-              </MenuToggle>
-            )}
-            ouiaId="BasicDropdown"
-            shouldFocusToggleOnSelect
-          >
-            <DropdownList>
-              {dropdownItems &&
-                dropdownItems.map((item) => (
-                  <DropdownItem onClick={dropOnSelect} key={item}>
-                    {item}
-                  </DropdownItem>
-                ))}
-              <></>
-            </DropdownList>
-          </Dropdown>
-        </Tooltip>
+        <Select
+          isOpen={isOpen}
+          selected={value}
+          onSelect={dropOnSelect}
+          toggle={(toggleRef) => (
+            <MenuToggle
+              ref={toggleRef}
+              onClick={() => setIsOpen(!isOpen)}
+              isExpanded={isOpen}
+              isDisabled={dropdownItems.length === 0}
+            >
+              {value}
+            </MenuToggle>
+          )}
+        >
+          <SelectList>
+            {dropdownItems.map((item) => (
+              <SelectOption value={item} key={item}>
+                {item}
+              </SelectOption>
+            ))}
+          </SelectList>
+        </Select>
       </div>
     </React.Fragment>
   );

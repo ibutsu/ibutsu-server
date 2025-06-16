@@ -75,13 +75,6 @@ export const ForgotPassword = () => {
       footerListVariants="inline"
       brandImgSrc="/images/ibutsu-wordart-164.png"
       brandImgAlt="Ibutsu"
-      backgroundImgSrc={{
-        lg: '/images/pfbg_1200.jpg',
-        sm: '/images/pfbg_768.jpg',
-        sm2x: '/images/pfbg_768@2x.jpg',
-        xs: '/images/pfbg_576.jpg',
-        xs2x: '/images/pfbg_576@2x.jpg',
-      }}
       textContent="Ibutsu is an open source test result aggregation. Collect and display your test results, view artifacts, and monitor tests."
       loginTitle="Recover your account"
       loginSubtitle="Please type in your e-mail address and a reset link will be sent to it."
@@ -120,8 +113,10 @@ export const ForgotPassword = () => {
           />
           <FormHelperText>
             <HelperText>
-              <HelperTextItem>
-                The e-mail address you signed up with
+              <HelperTextItem variant={isValidEmail ? 'default' : 'error'}>
+                {isValidEmail
+                  ? 'The e-mail address you signed up with'
+                  : 'Please enter a valid email address'}
               </HelperTextItem>
             </HelperText>
           </FormHelperText>

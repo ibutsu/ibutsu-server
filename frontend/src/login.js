@@ -12,6 +12,9 @@ import {
   Form,
   FormAlert,
   FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
   InputGroup,
   InputGroupItem,
   LoginMainFooterBandItem,
@@ -378,20 +381,11 @@ const Login = () => {
     'Please use your e-mail address and password, or login via one of the icons below the Log In button.';
   const loginWithoutUserDescription = 'Log in via one of the icons below.';
 
-  const backgroundImages = {
-    lg: '/images/pfbg_1200.jpg',
-    sm: '/images/pfbg_768.jpg',
-    sm2x: '/images/pfbg_768@2x.jpg',
-    xs: '/images/pfbg_576.jpg',
-    xs2x: '/images/pfbg_576@2x.jpg',
-  };
-
   return (
     <LoginPage
       footerListVariants="inline"
       brandImgSrc="/images/ibutsu-wordart-164.png"
       brandImgAlt="Ibutsu"
-      backgroundImgSrc={backgroundImages}
       textContent="Ibutsu is an open source test result aggregation tool. Collect and display your test results, view artifacts, and monitor tests."
       loginTitle="Log in to your account"
       loginSubtitle={
@@ -415,12 +409,7 @@ const Login = () => {
               />
             )}
           </FormAlert>
-          <FormGroup
-            label="Email address"
-            isRequired
-            fieldId="email"
-            validated={isValidEmail ? 'default' : 'error'}
-          >
+          <FormGroup label="Email address" isRequired fieldId="email">
             <TextInput
               isRequired
               type="email"
@@ -432,13 +421,17 @@ const Login = () => {
               onChange={(_, value) => setEmailValue(value)}
               onKeyDown={onEnterKeyPress}
             />
+            {!isValidEmail && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="error">
+                    Please enter a valid email address
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+            )}
           </FormGroup>
-          <FormGroup
-            label="Password"
-            isRequired
-            fieldId="password"
-            validated={isValidPassword ? 'default' : 'error'}
-          >
+          <FormGroup label="Password" isRequired fieldId="password">
             <InputGroup>
               {!isPasswordVisible && (
                 <TextInput
@@ -477,6 +470,15 @@ const Login = () => {
                 </Button>
               </InputGroupItem>
             </InputGroup>
+            {!isValidPassword && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="error">
+                    Please enter a password
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+            )}
           </FormGroup>
           <ActionGroup>
             <Button

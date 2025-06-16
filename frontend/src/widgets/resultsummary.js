@@ -120,7 +120,9 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
                 labels: { fontFamily: 'RedHatText' },
               }}
             />
-            <p className="pf-v5-u-pt-sm">Total number of tests: {summary.total}</p>
+            <p className="pf-v5-u-pt-sm">
+              Total number of tests: {summary.total}
+            </p>
           </div>
         )}
       </CardBody>

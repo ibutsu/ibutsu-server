@@ -1,26 +1,30 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import {
-	Checkbox,
-	Flex,
-	FlexItem,
-	SelectList,
-	MenuToggle,
-	TextContent,
-	Text,
-	Title,
-	CardHeader,
-	CardBody
+  Checkbox,
+  Flex,
+  FlexItem,
+  MenuToggle,
+  Select,
+  SelectList,
+  SelectOption,
+  TextContent,
+  Text,
+  Title,
+  CardHeader,
+  CardBody,
 } from '@patternfly/react-core';
-import {
-	Select,
-	SelectOption
-} from '@patternfly/react-core/deprecated';
-import { expandable } from '@patternfly/react-table';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { resultToTestHistoryRow, filtersToAPIParams } from '../utilities';
+import {
+  filtersToAPIParams,
+  getIconForResult,
+  toTitleCase,
+  round,
+  buildBadge,
+} from '../utilities';
 import { WEEKS, RESULT_STATES } from '../constants';
 
 import RunSummary from './runsummary';
@@ -35,10 +39,7 @@ const HIDE = ['project_id', 'test_id'];
 const BLOCK = ['result', 'component', 'start_time', 'env'];
 
 const COLUMNS = [
-  {
-    title: 'Result',
-    cellFormatters: [expandable],
-  },
+  'Result',
   'Source',
   'Exception Name',
   'Duration',
@@ -78,6 +79,60 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   const [onlyFailures, setOnlyFailures] = useState(false);
   const [historySummary, setHistorySummary] = useState();
   const [rows, setRows] = useState([]);
+
+  // Function to convert result to test history row format (PatternFly v5)
+  const resultToTestHistoryRow = useCallback((result, index, filterFunc) => {
+    let resultIcon = getIconForResult(result.result);
+    let exceptionBadge;
+
+    if (filterFunc) {
+      exceptionBadge = buildBadge(
+        'exception_name',
+        result.metadata.exception_name,
+        false,
+        () =>
+          filterFunc({
+            field: 'metadata.exception_name',
+            operator: 'eq',
+            value: result.metadata.exception_name,
+          }),
+      );
+    } else {
+      exceptionBadge = buildBadge(
+        'exception_name',
+        result.metadata.exception_name,
+        false,
+      );
+    }
+
+    // Create expanded content for the ResultView
+    const expandedContent = (
+      <ResultView
+        key="expanded-content"
+        defaultTab="summary"
+        hideTestHistory={true}
+        testResult={result}
+        skipHash={true}
+      />
+    );
+
+    return {
+      id: result.id,
+      result: result,
+      expandedContent: expandedContent,
+      cells: [
+        <span key="result" className={result.result}>
+          {resultIcon} {toTitleCase(result.result)}
+        </span>,
+        <span key="source" className={result.source}>
+          {result.source}
+        </span>,
+        <React.Fragment key="exception">{exceptionBadge}</React.Fragment>,
+        round(result.duration) + 's',
+        new Date(result.start_time).toLocaleString(),
+      ],
+    };
+  }, []);
 
   // Set active filters for result, test_id, component, time, and env based on test result
   useEffect(() => {
@@ -153,11 +208,9 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         );
         const data = await HttpClient.handleResponse(response);
         setRows(
-          data.results
-            .map((result, index) =>
-              resultToTestHistoryRow(result, index, updateFilters),
-            )
-            .flat(),
+          data.results.map((result, index) =>
+            resultToTestHistoryRow(result, index, updateFilters),
+          ),
         );
 
         setPage(data.pagination.page);
@@ -191,6 +244,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
     setPageSize,
     setTotalItems,
     updateFilters,
+    resultToTestHistoryRow,
   ]);
 
   // Compose result summary from all results
@@ -376,42 +430,10 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
     [activeFilters, historySummary, onRemoveFilter],
   );
 
-  // load individual result views on collapse to delay fetching artifacts
-  const onCollapse = useCallback((_, rowIndex, isOpen) => {
-    setRows((prevRows) => {
-      return prevRows.map((row, index) => {
-        if (index === rowIndex + 1) {
-          return {
-            ...row,
-            cells: [
-              {
-                title: (
-                  <ResultView
-                    defaultTab="summary"
-                    hideTestHistory={true}
-                    testResult={prevRows[rowIndex].result}
-                    skipHash={true}
-                  />
-                ),
-              },
-            ],
-          };
-        } else if (index === rowIndex) {
-          return {
-            ...row,
-            isOpen: isOpen,
-          };
-        } else {
-          return row;
-        }
-      });
-    });
-  }, []);
-
   return (
     <FilterTable
+      expandable
       headerChildren={historyHeader}
-      onCollapse={onCollapse}
       fetching={fetching}
       columns={COLUMNS}
       rows={rows}

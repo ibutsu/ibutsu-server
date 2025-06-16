@@ -1,4 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Badge } from '@patternfly/react-core';
 
 import {
   Card,
@@ -10,12 +13,20 @@ import {
   TextContent,
   Title,
 } from '@patternfly/react-core';
-import { TableVariant, expandable } from '@patternfly/react-table';
+import { TableVariant } from '@patternfly/react-table';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { resultToClassificationRow, filtersToAPIParams } from '../utilities';
+import {
+  filtersToAPIParams,
+  getIconForResult,
+  toTitleCase,
+  round,
+  buildBadge,
+  generateId,
+} from '../utilities';
 import { MultiClassificationDropdown } from './classification-dropdown';
+import { ClassificationDropdown } from './classification-dropdown';
 import FilterTable from './filtering/filtered-table-card';
 import ResultView from './resultView';
 import usePagination from './hooks/usePagination';
@@ -26,10 +37,7 @@ import { useParams } from 'react-router-dom';
 const HIDE = ['project_id', 'run_id'];
 
 const COLUMNS = [
-  {
-    title: 'Test',
-    cellFormatters: [expandable],
-  },
+  'Test',
   'Result',
   'Exception Name',
   'Classification',
@@ -41,6 +49,88 @@ const ClassifyFailuresTable = () => {
     useContext(FilterContext);
 
   const { run_id } = useParams();
+
+  // Function to convert result to classification row format
+  const resultToClassificationRow = useCallback((result, index, filterFunc) => {
+    let resultIcon = getIconForResult(result.result);
+    let markers = [];
+    let exceptionBadge;
+
+    if (filterFunc) {
+      exceptionBadge = buildBadge(
+        `exception_name-${result.id}`,
+        result.metadata.exception_name,
+        false,
+        () =>
+          filterFunc({
+            field: 'metadata.exception_name',
+            operation: 'eq',
+            value: result.metadata.exception_name,
+          }),
+      );
+    } else {
+      exceptionBadge = buildBadge(
+        `exception_name-${result.id}`,
+        result.metadata.exception_name,
+        false,
+      );
+    }
+
+    if (result.metadata && result.metadata.component) {
+      markers.push(
+        <Badge key={`component-${result.id}`}>
+          {result.metadata.component}
+        </Badge>,
+      );
+    }
+    if (result.metadata && result.metadata.markers) {
+      for (const marker of result.metadata.markers) {
+        // Don't add duplicate markers
+        if (markers.filter((m) => m.key === marker.name).length === 0) {
+          markers.push(
+            <Badge isRead key={`${marker.name}-${generateId(5)}`}>
+              {marker.name}
+            </Badge>,
+          );
+        }
+      }
+    }
+
+    // Create expanded content for the ResultView
+    let hideSummary = true;
+    let hideTestObject = true;
+
+    const expandedContent = (
+      <ResultView
+        key="expanded-content"
+        defaultTab="iqe.log"
+        hideSummary={hideSummary}
+        hideTestObject={hideTestObject}
+        testResult={result}
+        skipHash={true}
+      />
+    );
+
+    return {
+      id: result.id,
+      result: result,
+      expandedContent: expandedContent,
+      cells: [
+        <React.Fragment key="test">
+          <Link to={`../results/${result.id}#summary`} relative="Path">
+            {result.test_id}
+          </Link>{' '}
+          {markers}
+        </React.Fragment>,
+        <span key="result" className={result.result}>
+          {resultIcon} {toTitleCase(result.result)}
+        </span>,
+        <React.Fragment key="exception">{exceptionBadge}</React.Fragment>,
+        <ClassificationDropdown key="classification" testResult={result} />,
+        round(result.duration) + 's',
+      ],
+    };
+  }, []);
 
   const {
     page,
@@ -124,7 +214,7 @@ const ClassifyFailuresTable = () => {
 
     const debouncer = setTimeout(() => {
       fetchData();
-    }, 100);
+    }, 50);
     return () => {
       clearTimeout(debouncer);
     };
@@ -138,75 +228,24 @@ const ClassifyFailuresTable = () => {
     apiFilters,
   ]);
 
-  const onCollapse = (_, rowIndex, isOpen) => {
-    // handle row click opening the child row with ResultView
-    if (isOpen) {
-      let { result } = rows[rowIndex];
-      let hideSummary = true;
-      let hideTestObject = true;
-      let defaultTab = 'test-history';
-      if (result.result === 'skipped') {
-        hideSummary = false;
-        hideTestObject = false;
-        defaultTab = 'summary';
+  const onTableRowSelect = useCallback(
+    (event, isSelected, rowId) => {
+      if (!rows) {
+        console.warn('No rows available for selection');
+        return;
       }
 
-      const updatedRows = rows.map((row, index) => {
-        let newRow = {};
-        // set isOpen on the parent row items
-        if (index === rowIndex) {
-          newRow = { ...row, isOpen: isOpen };
-        } else if (index === rowIndex + 1) {
-          // set the ResultView on the child rows
-          newRow = {
-            ...row,
-            cells: [
-              {
-                title: (
-                  <ResultView
-                    defaultTab={defaultTab}
-                    hideSummary={hideSummary}
-                    hideTestObject={hideTestObject}
-                    testResult={rows[rowIndex].result}
-                    skipHash={true}
-                  />
-                ),
-              },
-            ],
-          };
-        } else {
-          newRow = { ...row };
-        }
-        return newRow;
-      });
-      setRows(updatedRows);
-    } else {
-      // handle updating isOpen on the clicked row (closing)
-      setRows((prevRows) => {
-        const updatedRows = [...prevRows];
-        if (updatedRows[rowIndex]) {
-          updatedRows[rowIndex] = { ...updatedRows[rowIndex], isOpen: isOpen };
-        }
-        return updatedRows;
-      });
-    }
-  };
-
-  const onTableRowSelect = useCallback(
-    (_, isSelected, rowId) => {
       // either set every row or single row selected state
       let mutatedRows = rows.map((oneRow, index) => {
         if (index === rowId || rowId === -1) {
-          oneRow.selected = isSelected;
+          return { ...oneRow, selected: isSelected };
         }
         return oneRow;
       });
       setRows(mutatedRows);
 
-      // filter to only pick parent rows
-      let resultsToSelect = mutatedRows.filter(
-        (oneRow) => oneRow.selected && oneRow.parent === undefined,
-      );
+      // filter to only pick rows without a parent (main rows, not child expanded rows)
+      let resultsToSelect = mutatedRows.filter((oneRow) => oneRow.selected);
       // map again to pull the result out of the row
       resultsToSelect = resultsToSelect.map((oneRow) => oneRow.result);
       setSelectedResults(resultsToSelect);
@@ -220,12 +259,11 @@ const ClassifyFailuresTable = () => {
 
   useEffect(() => {
     // set rows when filtered items update
-    setRows(
-      filteredResults.flatMap((result, index) =>
-        resultToClassificationRow(result, index, updateFilters),
-      ),
+    const newRows = filteredResults.map((result, index) =>
+      resultToClassificationRow(result, index, updateFilters),
     );
-  }, [filteredResults, updateFilters]);
+    setRows(newRows);
+  }, [filteredResults, updateFilters, resultToClassificationRow]);
 
   const resultFilterMemo = useMemo(() => {
     return <ResultFilter runs={[run_id]} hideFilters={HIDE} />;
@@ -259,6 +297,8 @@ const ClassifyFailuresTable = () => {
       </CardHeader>
       <CardBody>
         <FilterTable
+          selectable
+          expandable
           fetching={fetching}
           columns={COLUMNS}
           rows={rows}
@@ -266,11 +306,9 @@ const ClassifyFailuresTable = () => {
           page={page}
           totalItems={totalItems}
           isError={isError}
-          onCollapse={onCollapse}
           onSetPage={onSetPage}
           onSetPageSize={onSetPageSize}
-          canSelectAll={true}
-          onRowSelect={onTableRowSelect}
+          onRowSelectCallback={onTableRowSelect}
           variant={TableVariant.compact}
           filters={resultFilterMemo}
           onClearFilters={clearFilters}

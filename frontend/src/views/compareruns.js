@@ -13,10 +13,9 @@ import {
   Button,
   Text,
 } from '@patternfly/react-core';
-import { TableVariant, expandable } from '@patternfly/react-table';
+import { TableVariant } from '@patternfly/react-table';
 
 import FilterTable from '../components/filtering/filtered-table-card';
-import MetaFilter from '../components/metafilter';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
@@ -25,14 +24,9 @@ import {
   resultToComparisonRow,
 } from '../utilities';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
-import ResultView from '../components/resultView';
 import usePagination from '../components/hooks/usePagination';
 
-const COLUMNS = [
-  { title: 'Test', cellFormatters: [expandable] },
-  'Run 1',
-  'Run 2',
-];
+const COLUMNS = ['Test', 'Run 1', 'Run 2'];
 const FEP = 'failed;error;passed';
 const FEPSX = 'failed;error;passed;skipped;xfailed';
 
@@ -89,30 +83,10 @@ const CompareRunsView = () => {
     [filters],
   );
 
-  const updateFilters = (filterId, name, operator, value) => {
-    let newFilters = { ...filters };
-    if (value === null || value.length === 0) {
-      delete newFilters['run' + filterId][name];
-    } else {
-      newFilters['run' + filterId][name] = { op: operator, val: String(value) };
-    }
-
-    setFilters(newFilters);
+  const clearFilters = useCallback(() => {
+    setFilters(DEFAULT_FILTER);
     setPage(1);
-  };
-
-  const setFilter = (filterId, field, value) => {
-    // maybe process values array to string format here instead of expecting caller to do it?
-    updateFilters(filterId, field, value.includes(';') ? 'in' : 'eq', value);
-  };
-
-  // TODO use block with useTableFilters
-  const removeFilter = (filterId, id) => {
-    if (id !== 'result' && id !== 'run_id') {
-      // Don't allow removal of error/failure filter
-      updateFilters(filterId, id, null, null);
-    }
-  };
+  }, [setPage]);
 
   useEffect(() => {
     // Check to see if filters have been set besides id and result
@@ -157,101 +131,9 @@ const CompareRunsView = () => {
     setIsLoading(false);
   }, [filters, primaryObject, setPage, setPageSize, setTotalItems]);
 
-  const onCollapse = (_, rowIndex, isOpen) => {
-    // handle row expansion with ResultView
-    if (isOpen) {
-      let result = rows[rowIndex].result;
-      let hideSummary = true;
-      let hideTestObject = true;
-      let defaultTab = 'test-history';
-      if (result.result === 'skipped') {
-        hideSummary = false;
-        hideTestObject = false;
-      }
-      const updatedRows = rows.map((row, index) => {
-        let newRow = {};
-        if (index === rowIndex) {
-          // expand the parent
-          newRow = { ...row, isOpen: isOpen };
-        } else if (index === rowIndex + 1) {
-          // populate the expanded child with a ResultView in the title cell
-          newRow = {
-            ...row,
-            cells: [
-              {
-                title: (
-                  <ResultView
-                    hideArtifact={true}
-                    comparisonResults={result}
-                    defaultTab={defaultTab}
-                    hideTestHistory={false}
-                    hideSummary={hideSummary}
-                    hideTestObject={hideTestObject}
-                    testResult={result[0]}
-                  />
-                ),
-              },
-            ],
-          };
-        } else {
-          newRow = { ...row };
-        }
-        return newRow;
-      });
-      setRows(updatedRows);
-    } else {
-      // handle closing clicked rows
-      setRows((prevRows) => {
-        const updatedRows = [...prevRows];
-        if (updatedRows[rowIndex]) {
-          updatedRows[rowIndex] = { ...updatedRows[rowIndex], isOpen: isOpen };
-        }
-        return updatedRows;
-      });
-    }
-  };
-
-  // Remove all active filters and clear table
-  const clearFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTER);
-    setPage(1);
-    setTotalItems(0);
-  }, [setPage, setTotalItems]);
-
-  const resultFilters = [
-    <Flex
-      key="metafilters"
-      direction={{ default: 'column' }}
-      spaceItems={{ default: 'spaceItemsMd' }}
-    >
-      <FlexItem key="metafilter1">
-        <TextContent style={{ fontWeight: 'bold' }}>Run 1:</TextContent>
-        <MetaFilter
-          setFilter={setFilter}
-          customFilters={{ result: filters['result'] }}
-          activeFilters={filters['run0']}
-          onRemoveFilter={removeFilter}
-          hideFilters={['project_id']}
-          id={0}
-        />
-      </FlexItem>
-      <FlexItem key="metafilter2">
-        <TextContent style={{ fontWeight: 'bold' }}>Run 2:</TextContent>
-        <MetaFilter
-          setFilter={setFilter}
-          customFilters={{ result: filters['result'] }}
-          activeFilters={filters['run1']}
-          onRemoveFilter={removeFilter}
-          hideFilters={['project_id']}
-          id={1}
-        />
-      </FlexItem>
-    </Flex>,
-  ];
-
   useEffect(() => {
     setRows(
-      results.flatMap((result, index) => resultToComparisonRow(result, index)),
+      results.map((result, index) => resultToComparisonRow(result, index)),
     );
   }, [results]);
 
@@ -301,12 +183,9 @@ const CompareRunsView = () => {
         page={page}
         totalItems={totalItems}
         isError={isError}
-        onCollapse={onCollapse}
         onSetPage={onSetPage}
         onSetPageSize={onSetPageSize}
-        canSelectAll={false}
         variant={TableVariant.compact}
-        filters={resultFilters}
         headerChildren={compareHeader}
       />
     )
