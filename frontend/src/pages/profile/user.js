@@ -13,7 +13,6 @@ import {
   InputGroupItem,
   Label,
   PageSection,
-  PageSectionVariants,
   TextInput,
   Title,
   Skeleton,
@@ -93,7 +92,7 @@ const UserProfile = () => {
 
   return (
     <React.Fragment>
-      <PageSection variant={PageSectionVariants.light}>
+      <PageSection hasBodyWrapper={false}>
         <Title headingLevel="h1" size="2xl">
           <React.Fragment>
             <span> Profile </span>
@@ -109,7 +108,7 @@ const UserProfile = () => {
           </React.Fragment>
         </Title>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         {isError && (
           <Alert variant="danger" title="Error fetching user details" />
         )}
@@ -226,7 +225,7 @@ const UserProfile = () => {
                                 projects.map((project) => (
                                   <DataListCell
                                     key={project.name}
-                                    className="pf-v5-u-p-sm"
+                                    className="pf-v6-u-p-sm"
                                   >
                                     <span> {project.title} </span>
                                     {project.owner_id === user.id && (

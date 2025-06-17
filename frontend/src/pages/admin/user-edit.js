@@ -7,17 +7,15 @@ import {
   Card,
   CardBody,
   Checkbox,
-  Chip,
-  ChipGroup,
   Form,
   FormGroup,
   FormHelperText,
   HelperText,
   HelperTextItem,
   Label,
+  LabelGroup,
   MenuToggle,
   PageSection,
-  PageSectionVariants,
   SelectList,
   TextInput,
   TextInputGroup,
@@ -25,6 +23,7 @@ import {
   TextInputGroupUtilities,
   Title,
 } from '@patternfly/react-core';
+
 import { Select, SelectOption } from '@patternfly/react-core';
 
 import { TimesIcon } from '@patternfly/react-icons';
@@ -204,29 +203,29 @@ const UserEdit = () => {
             isExpanded={isProjectsOpen}
             aria-controls="select-multi-typeahead-listbox"
           >
-            <ChipGroup aria-label="Current selections">
+            <LabelGroup aria-label="Current selections">
               {formProjects?.map((userProject, index) => (
-                <Chip
+                <Label
+                  variant="outline"
                   key={index}
-                  onClick={(ev) => {
+                  onClose={(ev) => {
                     ev.stopPropagation();
                     onProjectsSelect(ev, userProject);
                   }}
                 >
                   {userProject.project.title}
-                </Chip>
+                </Label>
               ))}
-            </ChipGroup>
+            </LabelGroup>
           </TextInputGroupMain>
           <TextInputGroupUtilities>
             {(formProjects?.length > 0 || inputValue !== '') && (
               <Button
+                icon={<TimesIcon aria-hidden />}
                 variant="plain"
                 onClick={onProjectsClear}
                 aria-label="Clear input value"
-              >
-                <TimesIcon aria-hidden />
-              </Button>
+              />
             )}
           </TextInputGroupUtilities>
         </TextInputGroup>
@@ -247,8 +246,8 @@ const UserEdit = () => {
 
   return (
     <React.Fragment>
-      <PageSection variant={PageSectionVariants.light}>
-        <Title headingLevel="h1" size="2xl" className="pf-v5-c-title">
+      <PageSection hasBodyWrapper={false}>
+        <Title headingLevel="h1" size="2xl" className="pf-v6-c-title">
           Users / {formName}{' '}
           {formAdmin && (
             <Label className="super-admin-label" variant="outline" color="blue">
@@ -257,7 +256,7 @@ const UserEdit = () => {
           )}
         </Title>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         {!userLoaded && <Alert variant="info" title="Loading..." />}
         {userLoaded && (
           <Card>

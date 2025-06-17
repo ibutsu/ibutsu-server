@@ -6,13 +6,7 @@ import React, { useContext, useEffect } from 'react';
 
 import { Outlet } from 'react-router-dom';
 
-import {
-  EmptyState,
-  EmptyStateBody,
-  EmptyStateHeader,
-  EmptyStateIcon,
-  Page,
-} from '@patternfly/react-core';
+import { EmptyState, EmptyStateBody, Page } from '@patternfly/react-core';
 
 import IbutsuHeader from './ibutsu-header';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
@@ -31,7 +25,7 @@ const IbutsuPage = () => {
   return (
     <React.Fragment>
       <Page
-        header={<IbutsuHeader />}
+        masthead={<IbutsuHeader />}
         sidebar={<IbutsuSidebar />}
         isManagedSidebar={true}
         style={{ position: 'relative' }}
@@ -39,12 +33,11 @@ const IbutsuPage = () => {
         {primaryObject ? (
           <Outlet />
         ) : (
-          <EmptyState>
-            <EmptyStateHeader
-              titleText="No Project Selected"
-              icon={<EmptyStateIcon icon={ArchiveIcon} />}
-              headingLevel="h4"
-            />
+          <EmptyState
+            headingLevel="h4"
+            icon={ArchiveIcon}
+            titleText="No Project Selected"
+          >
             <EmptyStateBody>
               There is currently no project selected. Please select a project
               from the dropdown in order to view the dashboard.

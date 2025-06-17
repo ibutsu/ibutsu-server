@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { Card, CardBody, CardFooter, Text } from '@patternfly/react-core';
-import { Editor } from '@monaco-editor/react';
+import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 import DownloadButton from './download-button';
 import { Settings } from '../settings';
 import { HttpClient } from '../services/http';
+import { LogViewer, LogViewerSearch } from '@patternfly/react-log-viewer';
 
 const ArtifactTab = ({ artifact }) => {
   const [blob, setBlob] = useState();
@@ -38,25 +38,22 @@ const ArtifactTab = ({ artifact }) => {
     };
     const debouncer = setTimeout(() => {
       fetchArtifact();
-    }, 80);
+    }, 50);
     return () => {
       clearTimeout(debouncer);
     };
   }, [artifact.id]);
 
   const cardBody = useMemo(() => {
-    if (!blob) {
-      return <Text>Blob is loading</Text>;
+    if (blob === undefined || blobType === undefined) {
+      return <Content component="p">Blob is loading</Content>;
     }
     if (blobType === 'text') {
       return (
-        <Editor
+        <LogViewer
           key={artifact.id}
-          fontFamily="Noto Sans Mono, Hack, monospace"
-          theme="vs-dark"
-          value={blob}
-          height="40rem"
-          options={{ readOnly: true }}
+          data={blob}
+          toolbar={<LogViewerSearch placeholder="Search log" />}
         />
       );
     } else if (blobType === 'image') {

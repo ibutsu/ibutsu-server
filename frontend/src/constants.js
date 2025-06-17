@@ -14,24 +14,24 @@ export const KNOWN_WIDGETS = [
   'importance-component',
 ];
 export const STRING_OPERATIONS = {
-  eq: '=',
-  ne: '!',
-  in: '*',
-  exists: '@',
-  regex: '~',
+  eq: { opChar: '=', opString: 'equals' },
+  ne: { opChar: '!', opString: 'not equals' },
+  in: { opChar: '*', opString: 'contains' },
+  exists: { opChar: '@', opString: 'exists' },
+  regex: { opChar: '~', opString: 'matches regex' },
 };
 export const NUMERIC_OPERATIONS = {
-  eq: '=',
-  ne: '!',
-  gt: '>',
-  lt: '<',
-  gte: ')',
-  lte: '(',
+  eq: { opChar: '=', opString: 'equals' },
+  ne: { opChar: '!', opString: 'not equals' },
+  gt: { opChar: '>', opString: 'greater than' },
+  lt: { opChar: '<', opString: 'less than' },
+  gte: { opChar: ')', opString: 'greater than or equal' },
+  lte: { opChar: '(', opString: 'less than or equal' },
 };
 export const ARRAY_OPERATIONS = {
-  eq: '=',
-  exists: '@',
-  in: '*',
+  eq: { opChar: '=', opString: 'equals' },
+  exists: { opChar: '@', opString: 'exists' },
+  in: { opChar: '*', opString: 'contains' },
 };
 export const OPERATIONS = { ...STRING_OPERATIONS, ...NUMERIC_OPERATIONS };
 
@@ -185,14 +185,14 @@ export const RUN_RESULTS_COLUMNS = [
 ];
 
 export const CHART_COLOR_MAP = {
-  passed: 'var(--pf-v5-chart-color-green-300)',
-  failed: 'var(--pf-v5-chart-color-red-200)',
-  error: 'var(--pf-v5-chart-color-orange-200)',
-  skipped: 'var(--pf-v5-chart-color-gold-400)',
-  xfailed: 'var(--pf-v5-chart-color-purple-200)',
-  xpassed: 'var(--pf-v5-chart-color-blue-100)',
-  manual: 'var(--pf-v5-chart-color-cyan-500)',
-  default: 'var(--pf-v5-chart-color-organge-500)',
+  passed: 'var(--pf-t--chart--color--green--100)',
+  failed: 'var(--pf-t--chart--color--red-orange--300)',
+  error: 'var(--pf-t--chart--color--orange--300)',
+  skipped: 'var(--pf-t--chart--color--yellow--300)',
+  xfailed: 'var(--pf-t--chart--color--purple--200)',
+  xpassed: 'var(--pf-t--chart--color--blue--100)',
+  manual: 'var(--pf-t--chart--color--cyan--500)',
+  default: 'var(--pf-t--chart--color--black--100)',
 };
 
 export const FILE_IMPORT_KEY = 'importFile';

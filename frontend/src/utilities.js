@@ -38,6 +38,7 @@ import {
   NUMERIC_RESULT_FIELDS,
   NUMERIC_RUN_FIELDS,
   THEME_KEY,
+  CHART_COLOR_MAP,
 } from './constants';
 import RunSummary from './components/runsummary';
 import { TableText } from '@patternfly/react-table';
@@ -46,40 +47,43 @@ export const getDateString = () => {
   return String(new Date().getTime());
 };
 
-export const getIconForResult = (result) => {
-  let resultIcon = '';
-  if (result === 'passed') {
-    resultIcon = <CheckCircleIcon />;
-  } else if (result === 'failed') {
-    resultIcon = <TimesCircleIcon />;
-  } else if (result === 'error') {
-    resultIcon = <ExclamationCircleIcon />;
-  } else if (result === 'skipped') {
-    resultIcon = <ChevronCircleRightIcon />;
-  } else if (result === 'xfailed') {
-    resultIcon = <CheckCircleIcon />;
-  } else if (result === 'xpassed') {
-    resultIcon = <TimesCircleIcon />;
-  } else if (result === 'manual') {
-    resultIcon = <FlagIcon />;
-  }
-  return resultIcon;
+export const iconResultMap = {
+  passed: <CheckCircleIcon style={{ color: CHART_COLOR_MAP.passed }} />,
+  failed: <TimesCircleIcon style={{ color: CHART_COLOR_MAP.failed }} />,
+  error: <ExclamationCircleIcon style={{ color: CHART_COLOR_MAP.error }} />,
+  skipped: (
+    <ChevronCircleRightIcon style={{ color: CHART_COLOR_MAP.skipped }} />
+  ),
+  xfailed: <CheckCircleIcon style={{ color: CHART_COLOR_MAP.xfailed }} />,
+  xpassed: <TimesCircleIcon style={{ color: CHART_COLOR_MAP.xpassed }} />,
+  manual: <FlagIcon style={{ color: CHART_COLOR_MAP.manual }} />,
+  pending: <QuestionCircleIcon style={{ color: CHART_COLOR_MAP.skipped }} />,
 };
 
-export const getIconForStatus = (status) => {
-  let statusIcon = '';
-  if (status === 'done') {
-    statusIcon = <CheckCircleIcon />;
-  } else if (status === 'pending') {
-    statusIcon = <QuestionCircleIcon />;
-  } else if (status === 'running') {
-    statusIcon = <ClockIcon />;
-  } else if (status === 'error') {
-    statusIcon = <ExclamationCircleIcon />;
-  } else if (status === 'empty') {
-    statusIcon = <InfoAltIcon />;
-  }
-  return statusIcon;
+export const iconStatusMap = {
+  done: <CheckCircleIcon />,
+  pending: <QuestionCircleIcon />,
+  running: <ClockIcon />,
+  error: <ExclamationCircleIcon />,
+  empty: <InfoAltIcon />,
+};
+
+// Helper function to get a styled result icon
+export const getStyledResultIcon = (result, className = '') => {
+  const icon = iconResultMap[result];
+  if (!icon) return null;
+
+  const combinedClassName = `result-icon-${result} ${className}`.trim();
+  return <span className={combinedClassName}>{icon}</span>;
+};
+
+// Helper function to get a styled status icon
+export const getStyledStatusIcon = (status, className = '') => {
+  const icon = iconStatusMap[status];
+  if (!icon) return null;
+
+  const combinedClassName = `status-icon-${status} ${className}`.trim();
+  return <span className={combinedClassName}>{icon}</span>;
 };
 
 export const toTitleCase = (str, convertToSpace = false) => {
@@ -97,7 +101,7 @@ export const toTitleCase = (str, convertToSpace = false) => {
 export const filtersToAPIParams = (filters = []) => {
   if (filters?.length) {
     return filters.map((f) => {
-      const apiOperation = OPERATIONS[f.operator];
+      const apiOperation = OPERATIONS[f.operator].opChar;
       return `${f.field}${apiOperation}${f.value}`;
     });
   } else {
@@ -126,7 +130,7 @@ export const toAPIFilter = (filters) => {
       key !== 'id'
     ) {
       const val = filters[key]['val'];
-      const op = OPERATIONS[filters[key]['operator']];
+      const op = OPERATIONS[filters[key]['operator']].opChar;
       filter_strings.push(key + op + val);
     }
   }
@@ -213,12 +217,12 @@ export const buildResultsTree = (treeResults) => {
       child.badgeProps = { className: className };
       children = child.children;
     });
-    let icon = getIconForResult(testResult.result);
+    let icon = getStyledResultIcon(testResult.result);
 
     children.push({
       id: testResult.id,
       name: testResult.test_id,
-      icon: <span className={testResult.result}>{icon}</span>,
+      icon: icon,
       _testResult: testResult,
     });
   });
@@ -239,7 +243,7 @@ export const generateId = (length) => {
 };
 
 export const resultToRow = (result, filterFunc) => {
-  let resultIcon = getIconForResult(result.result);
+  let resultIcon = getStyledResultIcon(result.result);
   let markers = [];
   let runLink = '';
   let classification = '';
@@ -322,7 +326,7 @@ export const resultToComparisonRow = (result) => {
   let resultIcons = [];
   let markers = [];
   result.forEach((result) => {
-    resultIcons.push(getIconForResult(result.result));
+    resultIcons.push(getStyledResultIcon(result.result));
     if (result.metadata && result.metadata.markers) {
       for (const marker of result.metadata.markers) {
         // Don't add duplicate markers
@@ -479,6 +483,7 @@ export const userToRow = (user, setSelectedUser, setIsDeleteModalOpen) => {
       </React.Fragment>,
       <TableText key="edit">
         <Button
+          icon={<PencilAltIcon />}
           variant="primary"
           ouiaId={`admin-users-edit-${user.id}`}
           component={(props) => (
@@ -486,12 +491,11 @@ export const userToRow = (user, setSelectedUser, setIsDeleteModalOpen) => {
           )}
           size="sm"
           aria-label="Edit"
-        >
-          <PencilAltIcon />
-        </Button>
+        ></Button>
       </TableText>,
       <TableText key="delete">
         <Button
+          icon={<TrashIcon />}
           variant="danger"
           ouiaId={`admin-users-delete-${user.id}`}
           onClick={() => {
@@ -499,9 +503,7 @@ export const userToRow = (user, setSelectedUser, setIsDeleteModalOpen) => {
             setIsDeleteModalOpen(true);
           }}
           size="sm"
-        >
-          <TrashIcon />
-        </Button>
+        ></Button>
       </TableText>,
     ],
   };
@@ -710,8 +712,8 @@ export const setDocumentDarkTheme = (theme = null) => {
 
   localStorage.setItem('theme', set_dark ? 'dark' : 'light');
   if (set_dark) {
-    document.firstElementChild.classList.add('pf-v5-theme-dark');
+    document.firstElementChild.classList.add('pf-v6-theme-dark');
   } else {
-    document.firstElementChild.classList.remove('pf-v5-theme-dark');
+    document.firstElementChild.classList.remove('pf-v6-theme-dark');
   }
 };

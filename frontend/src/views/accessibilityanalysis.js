@@ -12,8 +12,7 @@ import {
   PageSection,
   Tab,
   Tabs,
-  TextContent,
-  Text,
+  Content,
 } from '@patternfly/react-core';
 import {
   CatalogIcon,
@@ -24,7 +23,7 @@ import {
   ChartLegend,
   ChartDonut,
   ChartThemeColor,
-} from '@patternfly/react-charts';
+} from '@patternfly/react-charts/victory';
 import {
   Link,
   useLocation,
@@ -125,21 +124,21 @@ const AccessibilityAnalysisView = ({ view }) => {
   // );
 
   // const getColors = (key) => {
-  //   let color = 'var(--pf-v5-global--success-color--100)';
+  //   let color = 'var(--pf-t--global--color--status--success--default)';
   //   if (key === 'violations') {
-  //     color = 'var(--pf-v5-global--danger-color--100)';
+  //     color = 'var(--pf-t--global--color--status--danger--default)';
   //   }
   //   else if (key === 'skipped') {
-  //     color = 'var(--pf-v5-global--info-color--100)';
+  //     color = 'var(--pf-t--global--color--status--info--default)';
   //   }
   //   else if (key === 'error') {
-  //     color = 'var(--pf-v5-global--warning-color--100)';
+  //     color = 'var(--pf-t--global--color--status--warning--default)';
   //   }
   //   else if (key === 'xfailed') {
-  //     color = 'var(--pf-v5-global--palette--purple-400)';
+  //     color = 'var(--pf-t--color--purple--40)';
   //   }
   //   else if (key === 'xpassed') {
-  //     color = 'var(--pf-v5-global--palette--purple-700)';
+  //     color = 'var(--pf-t--color--purple--70)';
   //   }
   //   return color;
   // };
@@ -160,7 +159,7 @@ const AccessibilityAnalysisView = ({ view }) => {
   //                   <Tab key={artifact.id} eventKey={artifact.id} title={<TabTitle icon={<FileAltIcon/>} text={artifact.filename} />} style={{backgroundColor: 'white'}}>
   //                     <Card>
   //                       <CardBody>
-  //                         <Editor fontFamily="Hack, monospace" theme="vs-dark" value={text} height="40rem" options={{readOnly: true}} />
+  //                         <LogViewer data={text} />
   //                       </CardBody>
   //                       <CardFooter>
   //                         <Button component="a" href={`${Settings.serverUrl}/artifact/${artifact.id}/download`}>Download {artifact.filename}</Button>
@@ -280,16 +279,16 @@ const AccessibilityAnalysisView = ({ view }) => {
     return (
       <Flex style={{ width: '100%' }}>
         <FlexItem grow={{ default: 'grow' }}>
-          <TextContent>
-            <Text component="h2" className="pf-v5-c-title pf-m-xl">
+          <Content>
+            <Content component="h2" className="pf-v6-c-title pf-m-xl">
               Test Results
-            </Text>
-          </TextContent>
+            </Content>
+          </Content>
         </FlexItem>
         <FlexItem>
           <Link
             to={`/results?run_id[eq]=${run?.id}`}
-            className="pf-v5-c-button pf-m-primary"
+            className="pf-v6-c-button pf-m-primary"
             style={{ marginLeft: '2px' }}
           >
             See all results <ChevronRightIcon />
@@ -301,7 +300,7 @@ const AccessibilityAnalysisView = ({ view }) => {
 
   return (
     <React.Fragment>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
           <Tab
             eventKey="overview"
@@ -336,13 +335,13 @@ const AccessibilityAnalysisView = ({ view }) => {
                       {
                         name: 'Passes: ' + pieData[0].y,
                         symbol: {
-                          fill: 'var(--pf-v5-global--success-color--100)',
+                          fill: 'var(--pf-t--color--green--default)',
                         },
                       },
                       {
                         name: 'Violations: ' + pieData[1].y,
                         symbol: {
-                          fill: 'var(--pf-v5-global--danger-color--100)',
+                          fill: 'var(--pf-t--color--red--default)',
                         },
                       },
                     ]}
@@ -391,7 +390,7 @@ const AccessibilityAnalysisView = ({ view }) => {
               onSetPage={onSetPage}
               onSetPageSize={onSetPageSize}
               headerChildren={accessTableHeader}
-              cardClass="pf-v5-u-mt-lg"
+              cardClass="pf-v6-u-mt-lg"
             />
           </Tab>
           {artifactTabs && artifactTabs.length > 0 ? artifactTabs : null}

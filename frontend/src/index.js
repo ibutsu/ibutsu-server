@@ -1,7 +1,6 @@
 import { createRoot } from 'react-dom/client';
 
 import '@patternfly/react-core/dist/styles/base.css';
-import '@patternfly/patternfly/patternfly-theme-dark.css';
 import '@patternfly/patternfly/patternfly-charts.css';
 import './index.css';
 import { setDocumentDarkTheme } from './utilities';

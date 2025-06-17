@@ -58,27 +58,27 @@ const IbutsuSidebar = () => {
 
   if (primaryType == 'project' && primaryObject) {
     return (
-      <PageSidebar theme="dark">
-        <PageSidebarBody>
-          <Nav theme="dark" aria-label="Nav">
+      <PageSidebar>
+        <PageSidebarBody isFilled>
+          <Nav aria-label="Nav">
             <NavList>
-              <li className="pf-v5-c-nav__item">
-                <Link to="dashboard" className="pf-v5-c-nav__link">
+              <li className="pf-v6-c-nav__item">
+                <Link to="dashboard" className="pf-v6-c-nav__link">
                   Dashboard
                 </Link>
               </li>
-              <li className="pf-v5-c-nav__item">
-                <Link to="runs/" className="pf-v5-c-nav__link">
+              <li className="pf-v6-c-nav__item">
+                <Link to="runs/" className="pf-v6-c-nav__link">
                   Runs
                 </Link>
               </li>
-              <li className="pf-v5-c-nav__item">
-                <Link to="results/" className="pf-v5-c-nav__link">
+              <li className="pf-v6-c-nav__item">
+                <Link to="results/" className="pf-v6-c-nav__link">
                   Test Results
                 </Link>
               </li>
-              <li className="pf-v5-c-nav__item">
-                <Link to="reports/" className="pf-v5-c-nav__link">
+              <li className="pf-v6-c-nav__item">
+                <Link to="reports/" className="pf-v6-c-nav__link">
                   Report Builder
                 </Link>
               </li>
@@ -86,10 +86,10 @@ const IbutsuSidebar = () => {
                 views.map(
                   (view) =>
                     view.widget !== 'jenkins-analysis-view' && (
-                      <li className="pf-v5-c-nav__item" key={view.id}>
+                      <li className="pf-v6-c-nav__item" key={view.id}>
                         <Link
                           to={`view/${view.id}`}
-                          className="pf-v5-c-nav__link"
+                          className="pf-v6-c-nav__link"
                         >
                           {view.title}
                         </Link>

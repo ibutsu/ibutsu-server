@@ -15,9 +15,7 @@ import {
   FormSelect,
   FormSelectOption,
   PageSection,
-  PageSectionVariants,
-  Text,
-  TextContent,
+  Content,
   TextInput,
 } from '@patternfly/react-core';
 import Linkify from 'react-linkify';
@@ -26,10 +24,10 @@ import { HttpClient } from './services/http';
 import { linkifyDecorator } from './components/decorators';
 import { Settings } from './settings';
 import {
-  getIconForStatus,
   toTitleCase,
   parseFilter,
   getSpinnerRow,
+  iconStatusMap,
 } from './utilities';
 import DownloadButton from './components/download-button';
 import FilterTable from './components/filtering/filtered-table-card';
@@ -70,7 +68,7 @@ const ReportBuilder = () => {
           pagination_pageSize.current = parseInt(pair[1]);
         } else {
           const combo = parseFilter(pair[0]);
-          filters.push(combo['key'] + OPERATIONS[combo['op']] + pair[1]);
+          filters.push(combo['key'] + OPERATIONS[combo['op']].opChar + pair[1]);
         }
       }
     }
@@ -113,7 +111,7 @@ const ReportBuilder = () => {
       if (report.status !== undefined && !!report.status) {
         reportStatus = report.status;
       }
-      let statusIcon = getIconForStatus(reportStatus);
+      let statusIcon = iconStatusMap[reportStatus] || iconStatusMap['pending'];
       if (report.status === 'empty') {
         row_actions = 'Filter(s) returned no data';
       }
@@ -196,12 +194,12 @@ const ReportBuilder = () => {
 
   return (
     <React.Fragment>
-      <PageSection variant={PageSectionVariants.light}>
-        <TextContent>
-          <Text component="h1">Report Builder</Text>
-        </TextContent>
+      <PageSection hasBodyWrapper={false}>
+        <Content>
+          <Content component="h1">Report Builder</Content>
+        </Content>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         <Card>
           <CardBody>
             <Form isHorizontal>
@@ -239,7 +237,7 @@ const ReportBuilder = () => {
                   }}
                   isExpanded={isHelpExpanded}
                 >
-                  <TextContent>
+                  <Content>
                     <p>
                       The filter parameter takes a comma-separated list of
                       filters to apply.{' '}
@@ -247,7 +245,7 @@ const ReportBuilder = () => {
                         https://docs.ibutsu-project.org/en/latest/user-guide/filter-help.html
                       </Linkify>
                     </p>
-                  </TextContent>
+                  </Content>
                 </ExpandableSection>
               </FormGroup>
               <FormGroup label="Source" fieldId="report-source">
@@ -271,13 +269,13 @@ const ReportBuilder = () => {
             </Form>
           </CardBody>
           <CardFooter>
-            <Text className="disclaimer" component="h4">
+            <Content className="disclaimer" component="h4">
               * Note: reports can only show a maximum of 100,000 results.
-            </Text>
+            </Content>
           </CardFooter>
         </Card>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         <Card>
           <CardBody>
             <FilterTable

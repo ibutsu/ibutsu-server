@@ -8,11 +8,10 @@ import React, {
 
 import {
   Button,
-  Modal,
   PageSection,
-  PageSectionVariants,
-  TextContent,
+  Content,
   Title,
+  Modal,
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../../services/http';
@@ -156,14 +155,14 @@ const UserList = () => {
 
   return (
     <React.Fragment>
-      <PageSection id="page" variant={PageSectionVariants.light}>
-        <TextContent>
+      <PageSection hasBodyWrapper={false} id="page">
+        <Content>
           <Title headingLevel="h1" ouiaId="users-title">
             Users
           </Title>
-        </TextContent>
+        </Content>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         <FilterTable
           columns={COLUMNS}
           rows={rows}

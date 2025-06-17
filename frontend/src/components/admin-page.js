@@ -15,22 +15,22 @@ import IbutsuHeader from './ibutsu-header';
 
 const AdminPage = () => {
   const navigation = (
-    <PageSidebar theme="dark">
+    <PageSidebar>
       <PageSidebarBody>
-        <Nav theme="dark" aria-label="Nav">
+        <Nav aria-label="Nav">
           <NavList>
             <NavItem>
-              <Link to="home" className="pf-v5-c-nav__link">
+              <Link to="home" className="pf-v6-c-nav__link">
                 Admin Home
               </Link>
             </NavItem>
             <NavItem>
-              <Link to="users" className="pf-v5-c-nav__link">
+              <Link to="users" className="pf-v6-c-nav__link">
                 Users
               </Link>
             </NavItem>
             <NavItem>
-              <Link to="projects" className="pf-v5-c-nav__link">
+              <Link to="projects" className="pf-v6-c-nav__link">
                 Projects
               </Link>
             </NavItem>
@@ -47,7 +47,7 @@ const AdminPage = () => {
   return (
     <React.Fragment>
       <Page
-        header={<IbutsuHeader />}
+        masthead={<IbutsuHeader />}
         sidebar={navigation}
         isManagedSidebar={true}
         style={{ position: 'relative' }}

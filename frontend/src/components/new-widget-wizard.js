@@ -15,9 +15,8 @@ import {
   Radio,
   Stack,
   StackItem,
-  Text,
+  Content,
   TextArea,
-  TextContent,
   TextInput,
   Title,
 } from '@patternfly/react-core';
@@ -370,17 +369,17 @@ const NewWidgetWizard = ({
                   <Title headingLevel="h4">Title</Title>
                 </GridItem>
                 <GridItem span="10">
-                  <TextContent>
-                    <Text>{title}</Text>
-                  </TextContent>
+                  <Content>
+                    <Content component="p">{title}</Content>
+                  </Content>
                 </GridItem>
                 <GridItem span="2">
                   <Title headingLevel="h4">Weight</Title>
                 </GridItem>
                 <GridItem span="10">
-                  <TextContent>
-                    <Text>{weight}</Text>
-                  </TextContent>
+                  <Content>
+                    <Content component="p">{weight}</Content>
+                  </Content>
                 </GridItem>
                 <GridItem span="2">
                   <Title headingLevel="h4">Parameters</Title>

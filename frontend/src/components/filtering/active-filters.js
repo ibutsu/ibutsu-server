@@ -1,17 +1,26 @@
 import {
   Badge,
   Button,
-  Chip,
-  ChipGroup,
   Flex,
   FlexItem,
-  Text,
+  Card,
+  CardHeader,
+  CardBody,
+  Divider,
 } from '@patternfly/react-core';
+
 import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { filtersToSearchParams, toTitleCase } from '../../utilities';
-import { ChevronRightIcon } from '@patternfly/react-icons';
+import { OPERATIONS } from '../../constants';
+import { ChevronRightIcon, TimesCircleIcon } from '@patternfly/react-icons';
+
+const BADGE_STYLE = {
+  margin: '0.1rem',
+  padding: '0.2rem',
+  maxWidth: '100%',
+};
 
 const ActiveFilters = ({
   activeFilters,
@@ -46,6 +55,7 @@ const ActiveFilters = ({
           {transferText && (
             <FlexItem>
               <Button
+                icon={<ChevronRightIcon />}
                 onClick={() =>
                   navigate({
                     pathname: `/project/${params.project_id}/${transferTarget}`,
@@ -61,31 +71,48 @@ const ActiveFilters = ({
                 type="button"
               >
                 {transferText}
-                <ChevronRightIcon />
               </Button>
             </FlexItem>
           )}
         </Flex>
       )}
 
-      <Flex direction={{ default: 'row' }}>
+      <Flex
+        grow={{ default: 'grow' }}
+        spaceItems={{ default: 'spaceItemsXs' }}
+        direction={{ default: 'row' }}
+      >
         {shownFilters?.map((activeFilter) => (
-          <FlexItem spacer={{ default: 'spacerXs' }} key={activeFilter?.field}>
-            <ChipGroup categoryName={activeFilter?.field}>
-              <Chip
-                badge={
-                  <Badge isRead={true}>
-                    {typeof activeFilter === 'object' && (
-                      <React.Fragment>{activeFilter?.value}</React.Fragment>
-                    )}
-                    {typeof activeFilter !== 'object' && activeFilter}
-                  </Badge>
-                }
-                onClick={() => onRemoveFilter(activeFilter?.field)}
-              >
-                <Text>{activeFilter?.operator}</Text>
-              </Chip>
-            </ChipGroup>
+          <FlexItem key={activeFilter?.field}>
+            <Card isCompact variant="outline" style={BADGE_STYLE}>
+              <CardHeader style={BADGE_STYLE}>
+                <Badge isRead style={BADGE_STYLE}>
+                  {activeFilter?.field}
+                </Badge>
+                <Button
+                  variant="plain"
+                  onClick={() => onRemoveFilter(activeFilter?.field)}
+                  aria-label={`Remove filter ${activeFilter?.field}`}
+                  icon={<TimesCircleIcon />}
+                  style={{
+                    ...BADGE_STYLE,
+                    float: 'right',
+                  }}
+                />
+              </CardHeader>
+              <Divider />
+              <CardBody style={BADGE_STYLE}>
+                <Badge isDisabled style={BADGE_STYLE}>
+                  {OPERATIONS[activeFilter?.operator]?.opString ||
+                    activeFilter?.operator}
+                </Badge>
+                <Badge isRead={false} style={BADGE_STYLE}>
+                  <React.Fragment>
+                    {activeFilter?.value || activeFilter}
+                  </React.Fragment>
+                </Badge>
+              </CardBody>
+            </Card>
           </FlexItem>
         ))}
       </Flex>

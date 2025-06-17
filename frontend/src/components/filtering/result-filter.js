@@ -1,8 +1,8 @@
 import {
+  Label,
+  LabelGroup,
   Button,
   CardBody,
-  Chip,
-  ChipGroup,
   Flex,
   FlexItem,
   MenuToggle,
@@ -201,29 +201,29 @@ const ResultFilter = ({ hideFilters, runs }) => {
             isExpanded={isResultOpen}
             placeholder="Select 1 or multiple results"
           >
-            <ChipGroup aria-label="Current selections">
+            <LabelGroup aria-label="Current selections">
               {resultSelection?.map((selection, index) => (
-                <Chip
+                <Label
+                  variant="outline"
                   key={index}
-                  onClick={(ev) => {
+                  onClose={(ev) => {
                     ev.stopPropagation();
                     onResultSelect(ev, selection);
                   }}
                 >
                   {selection}
-                </Chip>
+                </Label>
               ))}
-            </ChipGroup>
+            </LabelGroup>
           </TextInputGroupMain>
           <TextInputGroupUtilities>
             {!!resultSelection && (
               <Button
+                icon={<TimesIcon aria-hidden />}
                 variant="plain"
                 onClick={onResultClear}
                 aria-label="Clear input value"
-              >
-                <TimesIcon aria-hidden />
-              </Button>
+              />
             )}
           </TextInputGroupUtilities>
         </TextInputGroup>
@@ -260,14 +260,13 @@ const ResultFilter = ({ hideFilters, runs }) => {
           <TextInputGroupUtilities>
             {!!runInputValue && (
               <Button
+                icon={<TimesIcon aria-hidden />}
                 variant="plain"
                 onClick={() => {
                   onRunClear();
                 }}
                 aria-label="Clear input value"
-              >
-                <TimesIcon aria-hidden />
-              </Button>
+              />
             )}
           </TextInputGroupUtilities>
         </TextInputGroup>
@@ -295,31 +294,31 @@ const ResultFilter = ({ hideFilters, runs }) => {
             role="combobox"
             isExpanded={isRunOpen}
           >
-            <ChipGroup aria-label="Current selections">
+            <LabelGroup aria-label="Current selections">
               {runSelection?.map((selection, index) => (
-                <Chip
+                <Label
+                  variant="outline"
                   key={index}
-                  onClick={(ev) => {
+                  onClose={(ev) => {
                     ev.stopPropagation();
                     onRunSelect(ev, selection);
                   }}
                 >
                   {selection}
-                </Chip>
+                </Label>
               ))}
-            </ChipGroup>
+            </LabelGroup>
           </TextInputGroupMain>
           <TextInputGroupUtilities>
             {runSelection?.length > 0 && (
               <Button
+                icon={<TimesIcon aria-hidden />}
                 variant="plain"
                 onClick={() => {
                   onRunClear();
                 }}
                 aria-label="Clear input value"
-              >
-                <TimesIcon aria-hidden />
-              </Button>
+              />
             )}
           </TextInputGroupUtilities>
         </TextInputGroup>
@@ -401,7 +400,7 @@ const ResultFilter = ({ hideFilters, runs }) => {
                 <SelectList>
                   {Object.keys(operations).map((option, index) => (
                     <SelectOption key={index} value={option}>
-                      {option}
+                      {operations[option].opString}
                     </SelectOption>
                   ))}
                 </SelectList>

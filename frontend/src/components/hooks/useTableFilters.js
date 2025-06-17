@@ -310,15 +310,14 @@ const useTableFilters = ({
           <TextInputGroupUtilities>
             {!!fieldInputValue && (
               <Button
+                icon={<TimesIcon aria-hidden />}
                 variant="plain"
                 onClick={(e) => {
                   e.stopPropagation();
                   onFieldClear();
                 }}
                 aria-label="Clear input value"
-              >
-                <TimesIcon aria-hidden />
-              </Button>
+              />
             )}
           </TextInputGroupUtilities>
         </TextInputGroup>
@@ -337,10 +336,12 @@ const useTableFilters = ({
       >
         {typeof operationSelection === 'object' && operationSelection !== null
           ? operationSelection.title || 'Select operation'
-          : operationSelection || 'Select operation'}
+          : operations[operationSelection]?.opString ||
+            operationSelection ||
+            'Select operation'}
       </MenuToggle>
     ),
-    [isOperationOpen, operationSelection],
+    [isOperationOpen, operationSelection, operations],
   );
 
   const boolToggle = useCallback(

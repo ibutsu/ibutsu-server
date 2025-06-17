@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import {
+  Label,
+  LabelGroup,
   Button,
-  Chip,
-  ChipGroup,
   TextInputGroup,
   TextInputGroupMain,
   TextInputGroupUtilities,
@@ -74,26 +74,29 @@ const MultiValueInput = ({
           style={{ ...style, minWidth: '240px' }}
           type="text"
         >
-          <ChipGroup aria-label="Current selections">
+          <LabelGroup aria-label="Current selections">
             {values.map((item, index) => (
-              <Chip key={index} onClick={() => handleItemRemove(item)}>
+              <Label
+                variant="outline"
+                key={index}
+                onClose={() => handleItemRemove(item)}
+              >
                 {item}
-              </Chip>
+              </Label>
             ))}
-          </ChipGroup>
+          </LabelGroup>
         </TextInputGroupMain>
         <TextInputGroupUtilities>
           {(values.length > 0 || !!value) && (
             <Button
+              icon={<TimesIcon aria-hidden />}
               variant="plain"
               onClick={() => {
                 setValues([]);
                 setValue('');
               }}
               aria-label="Clear input value"
-            >
-              <TimesIcon aria-hidden />
-            </Button>
+            />
           )}
         </TextInputGroupUtilities>
       </TextInputGroup>

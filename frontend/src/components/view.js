@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
-import {
-  PageSection,
-  PageSectionVariants,
-  Title,
-  TextContent,
-} from '@patternfly/react-core';
+import { PageSection, Title, Content } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
@@ -65,14 +60,14 @@ const View = () => {
 
   return (
     <React.Fragment>
-      <PageSection id="page" variant={PageSectionVariants.light}>
-        <TextContent>
+      <PageSection hasBodyWrapper={false} id="page">
+        <Content>
           <Title headingLevel="h1">
             {(viewSpec && viewSpec.title) || 'Loading...'}
           </Title>
-        </TextContent>
+        </Content>
       </PageSection>
-      <PageSection className="pf-v5-u-pb-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-pb-0">
         {!!ViewComponent && (
           <FilterProvider key={viewSpec.id}>
             <ViewComponent view={viewSpec} />

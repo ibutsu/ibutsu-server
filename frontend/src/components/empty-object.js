@@ -5,10 +5,8 @@ import {
   Button,
   EmptyState,
   EmptyStateFooter,
-  EmptyStateHeader,
-  EmptyStateIcon,
   EmptyStateBody,
-  Text,
+  Content,
 } from '@patternfly/react-core';
 import { SearchIcon } from '@patternfly/react-icons';
 
@@ -17,11 +15,10 @@ import { NavLink } from 'react-router-dom';
 const EmptyObject = ({ headingText, bodyText, returnLink, returnLinkText }) => {
   return (
     <React.Fragment>
-      <EmptyState>
-        <EmptyStateHeader icon={<EmptyStateIcon icon={SearchIcon} />} />
-        <Text component="h1" size="lg">
+      <EmptyState icon={SearchIcon}>
+        <Content component="h1" size="lg">
           {headingText ? headingText : "This object couldn't be found."}
-        </Text>
+        </Content>
         <EmptyStateBody>
           {bodyText
             ? bodyText

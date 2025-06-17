@@ -13,7 +13,6 @@ import {
   HelperTextItem,
   MenuToggle,
   PageSection,
-  PageSectionVariants,
   SelectList,
   TextInput,
   TextInputGroup,
@@ -302,12 +301,11 @@ const ProjectEdit = () => {
         <TextInputGroupUtilities>
           {!!inputValueDashboard && (
             <Button
+              icon={<TimesIcon aria-hidden />}
               variant="plain"
               onClick={onDashboardClear}
               aria-label="Clear input value"
-            >
-              <TimesIcon aria-hidden />
-            </Button>
+            />
           )}
         </TextInputGroupUtilities>
       </TextInputGroup>
@@ -316,12 +314,12 @@ const ProjectEdit = () => {
 
   return (
     <React.Fragment>
-      <PageSection variant={PageSectionVariants.light}>
+      <PageSection hasBodyWrapper={false}>
         <Title headingLevel="h1" size="2xl">
           {isNewProject ? 'Add Project' : 'Projects / ' + crumbTitle}
         </Title>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         {!title && <Alert variant="info" title="Loading..." />}
         <Card>
           <CardBody>
