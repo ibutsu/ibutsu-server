@@ -2,10 +2,10 @@ import React, { useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
+  Label,
+  LabelGroup,
   Badge,
   Button,
-  Chip,
-  ChipGroup,
   Flex,
   FlexItem,
   MenuToggle,
@@ -198,12 +198,10 @@ const MetaFilter = ({
                 key={key}
               >
                 {!hideFilters.includes(key) && (
-                  <ChipGroup categoryName={key}>
-                    <Chip
-                      badge={
-                        <Badge isRead={true}>{activeFilters[key]['op']}</Badge>
-                      }
-                      onClick={() => onRemoveFilter(id, key)}
+                  <LabelGroup categoryName={key}>
+                    <Label
+                      variant="outline"
+                      onClose={() => onRemoveFilter(id, key)}
                     >
                       {typeof activeFilters[key] === 'object' && (
                         <React.Fragment>
@@ -212,8 +210,9 @@ const MetaFilter = ({
                       )}
                       {typeof activeFilters[key] !== 'object' &&
                         activeFilters[key]}
-                    </Chip>
-                  </ChipGroup>
+                      <Badge isRead={true}>{activeFilters[key]['op']}</Badge>
+                    </Label>
+                  </LabelGroup>
                 )}
               </FlexItem>
             ))}

@@ -264,14 +264,20 @@ const Login = () => {
     <React.Fragment>
       {externalLogins.keycloak && (
         <LoginMainFooterLinksItem
+          data-codemods="true"
           onClick={onKeycloakLogin}
-          href="#"
-          linkComponentProps={{
-            'aria-label': `Login with ${getKeycloakName()}`,
-            title: `Login with ${getKeycloakName()}`,
-          }}
         >
-          {getKeycloakIcon()}
+          <Button
+            variant="link"
+            component="a"
+            href="#"
+            {...{
+              'aria-label': `Login with ${getKeycloakName()}`,
+              title: `Login with ${getKeycloakName()}`,
+            }}
+          >
+            {getKeycloakIcon()}
+          </Button>
         </LoginMainFooterLinksItem>
       )}
       {externalLogins.google && (
@@ -283,14 +289,19 @@ const Login = () => {
           onFailure={(response) => console.error(response)}
           render={(renderProps) => (
             <LoginMainFooterLinksItem
+              data-codemods="true"
               onClick={renderProps.onClick}
-              href="#"
-              linkComponentProps={{
-                'aria-label': 'Login with Google',
-                title: 'Login with Google',
-              }}
             >
-              <GoogleIcon size="lg" />
+              <Button
+                icon={<GoogleIcon size="lg" />}
+                variant="link"
+                component="a"
+                href="#"
+                {...{
+                  'aria-label': 'Login with Google',
+                  title: 'Login with Google',
+                }}
+              ></Button>
             </LoginMainFooterLinksItem>
           )}
         />
@@ -307,14 +318,19 @@ const Login = () => {
           onFailure={(response) => console.error(response)}
           render={(renderProps) => (
             <LoginMainFooterLinksItem
+              data-codemods="true"
               onClick={renderProps.onClick}
-              href="#"
-              linkComponentProps={{
-                'aria-label': 'Login with GitHub',
-                title: 'Login with GitHub',
-              }}
             >
-              <GithubIcon size="lg" />
+              <Button
+                icon={<GithubIcon size="lg" />}
+                variant="link"
+                component="a"
+                href="#"
+                {...{
+                  'aria-label': 'Login with GitHub',
+                  title: 'Login with GitHub',
+                }}
+              ></Button>
             </LoginMainFooterLinksItem>
           )}
         />
@@ -331,11 +347,16 @@ const Login = () => {
           }}
           render={(renderProps) => (
             <LoginMainFooterLinksItem
+              data-codemods="true"
               onClick={renderProps.onClick}
-              href="#"
-              linkComponentProps={{ 'aria-label': 'Login with Facebook' }}
             >
-              <FacebookIcon size="lg" />
+              <Button
+                icon={<FacebookIcon size="lg" />}
+                variant="link"
+                component="a"
+                href="#"
+                {...{ 'aria-label': 'Login with Facebook' }}
+              ></Button>
             </LoginMainFooterLinksItem>
           )}
         />
@@ -352,14 +373,19 @@ const Login = () => {
           onFailure={(response) => console.error(response)}
           render={(renderProps) => (
             <LoginMainFooterLinksItem
+              data-codemods="true"
               onClick={renderProps.onClick}
-              href="#"
-              linkComponentProps={{
-                'aria-label': 'Login with GitLab',
-                title: 'Login with GitLab',
-              }}
             >
-              <GitlabIcon size="lg" />
+              <Button
+                icon={<GitlabIcon size="lg" />}
+                variant="link"
+                component="a"
+                href="#"
+                {...{
+                  'aria-label': 'Login with GitLab',
+                  title: 'Login with GitLab',
+                }}
+              ></Button>
             </LoginMainFooterLinksItem>
           )}
         />

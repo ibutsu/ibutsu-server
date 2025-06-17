@@ -6,7 +6,7 @@ import {
   ChartLegend,
   ChartPie,
   ChartTooltip,
-} from '@patternfly/react-charts';
+} from '@patternfly/react-charts/victory';
 import { Card, CardBody, CardFooter, Title } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';

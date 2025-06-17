@@ -222,7 +222,7 @@ const AccessibilityDashboardView = ({ view }) => {
         !!newFilters[key]
       ) {
         const val = newFilters[key]['val'];
-        const op = OPERATIONS[newFilters[key]['op']];
+        const op = OPERATIONS[newFilters[key]['op']].opChar;
         httpParams.filter.push(key + op + val);
       }
     }
@@ -309,14 +309,16 @@ const AccessibilityDashboardView = ({ view }) => {
           onClick={() => setIsOperationOpen(!isOperationOpen)}
           isExpanded={isOperationOpen}
         >
-          {operationSelection || 'Select operation'}
+          {OPERATIONS[operationSelection]?.opString ||
+            operationSelection ||
+            'Select operation'}
         </MenuToggle>
       )}
     >
       <SelectList>
         {Object.keys(operations).map((option, index) => (
           <SelectOption key={index} value={option}>
-            {option}
+            {operations[option]?.opString || option}
           </SelectOption>
         ))}
       </SelectList>

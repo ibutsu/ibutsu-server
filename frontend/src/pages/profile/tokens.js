@@ -7,8 +7,7 @@ import {
   Flex,
   FlexItem,
   PageSection,
-  PageSectionVariants,
-  TextContent,
+  Content,
   Title,
 } from '@patternfly/react-core';
 import { PlusCircleIcon } from '@patternfly/react-icons';
@@ -117,26 +116,27 @@ const UserTokens = () => {
 
   return (
     <React.Fragment>
-      <PageSection id="page" variant={PageSectionVariants.light}>
+      <PageSection hasBodyWrapper={false} id="page">
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <FlexItem spacer={{ default: 'spacerLg' }}>
-            <TextContent>
+            <Content>
               <Title headingLevel="h1">Tokens</Title>
-            </TextContent>
+            </Content>
           </FlexItem>
           <FlexItem>
             <Button
+              icon={<PlusCircleIcon />}
               aria-label="Add token"
               variant="secondary"
               title="Add token"
               onClick={() => setIsAddTokenOpen(true)}
             >
-              <PlusCircleIcon /> Add Token
+              Add Token
             </Button>
           </FlexItem>
         </Flex>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         <FilterTable
           columns={COLUMNS}
           rows={rows}

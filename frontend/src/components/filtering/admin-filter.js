@@ -82,7 +82,7 @@ const AdminFilter = () => {
                 <SelectList>
                   {Object.keys(STRING_OPERATIONS).map((option) => (
                     <SelectOption key={option} value={option}>
-                      {option}
+                      {STRING_OPERATIONS[option].opString}
                     </SelectOption>
                   ))}
                 </SelectList>

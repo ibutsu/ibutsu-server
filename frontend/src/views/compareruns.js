@@ -8,10 +8,9 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import {
   Flex,
   FlexItem,
-  TextContent,
+  Content,
   Checkbox,
   Button,
-  Text,
 } from '@patternfly/react-core';
 import { TableVariant } from '@patternfly/react-table';
 
@@ -141,14 +140,14 @@ const CompareRunsView = () => {
     return (
       <Flex style={{ width: '100%' }}>
         <FlexItem grow={{ default: 'grow' }}>
-          <TextContent>
-            <Text component="h2" className="pf-v5-c-title pf-m-xl">
+          <Content>
+            <Content component="h2" className="pf-v6-c-title pf-m-xl">
               Select Test Run metadata to compare
-            </Text>
-          </TextContent>
+            </Content>
+          </Content>
         </FlexItem>
         <FlexItem>
-          <TextContent>
+          <Content>
             <Checkbox
               id="include-skips"
               label="Include skips, xfails"
@@ -156,7 +155,7 @@ const CompareRunsView = () => {
               aria-label="include-skips-checkbox"
               onChange={(_, checked) => onSkipCheck(checked)}
             />
-          </TextContent>
+          </Content>
         </FlexItem>
         <FlexItem>
           <Button variant="primary">

@@ -24,12 +24,10 @@ import {
   GridItem,
   Label,
   PageSection,
-  PageSectionVariants,
   Spinner,
   Tab,
   Tabs,
-  TextContent,
-  Text,
+  Content,
   TreeView,
 } from '@patternfly/react-core';
 import {
@@ -301,14 +299,14 @@ const Run = ({ defaultTab = 'summary' }) => {
 
   return (
     <React.Fragment>
-      <PageSection variant={PageSectionVariants.light}>
-        <TextContent>
-          <Text component="h1" className="pf-v5-c-title">
+      <PageSection hasBodyWrapper={false}>
+        <Content>
+          <Content component="h1" className="pf-v6-c-title">
             Run {run.id}
-          </Text>
-        </TextContent>
+          </Content>
+        </Content>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         {!isRunValid && (
           <EmptyObject
             headingText="Run not found"
@@ -644,7 +642,7 @@ const Run = ({ defaultTab = 'summary' }) => {
               eventKey="results-tree"
               title={<TabTitle icon={<RepositoryIcon />} text="Results Tree" />}
             >
-              <Card className="pf-v5-u-mt-lg">
+              <Card className="pf-v6-u-mt-lg">
                 <CardBody>
                   <Grid gutter="sm">
                     {resultsTree.length === 0 && (
@@ -687,7 +685,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                               <CardBody
                                 style={{
                                   backgroundColor:
-                                    'var(--pf-v5-c-card--BackgroundColor)',
+                                    'var(--pf-t--global--background--color--primary--default)',
                                   paddingTop: '1.2em',
                                 }}
                               >

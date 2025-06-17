@@ -10,7 +10,7 @@ import {
   Checkbox,
   Flex,
   FlexItem,
-  TextContent,
+  Content,
   Title,
 } from '@patternfly/react-core';
 import { TableVariant } from '@patternfly/react-table';
@@ -19,7 +19,7 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   filtersToAPIParams,
-  getIconForResult,
+  iconResultMap,
   toTitleCase,
   round,
   buildBadge,
@@ -52,7 +52,7 @@ const ClassifyFailuresTable = () => {
 
   // Function to convert result to classification row format
   const resultToClassificationRow = useCallback((result, index, filterFunc) => {
-    let resultIcon = getIconForResult(result.result);
+    let resultIcon = iconResultMap[result.result];
     let markers = [];
     let exceptionBadge;
 
@@ -271,16 +271,16 @@ const ClassifyFailuresTable = () => {
 
   return (
     // mt-lg == margin top large
-    <Card className="pf-v5-u-mt-lg">
+    <Card className="pf-v6-u-mt-lg">
       <CardHeader>
         <Flex style={{ width: '100%' }}>
           <FlexItem grow={{ default: 'grow' }}>
-            <TextContent>
+            <Content>
               <Title headingLevel="h2">Test Failures</Title>
-            </TextContent>
+            </Content>
           </FlexItem>
           <FlexItem>
-            <TextContent>
+            <Content>
               <Checkbox
                 id="include-skips"
                 label="Include skips, xfails"
@@ -288,7 +288,7 @@ const ClassifyFailuresTable = () => {
                 aria-label="include-skips-checkbox"
                 onChange={onSkipCheck}
               />
-            </TextContent>
+            </Content>
           </FlexItem>
           <FlexItem>
             <MultiClassificationDropdown selectedResults={selectedResults} />

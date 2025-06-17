@@ -8,8 +8,8 @@ import {
   ChartLegend,
   ChartStack,
   ChartTooltip,
-} from '@patternfly/react-charts';
-import { Card, CardBody, CardFooter, Text } from '@patternfly/react-core';
+} from '@patternfly/react-charts/victory';
+import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
@@ -190,7 +190,7 @@ const GenericBarWidget = ({
       <CardBody data-id="recent-runs">
         {genericBarError && <p>Error fetching data</p>}
         {!genericBarError && isLoading && (
-          <Text component="h2">Loading ...</Text>
+          <Content component="h2">Loading ...</Content>
         )}
         {!genericBarError && !isLoading && (
           <Chart

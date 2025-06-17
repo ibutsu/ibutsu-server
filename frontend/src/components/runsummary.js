@@ -1,5 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { Label, LabelGroup } from '@patternfly/react-core';
+import { iconResultMap } from '../utilities';
 
 const RunSummary = ({ summary }) => {
   let passed = 0,
@@ -36,38 +38,50 @@ const RunSummary = ({ summary }) => {
   return (
     <React.Fragment>
       {summary && (
-        <>
+        <LabelGroup aria-label="Result Counts">
           {passed > 0 && (
-            <span className="pf-v5-c-badge passed" title="Passed">
+            <Label icon={iconResultMap.passed} variant="filled" title="Passed">
               {passed}
-            </span>
+            </Label>
           )}
           {failed > 0 && (
-            <span className="pf-v5-c-badge failed" title="Failed">
+            <Label icon={iconResultMap.failed} variant="filled" title="Failed">
               {failed}
-            </span>
+            </Label>
           )}
           {errors > 0 && (
-            <span className="pf-v5-c-badge error" title="Error">
+            <Label icon={iconResultMap.error} variant="filled" title="Error">
               {errors}
-            </span>
+            </Label>
           )}
           {skipped > 0 && (
-            <span className="pf-v5-c-badge skipped" title="Skipped">
+            <Label
+              icon={iconResultMap.skipped}
+              variant="filled"
+              title="Skipped"
+            >
               {skipped}
-            </span>
+            </Label>
           )}
           {xfailed > 0 && (
-            <span className="pf-v5-c-badge xfailed" title="Xfailed">
+            <Label
+              icon={iconResultMap.xfailed}
+              variant="filled"
+              title="Xfailed"
+            >
               {xfailed}
-            </span>
+            </Label>
           )}
           {xpassed > 0 && (
-            <span className="pf-v5-c-badge xpassed" title="Xpassed">
+            <Label
+              icon={iconResultMap.xpassed}
+              variant="filled"
+              title="Xpassed"
+            >
               {xpassed}
-            </span>
+            </Label>
           )}
-        </>
+        </LabelGroup>
       )}
     </React.Fragment>
   );

@@ -59,12 +59,17 @@ const LastPassed = ({ filters = [] }) => {
           to={`../results/${resultData.id}#summary`}
           relative="Path"
         >
-          <Badge isRead>
+          <Badge style={{ padding: '.2rem', margin: '.2rem' }}>
             {new Date(resultData.start_time).toLocaleString()}
           </Badge>
         </Link>
       )}
       {resultData === null && 'result error'}
+      {resultData === undefined && (
+        <Badge isDisabled style={{ padding: '.2rem', margin: '.2rem' }}>
+          Not Applicable
+        </Badge>
+      )}
     </React.Fragment>
   );
 };

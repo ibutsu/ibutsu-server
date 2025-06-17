@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { ChartDonut, ChartLegend } from '@patternfly/react-charts';
-import { Card, CardBody, CardFooter, Text } from '@patternfly/react-core';
+import { ChartDonut, ChartLegend } from '@patternfly/react-charts/victory';
+import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
@@ -105,7 +105,7 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
       />
       <CardBody>
         {isError && <p>Error fetching data</p>}
-        {!isError && fetching && <Text component="h2">Loading ...</Text>}
+        {!isError && fetching && <Content component="h2">Loading ...</Content>}
         {!isError && !fetching && Object.keys(summary || {}).length && (
           <div>
             <ChartDonut
@@ -120,7 +120,7 @@ const ResultSummaryWidget = ({ title, params, onDeleteClick, onEditClick }) => {
                 labels: { fontFamily: 'RedHatText' },
               }}
             />
-            <p className="pf-v5-u-pt-sm">
+            <p className="pf-v6-u-pt-sm">
               Total number of tests: {summary.total}
             </p>
           </div>

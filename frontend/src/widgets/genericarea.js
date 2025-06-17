@@ -11,8 +11,8 @@ import {
   ChartThemeColor,
   ChartTooltip,
   createContainer,
-} from '@patternfly/react-charts';
-import { Card, CardBody, CardFooter, Text } from '@patternfly/react-core';
+} from '@patternfly/react-charts/victory';
+import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
@@ -148,7 +148,7 @@ const GenericAreaWidget = ({
       />
       <CardBody data-id="generic-area">
         {isError && <p>Error fetching data</p>}
-        {!isError && isLoading && <Text component="h2">Loading ...</Text>}
+        {!isError && isLoading && <Content component="h2">Loading ...</Content>}
         {!isError && !isLoading && (
           <Chart
             padding={
@@ -192,7 +192,7 @@ const GenericAreaWidget = ({
             title: { fontFamily: 'RedHatText' },
           }}
         />
-        {varExplanation && <Text component="h3">{varExplanation}</Text>}
+        {varExplanation && <Content component="h3">{varExplanation}</Content>}
       </CardFooter>
     </Card>
   );

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
-import { Card, CardBody, CardFooter, Text } from '@patternfly/react-core';
+import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 
 import { Thead, Th, Tbody, Tr, Td, Table } from '@patternfly/react-table';
 
@@ -74,16 +74,16 @@ const ImportanceComponentWidget = ({
       />
       {!dataError && isLoading && (
         <CardBody>
-          <Text component="h2">Loading ...</Text>
+          <Content component="h2">Loading ...</Content>
         </CardBody>
       )}
       {!dataError && !isLoading && (
         <CardBody>
           {tableData.map((tdat) => (
             <div key={tdat.component}>
-              <Text key={tdat.component} component="h2">
+              <Content key={tdat.component} component="h2">
                 {tdat.component}
-              </Text>
+              </Content>
               <Table aria-label="importance-component-table" variant="compact">
                 <Thead>
                   <Tr>

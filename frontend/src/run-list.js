@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useContext, useMemo } from 'react';
 
-import {
-  PageSection,
-  PageSectionVariants,
-  Text,
-  TextContent,
-} from '@patternfly/react-core';
+import { PageSection, Content } from '@patternfly/react-core';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
@@ -97,14 +92,14 @@ const RunList = () => {
 
   return (
     <React.Fragment>
-      <PageSection id="page" variant={PageSectionVariants.light}>
-        <TextContent>
-          <Text className="title" component="h1">
+      <PageSection hasBodyWrapper={false} id="page">
+        <Content>
+          <Content className="title" component="h1">
             Test runs
-          </Text>
-        </TextContent>
+          </Content>
+        </Content>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         <FilterTable
           fetching={fetching}
           columns={COLUMNS}
@@ -118,11 +113,11 @@ const RunList = () => {
           onSetPage={onSetPage}
           onSetPageSize={onSetPageSize}
           footerChildren={
-            <Text className="disclaimer" component="h4">
+            <Content className="disclaimer" component="h4">
               * Note: for performance reasons, the total number of items is an
               approximation. Use the API with &lsquo;estimate=false&rsquo; if
               you need an accurate count.
-            </Text>
+            </Content>
           }
         />
       </PageSection>

@@ -1,22 +1,17 @@
 import React from 'react';
 
-import {
-  PageSection,
-  PageSectionVariants,
-  Text,
-  TextContent,
-} from '@patternfly/react-core';
+import { PageSection, Content } from '@patternfly/react-core';
 
 const AdminHome = () => (
   <React.Fragment>
-    <PageSection id="page" variant={PageSectionVariants.light}>
-      <TextContent>
-        <Text className="title" component="h1" ouiaId="admin">
+    <PageSection hasBodyWrapper={false} id="page">
+      <Content>
+        <Content className="title" component="h1" ouiaId="admin">
           Administration
-        </Text>
-      </TextContent>
+        </Content>
+      </Content>
     </PageSection>
-    <PageSection />
+    <PageSection hasBodyWrapper={false} />
   </React.Fragment>
 );
 

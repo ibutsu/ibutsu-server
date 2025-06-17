@@ -9,21 +9,20 @@ import {
   FlexItem,
   Masthead,
   MastheadMain,
-  MastheadBrand,
+  MastheadLogo,
   MastheadToggle,
+  MastheadBrand,
   MastheadContent,
   PageToggleButton,
   MenuToggle,
   Select,
   SelectList,
   SelectOption,
-  TextContent,
+  Content,
   Toolbar,
   ToolbarContent,
   ToolbarGroup,
   ToolbarItem,
-  TextList,
-  TextListItem,
   TextInputGroup,
   TextInputGroupMain,
   TextInputGroupUtilities,
@@ -196,11 +195,11 @@ const IbutsuHeader = () => {
         />
         <TextInputGroupUtilities>
           {!!inputValue && (
-            <Button onClick={onProjectClear} aria-label="Clear input value">
-              <Icon>
-                <TimesIcon aria-hidden />
-              </Icon>
-            </Button>
+            <Button
+              icon={<TimesIcon aria-hidden />}
+              onClick={onProjectClear}
+              aria-label="Clear input value"
+            ></Button>
           )}
         </TextInputGroupUtilities>
       </TextInputGroup>
@@ -263,12 +262,12 @@ const IbutsuHeader = () => {
           <ToolbarItem>{projectSelect}</ToolbarItem>
         </ToolbarGroup>
         <ToolbarGroup
-          variant="icon-button-group"
+          variant="action-group-plain"
           align={{
-            default: 'alignRight',
+            default: 'alignEnd',
           }}
         >
-          <ToolbarItem spacer={{ default: 'spacerSm' }}>
+          <ToolbarItem gap={{ default: 'gapSm' }}>
             <Button
               aria-label="About"
               onClick={() => {
@@ -282,10 +281,10 @@ const IbutsuHeader = () => {
               }
             />
           </ToolbarItem>
-          <ToolbarItem spacer={{ default: 'spacerSm' }}>
+          <ToolbarItem gap={{ default: 'gapSm' }}>
             <FileUpload />
           </ToolbarItem>
-          <ToolbarItem spacer={{ default: 'spacerSm' }}>
+          <ToolbarItem gap={{ default: 'gapSm' }}>
             <Button
               component="a"
               href={Settings.serverUrl + '/ui/'}
@@ -302,7 +301,7 @@ const IbutsuHeader = () => {
               API
             </Button>
           </ToolbarItem>
-          <ToolbarItem spacer={{ default: 'spacerSm' }}>
+          <ToolbarItem gap={{ default: 'gapSm' }}>
             <ToggleGroup>
               <ToggleGroupItem
                 aria-label="Light theme"
@@ -353,12 +352,12 @@ const IbutsuHeader = () => {
         backgroundImageSrc="/images/about-bg.jpg"
         trademark="Copyright (c) 2021 Red Hat, Inc."
       >
-        <TextContent>
-          <TextList component="dl">
-            <TextListItem component="dt">Version</TextListItem>
-            <TextListItem component="dd">{VERSION}</TextListItem>
-            <TextListItem component="dt">Source code</TextListItem>
-            <TextListItem component="dd">
+        <Content>
+          <Content component="dl">
+            <Content component="dt">Version</Content>
+            <Content component="dd">{VERSION}</Content>
+            <Content component="dt">Source code</Content>
+            <Content component="dd">
               <a
                 href="https://github.com/ibutsu/ibutsu-server"
                 target="_blank"
@@ -366,9 +365,9 @@ const IbutsuHeader = () => {
               >
                 github.com/ibutsu/ibutsu-server
               </a>
-            </TextListItem>
-            <TextListItem component="dt">Documentation</TextListItem>
-            <TextListItem component="dd">
+            </Content>
+            <Content component="dt">Documentation</Content>
+            <Content component="dd">
               <a
                 href="https://docs.ibutsu-project.org/"
                 target="_blank"
@@ -376,9 +375,9 @@ const IbutsuHeader = () => {
               >
                 docs.ibutsu-project.org
               </a>
-            </TextListItem>
-            <TextListItem component="dt">Report bugs</TextListItem>
-            <TextListItem component="dd">
+            </Content>
+            <Content component="dt">Report bugs</Content>
+            <Content component="dd">
               <a
                 href="https://github.com/ibutsu/ibutsu-server/issues/new"
                 target="_blank"
@@ -386,28 +385,30 @@ const IbutsuHeader = () => {
               >
                 Submit an issue
               </a>
-            </TextListItem>
-          </TextList>
-        </TextContent>
+            </Content>
+          </Content>
+        </Content>
         <p style={{ marginTop: '2rem' }}>
           * Note: artifact files (screenshots, logs) are retained for 3 months
         </p>
       </AboutModal>
       <Masthead>
-        <MastheadToggle>
-          <PageToggleButton
-            variant="plain"
-            aria-label="Global navigation"
-            id="vertical-nav-toggle"
-          >
-            <Icon>
-              <BarsIcon />
-            </Icon>
-          </PageToggleButton>
-        </MastheadToggle>
         <MastheadMain>
-          <MastheadBrand component="a" href="/">
-            <Brand src="/images/ibutsu-wordart-164.png" alt="Ibutsu" />
+          <MastheadToggle>
+            <PageToggleButton
+              variant="control"
+              aria-label="Global navigation"
+              id="vertical-nav-toggle"
+            >
+              <Icon>
+                <BarsIcon />
+              </Icon>
+            </PageToggleButton>
+          </MastheadToggle>
+          <MastheadBrand data-codemods>
+            <MastheadLogo data-codemods component="a" href="/">
+              <Brand src="/images/ibutsu-wordart-164.png" alt="Ibutsu" />
+            </MastheadLogo>
           </MastheadBrand>
         </MastheadMain>
         <MastheadContent>{headerTools}</MastheadContent>

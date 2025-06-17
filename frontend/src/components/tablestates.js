@@ -7,8 +7,6 @@ import {
   EmptyStateActions,
   EmptyStateBody,
   EmptyStateFooter,
-  EmptyStateHeader,
-  EmptyStateIcon,
 } from '@patternfly/react-core';
 import { ErrorCircleOIcon, SearchIcon } from '@patternfly/react-icons';
 
@@ -17,12 +15,11 @@ import { ErrorCircleOIcon, SearchIcon } from '@patternfly/react-icons';
 const TableEmptyState = ({ onClearFilters }) => {
   return (
     <Bullseye>
-      <EmptyState>
-        <EmptyStateHeader
-          titleText="No results found"
-          icon={<EmptyStateIcon icon={SearchIcon} />}
-          headingLevel="h5"
-        />
+      <EmptyState
+        headingLevel="h5"
+        icon={SearchIcon}
+        titleText="No results found"
+      >
         <EmptyStateFooter>
           {!!onClearFilters && (
             <React.Fragment>
@@ -52,12 +49,11 @@ const TableErrorState = (props) => {
 
   return (
     <Bullseye>
-      <EmptyState>
-        <EmptyStateHeader
-          titleText="Error occurred fetching results"
-          icon={<EmptyStateIcon icon={ErrorCircleOIcon} />}
-          headingLevel="h5"
-        />
+      <EmptyState
+        headingLevel="h5"
+        icon={ErrorCircleOIcon}
+        titleText="Error occurred fetching results"
+      >
         <EmptyStateFooter>
           {!!onClearFilters && (
             <React.Fragment>

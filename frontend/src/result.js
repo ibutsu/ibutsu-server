@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import {
-  PageSection,
-  PageSectionVariants,
-  TextContent,
-  Text,
-  Skeleton,
-} from '@patternfly/react-core';
+import { PageSection, Content, Skeleton } from '@patternfly/react-core';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
@@ -54,14 +48,18 @@ const Result = () => {
 
   return (
     <React.Fragment>
-      <PageSection variant={PageSectionVariants.light}>
-        <TextContent>
-          <Text component="h1">
-            {testResult ? testResult.test_id : <Text>Result</Text>}
-          </Text>
-        </TextContent>
+      <PageSection hasBodyWrapper={false}>
+        <Content>
+          <Content component="h1">
+            {testResult ? (
+              testResult.test_id
+            ) : (
+              <Content component="p">Result</Content>
+            )}
+          </Content>
+        </Content>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         {!fetching && isResultValid && <ResultView testResult={testResult} />}
         {!fetching && !isResultValid && (
           <EmptyObject

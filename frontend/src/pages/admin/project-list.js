@@ -4,11 +4,9 @@ import {
   Button,
   Flex,
   FlexItem,
-  Modal,
   PageSection,
-  PageSectionVariants,
-  Text,
-  TextContent,
+  Content,
+  Modal,
 } from '@patternfly/react-core';
 import {
   PencilAltIcon,
@@ -57,17 +55,17 @@ const ProjectList = () => {
       project.owner?.name || project.owner?.email,
       <div style={{ textAlign: 'right' }} key="actions">
         <Button
+          icon={<PencilAltIcon />}
           variant="primary"
           ouiaId={`admin-projects-edit-${project.id}`}
           component={(props) => (
             <Link {...props} to={`/admin/projects/${project.id}`} />
           )}
           size="sm"
-        >
-          <PencilAltIcon />
-        </Button>
+        ></Button>
         &nbsp;
         <Button
+          icon={<TrashIcon />}
           variant="danger"
           ouiaId={`admin-projects-delete-${project.id}`}
           onClick={() => {
@@ -75,9 +73,7 @@ const ProjectList = () => {
             setIsDeleteModalOpen(true);
           }}
           size="sm"
-        >
-          <TrashIcon />
-        </Button>
+        ></Button>
       </div>,
     ],
   });
@@ -155,20 +151,25 @@ const ProjectList = () => {
 
   return (
     <React.Fragment>
-      <PageSection id="page" variant={PageSectionVariants.light}>
+      <PageSection hasBodyWrapper={false} id="page">
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <Flex>
             <FlexItem spacer={{ default: 'spacerLg' }}>
-              <TextContent>
-                <Text className="title" component="h1" ouiaId="admin-projects">
+              <Content>
+                <Content
+                  className="title"
+                  component="h1"
+                  ouiaId="admin-projects"
+                >
                   Projects
-                </Text>
-              </TextContent>
+                </Content>
+              </Content>
             </FlexItem>
           </Flex>
           <Flex>
             <FlexItem>
               <Button
+                icon={<PlusCircleIcon />}
                 aria-label="Add project"
                 variant="secondary"
                 title="Add project"
@@ -177,13 +178,13 @@ const ProjectList = () => {
                   <Link {...props} to="/admin/projects/new" />
                 )}
               >
-                <PlusCircleIcon /> Add Project
+                Add Project
               </Button>
             </FlexItem>
           </Flex>
         </Flex>
       </PageSection>
-      <PageSection className="pf-v5-u-pb-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-pb-0">
         {anyProjects && (
           <FilterTable
             columns={COLUMNS}

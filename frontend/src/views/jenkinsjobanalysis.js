@@ -19,7 +19,7 @@ const DEFAULT_BAR = 8;
 const SHORT_BUILDS = [10, 20, 30, 40];
 const LONG_BUILDS = [...SHORT_BUILDS, 70, 150];
 
-const PF_BACK_100 = 'var(--pf-v5-global--BackgroundColor--100)';
+const PF_BACK_100 = 'var(--pf-t--color--background--secondary)';
 
 const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
   const { primaryObject } = useContext(IbutsuContext);
@@ -156,7 +156,6 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
         >
           <Switch
             id="bar-chart-switch"
-            labelOff="Change to Area Chart"
             label="Change to Bar Chart"
             isChecked={isAreaChart}
             onChange={(_, checked) => setIsAreaChart(checked)}

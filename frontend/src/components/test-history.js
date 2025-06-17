@@ -9,18 +9,18 @@ import {
   Select,
   SelectList,
   SelectOption,
-  TextContent,
-  Text,
-  Title,
+  Content,
   CardHeader,
   CardBody,
+  Label,
+  Card,
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   filtersToAPIParams,
-  getIconForResult,
+  iconResultMap,
   toTitleCase,
   round,
   buildBadge,
@@ -82,7 +82,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
 
   // Function to convert result to test history row format (PatternFly v5)
   const resultToTestHistoryRow = useCallback((result, index, filterFunc) => {
-    let resultIcon = getIconForResult(result.result);
+    let resultIcon = iconResultMap[result.result];
     let exceptionBadge;
 
     if (filterFunc) {
@@ -230,7 +230,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
     } else {
       const debouncer = setTimeout(() => {
         getResults();
-      }, 150);
+      }, 50);
       return () => {
         clearTimeout(debouncer);
       };
@@ -297,7 +297,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
     ) {
       const debouncer = setTimeout(() => {
         resultAggFetch(summary);
-      }, 100);
+      }, 50);
       return () => {
         clearTimeout(debouncer);
       };
@@ -329,59 +329,86 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   const historyHeader = useMemo(() => {
     return (
       <CardHeader>
-        <Flex style={{ width: '100%' }}>
-          <FlexItem grow={{ default: 'grow' }}>
-            <TextContent>
-              <Title headingLevel="h2">Test History</Title>
-            </TextContent>
-          </FlexItem>
-          <FlexItem>
-            <TextContent>
-              <Checkbox
-                id="only-failures"
-                label="Only show failures/errors"
-                isChecked={onlyFailures}
-                aria-label="only-failures-checkbox"
-                onChange={onFailuresCheck}
-              />
-            </TextContent>
-          </FlexItem>
-          <FlexItem spacer={{ sm: 'spacerSm' }}>
-            <TextContent>Time range prior to start_time:</TextContent>
-          </FlexItem>
-          <FlexItem>
-            <Select
-              id="single-select"
-              isOpen={isTimeRangeSelectOpen}
-              selected={selectedTimeRange}
-              onSelect={onTimeRangeSelect}
-              onOpenChange={(isTimeRangeSelectOpen) =>
-                setTimeRangeOpen(isTimeRangeSelectOpen)
-              }
-              toggle={(toggleRef) => (
-                <MenuToggle
-                  ref={toggleRef}
-                  onClick={onTimeRangeToggleClick}
-                  isExpanded={isTimeRangeSelectOpen}
-                >
-                  {selectedTimeRange}
-                </MenuToggle>
-              )}
-              shouldFocusToggleOnSelect
-            >
-              <SelectList>
-                {Object.keys(WEEKS).map((key) => (
-                  <SelectOption key={key} value={key}>
-                    {key}
-                  </SelectOption>
-                ))}
-              </SelectList>
-            </Select>
-          </FlexItem>
+        <Flex
+          direction={{ default: 'row' }}
+          justifyContent={{ default: 'justifyContentSpaceBetween' }}
+        >
+          <Flex
+            direction={{ default: 'column' }}
+            alignItems={{ default: 'alignItemsLeft' }}
+          >
+            <FlexItem>
+              <Content>
+                <Label htmlFor="only-failures">
+                  <Content component="h4">
+                    Display only failure and error results:
+                  </Content>
+                </Label>
+                <Checkbox
+                  id="only-failures"
+                  isChecked={onlyFailures}
+                  aria-label="only-failures-checkbox"
+                  onChange={onFailuresCheck}
+                />
+              </Content>
+            </FlexItem>
+            <FlexItem spacer={{ sm: 'spacerSm' }}>
+              <Label htmlFor="single-select">
+                <Content component="h4">Time Range:</Content>
+              </Label>
+              <Select
+                id="single-select"
+                isOpen={isTimeRangeSelectOpen}
+                selected={selectedTimeRange}
+                onSelect={onTimeRangeSelect}
+                onOpenChange={(isTimeRangeSelectOpen) =>
+                  setTimeRangeOpen(isTimeRangeSelectOpen)
+                }
+                toggle={(toggleRef) => (
+                  <MenuToggle
+                    ref={toggleRef}
+                    onClick={onTimeRangeToggleClick}
+                    isExpanded={isTimeRangeSelectOpen}
+                  >
+                    {selectedTimeRange}
+                  </MenuToggle>
+                )}
+                shouldFocusToggleOnSelect
+              >
+                <SelectList>
+                  {Object.keys(WEEKS).map((key) => (
+                    <SelectOption key={key} value={key}>
+                      {key}
+                    </SelectOption>
+                  ))}
+                </SelectList>
+              </Select>
+            </FlexItem>
+          </Flex>
+          <Flex direction={{ default: 'row' }}>
+            <Card isCompact>
+              <CardHeader>
+                <Content component="h4">Summary</Content>
+              </CardHeader>
+              <CardBody>
+                <RunSummary summary={historySummary} />
+              </CardBody>
+            </Card>
+            <Card isCompact>
+              <CardHeader>
+                <Content component="h4">Last passed:</Content>
+              </CardHeader>
+              <CardBody>
+                <LastPassed filters={activeFilters} />
+              </CardBody>
+            </Card>
+          </Flex>
         </Flex>
       </CardHeader>
     );
   }, [
+    activeFilters,
+    historySummary,
     isTimeRangeSelectOpen,
     onFailuresCheck,
     onTimeRangeSelect,
@@ -401,20 +428,6 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         >
           <Flex>
             <FlexItem>
-              <Text key="summary" component="h4">
-                Summary:&nbsp;
-                <RunSummary summary={historySummary} />
-              </Text>
-            </FlexItem>
-            <FlexItem>
-              <Text key="last-passed" component="h4">
-                Last passed:&nbsp;
-                <LastPassed filters={activeFilters} />
-              </Text>
-            </FlexItem>
-          </Flex>
-          <Flex>
-            <FlexItem>
               <ActiveFilters
                 key="active-filters"
                 activeFilters={activeFilters}
@@ -427,7 +440,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         </Flex>
       </CardBody>
     ),
-    [activeFilters, historySummary, onRemoveFilter],
+    [activeFilters, onRemoveFilter],
   );
 
   return (
@@ -446,11 +459,11 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
       onSetPage={onSetPage}
       onSetPageSize={onSetPageSize}
       footerChildren={
-        <Text className="disclaimer" component="h4">
+        <Content className="disclaimer" component="h4">
           * Note: for performance reasons, the total number of items is an
           estimate. Apply filters on the Test Results page to get precise
           results.
-        </Text>
+        </Content>
       }
     />
   );

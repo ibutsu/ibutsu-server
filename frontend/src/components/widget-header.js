@@ -20,6 +20,7 @@ const WidgetHeader = ({
       {actions ? actions : []}
       {getDataFunc && (
         <Button
+          icon={<PficonHistoryIcon />}
           variant="plain"
           onClick={() => {
             getDataFunc();
@@ -27,12 +28,11 @@ const WidgetHeader = ({
           title="Refresh"
           aria-label="Refresh"
           isInline
-        >
-          <PficonHistoryIcon />
-        </Button>
+        />
       )}
       {onEditClick && (
         <Button
+          icon={<PencilAltIcon />}
           variant="plain"
           onClick={() => {
             onEditClick();
@@ -40,12 +40,11 @@ const WidgetHeader = ({
           title="Edit"
           aria-label="Edit"
           isInline
-        >
-          <PencilAltIcon />
-        </Button>
+        />
       )}
       {onDeleteClick && (
         <Button
+          icon={<TimesIcon />}
           variant="plain"
           onClick={() => {
             onDeleteClick();
@@ -53,9 +52,7 @@ const WidgetHeader = ({
           title="Remove from dashboard"
           aria-label="Delete"
           isInline
-        >
-          <TimesIcon />
-        </Button>
+        />
       )}
     </React.Fragment>
   );

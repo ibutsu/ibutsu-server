@@ -8,8 +8,7 @@ import {
   CardFooter,
   EmptyState,
   EmptyStateBody,
-  Text,
-  EmptyStateHeader,
+  Content,
 } from '@patternfly/react-core';
 import {
   ArrowDownIcon,
@@ -99,13 +98,12 @@ const FilterHeatmapWidget = ({
           }}
         >
           <Button
+            icon={<ChartLineIcon />}
             variant="secondary"
             title="See analysis"
             aria-label="See analysis"
             isInline
-          >
-            <ChartLineIcon />
-          </Button>
+          ></Button>
         </Link>
       );
     } else {
@@ -300,7 +298,7 @@ const FilterHeatmapWidget = ({
         onDeleteClick={onDeleteClick}
       />
       <CardBody data-id="heatmap" style={{ paddingTop: '0.5rem' }}>
-        {!isError && isLoading && <Text component="h2">Loading ...</Text>}
+        {!isError && isLoading && <Content component="h2">Loading ...</Content>}
         {!isError && !isLoading && renderData.length !== 0 && (
           <HeatMap
             xLabels={xLabels}
@@ -315,11 +313,7 @@ const FilterHeatmapWidget = ({
           />
         )}
         {!isError && !isLoading && renderData.length === 0 && (
-          <EmptyState>
-            <EmptyStateHeader
-              titleText="No data found for heatmap"
-              headingLevel="h3"
-            />
+          <EmptyState headingLevel="h3" titleText="No data found for heatmap">
             <EmptyStateBody
               style={{ fontSize: '15px', fontFamily: 'sans-serif' }}
             >

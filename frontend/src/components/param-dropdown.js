@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   MenuToggle,
-  Text,
+  Content,
   SelectList,
   SelectOption,
   Select,
@@ -30,7 +30,7 @@ const ParamDropdown = ({
   return (
     <React.Fragment>
       <div data-id="widget-param-dropdown">
-        <Text component="h3">{tooltip}</Text>
+        <Content component="h3">{tooltip}</Content>
         <Select
           isOpen={isOpen}
           selected={value}

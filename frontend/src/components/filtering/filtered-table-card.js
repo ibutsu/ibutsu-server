@@ -6,12 +6,13 @@ import {
   CardBody,
   CardFooter,
   CardHeader,
+  Divider,
   Flex,
   FlexItem,
   Pagination,
   PaginationVariant,
-  Skeleton,
 } from '@patternfly/react-core';
+import SkeletonTable from '@patternfly/react-component-groups/dist/dynamic/SkeletonTable';
 
 import {
   Thead,
@@ -42,7 +43,7 @@ const FilterTable = ({
   totalItems,
   footerChildren = null,
   headerChildren = null,
-  cardClass = 'pf-v5-u-p-0',
+  cardClass = 'pf-v6-u-p-0',
   fetching = false,
   filters,
 }) => {
@@ -192,11 +193,16 @@ const FilterTable = ({
 
   return (
     <Card ouiaId="filter-table-card" className={cardClass}>
-      {headerChildren ? <CardHeader>{headerChildren}</CardHeader> : null}
+      {headerChildren ? (
+        <React.Fragment>
+          <CardHeader>{headerChildren}</CardHeader>
+          <Divider />
+        </React.Fragment>
+      ) : null}
       {filters || null}
       {fetching && (
         <CardBody key="loading-table">
-          <Skeleton />
+          <SkeletonTable rowsCount={10} columns={columns} variant={variant} />
         </CardBody>
       )}
       {!fetching && !isError && populatedRows && (

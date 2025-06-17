@@ -96,7 +96,7 @@ const RunFilter = ({ hideFilters }) => {
                 <SelectList>
                   {Object.keys(operations)?.map((option, index) => (
                     <SelectOption key={index} value={option}>
-                      {option}
+                      {operations[option].opString}
                     </SelectOption>
                   ))}
                 </SelectList>

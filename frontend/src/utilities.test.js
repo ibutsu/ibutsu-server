@@ -9,49 +9,49 @@ import {
 } from '@patternfly/react-icons';
 import {
   cleanPath,
-  getIconForResult,
-  getIconForStatus,
+  iconResultMap,
+  iconStatusMap,
   toTitleCase,
   processPyTestPath,
 } from './utilities';
 
-describe('getIconForResult', () => {
+describe('iconResultMap', () => {
   it('should return a CheckCircleIcon for a passed result', () => {
-    expect(getIconForResult('passed')).toEqual(<CheckCircleIcon />);
+    expect(iconResultMap['passed']).toEqual(<CheckCircleIcon />);
   });
 
   it('should return a TimesCircleIcon for a failed result', () => {
-    expect(getIconForResult('failed')).toEqual(<TimesCircleIcon />);
+    expect(iconResultMap['failed']).toEqual(<TimesCircleIcon />);
   });
 
   it('should return a ExclamationCircleIcon for an error result', () => {
-    expect(getIconForResult('error')).toEqual(<ExclamationCircleIcon />);
+    expect(iconResultMap['error']).toEqual(<ExclamationCircleIcon />);
   });
 
   it('should return a ChevronCircleRightIcon for a skipped result', () => {
-    expect(getIconForResult('skipped')).toEqual(<ChevronCircleRightIcon />);
+    expect(iconResultMap['skipped']).toEqual(<ChevronCircleRightIcon />);
   });
 });
 
-describe('getIconForStatus', () => {
+describe('iconStatusMap', () => {
   it('should return a CheckCircleIcon for a done status', () => {
-    expect(getIconForStatus('done')).toEqual(<CheckCircleIcon />);
+    expect(iconStatusMap['done']).toEqual(<CheckCircleIcon />);
   });
 
   it('should return a QuestionCircleIcon for a pending status', () => {
-    expect(getIconForStatus('pending')).toEqual(<QuestionCircleIcon />);
+    expect(iconStatusMap['pending']).toEqual(<QuestionCircleIcon />);
   });
 
   it('should return a ClockIcon for a running status', () => {
-    expect(getIconForStatus('running')).toEqual(<ClockIcon />);
+    expect(iconStatusMap['running']).toEqual(<ClockIcon />);
   });
 
   it('should return a ExclamationCircleIcon for an error status', () => {
-    expect(getIconForStatus('error')).toEqual(<ExclamationCircleIcon />);
+    expect(iconStatusMap['error']).toEqual(<ExclamationCircleIcon />);
   });
 
   it('should return an InfoAltIcon for an empty status', () => {
-    expect(getIconForStatus('empty')).toEqual(<InfoAltIcon />);
+    expect(iconStatusMap['empty']).toEqual(<InfoAltIcon />);
   });
 });
 

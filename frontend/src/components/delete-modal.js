@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 
-import { Button, Modal, ModalVariant, Text } from '@patternfly/react-core';
+import { Button, Content, Modal, ModalVariant } from '@patternfly/react-core';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
@@ -43,7 +43,7 @@ const DeleteModal = ({
         </Button>,
       ]}
     >
-      <Text>{body}</Text>
+      <Content component="p">{body}</Content>
     </Modal>
   );
 };

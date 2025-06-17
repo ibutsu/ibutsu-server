@@ -1,17 +1,20 @@
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Button,
   EmptyState,
-  EmptyStateIcon,
   EmptyStateBody,
   Flex,
   FlexItem,
   Grid,
   PageSection,
-  PageSectionVariants,
-  TextContent,
-  Text,
-  EmptyStateHeader,
+  Content,
   EmptyStateFooter,
   MenuToggle,
   Select,
@@ -218,16 +221,19 @@ const Dashboard = () => {
     setFilteredDashboards(filteredOptions);
   }, [selectFilterValue, dashboards, isDashboardOpen]);
 
-  const onDashboardSelect = (_event, selection) => {
-    const selected = dashboards.find((d) => d.id === selection);
-    setSelectInputValue(selected.title);
-    setSelectFilterValue('');
-    setSelectedDashboard(selected);
-    setIsSelectOpen(false);
-    navigate(`/project/${project_id}/dashboard/${selected.id}`);
-  };
+  const onDashboardSelect = useCallback(
+    (_event, selection) => {
+      const selected = dashboards.find((d) => d.id === selection);
+      setSelectInputValue(selected.title);
+      setSelectFilterValue('');
+      setSelectedDashboard(selected);
+      setIsSelectOpen(false);
+      navigate(`/project/${project_id}/dashboard/${selected.id}`);
+    },
+    [dashboards, navigate, project_id],
+  );
 
-  const onDashboardClear = () => {
+  const onDashboardClear = useCallback(() => {
     // state update
     setSelectedDashboard();
     setIsDashboardOpen(false);
@@ -235,15 +241,18 @@ const Dashboard = () => {
     setSelectFilterValue('');
     selectInputRef?.current?.focus();
     navigate(`/project/${project_id}/dashboard/`);
-  };
+  }, [navigate, project_id]);
 
-  const onDashboardFilterInput = (_, value) => {
-    setSelectInputValue(value);
-    setSelectFilterValue(value);
-    if (value !== selectedDashboard) {
-      setSelectedDashboard(value);
-    }
-  };
+  const onDashboardFilterInput = useCallback(
+    (_, value) => {
+      setSelectInputValue(value);
+      setSelectFilterValue(value);
+      if (value !== selectedDashboard) {
+        setSelectedDashboard(value);
+      }
+    },
+    [selectedDashboard],
+  );
 
   const onNewDashboardSave = async (newDashboard) => {
     try {
@@ -305,89 +314,96 @@ const Dashboard = () => {
     document.title = 'Dashboard | Ibutsu';
   }, []);
 
-  const onDashboardToggle = () => {
+  const onDashboardToggle = useCallback(() => {
     setIsSelectOpen(!isSelectOpen);
     selectInputRef?.current?.focus();
-  };
+  }, [isSelectOpen]);
 
-  const dashboardSelect = (
-    <Select
-      id="dashboard-select"
-      isOpen={isSelectOpen}
-      selected={selectedDashboard?.id}
-      onSelect={onDashboardSelect}
-      onOpenChange={(isOpen) => setIsSelectOpen(isOpen)}
-      toggle={(toggleRef) => (
-        <MenuToggle
-          ref={toggleRef}
-          variant="typeahead"
-          onClick={onDashboardToggle}
-          isExpanded={isSelectOpen}
-          isFullWidth
-        >
-          <TextInputGroup isPlain>
-            <TextInputGroupMain
-              value={selectInputValue}
-              onClick={onDashboardToggle}
-              onChange={onDashboardFilterInput}
-              id="typeahead-select-input"
-              autoComplete="off"
-              placeholder="Select a dashboard"
-            />
-            {!!selectInputValue && (
-              <TextInputGroupUtilities>
-                <Button
-                  variant="plain"
-                  onClick={onDashboardClear}
-                  aria-label="Clear input value"
-                >
-                  <TimesIcon aria-hidden />
-                </Button>
-              </TextInputGroupUtilities>
+  const dashboardSelect = useMemo(
+    () => (
+      <Flex>
+        <FlexItem>
+          <Select
+            id="dashboard-select"
+            isOpen={isSelectOpen}
+            selected={selectedDashboard?.id}
+            onSelect={onDashboardSelect}
+            onOpenChange={(isOpen) => setIsSelectOpen(isOpen)}
+            toggle={(toggleRef) => (
+              <MenuToggle
+                ref={toggleRef}
+                variant="typeahead"
+                onClick={onDashboardToggle}
+                isExpanded={isSelectOpen}
+              >
+                <TextInputGroup isPlain>
+                  <TextInputGroupMain
+                    value={selectInputValue}
+                    onClick={onDashboardToggle}
+                    onChange={onDashboardFilterInput}
+                    id="typeahead-select-input"
+                    autoComplete="off"
+                    placeholder="Select a dashboard"
+                  />
+                  {!!selectInputValue && (
+                    <TextInputGroupUtilities>
+                      <Button
+                        icon={<TimesIcon aria-hidden />}
+                        variant="plain"
+                        onClick={onDashboardClear}
+                        aria-label="Clear input value"
+                      />
+                    </TextInputGroupUtilities>
+                  )}
+                </TextInputGroup>
+              </MenuToggle>
             )}
-          </TextInputGroup>
-        </MenuToggle>
-      )}
-      ouiaId="dashboard-select"
-    >
-      <SelectList>
-        {filteredDashboards.map((dashboard, index) => (
-          <SelectOption
-            key={dashboard.id || index}
-            value={dashboard.id}
-            description={dashboard.id}
           >
-            {dashboard.title}
-          </SelectOption>
-        ))}
-      </SelectList>
-    </Select>
+            <SelectList>
+              {filteredDashboards.map((dashboard, index) => (
+                <SelectOption
+                  key={dashboard.id || index}
+                  value={dashboard.id}
+                  description={dashboard.id}
+                >
+                  {dashboard.title}
+                </SelectOption>
+              ))}
+            </SelectList>
+          </Select>
+        </FlexItem>
+      </Flex>
+    ),
+    [
+      filteredDashboards,
+      isSelectOpen,
+      onDashboardClear,
+      onDashboardFilterInput,
+      onDashboardSelect,
+      onDashboardToggle,
+      selectInputValue,
+      selectedDashboard?.id,
+    ],
   );
 
   const dashboardTitle = (
-    <TextContent>
-      <Text component="h1">Dashboard</Text>
-    </TextContent>
+    <Content>
+      <Content component="h1">Dashboard</Content>
+    </Content>
   );
 
   return (
     <React.Fragment>
-      <PageSection variant={PageSectionVariants.light}>
+      <PageSection hasBodyWrapper={false}>
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <Flex>
             <FlexItem spacer={{ default: 'spacerLg' }}>
               {dashboardTitle}
             </FlexItem>
-            {!loading && (
-              <FlexItem
-                id="dashboard-selector"
-                spacer={{ default: 'spacerNone' }}
-              >
-                {dashboardSelect}
-              </FlexItem>
-            )}
-            <FlexItem spacer={{ default: 'spacerNone' }}>
+            {!loading && dashboardSelect}
+            <FlexItem>
               <Button
+                icon={<PlusCircleIcon />}
                 aria-label="New dashboard"
                 variant="plain"
                 title="New dashboard"
@@ -395,12 +411,11 @@ const Dashboard = () => {
                 onClick={() => {
                   setIsNewDBOpen(true);
                 }}
-              >
-                <PlusCircleIcon />
-              </Button>
+              />
             </FlexItem>
             <FlexItem>
               <Button
+                icon={<TimesCircleIcon />}
                 aria-label="Delete dashboard"
                 variant="plain"
                 title="Delete dashboard"
@@ -408,15 +423,14 @@ const Dashboard = () => {
                 onClick={() => {
                   setIsDeleteDBOpen(true);
                 }}
-              >
-                <TimesCircleIcon />
-              </Button>
+              />
             </FlexItem>
           </Flex>
 
           <Flex>
             <FlexItem>
               <Button
+                icon={<PlusCircleIcon />}
                 aria-label="Add widget"
                 variant="secondary"
                 title="Add widget"
@@ -425,23 +439,22 @@ const Dashboard = () => {
                   setIsNewWidgetOpen(true);
                 }}
               >
-                <PlusCircleIcon /> Add Widget
+                Add Widget
               </Button>
             </FlexItem>
           </Flex>
         </Flex>
       </PageSection>
-      <PageSection>
+      <PageSection hasBodyWrapper={false}>
         {!!primaryObject && !!selectedDashboard && !!widgets && (
           <Grid hasGutter>{widgetComponents}</Grid>
         )}
         {!!primaryObject && !selectedDashboard && (
-          <EmptyState>
-            <EmptyStateHeader
-              titleText="No Dashboard Selected"
-              icon={<EmptyStateIcon icon={TachometerAltIcon} />}
-              headingLevel="h4"
-            />
+          <EmptyState
+            headingLevel="h4"
+            icon={TachometerAltIcon}
+            titleText="No Dashboard Selected"
+          >
             <EmptyStateBody>
               There is currently no dashboard selected. Please select a
               dashboard from the dropdown in order to view widgets, or create a
@@ -460,12 +473,7 @@ const Dashboard = () => {
           </EmptyState>
         )}
         {!!primaryObject && !!selectedDashboard && widgets.length === 0 && (
-          <EmptyState>
-            <EmptyStateHeader
-              titleText="No Widgets"
-              icon={<EmptyStateIcon icon={CubesIcon} />}
-              headingLevel="h4"
-            />
+          <EmptyState headingLevel="h4" icon={CubesIcon} titleText="No Widgets">
             <EmptyStateBody>
               This dashboard currently has no widgets defined.
               <br />
