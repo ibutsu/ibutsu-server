@@ -48,7 +48,11 @@ const NewDashboardModal = ({
   }, [closeCallback]);
 
   return (
-    <Modal variant={ModalVariant.small} isOpen={isOpen} onClose={closeCallback}>
+    <Modal
+      variant={ModalVariant.medium}
+      isOpen={isOpen}
+      onClose={closeCallback}
+    >
       <ModalHeader title="New Dashboard" />
       <ModalBody>
         <Form>

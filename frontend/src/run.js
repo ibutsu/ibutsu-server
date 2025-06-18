@@ -301,9 +301,7 @@ const Run = ({ defaultTab = 'summary' }) => {
     <React.Fragment>
       <PageSection hasBodyWrapper={false}>
         <Content>
-          <Content component="h1" className="pf-v6-c-title">
-            Run {run.id}
-          </Content>
+          <Content component="h1">Run {run.id}</Content>
         </Content>
       </PageSection>
       <PageSection hasBodyWrapper={false}>

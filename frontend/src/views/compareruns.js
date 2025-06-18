@@ -141,7 +141,7 @@ const CompareRunsView = () => {
       <Flex style={{ width: '100%' }}>
         <FlexItem grow={{ default: 'grow' }}>
           <Content>
-            <Content component="h2" className="pf-v6-c-title pf-m-xl">
+            <Content component="h2">
               Select Test Run metadata to compare
             </Content>
           </Content>

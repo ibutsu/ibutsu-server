@@ -137,7 +137,7 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
   );
 
   return (
-    <Modal variant={ModalVariant.small} isOpen={isOpen} onClose={onCloseModal}>
+    <Modal variant={ModalVariant.medium} isOpen={isOpen} onClose={onCloseModal}>
       <ModalHeader title="Edit widget" />
       <ModalBody>
         {componentLoaded ? (

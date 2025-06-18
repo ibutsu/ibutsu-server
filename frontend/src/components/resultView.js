@@ -37,7 +37,9 @@ import { HttpClient } from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
 import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
-import { filtersToSearchParams, iconResultMap, round } from '../utilities';
+import { filtersToSearchParams, round } from '../utilities';
+import { ICON_RESULT_MAP } from '../constants';
+
 import TabTitle from './tabs';
 import TestHistoryTable from './test-history';
 import ArtifactTab from './artifact-tab';
@@ -123,8 +125,8 @@ const ResultView = ({
 
   const resultIcon = useMemo(() => {
     return testResult?.result
-      ? iconResultMap[testResult.result]
-      : iconResultMap.pending;
+      ? ICON_RESULT_MAP[testResult.result]
+      : ICON_RESULT_MAP.pending;
   }, [testResult]);
 
   const runLink = useMemo(() => {

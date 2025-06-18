@@ -1,5 +1,16 @@
 import packageJson from '../package.json';
 
+import {
+  CheckCircleIcon,
+  ChevronCircleRightIcon,
+  ClockIcon,
+  ExclamationCircleIcon,
+  InfoAltIcon,
+  QuestionCircleIcon,
+  TimesCircleIcon,
+  FlagIcon,
+} from '@patternfly/react-icons';
+
 export const VERSION = packageJson.version;
 export const MONITOR_UPLOAD_TIMEOUT = 1 * 1000; // 1 second
 export const ALERT_TIMEOUT = 5 * 1000; // 5 seconds
@@ -196,3 +207,24 @@ export const CHART_COLOR_MAP = {
 };
 
 export const FILE_IMPORT_KEY = 'importFile';
+
+export const ICON_RESULT_MAP = {
+  passed: <CheckCircleIcon style={{ color: CHART_COLOR_MAP.passed }} />,
+  failed: <TimesCircleIcon style={{ color: CHART_COLOR_MAP.failed }} />,
+  error: <ExclamationCircleIcon style={{ color: CHART_COLOR_MAP.error }} />,
+  skipped: (
+    <ChevronCircleRightIcon style={{ color: CHART_COLOR_MAP.skipped }} />
+  ),
+  xfailed: <CheckCircleIcon style={{ color: CHART_COLOR_MAP.xfailed }} />,
+  xpassed: <TimesCircleIcon style={{ color: CHART_COLOR_MAP.xpassed }} />,
+  manual: <FlagIcon style={{ color: CHART_COLOR_MAP.manual }} />,
+  pending: <QuestionCircleIcon style={{ color: CHART_COLOR_MAP.skipped }} />,
+};
+
+export const ICON_STATUS_MAP = {
+  done: <CheckCircleIcon />,
+  pending: <QuestionCircleIcon />,
+  running: <ClockIcon />,
+  error: <ExclamationCircleIcon />,
+  empty: <InfoAltIcon />,
+};

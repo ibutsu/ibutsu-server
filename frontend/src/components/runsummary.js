@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Label, LabelGroup } from '@patternfly/react-core';
-import { iconResultMap } from '../utilities';
+import { ICON_RESULT_MAP } from '../constants';
 
 const RunSummary = ({ summary }) => {
   let passed = 0,
@@ -40,23 +40,31 @@ const RunSummary = ({ summary }) => {
       {summary && (
         <LabelGroup aria-label="Result Counts">
           {passed > 0 && (
-            <Label icon={iconResultMap.passed} variant="filled" title="Passed">
+            <Label
+              icon={ICON_RESULT_MAP.passed}
+              variant="filled"
+              title="Passed"
+            >
               {passed}
             </Label>
           )}
           {failed > 0 && (
-            <Label icon={iconResultMap.failed} variant="filled" title="Failed">
+            <Label
+              icon={ICON_RESULT_MAP.failed}
+              variant="filled"
+              title="Failed"
+            >
               {failed}
             </Label>
           )}
           {errors > 0 && (
-            <Label icon={iconResultMap.error} variant="filled" title="Error">
+            <Label icon={ICON_RESULT_MAP.error} variant="filled" title="Error">
               {errors}
             </Label>
           )}
           {skipped > 0 && (
             <Label
-              icon={iconResultMap.skipped}
+              icon={ICON_RESULT_MAP.skipped}
               variant="filled"
               title="Skipped"
             >
@@ -65,7 +73,7 @@ const RunSummary = ({ summary }) => {
           )}
           {xfailed > 0 && (
             <Label
-              icon={iconResultMap.xfailed}
+              icon={ICON_RESULT_MAP.xfailed}
               variant="filled"
               title="Xfailed"
             >
@@ -74,7 +82,7 @@ const RunSummary = ({ summary }) => {
           )}
           {xpassed > 0 && (
             <Label
-              icon={iconResultMap.xpassed}
+              icon={ICON_RESULT_MAP.xpassed}
               variant="filled"
               title="Xpassed"
             >

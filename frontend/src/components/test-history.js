@@ -21,12 +21,11 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   filtersToAPIParams,
-  iconResultMap,
   toTitleCase,
   round,
   buildBadge,
 } from '../utilities';
-import { WEEKS, RESULT_STATES } from '../constants';
+import { WEEKS, RESULT_STATES, ICON_RESULT_MAP } from '../constants';
 
 import RunSummary from './runsummary';
 import LastPassed from './last-passed';
@@ -83,7 +82,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
 
   // Function to convert result to test history row format (PatternFly v5)
   const resultToTestHistoryRow = useCallback((result, index, filterFunc) => {
-    let resultIcon = iconResultMap[result.result];
+    let resultIcon = ICON_RESULT_MAP[result.result];
     let exceptionBadge;
 
     if (filterFunc) {

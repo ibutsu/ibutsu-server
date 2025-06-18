@@ -23,15 +23,10 @@ import Linkify from 'react-linkify';
 import { HttpClient } from './services/http';
 import { linkifyDecorator } from './components/decorators';
 import { Settings } from './settings';
-import {
-  toTitleCase,
-  parseFilter,
-  getSpinnerRow,
-  iconStatusMap,
-} from './utilities';
+import { toTitleCase, parseFilter, getSpinnerRow } from './utilities';
 import DownloadButton from './components/download-button';
 import FilterTable from './components/filtering/filtered-table-card';
-import { OPERATIONS } from './constants';
+import { OPERATIONS, ICON_STATUS_MAP } from './constants';
 import { IbutsuContext } from './components/contexts/ibutsuContext';
 import { useLocation } from 'react-router-dom';
 
@@ -111,7 +106,8 @@ const ReportBuilder = () => {
       if (report.status !== undefined && !!report.status) {
         reportStatus = report.status;
       }
-      let statusIcon = iconStatusMap[reportStatus] || iconStatusMap['pending'];
+      let statusIcon =
+        ICON_STATUS_MAP[reportStatus] || ICON_STATUS_MAP['pending'];
       if (report.status === 'empty') {
         row_actions = 'Filter(s) returned no data';
       }
