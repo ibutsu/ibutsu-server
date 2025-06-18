@@ -35,6 +35,7 @@ import {
   ChevronRightIcon,
   CodeIcon,
   FileAltIcon,
+  FileIcon,
   FolderIcon,
   FolderOpenIcon,
   InfoCircleIcon,
@@ -47,9 +48,9 @@ import { HttpClient } from './services/http';
 import { Settings } from './settings';
 import {
   resultToRow,
-  round,
-  buildResultsTree,
   filtersToAPIParams,
+  processPyTestPath,
+  cleanPath,
 } from './utilities';
 import EmptyObject from './components/empty-object';
 import FilterTable from './components/filtering/filtered-table-card';
@@ -61,7 +62,11 @@ import { IbutsuContext } from './components/contexts/ibutsuContext';
 import { useTabHook } from './components/hooks/useTab';
 import usePagination from './components/hooks/usePagination';
 import PropTypes from 'prop-types';
-import { RESULT_FIELDS, RUN_RESULTS_COLUMNS } from './constants';
+import {
+  ICON_RESULT_MAP,
+  RESULT_FIELDS,
+  RUN_RESULTS_COLUMNS,
+} from './constants';
 import FilterProvider from './components/contexts/filterContext';
 
 const RUN_BLOCK = ['run_id', 'result'];
@@ -210,6 +215,77 @@ const Run = ({ defaultTab = 'summary' }) => {
     skipHash: false,
   });
 
+  const buildResultsTree = (treeResults) => {
+    const getPassPercent = (stats) => {
+      let percent = 'N/A';
+      if (stats.count > 0) {
+        percent = Math.round(
+          ((stats.passed + stats.xfailed) / stats.count) * 100,
+        );
+      }
+      return percent;
+    };
+
+    const getBadgeClass = (passPercent) => {
+      let className = 'failed';
+      if (passPercent > 75) {
+        className = 'error';
+      }
+      if (passPercent > 90) {
+        className = 'passed';
+      }
+      return className;
+    };
+
+    let treeStructure = [];
+    treeResults.forEach((testResult) => {
+      const pathParts = processPyTestPath(
+        cleanPath(testResult.metadata.fspath),
+      );
+      let children = treeStructure;
+      pathParts.forEach((dirName) => {
+        let child = children.find((item) => item.name == dirName);
+        if (!child) {
+          child = {
+            name: dirName,
+            id: dirName,
+            children: [],
+            hasBadge: true,
+            _stats: {
+              count: 0,
+              passed: 0,
+              failed: 0,
+              skipped: 0,
+              error: 0,
+              xpassed: 0,
+              xfailed: 0,
+            },
+          };
+          if (dirName.endsWith('.py')) {
+            child.icon = <FileIcon />;
+            child.expandedIcon = <FileIcon />;
+          }
+          children.push(child);
+        }
+        child._stats[testResult.result] += 1;
+        child._stats.count += 1;
+        const passPercent = getPassPercent(child._stats);
+        const className = getBadgeClass(passPercent);
+        child.customBadgeContent = `${passPercent}%`;
+        child.badgeProps = { className: className };
+        children = child.children;
+      });
+
+      children.push({
+        id: testResult.id,
+        name: testResult.test_id,
+        icon: ICON_RESULT_MAP[testResult.result],
+        _testResult: testResult,
+      });
+    });
+    return treeStructure;
+  };
+
   useEffect(() => {
     let fetchedResults = [];
     const getResultsForTree = (treePage = 1) => {
@@ -336,7 +412,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                   <strong>Duration:</strong>
                                 </DataListCell>,
                                 <DataListCell key={2} width={4}>
-                                  {round(run.duration)}s
+                                  {Math.ceil(run.duration)}s
                                 </DataListCell>,
                               ]}
                             />
@@ -496,7 +572,13 @@ const Run = ({ defaultTab = 'summary' }) => {
                                         <DataListItemCells
                                           dataListCells={[
                                             <DataListCell key={1}>
-                                              Passed:
+                                              <Label
+                                                variant="filled"
+                                                icon={ICON_RESULT_MAP.passed}
+                                                title="Passed"
+                                              >
+                                                Passed
+                                              </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
                                               {passed}
@@ -510,7 +592,13 @@ const Run = ({ defaultTab = 'summary' }) => {
                                         <DataListItemCells
                                           dataListCells={[
                                             <DataListCell key={1}>
-                                              Failed:
+                                              <Label
+                                                variant="filled"
+                                                icon={ICON_RESULT_MAP.failed}
+                                                title="Failed"
+                                              >
+                                                Failed
+                                              </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
                                               {failed}
@@ -524,7 +612,13 @@ const Run = ({ defaultTab = 'summary' }) => {
                                         <DataListItemCells
                                           dataListCells={[
                                             <DataListCell key={1}>
-                                              Error:
+                                              <Label
+                                                variant="filled"
+                                                icon={ICON_RESULT_MAP.error}
+                                                title="Error"
+                                              >
+                                                Error
+                                              </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
                                               {errors}
@@ -538,7 +632,13 @@ const Run = ({ defaultTab = 'summary' }) => {
                                         <DataListItemCells
                                           dataListCells={[
                                             <DataListCell key={1}>
-                                              Xfailed:
+                                              <Label
+                                                variant="filled"
+                                                icon={ICON_RESULT_MAP.xfailed}
+                                                title="Xfailed"
+                                              >
+                                                Xfailed
+                                              </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
                                               {xfailed}
@@ -552,7 +652,13 @@ const Run = ({ defaultTab = 'summary' }) => {
                                         <DataListItemCells
                                           dataListCells={[
                                             <DataListCell key={1}>
-                                              Xpassed:
+                                              <Label
+                                                variant="filled"
+                                                icon={ICON_RESULT_MAP.xpassed}
+                                                title="Xpassed"
+                                              >
+                                                Xpassed
+                                              </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
                                               {xpassed}
@@ -566,7 +672,13 @@ const Run = ({ defaultTab = 'summary' }) => {
                                         <DataListItemCells
                                           dataListCells={[
                                             <DataListCell key={1}>
-                                              Skipped:
+                                              <Label
+                                                variant="filled"
+                                                icon={ICON_RESULT_MAP.skipped}
+                                                title="Skipped"
+                                              >
+                                                Skipped
+                                              </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
                                               {skipped}
@@ -580,7 +692,13 @@ const Run = ({ defaultTab = 'summary' }) => {
                                         <DataListItemCells
                                           dataListCells={[
                                             <DataListCell key={1}>
-                                              Not Run:
+                                              <Label
+                                                variant="filled"
+                                                icon={ICON_RESULT_MAP.manual}
+                                                title="Not Run / Manual"
+                                              >
+                                                Not Run / Manual
+                                              </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
                                               {not_run}

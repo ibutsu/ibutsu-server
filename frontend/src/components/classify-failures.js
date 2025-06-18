@@ -1,7 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Badge } from '@patternfly/react-core';
+import { Badge, Label } from '@patternfly/react-core';
+import { nanoid } from 'nanoid/non-secure';
 
 import {
   Card,
@@ -17,13 +18,7 @@ import { TableVariant } from '@patternfly/react-table';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import {
-  filtersToAPIParams,
-  toTitleCase,
-  round,
-  buildBadge,
-  generateId,
-} from '../utilities';
+import { filtersToAPIParams, toTitleCase, buildBadge } from '../utilities';
 import { ICON_RESULT_MAP } from '../constants';
 import { MultiClassificationDropdown } from './classification-dropdown';
 import { ClassificationDropdown } from './classification-dropdown';
@@ -52,7 +47,6 @@ const ClassifyFailuresTable = () => {
 
   // Function to convert result to classification row format
   const resultToClassificationRow = useCallback((result, index, filterFunc) => {
-    let resultIcon = ICON_RESULT_MAP[result.result];
     let markers = [];
     let exceptionBadge;
 
@@ -88,7 +82,7 @@ const ClassifyFailuresTable = () => {
         // Don't add duplicate markers
         if (markers.filter((m) => m.key === marker.name).length === 0) {
           markers.push(
-            <Badge isRead key={`${marker.name}-${generateId(5)}`}>
+            <Badge isRead key={`${marker.name}-${nanoid(5)}`}>
               {marker.name}
             </Badge>,
           );
@@ -122,12 +116,17 @@ const ClassifyFailuresTable = () => {
           </Link>{' '}
           {markers}
         </React.Fragment>,
-        <span key="result" className={result.result}>
-          {resultIcon} {toTitleCase(result.result)}
-        </span>,
+        <Label
+          key="result-icon"
+          variant="filled"
+          title={result.result}
+          icon={ICON_RESULT_MAP[result.result]}
+        >
+          {toTitleCase(result.result)}
+        </Label>,
         <React.Fragment key="exception">{exceptionBadge}</React.Fragment>,
         <ClassificationDropdown key="classification" testResult={result} />,
-        round(result.duration) + 's',
+        Math.ceil(result.duration) + 's',
       ],
     };
   }, []);

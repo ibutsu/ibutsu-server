@@ -4,7 +4,11 @@ import { PageSection, Content } from '@patternfly/react-core';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import { resultToRow, filtersToAPIParams } from './utilities';
+import {
+  resultToRow,
+  filtersToAPIParams,
+  tableSortFunctions,
+} from './utilities';
 import FilterTable from './components/filtering/filtered-table-card';
 import { RUN_RESULTS_COLUMNS } from './constants';
 import { IbutsuContext } from './components/contexts/ibutsuContext';
@@ -14,6 +18,42 @@ import ResultFilter from './components/filtering/result-filter';
 
 const HIDE = ['project_id'];
 
+// Combine common sort functions with component-specific ones
+const sortFunctions = {
+  result: (a, b, direction) => {
+    // Extract result text from the Result cell Label title
+    const getResultText = (resultCell) => {
+      if (!resultCell || !resultCell.props || !resultCell.props.children)
+        return '';
+      const labelElement = resultCell.props.children.find(
+        (child) => child && child.props && child.props.title,
+      );
+      return labelElement ? labelElement.props.title : '';
+    };
+
+    const aValue = getResultText(a.cells[1]);
+    const bValue = getResultText(b.cells[1]);
+    return direction === 'asc'
+      ? aValue.localeCompare(bValue)
+      : bValue.localeCompare(aValue);
+  },
+  // Override with ResultList-specific cell indices
+  duration: (a, b, direction) =>
+    tableSortFunctions.duration(
+      a,
+      b,
+      direction,
+      RUN_RESULTS_COLUMNS.indexOf('Duration'),
+    ),
+  started: (a, b, direction) =>
+    tableSortFunctions.started(
+      a,
+      b,
+      direction,
+      RUN_RESULTS_COLUMNS.indexOf('Started'),
+    ),
+};
+
 const ResultList = () => {
   const { primaryObject } = useContext(IbutsuContext);
   const { activeFilters, updateFilters, clearFilters } =
@@ -21,6 +61,8 @@ const ResultList = () => {
 
   const [rows, setRows] = useState([]);
   const [runs, setRuns] = useState([]);
+  const [sortedRows, setSortedRows] = useState([]);
+  const [sortBy, setSortBy] = useState({});
 
   const [fetching, setFetching] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -35,6 +77,21 @@ const ResultList = () => {
     totalItems,
     setTotalItems,
   } = usePagination({});
+
+  // Handle sorting
+  const handleSort = (event, columnIndex, direction, columnName) => {
+    setSortBy({ index: columnIndex, direction });
+
+    if (sortFunctions[columnName]) {
+      const sorted = [...rows].sort((a, b) =>
+        sortFunctions[columnName](a, b, direction),
+      );
+      setSortedRows(sorted);
+    }
+  };
+
+  // Use sorted rows if sorting is active, otherwise use original rows
+  const displayRows = sortBy.index !== undefined ? sortedRows : rows;
 
   // fetch result data
   useEffect(() => {
@@ -53,6 +110,9 @@ const ResultList = () => {
         );
         const data = await HttpClient.handleResponse(response);
         setRows(
+          data.results.map((result) => resultToRow(result, updateFilters)),
+        );
+        setSortedRows(
           data.results.map((result) => resultToRow(result, updateFilters)),
         );
         setPage(data.pagination.page);
@@ -125,7 +185,7 @@ const ResultList = () => {
         <FilterTable
           fetching={fetching}
           columns={RUN_RESULTS_COLUMNS}
-          rows={rows}
+          rows={displayRows}
           filters={resultFilterMemo}
           pageSize={pageSize}
           page={page}
@@ -134,6 +194,9 @@ const ResultList = () => {
           onClearFilters={clearFilters}
           onSetPage={onSetPage}
           onSetPageSize={onSetPageSize}
+          sortBy={sortBy}
+          onSort={handleSort}
+          sortFunctions={sortFunctions}
           footerChildren={
             <Content className="disclaimer" component="h4">
               * Note: for performance reasons, the total number of items is an

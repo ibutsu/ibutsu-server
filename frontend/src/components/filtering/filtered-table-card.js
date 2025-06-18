@@ -46,6 +46,9 @@ const FilterTable = ({
   cardClass = 'pf-v6-u-p-0',
   fetching = false,
   filters,
+  sortBy = null,
+  onSort = null,
+  sortFunctions = {},
 }) => {
   // boolean for JSX control, if done fetching check the array length
   const populatedRows = fetching
@@ -114,6 +117,31 @@ const FilterTable = ({
     if (onCollapse) {
       onCollapse(event, rowIndex, isExpanding);
     }
+  };
+
+  // Handle column sorting
+  const getSortParams = (columnIndex) => {
+    if (!onSort || !sortFunctions || Object.keys(sortFunctions).length === 0) {
+      return {};
+    }
+
+    const columnName =
+      typeof columns[columnIndex] === 'string'
+        ? columns[columnIndex].toLowerCase()
+        : columns[columnIndex]?.title?.toLowerCase() || '';
+
+    if (!sortFunctions[columnName]) {
+      return {};
+    }
+
+    return {
+      sort: {
+        sortBy: sortBy,
+        onSort: (event, index, direction) =>
+          onSort(event, index, direction, columnName),
+        columnIndex: columnIndex,
+      },
+    };
   };
 
   const renderTableRows = () => {
@@ -249,7 +277,7 @@ const FilterTable = ({
                 )}
                 {expandable && <Th screenReaderText="Row expansion" />}
                 {columns.map((column, columnIndex) => (
-                  <Th key={columnIndex}>
+                  <Th key={columnIndex} {...getSortParams(columnIndex)}>
                     {typeof column === 'string' ? column : column?.title}
                   </Th>
                 ))}
@@ -337,6 +365,9 @@ FilterTable.propTypes = {
   totalItems: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   selectable: PropTypes.bool,
   expandable: PropTypes.bool,
+  sortBy: PropTypes.object,
+  onSort: PropTypes.func,
+  sortFunctions: PropTypes.object,
 };
 
 export default FilterTable;
