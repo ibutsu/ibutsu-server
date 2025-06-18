@@ -281,11 +281,8 @@ const FilterHeatmapWidget = ({
   const titleMemo = useMemo(() => {
     if (title) {
       return title;
-    }
-    if (params?.job_name) {
-      return `Heatmap for ${params.job_name}`;
     } else {
-      return 'Heatmap';
+      return params?.job_name || 'Heatmap';
     }
   }, [params.job_name, title]);
 

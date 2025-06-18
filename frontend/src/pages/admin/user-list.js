@@ -15,16 +15,26 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  Label,
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../../services/http';
 import { Settings } from '../../settings';
-import { filtersToAPIParams, userToRow } from '../../utilities';
+import { filtersToAPIParams } from '../../utilities';
 import { USER_COLUMNS } from '../../constants';
 import usePagination from '../../components/hooks/usePagination';
 import FilterTable from '../../components/filtering/filtered-table-card';
 import { FilterContext } from '../../components/contexts/filterContext';
 import AdminFilter from '../../components/filtering/admin-filter';
+import {
+  BanIcon,
+  CheckIcon,
+  LinuxIcon,
+  PencilAltIcon,
+  TrashIcon,
+} from '@patternfly/react-icons';
+import { TableText } from '@patternfly/react-table';
+import { Link } from 'react-router-dom';
 
 const COLUMNS = Object.values(USER_COLUMNS);
 
@@ -50,6 +60,82 @@ const UserList = () => {
   const [fetching, setFetching] = useState(true);
 
   const { activeFilters, clearFilters } = useContext(FilterContext);
+
+  const userToRow = (user, setSelectedUser, setIsDeleteModalOpen) => {
+    let userName = user.name;
+    if (user.is_superadmin) {
+      userName = `${user.name}`;
+    }
+    return {
+      cells: [
+        userName,
+        user.email,
+        user.projects
+          ? user.projects.map((project) => project.title).join(', ')
+          : '',
+        <React.Fragment key="status">
+          {user.is_active ? (
+            <Label
+              key="active"
+              className="active"
+              variant="filled"
+              color="green"
+              icon={<CheckIcon />}
+            >
+              Active
+            </Label>
+          ) : (
+            <Label
+              key="inactive"
+              className="active"
+              variant="filled"
+              color="red"
+              icon={<BanIcon />}
+            >
+              Inactive
+            </Label>
+          )}
+          {user.is_superadmin ? (
+            <Label
+              key="admin"
+              className="super-admin-label"
+              variant="outline"
+              color="orange"
+              icon={<LinuxIcon />}
+            >
+              Administrator
+            </Label>
+          ) : (
+            ''
+          )}
+        </React.Fragment>,
+        <TableText key="edit">
+          <Button
+            icon={<PencilAltIcon />}
+            variant="primary"
+            ouiaId={`admin-users-edit-${user.id}`}
+            component={(props) => (
+              <Link {...props} to={`/admin/users/${user.id}`} />
+            )}
+            size="sm"
+            aria-label="Edit"
+          ></Button>
+        </TableText>,
+        <TableText key="delete">
+          <Button
+            icon={<TrashIcon />}
+            variant="danger"
+            ouiaId={`admin-users-delete-${user.id}`}
+            onClick={() => {
+              setSelectedUser(user);
+              setIsDeleteModalOpen(true);
+            }}
+            size="sm"
+          ></Button>
+        </TableText>,
+      ],
+    };
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
