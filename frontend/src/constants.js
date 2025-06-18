@@ -24,27 +24,50 @@ export const KNOWN_WIDGETS = [
   'jenkins-line-chart',
   'importance-component',
 ];
-export const STRING_OPERATIONS = {
+export const STRING_OPERATIONS = Object.freeze({
   eq: { opChar: '=', opString: 'equals' },
   ne: { opChar: '!', opString: 'not equals' },
-  in: { opChar: '*', opString: 'contains' },
+  in: { opChar: '*', opString: 'in' },
   exists: { opChar: '@', opString: 'exists' },
   regex: { opChar: '~', opString: 'matches regex' },
-};
-export const NUMERIC_OPERATIONS = {
+});
+
+export const NUMERIC_OPERATIONS = Object.freeze({
   eq: { opChar: '=', opString: 'equals' },
   ne: { opChar: '!', opString: 'not equals' },
   gt: { opChar: '>', opString: 'greater than' },
   lt: { opChar: '<', opString: 'less than' },
   gte: { opChar: ')', opString: 'greater than or equal' },
   lte: { opChar: '(', opString: 'less than or equal' },
-};
-export const ARRAY_OPERATIONS = {
+});
+export const ARRAY_OPERATIONS = Object.freeze({
   eq: { opChar: '=', opString: 'equals' },
   exists: { opChar: '@', opString: 'exists' },
-  in: { opChar: '*', opString: 'contains' },
-};
-export const OPERATIONS = { ...STRING_OPERATIONS, ...NUMERIC_OPERATIONS };
+  in: { opChar: '*', opString: 'in' },
+});
+
+export const OPERATIONS = Object.freeze({
+  ...STRING_OPERATIONS,
+  ...NUMERIC_OPERATIONS,
+});
+
+const filterModes = Object.freeze({
+  run_id: 'run',
+  result: 'result',
+});
+
+export const FILTER_MODE_MAP = new Proxy(filterModes, {
+  get: (target, prop) => target[prop] || 'text',
+});
+
+const operationModes = Object.freeze({
+  in: 'multi',
+  exists: 'bool',
+});
+
+export const OPERATION_MODE_MAP = new Proxy(operationModes, {
+  get: (target, prop) => target[prop] || 'single',
+});
 
 // TODO create groups of these for presentation layer SelectGroup
 export const ARRAY_RESULT_FIELDS = [
@@ -144,40 +167,40 @@ export const STRING_USER_FIELDS = [
   { value: 'email', children: 'Email' },
 ];
 
-export const USER_COLUMNS = {
+export const USER_COLUMNS = Object.freeze({
   name: 'Display Name',
   email: 'Email',
   projects: 'Projects',
   status: 'Status',
   edit: 'Edit Action',
   delete: 'Delete Action',
-};
+});
 
 // TODO more project filtering on owner and title
 export const STRING_PROJECT_FIELDS = [{ value: 'name', children: 'Name' }];
 
-export const CLASSIFICATION = {
+export const CLASSIFICATION = Object.freeze({
   dependency_outage: 'Dependency Outage',
   environment_failure: 'Environment Failure',
   product_failure: 'Product Failure',
   product_rfe: 'Product RFE', // sometimes tests are skipped because functionality is not yet present
   test_failure: 'Test Failure',
   unknown: 'Unknown',
-};
+});
 export const HEATMAP_MAX_BUILDS = 40;
 
 export const THEME_KEY = 'theme';
 
-export const WEEKS = {
+export const WEEKS = Object.freeze({
   '1 Week': 0.25,
   '2 Weeks': 0.5,
   '1 Month': 1.0,
   '2 Months': 2.0,
   '3 Months': 3.0,
   '5 Months': 5.0,
-};
+});
 
-export const RESULT_STATES = {
+export const RESULT_STATES = Object.freeze({
   passed: 'passes',
   failed: 'failures',
   error: 'errors',
@@ -185,7 +208,7 @@ export const RESULT_STATES = {
   xfailed: 'xfailures',
   xpassed: 'xpasses',
   manual: 'manual',
-};
+});
 
 export const RUN_RESULTS_COLUMNS = [
   'Test',
@@ -195,7 +218,7 @@ export const RUN_RESULTS_COLUMNS = [
   'Started',
 ];
 
-export const CHART_COLOR_MAP = {
+export const CHART_COLOR_MAP = Object.freeze({
   passed: 'var(--pf-t--chart--color--green--100)',
   failed: 'var(--pf-t--chart--color--red-orange--300)',
   error: 'var(--pf-t--chart--color--orange--300)',
@@ -204,7 +227,7 @@ export const CHART_COLOR_MAP = {
   xpassed: 'var(--pf-t--chart--color--blue--100)',
   manual: 'var(--pf-t--chart--color--cyan--500)',
   default: 'var(--pf-t--chart--color--black--100)',
-};
+});
 
 export const FILE_IMPORT_KEY = 'importFile';
 
@@ -221,10 +244,10 @@ export const ICON_RESULT_MAP = Object.freeze({
   pending: <QuestionCircleIcon style={{ color: CHART_COLOR_MAP.skipped }} />,
 });
 
-export const ICON_STATUS_MAP = {
+export const ICON_STATUS_MAP = Object.freeze({
   done: <CheckCircleIcon />,
   pending: <QuestionCircleIcon />,
   running: <ClockIcon />,
   error: <ExclamationCircleIcon />,
   empty: <InfoAltIcon />,
-};
+});

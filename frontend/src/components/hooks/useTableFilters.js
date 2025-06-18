@@ -13,8 +13,6 @@ import {
   TextInputGroupUtilities,
 } from '@patternfly/react-core';
 import {
-  getFilterMode,
-  getOperationMode,
   getOperationsFromField,
   parseFilterValueToSearch,
   parseSearchToFilter,
@@ -22,6 +20,7 @@ import {
 import { IbutsuContext } from '../contexts/ibutsuContext';
 import { TimesIcon } from '@patternfly/react-icons';
 import PropTypes from 'prop-types';
+import { OPERATION_MODE_MAP, FILTER_MODE_MAP } from '../../constants';
 
 const useTableFilters = ({
   fieldOptions,
@@ -134,6 +133,10 @@ const useTableFilters = ({
     ],
   );
 
+  const operationMode = useMemo(() => {
+    return OPERATION_MODE_MAP[operationSelection];
+  }, [operationSelection]);
+
   const resetFilters = useCallback(() => {
     setFieldFilterValue('');
     setFieldInputValue('');
@@ -153,7 +156,6 @@ const useTableFilters = ({
         inValues?.length ||
         ['True', 'False'].includes(boolSelection))
     ) {
-      const operationMode = getOperationMode(operationSelection);
       let value = textFilter.trim();
       if (operationMode === 'multi') {
         value = inValues?.map((item) => item.trim()).join(';');
@@ -168,13 +170,14 @@ const useTableFilters = ({
       });
     }
   }, [
-    operationSelection,
-    textFilter,
-    updateFilters,
     fieldSelection,
-    resetFilters,
+    textFilter,
     inValues,
     boolSelection,
+    operationMode,
+    updateFilters,
+    operationSelection,
+    resetFilters,
   ]);
 
   const onRemoveFilter = useCallback(
@@ -257,14 +260,8 @@ const useTableFilters = ({
   }, [fieldFilterValue, fieldInputValue, fieldOptionsState, isFieldOpen]);
 
   const filterMode = useMemo(
-    () => getFilterMode(fieldSelection),
+    () => FILTER_MODE_MAP[fieldSelection],
     [fieldSelection],
-  );
-
-  // Get the operation mode (single / multi / bool) for the selected operation
-  const operationMode = useMemo(
-    () => getOperationMode(operationSelection),
-    [operationSelection],
   );
 
   // Get the operations (string / numeric / array) for the selected field
