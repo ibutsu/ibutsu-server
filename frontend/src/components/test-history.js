@@ -14,6 +14,7 @@ import {
   CardBody,
   Label,
   Card,
+  LabelGroup,
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
@@ -338,51 +339,57 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
             alignItems={{ default: 'alignItemsLeft' }}
           >
             <FlexItem>
-              <Content>
-                <Label htmlFor="only-failures">
-                  <Content component="h4">
-                    Display only failure and error results:
-                  </Content>
-                </Label>
-                <Checkbox
-                  id="only-failures"
-                  isChecked={onlyFailures}
-                  aria-label="only-failures-checkbox"
-                  onChange={onFailuresCheck}
-                />
-              </Content>
+              <Checkbox
+                id="only-failures"
+                label={
+                  <LabelGroup>
+                    <Label>
+                      <Content component="h4">
+                        Failures and Errors Only:{' '}
+                      </Content>
+                    </Label>
+                  </LabelGroup>
+                }
+                isChecked={onlyFailures}
+                aria-label="only-failures-checkbox"
+                onChange={onFailuresCheck}
+                labelPosition="start"
+                isLabelWrapped
+              />
             </FlexItem>
             <FlexItem spacer={{ sm: 'spacerSm' }}>
-              <Label htmlFor="single-select">
-                <Content component="h4">Time Range:</Content>
-              </Label>
-              <Select
-                id="single-select"
-                isOpen={isTimeRangeSelectOpen}
-                selected={selectedTimeRange}
-                onSelect={onTimeRangeSelect}
-                onOpenChange={(isTimeRangeSelectOpen) =>
-                  setTimeRangeOpen(isTimeRangeSelectOpen)
-                }
-                toggle={(toggleRef) => (
-                  <MenuToggle
-                    ref={toggleRef}
-                    onClick={onTimeRangeToggleClick}
-                    isExpanded={isTimeRangeSelectOpen}
-                  >
-                    {selectedTimeRange}
-                  </MenuToggle>
-                )}
-                shouldFocusToggleOnSelect
-              >
-                <SelectList>
-                  {Object.keys(WEEKS).map((key) => (
-                    <SelectOption key={key} value={key}>
-                      {key}
-                    </SelectOption>
-                  ))}
-                </SelectList>
-              </Select>
+              <LabelGroup>
+                <Label>
+                  <Content component="h4">Time Range</Content>
+                </Label>
+                <Select
+                  id="single-select"
+                  isOpen={isTimeRangeSelectOpen}
+                  selected={selectedTimeRange}
+                  onSelect={onTimeRangeSelect}
+                  onOpenChange={(isTimeRangeSelectOpen) =>
+                    setTimeRangeOpen(isTimeRangeSelectOpen)
+                  }
+                  toggle={(toggleRef) => (
+                    <MenuToggle
+                      ref={toggleRef}
+                      onClick={onTimeRangeToggleClick}
+                      isExpanded={isTimeRangeSelectOpen}
+                    >
+                      {selectedTimeRange}
+                    </MenuToggle>
+                  )}
+                  shouldFocusToggleOnSelect
+                >
+                  <SelectList>
+                    {Object.keys(WEEKS).map((key) => (
+                      <SelectOption key={key} value={key}>
+                        {key}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
+                </Select>
+              </LabelGroup>
             </FlexItem>
           </Flex>
           <Flex direction={{ default: 'row' }}>

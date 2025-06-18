@@ -1,26 +1,15 @@
 import React from 'react';
+import { Badge, Bullseye, Button, Spinner } from '@patternfly/react-core';
 import {
-  Badge,
-  Bullseye,
-  Button,
-  Label,
-  Spinner,
-} from '@patternfly/react-core';
-import {
-  BanIcon,
   CheckCircleIcon,
-  CheckIcon,
   ChevronCircleRightIcon,
   ChevronRightIcon,
   ClockIcon,
   ExclamationCircleIcon,
   FileIcon,
   InfoAltIcon,
-  LinuxIcon,
-  PencilAltIcon,
   QuestionCircleIcon,
   TimesCircleIcon,
-  TrashIcon,
   FlagIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
@@ -41,7 +30,6 @@ import {
   CHART_COLOR_MAP,
 } from './constants';
 import RunSummary from './components/runsummary';
-import { TableText } from '@patternfly/react-table';
 
 export const getDateString = () => {
   return String(new Date().getTime());
@@ -429,82 +417,6 @@ export const runToRow = (run, filterFunc) => {
       >
         See results <ChevronRightIcon />
       </Link>,
-    ],
-  };
-};
-
-export const userToRow = (user, setSelectedUser, setIsDeleteModalOpen) => {
-  let userName = user.name;
-  if (user.is_superadmin) {
-    userName = `${user.name}`;
-  }
-  return {
-    cells: [
-      userName,
-      user.email,
-      user.projects
-        ? user.projects.map((project) => project.title).join(', ')
-        : '',
-      <React.Fragment key="status">
-        {user.is_active ? (
-          <Label
-            key="active"
-            className="active"
-            variant="filled"
-            color="green"
-            icon={<CheckIcon />}
-          >
-            Active
-          </Label>
-        ) : (
-          <Label
-            key="inactive"
-            className="active"
-            variant="filled"
-            color="red"
-            icon={<BanIcon />}
-          >
-            Inactive
-          </Label>
-        )}
-        {user.is_superadmin ? (
-          <Label
-            key="admin"
-            className="super-admin-label"
-            variant="outline"
-            color="orange"
-            icon={<LinuxIcon />}
-          >
-            Administrator
-          </Label>
-        ) : (
-          ''
-        )}
-      </React.Fragment>,
-      <TableText key="edit">
-        <Button
-          icon={<PencilAltIcon />}
-          variant="primary"
-          ouiaId={`admin-users-edit-${user.id}`}
-          component={(props) => (
-            <Link {...props} to={`/admin/users/${user.id}`} />
-          )}
-          size="sm"
-          aria-label="Edit"
-        ></Button>
-      </TableText>,
-      <TableText key="delete">
-        <Button
-          icon={<TrashIcon />}
-          variant="danger"
-          ouiaId={`admin-users-delete-${user.id}`}
-          onClick={() => {
-            setSelectedUser(user);
-            setIsDeleteModalOpen(true);
-          }}
-          size="sm"
-        ></Button>
-      </TableText>,
     ],
   };
 };

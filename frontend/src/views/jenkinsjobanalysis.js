@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Switch, Tab, Tabs } from '@patternfly/react-core';
+import { Flex, FlexItem, Switch, Tab, Tabs } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
@@ -18,8 +18,6 @@ const DEFAULT_BAR = 8;
 
 const SHORT_BUILDS = [10, 20, 30, 40];
 const LONG_BUILDS = [...SHORT_BUILDS, 70, 150];
-
-const PF_BACK_100 = 'var(--pf-t--color--background--secondary)';
 
 const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
   const { primaryObject } = useContext(IbutsuContext);
@@ -41,6 +39,7 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
     defaultTab: defaultTab,
   });
 
+  // fetch data from widgets endpoint
   useEffect(() => {
     // Fetch the widget parameters for heatmap, barchart and linechart
     const fetchWidgetParams = async () => {
@@ -79,6 +78,7 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
     }
   }, [builds, countSkips, primaryObject, view, activeFilters]);
 
+  // Set the bar width based on the number of builds
   useEffect(() => {
     let newWidth = DEFAULT_BAR;
     if (builds > HEATMAP_MAX_BUILDS) {
@@ -91,6 +91,7 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
     setBarWidth(newWidth);
   }, [builds]);
 
+  // include the count_skips parameter in the widget params
   const heatmapParams = useMemo(() => {
     return {
       ...widgetParams,
@@ -98,72 +99,61 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
     };
   }, [countSkips, widgetParams]);
 
+  const buildNumberSelect = useMemo(
+    () => (
+      <ParamDropdown
+        dropdownItems={
+          ['overall-health', 'build-durations'].includes(activeTab)
+            ? LONG_BUILDS
+            : SHORT_BUILDS
+        }
+        defaultValue={
+          activeTab === 'heatmap'
+            ? Math.min(builds, HEATMAP_MAX_BUILDS)
+            : builds
+        }
+        handleSelect={setBuilds}
+        tooltip="Number of builds:"
+      />
+    ),
+    [activeTab, builds],
+  );
+
+  const countSkipsSelect = useMemo(
+    () => (
+      <ParamDropdown
+        dropdownItems={['Yes', 'No']}
+        defaultValue={countSkips ? 'Yes' : 'No'}
+        handleSelect={(value) => setCountSkips(value === 'Yes')}
+        tooltip="Skips as failure:"
+      />
+    ),
+    [countSkips],
+  );
+
+  const barAreaSwitch = useMemo(
+    () => (
+      <Switch
+        id="bar-chart-switch"
+        label="Change to Area Chart"
+        isChecked={isAreaChart}
+        onChange={(_, checked) => setIsAreaChart(checked)}
+      />
+    ),
+    [isAreaChart],
+  );
+
   return (
     <React.Fragment>
-      <div
-        style={{
-          backgroundColor: PF_BACK_100,
-          float: 'right',
-          clear: 'right',
-          marginBottom: '-2em',
-          padding: '0.2em 1em',
-          width: '30em',
-        }}
-      >
-        <ParamDropdown
-          dropdownItems={
-            ['overall-health', 'build-durations'].includes(activeTab)
-              ? LONG_BUILDS
-              : SHORT_BUILDS
-          }
-          defaultValue={
-            activeTab === 'heatmap'
-              ? Math.min(builds, HEATMAP_MAX_BUILDS)
-              : builds
-          }
-          handleSelect={setBuilds}
-          tooltip="Number of builds:"
-        />
-      </div>
-      {activeTab === 'heatmap' && (
-        <div
-          style={{
-            backgroundColor: PF_BACK_100,
-            float: 'right',
-            clear: 'none',
-            marginBottom: '-2em',
-            padding: '0.2em 1em',
-            width: '30em',
-          }}
-        >
-          <ParamDropdown
-            dropdownItems={['Yes', 'No']}
-            defaultValue={countSkips ? 'Yes' : 'No'}
-            handleSelect={(value) => setCountSkips(value === 'Yes')}
-            tooltip="Count skips as failure:"
-          />
-        </div>
-      )}
-      {activeTab === 'overall-health' && (
-        <div
-          style={{
-            backgroundColor: PF_BACK_100,
-            float: 'right',
-            clear: 'none',
-            marginBottom: '-2em',
-            padding: '0.5em 1em',
-          }}
-        >
-          <Switch
-            id="bar-chart-switch"
-            label="Change to Bar Chart"
-            isChecked={isAreaChart}
-            onChange={(_, checked) => setIsAreaChart(checked)}
-          />
-        </div>
-      )}
-      <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
+      <Tabs activeKey={activeTab} onSelect={onTabSelect}>
         <Tab eventKey="heatmap" title="Heatmap">
+          <Flex
+            direction={{ default: 'row' }}
+            align={{ default: 'alignItemsCenter' }}
+          >
+            <FlexItem>{buildNumberSelect}</FlexItem>
+            <FlexItem>{countSkipsSelect}</FlexItem>
+          </Flex>
           {!isLoading && activeTab === 'heatmap' && (
             <FilterHeatmapWidget
               params={heatmapParams}
@@ -173,6 +163,13 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
           )}
         </Tab>
         <Tab eventKey="overall-health" title="Overall Health">
+          <Flex
+            direction={{ default: 'row' }}
+            align={{ default: 'alignItemsCenter' }}
+          >
+            <FlexItem>{buildNumberSelect}</FlexItem>
+            <FlexItem>{barAreaSwitch}</FlexItem>
+          </Flex>
           {!isLoading && !isAreaChart && activeTab === 'overall-health' && (
             <GenericBarWidget
               title={'Test counts for ' + barchartParams.job_name}
@@ -217,6 +214,9 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
           )}
         </Tab>
         <Tab eventKey="build-durations" title="Build Duration">
+          <Flex>
+            <FlexItem>{buildNumberSelect}</FlexItem>
+          </Flex>
           {!isLoading && activeTab === 'build-durations' && (
             <GenericAreaWidget
               title={'Durations for ' + linechartParams.job_name}

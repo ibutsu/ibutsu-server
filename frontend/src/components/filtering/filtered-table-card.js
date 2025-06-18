@@ -127,9 +127,10 @@ const FilterTable = ({
 
       return (
         <Tbody key={row.id} isExpanded={isExpanded}>
-          <Tr>
+          <Tr key={`${row.id}-tr`}>
             {selectable && (
               <Td
+                key={`${row.id}-select`}
                 select={{
                   onSelect: (e, s) => onSelectRow(e, s, rowIndex),
                   isSelected: isSelected,
@@ -139,6 +140,7 @@ const FilterTable = ({
             )}
             {expandable && (
               <Td
+                key={`${row.id}-expand`}
                 expand={{
                   rowIndex,
                   isExpanded: isExpanded,
@@ -173,13 +175,17 @@ const FilterTable = ({
                   cellContent = cell;
                 }
 
-                return <Td key={cellIndex}>{cellContent}</Td>;
+                return <Td key={`${row.id}${cellIndex}`}>{cellContent}</Td>;
               })}
           </Tr>
           {expandable && row.expandedContent && isExpanded && (
-            <Tr isExpanded={isExpanded}>
+            <Tr key={`${row.id}-tr-expanded`} isExpanded={isExpanded}>
               {selectable && <Td />}
-              <Td colSpan={columns.length + (expandable ? 1 : 0)} noPadding>
+              <Td
+                colSpan={columns.length + (expandable ? 1 : 0)}
+                noPadding
+                key={`${row.id}-td-expanded`}
+              >
                 <ExpandableRowContent>
                   {row.expandedContent}
                 </ExpandableRowContent>
@@ -251,7 +257,7 @@ const FilterTable = ({
             </Thead>
             {!rows && (
               <Tbody>
-                <Tr>
+                <Tr key="no-rows">
                   <Td
                     colSpan={
                       columns.length +
@@ -266,7 +272,7 @@ const FilterTable = ({
             )}
             {rows && rows.length === 0 && (
               <Tbody>
-                <Tr>
+                <Tr key="empty-rows">
                   <Td
                     colSpan={
                       columns.length +
