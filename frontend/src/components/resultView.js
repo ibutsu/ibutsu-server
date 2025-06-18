@@ -37,7 +37,7 @@ import { HttpClient } from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
 import { linkifyDecorator } from './decorators';
 import { Settings } from '../settings';
-import { filtersToSearchParams, round } from '../utilities';
+import { filtersToSearchParams, toTitleCase } from '../utilities';
 import { ICON_RESULT_MAP } from '../constants';
 
 import TabTitle from './tabs';
@@ -243,9 +243,14 @@ const ResultView = ({
                               <strong>Result:</strong>
                             </DataListCell>,
                             <DataListCell key="result-data" width={4}>
-                              <span className={testResult.result}>
-                                {resultIcon} {testResult.result}
-                              </span>
+                              <Label
+                                key="result-icon"
+                                variant="filled"
+                                title={testResult.result}
+                                icon={resultIcon}
+                              >
+                                {toTitleCase(testResult.result)}
+                              </Label>
                             </DataListCell>,
                           ]}
                         />
@@ -460,7 +465,7 @@ const ResultView = ({
                                           key="total-data"
                                           className="pf-v6-u-p-sm"
                                         >
-                                          {round(testResult.duration)}s
+                                          {Math.ceil(testResult.duration)}s
                                         </DataListCell>,
                                       ]}
                                     />
@@ -487,7 +492,7 @@ const ResultView = ({
                                                   key="setup-data"
                                                   className="pf-v6-u-p-sm"
                                                 >
-                                                  {round(
+                                                  {Math.ceil(
                                                     testResult.metadata
                                                       .durations.setup,
                                                   )}
@@ -516,7 +521,7 @@ const ResultView = ({
                                                   key="call-data"
                                                   className="pf-v6-u-p-sm"
                                                 >
-                                                  {round(
+                                                  {Math.ceil(
                                                     testResult.metadata
                                                       .durations.call,
                                                   )}
@@ -546,7 +551,7 @@ const ResultView = ({
                                                   key="teardown-data"
                                                   className="pf-v6-u-p-sm"
                                                 >
-                                                  {round(
+                                                  {Math.ceil(
                                                     testResult.metadata
                                                       .durations.teardown,
                                                   )}

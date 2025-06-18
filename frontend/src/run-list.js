@@ -4,7 +4,7 @@ import { PageSection, Content } from '@patternfly/react-core';
 
 import { HttpClient } from './services/http';
 import { Settings } from './settings';
-import { runToRow, filtersToAPIParams } from './utilities';
+import { runToRow, filtersToAPIParams, tableSortFunctions } from './utilities';
 
 import FilterTable from './components/filtering/filtered-table-card';
 
@@ -16,12 +16,23 @@ import { FilterContext } from './components/contexts/filterContext.js';
 const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
 const HIDE = ['project_id'];
 
+// Sort functions for RunList columns
+const sortFunctions = {
+  // Override with RunList-specific cell indices
+  duration: (a, b, direction) =>
+    tableSortFunctions.duration(a, b, direction, COLUMNS.indexOf('Duration')),
+  started: (a, b, direction) =>
+    tableSortFunctions.started(a, b, direction, COLUMNS.indexOf('Started')),
+};
+
 const RunList = () => {
   const { primaryObject } = useContext(IbutsuContext);
   const { activeFilters, updateFilters, clearFilters } =
     useContext(FilterContext);
 
   const [rows, setRows] = useState([]);
+  const [sortedRows, setSortedRows] = useState([]);
+  const [sortBy, setSortBy] = useState({});
   // use state for pagination because it's a controlled input
   const {
     page,
@@ -36,6 +47,21 @@ const RunList = () => {
 
   const [fetching, setFetching] = useState(true);
   const [isError, setIsError] = useState(false);
+
+  // Handle sorting
+  const handleSort = (event, columnIndex, direction, columnName) => {
+    setSortBy({ index: columnIndex, direction });
+
+    if (sortFunctions[columnName]) {
+      const sorted = [...rows].sort((a, b) =>
+        sortFunctions[columnName](a, b, direction),
+      );
+      setSortedRows(sorted);
+    }
+  };
+
+  // Use sorted rows if sorting is active, otherwise use original rows
+  const displayRows = sortBy.index !== undefined ? sortedRows : rows;
 
   // Fetch runs based on active filters
   useEffect(() => {
@@ -54,6 +80,7 @@ const RunList = () => {
         );
         const data = await HttpClient.handleResponse(response);
         setRows(data.runs.map((run) => runToRow(run, updateFilters)));
+        setSortedRows(data.runs.map((run) => runToRow(run, updateFilters)));
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
@@ -103,7 +130,7 @@ const RunList = () => {
         <FilterTable
           fetching={fetching}
           columns={COLUMNS}
-          rows={rows}
+          rows={displayRows}
           filters={runFilterMemo}
           pageSize={pageSize}
           page={page}
@@ -112,6 +139,9 @@ const RunList = () => {
           onClearFilters={clearFilters}
           onSetPage={onSetPage}
           onSetPageSize={onSetPageSize}
+          sortBy={sortBy}
+          onSort={handleSort}
+          sortFunctions={sortFunctions}
           footerChildren={
             <Content className="disclaimer" component="h4">
               * Note: for performance reasons, the total number of items is an

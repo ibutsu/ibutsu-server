@@ -19,12 +19,7 @@ import {
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import {
-  filtersToAPIParams,
-  toTitleCase,
-  round,
-  buildBadge,
-} from '../utilities';
+import { filtersToAPIParams, toTitleCase, buildBadge } from '../utilities';
 import { WEEKS, RESULT_STATES, ICON_RESULT_MAP } from '../constants';
 
 import RunSummary from './runsummary';
@@ -82,7 +77,6 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
 
   // Function to convert result to test history row format (PatternFly v5)
   const resultToTestHistoryRow = useCallback((result, index, filterFunc) => {
-    let resultIcon = ICON_RESULT_MAP[result.result];
     let exceptionBadge;
 
     if (filterFunc) {
@@ -121,14 +115,19 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
       result: result,
       expandedContent: expandedContent,
       cells: [
-        <span key="result" className={result.result}>
-          {resultIcon} {toTitleCase(result.result)}
-        </span>,
+        <Label
+          key="result-icon"
+          variant="filled"
+          title={result.result}
+          icon={ICON_RESULT_MAP[result.result]}
+        >
+          {toTitleCase(result.result)}
+        </Label>,
         <span key="source" className={result.source}>
           {result.source}
         </span>,
         <React.Fragment key="exception">{exceptionBadge}</React.Fragment>,
-        round(result.duration) + 's',
+        Math.ceil(result.duration) + 's',
         new Date(result.start_time).toLocaleString(),
       ],
     };

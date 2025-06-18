@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge, Button, Label } from '@patternfly/react-core';
-import { ChevronRightIcon, FileIcon } from '@patternfly/react-icons';
+import { ChevronRightIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import {
   OPERATIONS,
@@ -17,30 +17,42 @@ import {
   NUMERIC_RUN_FIELDS,
   THEME_KEY,
   ICON_RESULT_MAP,
-  ICON_STATUS_MAP,
 } from './constants';
 import RunSummary from './components/runsummary';
 
-export const getDateString = () => {
-  return String(new Date().getTime());
-};
+// Table sorting functions for common column types
+export const tableSortFunctions = {
+  duration: (a, b, direction, cellIndex) => {
+    // Extract duration values from cells (format: "123s")
+    const getDurationValue = (durationCell) => {
+      if (!durationCell) return 0;
+      const cellContent =
+        typeof durationCell === 'string'
+          ? durationCell
+          : durationCell.toString();
+      const match = cellContent.match(/(\d+(?:\.\d+)?)/);
+      return match ? parseFloat(match[1]) : 0;
+    };
 
-// Helper function to get a styled result icon
-export const getStyledResultIcon = (result, className = '') => {
-  const icon = ICON_RESULT_MAP[result];
-  if (!icon) return null;
+    const aValue = getDurationValue(a.cells[cellIndex]);
+    const bValue = getDurationValue(b.cells[cellIndex]);
+    return direction === 'asc' ? aValue - bValue : bValue - aValue;
+  },
 
-  const combinedClassName = `result-icon-${result} ${className}`.trim();
-  return <span className={combinedClassName}>{icon}</span>;
-};
+  started: (a, b, direction, cellIndex) => {
+    // Extract date values from cells (format: "6/4/2025, 5:16:58 AM")
+    const getDateValue = (dateCell) => {
+      if (!dateCell) return new Date(0);
+      const cellContent =
+        typeof dateCell === 'string' ? dateCell : dateCell.toString();
+      const date = new Date(cellContent);
+      return isNaN(date.getTime()) ? new Date(0) : date;
+    };
 
-// Helper function to get a styled status icon
-export const getStyledStatusIcon = (status, className = '') => {
-  const icon = ICON_STATUS_MAP[status];
-  if (!icon) return null;
-
-  const combinedClassName = `status-icon-${status} ${className}`.trim();
-  return <span className={combinedClassName}>{icon}</span>;
+    const aValue = getDateValue(a.cells[cellIndex]);
+    const bValue = getDateValue(b.cells[cellIndex]);
+    return direction === 'asc' ? aValue - bValue : bValue - aValue;
+  },
 };
 
 export const toTitleCase = (str, convertToSpace = false) => {
@@ -94,11 +106,6 @@ export const toAPIFilter = (filters) => {
   return filter_strings;
 };
 
-export const round = (number) => {
-  let rounded = Math.round(number * 10);
-  return rounded / 10;
-};
-
 export const buildBadge = (key, value, isRead, onClick) => {
   const badge = (
     <Badge key={key} isRead={isRead}>
@@ -114,89 +121,6 @@ export const buildBadge = (key, value, isRead, onClick) => {
   } else {
     return badge;
   }
-};
-
-export const buildResultsTree = (treeResults) => {
-  const getPassPercent = (stats) => {
-    let percent = 'N/A';
-    if (stats.count > 0) {
-      percent = Math.round(
-        ((stats.passed + stats.xfailed) / stats.count) * 100,
-      );
-    }
-    return percent;
-  };
-
-  const getBadgeClass = (passPercent) => {
-    let className = 'failed';
-    if (passPercent > 75) {
-      className = 'error';
-    }
-    if (passPercent > 90) {
-      className = 'passed';
-    }
-    return className;
-  };
-
-  let treeStructure = [];
-  treeResults.forEach((testResult) => {
-    const pathParts = processPyTestPath(cleanPath(testResult.metadata.fspath));
-    let children = treeStructure;
-    pathParts.forEach((dirName) => {
-      let child = children.find((item) => item.name == dirName);
-      if (!child) {
-        child = {
-          name: dirName,
-          id: dirName,
-          children: [],
-          hasBadge: true,
-          _stats: {
-            count: 0,
-            passed: 0,
-            failed: 0,
-            skipped: 0,
-            error: 0,
-            xpassed: 0,
-            xfailed: 0,
-          },
-        };
-        if (dirName.endsWith('.py')) {
-          child.icon = <FileIcon />;
-          child.expandedIcon = <FileIcon />;
-        }
-        children.push(child);
-      }
-      child._stats[testResult.result] += 1;
-      child._stats.count += 1;
-      const passPercent = getPassPercent(child._stats);
-      const className = getBadgeClass(passPercent);
-      child.customBadgeContent = `${passPercent}%`;
-      child.badgeProps = { className: className };
-      children = child.children;
-    });
-    let icon = getStyledResultIcon(testResult.result);
-
-    children.push({
-      id: testResult.id,
-      name: testResult.test_id,
-      icon: icon,
-      _testResult: testResult,
-    });
-  });
-  return treeStructure;
-};
-
-export const generateId = (length) => {
-  let resultId = '';
-  const chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  const charsLength = chars.length;
-  let counter = 0;
-  while (counter < length) {
-    resultId += chars.charAt(Math.floor(Math.random() * charsLength));
-    counter += 1;
-  }
-  return resultId;
 };
 
 export const resultToRow = (result, filterFunc) => {
@@ -266,12 +190,16 @@ export const resultToRow = (result, filterFunc) => {
         {markers}
       </React.Fragment>,
       <React.Fragment key="result">
-        <Label variant="filled" title={result.result}>
-          {ICON_RESULT_MAP[result.result]}
+        <Label
+          variant="filled"
+          title={result.result}
+          icon={ICON_RESULT_MAP[result.result]}
+        >
+          {toTitleCase(result.result)}
         </Label>
         {classification}
       </React.Fragment>,
-      round(result.duration) + 's',
+      Math.ceil(result.duration) + 's',
       runLink,
       new Date(result.start_time).toLocaleString(),
     ],
@@ -282,7 +210,7 @@ export const resultToComparisonRow = (result) => {
   let resultIcons = [];
   let markers = [];
   result.forEach((result) => {
-    resultIcons.push(getStyledResultIcon(result.result));
+    resultIcons.push(ICON_RESULT_MAP(result.result));
     if (result.metadata && result.metadata.markers) {
       for (const marker of result.metadata.markers) {
         // Don't add duplicate markers
@@ -370,7 +298,7 @@ export const runToRow = (run, filterFunc) => {
       <React.Fragment key="run">
         <Link to={`${run.id}#summary`}>{run.id}</Link> {badges}
       </React.Fragment>,
-      round(run.duration) + 's',
+      Math.ceil(run.duration) + 's',
       <RunSummary key="summary" summary={run.summary} />,
       created.toLocaleString(),
       <Link
