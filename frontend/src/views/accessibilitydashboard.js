@@ -18,15 +18,18 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   buildBadge,
-  getFilterMode,
-  getOperationMode,
   getOperationsFromField,
   // parseFilter
 } from '../utilities';
 import FilterTable from '../components/filtering/filtered-table-card';
 import MultiValueInput from '../components/multivalueinput';
 import RunSummary from '../components/runsummary';
-import { OPERATIONS, ACCESSIBILITY_FIELDS } from '../constants';
+import {
+  OPERATIONS,
+  ACCESSIBILITY_FIELDS,
+  OPERATION_MODE_MAP,
+  FILTER_MODE_MAP,
+} from '../constants';
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import useTableFilters from '../components/hooks/useTableFilters';
 
@@ -169,7 +172,7 @@ const AccessibilityDashboardView = ({ view }) => {
   const { updateFilters } = useTableFilters();
 
   const applyFilter = () => {
-    const operationMode = getOperationMode(operationSelection);
+    const operationMode = OPERATION_MODE_MAP[operationSelection];
     let value = '';
     if (operationMode === 'multi') {
       value = inValues.join(';'); // translate list to ;-separated string for BE
@@ -266,8 +269,8 @@ const AccessibilityDashboardView = ({ view }) => {
     setFilteredFieldOptions(newSelectOptionsField);
   }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
 
-  const filterMode = getFilterMode(fieldSelection);
-  const operationMode = getOperationMode(operationSelection);
+  const filterMode = FILTER_MODE_MAP[fieldSelection];
+  const operationMode = OPERATION_MODE_MAP[operationSelection];
   const operations = getOperationsFromField(fieldSelection);
 
   const jsxFilters = [

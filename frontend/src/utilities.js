@@ -350,26 +350,6 @@ export const parseFilter = (paramKey) => {
   }
 };
 
-export const getFilterMode = (field) => {
-  let filterMode = 'text';
-  if (field === 'run_id') {
-    filterMode = 'run';
-  } else if (field === 'result') {
-    filterMode = 'result';
-  }
-  return filterMode;
-};
-
-export const getOperationMode = (operation) => {
-  let operationMode = 'single';
-  if (operation === 'in') {
-    operationMode = 'multi';
-  } else if (operation === 'exists') {
-    operationMode = 'bool';
-  }
-  return operationMode;
-};
-
 // TODO move the spec for this into the constant object
 // The hook needs to then dereference from there, currently fieldSelection is just the `value`
 export const getOperationsFromField = (field) => {
