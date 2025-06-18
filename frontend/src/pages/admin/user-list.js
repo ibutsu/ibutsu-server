@@ -12,6 +12,9 @@ import {
   Content,
   Title,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../../services/http';
@@ -122,33 +125,33 @@ const UserList = () => {
   const deleteModal = useMemo(() => {
     return (
       <Modal
-        title="Confirm Delete"
         variant="small"
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
-        actions={[
+      >
+        <ModalHeader title="Confirm Delete" />
+        <ModalBody>
+          Are you sure you want to delete &ldquo;
+          {selectedUser && (selectedUser.name || selectedUser.email)}&rdquo;?
+          This cannot be undone!
+        </ModalBody>
+        <ModalFooter>
           <Button
-            key="delete"
             variant="danger"
             isLoading={isDeleting}
             isDisabled={isDeleting}
             onClick={onModalDeleteClick}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
-          </Button>,
+          </Button>
           <Button
-            key="cancel"
             variant="secondary"
             isDisabled={isDeleting}
             onClick={() => setIsDeleteModalOpen(false)}
           >
             Cancel
-          </Button>,
-        ]}
-      >
-        Are you sure you want to delete &ldquo;
-        {selectedUser && (selectedUser.name || selectedUser.email)}&rdquo;? This
-        cannot be undone!
+          </Button>
+        </ModalFooter>
       </Modal>
     );
   }, [isDeleteModalOpen, isDeleting, selectedUser, onModalDeleteClick]);

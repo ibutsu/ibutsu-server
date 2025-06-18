@@ -6,6 +6,9 @@ import {
   Form,
   FormGroup,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   TextInput,
 } from '@patternfly/react-core';
@@ -45,48 +48,46 @@ const NewDashboardModal = ({
   }, [closeCallback]);
 
   return (
-    <Modal
-      variant={ModalVariant.small}
-      title="New Dashboard"
-      isOpen={isOpen}
-      onClose={closeCallback}
-      actions={[
-        <Button key="save" variant="primary" onClick={modalOnSave}>
-          Save
-        </Button>,
-        <Button key="cancel" variant="link" onClick={modalOnClose}>
-          Cancel
-        </Button>,
-      ]}
-    >
-      <Form>
-        <FormGroup
-          label="Title"
-          fieldId="dashboard-title"
-          helpertextinvalid="A dashboard title is required"
-          helpertextinvalidicon={<ExclamationCircleIcon />}
-          isRequired
-        >
-          <TextInput
-            type="text"
-            id="dashboard-title"
-            name="dashboard-title"
-            value={title}
-            onChange={(_, value) => setTitle(value)}
-            validated={isTitleValid.toString()}
+    <Modal variant={ModalVariant.small} isOpen={isOpen} onClose={closeCallback}>
+      <ModalHeader title="New Dashboard" />
+      <ModalBody>
+        <Form>
+          <FormGroup
+            label="Title"
+            fieldId="dashboard-title"
+            helpertextinvalid="A dashboard title is required"
+            helpertextinvalidicon={<ExclamationCircleIcon />}
             isRequired
-          />
-        </FormGroup>
-        <FormGroup label="Description" fieldId="dashboard-description">
-          <TextInput
-            type="text"
-            id="dashboard-description"
-            name="dashboard-description"
-            value={description}
-            onChange={(_, value) => setDescription(value)}
-          />
-        </FormGroup>
-      </Form>
+          >
+            <TextInput
+              type="text"
+              id="dashboard-title"
+              name="dashboard-title"
+              value={title}
+              onChange={(_, value) => setTitle(value)}
+              validated={isTitleValid.toString()}
+              isRequired
+            />
+          </FormGroup>
+          <FormGroup label="Description" fieldId="dashboard-description">
+            <TextInput
+              type="text"
+              id="dashboard-description"
+              name="dashboard-description"
+              value={description}
+              onChange={(_, value) => setDescription(value)}
+            />
+          </FormGroup>
+        </Form>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="primary" onClick={modalOnSave}>
+          Save
+        </Button>
+        <Button variant="link" onClick={modalOnClose}>
+          Cancel
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };
