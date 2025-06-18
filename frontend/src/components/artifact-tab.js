@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 import DownloadButton from './download-button';
@@ -10,9 +10,13 @@ const ArtifactTab = ({ artifact }) => {
   const [blob, setBlob] = useState();
   const [blobType, setBlobType] = useState();
   const [imageUrl, setImageUrl] = useState();
+  const [isLoading, setIsLoading] = useState(true);
+  const logViewerRef = useRef();
+  const imageUrlRef = useRef();
 
   useEffect(() => {
     const fetchArtifact = async () => {
+      setIsLoading(true);
       try {
         const response = await HttpClient.get([
           Settings.serverUrl,
@@ -34,8 +38,20 @@ const ArtifactTab = ({ artifact }) => {
         }
       } catch (error) {
         console.error(error);
+      } finally {
+        setIsLoading(false);
       }
     };
+
+    // Reset state when artifact changes
+    if (imageUrlRef.current) {
+      URL.revokeObjectURL(imageUrlRef.current);
+      imageUrlRef.current = undefined;
+    }
+    setBlob();
+    setBlobType();
+    setImageUrl();
+
     const debouncer = setTimeout(() => {
       fetchArtifact();
     }, 50);
@@ -45,13 +61,19 @@ const ArtifactTab = ({ artifact }) => {
   }, [artifact.id]);
 
   const cardBody = useMemo(() => {
-    if (blob === undefined || blobType === undefined) {
+    if (isLoading) {
       return <Content component="p">Blob is loading</Content>;
     }
+
+    if (!isLoading && (!blob || !blobType)) {
+      return <Content component="p">Unable to load artifact</Content>;
+    }
+
     if (blobType === 'text') {
       return (
         <LogViewer
-          key={artifact.id}
+          ref={logViewerRef}
+          key={`${artifact.id}-${logViewerRef.current}`}
           data={blob}
           toolbar={<LogViewerSearch placeholder="Search log" />}
         />
@@ -59,17 +81,41 @@ const ArtifactTab = ({ artifact }) => {
     } else if (blobType === 'image') {
       return <img key={artifact.id} src={imageUrl} alt={artifact.filename} />;
     }
-  }, [blob, blobType, artifact.id, artifact.filename, imageUrl]);
+
+    return <Content component="p">Unsupported artifact type</Content>;
+  }, [
+    blob,
+    blobType,
+    artifact.id,
+    artifact.filename,
+    imageUrl,
+    isLoading,
+    logViewerRef,
+  ]);
 
   useEffect(() => {
     if (blobType === 'image' && blob) {
       const objectUrl = URL.createObjectURL(blob);
       setImageUrl(objectUrl);
-      return () => URL.revokeObjectURL(objectUrl);
+      imageUrlRef.current = objectUrl;
+      return () => {
+        URL.revokeObjectURL(objectUrl);
+      };
     } else {
       setImageUrl();
+      imageUrlRef.current = undefined;
     }
   }, [blob, blobType]);
+
+  // Cleanup effect for component unmount
+  useEffect(() => {
+    return () => {
+      // Revoke any existing image URL on component unmount
+      if (imageUrlRef.current) {
+        URL.revokeObjectURL(imageUrlRef.current);
+      }
+    };
+  }, []);
 
   return (
     <Card>
