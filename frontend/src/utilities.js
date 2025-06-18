@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge, Button, Label } from '@patternfly/react-core';
-import { ChevronRightIcon } from '@patternfly/react-icons';
+import { ChevronRightIcon, FileIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import {
   OPERATIONS,
@@ -17,6 +17,7 @@ import {
   NUMERIC_RUN_FIELDS,
   THEME_KEY,
   ICON_RESULT_MAP,
+  ICON_STATUS_MAP,
 } from './constants';
 import RunSummary from './components/runsummary';
 
@@ -419,24 +420,6 @@ export const parseFilter = (paramKey) => {
       operator: 'eq',
     };
   }
-};
-
-export const getSpinnerRow = (columnCount) => {
-  return {
-    heightAuto: true,
-    cells: [
-      {
-        props: { colSpan: columnCount },
-        title: (
-          <Bullseye>
-            <center>
-              <Spinner size="xl" />
-            </center>
-          </Bullseye>
-        ),
-      },
-    ],
-  };
 };
 
 export const getFilterMode = (field) => {

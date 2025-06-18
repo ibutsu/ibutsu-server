@@ -23,7 +23,7 @@ import Linkify from 'react-linkify';
 import { HttpClient } from './services/http';
 import { linkifyDecorator } from './components/decorators';
 import { Settings } from './settings';
-import { toTitleCase, parseFilter, getSpinnerRow } from './utilities';
+import { toTitleCase, parseFilter } from './utilities';
 import DownloadButton from './components/download-button';
 import FilterTable from './components/filtering/filtered-table-card';
 import { OPERATIONS, ICON_STATUS_MAP } from './constants';
@@ -40,7 +40,7 @@ const ReportBuilder = () => {
   const [reportSource, setReportSource] = useState('');
   const [reportFilter, setReportFilter] = useState();
   const [reportTypes, setReportTypes] = useState([]);
-  const [rows, setRows] = useState([getSpinnerRow(3)]);
+  const [rows, setRows] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
   const [isError, setIsError] = useState(false);
   const [isHelpExpanded, setIsHelpExpanded] = useState(false);
