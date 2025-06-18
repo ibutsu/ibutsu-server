@@ -17,11 +17,15 @@ import { TableVariant } from '@patternfly/react-table';
 import FilterTable from '../components/filtering/filtered-table-card';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
+<<<<<<< Updated upstream
 import {
   toAPIFilter,
   getSpinnerRow,
   resultToComparisonRow,
 } from '../utilities';
+=======
+import { toAPIFilter, toTitleCase } from '../utilities';
+>>>>>>> Stashed changes
 import { IbutsuContext } from '../components/contexts/ibutsuContext';
 import usePagination from '../components/hooks/usePagination';
 

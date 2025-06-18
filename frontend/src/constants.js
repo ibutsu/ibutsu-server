@@ -208,7 +208,7 @@ export const CHART_COLOR_MAP = {
 
 export const FILE_IMPORT_KEY = 'importFile';
 
-export const ICON_RESULT_MAP = {
+export const ICON_RESULT_MAP = Object.freeze({
   passed: <CheckCircleIcon style={{ color: CHART_COLOR_MAP.passed }} />,
   failed: <TimesCircleIcon style={{ color: CHART_COLOR_MAP.failed }} />,
   error: <ExclamationCircleIcon style={{ color: CHART_COLOR_MAP.error }} />,
@@ -219,7 +219,7 @@ export const ICON_RESULT_MAP = {
   xpassed: <TimesCircleIcon style={{ color: CHART_COLOR_MAP.xpassed }} />,
   manual: <FlagIcon style={{ color: CHART_COLOR_MAP.manual }} />,
   pending: <QuestionCircleIcon style={{ color: CHART_COLOR_MAP.skipped }} />,
-};
+});
 
 export const ICON_STATUS_MAP = {
   done: <CheckCircleIcon />,

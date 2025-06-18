@@ -1,6 +1,6 @@
 import React from 'react';
-import { Badge, Bullseye, Button, Spinner } from '@patternfly/react-core';
-import { ChevronRightIcon, FileIcon } from '@patternfly/react-icons';
+import { Badge, Button, Label } from '@patternfly/react-core';
+import { ChevronRightIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import {
   OPERATIONS,
@@ -17,7 +17,6 @@ import {
   NUMERIC_RUN_FIELDS,
   THEME_KEY,
   ICON_RESULT_MAP,
-  ICON_STATUS_MAP,
 } from './constants';
 import RunSummary from './components/runsummary';
 
@@ -200,7 +199,6 @@ export const generateId = (length) => {
 };
 
 export const resultToRow = (result, filterFunc) => {
-  let resultIcon = getStyledResultIcon(result.result);
   let markers = [];
   let runLink = '';
   let classification = '';
@@ -267,9 +265,9 @@ export const resultToRow = (result, filterFunc) => {
         {markers}
       </React.Fragment>,
       <React.Fragment key="result">
-        <span className={result.result}>
-          {resultIcon} {toTitleCase(result.result)}
-        </span>{' '}
+        <Label variant="filled" title={result.result}>
+          {ICON_RESULT_MAP[result.result]}
+        </Label>
         {classification}
       </React.Fragment>,
       round(result.duration) + 's',
