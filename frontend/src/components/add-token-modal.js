@@ -71,7 +71,7 @@ const AddTokenModal = ({ isOpen, onClose }) => {
   return (
     <Modal
       id="add-token-modal"
-      variant={ModalVariant.large}
+      variant={ModalVariant.medium}
       isOpen={isOpen}
       onClose={localOnClose}
     >

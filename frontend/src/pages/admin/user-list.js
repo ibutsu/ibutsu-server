@@ -16,6 +16,7 @@ import {
   ModalFooter,
   ModalHeader,
   Label,
+  ModalVariant,
 } from '@patternfly/react-core';
 
 import { HttpClient } from '../../services/http';
@@ -211,7 +212,7 @@ const UserList = () => {
   const deleteModal = useMemo(() => {
     return (
       <Modal
-        variant="small"
+        variant={ModalVariant.medium}
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
       >

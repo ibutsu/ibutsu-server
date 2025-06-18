@@ -37,7 +37,7 @@ const DeleteModal = ({
   };
 
   return (
-    <Modal variant={ModalVariant.small} isOpen={isOpen} onClose={onClose}>
+    <Modal variant={ModalVariant.medium} isOpen={isOpen} onClose={onClose}>
       <ModalHeader title={title} />
       <ModalBody>
         <Content component="p">{body}</Content>

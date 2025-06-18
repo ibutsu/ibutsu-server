@@ -11,7 +11,6 @@ import {
   HelperText,
   HelperTextItem,
   Modal,
-  ModalVariant,
   Radio,
   Stack,
   StackItem,
@@ -19,6 +18,7 @@ import {
   TextArea,
   TextInput,
   Title,
+  ModalVariant,
 } from '@patternfly/react-core';
 import { Wizard, WizardHeader, WizardStep } from '@patternfly/react-core';
 
@@ -432,14 +432,10 @@ const NewWidgetWizard = ({
   return (
     <Modal
       isOpen={isOpen}
-      variant={ModalVariant.large}
-      showClose={false}
-      onClose={onClose}
-      hasNoBodyWrapper
       aria-label="Add widget modal"
+      variant={ModalVariant.large}
     >
       <Wizard
-        height={400}
         header={
           <WizardHeader
             onClose={onClose}

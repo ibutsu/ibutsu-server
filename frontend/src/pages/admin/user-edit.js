@@ -247,7 +247,7 @@ const UserEdit = () => {
   return (
     <React.Fragment>
       <PageSection hasBodyWrapper={false}>
-        <Title headingLevel="h1" size="2xl" className="pf-v6-c-title">
+        <Title headingLevel="h1" size="2xl">
           Users / {formName}{' '}
           {formAdmin && (
             <Label className="super-admin-label" variant="outline" color="blue">

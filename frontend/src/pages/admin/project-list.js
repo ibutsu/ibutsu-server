@@ -10,6 +10,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalHeader,
+  ModalVariant,
 } from '@patternfly/react-core';
 import {
   PencilAltIcon,
@@ -211,7 +212,11 @@ const ProjectList = () => {
           />
         )}
       </PageSection>
-      <Modal variant="small" isOpen={isDeleteModalOpen} onClose={onDeleteClose}>
+      <Modal
+        variant={ModalVariant.medium}
+        isOpen={isDeleteModalOpen}
+        onClose={onDeleteClose}
+      >
         <ModalHeader title="Confirm Delete" />
         <ModalBody>
           Are you sure you want to delete &ldquo;

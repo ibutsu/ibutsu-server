@@ -1,17 +1,6 @@
 import React from 'react';
 import { Badge, Bullseye, Button, Spinner } from '@patternfly/react-core';
-import {
-  CheckCircleIcon,
-  ChevronCircleRightIcon,
-  ChevronRightIcon,
-  ClockIcon,
-  ExclamationCircleIcon,
-  FileIcon,
-  InfoAltIcon,
-  QuestionCircleIcon,
-  TimesCircleIcon,
-  FlagIcon,
-} from '@patternfly/react-icons';
+import { ChevronRightIcon, FileIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 import {
   OPERATIONS,
@@ -27,7 +16,8 @@ import {
   NUMERIC_RESULT_FIELDS,
   NUMERIC_RUN_FIELDS,
   THEME_KEY,
-  CHART_COLOR_MAP,
+  ICON_RESULT_MAP,
+  ICON_STATUS_MAP,
 } from './constants';
 import RunSummary from './components/runsummary';
 
@@ -35,30 +25,9 @@ export const getDateString = () => {
   return String(new Date().getTime());
 };
 
-export const iconResultMap = {
-  passed: <CheckCircleIcon style={{ color: CHART_COLOR_MAP.passed }} />,
-  failed: <TimesCircleIcon style={{ color: CHART_COLOR_MAP.failed }} />,
-  error: <ExclamationCircleIcon style={{ color: CHART_COLOR_MAP.error }} />,
-  skipped: (
-    <ChevronCircleRightIcon style={{ color: CHART_COLOR_MAP.skipped }} />
-  ),
-  xfailed: <CheckCircleIcon style={{ color: CHART_COLOR_MAP.xfailed }} />,
-  xpassed: <TimesCircleIcon style={{ color: CHART_COLOR_MAP.xpassed }} />,
-  manual: <FlagIcon style={{ color: CHART_COLOR_MAP.manual }} />,
-  pending: <QuestionCircleIcon style={{ color: CHART_COLOR_MAP.skipped }} />,
-};
-
-export const iconStatusMap = {
-  done: <CheckCircleIcon />,
-  pending: <QuestionCircleIcon />,
-  running: <ClockIcon />,
-  error: <ExclamationCircleIcon />,
-  empty: <InfoAltIcon />,
-};
-
 // Helper function to get a styled result icon
 export const getStyledResultIcon = (result, className = '') => {
-  const icon = iconResultMap[result];
+  const icon = ICON_RESULT_MAP[result];
   if (!icon) return null;
 
   const combinedClassName = `result-icon-${result} ${className}`.trim();
@@ -67,7 +36,7 @@ export const getStyledResultIcon = (result, className = '') => {
 
 // Helper function to get a styled status icon
 export const getStyledStatusIcon = (status, className = '') => {
-  const icon = iconStatusMap[status];
+  const icon = ICON_STATUS_MAP[status];
   if (!icon) return null;
 
   const combinedClassName = `status-icon-${status} ${className}`.trim();

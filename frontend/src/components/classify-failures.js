@@ -19,12 +19,12 @@ import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import {
   filtersToAPIParams,
-  iconResultMap,
   toTitleCase,
   round,
   buildBadge,
   generateId,
 } from '../utilities';
+import { ICON_RESULT_MAP } from '../constants';
 import { MultiClassificationDropdown } from './classification-dropdown';
 import { ClassificationDropdown } from './classification-dropdown';
 import FilterTable from './filtering/filtered-table-card';
@@ -52,7 +52,7 @@ const ClassifyFailuresTable = () => {
 
   // Function to convert result to classification row format
   const resultToClassificationRow = useCallback((result, index, filterFunc) => {
-    let resultIcon = iconResultMap[result.result];
+    let resultIcon = ICON_RESULT_MAP[result.result];
     let markers = [];
     let exceptionBadge;
 

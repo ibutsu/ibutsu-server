@@ -5,6 +5,7 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
+  Button,
   Card,
   CardBody,
   Flex,
@@ -280,19 +281,17 @@ const AccessibilityAnalysisView = ({ view }) => {
       <Flex style={{ width: '100%' }}>
         <FlexItem grow={{ default: 'grow' }}>
           <Content>
-            <Content component="h2" className="pf-v6-c-title pf-m-xl">
-              Test Results
-            </Content>
+            <Content component="h2">Test Results</Content>
           </Content>
         </FlexItem>
         <FlexItem>
-          <Link
+          <Button
+            component={Link}
             to={`/results?run_id[eq]=${run?.id}`}
-            className="pf-v6-c-button pf-m-primary"
-            style={{ marginLeft: '2px' }}
+            variant="primary"
           >
             See all results <ChevronRightIcon />
-          </Link>
+          </Button>
         </FlexItem>
       </Flex>
     );
