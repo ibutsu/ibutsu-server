@@ -10,6 +10,9 @@ import {
   HelperText,
   HelperTextItem,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   TextInput,
   ValidatedOptions,
@@ -68,71 +71,75 @@ const AddTokenModal = ({ isOpen, onClose }) => {
   return (
     <Modal
       id="add-token-modal"
-      variant={ModalVariant.small}
-      title="Add Token"
+      variant={ModalVariant.large}
       isOpen={isOpen}
       onClose={localOnClose}
-      actions={[
-        <Button key="save" variant="primary" onClick={onSave}>
-          Save
-        </Button>,
-        <Button key="cancel" variant="link" onClick={localOnClose}>
-          Cancel
-        </Button>,
-      ]}
     >
-      <Form>
-        <FormGroup label="Name" fieldId="token-name" isRequired>
-          <TextInput
-            type="text"
-            id="token-name"
-            name="token-name"
-            value={name}
-            onChange={(_, change) => setName(change)}
-            validated={
-              isNameValid ? ValidatedOptions.default : ValidatedOptions.error
-            }
-            isRequired
-          />
-          {isNameValid !== true && (
+      <ModalHeader title="Add Token" />
+      <ModalBody>
+        <Form>
+          <FormGroup label="Name" fieldId="token-name" isRequired>
+            <TextInput
+              type="text"
+              id="token-name"
+              name="token-name"
+              value={name}
+              onChange={(_, change) => setName(change)}
+              validated={
+                isNameValid ? ValidatedOptions.default : ValidatedOptions.error
+              }
+              isRequired
+            />
+            {isNameValid !== true && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="error">
+                    A token name is required
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+            )}
+          </FormGroup>
+          <FormGroup label="Expiry" fieldId="token-expiry-date" isRequired>
+            <DatePicker
+              appendTo={() => document.getElementById('add-token-modal')}
+              onChange={(_, change) => {
+                setExpiryDate(change);
+              }}
+              value={expiryDate}
+              inputProps={{
+                id: 'token-expiry-date',
+                validated: isExpiryValid
+                  ? ValidatedOptions.default
+                  : ValidatedOptions.error,
+              }}
+              popoverProps={{
+                enableFlip: true,
+                position: 'auto',
+                hasAutoWidth: true,
+                appendTo: () => document.getElementById('add-token-modal'),
+              }}
+            />
             <FormHelperText>
               <HelperText>
-                <HelperTextItem variant="error">
-                  A token name is required
+                <HelperTextItem variant={isExpiryValid ? 'default' : 'error'}>
+                  {isExpiryValid
+                    ? 'Enter the expiry date for this token'
+                    : 'A valid expiry date is required'}
                 </HelperTextItem>
               </HelperText>
             </FormHelperText>
-          )}
-        </FormGroup>
-        <FormGroup label="Expiry" fieldId="token-expiry-date" isRequired>
-          <DatePicker
-            appendTo={() => document.getElementById('add-token-modal')}
-            onChange={(_, change) => {
-              setExpiryDate(change);
-            }}
-            value={expiryDate}
-            inputProps={{
-              id: 'token-expiry-date',
-              validated: isExpiryValid
-                ? ValidatedOptions.default
-                : ValidatedOptions.error,
-            }}
-            popoverProps={{
-              enableFlip: false,
-              position: 'bottom',
-            }}
-          />
-          <FormHelperText>
-            <HelperText>
-              <HelperTextItem variant={isExpiryValid ? 'default' : 'error'}>
-                {isExpiryValid
-                  ? 'Enter the expiry date for this token'
-                  : 'A valid expiry date is required'}
-              </HelperTextItem>
-            </HelperText>
-          </FormHelperText>
-        </FormGroup>
-      </Form>
+          </FormGroup>
+        </Form>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="primary" onClick={onSave}>
+          Save
+        </Button>
+        <Button variant="link" onClick={localOnClose}>
+          Cancel
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

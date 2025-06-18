@@ -7,6 +7,9 @@ import {
   PageSection,
   Content,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
 } from '@patternfly/react-core';
 import {
   PencilAltIcon,
@@ -208,14 +211,15 @@ const ProjectList = () => {
           />
         )}
       </PageSection>
-      <Modal
-        title="Confirm Delete"
-        variant="small"
-        isOpen={isDeleteModalOpen}
-        onClose={onDeleteClose}
-        actions={[
+      <Modal variant="small" isOpen={isDeleteModalOpen} onClose={onDeleteClose}>
+        <ModalHeader title="Confirm Delete" />
+        <ModalBody>
+          Are you sure you want to delete &ldquo;
+          {selectedProject && selectedProject.title}&rdquo;? This cannot be
+          undone!
+        </ModalBody>
+        <ModalFooter>
           <Button
-            key="delete"
             variant="danger"
             ouiaId="admin-projects-modal-delete"
             isLoading={isDeleting}
@@ -223,21 +227,16 @@ const ProjectList = () => {
             onClick={onModalDeleteClick}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
-          </Button>,
+          </Button>
           <Button
-            key="cancel"
             variant="secondary"
             ouiaId="admin-projects-modal-cancel"
             isDisabled={isDeleting}
             onClick={onDeleteClose}
           >
             Cancel
-          </Button>,
-        ]}
-      >
-        Are you sure you want to delete &ldquo;
-        {selectedProject && selectedProject.title}&rdquo;? This cannot be
-        undone!
+          </Button>
+        </ModalFooter>
       </Modal>
     </React.Fragment>
   );

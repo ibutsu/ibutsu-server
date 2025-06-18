@@ -1,6 +1,14 @@
 import PropTypes from 'prop-types';
 
-import { Button, Content, Modal, ModalVariant } from '@patternfly/react-core';
+import {
+  Button,
+  Content,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalVariant,
+} from '@patternfly/react-core';
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 
@@ -29,21 +37,19 @@ const DeleteModal = ({
   };
 
   return (
-    <Modal
-      variant={ModalVariant.small}
-      title={title}
-      isOpen={isOpen}
-      onClose={onClose}
-      actions={[
-        <Button key="delete" variant="danger" onClick={localOnDelete}>
+    <Modal variant={ModalVariant.small} isOpen={isOpen} onClose={onClose}>
+      <ModalHeader title={title} />
+      <ModalBody>
+        <Content component="p">{body}</Content>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="danger" onClick={localOnDelete}>
           Delete
-        </Button>,
-        <Button key="cancel" variant="link" onClick={onClose}>
+        </Button>
+        <Button variant="link" onClick={onClose}>
           Cancel
-        </Button>,
-      ]}
-    >
-      <Content component="p">{body}</Content>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };

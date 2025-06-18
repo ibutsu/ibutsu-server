@@ -9,6 +9,9 @@ import {
   HelperText,
   HelperTextItem,
   Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   ModalVariant,
   Skeleton,
   TextInput,
@@ -134,74 +137,75 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
   );
 
   return (
-    <Modal
-      variant={ModalVariant.small}
-      title="Edit widget"
-      isOpen={isOpen}
-      onClose={onCloseModal}
-      actions={[
+    <Modal variant={ModalVariant.small} isOpen={isOpen} onClose={onCloseModal}>
+      <ModalHeader title="Edit widget" />
+      <ModalBody>
+        {componentLoaded ? (
+          <Form>
+            <FormGroup label="Title" fieldId="widget-title" isRequired>
+              <TextInput
+                type="text"
+                id="widget-title"
+                name="widget-title"
+                value={title}
+                onChange={(_, value) => setTitle(value)}
+                validated={isTitleValid.toString()}
+                isRequired
+              />
+              {isTitleValid !== true && (
+                <FormHelperText>
+                  <HelperText>
+                    <HelperTextItem
+                      icon={<ExclamationCircleIcon />}
+                      variant="error"
+                    >
+                      Please enter a title for this widget
+                    </HelperTextItem>
+                  </HelperText>
+                </FormHelperText>
+              )}
+            </FormGroup>
+            <FormGroup label="Weight" fieldId="widget-weight">
+              <TextInput
+                type="number"
+                id="widget-weight"
+                name="widget-weight"
+                value={weight}
+                onChange={(_, value) => setWeight(value)}
+              />
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="default">
+                    How widgets are ordered on the dashboard
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+            </FormGroup>
+            {widgetParams}
+          </Form>
+        ) : (
+          <div>
+            <Skeleton
+              width="10%"
+              height="15px"
+              style={{ marginBottom: '5px' }}
+            />
+            <Skeleton width="100%" height="30px" />
+          </div>
+        )}
+      </ModalBody>
+      <ModalFooter>
         <Button
-          key="save"
           variant="primary"
           onClick={onSaveModal}
           isDisabled={saveButtonDisabled}
         >
           Save
-        </Button>,
-        <Button key="cancel" variant="link" onClick={onCloseModal}>
+        </Button>
+        <Button variant="link" onClick={onCloseModal}>
           Cancel
-        </Button>,
-      ]}
-    >
-      {componentLoaded ? (
-        <Form>
-          <FormGroup label="Title" fieldId="widget-title" isRequired>
-            <TextInput
-              type="text"
-              id="widget-title"
-              name="widget-title"
-              value={title}
-              onChange={(_, value) => setTitle(value)}
-              validated={isTitleValid.toString()}
-              isRequired
-            />
-            {isTitleValid !== true && (
-              <FormHelperText>
-                <HelperText>
-                  <HelperTextItem
-                    icon={<ExclamationCircleIcon />}
-                    variant="error"
-                  >
-                    Please enter a title for this widget
-                  </HelperTextItem>
-                </HelperText>
-              </FormHelperText>
-            )}
-          </FormGroup>
-          <FormGroup label="Weight" fieldId="widget-weight">
-            <TextInput
-              type="number"
-              id="widget-weight"
-              name="widget-weight"
-              value={weight}
-              onChange={(_, value) => setWeight(value)}
-            />
-            <FormHelperText>
-              <HelperText>
-                <HelperTextItem variant="default">
-                  How widgets are ordered on the dashboard
-                </HelperTextItem>
-              </HelperText>
-            </FormHelperText>
-          </FormGroup>
-          {widgetParams}
-        </Form>
-      ) : (
-        <div>
-          <Skeleton width="10%" height="15px" style={{ marginBottom: '5px' }} />
-          <Skeleton width="100%" height="30px" />
-        </div>
-      )}
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 };
