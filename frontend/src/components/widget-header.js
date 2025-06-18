@@ -20,6 +20,7 @@ const WidgetHeader = ({
       {actions ? actions : []}
       {getDataFunc && (
         <Button
+          key="refresh"
           icon={<PficonHistoryIcon />}
           variant="plain"
           onClick={() => {
@@ -32,6 +33,7 @@ const WidgetHeader = ({
       )}
       {onEditClick && (
         <Button
+          key="edit"
           icon={<PencilAltIcon />}
           variant="plain"
           onClick={() => {
@@ -44,6 +46,7 @@ const WidgetHeader = ({
       )}
       {onDeleteClick && (
         <Button
+          key="delete"
           icon={<TimesIcon />}
           variant="plain"
           onClick={() => {

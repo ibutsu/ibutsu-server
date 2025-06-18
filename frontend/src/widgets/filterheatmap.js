@@ -91,6 +91,7 @@ const FilterHeatmapWidget = ({
       ).toString();
       return (
         <Link
+          key="jenkins-analysis-link"
           to={{
             pathname: `/project/${primaryObject?.id || params?.project}/view/${analysisViewId}`,
             search: searchString,
