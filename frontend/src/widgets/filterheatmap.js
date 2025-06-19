@@ -288,27 +288,33 @@ const FilterHeatmapWidget = ({
   }, [params.job_name, title]);
 
   return (
-    <Card>
+    <Card className="ibutsu-widget-card">
       <WidgetHeader
         title={titleMemo}
         actions={[jenkinsAnalysisLink].filter((a) => a !== null)}
         onEditClick={onEditClick}
         onDeleteClick={onDeleteClick}
       />
-      <CardBody data-id="heatmap" style={{ paddingTop: '0.5rem' }}>
+      <CardBody
+        className="ibutsu-widget-card-body"
+        data-id="heatmap"
+        style={{ paddingTop: '0.5rem' }}
+      >
         {!isError && isLoading && <Content component="h2">Loading ...</Content>}
         {!isError && !isLoading && renderData.length !== 0 && (
-          <HeatMap
-            xLabels={xLabels}
-            yLabels={yLabels}
-            yLabelWidth={labelWidth}
-            yLabelTextAlign="left"
-            data={renderData}
-            squares
-            cellStyle={getCellStyle}
-            cellRender={renderCell}
-            title={(value) => (value ? `${value[0]}` : '')}
-          />
+          <div className="ibutsu-widget-chart-container">
+            <HeatMap
+              xLabels={xLabels}
+              yLabels={yLabels}
+              yLabelWidth={labelWidth}
+              yLabelTextAlign="left"
+              data={renderData}
+              squares
+              cellStyle={getCellStyle}
+              cellRender={renderCell}
+              title={(value) => (value ? `${value[0]}` : '')}
+            />
+          </div>
         )}
         {!isError && !isLoading && renderData.length === 0 && (
           <EmptyState headingLevel="h3" titleText="No data found for heatmap">
@@ -322,7 +328,7 @@ const FilterHeatmapWidget = ({
         {isError && <p>Error fetching data</p>}
       </CardBody>
       {!hideDropdown && (
-        <CardFooter>
+        <CardFooter className="ibutsu-widget-footer">
           <ParamDropdown
             dropdownItems={dropdownItems}
             handleSelect={(value) => setBuilds(value)}

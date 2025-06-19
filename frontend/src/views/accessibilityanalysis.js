@@ -330,6 +330,7 @@ const AccessibilityAnalysisView = ({ view }) => {
                 legendComponent={
                   <ChartLegend
                     themeColor={ChartThemeColor.multiOrdered}
+                    itemsPerRow={3}
                     data={[
                       {
                         name: 'Passes: ' + pieData[0].y,
