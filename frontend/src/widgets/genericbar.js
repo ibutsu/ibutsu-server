@@ -22,7 +22,6 @@ const GenericBarWidget = ({
   barWidth = 30,
   dropdownItems = ['component', 'env', 'metadata.jenkins.job_name'],
   fontSize,
-  height,
   hideDropdown,
   horizontal,
   padding = {
@@ -149,14 +148,6 @@ const GenericBarWidget = ({
     legendData,
   ]);
 
-  const getChartHeight = (numBars) => {
-    if (numBars > 10) {
-      return numBars * 30;
-    } else {
-      return 300;
-    }
-  };
-
   const getDropdowns = () => {
     if (hideDropdown) {
       return null;
@@ -180,55 +171,58 @@ const GenericBarWidget = ({
     }
   };
 
+  const itemsPerRow = Math.ceil(legendData.length / 3);
+
   return (
-    <Card>
+    <Card className="ibutsu-widget-card">
       <WidgetHeader
         title={title}
         onEditClick={onEditClick}
         onDeleteClick={onDeleteClick}
       />
-      <CardBody data-id="recent-runs">
+      <CardBody className="ibutsu-widget-card-body" data-id="recent-runs">
         {genericBarError && <p>Error fetching data</p>}
         {!genericBarError && isLoading && (
           <Content component="h2">Loading ...</Content>
         )}
         {!genericBarError && !isLoading && (
-          <Chart
-            domainPadding={horizontal ? { x: 20 } : { y: 20 }}
-            padding={padding}
-            height={
-              height || getChartHeight(Object.keys(data['passed']).length)
-            }
-          >
-            <ChartAxis
-              label={xLabel}
-              fixLabelOverlap={!horizontal}
-              style={{
-                tickLabels: { fontSize: fontSize - 2 || 12 },
-                axisLabel: { fontSize: fontSize || 12 },
-              }}
-            />
-            <ChartAxis
-              label={yLabel}
-              dependentAxis
-              style={{
-                tickLabels: { fontSize: fontSize - 2 || 12 },
-                axisLabel: { fontSize: fontSize || 12 },
-              }}
-            />
-            <ChartStack>{barCharts}</ChartStack>
-          </Chart>
+          <div className="ibutsu-widget-chart-container">
+            <Chart
+              className="ibutsu-widget-chart"
+              domainPadding={horizontal ? { x: 20 } : { y: 20 }}
+              padding={padding}
+            >
+              <ChartAxis
+                label={xLabel}
+                fixLabelOverlap={!horizontal}
+                style={{
+                  tickLabels: { fontSize: fontSize - 2 || 12 },
+                  axisLabel: { fontSize: fontSize || 12 },
+                }}
+              />
+              <ChartAxis
+                label={yLabel}
+                dependentAxis
+                style={{
+                  tickLabels: { fontSize: fontSize - 2 || 12 },
+                  axisLabel: { fontSize: fontSize || 12 },
+                }}
+              />
+              <ChartStack>{barCharts}</ChartStack>
+            </Chart>
+          </div>
         )}
       </CardBody>
-      <CardFooter>
-        <ChartLegend
-          height={30}
-          data={legendData}
-          style={{
-            labels: { fontFamily: 'RedHatText', fontSize: fontSize - 2 || 12 },
-            title: { fontFamily: 'RedHatText' },
-          }}
-        />
+      <CardFooter className="ibutsu-widget-footer">
+        <div className="ibutsu-widget-chart-legend">
+          <ChartLegend
+            height="auto"
+            width="auto"
+            data={legendData}
+            itemsPerRow={itemsPerRow}
+            responsive={true}
+          />
+        </div>
         {getDropdowns()}
       </CardFooter>
     </Card>
@@ -239,7 +233,6 @@ GenericBarWidget.propTypes = {
   barWidth: PropTypes.number,
   dropdownItems: PropTypes.array,
   fontSize: PropTypes.number,
-  height: PropTypes.number,
   hideDropdown: PropTypes.bool,
   horizontal: PropTypes.bool,
   onDeleteClick: PropTypes.func,

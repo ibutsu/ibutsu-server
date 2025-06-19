@@ -1,0 +1,26 @@
+/* Widget Chart Styles for Consistent Layout */
+.ibutsu-widget-card {
+  height: 100%;
+}
+
+.ibutsu-widget-chart-legend {
+  overflow: auto;
+}
+
+/* Ensure tables fill their space */
+.ibutsu-widget-table-container {
+  flex: 1;
+  overflow: auto;
+  max-height: 600px;
+}
+
+/* Ensure consistent heights across all widgets in the same row */
+.pf-v6-l-grid > .pf-v6-l-grid__item {
+  align-self: auto;
+}
+
+/* Override PatternFly chart default heights to be responsive */
+.pf-v6-c-chart svg {
+  width: 100% !important;
+  height: 100% !important;
+}
