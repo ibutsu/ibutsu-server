@@ -65,7 +65,7 @@ const ImportanceComponentWidget = ({
   };
 
   return (
-    <Card>
+    <Card className="ibutsu-widget-card">
       <WidgetHeader
         title={title}
         getDataFunc={getData}
@@ -73,53 +73,58 @@ const ImportanceComponentWidget = ({
         onDeleteClick={onDeleteClick}
       />
       {!dataError && isLoading && (
-        <CardBody>
+        <CardBody className="ibutsu-widget-card-body">
           <Content component="h2">Loading ...</Content>
         </CardBody>
       )}
       {!dataError && !isLoading && (
-        <CardBody>
-          {tableData.map((tdat) => (
-            <div key={tdat.component}>
-              <Content key={tdat.component} component="h2">
-                {tdat.component}
-              </Content>
-              <Table aria-label="importance-component-table" variant="compact">
-                <Thead>
-                  <Tr>
-                    {['-', ...tdat.bnums].map((buildnum) => (
-                      <Th key={buildnum}>{buildnum}</Th>
-                    ))}
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {tdat.importances.map((importance) => (
-                    <Tr key={importance}>
-                      <Td>{importance}</Td>
-                      {tdat.bnums.map((buildnum) => (
-                        <Td key={buildnum}>
-                          <Link
-                            to={
-                              '/project/' +
-                              params.project +
-                              `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`
-                            }
-                          >
-                            {toPercent(
-                              tdat.data[buildnum][importance]['percentage'],
-                            )}
-                          </Link>
-                        </Td>
+        <CardBody className="ibutsu-widget-card-body">
+          <div className="ibutsu-widget-table-container">
+            {tableData.map((tdat) => (
+              <div key={tdat.component}>
+                <Content key={tdat.component} component="h2">
+                  {tdat.component}
+                </Content>
+                <Table
+                  aria-label="importance-component-table"
+                  variant="compact"
+                >
+                  <Thead>
+                    <Tr>
+                      {['-', ...tdat.bnums].map((buildnum) => (
+                        <Th key={buildnum}>{buildnum}</Th>
                       ))}
                     </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            </div>
-          ))}
+                  </Thead>
+                  <Tbody>
+                    {tdat.importances.map((importance) => (
+                      <Tr key={importance}>
+                        <Td>{importance}</Td>
+                        {tdat.bnums.map((buildnum) => (
+                          <Td key={buildnum}>
+                            <Link
+                              to={
+                                '/project/' +
+                                params.project +
+                                `/results?id[in]=${tdat.data[buildnum][importance]['result_list'].join(';')}`
+                              }
+                            >
+                              {toPercent(
+                                tdat.data[buildnum][importance]['percentage'],
+                              )}
+                            </Link>
+                          </Td>
+                        ))}
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </div>
+            ))}
+          </div>
         </CardBody>
       )}
-      <CardFooter>
+      <CardFooter className="ibutsu-widget-footer">
         <ParamDropdown
           dropdownItems={['Yes', 'No']}
           handleSelect={onSkipSelect}

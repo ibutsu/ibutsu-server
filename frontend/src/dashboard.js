@@ -12,7 +12,6 @@ import {
   EmptyStateBody,
   Flex,
   FlexItem,
-  Grid,
   PageSection,
   Content,
   EmptyStateFooter,
@@ -23,6 +22,7 @@ import {
   TextInputGroup,
   TextInputGroupMain,
   TextInputGroupUtilities,
+  Grid,
 } from '@patternfly/react-core';
 
 import CubesIcon from '@patternfly/react-icons/dist/esm/icons/cubes-icon';
@@ -447,7 +447,9 @@ const Dashboard = () => {
       </PageSection>
       <PageSection hasBodyWrapper={false}>
         {!!primaryObject && !!selectedDashboard && !!widgets && (
-          <Grid hasGutter>{widgetComponents}</Grid>
+          <Grid sm={12} md={6} lg={6} xl={4} xl2={4} hasGutter>
+            {widgetComponents}
+          </Grid>
         )}
         {!!primaryObject && !selectedDashboard && (
           <EmptyState

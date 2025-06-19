@@ -179,7 +179,6 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
               barWidth={barWidth}
               horizontal={false}
               xLabelTooltip="Build"
-              height={180}
               yLabel="Test counts"
               xLabel="Build number"
               padding={{
@@ -188,7 +187,6 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
                 right: 20,
                 top: 20,
               }}
-              fontSize={9}
               sortOrder="ascending"
             />
           )}
@@ -198,7 +196,6 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
               params={barchartParams}
               hideDropdown={true}
               widgetEndpoint="jenkins-bar-chart"
-              height={180}
               yLabel="Test counts"
               xLabel="Build number"
               sortOrder="ascending"
@@ -209,7 +206,6 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
                 right: 20,
                 top: 20,
               }}
-              fontSize={9}
             />
           )}
         </Tab>
@@ -222,7 +218,6 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
               title={'Durations for ' + linechartParams.job_name}
               params={linechartParams}
               hideDropdown={true}
-              height={180}
               padding={{
                 bottom: 50,
                 left: 50,

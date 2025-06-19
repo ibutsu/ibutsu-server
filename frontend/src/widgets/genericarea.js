@@ -22,7 +22,6 @@ import { CHART_COLOR_MAP } from '../constants';
 
 const GenericAreaWidget = ({
   fontSize,
-  height,
   interpolation,
   padding,
   params,
@@ -140,58 +139,65 @@ const GenericAreaWidget = ({
   }, [fontSize, percentData, showTooltip]);
 
   return (
-    <Card>
+    <Card className="ibutsu-widget-card">
       <WidgetHeader
         title={title || 'Generic Area Chart'}
         onEditClick={onEditClick}
         onDeleteClick={onDeleteClick}
       />
-      <CardBody data-id="generic-area">
+      <CardBody className="ibutsu-widget-card-body" data-id="generic-area">
         {isError && <p>Error fetching data</p>}
         {!isError && isLoading && <Content component="h2">Loading ...</Content>}
         {!isError && !isLoading && (
-          <Chart
-            padding={
-              padding || {
-                bottom: 30,
-                left: 150,
-                right: 15,
-                top: 20,
+          <div className="ibutsu-widget-chart-container">
+            <Chart
+              className="ibutsu-widget-chart"
+              height={250}
+              padding={
+                padding || {
+                  bottom: 30,
+                  left: 150,
+                  right: 15,
+                  top: 20,
+                }
               }
-            }
-            domainPadding={{ y: 10 }}
-            height={height || 200}
-            containerComponent={toolTip}
-          >
-            <ChartStack>{areaCharts}</ChartStack>
-            <ChartAxis
-              label={xLabel || 'x'}
-              fixLabelOverlap
-              style={{
-                tickLabels: { fontSize: fontSize - 2 || 14 },
-                axisLabel: { fontSize: fontSize || 14 },
-              }}
-            />
-            <ChartAxis
-              label={yLabel || 'y'}
-              dependentAxis
-              style={{
-                tickLabels: { fontSize: fontSize - 2 || 14 },
-                axisLabel: { fontSize: fontSize || 14 },
-              }}
-            />
-          </Chart>
+              domainPadding={{ y: 10 }}
+              containerComponent={toolTip}
+            >
+              <ChartStack>{areaCharts}</ChartStack>
+              <ChartAxis
+                label={xLabel || 'x'}
+                fixLabelOverlap
+                style={{
+                  tickLabels: { fontSize: fontSize - 2 || 14 },
+                  axisLabel: { fontSize: fontSize || 14 },
+                }}
+              />
+              <ChartAxis
+                label={yLabel || 'y'}
+                dependentAxis
+                style={{
+                  tickLabels: { fontSize: fontSize - 2 || 14 },
+                  axisLabel: { fontSize: fontSize || 14 },
+                }}
+              />
+            </Chart>
+          </div>
         )}
       </CardBody>
-      <CardFooter>
-        <ChartLegend
-          height={30}
-          data={legendData}
-          style={{
-            labels: { fontFamily: 'RedHatText', fontSize: fontSize - 2 || 14 },
-            title: { fontFamily: 'RedHatText' },
-          }}
-        />
+      <CardFooter className="ibutsu-widget-footer">
+        <div className="ibutsu-widget-chart-legend">
+          <ChartLegend
+            data={legendData}
+            height={60}
+            responsive={true}
+            itemsPerRow={3}
+            style={{
+              labels: { fontFamily: 'RedHatText', fontSize: 12 },
+              title: { fontFamily: 'RedHatText' },
+            }}
+          />
+        </div>
         {varExplanation && <Content component="h3">{varExplanation}</Content>}
       </CardFooter>
     </Card>
@@ -201,7 +207,6 @@ const GenericAreaWidget = ({
 GenericAreaWidget.propTypes = {
   dropdownItems: PropTypes.array,
   fontSize: PropTypes.number,
-  height: PropTypes.number,
   hideDropdown: PropTypes.bool,
   interpolation: PropTypes.string,
   padding: PropTypes.object,
