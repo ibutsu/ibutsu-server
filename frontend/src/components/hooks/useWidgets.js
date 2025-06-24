@@ -16,6 +16,45 @@ import ResultSummaryApex from '../../widgets/ResultSummaryApex';
 import ResultAggregateApex from '../../widgets/ResultAggregateApex';
 import RunAggregateApex from '../../widgets/RunAggregateApex';
 
+// Move constants outside component to prevent unnecessary re-renders
+const DEFAULT_COLSPAN = Object.freeze({
+  sm: 12,
+  md: 6,
+  lg: 6,
+  xl: 4,
+  xl2: 4,
+});
+
+const COLUMN_SPAN = Object.freeze({
+  'jenkins-heatmap': { sm: 12, md: 6, lg: 6, xl: 6, xl2: 6 },
+  'filter-heatmap': { sm: 12, md: 6, lg: 6, xl: 6, xl2: 6 },
+  'run-aggregator': DEFAULT_COLSPAN,
+  'result-summary': DEFAULT_COLSPAN,
+  'result-aggregator': DEFAULT_COLSPAN,
+  'jenkins-bar-chart': DEFAULT_COLSPAN,
+  'jenkins-line-chart': DEFAULT_COLSPAN,
+  'importance-component': DEFAULT_COLSPAN,
+});
+
+const DEFAULT_ROWSPAN = Object.freeze({
+  smRowSpan: 1,
+  mdRowSpan: 1,
+  lgRowSpan: 1,
+  xlRowSpan: 1,
+  xl2RowSpan: 1,
+});
+
+const ROW_SPAN = Object.freeze({
+  'jenkins-heatmap': DEFAULT_ROWSPAN,
+  'filter-heatmap': DEFAULT_ROWSPAN,
+  'run-aggregator': DEFAULT_ROWSPAN,
+  'result-summary': DEFAULT_ROWSPAN,
+  'result-aggregator': DEFAULT_ROWSPAN,
+  'jenkins-bar-chart': DEFAULT_ROWSPAN,
+  'jenkins-line-chart': DEFAULT_ROWSPAN,
+  'importance-component': DEFAULT_ROWSPAN,
+});
+
 export const useWidgets = ({
   dashboardId = null,
   editCallback = () => {},
@@ -52,26 +91,13 @@ export const useWidgets = ({
     }
   }, [dashboardId, primaryObject, loadKey]);
 
-  // Proxy this to set defaults?
-  const DEFAULT_SIZES = Object.freeze({ sm: 12, md: 6, lg: 6, xl: 4, xl2: 4 });
-
-  const gridItemSpan = Object.freeze({
-    'jenkins-heatmap': { sm: 12, md: 6, lg: 6, xl: 6, xl2: 6 },
-    'filter-heatmap': { sm: 12, md: 6, lg: 6, xl: 6, xl2: 6 },
-    'run-aggregator': DEFAULT_SIZES,
-    'result-summary': DEFAULT_SIZES,
-    'result-aggregator': DEFAULT_SIZES,
-    'jenkins-bar-chart': DEFAULT_SIZES,
-    'jenkins-line-chart': DEFAULT_SIZES,
-    'importance-component': DEFAULT_SIZES,
-  });
-
   const widgetComponents = useMemo(() => {
     return widgets?.map((widget) => {
       if (KNOWN_WIDGETS.includes(widget.widget)) {
         return (
           <GridItem
-            {...gridItemSpan[widget.widget]}
+            {...COLUMN_SPAN[widget.widget]}
+            {...ROW_SPAN[widget.widget]}
             key={`${widget.id}-${loadKey}`}
           >
             {widget.type === 'widget' &&
@@ -198,7 +224,7 @@ export const useWidgets = ({
         );
       }
     });
-  }, [deleteCallback, editCallback, gridItemSpan, loadKey, widgets]);
+  }, [deleteCallback, editCallback, loadKey, widgets]);
 
   return { widgets, widgetComponents };
 };

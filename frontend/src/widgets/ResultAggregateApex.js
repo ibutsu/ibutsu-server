@@ -9,7 +9,31 @@ import { Settings } from '../settings';
 import { getDarkTheme, toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
-import { CHART_COLOR_MAP } from '../constants';
+import {
+  CHART_COLOR_MAP,
+  DEFAULT_CHART_COLORS,
+  ICON_RESULT_MAP,
+  WIDGET_HEIGHT,
+} from '../constants';
+import ResultWidgetLegend from './ResultWidgetLegend';
+import { useSVGContainerDimensions } from '../components/hooks/useSVGContainerDimensions';
+
+// Helper function to get color for a label
+const getColorForLabel = (label, index) => {
+  // First check if it's a result type
+  const resultColor = CHART_COLOR_MAP[label.toLowerCase()];
+  if (resultColor) {
+    return resultColor;
+  }
+
+  // Use default chart colors cycling through the array
+  return DEFAULT_CHART_COLORS[index % DEFAULT_CHART_COLORS.length];
+};
+
+// Helper function to get colors for all labels
+const getColorsForLabels = (labels) => {
+  return labels.map((label, index) => getColorForLabel(label, index));
+};
 
 const ResultAggregateApex = ({
   title,
@@ -30,7 +54,19 @@ const ResultAggregateApex = ({
   const runId = useRef(params.run_id);
   const project = useRef(params.project);
 
-  console.dir(params);
+  // Dynamic SVG container measurement
+  const { containerRef, width: containerWidth } = useSVGContainerDimensions();
+
+  const dropdownItemsMemo = useMemo(() => {
+    const uniqueItems = new Set([
+      'result',
+      'metadata.exception_name',
+      'component',
+      'metadata.classification',
+      `${groupField}`,
+    ]);
+    return dropdownItems || [...uniqueItems];
+  }, [dropdownItems, groupField]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -50,7 +86,7 @@ const ResultAggregateApex = ({
         const data = await HttpClient.handleResponse(response);
         let _chartData = [];
         let _total = 0;
-        data.forEach((datum) => {
+        data?.forEach((datum) => {
           _chartData.push({
             x: datum._id,
             y: datum.count,
@@ -92,92 +128,121 @@ const ResultAggregateApex = ({
     };
   }, [chartData]);
 
-  // ApexCharts configuration
-  const chartOptions = {
-    chart: {
-      type: 'donut',
-    },
-    colors: chartLabels.map((label) => CHART_COLOR_MAP[label.toLowerCase()]),
-    labels: chartLabels,
-    legend: {
-      show: true,
-      position: 'bottom',
-      fontFamily: 'RedHatText, sans-serif',
-      labels: {
-        colors: chartLabels.map(
-          (label) => CHART_COLOR_MAP[label.toLowerCase()],
-        ),
-        overflow: 'visible',
-      },
-      formatter: function (val) {
-        return val;
-      },
-    },
-    plotOptions: {
-      pie: {
-        donut: {
-          size: '85%',
+  const chartLegend = useMemo(() => {
+    if (
+      chartLabels?.length > 0 &&
+      chartLabels.every((label) =>
+        Object.keys(ICON_RESULT_MAP).includes(label.toLowerCase()),
+      )
+    ) {
+      return {
+        legendOption: {
+          show: false,
+        },
+        legendData: chartLabels.map((resultLabel, index) => {
+          // Find the corresponding count from chartData
+          const chartItem = chartData.find(
+            (item) => item.x === resultLabel.toLowerCase(),
+          );
+          const count = chartItem ? chartItem.y : chartSeries[index] || 0;
+
+          return {
+            name: `${resultLabel} (${count})`,
+            symbol: {
+              fill: CHART_COLOR_MAP[resultLabel.toLowerCase()],
+              type: resultLabel.toLowerCase(),
+            },
+          };
+        }),
+      };
+    } else {
+      return {
+        legendOption: {
+          show: true,
+          position: 'bottom',
+          fontFamily: 'RedHatText, sans-serif',
           labels: {
-            show: true,
-            name: {
+            colors: getColorsForLabels(chartLabels),
+            overflow: 'visible',
+          },
+          formatter: function (val) {
+            return val;
+          },
+        },
+      };
+    }
+  }, [chartData, chartLabels, chartSeries]);
+
+  // ApexCharts configuration
+  const chartOptions = useMemo(() => {
+    return {
+      chart: {
+        type: 'donut',
+      },
+      colors: getColorsForLabels(chartLabels),
+      labels: chartLabels,
+      legend: chartLegend.legendOption,
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '85%',
+            labels: {
               show: true,
-              fontFamily: 'RedHatText, sans-serif',
-              color: 'var(--pf-t--global--text--color--regular)',
-            },
-            value: {
-              show: true,
-              fontFamily: 'RedHatText, sans-serif',
-              color: 'var(--pf-t--global--text--color--regular)',
-              formatter: function (val) {
-                return val;
+              name: {
+                show: true,
+                fontFamily: 'RedHatText, sans-serif',
+                color: 'var(--pf-t--global--text--color--regular)',
               },
-            },
-            total: {
-              show: true,
-              showAlways: false,
-              label: 'Total Results',
-              fontWeight: 600,
-              fontFamily: 'RedHatText, sans-serif',
-              color: 'var(--pf-t--global--text--color--subtle)',
-              formatter: function () {
-                return total || 0;
+              value: {
+                show: true,
+                fontFamily: 'RedHatText, sans-serif',
+                color: 'var(--pf-t--global--text--color--regular)',
+                formatter: function (val) {
+                  return val;
+                },
+              },
+              total: {
+                show: true,
+                showAlways: false,
+                label: 'Total Results',
+                fontWeight: 600,
+                fontFamily: 'RedHatText, sans-serif',
+                color: 'var(--pf-t--global--text--color--subtle)',
+                formatter: function () {
+                  return total || 0;
+                },
               },
             },
           },
         },
       },
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    stroke: {
-      show: true,
-      width: 1,
-      colors: ['var(--pf-t--global--text--color--regular)'],
-    },
-    tooltip: {
-      enabled: true,
-      theme: getDarkTheme() ? 'dark' : 'light',
-      style: {
-        fontFamily: 'RedHatText, sans-serif',
+      dataLabels: {
+        enabled: false,
       },
-      y: {
-        formatter: function (val) {
-          return `${val} results`;
+      tooltip: {
+        enabled: true,
+        theme: getDarkTheme() ? 'dark' : 'light',
+        style: {
+          fontFamily: 'RedHatText, sans-serif',
         },
-      },
-    },
-    responsive: [
-      {
-        breakpoint: 768,
-        options: {
-          chart: {
-            height: 250,
+        y: {
+          formatter: function (val) {
+            return `${val} results`;
           },
         },
       },
-    ],
-  };
+      responsive: [
+        {
+          breakpoint: 768,
+          options: {
+            chart: {
+              height: WIDGET_HEIGHT,
+            },
+          },
+        },
+      ],
+    };
+  }, [chartLabels, chartLegend, total]);
 
   const onGroupFieldSelect = (value) => {
     setFilterGroupField(value);
@@ -186,6 +251,8 @@ const ResultAggregateApex = ({
   const onDaySelect = (value) => {
     setFilterDays(value);
   };
+
+  const itemsPerRow = Math.ceil((chartLegend?.legendData?.length || 3) / 3);
 
   return (
     <Card className="ibutsu-widget-card">
@@ -227,39 +294,69 @@ const ResultAggregateApex = ({
           </div>
         )}
         {!resultAggregatorError && !isLoading && total !== 0 && (
-          <div className="ibutsu-widget-chart-container">
-            <Chart
-              className="ibutsu-widget-chart"
-              options={chartOptions}
-              series={chartSeries}
-              type="donut"
-            />
-          </div>
+          <>
+            <div
+              className="ibutsu-widget-chart-container"
+              style={{ height: 'auto', minHeight: '250px' }}
+            >
+              <Chart
+                className="ibutsu-widget-chart"
+                options={chartOptions}
+                series={chartSeries}
+                type="donut"
+              />
+            </div>
+            {chartLegend?.legendData?.length > 0 && (
+              <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                <svg
+                  ref={containerRef}
+                  style={{
+                    overflow: 'visible',
+                    width: '100%',
+                    height: '60px',
+                  }}
+                >
+                  {chartLegend?.legendData?.map((item, index) => {
+                    const row = Math.floor(index / itemsPerRow);
+                    const col = index % itemsPerRow;
+                    const itemWidth = 150;
+                    const totalLegendWidth = itemsPerRow * itemWidth;
+                    const startX = Math.max(
+                      0,
+                      (containerWidth - totalLegendWidth) / 2,
+                    );
+
+                    return (
+                      <ResultWidgetLegend
+                        key={item.name}
+                        x={startX + col * itemWidth}
+                        y={20 + row * 25}
+                        datum={item}
+                        style={{
+                          fill: 'var(--pf-t--global--text--color--regular)',
+                        }}
+                      />
+                    );
+                  })}
+                </svg>
+              </div>
+            )}
+          </>
         )}
       </CardBody>
       <CardFooter className="ibutsu-widget-footer">
-        <div style={{ marginTop: 'var(--pf-v6-global--spacer--sm)' }}>
-          <ParamDropdown
-            dropdownItems={
-              dropdownItems || [
-                'result',
-                'metadata.exception_name',
-                'component',
-                'metadata.classification',
-                `${groupField}`,
-              ]
-            }
-            defaultValue={filterGroupField}
-            handleSelect={onGroupFieldSelect}
-            tooltip="Group data by:"
-          />
-          <ParamDropdown
-            dropdownItems={[3, 5, 10, 14, 90]}
-            handleSelect={onDaySelect}
-            defaultValue={filterDays}
-            tooltip="Set days to:"
-          />
-        </div>
+        <ParamDropdown
+          dropdownItems={dropdownItemsMemo}
+          defaultValue={filterGroupField}
+          handleSelect={onGroupFieldSelect}
+          tooltip="Group data by:"
+        />
+        <ParamDropdown
+          dropdownItems={[3, 5, 10, 14, 90]}
+          handleSelect={onDaySelect}
+          defaultValue={filterDays}
+          tooltip="Set days to:"
+        />
       </CardFooter>
     </Card>
   );

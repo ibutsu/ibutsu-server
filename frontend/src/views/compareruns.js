@@ -104,8 +104,6 @@ const CompareRunsView = () => {
         project_id: { op: 'in', val: projectId },
       };
 
-      console.dir(filtersWithProject);
-
       // Retrieve results from database
       HttpClient.get([Settings.serverUrl, 'widget', 'compare-runs-view'], {
         filters: filtersWithProject.map((f) => toAPIFilter(f)),

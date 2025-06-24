@@ -2,14 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import Chart from 'react-apexcharts';
 
-import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
+import { Card, CardBody, Content } from '@patternfly/react-core';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
 import { getDarkTheme, toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
-import { CHART_COLOR_MAP } from '../constants';
+import { CHART_COLOR_MAP, WIDGET_HEIGHT } from '../constants';
 import ResultWidgetLegend from './ResultWidgetLegend';
+import { useSVGContainerDimensions } from '../components/hooks/useSVGContainerDimensions';
 
 const ResultSummaryApex = ({ title, params, onDeleteClick, onEditClick }) => {
   const [summary, setSummary] = useState({
@@ -26,6 +27,9 @@ const ResultSummaryApex = ({ title, params, onDeleteClick, onEditClick }) => {
 
   const [isError, setIsError] = useState(false);
   const [fetching, setFetching] = useState(true);
+
+  // Dynamic SVG container measurement
+  const { containerRef, width: containerWidth } = useSVGContainerDimensions();
 
   useEffect(() => {
     setIsError(false);
@@ -77,7 +81,7 @@ const ResultSummaryApex = ({ title, params, onDeleteClick, onEditClick }) => {
     };
   }, [summary]);
 
-  // Legend data for PatternFly legend component
+  // Legend data for with custom symbols
   const legendData = useMemo(() => {
     return Object.keys(summary || {}).length
       ? Object.keys(summary)
@@ -142,11 +146,6 @@ const ResultSummaryApex = ({ title, params, onDeleteClick, onEditClick }) => {
       dataLabels: {
         enabled: false,
       },
-      stroke: {
-        show: true,
-        width: 1,
-        colors: ['var(--pf-t--global--text--color--regular)'],
-      },
       tooltip: {
         enabled: true,
         theme: getDarkTheme() ? 'dark' : 'light',
@@ -164,7 +163,7 @@ const ResultSummaryApex = ({ title, params, onDeleteClick, onEditClick }) => {
           breakpoint: 768,
           options: {
             chart: {
-              height: 250,
+              height: WIDGET_HEIGHT,
             },
           },
         },
@@ -203,39 +202,52 @@ const ResultSummaryApex = ({ title, params, onDeleteClick, onEditClick }) => {
           </div>
         )}
         {!isError && !fetching && Object.keys(summary || {}).length && (
-          <div className="ibutsu-widget-chart-container">
-            <Chart
-              className="ibutsu-widget-chart"
-              options={chartOptions}
-              series={chartSeries}
-              type="donut"
-            />
-          </div>
+          <>
+            <div
+              className="ibutsu-widget-chart-container"
+              style={{ height: 'auto', minHeight: '250px' }}
+            >
+              <Chart
+                className="ibutsu-widget-chart"
+                options={chartOptions}
+                series={chartSeries}
+                type="donut"
+              />
+            </div>
+            {Object.keys(summary || {}).length > 0 && (
+              <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                <svg
+                  ref={containerRef}
+                  style={{ overflow: 'visible', width: '100%', height: '60px' }}
+                >
+                  {legendData.map((item, index) => {
+                    const row = Math.floor(index / itemsPerRow);
+                    const col = index % itemsPerRow;
+                    const itemWidth = 150;
+                    const totalLegendWidth = itemsPerRow * itemWidth;
+                    const startX = Math.max(
+                      0,
+                      (containerWidth - totalLegendWidth) / 2,
+                    );
+
+                    return (
+                      <ResultWidgetLegend
+                        key={item.name}
+                        x={startX + col * itemWidth}
+                        y={20 + row * 25}
+                        datum={item}
+                        style={{
+                          fill: 'var(--pf-t--global--text--color--regular)',
+                        }}
+                      />
+                    );
+                  })}
+                </svg>
+              </div>
+            )}
+          </>
         )}
       </CardBody>
-      <CardFooter className="ibutsu-widget-footer">
-        {!isError && !fetching && Object.keys(summary || {}).length > 0 && (
-          <svg style={{ overflow: 'visible' }}>
-            {legendData.map((item, index) => {
-              const row = Math.floor(index / itemsPerRow);
-              const col = index % itemsPerRow;
-              const itemWidth = 120;
-
-              return (
-                <ResultWidgetLegend
-                  key={item.name}
-                  x={(100 - itemsPerRow * itemWidth) / 2 + col * itemWidth}
-                  y={20 + row * 25}
-                  datum={item}
-                  style={{
-                    fill: 'var(--pf-t--global--text--color--regular)',
-                  }}
-                />
-              );
-            })}
-          </svg>
-        )}
-      </CardFooter>
     </Card>
   );
 };
