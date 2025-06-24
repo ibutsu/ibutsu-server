@@ -24,6 +24,8 @@ export const KNOWN_WIDGETS = [
   'jenkins-line-chart',
   'importance-component',
 ];
+export const WIDGET_HEIGHT = 250; // px
+
 export const STRING_OPERATIONS = Object.freeze({
   eq: { opChar: '=', opString: 'equals' },
   ne: { opChar: '!', opString: 'not equals' },
@@ -228,6 +230,20 @@ export const CHART_COLOR_MAP = Object.freeze({
   manual: 'var(--pf-t--chart--color--cyan--500)',
   default: 'var(--pf-t--chart--color--black--100)',
 });
+
+// Default color palette for non-result aggregations using PatternFly chart color tokens
+export const DEFAULT_CHART_COLORS = Object.freeze([
+  'var(--pf-t--chart--color--blue--100)',
+  'var(--pf-t--chart--color--green--100)',
+  'var(--pf-t--chart--color--purple--200)',
+  'var(--pf-t--chart--color--cyan--500)',
+  'var(--pf-t--chart--color--orange--300)',
+  'var(--pf-t--chart--color--red--100)',
+  'var(--pf-t--chart--color--teal--500)',
+  'var(--pf-t--chart--color--pink--300)',
+  'var(--pf-t--chart--color--lime--400)',
+  'var(--pf-t--chart--color--indigo--300)',
+]);
 
 export const FILE_IMPORT_KEY = 'importFile';
 

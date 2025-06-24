@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import Chart from 'react-apexcharts';
 
@@ -11,6 +11,7 @@ import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 import { CHART_COLOR_MAP } from '../constants';
 import ResultWidgetLegend from './ResultWidgetLegend';
+import { useSVGContainerDimensions } from '../components/hooks/useSVGContainerDimensions';
 
 const RunAggregateApex = ({
   title,
@@ -26,8 +27,14 @@ const RunAggregateApex = ({
   const [runAggregatorError, setRunAggregatorError] = useState(false);
   const [groupField, setGroupField] = useState(params.group_field);
   const [weeks, setWeeks] = useState(params.weeks);
+  const [containerHeight, setContainerHeight] = useState(null);
+  const cardRef = useRef(null);
+  const resizeObserverRef = useRef(null);
+  const timeoutRef = useRef(null);
 
-  console.dir(params);
+  // Dynamic SVG container measurement
+  const { containerRef: legendContainerRef, width: legendContainerWidth } =
+    useSVGContainerDimensions();
 
   useEffect(() => {
     setIsLoading(true);
@@ -68,6 +75,44 @@ const RunAggregateApex = ({
       fetchAggregated();
     }
   }, [params, groupField, weeks]);
+
+  // Effect to monitor container height changes
+  useEffect(() => {
+    if (!cardRef.current) return;
+
+    const updateContainerHeight = () => {
+      if (cardRef.current) {
+        const cardHeight = cardRef.current.offsetHeight;
+        // Debounce height updates to prevent excessive re-renders
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          setContainerHeight(cardHeight);
+        }, 100);
+      }
+    };
+
+    // Initial measurement with a small delay to ensure DOM is ready
+    timeoutRef.current = setTimeout(updateContainerHeight, 100);
+
+    // Set up ResizeObserver to watch for container size changes
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserverRef.current = new ResizeObserver(() => {
+        updateContainerHeight();
+      });
+      resizeObserverRef.current.observe(cardRef.current);
+    }
+
+    // Fallback: listen for window resize
+    window.addEventListener('resize', updateContainerHeight);
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+      window.removeEventListener('resize', updateContainerHeight);
+    };
+  }, []);
 
   // Prepare data for ApexCharts horizontal bar chart
   const { chartSeries, chartCategories } = useMemo(() => {
@@ -110,6 +155,24 @@ const RunAggregateApex = ({
     };
   }, [chartData]);
 
+  // Calculate responsive height based on data and container
+  const chartHeight = useMemo(() => {
+    const minHeight = 250;
+    const maxHeight = 600;
+    const categoryCount = chartCategories.length;
+
+    if (!containerHeight) {
+      // Default calculation when container height not available
+      return horizontal
+        ? Math.min(Math.max(minHeight, categoryCount * 35), maxHeight)
+        : minHeight;
+    }
+
+    // Use 70% of container height for chart, leaving space for header/footer
+    const availableHeight = Math.max(minHeight, containerHeight * 0.7);
+    return Math.min(availableHeight, maxHeight);
+  }, [chartCategories.length, horizontal, containerHeight]);
+
   // ApexCharts configuration for horizontal bar chart
   const chartOptions = useMemo(() => {
     return {
@@ -117,6 +180,7 @@ const RunAggregateApex = ({
         type: 'bar',
         stacked: true,
         stackType: '100%',
+        height: chartHeight,
       },
       toolbar: {
         show: false,
@@ -132,11 +196,6 @@ const RunAggregateApex = ({
       },
       dataLabels: {
         enabled: false,
-      },
-      stroke: {
-        show: true,
-        width: 1,
-        colors: ['var(--pf-t--global--text--color--regular)'],
       },
       xaxis: {
         categories: chartCategories,
@@ -180,13 +239,13 @@ const RunAggregateApex = ({
           breakpoint: 768,
           options: {
             chart: {
-              height: 350,
+              height: Math.max(200, chartHeight * 0.75), // Smaller height for mobile
             },
           },
         },
       ],
     };
-  }, [chartSeries, chartCategories, horizontal]);
+  }, [chartSeries, chartCategories, horizontal, chartHeight]);
 
   const onGroupFieldSelect = (value) => {
     setGroupField(value);
@@ -199,7 +258,11 @@ const RunAggregateApex = ({
   const itemsPerRow = Math.ceil(legendData.length / 3);
 
   return (
-    <Card className="ibutsu-widget-card">
+    <Card
+      className="ibutsu-widget-card"
+      ref={cardRef}
+      style={{ height: '100%' }}
+    >
       <WidgetHeader
         title={title || 'Recent Run Results'}
         onEditClick={onEditClick}
@@ -231,39 +294,58 @@ const RunAggregateApex = ({
         {!runAggregatorError &&
           !isLoading &&
           Object.keys(chartData || {}).length > 0 && (
-            <div className="ibutsu-widget-chart-container">
-              <Chart
-                className="ibutsu-widget-chart"
-                options={chartOptions}
-                series={chartSeries}
-                type="bar"
-                height={350}
-              />
-            </div>
+            <>
+              <div
+                className="ibutsu-widget-chart-container"
+                style={{ height: chartHeight }}
+              >
+                <Chart
+                  className="ibutsu-widget-chart"
+                  options={chartOptions}
+                  series={chartSeries}
+                  type="bar"
+                  height={chartHeight}
+                />
+              </div>
+              {legendData.length > 0 && (
+                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                  <svg
+                    ref={legendContainerRef}
+                    style={{
+                      overflow: 'visible',
+                      width: '100%',
+                      height: '60px',
+                    }}
+                  >
+                    {legendData.map((item, index) => {
+                      const row = Math.floor(index / itemsPerRow);
+                      const col = index % itemsPerRow;
+                      const itemWidth = 120;
+                      const totalLegendWidth = itemsPerRow * itemWidth;
+                      const startX = Math.max(
+                        0,
+                        (legendContainerWidth - totalLegendWidth) / 2,
+                      );
+
+                      return (
+                        <ResultWidgetLegend
+                          key={item.name}
+                          x={startX + col * itemWidth}
+                          y={20 + row * 25}
+                          datum={item}
+                          style={{
+                            fill: 'var(--pf-t--global--text--color--regular)',
+                          }}
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+              )}
+            </>
           )}
       </CardBody>
       <CardFooter className="ibutsu-widget-footer">
-        {!runAggregatorError && !isLoading && legendData.length > 0 && (
-          <svg style={{ overflow: 'visible' }}>
-            {legendData.map((item, index) => {
-              const row = Math.floor(index / itemsPerRow);
-              const col = index % itemsPerRow;
-              const itemWidth = 120;
-
-              return (
-                <ResultWidgetLegend
-                  key={item.name}
-                  x={col * itemWidth}
-                  y={20 + row * 25}
-                  datum={item}
-                  style={{
-                    fill: 'var(--pf-t--global--text--color--regular)',
-                  }}
-                />
-              );
-            })}
-          </svg>
-        )}
         <ParamDropdown
           dropdownItems={
             dropdownItems || ['component', 'env', 'metadata.jenkins.job_name']

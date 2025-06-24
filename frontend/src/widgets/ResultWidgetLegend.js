@@ -7,7 +7,7 @@ const ResultWidgetLegend = ({ x, y, datum, style }) => {
   const textOffset = iconSize + 8;
   const resultType = datum?.symbol?.type;
 
-  // Get the appropriate icon from ICON_RESULT_MAP
+  // Get the appropriate icon from ICON_RESULT_MAP (already has correct colors)
   const IconComponent = ICON_RESULT_MAP[resultType];
 
   if (!IconComponent) {
@@ -51,12 +51,8 @@ const ResultWidgetLegend = ({ x, y, datum, style }) => {
           style={{
             width: iconSize,
             height: iconSize,
-            display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color:
-              datum.symbol?.fill ||
-              'var(--pf-t--global--color--brand--default)',
           }}
         >
           {IconComponent}

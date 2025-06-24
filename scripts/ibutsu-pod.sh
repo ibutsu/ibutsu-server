@@ -437,7 +437,8 @@ if [[ $CREATE_PROJECT = true ]]; then
                     \"widget\": \"result-aggregator\", \
                     \"params\": {\"group_field\": \"result\", \
                                 \"chart_type\": \"donut\", \
-                                \"days\": 120}}" \
+                                \"days\": 30, \
+                                \"additional_filters\": \"env*stage_proxy;stage\", \}}" \
             http://127.0.0.1:8080/api/widget-config | jq -r '.id')
         echo "  Result Aggregator ID: ${RESULT_AGGREGATOR}"
 
