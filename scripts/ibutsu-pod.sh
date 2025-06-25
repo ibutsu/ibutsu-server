@@ -398,9 +398,48 @@ if [[ $CREATE_PROJECT = true ]]; then
                     \"widget\": \"filter-heatmap\", \
                     \"params\": {\"filters\": \"component=${RUN_COMPONENT}\", \
                                \"group_field\": \"component\", \
-                               \"builds\": 5}}" \
+                               \"builds\": 10}}" \
             http://127.0.0.1:8080/api/widget-config | jq -r '.id')
         echo "  Filtered Heatmap ID: ${FILTERED_HEATMAP}"
+
+        RUN_AGGREGATOR=$(curl --no-progress-meter --header "Content-Type: application/json" \
+            --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            --request POST \
+            --data "{\"dashboard_id\": \"${DASHBOARD_ID}\", \
+                    \"project_id\": \"${PROJECT_ID}\", \
+                    \"title\": \"Run Aggregation\", \
+                    \"type\": \"widget\", \
+                    \"widget\": \"run-aggregator\", \
+                    \"params\": {\"group_field\": \"component\", \
+                               \"weeks\": 12}}" \
+            http://127.0.0.1:8080/api/widget-config | jq -r '.id')
+        echo "  Run Aggregator ID: ${RUN_AGGREGATOR}"
+
+        RESULT_SUMMARY=$(curl --no-progress-meter --header "Content-Type: application/json" \
+            --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            --request POST \
+            --data "{\"dashboard_id\": \"${DASHBOARD_ID}\", \
+                    \"project_id\": \"${PROJECT_ID}\", \
+                    \"title\": \"Result Summary\", \
+                    \"type\": \"widget\", \
+                    \"widget\": \"result-summary\", \
+                    \"params\": {}}" \
+            http://127.0.0.1:8080/api/widget-config | jq -r '.id')
+        echo "  Result Summary ID: ${RESULT_SUMMARY}"
+
+        RESULT_AGGREGATOR=$(curl --no-progress-meter --header "Content-Type: application/json" \
+            --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            --request POST \
+            --data "{\"dashboard_id\": \"${DASHBOARD_ID}\", \
+                    \"project_id\": \"${PROJECT_ID}\", \
+                    \"title\": \"Result Aggregation\", \
+                    \"type\": \"widget\", \
+                    \"widget\": \"result-aggregator\", \
+                    \"params\": {\"group_field\": \"result\", \
+                                \"chart_type\": \"donut\", \
+                                \"days\": 120}}" \
+            http://127.0.0.1:8080/api/widget-config | jq -r '.id')
+        echo "  Result Aggregator ID: ${RESULT_AGGREGATOR}"
 
     fi
 
