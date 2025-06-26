@@ -41,7 +41,7 @@
     "victory": "^37.3.6"
   },
   "devDependencies": {
-    "@babel/core": "^7.27.4",
+    "@babel/core": "^7.27.7",
     "@babel/eslint-parser": "^7.27.5",
     "@babel/helper-call-delegate": "^7.12.13",
     "@babel/plugin-syntax-flow": "^7.14.5",
@@ -62,11 +62,11 @@
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-cypress": "^5.1.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-prettier": "^5.5.0",
+    "eslint-plugin-prettier": "^5.5.1",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-unused-imports": "^4.1.4",
-    "prettier": "^3.5.3"
+    "prettier": "^3.6.1"
   },
   "scripts": {
     "start": "serve -s build -l tcp://0.0.0.0:3000",
