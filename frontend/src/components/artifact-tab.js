@@ -1,17 +1,24 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
+import {
+  Card,
+  CardBody,
+  CardExpandableContent,
+  CardHeader,
+  CodeBlock,
+  CodeBlockCode,
+  Content,
+} from '@patternfly/react-core';
 import DownloadButton from './download-button';
 import { Settings } from '../settings';
 import { HttpClient } from '../services/http';
-import { LogViewer, LogViewerSearch } from '@patternfly/react-log-viewer';
 
 const ArtifactTab = ({ artifact }) => {
   const [blob, setBlob] = useState();
   const [blobType, setBlobType] = useState();
   const [imageUrl, setImageUrl] = useState();
   const [isLoading, setIsLoading] = useState(true);
-  const logViewerRef = useRef();
+  const [isExpanded, setIsExpanded] = useState(false);
   const imageUrlRef = useRef();
 
   useEffect(() => {
@@ -69,29 +76,21 @@ const ArtifactTab = ({ artifact }) => {
       return <Content component="p">Unable to load artifact</Content>;
     }
 
-    if (blobType === 'text') {
+    if (blobType === 'text' && typeof blob === 'string') {
+      // raw string to preserve newlines and tabs
       return (
-        <LogViewer
-          ref={logViewerRef}
-          key={`${artifact.id}-${logViewerRef.current}`}
-          data={blob}
-          toolbar={<LogViewerSearch placeholder="Search log" />}
-        />
+        <CodeBlock>
+          <CodeBlockCode>
+            {blob.length ? String.raw`${blob}` : 'Log artifact is empty.'}
+          </CodeBlockCode>
+        </CodeBlock>
       );
     } else if (blobType === 'image') {
       return <img key={artifact.id} src={imageUrl} alt={artifact.filename} />;
     }
 
     return <Content component="p">Unsupported artifact type</Content>;
-  }, [
-    blob,
-    blobType,
-    artifact.id,
-    artifact.filename,
-    imageUrl,
-    isLoading,
-    logViewerRef,
-  ]);
+  }, [blob, blobType, artifact.id, artifact.filename, imageUrl, isLoading]);
 
   useEffect(() => {
     if (blobType === 'image' && blob) {
@@ -118,16 +117,18 @@ const ArtifactTab = ({ artifact }) => {
   }, []);
 
   return (
-    <Card>
-      <CardBody>{cardBody}</CardBody>
-      <CardFooter>
+    <Card isExpanded={isExpanded}>
+      <CardHeader onExpand={() => setIsExpanded(!isExpanded)}>
         <DownloadButton
           url={`${Settings.serverUrl}/artifact/${artifact.id}/download`}
           filename={artifact.filename}
         >
           Download {artifact.filename}
         </DownloadButton>
-      </CardFooter>
+      </CardHeader>
+      <CardExpandableContent>
+        <CardBody>{cardBody}</CardBody>
+      </CardExpandableContent>
     </Card>
   );
 };
