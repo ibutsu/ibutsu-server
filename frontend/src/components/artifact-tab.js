@@ -18,7 +18,7 @@ const ArtifactTab = ({ artifact }) => {
   const [blobType, setBlobType] = useState();
   const [imageUrl, setImageUrl] = useState();
   const [isLoading, setIsLoading] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const imageUrlRef = useRef();
 
   useEffect(() => {
