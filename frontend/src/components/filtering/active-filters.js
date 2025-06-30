@@ -32,7 +32,7 @@ const ActiveFilters = ({
   const navigate = useNavigate();
 
   const shownFilters = activeFilters?.filter(
-    (filter) => !hideFilters?.includes(filter.field),
+    (filter) => !hideFilters?.includes(filter?.field),
   );
 
   // Get the proper button text based on transfer_target
@@ -61,7 +61,7 @@ const ActiveFilters = ({
                     pathname: `/project/${params.project_id}/${transferTarget}`,
                     search: filtersToSearchParams(
                       activeFilters.filter(
-                        (filter) => filter.field !== 'project_id',
+                        (filter) => filter?.field !== 'project_id',
                       ),
                     ),
                   })
