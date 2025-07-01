@@ -1,7 +1,7 @@
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
@@ -37,7 +37,7 @@ def update_current_user(token_info=None, user=None):
     user = User.query.get(user)
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-    user_dict = connexion.request.get_json()
+    user_dict = request.get_json()
     user_dict.pop("is_superadmin", None)
     user.update(user_dict)
     session.add(user)
@@ -116,12 +116,12 @@ def add_token(token=None, token_info=None, user=None):
 
     :rtype: Token
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
     user = User.query.get(user)
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-    token = Token.from_dict(**connexion.request.get_json())
+    token = Token.from_dict(**request.get_json())
     token.user = user
     token.expires = datetime.fromisoformat(token.expires.replace("Z", "+00:00"))
     token.token = generate_token(user.id, token.expires.timestamp())

@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-import connexion
+from flask import request
 from sqlalchemy import or_
 
 from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, RESPONSE_JSON_REQ, WIDGET_TYPES
@@ -22,9 +22,9 @@ def add_widget_config(widget_config=None, token_info=None, user=None):
 
     :rtype: WidgetConfig
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    data = connexion.request.json
+    data = request.json
     if data["widget"] not in WIDGET_TYPES.keys():
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
 
@@ -113,9 +113,9 @@ def update_widget_config(id_, body=None, widget_config=None, token_info=None, us
 
     :rtype: Result
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    data = connexion.request.get_json()
+    data = request.get_json()
     if data.get("widget") and data["widget"] not in WIDGET_TYPES.keys():
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
     # Look up the project id

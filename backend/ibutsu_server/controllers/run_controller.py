@@ -1,7 +1,7 @@
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
@@ -120,9 +120,9 @@ def add_run(run=None, token_info=None, user=None):
 
     :rtype: Run
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    run = Run.from_dict(**connexion.request.get_json())
+    run = Run.from_dict(**request.get_json())
 
     if not run.data:
         return "Bad request, no data supplied", HTTPStatus.BAD_REQUEST
@@ -160,9 +160,9 @@ def update_run(id_, run=None, body=None, token_info=None, user=None):
 
     :rtype: Run
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    run_dict = connexion.request.get_json()
+    run_dict = request.get_json()
     if run_dict.get("metadata", {}).get("project"):
         run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
         if not project_has_user(run_dict["project_id"], user):
@@ -189,10 +189,10 @@ def bulk_update(filter_=None, page_size=1, token_info=None, user=None):
 
     :rtype: List[Run]
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
 
-    run_dict = connexion.request.get_json()
+    run_dict = request.get_json()
 
     if not run_dict.get("metadata"):
         return "Bad request, can only update metadata", HTTPStatus.UNAUTHORIZED

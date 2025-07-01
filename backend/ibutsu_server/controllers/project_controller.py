@@ -1,7 +1,7 @@
 from http import HTTPStatus
 
-import connexion
 import flatdict
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
@@ -20,9 +20,9 @@ def add_project(project=None, token_info=None, user=None):
 
     :rtype: Project
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    project = Project.from_dict(**connexion.request.get_json())
+    project = Project.from_dict(**request.get_json())
     # check if project already exists
     if project.id and Project.query.get(project.id):
         return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
@@ -116,7 +116,7 @@ def update_project(id_, project=None, token_info=None, user=None, **kwargs):
 
     :rtype: Project
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
     if not is_uuid(id_):
         id_ = convert_objectid_to_uuid(id_)
@@ -130,7 +130,7 @@ def update_project(id_, project=None, token_info=None, user=None, **kwargs):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
 
     # handle updating users separately
-    updates = connexion.request.get_json()
+    updates = request.get_json()
     for username in updates.pop("users", []):
         user_to_add = User.query.filter_by(email=username).first()
         if user_to_add and user_to_add not in project.users:

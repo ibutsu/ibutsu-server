@@ -4,9 +4,8 @@ from http import HTTPStatus
 from urllib.parse import urlencode
 from uuid import uuid4
 
-import connexion
 import requests
-from flask import current_app, make_response, redirect
+from flask import current_app, make_response, redirect, request
 from google.auth.transport.requests import Request
 from google.oauth2 import id_token
 
@@ -106,9 +105,9 @@ def login(email=None, password=None):
 
     :rtype: LoginToken
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    login = connexion.request.get_json()
+    login = request.get_json()
 
     if not login.get("email") or not login.get("password"):
         return {
@@ -169,9 +168,9 @@ def config(provider):
 
 def auth(provider):
     """Auth redirect URL"""
-    if not connexion.request.args.get("code"):
+    if not request.args.get("code"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-    code = connexion.request.args["code"]
+    code = request.args["code"]
     frontend_url = build_url(
         current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login"
     )
@@ -205,9 +204,9 @@ def register(email=None, password=None):
     :param password: The password for the user
     :type password: str
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    details = connexion.request.get_json()
+    details = request.get_json()
     if not details.get("email") or not details.get("password"):
         return {
             "code": "EMPTY",
@@ -253,9 +252,9 @@ def recover(email=None):
 
     :param email: The e-mail address of the user
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    login = connexion.request.get_json()
+    login = request.get_json()
     if not login.get("email"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
     user = User.query.filter(User.email == login["email"]).first()
@@ -275,9 +274,9 @@ def reset_password(activation_code=None, password=None):
     :param activation_code: The activation_code supplied to the reset page
     :param password: The new password for the user
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    login = connexion.request.get_json()
+    login = request.get_json()
     if result := validate_activation_code(login.get("activation_code")):
         return result
     if not login.get("activation_code") or not login.get("password"):

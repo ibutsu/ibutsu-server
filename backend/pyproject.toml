@@ -32,11 +32,11 @@ classifiers = [
 dependencies = [
     "alembic",
     "celery",
-    "connexion[swagger-ui]==2.14.2",
+    "connexion[swagger-ui]>=3.0.0",
     "flask_bcrypt",
     "flask_cors",
     "flask_mail",
-    "Flask>=2,<2.3.0",
+    "Flask>=2.2.0,<3.0.0",
     "Flask-SQLAlchemy<3.0",
     "flatdict",
     "google-api-python-client",

@@ -2,9 +2,8 @@ import json
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
 import magic
-from flask import make_response
+from flask import make_response, request
 
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact, Result, User
@@ -88,8 +87,8 @@ def get_artifact_list(
     """
     query = Artifact.query
     user = User.query.get(user)
-    if "result_id" in connexion.request.args:
-        result_id = connexion.request.args["result_id"]
+    if "result_id" in request.args:
+        result_id = request.args["result_id"]
     if result_id:
         query = query.filter(Artifact.result_id == result_id)
     if run_id:
@@ -138,7 +137,7 @@ def upload_artifact(body, token_info=None, user=None):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     filename = body.get("filename")
     additional_metadata = body.get("additional_metadata", {})
-    file_ = connexion.request.files["file"]
+    file_ = request.files["file"]
     content_type = magic.from_buffer(file_.read())
     data = {
         "contentType": content_type,

@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
@@ -19,9 +19,9 @@ def add_dashboard(dashboard=None, token_info=None, user=None):
 
     :rtype: Dashboard
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    dashboard = Dashboard.from_dict(**connexion.request.get_json())
+    dashboard = Dashboard.from_dict(**request.get_json())
     if dashboard.project_id and not project_has_user(dashboard.project_id, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     if dashboard.user_id and not User.query.get(dashboard.user_id):
@@ -66,8 +66,8 @@ def get_dashboard_list(
     """
     query = Dashboard.query
     project = None
-    if "project_id" in connexion.request.args:
-        project = Project.query.get(connexion.request.args["project_id"])
+    if "project_id" in request.args:
+        project = Project.query.get(request.args["project_id"])
     if project:
         if not project_has_user(project, user):
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
@@ -106,9 +106,9 @@ def update_dashboard(id_, dashboard=None, token_info=None, user=None):
 
     :rtype: Dashboard
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    dashboard_dict = connexion.request.get_json()
+    dashboard_dict = request.get_json()
     if dashboard_dict.get("metadata", {}).get("project") and not project_has_user(
         dashboard_dict["metadata"]["project"], user
     ):
@@ -118,7 +118,7 @@ def update_dashboard(id_, dashboard=None, token_info=None, user=None):
         return "Dashboard not found", HTTPStatus.NOT_FOUND
     if project_has_user(dashboard.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-    dashboard.update(connexion.request.get_json())
+    dashboard.update(request.get_json())
     session.add(dashboard)
     session.commit()
     return dashboard.to_dict()

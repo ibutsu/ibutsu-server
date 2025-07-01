@@ -4,8 +4,8 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any, Optional
 
+import connexion
 import flask
-from connexion import App
 from flask import redirect, request
 from flask_cors import CORS
 from flask_mail import Mail
@@ -58,7 +58,7 @@ def make_celery_redis_url(config: flask.Config, *, envvar: str) -> str:
 def get_app(**extra_config):
     """Create the WSGI application"""
 
-    app = App(__name__, specification_dir="./openapi/")
+    app = connexion.FlaskApp(__name__, specification_dir="./openapi/")
 
     app.app.json_provider_class = IbutsuJSONProvider
 
@@ -114,6 +114,7 @@ def get_app(**extra_config):
         arguments={"title": "Ibutsu"},
         base_path="/api",
         pythonic_params=True,
+        resolver=connexion.resolver.RelativeResolver("ibutsu_server.controllers"),
     )
 
     CORS(app.app, resources={r"/*": {"origins": "*", "send_wildcard": False}})

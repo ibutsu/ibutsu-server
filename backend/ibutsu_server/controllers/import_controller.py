@@ -2,7 +2,7 @@ import json
 from http import HTTPStatus
 from typing import Optional
 
-import connexion
+from flask import request
 from werkzeug.datastructures import FileStorage
 
 from ibutsu_server.db.base import session
@@ -52,13 +52,13 @@ def add_import(
 
     :rtype: Import
     """
-    if "importFile" in connexion.request.files:
-        import_file = connexion.request.files["importFile"]
+    if "importFile" in request.files:
+        import_file = request.files["importFile"]
     if not import_file:
         return "Bad request, no file uploaded", HTTPStatus.BAD_REQUEST
     data = {}
-    if connexion.request.form.get("project"):
-        project = connexion.request.form["project"]
+    if request.form.get("project"):
+        project = request.form["project"]
     if project:
         project_obj = get_project(project)
         if not project_obj:
@@ -66,11 +66,11 @@ def add_import(
         if not project_has_user(project, user):
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         data["project_id"] = project_obj.id
-    if connexion.request.form.get("metadata"):
-        metadata = json.loads(connexion.request.form.get("metadata"))
+    if request.form.get("metadata"):
+        metadata = json.loads(request.form.get("metadata"))
     data["metadata"] = metadata
-    if connexion.request.form.get("source"):
-        data["source"] = connexion.request.form["source"]
+    if request.form.get("source"):
+        data["source"] = request.form["source"]
     new_import = Import.from_dict(
         **{
             "status": "pending",

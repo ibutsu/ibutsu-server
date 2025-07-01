@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
@@ -17,9 +17,9 @@ def add_group(group=None):
 
     :rtype: Group
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    group = Group.from_dict(**connexion.request.get_json())
+    group = Group.from_dict(**request.get_json())
     if group.id and Group.query.get(group.id):
         return f"The group with ID {group.id} already exists", HTTPStatus.BAD_REQUEST
     if not is_uuid(group.id):
@@ -86,12 +86,12 @@ def update_group(id_, group=None, **kwargs):
 
     :rtype: Group
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
     group = Group.query.get(id_)
     if not group:
         return "Group not found", HTTPStatus.NOT_FOUND
-    group.update(connexion.request.get_json())
+    group.update(request.get_json())
     session.add(group)
     session.commit()
     return group.to_dict()

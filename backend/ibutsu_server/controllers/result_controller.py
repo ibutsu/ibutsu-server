@@ -1,7 +1,7 @@
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
@@ -22,9 +22,9 @@ def add_result(result=None, token_info=None, user=None):
 
     :rtype: Result
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    result = Result.from_dict(**connexion.request.get_json())
+    result = Result.from_dict(**request.get_json())
 
     if result.id and Result.query.get(result.id):
         return f"Result id {result.id} already exist", HTTPStatus.BAD_REQUEST
@@ -161,9 +161,9 @@ def update_result(id_, result=None, token_info=None, user=None, **kwargs):
 
     :rtype: Result
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    result_dict = connexion.request.get_json()
+    result_dict = request.get_json()
     if result_dict.get("metadata", {}).get("project"):
         project = get_project(result_dict["metadata"]["project"])
         if not project_has_user(project, user):

@@ -1,8 +1,7 @@
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
-from flask import make_response
+from flask import make_response, request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
@@ -45,9 +44,9 @@ def add_report(report_parameters=None):
 
     :rtype: Report
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    report_parameters = connexion.request.json
+    report_parameters = request.json
     if report_parameters["type"] not in REPORTS:
         return "Bad request, report type does not exist", HTTPStatus.BAD_REQUEST
 
