@@ -1,5 +1,6 @@
 import yaml
 
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact
 
 
@@ -8,9 +9,11 @@ def get_accessibility_bar_chart(run_list, _filters=None):
     This takes data from an accessibility run's 'axe_run_data.yaml' file
     and converts it into a format that can be used with a pie chart.
     """
-    query_data = Artifact.query.filter(
-        Artifact.run_id.in_(run_list), Artifact.filename == "axe_run_data.yaml"
-    ).all()
+    query_data = (
+        db.select(Artifact)
+        .where(Artifact.run_id.in_(run_list), Artifact.filename == "axe_run_data.yaml")
+        .all()
+    )
 
     axe_datas = []
     for datum in query_data:

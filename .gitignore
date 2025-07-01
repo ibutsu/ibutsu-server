@@ -110,3 +110,5 @@ sonar-project.properties
 
 scripts/populate-users-data.py
 users_data.json
+
+*.backup

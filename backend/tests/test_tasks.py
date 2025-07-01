@@ -54,7 +54,6 @@ def test_ibutsu_task_after_return(flask_app):
 
     # Enable commit on teardown for this test
     with client.application.app_context():
-        client.application.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] = True
 
         # Mock only the session methods to verify they're called
         with (
@@ -75,7 +74,6 @@ def test_ibutsu_task_after_return_with_exception(flask_app):
     task.flask_app = client.application
 
     with client.application.app_context():
-        client.application.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] = True
 
         with (
             patch("ibutsu_server.tasks.session.commit") as mock_commit,

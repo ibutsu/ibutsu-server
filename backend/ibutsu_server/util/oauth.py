@@ -2,8 +2,9 @@ import requests
 from flask import current_app
 
 from ibutsu_server.constants import LOCALHOST, OAUTH_CONFIG
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import User
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.urls import build_url
 
 
@@ -41,6 +42,7 @@ def get_provider_config(provider, is_private=False):
     return config
 
 
+@with_app_context
 def get_user_from_provider(provider, auth_data):
     """Get a user object from the ``provider``, using the ``auth_data``"""
     provider_config = get_provider_config(provider, is_private=True)
@@ -81,7 +83,9 @@ def get_user_from_provider(provider, auth_data):
                 return None
         else:
             return None
-    user = User.query.filter(User.email == user_dict["email"]).first()
+    user = db.session.execute(
+        db.select(User).where(User.email == user_dict["email"])
+    ).scalar_one_or_none()
     if not user:
         user = User(
             email=user_dict["email"],
@@ -90,6 +94,6 @@ def get_user_from_provider(provider, auth_data):
             is_active=True,
             is_superadmin=False,
         )
-        session.add(user)
-        session.commit()
+        db.session.add(user)
+        db.session.commit()
     return user

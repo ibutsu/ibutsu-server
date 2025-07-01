@@ -1,16 +1,16 @@
 import json
 import re
 import tarfile
-from datetime import datetime, timezone
+from datetime import datetime
 from io import BytesIO
 
 from celery.utils.log import get_task_logger
 from dateutil import parser
 from lxml import objectify
 
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
-from ibutsu_server.tasks import task
+from ibutsu_server.tasks import shared_task
 from ibutsu_server.tasks.runs import update_run
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.uuid import is_uuid
@@ -22,20 +22,15 @@ uuid_pattern = re.compile(
 )
 
 
-def prune_fields(data, fields_to_prune=None):
-    """Prune fields from a dictionary."""
-    fields_to_prune = fields_to_prune or ["id", "_id"]
-    for field in fields_to_prune:
-        if field in data:
-            del data[field]
-    return data
-
-
+@shared_task
 def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
     """Create a result with artifacts, used in the archive importer"""
     old_id = None
     result_id = result.get("id")
-    result_record = session.query(Result).get(result_id) if is_uuid(result_id) else None
+    if is_uuid(result_id):
+        result_record = db.session.get(Result, result_id)
+    else:
+        result_record = None
     if result_record:
         result_record.run_id = run_id
     else:
@@ -55,11 +50,11 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         result["env"] = result.get("metadata", {}).get("env")
         result["component"] = result.get("metadata", {}).get("component")
         result_record = Result.from_dict(**result)
-    session.add(result_record)
-    session.commit()
+    db.session.add(result_record)
+    db.session.commit()
     result = result_record.to_dict()
     for artifact in artifacts:
-        session.add(
+        db.session.add(
             Artifact(
                 filename=artifact.name.split("/")[-1],
                 result_id=result["id"],
@@ -67,44 +62,52 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
                 content=tar.extractfile(artifact).read(),
             )
         )
-    session.commit()
+    db.session.commit()
     return old_id
 
 
+@shared_task
 def _update_import_status(import_record, status):
     """Update the status of the import"""
-    import_record.status = status
-    session.add(import_record)
-    session.commit()
+    # Make sure we have the latest data
+    import_obj = db.session.get(Import, import_record.id)
+    log.info(f"Updating import {import_record.id} status to {status}")
+    if import_obj:
+        import_obj.status = status
+        db.session.add(import_obj)
+        db.session.commit()
+    else:
+        log.error(f"Could not find import with ID {import_record.id} to update status to {status}")
 
 
 def _get_ts_element(tree):
     """To reduce cognitive complexity"""
     if tree.tag == "testsuite":
         return tree
-    return tree.testsuite
+    else:
+        return tree.testsuite
 
 
 def _parse_timestamp(ts):
     """To reduce cognitive complexity"""
-    return parser.parse(ts.get("timestamp")) if ts.get("timestamp") else datetime.now(timezone.utc)
+    return parser.parse(ts.get("timestamp")) if ts.get("timestamp") else datetime.utcnow()
 
 
 def _process_result(result_dict, testcase):
     """To reduce cognitive complexity"""
     skip_reason = traceback = None
-    if hasattr(testcase, "failure"):
+    if testcase.find("failure"):
         result_dict["result"] = "failed"
         traceback = bytes(str(testcase.failure), "utf8")
-    elif hasattr(testcase, "error"):
+    elif testcase.find("error"):
         result_dict["result"] = "error"
         traceback = bytes(str(testcase.error), "utf8")
-    elif hasattr(testcase, "skipped"):
+    elif testcase.find("skipped"):
         result_dict["result"] = "skipped"
         skip_reason = str(testcase.skipped)
-    elif hasattr(testcase, "xfailure"):
+    elif testcase.find("xfailure"):
         result_dict["result"] = "xfailed"
-    elif hasattr(testcase, "xpassed"):
+    elif testcase.find("xpassed"):
         result_dict["result"] = "xpassed"
     else:
         result_dict["result"] = "passed"
@@ -113,10 +116,11 @@ def _process_result(result_dict, testcase):
     return result_dict, traceback
 
 
-def _add_artifacts(result, testcase, traceback, session):
+@shared_task
+def _add_artifacts(result, testcase, traceback):
     """To reduce cognitive complexity"""
     if traceback:
-        session.add(
+        db.session.add(
             Artifact(
                 filename="traceback.log",
                 result_id=result.id,
@@ -124,9 +128,9 @@ def _add_artifacts(result, testcase, traceback, session):
                 content=traceback,
             )
         )
-    if hasattr(testcase, "system-out"):
+    if testcase.find("system-out"):
         system_out = bytes(str(testcase["system-out"]), "utf8")
-        session.add(
+        db.session.add(
             Artifact(
                 filename="system-out.log",
                 result_id=result.id,
@@ -134,9 +138,9 @@ def _add_artifacts(result, testcase, traceback, session):
                 content=system_out,
             )
         )
-    if hasattr(testcase, "system-err"):
+    if testcase.find("system-err"):
         system_err = bytes(str(testcase["system-err"]), "utf8")
-        session.add(
+        db.session.add(
             Artifact(
                 filename="system-err.log",
                 result_id=result.id,
@@ -144,7 +148,7 @@ def _add_artifacts(result, testcase, traceback, session):
                 content=system_err,
             )
         )
-    session.commit()
+    db.session.commit()
 
 
 def _get_properties(xml_element: objectify.Element) -> dict:
@@ -191,10 +195,10 @@ def _populate_result_metadata(run_dict, result_dict, metadata):
         result_dict["metadata"].update(metadata)
         result_dict["env"] = run_dict.get("env")
         result_dict["component"] = run_dict.get("component")
-        if metadata.get("project_id"):
-            result_dict["project_id"] = metadata["project_id"]
-        if metadata.get("source"):
-            result_dict["source"] = metadata["source"]
+    if metadata.get("project_id"):
+        result_dict["project_id"] = metadata["project_id"]
+    if metadata.get("source"):
+        result_dict["source"] = metadata["source"]
 
 
 def _get_test_name_path(testcase):
@@ -209,14 +213,16 @@ def _get_test_name_path(testcase):
     return test_name, backup_fspath
 
 
-@task
-def run_junit_import(import_):  # noqa: PLR0912
+@shared_task
+def run_junit_import(import_):
     """Import a test run from a JUnit file"""
     # Update the status of the import
-    import_record = Import.query.get(import_["id"])
+    import_record = db.session.get(Import, import_["id"])
     _update_import_status(import_record, "running")
     # Fetch the file contents
-    import_file = ImportFile.query.filter(ImportFile.import_id == import_["id"]).first()
+    import_file = db.session.execute(
+        db.select(ImportFile).where(ImportFile.import_id == import_["id"])
+    ).scalar_one_or_none()
     if not import_file:
         _update_import_status(import_record, "error")
         return
@@ -269,8 +275,8 @@ def run_junit_import(import_):  # noqa: PLR0912
 
     # Insert the run, and then update the import with the run id
     run = Run.from_dict(**run_dict)
-    session.add(run)
-    session.commit()
+    db.session.add(run)
+    db.session.commit()
     run_dict = run.to_dict()
     import_record.run_id = run.id
     import_record.data["run_id"].append(run.id)
@@ -333,12 +339,12 @@ def run_junit_import(import_):  # noqa: PLR0912
             result_dict, traceback = _process_result(result_dict, testcase)
 
             result = Result.from_dict(**result_dict)
-            session.add(result)
-            session.commit()
-            _add_artifacts(result, testcase, traceback, session)
+            db.session.add(result)
+            db.session.commit()
+            _add_artifacts(result, testcase, traceback)
 
             if traceback:
-                session.add(
+                db.session.add(
                     Artifact(
                         filename="traceback.log",
                         result_id=result.id,
@@ -346,9 +352,9 @@ def run_junit_import(import_):  # noqa: PLR0912
                         content=traceback,
                     )
                 )
-            if hasattr(testcase, "system-out"):
+            if testcase.find("system-out"):
                 system_out = bytes(str(testcase["system-out"]), "utf8")
-                session.add(
+                db.session.add(
                     Artifact(
                         filename="system-out.log",
                         result_id=result.id,
@@ -356,9 +362,9 @@ def run_junit_import(import_):  # noqa: PLR0912
                         content=system_out,
                     )
                 )
-            if hasattr(testcase, "system-err"):
+            if testcase.find("system-err"):
                 system_err = bytes(str(testcase["system-err"]), "utf8")
-                session.add(
+                db.session.add(
                     Artifact(
                         filename="system-err.log",
                         result_id=result.id,
@@ -366,7 +372,7 @@ def run_junit_import(import_):  # noqa: PLR0912
                         content=system_err,
                     )
                 )
-            session.commit()
+            db.session.commit()
 
     # Check if we need to update the run
     if not run.duration:
@@ -383,25 +389,29 @@ def run_junit_import(import_):  # noqa: PLR0912
         run.summary["xpasses"] = run_data["xpasses"]
     if not run.summary["tests"]:
         run.summary["tests"] = run_data["tests"]
-    session.add(run)
-    session.commit()
+    db.session.add(run)
+    db.session.commit()
 
     # Update the status of the import, now that we're all done
     _update_import_status(import_record, "done")
 
 
-@task
-def run_archive_import(import_):  # noqa: PLR0912
+@shared_task
+def run_archive_import(import_):
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
-    import_record = Import.query.get(str(import_["id"]))
+    import_record = db.session.get(Import, str(import_["id"]))
+    log.info(f"Starting archive import for import record {import_record.id}")
     metadata = {}
     if import_record.data.get("metadata"):
         # metadata is expected to be a json dict
         metadata = import_record.data["metadata"]
+    log.info("Setting import status to running")
     _update_import_status(import_record, "running")
     # Fetch the file contents
-    import_file = ImportFile.query.filter(ImportFile.import_id == import_["id"]).first()
+    import_file = db.session.execute(
+        db.select(ImportFile).where(ImportFile.import_id == import_["id"])
+    ).scalar_one_or_none()
     if not import_file:
         _update_import_status(import_record, "error")
         return
@@ -419,14 +429,16 @@ def run_archive_import(import_):  # noqa: PLR0912
             if member.isdir():
                 continue
             # Grab the run id
-            _run_id, rest = member.name.split("/", 1)
+            run_id, rest = member.name.split("/", 1)
+            assert is_uuid(run_id), f"Invalid run ID {run_id} in archive import"
             if "/" not in rest:
                 if member.name.endswith("run.json"):
                     run = json.loads(tar.extractfile(member).read())
                 else:
                     run_artifacts.append(member)
                 continue
-            result_id, _file_name = rest.split("/")
+            result_id, file_name = rest.split("/")
+            assert is_uuid(result_id), f"Invalid result ID {result_id} in archive import"
             if member.name.endswith("result.json"):
                 result = json.loads(tar.extractfile(member).read())
                 result_start_time = result.get("start_time")
@@ -457,18 +469,18 @@ def run_archive_import(import_):  # noqa: PLR0912
 
         # If this run has a valid ID, check if this run exists
         if is_uuid(run_dict.get("id")):
-            run = session.query(Run).get(run_dict["id"])
+            run = db.session.get(Run, run_dict["id"])
         if run:
             run.update(run_dict)
         else:
             run = Run.from_dict(**run_dict)
-        session.add(run)
-        session.commit()
+        db.session.add(run)
+        db.session.commit()
         import_record.run_id = run.id
         import_record.data["run_id"] = [run.id]
         # Loop through any artifacts associated with the run and upload them
         for artifact in run_artifacts:
-            session.add(
+            db.session.add(
                 Artifact(
                     filename=artifact.name.split("/")[-1],
                     run_id=run.id,
@@ -488,6 +500,7 @@ def run_archive_import(import_):  # noqa: PLR0912
                 metadata=metadata,
             )
     # Update the import record
+    log.info("Setting import status to done")
     _update_import_status(import_record, "done")
     if run:
         update_run.delay(run.id)

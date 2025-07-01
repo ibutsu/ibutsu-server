@@ -1,11 +1,12 @@
 import logging
 
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Result, Run
-from ibutsu_server.tasks import is_locked, lock, task
+from ibutsu_server.tasks import shared_task
+from ibutsu_server.util.redis_lock import is_locked, lock
 
 
-@task
+@shared_task
 def add_result_start_time(run_id):
     """Update all results in a run to add the 'start_time' field to a result"""
     if is_locked(run_id):
@@ -13,12 +14,14 @@ def add_result_start_time(run_id):
         return
 
     with lock(f"update-run-lock-{run_id}"):
-        run = Run.query.get(run_id)
+        run = db.session.get(Run, run_id)
         if not run:
             return
-        results = Result.query.filter(Result.data["metadata"]["run"] == run_id).all()
+        results = db.session.execute(
+            db.select(Result).where(Result.data["metadata"]["run"] == run_id)
+        ).scalars()
         for result in results:
             if not result.get("start_time"):
                 result.data["start_time"] = result.get("starttime")
-                session.add(result)
-        session.commit()
+                db.session.add(result)
+        db.session.commit()

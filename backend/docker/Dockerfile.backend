@@ -16,5 +16,6 @@ RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 
 USER 1001
 
-# Set the default command for the resulting image
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--access-logfile", "-", "--config", "/app/config.py", "wsgi:application"]
+# ASGI entrypoint
+# dev? CMD ["uvicorn", "ibutsu_server:connexion_app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "ibutsu_server:connexion_app"]

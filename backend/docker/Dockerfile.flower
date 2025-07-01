@@ -19,4 +19,4 @@ RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
     pip install --no-cache-dir flower
 
 # Run application
-CMD ["celery", "flower", "-A ibutsu_server.tasks.queues:app", "--loglevel=info", "--broker=$BROKER_URL"]
+CMD ["celery", "flower", "-A ibutsu_server.celery_app", "--loglevel=info", "--broker=$BROKER_URL"]

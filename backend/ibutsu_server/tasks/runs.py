@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 
 from ibutsu_server.constants import SYNC_RUN_TIME
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Result, Run
-from ibutsu_server.tasks import lock, task
+from ibutsu_server.tasks import shared_task
+from ibutsu_server.util.redis_lock import is_locked, lock
 
 METADATA_TO_COPY = ["jenkins", "tags"]
 COLUMNS_TO_COPY = ["start_time", "env", "component", "project_id", "source"]
@@ -30,11 +31,11 @@ def _status_to_summary(status):
     }.get(status, status)
 
 
-@task(max_retries=1000)
+@shared_task(max_retries=1000)
 def update_run(run_id):
     """Update the run summary from the results, this task will retry 1000 times"""
     with lock(f"update-run-lock-{run_id}"):
-        run = Run.query.get(run_id)
+        run = db.session.get(Run, run_id)
         if not run:
             return
 
@@ -53,7 +54,11 @@ def update_run(run_id):
 
         # Fetch all the results for the runs and calculate the summary
         results = (
-            Result.query.filter(Result.run_id == run_id).order_by(Result.start_time.asc()).all()
+            db.session.execute(
+                db.select(Result).where(Result.run_id == run_id).order_by(Result.start_time.asc())
+            )
+            .scalars()
+            .all()
         )
 
         for i, result in enumerate(results):
@@ -85,11 +90,11 @@ def update_run(run_id):
         summary["not_run"] = max(summary["collected"] - summary["tests"], 0)
 
         run.update({"summary": summary, "data": metadata})
-        session.add(run)
-        session.commit()
+        db.session.add(run)
+        db.session.commit()
 
 
-@task(max_retries=1)
+@shared_task(max_retries=1)
 def sync_aborted_runs():
     """
     When test runs are prematurely aborted, e.g. due to a connection failure or outage, the number
@@ -100,11 +105,23 @@ def sync_aborted_runs():
     number of results. If there is a mismatch, it will run the 'update_run' task on the Run.id.
     """
     # fetch recent runs
-    runs = Run.query.filter(Run.start_time > (datetime.utcnow() - timedelta(seconds=SYNC_RUN_TIME)))
+    runs = db.session.execute(
+        db.select(Run).where(
+            Run.start_time > (datetime.utcnow() - timedelta(seconds=SYNC_RUN_TIME))
+        )
+    ).scalars()
 
     # for each run, check if the result count matches 'summary.tests'
     # if it doesn't, run the update_run task
     for run in runs:
-        result_count = Result.query.filter(Result.run_id == run.id).count()
+        result_count = (
+            db.session.execute(
+                db.select(db.func.count()).select_from(
+                    db.select(Result).where(Result.run_id == run.id).subquery()
+                )
+            ).scalar()
+            or 0
+        )
+
         if run.summary["tests"] != result_count:
             update_run.apply_async((run.id,), countdown=5)

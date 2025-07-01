@@ -66,17 +66,26 @@ def _array_compare(oper, column, value):
 
 def string_to_column(field, model):
     field_parts = field.split(".")
-    if field_parts[0] == "data" or field_parts[0] == "metadata" or field_parts[0] == "summary":
-        column = model.summary if field_parts[0] == "summary" else model.data
+
+    # For subqueries, access columns directly via .c
+    column_ref = model if not hasattr(model, "c") else model.c
+
+    if field_parts[0] in ["data", "metadata", "summary"]:
+        if field_parts[0] == "summary":
+            column = column_ref.summary
+        else:
+            column = column_ref.data
+
         for idx, part in enumerate(field_parts):
             if idx == 0:
                 continue
             column = column[part]
+
         if field not in ARRAY_FIELDS and field not in NUMERIC_FIELDS:
             column = column.as_string()
     else:
         try:
-            column = getattr(model, field)
+            column = getattr(column_ref, field)
         except AttributeError:
             return None
     return column
@@ -87,7 +96,7 @@ def apply_filters(query, filter_list, model):
     for filter_string in filter_list:
         filter_clause = convert_filter(filter_string, model)
         if filter_clause is not None:
-            query = query.filter(filter_clause)
+            query = query.where(filter_clause)
     return query
 
 

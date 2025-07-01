@@ -30,12 +30,14 @@ classifiers = [
 dependencies = [
     "alembic",
     "celery",
-    "connexion[swagger-ui]==2.14.2",
+    "connexion[swagger-ui]>=3.0.0",
+    "connexion[flask]>=3.0.0",
     "flask_bcrypt",
-    "flask_cors",
     "flask_mail",
-    "Flask>=2,<2.3.0",
-    "Flask-SQLAlchemy<3.0",
+    "Flask>=3.0.0",
+    "Flask-SQLAlchemy>=3.1.0",
+    "starlette",
+    "uvicorn[standard]",
     "flatdict",
     "google-api-python-client",
     "google-auth",
@@ -53,10 +55,10 @@ dependencies = [
     "redis",
     "setuptools",
     "sqlalchemy-json",
-    "sqlalchemy==1.4",
+    "sqlalchemy>=2.0.0",
     "swagger-ui-bundle",
     "vine",
-    "werkzeug",
+    "werkzeug>=3.0.0",
 ]
 
 [project.urls]
