@@ -12,7 +12,7 @@ IMPORT_FILES=true
 POSTGRES_EXTRA_ARGS=
 REDIS_EXTRA_ARGS=
 BACKEND_EXTRA_ARGS=
-PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-39:latest
+PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-311:latest
 
 ADMIN_EMAIL="admin@example.com"
 ADMIN_PASSWORD="admin12345"
@@ -200,8 +200,8 @@ podman run -d \
     -v ./backend:/mnt/:z \
     $PYTHON_IMAGE \
     /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
-                    pip install . &&
-                    python -W always::DeprecationWarning -m ibutsu_server --host 0.0.0.0'
+                  pip install . &&
+                  uvicorn ibutsu_server:app --host 0.0.0.0 --port 8080 --reload --workers 1'
 echo -n "Waiting for backend to respond: "
 sleep 5
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); do

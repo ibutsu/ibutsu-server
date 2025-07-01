@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import func
 
+from ibutsu_server.db import db
 from ibutsu_server.db.base import Float, session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
@@ -39,7 +40,7 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
         return data
 
     # create the query
-    query = session.query(
+    query = db.select(session)(
         group_field,
         func.sum(Run.summary["failures"].cast(Float)),
         func.sum(Run.summary["errors"].cast(Float)),

@@ -93,7 +93,7 @@ def apply_filters(query, filter_list, model):
     for filter_string in filter_list:
         filter_clause = convert_filter(filter_string, model)
         if filter_clause is not None:
-            query = query.filter(filter_clause)
+            query = query.where(filter_clause)
     return query
 
 

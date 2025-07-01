@@ -7,7 +7,7 @@ from flask import current_app
 from redis import Redis
 from redis.exceptions import LockError
 
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Report
 
 LOCK_EXPIRE = 1
@@ -35,8 +35,8 @@ def create_celery_app(_app=None):
 
         def _set_report_error(self, report):
             report.status = "error"
-            session.add(report)
-            session.commit()
+            db.session.add(report)
+            db.session.commit()
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
             """
@@ -44,10 +44,18 @@ def create_celery_app(_app=None):
             FMI: https://gist.github.com/twolfson/a1b329e9353f9b575131
             Flask-SQLAlchemy uses create_scoped_session at startup which avoids any setup on a
             per-request basis. This means Celery can piggyback off of this initialization.
+
+            Note: SQLALCHEMY_COMMIT_ON_TEARDOWN is deprecated in Flask-SQLAlchemy 3.0+
+            We now explicitly commit only on successful completion.
             """
-            if _app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] and not isinstance(retval, Exception):
-                session.commit()
-            session.remove()
+            # Commit only on successful completion (no exception)
+            if not isinstance(retval, Exception):
+                try:
+                    db.session.commit()
+                except Exception:
+                    db.session.rollback()
+                    raise
+            db.session.remove()
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             # if the task is related to a report, set that report to failed
@@ -55,7 +63,7 @@ def create_celery_app(_app=None):
                 try:
                     with _app.app_context():
                         report_id = args[0].get("id")  # get the report ID from the task
-                        report = Report.query.get(report_id)
+                        report = db.session.get(Report, report_id)
                         # if this is actually a report ID, set it as an error
                         if report:
                             self._set_report_error(report)

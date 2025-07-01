@@ -9,6 +9,7 @@ from sqlalchemy.orm import backref
 from sqlalchemy_json import mutable_json_type
 
 from ibutsu_server.auth import bcrypt
+from ibutsu_server.db import db
 from ibutsu_server.db.base import (
     Boolean,
     Column,
@@ -318,7 +319,7 @@ def upgrade_db(session, upgrades):
     """
     # Query the metadata table in the DB for the version number
     db_version = 0
-    meta_version = Meta.query.get("version")
+    meta_version = db.session.get(Meta, "version")
     if meta_version:
         db_version = int(meta_version.value)
     else:

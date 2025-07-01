@@ -1,10 +1,10 @@
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
-from flask import make_response
+from flask import make_response, request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Report, ReportFile
 from ibutsu_server.tasks.reports import REPORTS
@@ -18,10 +18,12 @@ def _build_report_response(id_):
 
     :rtype: tuple
     """
-    report = Report.query.get(id_)
+    report = db.session.get(Report, id_)
     if not report:
         return "Report not found", HTTPStatus.NOT_FOUND
-    report_file = ReportFile.query.filter(ReportFile.report_id == id_).first()
+    report_file = db.session.execute(
+        db.select(ReportFile).where(ReportFile.report_id == id_)
+    ).scalar_one_or_none()
     if not report_file:
         return "File not found", HTTPStatus.NOT_FOUND
     response = make_response(report_file.content, HTTPStatus.OK)
@@ -45,9 +47,9 @@ def add_report(report_parameters=None):
 
     :rtype: Report
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    report_parameters = connexion.request.json
+    report_parameters = request.json
     if report_parameters["type"] not in REPORTS:
         return "Bad request, report type does not exist", HTTPStatus.BAD_REQUEST
 
@@ -81,7 +83,7 @@ def get_report(id_, token_info=None, user=None):
 
     :rtype: Report
     """
-    report = Report.query.get(id_)
+    report = db.session.get(Report, id_)
     return report.to_dict()
 
 
@@ -95,12 +97,14 @@ def get_report_list(page=1, page_size=25, project=None, token_info=None, user=No
 
     :rtype: ReportList
     """
-    query = Report.query
+    query = db.select(Report)
     if project:
         project_id = get_project_id(project)
-        query = query.filter(Report.project_id == project_id)
+        query = query.where(Report.project_id == project_id)
     offset = get_offset(page, page_size)
-    total_items = query.count()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.select_from())
+    ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     reports = query.order_by(Report.created.desc()).offset(offset).limit(page_size).all()
     return {
@@ -123,11 +127,13 @@ def delete_report(id_, user=None, token_info=None):
 
     :rtype: tuple
     """
-    report = Report.query.get(id_)
+    report = db.session.get(Report, id_)
     if not report:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
 
-    report_file = ReportFile.query.filter(ReportFile.report_id == report.id).first()
+    report_file = db.session.execute(
+        db.select(ReportFile).where(ReportFile.report_id == report.id)
+    ).scalar_one_or_none()
     session.delete(report_file)
 
     session.delete(report)

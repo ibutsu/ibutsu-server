@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import desc, func
 
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Result
 from ibutsu_server.filters import apply_filters, string_to_column
 
@@ -39,7 +39,7 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
 
     # create the query
     query = (
-        session.query(group_field, func.count(Result.id).label("count"))
+        db.select(group_field, func.count(Result.id).label("count"))
         .group_by(group_field)
         .order_by(desc("count"))
     )
@@ -47,7 +47,7 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
     # add filters to the query
     query = apply_filters(query, filters, Result)
 
-    query_data = query.all()
+    query_data = db.session.execute(query).all()
     # parse the data for the frontend
     data = [{"_id": _id, "count": count} for _id, count in query_data]
     return data

@@ -64,6 +64,7 @@ class TestRunTasks(BaseTestCase):
         self, mocked_is_locked, mocked_lock, mocked_session, mocked_run, mocked_result
     ):
         """Test updating the run"""
+
         from ibutsu_server.tasks.runs import update_run
 
         mocked_is_locked.return_value = False

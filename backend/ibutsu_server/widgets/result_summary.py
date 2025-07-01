@@ -1,5 +1,6 @@
 from sqlalchemy import func
 
+from ibutsu_server.db import db
 from ibutsu_server.db.base import Integer, session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters
@@ -18,7 +19,7 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
         "xfailed": 0,
         "xpassed": 0,
     }
-    query = session.query(
+    query = db.select(session)(
         func.sum(Run.summary["errors"].cast(Integer)),
         func.sum(Run.summary["skips"].cast(Integer)),
         func.sum(Run.summary["failures"].cast(Integer)),

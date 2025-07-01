@@ -10,7 +10,9 @@ try:
 except ImportError:
     IS_CONNECTED = False
 
+
 from ibutsu_server.constants import LOCALHOST
+from ibutsu_server.db import db
 
 
 def get_health(token_info=None, user=None):
@@ -35,7 +37,7 @@ def get_database_health(token_info=None, user=None):
                 HTTPStatus.SERVICE_UNAVAILABLE,
             )
         else:
-            Result.query.first()
+            db.session.execute(db.select(Result)).scalar_one_or_none()
             response = ({"status": "OK", "message": "Service is running"}, HTTPStatus.OK)
     except OperationalError:
         response = (

@@ -1,8 +1,9 @@
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Group
 from ibutsu_server.util.query import get_offset
@@ -17,10 +18,10 @@ def add_group(group=None):
 
     :rtype: Group
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    group = Group.from_dict(**connexion.request.get_json())
-    if group.id and Group.query.get(group.id):
+    group = Group.from_dict(**request.get_json())
+    if group.id and db.session.get(Group, group.id):
         return f"The group with ID {group.id} already exists", HTTPStatus.BAD_REQUEST
     if not is_uuid(group.id):
         return f"Group ID {group.id} is not in UUID format", HTTPStatus.BAD_REQUEST
@@ -38,7 +39,7 @@ def get_group(id_, token_info=None, user=None):
 
     :rtype: Group
     """
-    group = Group.query.get(id_)
+    group = db.session.get(Group, id_)
     if group:
         return group.to_dict()
     else:
@@ -58,8 +59,10 @@ def get_group_list(page=1, page_size=25, token_info=None, user=None):
     :rtype: List[Group]
     """
     offset = get_offset(page, page_size)
-    query = Group.query
-    total_items = query.count()
+    query = db.select(Group)
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.select_from())
+    ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     groups = query.limit(page_size).offset(offset).all()
     return {
@@ -86,12 +89,12 @@ def update_group(id_, group=None, **kwargs):
 
     :rtype: Group
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    group = Group.query.get(id_)
+    group = db.session.get(Group, id_)
     if not group:
         return "Group not found", HTTPStatus.NOT_FOUND
-    group.update(connexion.request.get_json())
+    group.update(request.get_json())
     session.add(group)
     session.commit()
     return group.to_dict()
