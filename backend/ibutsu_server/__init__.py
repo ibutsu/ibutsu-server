@@ -7,7 +7,6 @@ from typing import Any, Optional
 import connexion
 import flask
 from flask import redirect, request
-from flask_cors import CORS
 from flask_mail import Mail
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL as SQLA_URL
@@ -65,7 +64,9 @@ def get_app(**extra_config):
     # Shortcut
     config: flask.Config = app.app.config
     config.setdefault("BCRYPT_LOG_ROUNDS", 12)
-    config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", True)
+    # Flask-SQLAlchemy 3.0+ - Set explicit defaults
+    config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False)  # Default to False in 3.0+
+    config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})  # Default engine options
 
     config.from_file(str(Path("./settings.yaml").resolve()), yaml_load, silent=True)
     # Now load config from environment variables
@@ -114,10 +115,20 @@ def get_app(**extra_config):
         arguments={"title": "Ibutsu"},
         base_path="/api",
         pythonic_params=True,
-        resolver=connexion.resolver.RelativeResolver("ibutsu_server.controllers"),
     )
 
-    CORS(app.app, resources={r"/*": {"origins": "*", "send_wildcard": False}})
+    # Add CORS middleware for Connexion 3 (must be after add_api)
+    from starlette.middleware.cors import CORSMiddleware
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+    # Initialize Flask extensions on the underlying Flask app
     db.init_app(app.app)
     bcrypt.init_app(app.app)
     Mail(app.app)
@@ -166,4 +177,4 @@ def get_app(**extra_config):
         task.delay(**task_params)
         return HTTPStatus.ACCEPTED.phrase, HTTPStatus.ACCEPTED
 
-    return app.app
+    return app  # Return Connexion app, not Flask app
