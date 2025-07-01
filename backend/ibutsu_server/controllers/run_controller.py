@@ -1,9 +1,10 @@
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run, User
 from ibutsu_server.filters import convert_filter
@@ -65,8 +66,8 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
 
     :rtype: List[Run]
     """
-    user = User.query.get(user)
-    query = Run.query
+    user = db.session.get(User, user)
+    query = db.select(Run)
     if user:
         query = add_user_filter(query, user, model=Run)
 
@@ -74,12 +75,14 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Run)
             if filter_clause is not None:
-                query = query.filter(filter_clause)
+                query = query.where(filter_clause)
 
     if estimate:
         total_items = get_count_estimate(query)
     else:
-        total_items = query.count()
+        total_items = db.session.execute(
+            db.select(db.func.count()).select_from(query.select_from())
+        ).scalar()
 
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
@@ -104,7 +107,7 @@ def get_run(id_, token_info=None, user=None):
 
     :rtype: Run
     """
-    run = Run.query.get(id_)
+    run = db.session.get(Run, id_)
     if not run:
         return "Run not found", HTTPStatus.NOT_FOUND
     if not project_has_user(run.project, user):
@@ -120,9 +123,9 @@ def add_run(run=None, token_info=None, user=None):
 
     :rtype: Run
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    run = Run.from_dict(**connexion.request.get_json())
+    run = Run.from_dict(**request.get_json())
 
     if not run.data:
         return "Bad request, no data supplied", HTTPStatus.BAD_REQUEST
@@ -160,14 +163,14 @@ def update_run(id_, run=None, body=None, token_info=None, user=None):
 
     :rtype: Run
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    run_dict = connexion.request.get_json()
+    run_dict = request.get_json()
     if run_dict.get("metadata", {}).get("project"):
         run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
         if not project_has_user(run_dict["project_id"], user):
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-    run = Run.query.get(id_)
+    run = db.session.get(Run, id_)
     if run and not project_has_user(run.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     if not run:
@@ -189,10 +192,10 @@ def bulk_update(filter_=None, page_size=1, token_info=None, user=None):
 
     :rtype: List[Run]
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
 
-    run_dict = connexion.request.get_json()
+    run_dict = request.get_json()
 
     if not run_dict.get("metadata"):
         return "Bad request, can only update metadata", HTTPStatus.UNAUTHORIZED
@@ -219,7 +222,7 @@ def bulk_update(filter_=None, page_size=1, token_info=None, user=None):
 
     model_runs = []
     for run_json in runs:
-        run = Run.query.get(run_json.get("id"))
+        run = db.session.get(Run, run_json.get("id"))
         # update the json dict of the run with the new metadata
         merge_dicts(run_dict, run_json)
         run.update(run_json)

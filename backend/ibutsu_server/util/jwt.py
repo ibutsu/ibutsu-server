@@ -6,6 +6,7 @@ from jwt import encode as jwt_encode
 from jwt.exceptions import InvalidTokenError
 from werkzeug.exceptions import Unauthorized
 
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Token
 from ibutsu_server.errors import IbutsuError
 
@@ -41,7 +42,9 @@ def decode_token(token):
         decoded_token = jwt_decode(token, jwt_secret, algorithms=["HS256"])
     except InvalidTokenError as error:
         raise Unauthorized from error
-    tokens = Token.query.filter(Token.user_id == decoded_token["sub"]).all()
+    tokens = db.session.execute(
+        db.select(Token).where(Token.user_id == decoded_token["sub"])
+    ).scalars()
     if not tokens:
         raise Unauthorized("Invalid JWT token")
     return decoded_token

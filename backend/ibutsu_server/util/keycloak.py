@@ -2,6 +2,7 @@ import requests
 from flask import current_app
 
 from ibutsu_server.constants import LOCALHOST
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import User
 from ibutsu_server.util.urls import build_url
@@ -54,7 +55,9 @@ def get_user_from_keycloak(auth_data):
     )
     if response.status_code == 200:
         user_json = response.json()
-        user = User.query.filter(User.email == user_json["email"]).first()
+        user = db.session.execute(
+            db.select(User).where(User.email == user_json["email"])
+        ).scalar_one_or_none()
         if not user:
             user = User(
                 email=user_json["email"],

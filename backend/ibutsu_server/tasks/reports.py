@@ -9,6 +9,7 @@ from flask import current_app
 from sqlalchemy.exc import OperationalError
 
 from ibutsu_server.constants import LOCALHOST
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Report, ReportFile, Result
 from ibutsu_server.filters import apply_filters
@@ -90,7 +91,7 @@ def _update_report(report):
             "status": "running",
         }
     )
-    report_record = Report.query.get(report["id"])
+    report_record = db.session.get(Report, report["id"])
     report_record.update(report)
     session.add(report_record)
     session.commit()
@@ -100,7 +101,7 @@ def _update_report(report):
 
 def _set_report_status(report_id, status):
     """Set a report's status"""
-    report = Report.query.get(report_id)
+    report = db.session.get(Report, report_id)
     report.status = status
     session.add(report)
     session.commit()
@@ -121,15 +122,15 @@ def _set_report_empty(report):
 
 def _build_query(report):
     """Build the filters from a report object"""
-    query = Result.query
+    query = db.select(Result)
     if report["params"].get("filter"):
         filters = report["params"]["filter"].split(",")
         if filters:
             query = apply_filters(query, filters, Result)
     if report["params"]["source"]:
-        query = query.filter(Result.source == report["params"]["source"])
+        query = query.where(Result.source == report["params"]["source"])
     if report["params"].get("project"):
-        query = query.filter(Result.project_id == get_project_id(report["params"]["project"]))
+        query = query.where(Result.project_id == get_project_id(report["params"]["project"]))
     return query
 
 
@@ -138,7 +139,10 @@ def _get_results(report):
     query = _build_query(report)
     try:
         session.execute(f"SET statement_timeout TO {int(REPORT_COUNT_TIMEOUT * 1000)}; commit;")
-        if query.count() == 0:
+        if (
+            db.session.execute(db.select(db.func.count()).select_from(query.select_from())).scalar()
+            == 0
+        ):
             return None
     except OperationalError:
         pass
@@ -223,9 +227,9 @@ def _get_files(result):
                 str(report_file.id),
             ),
         }
-        for report_file in ReportFile.query.filter(
-            ReportFile.data["resultId"] == result["id"]
-        ).all()
+        for report_file in db.session.execute(
+            db.select(ReportFile).where(ReportFile.data["resultId"] == result["id"])
+        ).scalars()
     ]
 
 

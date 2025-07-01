@@ -1,6 +1,7 @@
 from sqlalchemy import case, desc, func
 
 from ibutsu_server.constants import HEATMAP_MAX_BUILDS, HEATMAP_RUN_LIMIT
+from ibutsu_server.db import db
 from ibutsu_server.db.base import Float, Integer, session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
@@ -107,7 +108,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
     annotations = string_to_column("metadata.annotations", Run)
 
     # create the base query
-    query = session.query(
+    query = db.select(session)(
         Run.id.label("run_id"),
         annotations.label("annotations"),
         group_field.label("group_field"),
@@ -141,7 +142,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
             subquery.c.errors + subquery.c.failures + subquery.c.xpasses + subquery.c.xfailures
         )
 
-    query = session.query(
+    query = db.select(session)(
         subquery.c.group_field,
         subquery.c.build_number,
         subquery.c.run_id,

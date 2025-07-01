@@ -1,6 +1,7 @@
 from sqlalchemy import desc, func
 
 from ibutsu_server.constants import JJV_RUN_LIMIT
+from ibutsu_server.db import db
 from ibutsu_server.db.base import Integer, Text, session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
@@ -72,7 +73,9 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
         "pagination": {
             "page": page,
             "pageSize": page_size,
-            "totalItems": query.count(),  # TODO: examine performance here
+            "totalItems": db.session.execute(
+                db.select(db.func.count()).select_from(query.select_from())
+            ).scalar(),  # TODO: examine performance here
         },
     }
     for datum in query_data:
