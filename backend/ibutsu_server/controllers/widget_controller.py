@@ -1,7 +1,8 @@
 import logging
 from http import HTTPStatus
 
-import connexion
+# Connexion 3: use flask.request instead of connexion.request
+from flask import request
 from sqlalchemy.exc import OperationalError
 
 from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, WIDGET_TYPES
@@ -125,8 +126,9 @@ def get_widget(id_):
     if id_ not in WIDGET_TYPES:
         return "Widget not found", HTTPStatus.NOT_FOUND
     params = {}
-    for key in connexion.request.args:
-        params[key] = connexion.request.args.getlist(key)
+    # Connexion 3: use flask.request instead of connexion.request
+    for key in request.args:
+        params[key] = request.args.getlist(key)
     params = _pre_process_params(params, id_)
     params = _typecast_params(id_, params)
 

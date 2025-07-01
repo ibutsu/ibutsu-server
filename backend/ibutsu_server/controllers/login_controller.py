@@ -4,13 +4,13 @@ from http import HTTPStatus
 from urllib.parse import urlencode
 from uuid import uuid4
 
-import connexion
 import requests
-from flask import current_app, make_response, redirect
+from flask import current_app, make_response, redirect, request
 from google.auth.transport.requests import Request
 from google.oauth2 import id_token
 
 from ibutsu_server.constants import LOCALHOST, RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
@@ -90,7 +90,10 @@ def _get_user_from_provider(provider, provider_config, code):
 
 def _find_or_create_token(token_name, user):
     """To reduce cognitive complexity"""
-    token = Token.query.filter(Token.name == token_name, Token.user_id == user.id).first()
+    # Flask-SQLAlchemy 3.0+ pattern
+    token = db.session.execute(
+        db.select(Token).where(Token.name == token_name, Token.user_id == user.id)
+    ).scalar_one_or_none()
     if not token:
         token = Token(name=token_name, user_id=user.id)
     return token
@@ -104,16 +107,17 @@ def login(body=None):
 
     :rtype: LoginToken
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    login = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    login = body if body is not None else request.get_json()
 
     if not login.get("email") or not login.get("password"):
         return {
             "code": "EMPTY",
             "message": "Username and/or password are empty",
         }, HTTPStatus.UNAUTHORIZED
-    user = User.query.filter_by(email=login["email"]).first()
+    user = db.session.execute(db.select(User).filter_by(email=login["email"])).scalar_one_or_none()
 
     # superadmins can login even if local login is disabled
     if user and not user.is_superadmin and not current_app.config.get("USER_LOGIN_ENABLED", True):
@@ -130,7 +134,9 @@ def login(body=None):
                 "message": "User account is inactive",
             }, HTTPStatus.UNAUTHORIZED
         login_token = generate_token(user.id)
-        token = Token.query.filter(Token.name == "login-token", Token.user_id == user.id).first()
+        token = db.session.execute(
+            db.select(Token).where(Token.name == "login-token", Token.user_id == user.id)
+        ).scalar_one_or_none()
         if not token:
             token = Token(name="login-token", user_id=user.id)
         token.token = login_token
@@ -189,9 +195,9 @@ def config(provider):
 
 def auth(provider):
     """Auth redirect URL"""
-    if not connexion.request.args.get("code"):
+    if not request.args.get("code"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-    code = connexion.request.args["code"]
+    code = request.args["code"]
     frontend_url = build_url(
         current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login"
     )
@@ -222,9 +228,10 @@ def register(body=None):
     :param body: Registration details
     :type body: dict | bytes
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    details = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    details = body if body is not None else request.get_json()
     if not details.get("email") or not details.get("password"):
         return {
             "code": "EMPTY",
@@ -239,7 +246,9 @@ def register(body=None):
         password=details["password"],
         activation_code=activation_code,
     )
-    user_exists = User.query.filter_by(email=user.email).first()
+    user_exists = db.session.execute(
+        db.select(User).filter_by(email=user.email)
+    ).scalar_one_or_none()
     if user_exists:
         return f"The user with email {user.email} already exists", HTTPStatus.BAD_REQUEST
     session.add(user)
@@ -271,12 +280,15 @@ def recover(body=None):
     :param body: Recovery details
     :type body: dict | bytes
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    login = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    login = body if body is not None else request.get_json()
     if not login.get("email"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-    user = User.query.filter(User.email == login["email"]).first()
+    user = db.session.execute(
+        db.select(User).where(User.email == login["email"])
+    ).scalar_one_or_none()
     if not user:
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
     # Create a random activation code. Base64 just for funsies
@@ -292,14 +304,17 @@ def reset_password(body=None):
     :param body: Password reset details
     :type body: dict | bytes
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    login = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    login = body if body is not None else request.get_json()
     if result := validate_activation_code(login.get("activation_code")):
         return result
     if not login.get("activation_code") or not login.get("password"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-    user = User.query.filter(User.activation_code == login["activation_code"]).first()
+    user = db.session.execute(
+        db.select(User).where(User.activation_code == login["activation_code"])
+    ).scalar_one_or_none()
     if not user:
         return "Invalid activation code", HTTPStatus.BAD_REQUEST
     user.password = login["password"]
@@ -316,7 +331,9 @@ def activate(activation_code=None):
     """
     if result := validate_activation_code(activation_code):
         return result
-    user = User.query.filter(User.activation_code == activation_code).first()
+    user = db.session.execute(
+        db.select(User).where(User.activation_code == activation_code)
+    ).scalar_one_or_none()
     login_url = build_url(
         current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login"
     )

@@ -25,9 +25,9 @@ const prepareUrl = (url, params = {}) => {
   return buildUrl(newUrl, params);
 };
 
-const addAuth = (options) => {
-  if (AuthService.isLoggedIn()) {
-    const bearer = 'Bearer ' + AuthService.getToken();
+const addAuth = async (options) => {
+  if (await AuthService.isLoggedIn()) {
+    const bearer = 'Bearer ' + (await AuthService.getToken());
     if (Object.keys(options).includes('headers')) {
       options['headers'].set('Authorization', bearer);
     } else {

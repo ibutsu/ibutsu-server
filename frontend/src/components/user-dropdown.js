@@ -15,7 +15,7 @@ import { AuthService } from '../utilities/auth';
 const UserDropdown = () => {
   const [displayName, setDisplayName] = useState('User');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   const navigate = useNavigate();
 
   const logout = () => {
@@ -24,13 +24,23 @@ const UserDropdown = () => {
   };
 
   useEffect(() => {
-    AuthService.isSuperAdmin().then((isSuperAdmin) =>
-      setIsSuperAdmin(isSuperAdmin),
-    );
+    const localUser = AuthService.getLocalUser();
     setDisplayName(
-      AuthService.getUser() &&
-        (AuthService.getUser().name || AuthService.getUser().email),
+      (localUser && (localUser.name || localUser.email)) || 'User',
     );
+
+    // Check admin status
+    const checkAdminStatus = async () => {
+      try {
+        const adminStatus = await AuthService.isSuperAdmin();
+        setIsAdminUser(adminStatus);
+      } catch (error) {
+        console.error('Error checking super admin status:', error);
+        setIsAdminUser(false);
+      }
+    };
+
+    checkAdminStatus();
   }, []);
 
   return (
@@ -59,7 +69,7 @@ const UserDropdown = () => {
         >
           Profile
         </DropdownItem>
-        {!!isSuperAdmin && (
+        {!!isAdminUser && (
           <DropdownItem
             key="admin"
             onClick={() => navigate('/admin/home')}

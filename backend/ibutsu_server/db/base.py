@@ -14,4 +14,3 @@ Table = db.Table
 Text = db.Text
 relationship = db.relationship
 inspect = db.inspect
-session = db.session

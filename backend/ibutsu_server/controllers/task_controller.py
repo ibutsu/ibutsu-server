@@ -13,16 +13,6 @@ _STATE_TO_CODE = {
 }
 
 
-def _get_celery_app():
-    """Get the celery app, handling import errors gracefully"""
-    try:
-        from ibutsu_server.tasks.queues import app  # noqa: PLC0415
-
-        return app
-    except (ImportError, AssertionError):
-        return None
-
-
 @validate_uuid
 def get_task(id_, token_info=None, user=None):
     """
@@ -30,16 +20,10 @@ def get_task(id_, token_info=None, user=None):
 
     :param id_: id of the task
     """
-    # lazy load the task app to avoid circular imports
-    app = _get_celery_app()
-    if app is None:
-        # In test environment or when celery is not configured
-        return {
-            "state": "PENDING",
-            "message": "Task system not available",
-        }, HTTPStatus.SERVICE_UNAVAILABLE
+    # Use the global celery app instance
+    from ibutsu_server import celery_app
 
-    async_result = AsyncResult(id_, app=app)
+    async_result = AsyncResult(id_, app=celery_app)
     response = {"state": async_result.state}
 
     if async_result.state == "SUCCESS":

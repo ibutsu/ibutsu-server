@@ -162,11 +162,11 @@ In order to update pinned dependency versions, modify the hardcoded pin in pypro
 Run Celery Worker
 ~~~~~~~~~~~~~~~~~
 
-Start the celery worker using the ``backend/celery_worker.sh`` script or via:
+Start the celery worker:
 
 .. code:: shell
 
-    celery worker -E -A ibutsu_server.tasks.queues:app --loglevel=info
+    celery worker -E -A ibutsu_server.celery_app --loglevel=info
 
 
 .. note::

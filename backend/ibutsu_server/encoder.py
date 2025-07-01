@@ -1,9 +1,9 @@
-from flask.json.provider import DefaultJSONProvider
+from connexion.jsonifier import Jsonifier
 
 from ibutsu_server.models.base_model_ import Model
 
 
-class IbutsuJSONProvider(DefaultJSONProvider):
+class IbutsuJSONProvider(Jsonifier):
     include_nulls = False
 
     def default(self, o):

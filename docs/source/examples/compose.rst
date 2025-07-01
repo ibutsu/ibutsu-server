@@ -43,7 +43,6 @@ Docker/Podman Compose
        image: postgres:latest
      worker:
        environment:
-         APP_SCRIPT: celery_worker.sh
          POSTGRESQL_HOST: postgres
          POSTGRESQL_DATABASE: ibutsu
          CELERY_BROKER_URL: 'redis://redis'
@@ -52,6 +51,7 @@ Docker/Podman Compose
          context: ./backend
          dockerfile: docker/Dockerfile.worker
        image: ibutsu/worker
+       command: /bin/bash -c 'celery --app ibutsu_server.celery_app --no-color worker --events'
        depends_on:
          - backend
          - postgres

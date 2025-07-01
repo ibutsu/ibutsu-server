@@ -1,9 +1,10 @@
 from http import HTTPStatus
 
-import connexion
-from flask import abort
+# Connexion 3: use flask.request instead of connexion.request
+from flask import abort, request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project, User
 from ibutsu_server.filters import convert_filter
@@ -28,7 +29,7 @@ def _hide_sensitive_fields(user_dict):
 @validate_admin
 def admin_get_user(id_, token_info=None, user=None):
     """Return the current user"""
-    requested_user = User.query.get(id_)
+    requested_user = db.session.get(User, id_)
     if not requested_user:
         abort(HTTPStatus.NOT_FOUND)
     return _hide_sensitive_fields(requested_user.to_dict(with_projects=True))
@@ -39,16 +40,16 @@ def admin_get_user_list(filter_=None, page=1, page_size=25, token_info=None, use
     """
     Return a list of users (only superadmins can run this function)
     """
-    query = User.query
+    query = db.select(User)
 
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, User)
             if filter_clause is not None:
-                query = query.filter(filter_clause)
+                query = query.where(filter_clause)
 
     offset = get_offset(page, page_size)
-    total_items = query.count()
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     users = query.order_by(User.email.asc()).offset(offset).limit(page_size).all()
     return {
@@ -65,11 +66,15 @@ def admin_get_user_list(filter_=None, page=1, page_size=25, token_info=None, use
 @validate_admin
 def admin_add_user(body=None, token_info=None, user=None):
     """Create a new user in the system"""
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    body_data = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    body_data = body if body is not None else request.get_json()
     new_user = User.from_dict(**body_data)
-    user_exists = User.query.filter_by(email=new_user.email).first()
+    # Flask-SQLAlchemy 3.0+ pattern
+    user_exists = db.session.execute(
+        db.select(User).filter_by(email=new_user.email)
+    ).scalar_one_or_none()
     if user_exists:
         return f"The user with email {new_user.email} already exists", HTTPStatus.BAD_REQUEST
     session.add(new_user)
@@ -81,15 +86,16 @@ def admin_add_user(body=None, token_info=None, user=None):
 @validate_admin
 def admin_update_user(id_, body=None, token_info=None, user=None):
     """Update a single user in the system"""
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    user_dict = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    user_dict = body if body is not None else request.get_json()
     projects = user_dict.pop("projects", [])
-    requested_user = User.query.get(id_)
+    requested_user = db.session.get(User, id_)
     if not requested_user:
         abort(HTTPStatus.NOT_FOUND)
     requested_user.update(user_dict)
-    requested_user.projects = [Project.query.get(project["id"]) for project in projects]
+    requested_user.projects = [db.session.get(Project, project["id"]) for project in projects]
     session.add(requested_user)
     session.commit()
     return _hide_sensitive_fields(requested_user.to_dict())
@@ -98,19 +104,22 @@ def admin_update_user(id_, body=None, token_info=None, user=None):
 @validate_uuid
 @validate_admin
 def admin_delete_user(id_, token_info=None, user=None):
-    """Delete a single user and handle all related records"""
-    user_to_delete = User.query.get(id_)
+    """Delete a single user"""
+    user_to_delete = db.session.get(User, id_)
     if not user_to_delete:
         abort(HTTPStatus.NOT_FOUND)
 
-    user = User.query.get(user)
+    user = db.session.get(User, user)
     # prevent deletion of self
     # TODO just block in the frontend?
     if id_ == user.id:
         abort(HTTPStatus.BAD_REQUEST, description="Cannot delete yourself")
 
     # Prevent deletion of the last superadmin
-    if user_to_delete.is_superadmin and (User.query.filter_by(is_superadmin=True).count() <= 1):
+    superadmin_count = db.session.execute(
+        db.select(db.func.count()).where(User.is_superadmin == True)
+    ).scalar()
+    if user_to_delete.is_superadmin and superadmin_count <= 1:
         abort(HTTPStatus.BAD_REQUEST, description="Cannot delete the last superadmin user")
 
     # Handle user deletion with proper cleanup of related records

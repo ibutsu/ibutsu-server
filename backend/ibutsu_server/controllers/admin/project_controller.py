@@ -1,9 +1,10 @@
 from http import HTTPStatus
 
-import connexion
-from flask import abort
+# Connexion 3: use flask.request instead of connexion.request
+from flask import abort, request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Group, Project, User
 from ibutsu_server.filters import convert_filter
@@ -21,17 +22,18 @@ def admin_add_project(body=None, token_info=None, user=None):
 
     :rtype: Project
     """
-    requesting_user = User.query.get(user)
-    if not connexion.request.is_json:
+    requesting_user = db.session.get(User, user)
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    body_data = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    body_data = body if body is not None else request.get_json()
     project = Project.from_dict(**body_data)
     # check if project already exists
-    if project.id and Project.query.get(project.id):
+    if project.id and db.session.get(Project, project.id):
         return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
     if project.group_id:
         # check if the group exists
-        group = Group.query.get(project.group_id)
+        group = db.session.get(Group, project.group_id)
         if not group:
             return f"Group id {project.group_id} doesn't exist", HTTPStatus.BAD_REQUEST
     if requesting_user is not None:
@@ -52,9 +54,11 @@ def admin_get_project(id_, token_info=None, user=None):
 
     :rtype: Project
     """
-    project = Project.query.get(id_)
+    project = db.session.get(Project, id_)
     if not project:
-        project = Project.query.filter(Project.name == id_).first()
+        project = db.session.execute(
+            db.select(Project).where(Project.name == id_)
+        ).scalar_one_or_none()
     if not project:
         abort(HTTPStatus.NOT_FOUND)
     return project.to_dict(with_owner=True)
@@ -83,20 +87,20 @@ def admin_get_project_list(
 
     :rtype: List[Project]
     """
-    query = Project.query
+    query = db.select(Project)
 
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Project)
             if filter_clause is not None:
-                query = query.filter(filter_clause)
+                query = query.where(filter_clause)
     if owner_id:
-        query = query.filter(Project.owner_id == owner_id)
+        query = query.where(Project.owner_id == owner_id)
     if group_id:
-        query = query.filter(Project.group_id == group_id)
+        query = query.where(Project.group_id == group_id)
 
     offset = get_offset(page, page_size)
-    total_items = query.count()
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     if offset > 9223372036854775807:  # max value of bigint
         return "The page number is too big.", HTTPStatus.BAD_REQUEST
@@ -123,17 +127,18 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
 
     :rtype: Project
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
     if not is_uuid(id_):
         id_ = convert_objectid_to_uuid(id_)
-    project = Project.query.get(id_)
+    project = db.session.get(Project, id_)
 
     if not project:
         abort(HTTPStatus.NOT_FOUND)
 
     # Grab the fields from the request
-    body_data = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    body_data = body if body is not None else request.get_json()
     project_dict = body_data.copy()
 
     # If the "owner" field is set, ignore it
@@ -141,13 +146,15 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
 
     # handle updating users separately
     for username in project_dict.pop("users", []):
-        user_to_add = User.query.filter_by(email=username).first()
+        user_to_add = db.session.execute(
+            db.select(User).filter_by(email=username)
+        ).scalar_one_or_none()
         if user_to_add and user_to_add not in project.users:
             project.users.append(user_to_add)
 
     # Make sure the project owner is in the list of users
     if project_dict.get("owner_id"):
-        owner = User.query.get(project_dict["owner_id"])
+        owner = db.session.get(User, project_dict["owner_id"])
         if owner and owner not in project.users:
             project.users.append(owner)
 
@@ -162,7 +169,10 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
 @validate_admin
 def admin_delete_project(id_, token_info=None, user=None):
     """Delete a single project"""
-    project = Project.query.get(id_)
+    # UUID validation (from incoming branch)
+    if not is_uuid(id_):
+        return f"Project ID {id_} is not in UUID format", HTTPStatus.BAD_REQUEST
+    project = db.session.get(Project, id_)
     if not project:
         abort(HTTPStatus.NOT_FOUND)
     session.delete(project)
