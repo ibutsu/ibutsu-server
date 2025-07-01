@@ -47,7 +47,6 @@ services:
 
   worker:
     environment:
-      APP_SCRIPT: celery_worker.sh
       POSTGRESQL_HOST: postgres
       POSTGRESQL_DATABASE: ibutsu
       POSTGRESQL_USER: ibutsu
@@ -61,6 +60,7 @@ services:
       context: ./backend
       dockerfile: docker/Dockerfile.worker
     image: ibutsu/worker
+    command: /bin/bash -c 'celery --app ibutsu_server.celery_app --no-color worker --events'
     depends_on:
       backend:
         condition: service_healthy

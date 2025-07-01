@@ -1,13 +1,13 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
-from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Artifact, Import, Project, Result, Run, User
-from ibutsu_server.tasks import task
+from ibutsu_server.db import db
+from ibutsu_server.db.models import Artifact, Project, Result, Run, User
+from ibutsu_server.tasks import shared_task
 
 DAYS_IN_MONTH = 30
 
 
-@task
+@shared_task
 def prune_old_files(months=5):
     """Delete artifact files older than specified months (here defined as 30 days)."""
     try:
@@ -18,17 +18,17 @@ def prune_old_files(months=5):
             # we don't want to remove files more recent than 2 months
             return
 
-        max_date = datetime.now(timezone.utc) - timedelta(days=months * DAYS_IN_MONTH)
+        max_date = datetime.utcnow() - timedelta(days=months * DAYS_IN_MONTH)
         # delete artifact files older than max_date
         delete_statement = Artifact.__table__.delete().where(Artifact.upload_date < max_date)
-        session.execute(delete_statement)
-        session.commit()
+        db.session.execute(delete_statement)
+        db.session.commit()
     except Exception:
         # we don't want to continually retry this task
         return
 
 
-@task
+@shared_task
 def prune_old_results(months=6):
     """
     Remove results older than specified months (here defined as 30 days).
@@ -44,17 +44,17 @@ def prune_old_results(months=6):
             # we don't want to remove files more recent than 4 months
             return
 
-        max_date = datetime.now(timezone.utc) - timedelta(days=months * DAYS_IN_MONTH)
+        max_date = datetime.utcnow() - timedelta(days=months * DAYS_IN_MONTH)
         # delete artifact files older than max_date
         delete_statement = Result.__table__.delete().where(Result.start_time < max_date)
-        session.execute(delete_statement)
-        session.commit()
+        db.session.execute(delete_statement)
+        db.session.commit()
     except Exception:
         # we don't want to continually retry this task
         return
 
 
-@task
+@shared_task
 def prune_old_runs(months=12):
     """
     Remove runs older than specified months (here defined as 30 days).
@@ -70,39 +70,17 @@ def prune_old_runs(months=12):
             # we don't want to remove files more recent than 10 months
             return
 
-        max_date = datetime.now(timezone.utc) - timedelta(days=months * DAYS_IN_MONTH)
+        max_date = datetime.utcnow() - timedelta(days=months * DAYS_IN_MONTH)
         # delete artifact files older than max_date
         delete_statement = Run.__table__.delete().where(Run.start_time < max_date)
-        session.execute(delete_statement)
-        session.commit()
+        db.session.execute(delete_statement)
+        db.session.commit()
     except Exception:
         # we don't want to continually retry this task
         return
 
 
-@task
-def prune_old_imports(months=2):
-    """Delete import records older than specified months (here defined as 30 days)."""
-    try:
-        if isinstance(months, str):
-            months = int(months)
-
-        if months < 1:
-            # we don't want to remove imports more recent than 1 month
-            return
-
-        max_date = datetime.now(timezone.utc) - timedelta(days=months * DAYS_IN_MONTH)
-        # delete import records older than max_date
-        # Note: import_files should be deleted via cascade when imports are deleted
-        delete_statement = Import.__table__.delete().where(Import.created < max_date)
-        session.execute(delete_statement)
-        session.commit()
-    except Exception:
-        # we don't want to continually retry this task
-        return
-
-
-@task
+@shared_task
 def seed_users(projects):
     """
     Add users and add users to projects in database.
@@ -140,14 +118,18 @@ def seed_users(projects):
             return
 
         for project_name, project_info in projects.items():
-            project = Project.query.filter_by(name=project_name).first()
+            project = db.session.execute(
+                db.select(Project).filter_by(name=project_name)
+            ).scalar_one_or_none()
             if not project:
                 print(f"Project with name {project_name} not found.")
                 continue
 
             # create/set the project owner
             if project_info.get("owner"):
-                project_owner = User.query.filter_by(email=project_info["owner"]).first()
+                project_owner = db.session.execute(
+                    db.select(User).filter_by(email=project_info["owner"])
+                ).scalar_one_or_none()
                 if not project_owner:
                     project_owner = User(
                         email=project_info["owner"],
@@ -155,12 +137,14 @@ def seed_users(projects):
                         is_active=True,
                     )
                 project.owner = project_owner
-                session.add(project)
-                session.commit()
+                db.session.add(project)
+                db.session.commit()
 
             # add the users
             for user_email in project_info.get("users", []):
-                user = User.query.filter_by(email=user_email).first()
+                user = db.session.execute(
+                    db.select(User).filter_by(email=user_email)
+                ).scalar_one_or_none()
                 # create the user if they don't exist
                 if not user:
                     user = User(email=user_email, name=user_email.split("@")[0], is_active=True)
@@ -169,8 +153,9 @@ def seed_users(projects):
                 if project not in user.projects:
                     user.projects.append(project)
 
-                session.add(user)
-            session.commit()
+                db.session.add(user)
+            db.session.commit()
+
     except Exception as e:
         # we don't want to continually retry this task
         print(e)

@@ -1,7 +1,8 @@
 from sqlalchemy import case, desc, func
 
 from ibutsu_server.constants import HEATMAP_MAX_BUILDS, HEATMAP_RUN_LIMIT
-from ibutsu_server.db.base import Float, session
+from ibutsu_server.db import db
+from ibutsu_server.db.base import Float
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
 from ibutsu_server.util.uuid import is_uuid
@@ -54,7 +55,7 @@ def _get_heatmap(additional_filters, builds, group_field, project=None):
     )
 
     query = (
-        session.query(
+        db.select(
             Run.id.label("run_id"),
             group_field.label("group_field"),
             Run.start_time.label("start_time"),
@@ -65,7 +66,7 @@ def _get_heatmap(additional_filters, builds, group_field, project=None):
             func.sum(Run.summary["xpasses"].cast(Float)).label("xpasses"),
             func.sum(Run.summary["tests"].cast(Float)).label("total"),
         )
-        .select_entity_from(sub_query)
+        .select_from(sub_query)
         .order_by(desc("start_time"))
         .group_by(group_field, Run.id, Run.start_time)
     )
@@ -81,21 +82,20 @@ def _get_heatmap(additional_filters, builds, group_field, project=None):
         subquery.c.errors + subquery.c.failures + subquery.c.xpasses + subquery.c.xfailures
     )
 
-    query = session.query(
+    # Create a fresh select that only uses the subquery, to avoid cartesian product
+    query = db.select(
         subquery.c.group_field,
         subquery.c.run_id,
         subquery.c.start_time,
         # handle potential division by 0 errors, if the total is 0, set the pass_percent to 0
         case(
-            [
-                (subquery.c.total == 0, 0),
-            ],
+            (subquery.c.total == 0, 0),
             else_=(100 * passes / subquery.c.total),
         ).label("pass_percent"),
-    )
+    ).select_from(subquery)  # Explicitly select from subquery, not entire Runs table
 
     # parse the data for the frontend
-    query_data = query.all()
+    query_data = db.session.execute(query).all()
     data = {datum.group_field: [] for datum in query_data}
     for key, value in data.items():
         runs = [run for run in query_data if run.group_field == key]

@@ -1,14 +1,16 @@
 from sqlalchemy import desc, func
 
 from ibutsu_server.constants import JJV_RUN_LIMIT
-from ibutsu_server.db.base import Integer, Text, session
+from ibutsu_server.db import db
+from ibutsu_server.db.base import Integer, Text
 from ibutsu_server.db.models import Run
-from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.filters import apply_filters
 from ibutsu_server.util.uuid import is_uuid
+from ibutsu_server.util.widget import create_jenkins_columns, create_summary_columns
 
 
 def _get_jenkins_aggregation(
-    additional_filters=None, project=None, page=1, page_size=25, run_limit=None
+    additional_filters=None, project=None, page=1, page_size=25, run_limit=JJV_RUN_LIMIT
 ):
     """Get a list of Jenkins jobs"""
     offset = (page * page_size) - page_size
@@ -24,50 +26,55 @@ def _get_jenkins_aggregation(
         query_filters.append(f"project_id={project}")
     filters = query_filters
 
-    # generate the group_fields
-    job_name = string_to_column("metadata.jenkins.job_name", Run)
-    build_number = string_to_column("metadata.jenkins.build_number", Run)
-    build_url = string_to_column("metadata.jenkins.build_url", Run)
-    env = string_to_column("env", Run)
-
     # get the runs on which to run the aggregation, we select from a subset of runs to improve
     # performance, otherwise we'd be aggregating over ALL runs
-    sub_query = (
-        apply_filters(Run.query, filters, Run)
-        .order_by(desc("start_time"))
-        .limit(run_limit or JJV_RUN_LIMIT)
-        .subquery()
-    )
+    run_query = db.select(Run).select_from(Run)
+
+    # Create a consistent ref to the Run model with or without limit and filter applied
+    runRef = Run
+    columnRef = Run
+    if run_limit is not None:
+        run_query = apply_filters(run_query, filters, Run)
+        runRef = run_query.order_by(desc(Run.start_time)).limit(run_limit).subquery()
+        columnRef = runRef.c
+
+    # Use shared utility functions for consistent column creation
+    jenkins_cols = create_jenkins_columns(runRef)
+    summary_cols = create_summary_columns(columnRef, cast_type=Integer)
 
     # create the base query
-    query = (
-        session.query(
-            job_name.label("job_name"),
-            build_number.label("build_number"),
-            func.min(build_url.cast(Text)).label("build_url"),
-            func.min(env).label("env"),
-            func.min(Run.source).label("source"),
-            func.sum(Run.summary["xfailures"].cast(Integer)).label("xfailures"),
-            func.sum(Run.summary["xpasses"].cast(Integer)).label("xpasses"),
-            func.sum(Run.summary["failures"].cast(Integer)).label("failures"),
-            func.sum(Run.summary["errors"].cast(Integer)).label("errors"),
-            func.sum(Run.summary["skips"].cast(Integer)).label("skips"),
-            func.sum(Run.summary["tests"].cast(Integer)).label("tests"),
-            func.min(Run.start_time).label("min_start_time"),
-            func.max(Run.start_time).label("max_start_time"),
-            func.sum(Run.duration).label("total_execution_time"),
-            func.max(Run.duration).label("max_duration"),
-        )
-        .select_entity_from(sub_query)
-        .group_by(job_name, build_number)
-        .order_by(desc("max_start_time"))
+    query = db.select(
+        jenkins_cols["job_name"].label("job_name"),
+        jenkins_cols["build_number"].label("build_number"),
+        func.min(jenkins_cols["build_url"].cast(Text)).label("build_url"),
+        func.min(jenkins_cols["env"]).label("env"),
+        summary_cols["source"],
+        summary_cols["xfailures"],
+        summary_cols["xpasses"],
+        summary_cols["failures"],
+        summary_cols["errors"],
+        summary_cols["skips"],
+        summary_cols["tests"],
+        summary_cols["min_start_time"],
+        summary_cols["max_start_time"],
+        summary_cols["total_execution_time"],
+        summary_cols["max_duration"],
+    ).select_from(runRef)
+
+    # Apply the filters to the main query if no limit was set
+    if run_limit is None:
+        query = apply_filters(query, filters, runRef)
+
+    query = query.group_by(jenkins_cols["job_name"], jenkins_cols["build_number"]).order_by(
+        desc("max_start_time")
     )
 
-    # apply filters to the query
-    query = apply_filters(query, filters, Run)
+    # form a count query
+    count_query = query.subquery()
+    total_count = db.session.execute(db.select(func.count()).select_from(count_query)).scalar()
 
     # apply pagination and get data
-    query_data = query.offset(offset).limit(page_size).all()
+    query_data = db.session.execute(query.offset(offset).limit(page_size)).all()
 
     # parse the data for the frontend
     data = {
@@ -75,7 +82,7 @@ def _get_jenkins_aggregation(
         "pagination": {
             "page": page,
             "pageSize": page_size,
-            "totalItems": query.count(),  # TODO: examine performance here
+            "totalItems": total_count,
         },
     }
     for datum in query_data:
