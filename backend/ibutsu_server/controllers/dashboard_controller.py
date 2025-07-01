@@ -116,7 +116,7 @@ def update_dashboard(id_, dashboard=None, token_info=None, user=None):
     dashboard = Dashboard.query.get(id_)
     if not dashboard:
         return "Dashboard not found", HTTPStatus.NOT_FOUND
-    if project_has_user(dashboard.project, user):
+    if not project_has_user(dashboard.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     dashboard.update(request.get_json())
     session.add(dashboard)

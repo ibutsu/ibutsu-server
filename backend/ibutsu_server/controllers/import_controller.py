@@ -52,8 +52,7 @@ def add_import(
 
     :rtype: Import
     """
-    if "importFile" in request.files:
-        import_file = request.files["importFile"]
+    import_file = request.files.get("importFile")
     if not import_file:
         return "Bad request, no file uploaded", HTTPStatus.BAD_REQUEST
     data = {}

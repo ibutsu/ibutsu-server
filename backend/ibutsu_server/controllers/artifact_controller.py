@@ -137,8 +137,10 @@ def upload_artifact(body, token_info=None, user=None):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     filename = body.get("filename")
     additional_metadata = body.get("additional_metadata", {})
-    file_ = request.files["file"]
-    content_type = magic.from_buffer(file_.read())
+    file_ = request.files.get("file")
+    content_type = body.get("content_type")
+    if file_ is not None:
+        content_type = magic.from_buffer(file_.read())
     data = {
         "contentType": content_type,
         "resultId": result_id,
