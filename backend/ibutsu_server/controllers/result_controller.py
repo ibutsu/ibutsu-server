@@ -1,9 +1,10 @@
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, User
 from ibutsu_server.filters import convert_filter, has_project_filter
@@ -48,13 +49,14 @@ def add_result(result=None, token_info=None, user=None):
 
     :rtype: Result
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    result_data = result if result is not None else connexion.request.get_json()
+    # Use result parameter if provided, otherwise get from request (Connexion 3 pattern)
+    result_data = result if result is not None else request.get_json()
     result = Result.from_dict(**result_data)
 
     # Validate result doesn't already exist
-    if result.id and Result.query.get(result.id):
+    if result.id and db.session.get(Result, result.id):
         return f"Result id {result.id} already exist", HTTPStatus.BAD_REQUEST
 
     # Validate and get project
@@ -126,7 +128,7 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
 
     :rtype: List[Result]
     """
-    requesting_user = User.query.get(user)
+    requesting_user = db.session.get(User, user)
 
     # Validate query scope to prevent full table scans
     # If user is superadmin or query is not properly scoped by user projects,
@@ -138,7 +140,7 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
             HTTPStatus.BAD_REQUEST,
         )
 
-    query = Result.query
+    query = db.select(Result)
     if requesting_user:
         query = add_user_filter(query, requesting_user, model=Result)
         # For non-superadmin users without projects, require project filter
@@ -156,9 +158,12 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Result)
             if filter_clause is not None:
-                query = query.filter(filter_clause)
+                query = query.where(filter_clause)
 
-    total_items = get_count_estimate(query) if estimate else query.count()
+    if estimate:
+        total_items = get_count_estimate(query)
+    else:
+        total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
 
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
@@ -184,7 +189,7 @@ def get_result(id_, token_info=None, user=None):
 
     :rtype: Result
     """
-    result = Result.query.get(id_)
+    result = db.session.get(Result, id_)
     if not result:
         return "Result not found", HTTPStatus.NOT_FOUND
     if not project_has_user(result.project, user):
@@ -203,9 +208,10 @@ def update_result(id_, result=None, token_info=None, user=None, **_kwargs):
 
     :rtype: Result
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    result_data = result if result is not None else connexion.request.get_json()
+    # Use result parameter if provided, otherwise get from request (Connexion 3 pattern)
+    result_data = result if result is not None else request.get_json()
     if result_data.get("metadata", {}).get("project"):
         project = get_project(result_data["metadata"]["project"])
         if not project_has_user(project, user):
@@ -218,7 +224,8 @@ def update_result(id_, result=None, token_info=None, user=None, **_kwargs):
         user_properties = result_data["metadata"].pop("user_properties")
         merge_dicts(user_properties, result_data["metadata"])
 
-    result_obj = Result.query.get(id_)
+    # Flask-SQLAlchemy 3.0+ pattern
+    result_obj = db.session.get(Result, id_)
     if not result_obj:
         return "Result not found", HTTPStatus.NOT_FOUND
     if not project_has_user(result_obj.project, user):

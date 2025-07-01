@@ -1,9 +1,10 @@
 from http import HTTPStatus
 
-import connexion
 import flatdict
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project, Result, User
 from ibutsu_server.filters import convert_filter
@@ -20,14 +21,16 @@ def add_project(body=None, token_info=None, user=None):
 
     :rtype: Project
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    body_data = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    body_data = body if body is not None else request.get_json()
     project = Project.from_dict(**body_data)
     # check if project already exists
-    if project.id and Project.query.get(project.id):
+    if project.id and db.session.get(Project, project.id):
         return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
-    requesting_user = User.query.get(user)
+    # Flask-SQLAlchemy 3.0+ pattern: use db.session.get instead of Model.query.get
+    requesting_user = db.session.get(User, user)
     if requesting_user:
         project.owner = requesting_user
         project.users.append(requesting_user)
@@ -47,9 +50,9 @@ def get_project(id_, token_info=None, user=None):
     """
     if not is_uuid(id_):
         id_ = convert_objectid_to_uuid(id_)
-    project = Project.query.filter(Project.name == id_).first()
+    project = db.session.execute(db.select(Project).where(Project.name == id_)).scalar_one_or_none()
     if not project:
-        project = Project.query.get(id_)
+        project = db.session.get(Project, id_)
     if project and not project_has_user(project, user):
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
     if not project:
@@ -79,20 +82,21 @@ def get_project_list(
 
     :rtype: List[Project]
     """
-    query = add_user_filter(Project.query, user, model=Project)
+    query = db.select(Project)
+    query = add_user_filter(query, user, model=Project)
     if owner_id:
-        query = query.filter(Project.owner_id == owner_id)
+        query = query.where(Project.owner_id == owner_id)
     if group_id:
-        query = query.filter(Project.group_id == group_id)
+        query = query.where(Project.group_id == group_id)
 
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Project)
             if filter_clause is not None:
-                query = query.filter(filter_clause)
+                query = query.where(filter_clause)
 
     offset = get_offset(page, page_size)
-    total_items = query.count()
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     projects = query.offset(offset).limit(page_size).all()
     return {
@@ -117,26 +121,30 @@ def update_project(id_, body=None, token_info=None, user=None, **_kwargs):
 
     :rtype: Project
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
     if not is_uuid(id_):
         id_ = convert_objectid_to_uuid(id_)
-    project = Project.query.get(id_)
+    project = db.session.get(Project, id_)
 
     if not project:
         return "Project not found", HTTPStatus.NOT_FOUND
 
-    requesting_user = User.query.get(user)
+    # Flask-SQLAlchemy 3.0+ pattern: use db.session.get instead of Model.query.get
+    requesting_user = db.session.get(User, user)
     if not requesting_user.is_superadmin and (
         not project.owner or project.owner.id != requesting_user.id
     ):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
 
     # handle updating users separately
-    body_data = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    body_data = body if body is not None else request.get_json()
     updates = body_data.copy()
     for username in updates.pop("users", []):
-        user_to_add = User.query.filter_by(email=username).first()
+        user_to_add = db.session.execute(
+            db.select(User).filter_by(email=username)
+        ).scalar_one_or_none()
         if user_to_add and user_to_add not in project.users:
             project.users.append(user_to_add)
 
@@ -156,7 +164,7 @@ def get_filter_params(id_, user=None, token_info=None):
 
     :rtype: List
     """
-    project = Project.query.get(id_)
+    project = db.session.get(Project, id_)
 
     if not project:
         return "Project not found", HTTPStatus.NOT_FOUND

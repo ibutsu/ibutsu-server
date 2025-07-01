@@ -308,8 +308,6 @@ OKD/OpenShift Template
         spec:
           containers:
           - env:
-            - name: APP_SCRIPT
-              value: celery_worker.sh
             - name: POSTGRESQL_HOST
               value: postgresql.${NAMESPACE}.svc
             - name: POSTGRESQL_PORT

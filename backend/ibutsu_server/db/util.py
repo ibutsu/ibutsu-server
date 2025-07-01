@@ -4,26 +4,38 @@ Various utility DB functions
 
 from typing import Optional
 
+from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Query
 from sqlalchemy.sql.expression import ClauseElement, Executable
 
-from ibutsu_server.db import models
+from ibutsu_server.db import db, models
 
 
 class Explain(Executable, ClauseElement):
     """
     EXPLAIN a SQLAlchemy query (only for PSQL)
     e.g.
-        query = Run.query
-        session.execute(Explain(query)).fetchall()
+        query = db.select(Run)
+        db.session.execute(Explain(query)).fetchall()
 
     cf. http://www.wmmi.net/documents/SQLAlchemy.pdf for more info
     """
 
+    # Enable SQL compilation caching for better performance in SQLAlchemy 2.x
+    inherit_cache = True
+
     def __init__(self, stmt, analyze=False):
-        # In SQLAlchemy 1.4, Query objects need to be converted to statements
-        self.statement = stmt.statement if isinstance(stmt, Query) else stmt
+        # SQLAlchemy 2.0+ compatibility: use text() for string conversion
+        if hasattr(stmt, "statement"):
+            # If it's a query object, get the statement
+            self.statement = stmt.statement
+        elif isinstance(stmt, str):
+            # If it's a string, wrap in text()
+            self.statement = text(stmt)
+        else:
+            # Otherwise assume it's already a valid statement
+            self.statement = stmt
         self.analyze = analyze
 
 
@@ -37,7 +49,7 @@ def pg_explain(element, compiler, **_kw):
 
 
 def add_superadmin(
-    session,
+    current_session,
     *,
     name: str = "Ibutsu Admin",
     email: str,
@@ -48,7 +60,9 @@ def add_superadmin(
     Adds a superadmin user to Ibutsu.
     """
 
-    user = models.User.query.filter_by(email=email).first()
+    user = current_session.execute(
+        db.select(models.User).filter_by(email=email)
+    ).scalar_one_or_none()
     if user and user.is_superadmin:
         return user
     if user and not user.is_superadmin:
@@ -62,14 +76,15 @@ def add_superadmin(
         )
         user.password = password
 
-        session.add(user)
+        current_session.add(user)
 
-    session.commit()
+    current_session.commit()
 
     if own_project is not None:
-        project = models.Project.query.filter_by(name=own_project, owner=user).first()
+        project = current_session.execute(
+            db.select(models.Project).filter_by(name=own_project, owner=user)
+        ).scalar_one_or_none()
         if project is None:
             project = models.Project(name=own_project, owner=user)
-        session.add(project)
-        session.commit()
-    return None
+        current_session.add(project)
+        current_session.commit()

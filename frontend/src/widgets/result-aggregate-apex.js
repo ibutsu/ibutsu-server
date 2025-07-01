@@ -4,8 +4,8 @@ import Chart from 'react-apexcharts';
 
 import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 
-import { HttpClient } from '../utilities/http';
-import { Settings } from '../pages/settings';
+import { HttpClient } from '../services/http';
+import { Settings } from '../settings';
 import { getDarkTheme, toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
@@ -15,8 +15,8 @@ import {
   ICON_RESULT_MAP,
   WIDGET_HEIGHT,
 } from '../constants';
-import ResultWidgetLegend from './result-widget-legend';
-import { useSVGContainerDimensions } from '../components/hooks/use-svg-container-dimensions';
+import ResultWidgetLegend from './ResultWidgetLegend';
+import { useSVGContainerDimensions } from '../components/hooks/useSVGContainerDimensions';
 
 // Helper function to get color for a label
 const getColorForLabel = (label, index) => {
@@ -48,7 +48,6 @@ const ResultAggregateApex = ({
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [resultAggregatorError, setResultAggregatorError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [filterDays, setFilterDays] = useState(days);
   const [filterGroupField, setFilterGroupField] = useState(groupField);
   const additionalFilters = useRef(params.additional_filters);
@@ -73,43 +72,19 @@ const ResultAggregateApex = ({
     setIsLoading(true);
     const fetchAggregated = async () => {
       try {
-        // Build params object, excluding undefined values
-        const params = {
-          days: filterDays,
-          group_field: filterGroupField,
-        };
-
-        // Only add optional parameters if they have valid values
-        if (project.current) {
-          params.project = project.current;
-        }
-        if (additionalFilters.current) {
-          params.additional_filters = additionalFilters.current;
-        }
-        if (runId.current) {
-          params.run_id = runId.current;
-        }
-
         const response = await HttpClient.get(
           [Settings.serverUrl, 'widget', 'result-aggregator'],
-          params,
+          {
+            days: filterDays,
+            group_field: filterGroupField,
+            chart_type: 'donut',
+            project: project.current,
+            ...(additionalFilters.current
+              ? { additional_filters: additionalFilters.current }
+              : {}),
+            ...(runId.current ? { run_id: runId.current } : {}),
+          },
         );
-
-        // Check for non-200 responses and set error message
-        if (!response.ok) {
-          let errorText = 'Error fetching data';
-          if (response.status === 400) {
-            errorText = 'Bad request for widget data, review settings';
-          } else if (response.status >= 500) {
-            errorText =
-              'Backend error processing widget data, review settings and contact administrator';
-          }
-          setErrorMessage(errorText);
-          setIsLoading(false);
-          setResultAggregatorError(true);
-          return;
-        }
-
         const data = await HttpClient.handleResponse(response);
         let _chartData = [];
         let _total = 0;
@@ -126,13 +101,9 @@ const ResultAggregateApex = ({
 
         setIsLoading(false);
         setResultAggregatorError(false);
-        setErrorMessage('');
       } catch (error) {
         setIsLoading(false);
         setResultAggregatorError(true);
-        setErrorMessage(
-          error.message || 'Error fetching result aggregator data',
-        );
         console.error('Error fetching result aggregator data:', error);
       }
     };
@@ -297,35 +268,12 @@ const ResultAggregateApex = ({
           <div
             style={{
               textAlign: 'center',
-              padding: '20px',
             }}
           >
             <Content
-              component="h3"
               style={{ color: 'var(--pf-v6-global--danger-color--100)' }}
             >
-              Widget Error
-            </Content>
-            <Content
-              style={{
-                color: 'var(--pf-t--global--text--color--regular)',
-                marginTop: '10px',
-              }}
-            >
-              {errorMessage && (
-                <div style={{ marginBottom: '10px', fontStyle: 'italic' }}>
-                  {errorMessage}
-                </div>
-              )}
-              <div>
-                Unable to load result aggregation data. Please review your
-                filter and group field combination to ensure a valid aggregation
-                can be created.
-              </div>
-              <div style={{ marginTop: '10px' }}>
-                If this issue persists, please contact your system
-                administrators.
-              </div>
+              Error fetching data
             </Content>
           </div>
         )}

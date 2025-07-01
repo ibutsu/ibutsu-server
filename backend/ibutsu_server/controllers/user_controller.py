@@ -1,9 +1,10 @@
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
@@ -25,7 +26,7 @@ def _hide_sensitive_fields(user_dict):
 
 def get_current_user(token_info=None, user=None):
     """Return the current user"""
-    user = User.query.get(user)
+    user = db.session.get(User, user)
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
@@ -38,12 +39,14 @@ def update_current_user(body=None, token_info=None, user=None):
     :param body: User update data
     :type body: dict | bytes
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    user = User.query.get(user)
+    # Flask-SQLAlchemy 3.0+ pattern
+    user = db.session.get(User, user)
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-    user_dict = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    user_dict = body if body is not None else request.get_json()
     user_dict.pop("is_superadmin", None)
     user.update(user_dict)
     session.add(user)
@@ -60,12 +63,12 @@ def get_token_list(page=1, page_size=25, token_info=None, user=None):
 
     :rtype: List[Token]
     """
-    user = User.query.get(user)
+    user = db.session.get(User, user)
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
-    query = Token.query.filter(Token.user == user, Token.name != "login-token")
-    total_items = query.count()
+    query = db.select(Token).where(Token.user == user, Token.name != "login-token")
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     tokens = query.offset(offset).limit(page_size).all()
@@ -89,8 +92,9 @@ def get_token(id_, token_info=None, user=None):
 
     :rtype: Token
     """
-    user = User.query.get(user)
-    token = Token.query.get(id_)
+    # Flask-SQLAlchemy 3.0+ pattern
+    user = db.session.get(User, user)
+    token = db.session.get(Token, id_)
     if not token:
         return "Token not found", HTTPStatus.NOT_FOUND
     if token.user != user:
@@ -107,8 +111,9 @@ def delete_token(id_, token_info=None, user=None):
 
     :rtype: Token
     """
-    user = User.query.get(user)
-    token = Token.query.get(id_)
+    # Flask-SQLAlchemy 3.0+ pattern
+    user = db.session.get(User, user)
+    token = db.session.get(Token, id_)
     if not token:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     if token.user != user:
@@ -126,12 +131,13 @@ def add_token(body=None, token_info=None, user=None):
 
     :rtype: Token
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    user = User.query.get(user)
+    user = db.session.get(User, user)
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-    body_data = body if body is not None else connexion.request.get_json()
+    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    body_data = body if body is not None else request.get_json()
     token = Token.from_dict(**body_data)
     token.user = user
     # token.expires is already parsed by from_dict if it was a string

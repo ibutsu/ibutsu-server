@@ -1,7 +1,12 @@
 from datetime import datetime
 from uuid import uuid4
 
+# SQLAlchemy 2.0+ imports
+from sqlalchemy import Text as sa_text
+from sqlalchemy import cast as sa_cast
+from sqlalchemy import delete as sqlalchemy_delete
 from sqlalchemy import func
+from sqlalchemy import update as sqlalchemy_update
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -282,19 +287,31 @@ class User(Model, ModelMixin):
         self.projects.clear()
 
         # 2. Delete tokens associated with the user
-        session.query(Token).filter_by(user_id=self.id).delete(synchronize_session=False)
+        # 2. Delete tokens associated with the user
+        stmt = (
+            sqlalchemy_delete(Token)
+            .where(Token.user_id == self.id)
+        )
+        session.execute(stmt)
 
         # 3. Reassign owned projects to the current user (admin performing deletion)
-        session.query(Project).filter_by(owner_id=self.id).update(
-            {"owner_id": new_owner.id}, synchronize_session=False
+        # SQLAlchemy 2.0+ pattern: use update() instead of query.update()
+        stmt = (
+            sqlalchemy_update(Project)
+            .where(sa_cast(Project.owner_id, sa_text) == sa_cast(self.id, sa_text))
+            .values(owner_id=new_owner.id)
         )
+        session.execute(stmt)
 
         # 4. Reassign dashboards to the current user (admin performing deletion)
         # TODO: this field is null on every prod record, evaluate dropping the field
         # or changing to creator_id
-        session.query(Dashboard).filter_by(user_id=self.id).update(
-            {"user_id": new_owner.id}, synchronize_session=False
+        stmt = (
+            sqlalchemy_update(Dashboard)
+            .where(Dashboard.user_id == self.id)
+            .values(user_id=new_owner.id)
         )
+        session.execute(stmt)
 
 
 class Token(Model, ModelMixin):
@@ -317,7 +334,7 @@ class Meta(Model):
     value = Column(Text)
 
 
-def upgrade_db(session, upgrades):
+def upgrade_db(current_session, upgrades):
     """Upgrade the database using Alembic
 
     :param session: An SQLAlchemy Session object
@@ -325,13 +342,13 @@ def upgrade_db(session, upgrades):
     """
     # Query the metadata table in the DB for the version number
     db_version = 0
-    meta_version = Meta.query.get("version")
+    meta_version = current_session.get(Meta, "version")
     if meta_version:
         db_version = int(meta_version.value)
     else:
         meta_version = Meta(key="version", value="0")
-        session.add(meta_version)
-        session.commit()
+        current_session.add(meta_version)
+        current_session.commit()
     if db_version > upgrades.__version__:
         return db_version, upgrades.__version__
     db_version += 1
@@ -339,8 +356,8 @@ def upgrade_db(session, upgrades):
         while hasattr(upgrades, f"upgrade_{db_version:d}"):
             try:
                 upgrade_func = getattr(upgrades, f"upgrade_{db_version:d}")
-                upgrade_func(session)
-                session.commit()
+                upgrade_func(current_session)
+                current_session.commit()
             except (SQLAlchemyError, DBAPIError) as e:
                 # Could not run the upgrade
                 if "already exists" not in str(e):
@@ -349,12 +366,12 @@ def upgrade_db(session, upgrades):
             # Update the version number AFTER a commit so that we are sure the previous
             # transaction happened
             meta_version.value = str(db_version)
-            session.commit()
+            current_session.commit()
             db_version += 1
     except (SQLAlchemyError, DBAPIError):
         version_meta = Meta(key="version", value=int(upgrades.__version__))
-        session.add(version_meta)
-        session.commit()
+        current_session.add(version_meta)
+        current_session.commit()
     upgrade_version = upgrades.__version__
     db_version = int(meta_version.value)
     return db_version, upgrade_version
