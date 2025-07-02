@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 from ibutsu_server.constants import SYNC_RUN_TIME
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, Run
 from ibutsu_server.tasks import is_locked, lock, task
@@ -39,7 +40,7 @@ def update_run(run_id):
         return
 
     with lock(f"update-run-lock-{run_id}"):
-        run = Run.query.get(run_id)
+        run = db.session.get(Run, run_id)
         if not run:
             return
 
@@ -58,7 +59,11 @@ def update_run(run_id):
 
         # Fetch all the results for the runs and calculate the summary
         results = (
-            Result.query.filter(Result.run_id == run_id).order_by(Result.start_time.asc()).all()
+            db.session.execute(
+                db.select(Result).where(Result.run_id == run_id).order_by(Result.start_time.asc())
+            )
+            .scalars()
+            .all()
         )
 
         for i, result in enumerate(results):
@@ -105,11 +110,13 @@ def sync_aborted_runs():
     number of results. If there is a mismatch, it will run the 'update_run' task on the Run.id.
     """
     # fetch recent runs
-    runs = Run.query.filter(Run.start_time > (datetime.utcnow() - timedelta(seconds=SYNC_RUN_TIME)))
+    runs = db.select(Run).where(
+        Run.start_time > (datetime.utcnow() - timedelta(seconds=SYNC_RUN_TIME))
+    )
 
     # for each run, check if the result count matches 'summary.tests'
     # if it doesn't, run the update_run task
     for run in runs:
-        result_count = Result.query.filter(Result.run_id == run.id).count()
+        result_count = db.select(Result).where(Result.run_id == run.id).count()
         if run.summary["tests"] != result_count:
             update_run.apply_async((run.id,), countdown=5)

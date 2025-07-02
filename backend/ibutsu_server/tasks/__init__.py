@@ -7,7 +7,7 @@ from flask import current_app
 from redis import Redis
 from redis.exceptions import LockError
 
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Report
 
 LOCK_EXPIRE = 1
@@ -35,8 +35,8 @@ def create_celery_app(_app=None):
 
         def _set_report_error(self, report):
             report.status = "error"
-            session.add(report)
-            session.commit()
+            db.session.add(report)
+            db.session.commit()
 
         def after_return(self, status, retval, task_id, args, kwargs, einfo):
             """
@@ -51,11 +51,11 @@ def create_celery_app(_app=None):
             # Commit only on successful completion (no exception)
             if not isinstance(retval, Exception):
                 try:
-                    session.commit()
+                    db.session.commit()
                 except Exception:
-                    session.rollback()
+                    db.session.rollback()
                     raise
-            session.remove()
+            db.session.remove()
 
         def on_failure(self, exc, task_id, args, kwargs, einfo):
             # if the task is related to a report, set that report to failed
@@ -63,7 +63,7 @@ def create_celery_app(_app=None):
                 try:
                     with _app.app_context():
                         report_id = args[0].get("id")  # get the report ID from the task
-                        report = Report.query.get(report_id)
+                        report = db.session.get(Report, report_id)
                         # if this is actually a report ID, set it as an error
                         if report:
                             self._set_report_error(report)

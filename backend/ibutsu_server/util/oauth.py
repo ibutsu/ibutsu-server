@@ -2,6 +2,7 @@ import requests
 from flask import current_app
 
 from ibutsu_server.constants import LOCALHOST, OAUTH_CONFIG
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import User
 from ibutsu_server.util.urls import build_url
@@ -79,7 +80,9 @@ def get_user_from_provider(provider, auth_data):
                 return None
         else:
             return None
-    user = User.query.filter(User.email == user_dict["email"]).first()
+    user = db.session.execute(
+        db.select(User).where(User.email == user_dict["email"])
+    ).scalar_one_or_none()
     if not user:
         user = User(
             email=user_dict["email"],

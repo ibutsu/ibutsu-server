@@ -10,6 +10,7 @@ from google.auth.transport.requests import Request
 from google.oauth2 import id_token
 
 from ibutsu_server.constants import LOCALHOST, RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
@@ -89,7 +90,9 @@ def _get_user_from_provider(provider, provider_config, code):
 
 def _find_or_create_token(token_name, user):
     """To reduce congnitive complexity"""
-    token = Token.query.filter(Token.name == token_name, Token.user_id == user.id).first()
+    token = db.session.execute(
+        db.select(Token).where(Token.name == token_name, Token.user_id == user.id)
+    ).scalar_one_or_none()
     if not token:
         token = Token(name=token_name, user_id=user.id)
     return token
@@ -114,7 +117,7 @@ def login(email=None, password=None):
             "code": "EMPTY",
             "message": "Username and/or password are empty",
         }, HTTPStatus.UNAUTHORIZED
-    user = User.query.filter_by(email=login["email"]).first()
+    user = db.session.execute(db.select(User).filter_by(email=login["email"])).scalar_one_or_none()
 
     # superadmins can login even if local login is disabled
     if user and not user.is_superadmin and not current_app.config.get("USER_LOGIN_ENABLED", True):
@@ -126,7 +129,9 @@ def login(email=None, password=None):
 
     if user and user.check_password(login["password"]):
         login_token = generate_token(user.id)
-        token = Token.query.filter(Token.name == "login-token", Token.user_id == user.id).first()
+        token = db.session.execute(
+            db.select(Token).where(Token.name == "login-token", Token.user_id == user.id)
+        ).scalar_one_or_none()
         if not token:
             token = Token(name="login-token", user_id=user.id)
         token.token = login_token
@@ -221,7 +226,9 @@ def register(email=None, password=None):
         password=details["password"],
         activation_code=activation_code,
     )
-    user_exists = User.query.filter_by(email=user.email).first()
+    user_exists = db.session.execute(
+        db.select(User).filter_by(email=user.email)
+    ).scalar_one_or_none()
     if user_exists:
         return f"The user with email {user.email} already exists", HTTPStatus.BAD_REQUEST
     session.add(user)
@@ -257,7 +264,9 @@ def recover(email=None):
     login = request.get_json()
     if not login.get("email"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-    user = User.query.filter(User.email == login["email"]).first()
+    user = db.session.execute(
+        db.select(User).where(User.email == login["email"])
+    ).scalar_one_or_none()
     if not user:
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
     # Create a random activation code. Base64 just for funsies
@@ -281,7 +290,9 @@ def reset_password(activation_code=None, password=None):
         return result
     if not login.get("activation_code") or not login.get("password"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-    user = User.query.filter(User.activation_code == login["activation_code"]).first()
+    user = db.session.execute(
+        db.select(User).where(User.activation_code == login["activation_code"])
+    ).scalar_one_or_none()
     if not user:
         return "Invalid activation code", HTTPStatus.BAD_REQUEST
     user.password = login["password"]
@@ -298,7 +309,9 @@ def activate(activation_code=None):
     """
     if result := validate_activation_code(activation_code):
         return result
-    user = User.query.filter(User.activation_code == activation_code).first()
+    user = db.session.execute(
+        db.select(User).where(User.activation_code == activation_code)
+    ).scalar_one_or_none()
     login_url = build_url(
         current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login"
     )

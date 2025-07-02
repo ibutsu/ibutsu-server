@@ -8,6 +8,7 @@ from celery.utils.log import get_task_logger
 from dateutil import parser
 from lxml import objectify
 
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
 from ibutsu_server.tasks import task
@@ -27,7 +28,7 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
     old_id = None
     result_id = result.get("id")
     if is_uuid(result_id):
-        result_record = session.query(Result).get(result_id)
+        result_record = db.select(session)(Result).get(result_id)
     else:
         result_record = None
     if result_record:
@@ -208,10 +209,12 @@ def _get_test_name_path(testcase):
 def run_junit_import(import_):
     """Import a test run from a JUnit file"""
     # Update the status of the import
-    import_record = Import.query.get(import_["id"])
+    import_record = db.session.get(Import, import_["id"])
     _update_import_status(import_record, "running")
     # Fetch the file contents
-    import_file = ImportFile.query.filter(ImportFile.import_id == import_["id"]).first()
+    import_file = db.session.execute(
+        db.select(ImportFile).where(ImportFile.import_id == import_["id"])
+    ).scalar_one_or_none()
     if not import_file:
         _update_import_status(import_record, "error")
         return
@@ -389,14 +392,16 @@ def run_junit_import(import_):
 def run_archive_import(import_):
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
-    import_record = Import.query.get(str(import_["id"]))
+    import_record = db.session.get(Import, str(import_["id"]))
     metadata = {}
     if import_record.data.get("metadata"):
         # metadata is expected to be a json dict
         metadata = import_record.data["metadata"]
     _update_import_status(import_record, "running")
     # Fetch the file contents
-    import_file = ImportFile.query.filter(ImportFile.import_id == import_["id"]).first()
+    import_file = db.session.execute(
+        db.select(ImportFile).where(ImportFile.import_id == import_["id"])
+    ).scalar_one_or_none()
     if not import_file:
         _update_import_status(import_record, "error")
         return
@@ -452,7 +457,7 @@ def run_archive_import(import_):
 
         # If this run has a valid ID, check if this run exists
         if is_uuid(run_dict.get("id")):
-            run = session.query(Run).get(run_dict["id"])
+            run = db.select(session)(Run).get(run_dict["id"])
         if run:
             run.update(run_dict)
         else:

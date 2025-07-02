@@ -32,6 +32,10 @@ This document outlines the migration from Flask 2.x/Flask-SQLAlchemy 2.x to Flas
 - Replaced deprecated `session.get_bind()` with `session.bind` or `db.engine`
 - Updated all database upgrade functions for Flask-SQLAlchemy 3.0+ compatibility
 
+**SQLAlchemy 2.0+ Private API Compatibility:**
+- Replaced deprecated `_literal_as_text` with `text()` function in `db/util.py`
+- Updated `Explain` class for SQLAlchemy 2.0+ compatibility
+
 ### 5. ASGI Compatibility
 
 The backend is now fully configured for ASGI deployment with:
@@ -47,6 +51,10 @@ The backend is now fully configured for ASGI deployment with:
 - ✅ Removed before_first_request decorator - Not used
 - ✅ Removed json_encoder/json_decoder - Not used
 - ✅ Werkzeug >= 3.0.0 requirement - Added
+
+### SQLAlchemy 2.0+ Breaking Changes ✅
+- ✅ Removed `_literal_as_text` private API usage
+- ✅ Updated database utility functions for 2.0+ compatibility
 
 ### Flask-SQLAlchemy 3.0 Breaking Changes ✅
 - ✅ Session scoped to app context - Verified compatible

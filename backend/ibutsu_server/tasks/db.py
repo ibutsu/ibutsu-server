@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact, Project, Result, Run, User
 from ibutsu_server.tasks import task
@@ -118,14 +119,18 @@ def seed_users(projects):
             return
 
         for project_name, project_info in projects.items():
-            project = Project.query.filter_by(name=project_name).first()
+            project = db.session.execute(
+                db.select(Project).filter_by(name=project_name)
+            ).scalar_one_or_none()
             if not project:
                 print(f"Project with name {project_name} not found.")
                 continue
 
             # create/set the project owner
             if project_info.get("owner"):
-                project_owner = User.query.filter_by(email=project_info["owner"]).first()
+                project_owner = db.session.execute(
+                    db.select(User).filter_by(email=project_info["owner"])
+                ).scalar_one_or_none()
                 if not project_owner:
                     project_owner = User(
                         email=project_info["owner"],
@@ -138,7 +143,9 @@ def seed_users(projects):
 
             # add the users
             for user_email in project_info.get("users", []):
-                user = User.query.filter_by(email=user_email).first()
+                user = db.session.execute(
+                    db.select(User).filter_by(email=user_email)
+                ).scalar_one_or_none()
                 # create the user if they don't exist
                 if not user:
                     user = User(email=user_email, name=user_email.split("@")[0], is_active=True)

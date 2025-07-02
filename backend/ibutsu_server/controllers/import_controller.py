@@ -5,6 +5,7 @@ from typing import Optional
 from flask import request
 from werkzeug.datastructures import FileStorage
 
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Import, ImportFile
 from ibutsu_server.tasks.importers import run_archive_import, run_junit_import
@@ -21,7 +22,7 @@ def get_import(id_, token_info=None, user=None):
 
     :rtype: Run
     """
-    import_ = Import.query.get(id_)
+    import_ = db.session.get(Import, id_)
     if import_ and import_.data.get("project_id"):
         project = get_project(import_.data["project_id"])
         if project and not project_has_user(project, user):

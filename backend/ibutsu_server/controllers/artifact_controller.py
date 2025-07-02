@@ -5,6 +5,7 @@ from http import HTTPStatus
 import magic
 from flask import make_response, request
 
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact, Result, User
 from ibutsu_server.util.projects import add_user_filter, project_has_user
@@ -14,7 +15,7 @@ from ibutsu_server.util.uuid import is_uuid, validate_uuid
 
 def _build_artifact_response(id_):
     """Build a response for the artifact"""
-    artifact = Artifact.query.get(id_)
+    artifact = db.session.get(Artifact, id_)
     if not artifact:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     # Create a response with the contents of this file
@@ -67,7 +68,7 @@ def get_artifact(id_, token_info=None, user=None):
 
     :rtype: Artifact
     """
-    artifact = Artifact.query.get(id_)
+    artifact = db.session.get(Artifact, id_)
     if not artifact:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     if not project_has_user(artifact.result.project, user):
@@ -85,17 +86,19 @@ def get_artifact_list(
 
     :rtype: List[Artifact]
     """
-    query = Artifact.query
-    user = User.query.get(user)
+    query = db.select(Artifact)
+    user = db.session.get(User, user)
     if "result_id" in request.args:
         result_id = request.args["result_id"]
     if result_id:
-        query = query.filter(Artifact.result_id == result_id)
+        query = query.where(Artifact.result_id == result_id)
     if run_id:
-        query = query.filter(Artifact.run_id == run_id)
+        query = query.where(Artifact.run_id == run_id)
     if user:
         query = add_user_filter(query, user)
-    total_items = query.count()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.select_from())
+    ).scalar()
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     artifacts = query.limit(page_size).offset(offset).all()
@@ -132,7 +135,7 @@ def upload_artifact(body, token_info=None, user=None):
         return f"Result ID {result_id} is not in UUID format", HTTPStatus.BAD_REQUEST
     if run_id and not is_uuid(run_id):
         return f"Run ID {run_id} is not in UUID format", HTTPStatus.BAD_REQUEST
-    result = Result.query.get(result_id)
+    result = db.session.get(Result, result_id)
     if result and not project_has_user(result.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     filename = body.get("filename")
@@ -189,7 +192,7 @@ def delete_artifact(id_, token_info=None, user=None):
 
     :rtype: tuple
     """
-    artifact = Artifact.query.get(id_)
+    artifact = db.session.get(Artifact, id_)
     if not artifact:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     if not project_has_user(artifact.result.project, user):

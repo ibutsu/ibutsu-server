@@ -4,6 +4,7 @@ from http import HTTPStatus
 from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, User
 from ibutsu_server.filters import convert_filter
@@ -26,7 +27,7 @@ def add_result(result=None, token_info=None, user=None):
         return RESPONSE_JSON_REQ
     result = Result.from_dict(**request.get_json())
 
-    if result.id and Result.query.get(result.id):
+    if result.id and db.session.get(Result, result.id):
         return f"Result id {result.id} already exist", HTTPStatus.BAD_REQUEST
 
     if result.data and not (result.data.get("project") or result.project_id):
@@ -102,8 +103,8 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
 
     :rtype: List[Result]
     """
-    user = User.query.get(user)
-    query = Result.query
+    user = db.session.get(User, user)
+    query = db.select(Result)
     if user:
         query = add_user_filter(query, user, model=Result)
 
@@ -111,12 +112,14 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Result)
             if filter_clause is not None:
-                query = query.filter(filter_clause)
+                query = query.where(filter_clause)
 
     if estimate:
         total_items = get_count_estimate(query)
     else:
-        total_items = query.count()
+        total_items = db.session.execute(
+            db.select(db.func.count()).select_from(query.select_from())
+        ).scalar()
 
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
@@ -142,7 +145,7 @@ def get_result(id_, token_info=None, user=None):
 
     :rtype: Result
     """
-    result = Result.query.get(id_)
+    result = db.session.get(Result, id_)
     if not result:
         return "Result not found", HTTPStatus.NOT_FOUND
     if not project_has_user(result.project, user):
@@ -176,7 +179,7 @@ def update_result(id_, result=None, token_info=None, user=None, **kwargs):
         user_properties = result_dict["metadata"].pop("user_properties")
         merge_dicts(user_properties, result_dict["metadata"])
 
-    result = Result.query.get(id_)
+    result = db.session.get(Result, id_)
     if not result:
         return "Result not found", HTTPStatus.NOT_FOUND
     if not project_has_user(result.project, user):

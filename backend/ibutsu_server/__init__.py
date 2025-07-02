@@ -14,7 +14,7 @@ from yaml import full_load as yaml_load
 
 from ibutsu_server.auth import bcrypt
 from ibutsu_server.db import upgrades
-from ibutsu_server.db.base import db, session
+from ibutsu_server.db.base import session
 from ibutsu_server.db.models import User, upgrade_db
 from ibutsu_server.db.util import add_superadmin
 from ibutsu_server.encoder import IbutsuJSONProvider
@@ -28,17 +28,19 @@ def maybe_sql_url(conf: dict[str, Any]) -> Optional[SQLA_URL]:
     host = conf.get("host") or conf.get("hostname")
     database = conf.get("db") or conf.get("database")
     if host and database:
-        query = None
+        # Build query parameters only if they exist
+        query_params = {}
         if sslmode := conf.get("sslmode"):
-            query = {"sslmode": sslmode}
-        return SQLA_URL(
+            query_params["sslmode"] = sslmode
+
+        return SQLA_URL.create(
             drivername="postgresql",
             host=host,
             database=database,
             port=conf.get("port"),
             username=conf.get("user"),
             password=conf.get("password"),
-            query=query,
+            query=query_params if query_params else None,
         )
     return None
 
@@ -84,20 +86,27 @@ def get_app(**extra_config):
         maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
             config.get_namespace("POSTGRES_")
         )
-        assert maybe_db_uri is not None
 
-        # wait for db to appear in case of pod usage
-        config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
+        if maybe_db_uri is None:
+            # Flask-SQLAlchemy 3.0+ requires explicit database URI
+            # Provide a default for development/testing
+            default_db_uri = config.get("SQLALCHEMY_DATABASE_URI", "sqlite:///ibutsu.db")
+            config.update(SQLALCHEMY_DATABASE_URI=default_db_uri)
+            print(f"⚠️  No database configuration found. Using default: {default_db_uri}")
+        else:
+            # wait for db to appear in case of pod usage
+            config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
 
-        engine = create_engine(maybe_db_uri)
-        for _ in range(10):
-            try:
-                c = engine.connect()
-            except ConnectionError:
-                pass
-            else:
-                c.close()
-        engine.dispose()
+            engine = create_engine(maybe_db_uri)
+            for _ in range(10):
+                try:
+                    c = engine.connect()
+                except ConnectionError:
+                    pass
+                else:
+                    c.close()
+                    break
+            engine.dispose()
 
         # Set celery broker URL
         # hackishly indented to only be part of the setup where extra config wont pass the db
@@ -119,6 +128,8 @@ def get_app(**extra_config):
 
     # Add CORS middleware for Connexion 3 (must be after add_api)
     from starlette.middleware.cors import CORSMiddleware
+
+    from ibutsu_server.db import db
 
     app.add_middleware(
         CORSMiddleware,
@@ -158,7 +169,7 @@ def get_app(**extra_config):
         user_id = decode_token(token).get("sub")
         if not user_id:
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user or not user.is_superadmin:
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         # get task info
@@ -178,3 +189,7 @@ def get_app(**extra_config):
         return HTTPStatus.ACCEPTED.phrase, HTTPStatus.ACCEPTED
 
     return app  # Return Connexion app, not Flask app
+
+
+# ASGI app instance for uvicorn
+app = get_app()

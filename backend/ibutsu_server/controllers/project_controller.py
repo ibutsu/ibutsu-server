@@ -4,6 +4,7 @@ import flatdict
 from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project, Result, User
 from ibutsu_server.filters import convert_filter
@@ -24,9 +25,9 @@ def add_project(project=None, token_info=None, user=None):
         return RESPONSE_JSON_REQ
     project = Project.from_dict(**request.get_json())
     # check if project already exists
-    if project.id and Project.query.get(project.id):
+    if project.id and db.session.get(Project, project.id):
         return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
-    user = User.query.get(user)
+    user = db.session.get(User, user)
     if user:
         project.owner = user
         project.users.append(user)
@@ -46,9 +47,9 @@ def get_project(id_, token_info=None, user=None):
     """
     if not is_uuid(id_):
         id_ = convert_objectid_to_uuid(id_)
-    project = Project.query.filter(Project.name == id_).first()
+    project = db.session.execute(db.select(Project).where(Project.name == id_)).scalar_one_or_none()
     if not project:
-        project = Project.query.get(id_)
+        project = db.session.get(Project, id_)
     if project and not project_has_user(project, user):
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
     if not project:
@@ -80,18 +81,20 @@ def get_project_list(
     """
     query = add_user_filter(Project.query, user, model=Project)
     if owner_id:
-        query = query.filter(Project.owner_id == owner_id)
+        query = query.where(Project.owner_id == owner_id)
     if group_id:
-        query = query.filter(Project.group_id == group_id)
+        query = query.where(Project.group_id == group_id)
 
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Project)
             if filter_clause is not None:
-                query = query.filter(filter_clause)
+                query = query.where(filter_clause)
 
     offset = get_offset(page, page_size)
-    total_items = query.count()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.select_from())
+    ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     projects = query.offset(offset).limit(page_size).all()
     return {
@@ -120,19 +123,21 @@ def update_project(id_, project=None, token_info=None, user=None, **kwargs):
         return RESPONSE_JSON_REQ
     if not is_uuid(id_):
         id_ = convert_objectid_to_uuid(id_)
-    project = Project.query.get(id_)
+    project = db.session.get(Project, id_)
 
     if not project:
         return "Project not found", HTTPStatus.NOT_FOUND
 
-    user = User.query.get(user)
+    user = db.session.get(User, user)
     if not user.is_superadmin and (not project.owner or project.owner.id != user.id):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
 
     # handle updating users separately
     updates = request.get_json()
     for username in updates.pop("users", []):
-        user_to_add = User.query.filter_by(email=username).first()
+        user_to_add = db.session.execute(
+            db.select(User).filter_by(email=username)
+        ).scalar_one_or_none()
         if user_to_add and user_to_add not in project.users:
             project.users.append(user_to_add)
 
@@ -152,7 +157,7 @@ def get_filter_params(id_, user=None, token_info=None):
 
     :rtype: List
     """
-    project = Project.query.get(id_)
+    project = db.session.get(Project, id_)
 
     if not project:
         return "Project not found", HTTPStatus.NOT_FOUND
