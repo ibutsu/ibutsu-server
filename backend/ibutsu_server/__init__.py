@@ -67,9 +67,8 @@ def get_app(**extra_config):
     # Shortcut to the Flask app config
     config: flask.Config = flask_app.config
     config.setdefault("BCRYPT_LOG_ROUNDS", 12)
-    # Flask-SQLAlchemy 3.0+ - Set explicit defaults
-    config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False)  # Default to False in 3.0+
-    config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})  # Default engine options
+    config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False)
+    config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
 
     config.from_file(str(Path("./settings.yaml").resolve()), yaml_load, silent=True)
     # Now load config from environment variables
