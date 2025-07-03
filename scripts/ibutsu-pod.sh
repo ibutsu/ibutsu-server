@@ -201,7 +201,8 @@ podman run -d \
     $PYTHON_IMAGE \
     /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
                   pip install . &&
-                  uvicorn ibutsu_server:app --host 0.0.0.0 --port 8080 --reload --workers 1'
+                  ls -lh /mnt &&
+                  uvicorn ibutsu_server:connexion_app --host 0.0.0.0 --port 8080 --reload --workers 1'
 echo -n "Waiting for backend to respond: "
 sleep 5
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); do
@@ -231,7 +232,7 @@ podman run -d \
     $PYTHON_IMAGE \
     /bin/bash -c 'pip install -U pip wheel &&
                     pip install . &&
-                    ./celery_worker.sh'
+                    celery --app ibutsu_server.celery_app --no-color worker --events'
 echo -n "Waiting for celery to respond: "
 sleep 5
 until $(podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null | grep -q pong); do

@@ -5,12 +5,13 @@ export class AuthService {
   static registerError = null;
   static recoverError = null;
 
-  static isLoggedIn() {
-    return Boolean(AuthService.getToken());
+  static async isLoggedIn() {
+    return Boolean(await AuthService.getCurrentUser());
   }
 
   static getLocalUser() {
     let user = localStorage.getItem('user');
+    console.log('getLocalUser', user);
     if (user) {
       return JSON.parse(user);
     }
@@ -18,6 +19,7 @@ export class AuthService {
   }
 
   static async getCurrentUser(user = null) {
+    console.log('getCurrentUser', user);
     if (!user) {
       user = AuthService.getLocalUser();
     }
@@ -28,6 +30,7 @@ export class AuthService {
           Authorization: 'Bearer ' + user.token,
         },
       });
+      console.log('getCurrentUser response', response);
       if (response.ok) {
         return Promise.resolve(user);
       }
@@ -43,11 +46,14 @@ export class AuthService {
     localStorage.setItem('user', JSON.stringify(user));
   }
 
-  static getToken() {
+  static async getToken() {
     let user = AuthService.getLocalUser();
+    console.log('getToken', user);
     if (user?.token) {
-      return AuthService.getCurrentUser(user).then((token) => token);
+      const userObj = await AuthService.getCurrentUser(user);
+      return userObj?.token || null;
     }
+    return null;
   }
 
   static setToken(token) {
@@ -60,105 +66,113 @@ export class AuthService {
     AuthService.setUser(user);
   }
 
-  static register(email, password) {
+  static async register(email, password) {
     // Cannot use the HttpClient service here, otherwise we have circular imports
-    return fetch(Settings.serverUrl + '/login/register', {
-      method: 'POST',
-      body: JSON.stringify({ email: email, password: password }),
-      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-    })
-      .then((response) => response.json())
-      .then(() => true) // returns for register
-      .catch((error) => {
-        console.error(error);
-        AuthService.registerError = error;
-        return Promise.resolve(false);
+    try {
+      const response = await fetch(Settings.serverUrl + '/login/register', {
+        method: 'POST',
+        body: JSON.stringify({ email: email, password: password }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' },
       });
+      await response.json();
+      return true;
+    } catch (error) {
+      console.error(error);
+      AuthService.registerError = error;
+      return false;
+    }
   }
 
-  static recover(email) {
+  static async recover(email) {
     // Cannot use the HttpClient service here, otherwise we have circular imports
-    return fetch(Settings.serverUrl + '/login/recover', {
-      method: 'POST',
-      body: JSON.stringify({ email: email }),
-      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-    })
-      .then((response) => {
-        if (response.ok) {
-          return true;
-        } else {
-          AuthService.recoverError = {
-            message: 'There was a problem recovering your account',
-          };
-          return false;
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        AuthService.recoverError = error;
+    try {
+      const response = await fetch(Settings.serverUrl + '/login/recover', {
+        method: 'POST',
+        body: JSON.stringify({ email: email }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+      });
+
+      if (response.ok) {
+        return true;
+      } else {
+        AuthService.recoverError = {
+          message: 'There was a problem recovering your account',
+        };
         return false;
-      });
+      }
+    } catch (error) {
+      console.error(error);
+      AuthService.recoverError = error;
+      return false;
+    }
   }
 
-  static resetPassword(activationCode, newPassword) {
+  static async resetPassword(activationCode, newPassword) {
     // Cannot use the HttpClient service here, otherwise we have circular imports
-    return fetch(Settings.serverUrl + '/login/reset-password', {
-      method: 'POST',
-      body: JSON.stringify({
-        activation_code: activationCode,
-        password: newPassword,
-      }),
-      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-    })
-      .then((response) => {
-        if (response.ok) {
-          return true;
-        } else {
-          AuthService.resetError = {
-            message: 'Invalid activation code or password',
-          };
-          return false;
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        AuthService.resetError = error;
+    try {
+      const response = await fetch(
+        Settings.serverUrl + '/login/reset-password',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            activation_code: activationCode,
+            password: newPassword,
+          }),
+          headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+        },
+      );
+
+      if (response.ok) {
+        return true;
+      } else {
+        AuthService.resetError = {
+          message: 'Invalid activation code or password',
+        };
         return false;
-      });
+      }
+    } catch (error) {
+      console.error(error);
+      AuthService.resetError = error;
+      return false;
+    }
   }
 
-  static login(email, password) {
+  static async login(email, password) {
     // Cannot use the HttpClient service here, otherwise we have circular imports
-    return fetch(Settings.serverUrl + '/login', {
-      method: 'POST',
-      body: JSON.stringify({ email: email, password: password }),
-      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-    })
-      .then((response) => response.json())
-      .then((json) => {
-        if (json.token) {
-          AuthService.setUser(json);
-          return true;
-        } else if (json.code) {
-          AuthService.loginError = json;
-          return false;
-        } else {
-          return false;
-        }
+    try {
+      const response = await fetch(Settings.serverUrl + '/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: email, password: password }),
+        headers: { 'Content-Type': 'application/json; charset=UTF-8' },
       });
+
+      const json = await response.json();
+      if (json.token) {
+        AuthService.setUser(json);
+        return true;
+      } else if (json.code) {
+        AuthService.loginError = json;
+        return false;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
   }
 
   static logout() {
     localStorage.removeItem('user');
   }
 
-  static isSuperAdmin() {
+  static async isSuperAdmin() {
     // Cannot use the HttpClient service here, otherwise we have circular imports
     const user = AuthService.getLocalUser();
     if (!user) {
       return false;
     }
-    const realUser = AuthService.getCurrentUser(user);
+    const realUser = await AuthService.getCurrentUser(user);
     if (realUser) {
       return realUser?.is_super_admin || false;
     } else {

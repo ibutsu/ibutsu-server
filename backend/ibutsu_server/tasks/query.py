@@ -1,15 +1,13 @@
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Result, Run
 from ibutsu_server.filters import convert_filter
-from ibutsu_server.tasks import task
-from ibutsu_server.util.app_context import with_app_context
+from ibutsu_server.tasks import shared_task
 from ibutsu_server.util.count import get_count_estimate
 
 TABLENAME_TO_MODEL = {"results": Result, "runs": Run}
 
 
-@task
-@with_app_context
+@shared_task
 def query_task(filter_=None, page=1, page_size=25, estimate=False, tablename="results"):
     """
     Run a large query as a task.
