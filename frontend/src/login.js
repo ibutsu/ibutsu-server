@@ -64,7 +64,7 @@ const getAlert = (location) => {
   return alert;
 };
 
-const getUser = (location) => {
+const getSearchUser = (location) => {
   const userProperties = ['name', 'email', 'token'];
   const urlParams = new URLSearchParams(location.search);
   let user = null;
@@ -98,7 +98,7 @@ const Login = () => {
   const from = useMemo(() => getLocationFrom(location), [location]);
 
   useEffect(() => {
-    const user = getUser(location);
+    const user = getSearchUser(location);
     if (user) {
       AuthService.setUser(user);
       window.location = '/';

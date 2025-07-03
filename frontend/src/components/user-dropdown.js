@@ -28,8 +28,8 @@ const UserDropdown = () => {
       setIsSuperAdmin(isSuperAdmin),
     );
     setDisplayName(
-      AuthService.getUser() &&
-        (AuthService.getUser().name || AuthService.getUser().email),
+      AuthService.getLocalUser() &&
+        (AuthService.getLocalUser().name || AuthService.getLocalUser().email),
     );
   }, []);
 
