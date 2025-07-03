@@ -78,22 +78,6 @@ class IbutsuTask(Task):
     abstract = True
 
     @with_app_context
-    def run(self, *args, **kwargs):
-        """
-        Override the Task.run method to ensure it runs within app context.
-
-        This is the default implementation which just raises NotImplementedError.
-        Subclasses must override this method to define their task logic.
-
-        The @with_app_context decorator ensures that:
-        1. A Flask application context is available
-        2. SQLAlchemy sessions can be used safely
-        3. All Flask extensions are properly initialized
-
-        Task implementations don't need to worry about managing app context.
-        """
-        raise NotImplementedError("Tasks must define the run method.")
-
     def __call__(self, *args, **kwargs):
         """
         Run the task.

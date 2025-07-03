@@ -4,9 +4,38 @@ export class AuthService {
   static loginError = null;
   static registerError = null;
   static recoverError = null;
+  static _cachedUser = null;
+  static _tokenValidated = false;
 
   static async isLoggedIn() {
-    return Boolean(await AuthService.getCurrentUser());
+    const user = AuthService.getLocalUser();
+    if (!user || !user.token) {
+      return false;
+    }
+
+    // If we've already validated the token in this session, don't validate again
+    if (AuthService._tokenValidated && AuthService._cachedUser) {
+      return true;
+    }
+
+    // Validate token with server
+    try {
+      const validUser = await AuthService.getCurrentUser(user);
+      if (validUser) {
+        AuthService._tokenValidated = true;
+        AuthService._cachedUser = validUser;
+        return true;
+      } else {
+        AuthService._tokenValidated = false;
+        AuthService._cachedUser = null;
+        return false;
+      }
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      AuthService._tokenValidated = false;
+      AuthService._cachedUser = null;
+      return false;
+    }
   }
 
   static getLocalUser() {
@@ -23,6 +52,11 @@ export class AuthService {
     if (!user) {
       user = AuthService.getLocalUser();
     }
+
+    if (!user || !user.token) {
+      return null;
+    }
+
     try {
       const response = await fetch(Settings.serverUrl + '/user', {
         headers: {
@@ -32,14 +66,21 @@ export class AuthService {
       });
       console.log('getCurrentUser response', response);
       if (response.ok) {
-        return Promise.resolve(user);
+        const userData = await response.json();
+        // Merge the server data with the local token
+        return { ...userData, token: user.token };
+      } else if (response.status === 401) {
+        // Token is invalid
+        console.warn('Token is invalid, removing from localStorage');
+        AuthService.logout();
+        return null;
       }
-    } catch {
-      console.warn('Stored user token is invalid, removing from localStorage');
-      AuthService.logout();
-      return Promise.resolve(null);
+    } catch (error) {
+      console.warn('Error validating token:', error);
+      // Don't logout on network errors, just return null
+      return null;
     }
-    return Promise.resolve(null);
+    return null;
   }
 
   static setUser(user) {
@@ -47,11 +88,21 @@ export class AuthService {
   }
 
   static async getToken() {
+    // Use cached user if token is validated
+    if (AuthService._tokenValidated && AuthService._cachedUser?.token) {
+      return AuthService._cachedUser.token;
+    }
+
     let user = AuthService.getLocalUser();
     console.log('getToken', user);
     if (user?.token) {
+      // Validate token before returning it
       const userObj = await AuthService.getCurrentUser(user);
-      return userObj?.token || null;
+      if (userObj?.token) {
+        AuthService._tokenValidated = true;
+        AuthService._cachedUser = userObj;
+        return userObj.token;
+      }
     }
     return null;
   }
@@ -149,6 +200,9 @@ export class AuthService {
       const json = await response.json();
       if (json.token) {
         AuthService.setUser(json);
+        // Reset validation flags on successful login
+        AuthService._tokenValidated = true;
+        AuthService._cachedUser = json;
         return true;
       } else if (json.code) {
         AuthService.loginError = json;
@@ -158,22 +212,36 @@ export class AuthService {
       }
     } catch (error) {
       console.error(error);
+      AuthService.loginError = { message: 'Network error during login' };
       return false;
     }
   }
 
   static logout() {
     localStorage.removeItem('user');
+    // Reset validation flags on logout
+    AuthService._tokenValidated = false;
+    AuthService._cachedUser = null;
+    AuthService.loginError = null;
+    AuthService.registerError = null;
+    AuthService.recoverError = null;
   }
 
   static async isSuperAdmin() {
-    // Cannot use the HttpClient service here, otherwise we have circular imports
+    // Use cached user if available
+    if (AuthService._cachedUser && AuthService._tokenValidated) {
+      return AuthService._cachedUser?.is_super_admin || false;
+    }
+
+    // Otherwise, get current user
     const user = AuthService.getLocalUser();
     if (!user) {
       return false;
     }
     const realUser = await AuthService.getCurrentUser(user);
     if (realUser) {
+      AuthService._cachedUser = realUser;
+      AuthService._tokenValidated = true;
       return realUser?.is_super_admin || false;
     } else {
       return false;

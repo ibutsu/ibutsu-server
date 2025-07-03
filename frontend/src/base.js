@@ -11,7 +11,7 @@ import Login from './login';
 import { SignUp } from './sign-up';
 import ForgotPassword from './forgot-password';
 import ResetPassword from './reset-password';
-import { AuthService } from './services/auth';
+import ProtectedRoute from './components/ProtectedRoute';
 import { IbutsuContextProvider } from './components/contexts/ibutsuContext';
 
 export const Base = () => (
@@ -28,23 +28,25 @@ export const Base = () => (
         <Route
           path="profile/*"
           element={
-            AuthService.isLoggedIn() ? <Profile /> : <Navigate to="/login" />
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
           }
         />
         <Route
           path="admin/*"
           element={
-            AuthService.isLoggedIn() && AuthService.isSuperAdmin() ? (
+            <ProtectedRoute requireSuperAdmin={true}>
               <Admin />
-            ) : (
-              <Navigate to="/login" />
-            )
+            </ProtectedRoute>
           }
         />
         <Route
           path="project/*"
           element={
-            AuthService.isLoggedIn() ? <App /> : <Navigate to="/login" />
+            <ProtectedRoute>
+              <App />
+            </ProtectedRoute>
           }
         />
         <Route path="*" element={<Navigate to="project" replace />} />
