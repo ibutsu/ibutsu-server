@@ -59,15 +59,15 @@ export const buildUrl = (url, params) => {
 };
 
 export class HttpClient {
-  static get(url, params = {}, options = {}) {
+  static async get(url, params = {}, options = {}) {
     url = prepareUrl(url, params);
-    options = addAuth(options);
+    options = await addAuth(options);
     return fetch(url, options);
   }
 
-  static post(url, data = {}, options = {}) {
+  static async post(url, data = {}, options = {}) {
     url = prepareUrl(url);
-    options = addAuth(options);
+    options = await addAuth(options);
     if (data) {
       options['body'] = JSON.stringify(data);
       if (Object.keys(options).includes('headers')) {
@@ -82,9 +82,9 @@ export class HttpClient {
     return fetch(url, options);
   }
 
-  static put(url, params = {}, data = {}, options = {}) {
+  static async put(url, params = {}, data = {}, options = {}) {
     url = prepareUrl(url, params);
-    options = addAuth(options);
+    options = await addAuth(options);
     if (data) {
       options['body'] = JSON.stringify(data);
       if (Object.keys(options).includes('headers')) {
@@ -99,16 +99,16 @@ export class HttpClient {
     return fetch(url, options);
   }
 
-  static delete(url, params = {}, options = {}) {
+  static async delete(url, params = {}, options = {}) {
     url = prepareUrl(url, params);
-    options = addAuth(options);
+    options = await addAuth(options);
     options['method'] = 'DELETE';
     return fetch(url, options);
   }
 
-  static upload(url, files, params = {}, options = {}) {
+  static async upload(url, files, params = {}, options = {}) {
     url = prepareUrl(url);
-    options = addAuth(options);
+    options = await addAuth(options);
     const formData = new FormData();
     Object.keys(files).forEach((key) => {
       formData.append(key, files[key]);
@@ -129,7 +129,14 @@ export class HttpClient {
         return response;
       }
     } else if (response.status === 401) {
-      window.location = '/login';
+      // Token is invalid or expired, clear auth and redirect to login
+      import('./auth').then(({ AuthService }) => {
+        AuthService.logout();
+        window.location.href = '/login';
+      });
+      throw new Error('Unauthorized - redirecting to login');
+    } else {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
   }
 }

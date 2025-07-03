@@ -1921,7 +1921,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
         "400":
-          description: "Bad reqest, JSON required or not enough parameters"
+          description: "Bad request, JSON required or not enough parameters"
         "401":
           description: The user needs to be logged in
         "403":
@@ -2079,7 +2079,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Project'
         "400":
-          description: "Bad reqest, JSON required or not enough parameters"
+          description: "Bad request, JSON required or not enough parameters"
         "401":
           description: The user needs to be logged in
         "403":
@@ -2503,6 +2503,15 @@ components:
         filename: test-run.xml
         format: JUnit
         run_id: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
+    ImportList:
+      type: object
+      properties:
+        imports:
+          type: array
+          items:
+            $ref: '#/components/schemas/Import'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
     WidgetConfig:
       type: object
       properties:

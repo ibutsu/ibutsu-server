@@ -195,9 +195,8 @@ def upgrade_6(current_session):
     it was found that the Project.owner_id field in the stage and prod database are TEXT instead of
     PortableUUID.
     """
-    # Flask-SQLAlchemy 3.0+ pattern: use db.engine fallback
-    engine = getattr(session, "bind", None) or db.engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
 
     inspector = inspect(engine)
 
@@ -239,7 +238,6 @@ def upgrade_7(session):
 
     """
     # Get database connection and metadata
-    # Flask-SQLAlchemy 3.0+ pattern: use db.engine fallback
     engine = getattr(session, "bind", None) or db.engine
     op = get_upgrade_op(session)
     metadata = MetaData()

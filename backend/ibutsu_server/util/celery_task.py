@@ -7,8 +7,7 @@ Flask application context in Celery workers.
 
 import logging
 
-from celery import Task
-from celery import shared_task as orig_shared_task
+from celery import Task, shared_task as orig_shared_task
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Report
@@ -20,16 +19,16 @@ _flask_app = None
 
 def set_flask_app(app):
     """Store a reference to the Flask app for use in Celery tasks"""
-    global _flask_app
+    global _flask_app  # noqa: PLW0603
     _flask_app = app
 
 
 def get_flask_app():
     """Get the Flask app instance for use in tasks"""
-    global _flask_app
+    global _flask_app  # noqa: PLW0603
     if _flask_app is None:
         # Lazy import to avoid circular imports
-        from ibutsu_server import flask_app
+        from ibutsu_server import flask_app  # noqa: PLC0415
 
         _flask_app = flask_app
     return _flask_app
@@ -78,22 +77,6 @@ class IbutsuTask(Task):
     abstract = True
 
     @with_app_context
-    def run(self, *args, **kwargs):
-        """
-        Override the Task.run method to ensure it runs within app context.
-
-        This is the default implementation which just raises NotImplementedError.
-        Subclasses must override this method to define their task logic.
-
-        The @with_app_context decorator ensures that:
-        1. A Flask application context is available
-        2. SQLAlchemy sessions can be used safely
-        3. All Flask extensions are properly initialized
-
-        Task implementations don't need to worry about managing app context.
-        """
-        raise NotImplementedError("Tasks must define the run method.")
-
     def __call__(self, *args, **kwargs):
         """
         Run the task.
@@ -117,7 +100,7 @@ class IbutsuTask(Task):
         db.session.commit()
 
     @with_app_context
-    def after_return(self, status, retval, task_id, args, kwargs, einfo):
+    def after_return(self, _status, retval, _task_id, _args, _kwargs, _einfo):
         """
         Handle database session after task completion.
 
@@ -136,7 +119,7 @@ class IbutsuTask(Task):
         db.session.remove()
 
     @with_app_context
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
+    def on_failure(self, _exc, task_id, args, _kwargs, _einfo):
         """
         Handle task failure, particularly for reports.
 

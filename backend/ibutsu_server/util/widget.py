@@ -57,7 +57,7 @@ def create_jenkins_columns(data_source):
     :param data_source: The table or subquery to reference (Run table or subquery)
     :return: Dictionary of common column references
     """
-    from ibutsu_server.filters import string_to_column
+    from ibutsu_server.filters import string_to_column  # noqa: PLC0415
 
     return {
         "job_name": string_to_column("metadata.jenkins.job_name", data_source),
@@ -75,13 +75,11 @@ def create_basic_summary_columns(data_source, cast_type=Integer, use_alternate_n
 
     :param data_source: The table or column reference (Run table or subquery.c)
     :param cast_type: The SQLAlchemy type to cast to (Integer or Float)
-    :param use_alternate_names: Use alternate column names (xpassed/xfailed instead of xpasses/xfailures)
+    :param use_alternate_names: Use alternate column names
+        (xpassed/xfailed instead of xpasses/xfailures)
     :return: Dictionary of basic summary column expressions
     """
-    if hasattr(data_source, "c"):  # It's a subquery
-        summary_ref = data_source.c.summary
-    else:  # It's the Run table
-        summary_ref = data_source.summary
+    summary_ref = data_source.c.summary if hasattr(data_source, "c") else data_source.summary
 
     # Handle different naming conventions
     if use_alternate_names:

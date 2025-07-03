@@ -147,18 +147,22 @@ def delete_dashboard(id_, token_info=None, user=None):
 
     # Clear any projects that reference this dashboard as their default dashboard
     # Flask-SQLAlchemy 3.0+ pattern
-    projects_with_default = db.session.execute(
-        db.select(Project).where(Project.default_dashboard_id == dashboard.id)
-    ).scalars().all()
+    projects_with_default = (
+        db.session.execute(db.select(Project).where(Project.default_dashboard_id == dashboard.id))
+        .scalars()
+        .all()
+    )
     for project in projects_with_default:
         project.default_dashboard_id = None
         session.add(project)
 
     # Delete all widget configs associated with this dashboard
     # Flask-SQLAlchemy 3.0+ pattern
-    widget_configs = db.session.execute(
-        db.select(WidgetConfig).where(WidgetConfig.dashboard_id == dashboard.id)
-    ).scalars().all()
+    widget_configs = (
+        db.session.execute(db.select(WidgetConfig).where(WidgetConfig.dashboard_id == dashboard.id))
+        .scalars()
+        .all()
+    )
     for widget_config in widget_configs:
         session.delete(widget_config)
 

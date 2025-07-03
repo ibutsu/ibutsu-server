@@ -23,5 +23,5 @@ case $1 in
       FLASK_APP=ibutsu_server:get_app \
       FLASK_ENV=development \
       flask run  --host 0.0.0.0 --port 8080;;
-    *) echo $0 unknown; print_help;;
+    *) echo "$0" unknown; print_help;;
 esac

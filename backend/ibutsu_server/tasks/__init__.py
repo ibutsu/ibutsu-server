@@ -30,12 +30,12 @@ def create_celery_app(app=None):
 
     # Make sure all task modules are imported so tasks are registered
     # This is crucial for Celery task discovery
-    import ibutsu_server.tasks.db  # noqa: F401
-    import ibutsu_server.tasks.importers  # noqa: F401
-    import ibutsu_server.tasks.query  # noqa: F401
-    import ibutsu_server.tasks.reports  # noqa: F401
-    import ibutsu_server.tasks.results  # noqa: F401
-    import ibutsu_server.tasks.runs  # noqa: F401
+    import ibutsu_server.tasks.db  # noqa: PLC0415
+    import ibutsu_server.tasks.importers  # noqa: PLC0415
+    import ibutsu_server.tasks.query  # noqa: PLC0415
+    import ibutsu_server.tasks.reports  # noqa: PLC0415
+    import ibutsu_server.tasks.results  # noqa: PLC0415
+    import ibutsu_server.tasks.runs  # noqa: F401, PLC0415
 
     celery_app.Task = IbutsuTask
 
@@ -63,7 +63,7 @@ def create_celery_app(app=None):
     }
 
     @signals.task_failure.connect
-    def retry_task_on_exception(*args, **kwargs):
+    def retry_task_on_exception(*_args, **kwargs):
         """Retry a task automatically when it fails"""
         task = kwargs.get("sender")
         einfo = kwargs.get("einfo")

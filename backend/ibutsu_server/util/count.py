@@ -24,15 +24,14 @@ def get_count_estimate(query, no_filter=False, **kwargs):
         # Use parameterized query to prevent SQL injection
         sql = text("SELECT reltuples as approx_count FROM pg_class WHERE relname=:tablename")
         return int(session.execute(sql, {"tablename": tablename}).fetchall()[0][0])
-    else:
-        estimate = _get_count_from_explain(query)
-        # if the estimate is < COUNT_ESTIMATE_LIMIT
-        # then probably there aren't too many rows, just regularly count them
-        if estimate < COUNT_ESTIMATE_LIMIT:
-            return db.session.execute(
-                db.select(db.func.count()).select_from(query.select_from())
-            ).scalar()
-        return estimate
+    estimate = _get_count_from_explain(query)
+    # if the estimate is < COUNT_ESTIMATE_LIMIT
+    # then probably there aren't too many rows, just regularly count them
+    if estimate < COUNT_ESTIMATE_LIMIT:
+        return db.session.execute(
+            db.select(db.func.count()).select_from(query.select_from())
+        ).scalar()
+    return estimate
 
 
 @contextmanager

@@ -2,11 +2,13 @@ from datetime import datetime
 from uuid import uuid4
 
 # SQLAlchemy 2.0+ imports
-from sqlalchemy import Text as sa_text
-from sqlalchemy import cast as sa_cast
-from sqlalchemy import delete as sqlalchemy_delete
-from sqlalchemy import func
-from sqlalchemy import update as sqlalchemy_update
+from sqlalchemy import (
+    Text as sa_text,  # noqa: N813
+    cast as sa_cast,
+    delete as sqlalchemy_delete,
+    func,
+    update as sqlalchemy_update,
+)
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -288,10 +290,7 @@ class User(Model, ModelMixin):
 
         # 2. Delete tokens associated with the user
         # 2. Delete tokens associated with the user
-        stmt = (
-            sqlalchemy_delete(Token)
-            .where(Token.user_id == self.id)
-        )
+        stmt = sqlalchemy_delete(Token).where(Token.user_id == self.id)
         session.execute(stmt)
 
         # 3. Reassign owned projects to the current user (admin performing deletion)

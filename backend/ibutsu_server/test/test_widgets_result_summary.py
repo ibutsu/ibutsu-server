@@ -9,9 +9,10 @@ from ibutsu_server.widgets.result_summary import get_result_summary
 def test_get_result_summary(mocked_session: Mock, mocked_apply_filters: Mock):
     """Test the get_result_summary() function"""
     # GIVEN: Some mocked objects and data
-    mocked_apply_filters.side_effect = lambda query, filters, run: query
+    mocked_apply_filters.side_effect = lambda query, _filters, _run: query
     mocked_query = MagicMock()
-    # TODO how to mock into the db.session.execute that's necessry for the query.scalers.all chain?
+    # TODO how to mock into the db.session.execute that's necessary
+    # for the query.scalers.all chain?
     mocked_query.all.return_value = [
         # errors, skips, failures, tests, xfailures, xpasses
         (0, 0, 0, 17, 0, 0),
@@ -23,7 +24,7 @@ def test_get_result_summary(mocked_session: Mock, mocked_apply_filters: Mock):
     ]
     mocked_session.query.return_value = mocked_query
 
-    # WHEN: get_result_summary() is called
+    # Call get_result_summary()
     summary = get_result_summary(
         "prodTestSuite", "prod", "prodTestSuite", "d13d1301-a663-4b26-a9e5-77364e420c0c"
     )
