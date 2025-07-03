@@ -9,7 +9,7 @@ export class AuthService {
     return Boolean(AuthService.getToken());
   }
 
-  static getUser() {
+  static getLocalUser() {
     let user = localStorage.getItem('user');
     if (user) {
       return JSON.parse(user);
@@ -17,20 +17,41 @@ export class AuthService {
     return user;
   }
 
+  static async getCurrentUser(user = null) {
+    if (!user) {
+      user = AuthService.getLocalUser();
+    }
+    try {
+      const response = await fetch(Settings.serverUrl + '/user', {
+        headers: {
+          'Content-Type': 'application/json; charset=UTF-8',
+          Authorization: 'Bearer ' + user.token,
+        },
+      });
+      if (response.ok) {
+        return Promise.resolve(user);
+      }
+    } catch {
+      console.warn('Stored user token is invalid, removing from localStorage');
+      AuthService.logout();
+      return Promise.resolve(null);
+    }
+    return Promise.resolve(null);
+  }
+
   static setUser(user) {
     localStorage.setItem('user', JSON.stringify(user));
   }
 
   static getToken() {
-    let user = AuthService.getUser();
+    let user = AuthService.getLocalUser();
     if (user?.token) {
-      return user.token;
+      return AuthService.getCurrentUser(user).then((token) => token);
     }
-    return null;
   }
 
   static setToken(token) {
-    let user = AuthService.getUser();
+    let user = AuthService.getLocalUser();
     if (user) {
       user.token = token;
     } else {
@@ -133,30 +154,15 @@ export class AuthService {
 
   static isSuperAdmin() {
     // Cannot use the HttpClient service here, otherwise we have circular imports
-    const user = AuthService.getUser();
+    const user = AuthService.getLocalUser();
     if (!user) {
       return false;
     }
-    const fetchUser = async () => {
-      try {
-        const response = await fetch(Settings.serverUrl + '/user', {
-          headers: {
-            'Content-Type': 'application/json; charset=UTF-8',
-            Authorization: 'Bearer ' + user.token,
-          },
-        });
-        if (response.status === 401) {
-          // User is not authenticated, probably browser local storage has old token
-          AuthService.logout();
-          return Promise.resolve(false);
-        }
-        const json = await response.json();
-        return json.is_superadmin;
-      } catch (error) {
-        console.error('Error checking admin for user: ', error);
-        return Promise.resolve(false);
-      }
-    };
-    return fetchUser();
+    const realUser = AuthService.getCurrentUser(user);
+    if (realUser) {
+      return realUser?.is_super_admin || false;
+    } else {
+      return false;
+    }
   }
 }
