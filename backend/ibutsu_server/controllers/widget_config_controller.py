@@ -117,8 +117,8 @@ def get_widget_config(id_, token_info=None, user=None):
         cleaned_params = _validate_widget_params(widget_config.widget, widget_config.params)
         if cleaned_params != widget_config.params:
             widget_config.params = cleaned_params
-            session.add(widget_config)
-            session.commit()
+            db.session.add(widget_config)
+            db.session.commit()
 
     return widget_config.to_dict()
 

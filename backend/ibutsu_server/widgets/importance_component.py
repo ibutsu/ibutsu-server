@@ -27,7 +27,7 @@ def _get_results(job_name, builds, components, project):
     )
     # Actually filter the results based on build_numbers, job_name, project_id and component.
     # Flask-SQLAlchemy 3.0+ pattern
-    result_data = db.session.execute(
+    return db.session.execute(
         db.select(
             Result.component,
             Result.id,
@@ -41,7 +41,6 @@ def _get_results(job_name, builds, components, project):
             Result.project_id == project,
         )
     ).all()
-    return result_data
 
 
 def get_importance_component(  # noqa: PLR0912

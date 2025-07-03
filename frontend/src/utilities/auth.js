@@ -4,14 +4,46 @@ export class AuthService {
   static loginError = null;
   static registerError = null;
   static recoverError = null;
+  static _cachedUser = null;
+  static _tokenValidated = false;
 
   static async isLoggedIn() {
-    return Boolean(await AuthService.getCurrentUser());
+    const user = AuthService.getLocalUser();
+    if (!user || !user.token) {
+      return false;
+    }
+
+    // If we've already validated the token in this session, don't validate again
+    if (AuthService._tokenValidated && AuthService._cachedUser) {
+      return true;
+    }
+
+    // Validate token with server
+    try {
+      const validUser = await AuthService.getCurrentUser(user);
+      if (validUser) {
+        AuthService._tokenValidated = true;
+        AuthService._cachedUser = validUser;
+        return true;
+      } else {
+        AuthService._tokenValidated = false;
+        AuthService._cachedUser = null;
+        return false;
+      }
+    } catch (error) {
+      console.error(
+        'AuthService.isLoggedIn: Token validation failed with error:',
+        error,
+      );
+      AuthService._tokenValidated = false;
+      AuthService._cachedUser = null;
+      return false;
+    }
   }
 
-  static getUser() {
+  static getLocalUser() {
     let user = localStorage.getItem('user');
-    console.log('getLocalUser', user);
+
     if (user) {
       return JSON.parse(user);
     }
@@ -19,10 +51,14 @@ export class AuthService {
   }
 
   static async getCurrentUser(user = null) {
-    console.log('getCurrentUser', user);
     if (!user) {
       user = AuthService.getLocalUser();
     }
+
+    if (!user || !user.token) {
+      return null;
+    }
+
     try {
       const response = await fetch(Settings.serverUrl + '/user', {
         headers: {
@@ -30,16 +66,23 @@ export class AuthService {
           Authorization: 'Bearer ' + user.token,
         },
       });
-      console.log('getCurrentUser response', response);
+
       if (response.ok) {
-        return Promise.resolve(user);
+        const userData = await response.json();
+        // Merge the server data with the local token
+        return { ...userData, token: user.token };
+      } else if (response.status === 401) {
+        // Token is invalid
+        console.warn('Token is invalid, removing from localStorage');
+        AuthService.logout();
+        return null;
       }
-    } catch {
-      console.warn('Stored user token is invalid, removing from localStorage');
-      AuthService.logout();
-      return Promise.resolve(null);
+    } catch (error) {
+      console.warn('Error validating token:', error);
+      // Don't logout on network errors, just return null
+      return null;
     }
-    return Promise.resolve(null);
+    return null;
   }
 
   static setUser(user) {
@@ -47,17 +90,26 @@ export class AuthService {
   }
 
   static async getToken() {
-    let user = AuthService.getLocalUser();
-    console.log('getToken', user);
-    if (user?.token) {
-      const userObj = await AuthService.getCurrentUser(user);
-      return userObj?.token || null;
+    // Use cached user if token is validated
+    if (AuthService._tokenValidated && AuthService._cachedUser?.token) {
+      return AuthService._cachedUser.token;
     }
-    return null;
+
+    let user = AuthService.getLocalUser();
+
+    if (user?.token) {
+      // Validate token before returning it
+      const userObj = await AuthService.getCurrentUser(user);
+      if (userObj?.token) {
+        AuthService._tokenValidated = true;
+        AuthService._cachedUser = userObj;
+        return userObj.token;
+      }
+    }
   }
 
   static setToken(token) {
-    let user = AuthService.getUser();
+    let user = AuthService.getLocalUser();
     if (user) {
       user.token = token;
     } else {
@@ -147,6 +199,7 @@ export class AuthService {
       });
 
       const json = await response.json();
+
       if (json.token) {
         AuthService.setUser(json);
         // Don't set cached user and validation flags yet - let them be set properly
@@ -162,13 +215,20 @@ export class AuthService {
         return false;
       }
     } catch (error) {
-      console.error(error);
+      console.error('AuthService.login: Network error during login:', error);
+      AuthService.loginError = { message: 'Network error during login' };
       return false;
     }
   }
 
   static logout() {
     localStorage.removeItem('user');
+    // Reset validation flags on logout
+    AuthService._tokenValidated = false;
+    AuthService._cachedUser = null;
+    AuthService.loginError = null;
+    AuthService.registerError = null;
+    AuthService.recoverError = null;
   }
 
   static async isSuperAdmin() {

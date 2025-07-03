@@ -5,9 +5,9 @@ from pathlib import Path
 
 def main():
     """Main entrypoint for running the Ibutsu server with uvicorn."""
-    import uvicorn
+    import uvicorn  # noqa: PLC0415
 
-    from ibutsu_server import get_app
+    from ibutsu_server import get_app  # noqa: PLC0415
 
     SSL_CERT = Path("../certs/dev.ibutsu.org+2.pem")
     SSL_KEY = Path("../certs/dev.ibutsu.org+2-key.pem")
