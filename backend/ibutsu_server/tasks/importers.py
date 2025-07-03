@@ -9,10 +9,10 @@ from dateutil import parser
 from lxml import objectify
 
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
 from ibutsu_server.tasks import task
 from ibutsu_server.tasks.runs import update_run
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.uuid import is_uuid
 
@@ -23,12 +23,13 @@ uuid_pattern = re.compile(
 )
 
 
+@with_app_context
 def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
     """Create a result with artifacts, used in the archive importer"""
     old_id = None
     result_id = result.get("id")
     if is_uuid(result_id):
-        result_record = db.select(session)(Result).get(result_id)
+        result_record = db.select(db.session)(Result).get(result_id)
     else:
         result_record = None
     if result_record:
@@ -50,11 +51,11 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         result["env"] = result.get("metadata", {}).get("env")
         result["component"] = result.get("metadata", {}).get("component")
         result_record = Result.from_dict(**result)
-    session.add(result_record)
-    session.commit()
+    db.session.add(result_record)
+    db.session.commit()
     result = result_record.to_dict()
     for artifact in artifacts:
-        session.add(
+        db.session.add(
             Artifact(
                 filename=artifact.name.split("/")[-1],
                 result_id=result["id"],
@@ -62,15 +63,15 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
                 content=tar.extractfile(artifact).read(),
             )
         )
-    session.commit()
+    db.session.commit()
     return old_id
 
 
 def _update_import_status(import_record, status):
     """Update the status of the import"""
     import_record.status = status
-    session.add(import_record)
-    session.commit()
+    db.session.add(import_record)
+    db.session.commit()
 
 
 def _get_ts_element(tree):
@@ -109,10 +110,11 @@ def _process_result(result_dict, testcase):
     return result_dict, traceback
 
 
-def _add_artifacts(result, testcase, traceback, session):
+@with_app_context
+def _add_artifacts(result, testcase, traceback):
     """To reduce cognitive complexity"""
     if traceback:
-        session.add(
+        db.session.add(
             Artifact(
                 filename="traceback.log",
                 result_id=result.id,
@@ -122,7 +124,7 @@ def _add_artifacts(result, testcase, traceback, session):
         )
     if testcase.find("system-out"):
         system_out = bytes(str(testcase["system-out"]), "utf8")
-        session.add(
+        db.session.add(
             Artifact(
                 filename="system-out.log",
                 result_id=result.id,
@@ -132,7 +134,7 @@ def _add_artifacts(result, testcase, traceback, session):
         )
     if testcase.find("system-err"):
         system_err = bytes(str(testcase["system-err"]), "utf8")
-        session.add(
+        db.session.add(
             Artifact(
                 filename="system-err.log",
                 result_id=result.id,
@@ -140,7 +142,7 @@ def _add_artifacts(result, testcase, traceback, session):
                 content=system_err,
             )
         )
-    session.commit()
+    db.session.commit()
 
 
 def _get_properties(xml_element: objectify.Element) -> dict:
@@ -206,6 +208,7 @@ def _get_test_name_path(testcase):
 
 
 @task
+@with_app_context
 def run_junit_import(import_):
     """Import a test run from a JUnit file"""
     # Update the status of the import
@@ -267,8 +270,8 @@ def run_junit_import(import_):
 
     # Insert the run, and then update the import with the run id
     run = Run.from_dict(**run_dict)
-    session.add(run)
-    session.commit()
+    db.session.add(run)
+    db.session.commit()
     run_dict = run.to_dict()
     import_record.run_id = run.id
     import_record.data["run_id"].append(run.id)
@@ -331,12 +334,12 @@ def run_junit_import(import_):
             result_dict, traceback = _process_result(result_dict, testcase)
 
             result = Result.from_dict(**result_dict)
-            session.add(result)
-            session.commit()
-            _add_artifacts(result, testcase, traceback, session)
+            db.session.add(result)
+            db.session.commit()
+            _add_artifacts(result, testcase, traceback)
 
             if traceback:
-                session.add(
+                db.session.add(
                     Artifact(
                         filename="traceback.log",
                         result_id=result.id,
@@ -346,7 +349,7 @@ def run_junit_import(import_):
                 )
             if testcase.find("system-out"):
                 system_out = bytes(str(testcase["system-out"]), "utf8")
-                session.add(
+                db.session.add(
                     Artifact(
                         filename="system-out.log",
                         result_id=result.id,
@@ -356,7 +359,7 @@ def run_junit_import(import_):
                 )
             if testcase.find("system-err"):
                 system_err = bytes(str(testcase["system-err"]), "utf8")
-                session.add(
+                db.session.add(
                     Artifact(
                         filename="system-err.log",
                         result_id=result.id,
@@ -364,7 +367,7 @@ def run_junit_import(import_):
                         content=system_err,
                     )
                 )
-            session.commit()
+            db.session.commit()
 
     # Check if we need to update the run
     if not run.duration:
@@ -381,8 +384,8 @@ def run_junit_import(import_):
         run.summary["xpasses"] = run_data["xpasses"]
     if not run.summary["tests"]:
         run.summary["tests"] = run_data["tests"]
-    session.add(run)
-    session.commit()
+    db.session.add(run)
+    db.session.commit()
 
     # Update the status of the import, now that we're all done
     _update_import_status(import_record, "done")
@@ -457,18 +460,18 @@ def run_archive_import(import_):
 
         # If this run has a valid ID, check if this run exists
         if is_uuid(run_dict.get("id")):
-            run = db.select(session)(Run).get(run_dict["id"])
+            run = db.select(db.session)(Run).get(run_dict["id"])
         if run:
             run.update(run_dict)
         else:
             run = Run.from_dict(**run_dict)
-        session.add(run)
-        session.commit()
+        db.session.add(run)
+        db.session.commit()
         import_record.run_id = run.id
         import_record.data["run_id"] = [run.id]
         # Loop through any artifacts associated with the run and upload them
         for artifact in run_artifacts:
-            session.add(
+            db.session.add(
                 Artifact(
                     filename=artifact.name.split("/")[-1],
                     run_id=run.id,

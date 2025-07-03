@@ -212,7 +212,6 @@ echo " backend up."
 # Note the COLUMNS=80 env var is for https://github.com/celery/celery/issues/5761
 echo "================================="
 echo -n "Adding celery worker to the pod:    "
-set +x
 podman run -d \
     --rm \
     --pod $POD_NAME \
@@ -231,7 +230,6 @@ podman run -d \
     /bin/bash -c 'pip install -U pip wheel &&
                     pip install . &&
                     ./celery_worker.sh'
-set -x
 echo -n "Waiting for celery to respond: "
 sleep 5
 until $(podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null | grep -q pong); do

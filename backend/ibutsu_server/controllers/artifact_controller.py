@@ -105,7 +105,7 @@ def get_artifact_list(
     ).scalar()
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    artifacts = query.limit(page_size).offset(offset).all()
+    artifacts = db.session.execute(query.limit(page_size).offset(offset)).scalars().all()
     return {
         "artifacts": [artifact.to_dict() for artifact in artifacts],
         "pagination": {

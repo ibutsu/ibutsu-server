@@ -68,7 +68,8 @@ def get_token_list(page=1, page_size=25, token_info=None, user=None):
     ).scalar()
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    tokens = query.offset(offset).limit(page_size).all()
+    result = db.session.execute(query.offset(offset).limit(page_size))
+    tokens = result.scalars().all()
     return {
         "tokens": [token.to_dict() for token in tokens],
         "pagination": {

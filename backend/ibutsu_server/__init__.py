@@ -14,7 +14,6 @@ from yaml import full_load as yaml_load
 
 from ibutsu_server.auth import bcrypt
 from ibutsu_server.db import upgrades
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import User, upgrade_db
 from ibutsu_server.db.util import add_superadmin
 from ibutsu_server.encoder import IbutsuJSONProvider
@@ -59,9 +58,9 @@ def make_celery_redis_url(config: flask.Config, *, envvar: str) -> str:
 def get_app(**extra_config):
     """Create the WSGI application"""
 
-    app = connexion.FlaskApp(__name__, specification_dir="./openapi/")
-
-    app.app.json_provider_class = IbutsuJSONProvider
+    app = connexion.FlaskApp(
+        __name__, specification_dir="./openapi/", jsonifier=IbutsuJSONProvider()
+    )
 
     # Shortcut
     config: flask.Config = app.app.config
@@ -118,63 +117,64 @@ def get_app(**extra_config):
     config.update(extra_config)
 
     create_celery_app(app.app)
-    app.add_api(
-        "openapi.yaml",
-        arguments={"title": "Ibutsu"},
-        base_path="/api",
-        pythonic_params=True,
-    )
 
-    # Add CORS middleware for Connexion 3 (must be after add_api)
+    # Configure CORS middleware for Connexion 3 - MUST be before routes are added
+    from connexion.middleware import MiddlewarePosition
     from starlette.middleware.cors import CORSMiddleware
 
     from ibutsu_server.db import db
 
-    # Configure CORS middleware with explicit OPTIONS handling
+    # Apply the middleware first, before routes
     app.add_middleware(
         CORSMiddleware,
+        position=MiddlewarePosition.BEFORE_ROUTING,  # Changed to BEFORE_ROUTING
         allow_origins=["*"],
-        allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allow_headers=["*"],
+        allow_headers=["Content-Type", "Authorization", "*"],
         expose_headers=["Content-Type", "Authorization"],
-        max_age=600,  # Cache preflight requests for 10 minutes
+        allow_credentials=True,
     )
 
-    # Import the ensure_app_context decorator
-    from ibutsu_server.util.app_context import ensure_app_context
+    # Add API routes after middleware
+    app.add_api(
+        "openapi.yaml", arguments={"title": "Ibutsu"}, base_path="/api", pythonic_params=True
+    )
 
     # Initialize Flask extensions on the underlying Flask app
     db.init_app(app.app)
     bcrypt.init_app(app.app)
     Mail(app.app)
 
-    # Auto-wrap controller functions to ensure app context is always available
-    # This is critical for Flask-SQLAlchemy 3.0+ compatibility
-    import importlib
-    import inspect
-    import pkgutil
+    # Add Flask level CORS support for any Flask routes
+    @app.app.after_request
+    def add_cors_headers(response):
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, *")
+        response.headers.add(
+            "Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS, PATCH"
+        )
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        return response
 
-    import ibutsu_server.controllers as controllers
-
-    # Find all controller modules and wrap their functions
-    for _, module_name, is_pkg in pkgutil.iter_modules(controllers.__path__):
-        if module_name.endswith("_controller"):
-            full_name = f"ibutsu_server.controllers.{module_name}"
-            module = importlib.import_module(full_name)
-            for name, obj in inspect.getmembers(module):
-                if inspect.isfunction(obj) and not name.startswith("_"):
-                    # Only wrap if not already wrapped
-                    if not hasattr(obj, "__wrapped__"):
-                        setattr(module, name, ensure_app_context(obj))
+    # Add explicit handling for OPTIONS requests at the Flask level
+    @app.app.route("/api/<path:path>", methods=["OPTIONS"])
+    def options_handler(path):
+        response = app.app.make_response("")
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, *")
+        response.headers.add(
+            "Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS, PATCH"
+        )
+        response.headers.add("Access-Control-Allow-Credentials", "true")
+        return response
 
     with app.app.app_context():
         db.create_all()
-        upgrade_db(session, upgrades)
+        upgrade_db(db.session, upgrades)
         # add a superadmin user
         db.session.commit()
         if superadmin_data := config.get_namespace("IBUTSU_SUPERADMIN_"):
-            add_superadmin(session, **superadmin_data)
+            add_superadmin(db.session, **superadmin_data)
 
     @app.route("/")
     def index():
@@ -190,12 +190,15 @@ def get_app(**extra_config):
         token = params.get("token")
         if not token:
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
+        # decode_token already has the with_app_context decorator
         user_id = decode_token(token).get("sub")
         if not user_id:
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-        user = db.session.get(User, user_id)
-        if not user or not user.is_superadmin:
-            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+        # db.session usage inside an app.route needs app context
+        with app.app.app_context():
+            user = db.session.get(User, user_id)
+            if not user or not user.is_superadmin:
+                return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         # get task info
         task_path = params.get("task")
         task_params = params.get("params", {})

@@ -16,7 +16,7 @@ class Explain(Executable, ClauseElement):
     EXPLAIN a SQLAlchemy query (only for PSQL)
     e.g.
         query = db.select(Run)
-        session.execute(Explain(query)).fetchall()
+        db.session.execute(Explain(query)).fetchall()
 
     cf. http://www.wmmi.net/documents/SQLAlchemy.pdf for more info
     """
@@ -45,7 +45,7 @@ def pg_explain(element, compiler, **kw):
 
 
 def add_superadmin(
-    session,
+    current_session,
     *,
     name: str = "Ibutsu Admin",
     email: str,
@@ -56,7 +56,9 @@ def add_superadmin(
     Adds a superadmin user to Ibutsu.
     """
 
-    user = db.session.execute(db.select(models.User).filter_by(email=email)).scalar_one_or_none()
+    user = current_session.execute(
+        db.select(models.User).filter_by(email=email)
+    ).scalar_one_or_none()
     if user and user.is_superadmin:
         return user
     elif user and not user.is_superadmin:
@@ -70,15 +72,15 @@ def add_superadmin(
         )
         user.password = password
 
-        session.add(user)
+        current_session.add(user)
 
-    session.commit()
+    current_session.commit()
 
     if own_project is not None:
-        project = db.session.execute(
+        project = current_session.execute(
             db.select(models.Project).filter_by(name=own_project, owner=user)
         ).scalar_one_or_none()
         if project is None:
             project = models.Project(name=own_project, owner=user)
-        session.add(project)
-        session.commit()
+        current_session.add(project)
+        current_session.commit()

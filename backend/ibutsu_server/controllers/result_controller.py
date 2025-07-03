@@ -126,7 +126,11 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
 
-    results = query.order_by(Result.start_time.desc()).offset(offset).limit(page_size).all()
+    results = (
+        db.session.execute(query.order_by(Result.start_time.desc()).offset(offset).limit(page_size))
+        .scalars()
+        .all()
+    )
     return {
         "results": [result.to_dict() for result in results],
         "pagination": {

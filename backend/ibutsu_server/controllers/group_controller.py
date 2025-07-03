@@ -67,7 +67,7 @@ def get_group_list(page=1, page_size=25, token_info=None, user=None):
         db.select(db.func.count()).select_from(query.select_from())
     ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    groups = query.limit(page_size).offset(offset).all()
+    groups = db.session.execute(query.limit(page_size).offset(offset)).scalars().all()
     return {
         "groups": [group.to_dict() for group in groups],
         "pagination": {

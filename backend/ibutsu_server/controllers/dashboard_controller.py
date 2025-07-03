@@ -89,7 +89,7 @@ def get_dashboard_list(
         db.select(db.func.count()).select_from(query.select_from())
     ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    dashboards = query.offset(offset).limit(page_size).all()
+    dashboards = db.session.execute(query.offset(offset).limit(page_size)).scalars().all()
     return {
         "dashboards": [dashboard.to_dict() for dashboard in dashboards],
         "pagination": {

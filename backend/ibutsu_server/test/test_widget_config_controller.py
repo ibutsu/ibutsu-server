@@ -127,7 +127,9 @@ class TestWidgetConfigController(BaseTestCase):
         Get the list of widget_configs.
         """
         mock_all = MagicMock(return_value=[MOCK_WIDGET_CONFIG])
+        # TODO how to mock into the db.session.execute that's necessry for the query.scalers.all chain?
         mock_query = self.mock_widget_config.query
+
         mock_query.order_by.return_value.offset.return_value.limit.return_value.all = mock_all
         mock_query.count.return_value = 1
         headers = {

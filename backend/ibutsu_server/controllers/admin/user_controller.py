@@ -52,7 +52,11 @@ def admin_get_user_list(filter_=None, page=1, page_size=25, token_info=None, use
         db.select(db.func.count()).select_from(query.select_from())
     ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    users = query.order_by(User.email.asc()).offset(offset).limit(page_size).all()
+    users = (
+        db.session.execute(query.order_by(User.email.asc()).offset(offset).limit(page_size))
+        .scalars()
+        .all()
+    )
     return {
         "users": [_hide_sensitive_fields(user.to_dict(with_projects=True)) for user in users],
         "pagination": {

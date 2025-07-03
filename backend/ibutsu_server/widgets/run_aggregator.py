@@ -54,7 +54,7 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
     query = apply_filters(query, filters, Run)
 
     # make the query
-    query_data = query.all()
+    query_data = db.session.execute(query).scalars().all()
 
     # parse the data
     for group, failed, error, skipped, total, xpassed, xfailed in query_data:

@@ -1685,6 +1685,11 @@ paths:
       security: []
       x-openapi-router-controller: ibutsu_server.controllers.login_controller
   /user:
+    # options:
+    #   operationId: ibutsu_server.util.cors.cors_options_handler
+    #   responses:
+    #     204:
+    #       description: CORS preflight response
     get:
       operationId: get_current_user
       responses:

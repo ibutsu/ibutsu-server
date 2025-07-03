@@ -87,7 +87,11 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
 
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    runs = query.order_by(Run.start_time.desc()).offset(offset).limit(page_size).all()
+    runs = (
+        db.session.execute(query.order_by(Run.start_time.desc()).offset(offset).limit(page_size))
+        .scalars()
+        .all()
+    )
     return {
         "runs": [run.to_dict() for run in runs],
         "pagination": {

@@ -110,7 +110,11 @@ def get_report_list(page=1, page_size=25, project=None, token_info=None, user=No
         db.select(db.func.count()).select_from(query.select_from())
     ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    reports = query.order_by(Report.created.desc()).offset(offset).limit(page_size).all()
+    reports = (
+        db.session.execute(query.order_by(Report.created.desc()).offset(offset).limit(page_size))
+        .scalars()
+        .all()
+    )
     return {
         "reports": [report.to_dict() for report in reports],
         "pagination": {

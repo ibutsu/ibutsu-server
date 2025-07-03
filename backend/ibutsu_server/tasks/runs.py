@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 
 from ibutsu_server.constants import SYNC_RUN_TIME
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, Run
 from ibutsu_server.tasks import is_locked, lock, task
 
@@ -95,8 +94,8 @@ def update_run(run_id):
         summary["not_run"] = max(summary["collected"] - summary["tests"], 0)
 
         run.update({"summary": summary, "data": metadata})
-        session.add(run)
-        session.commit()
+        db.session.add(run)
+        db.session.commit()
 
 
 @task(max_retries=1)

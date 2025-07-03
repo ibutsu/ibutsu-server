@@ -54,7 +54,7 @@ def _get_heatmap(filters, builds, group_field, project=None):
     )
 
     query = (
-        session.query(
+        db.session.query(
             Run.id.label("run_id"),
             group_field.label("group_field"),
             Run.start_time.label("start_time"),
@@ -95,7 +95,7 @@ def _get_heatmap(filters, builds, group_field, project=None):
     )
 
     # parse the data for the frontend
-    query_data = query.all()
+    query_data = db.session.execute(query).scalars().all()
     data = {datum.group_field: [] for datum in query_data}
     for key in data.keys():
         runs = [run for run in query_data if run.group_field == key]

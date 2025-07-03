@@ -32,7 +32,11 @@ def query_task(filter_=None, page=1, page_size=25, estimate=False, tablename="re
     offset = (page * page_size) - page_size
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
 
-    data = query.order_by(model.start_time.desc()).offset(offset).limit(page_size).all()
+    data = (
+        db.session.execute(query.order_by(model.start_time.desc()).offset(offset).limit(page_size))
+        .scalars()
+        .all()
+    )
     return {
         tablename: [datum.to_dict() for datum in data],
         "pagination": {

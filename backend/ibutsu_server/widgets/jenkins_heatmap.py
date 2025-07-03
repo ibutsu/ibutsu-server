@@ -57,7 +57,7 @@ def _get_builds(job_name, builds, project=None, additional_filters=None):
 
     # create the query
     query = (
-        session.query(
+        db.session.query(
             func.min(Run.start_time).label("min_start_time"),
             group_field.cast(Integer).label("build_number"),
         )
@@ -157,7 +157,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
     )
 
     # parse the data for the frontend
-    query_data = query.all()
+    query_data = db.session.execute(query).scalars().all()
     data = {datum.group_field: [] for datum in query_data}
     for datum in query_data:
         data[datum.group_field].append(

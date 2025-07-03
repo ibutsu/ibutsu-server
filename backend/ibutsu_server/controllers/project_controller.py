@@ -99,7 +99,7 @@ def get_project_list(
         db.select(db.func.count()).select_from(query.select_from())
     ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    projects = query.offset(offset).limit(page_size).all()
+    projects = db.session.execute(query.offset(offset).limit(page_size)).scalars().all()
     return {
         "projects": [project.to_dict() for project in projects],
         "pagination": {

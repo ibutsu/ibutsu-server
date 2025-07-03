@@ -1,7 +1,6 @@
 import logging
 
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, Run
 from ibutsu_server.tasks import is_locked, lock, task
 
@@ -23,5 +22,5 @@ def add_result_start_time(run_id):
         for result in results:
             if not result.get("start_time"):
                 result.data["start_time"] = result.get("starttime")
-                session.add(result)
-        session.commit()
+                db.session.add(result)
+        db.session.commit()

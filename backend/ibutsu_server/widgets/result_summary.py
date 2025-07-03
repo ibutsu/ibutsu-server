@@ -46,7 +46,7 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
         query = apply_filters(query, filters, Run)
 
     # get the total number
-    query_data = query.all()
+    query_data = db.session.execute(query).scalars().all()
 
     # parse the data
     for error, skipped, failed, total, xfailed, xpassed in query_data:

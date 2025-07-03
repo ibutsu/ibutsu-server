@@ -103,7 +103,7 @@ def admin_get_project_list(
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     if offset > 9223372036854775807:  # max value of bigint
         return "The page number is too big.", HTTPStatus.BAD_REQUEST
-    projects = query.offset(offset).limit(page_size).all()
+    projects = db.session.execute(query.offset(offset).limit(page_size)).scalars().all()
     return {
         "projects": [project.to_dict(with_owner=True) for project in projects],
         "pagination": {
