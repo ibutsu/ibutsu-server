@@ -64,6 +64,7 @@ def _get_value(d, *keys):
     return d
 
 
+@with_app_context
 def _update_report(report):
     """Update the report with the parameters, etc."""
     report_type = report["params"]["type"]
@@ -99,6 +100,7 @@ def _update_report(report):
     report.update(report_record.to_dict())
 
 
+@with_app_context
 def _set_report_status(report_id, status):
     """Set a report's status"""
     report = db.session.get(Report, report_id)
@@ -120,6 +122,7 @@ def _set_report_empty(report):
     _set_report_status(report["id"], "empty")
 
 
+@with_app_context
 def _build_query(report):
     """Build the filters from a report object"""
     query = db.select(Result)
@@ -134,6 +137,7 @@ def _build_query(report):
     return query
 
 
+@with_app_context
 def _get_results(report):
     """Limit the number of documents to REPORT_MAX_DOCUMENTS so as not to crash the server."""
     query = _build_query(report)
