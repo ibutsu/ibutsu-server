@@ -6,13 +6,14 @@ import magic
 from flask import make_response, request
 
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact, Result, User
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.projects import add_user_filter, project_has_user
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import is_uuid, validate_uuid
 
 
+@with_app_context
 def _build_artifact_response(id_):
     """Build a response for the artifact"""
     artifact = db.session.get(Artifact, id_)
@@ -60,6 +61,7 @@ def download_artifact(id_, token_info=None, user=None):
 
 
 @validate_uuid
+@with_app_context
 def get_artifact(id_, token_info=None, user=None):
     """Return a single artifact
 
@@ -76,6 +78,8 @@ def get_artifact(id_, token_info=None, user=None):
     return artifact.to_dict()
 
 
+@with_app_context
+@with_app_context
 def get_artifact_list(
     result_id=None, run_id=None, page_size=25, page=1, token_info=None, user=None
 ):
@@ -101,7 +105,7 @@ def get_artifact_list(
     ).scalar()
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    artifacts = query.limit(page_size).offset(offset).all()
+    artifacts = db.session.execute(query.limit(page_size).offset(offset)).scalars().all()
     return {
         "artifacts": [artifact.to_dict() for artifact in artifacts],
         "pagination": {
@@ -113,6 +117,7 @@ def get_artifact_list(
     }
 
 
+@with_app_context
 def upload_artifact(body, token_info=None, user=None):
     """Uploads a artifact artifact
 
@@ -178,12 +183,13 @@ def upload_artifact(body, token_info=None, user=None):
             data=additional_metadata,
         )
 
-    session.add(artifact)
-    session.commit()
+    db.session.add(artifact)
+    db.session.commit()
     return artifact.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
+@with_app_context
 def delete_artifact(id_, token_info=None, user=None):
     """Deletes an artifact
 
@@ -197,6 +203,6 @@ def delete_artifact(id_, token_info=None, user=None):
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     if not project_has_user(artifact.result.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-    session.delete(artifact)
-    session.commit()
+    db.session.delete(artifact)
+    db.session.commit()
     return HTTPStatus.OK.phrase, HTTPStatus.OK

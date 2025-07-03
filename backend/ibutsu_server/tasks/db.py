@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta
 
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact, Project, Result, Run, User
 from ibutsu_server.tasks import task
+from ibutsu_server.util.app_context import with_app_context
 
 DAYS_IN_MONTH = 30
 
 
 @task
+@with_app_context
 def prune_old_files(months=5):
     """Delete artifact files older than specified months (here defined as 30 days)."""
     try:
@@ -22,14 +23,15 @@ def prune_old_files(months=5):
         max_date = datetime.utcnow() - timedelta(days=months * DAYS_IN_MONTH)
         # delete artifact files older than max_date
         delete_statement = Artifact.__table__.delete().where(Artifact.upload_date < max_date)
-        session.execute(delete_statement)
-        session.commit()
+        db.session.execute(delete_statement)
+        db.session.commit()
     except Exception:
         # we don't want to continually retry this task
         return
 
 
 @task
+@with_app_context
 def prune_old_results(months=6):
     """
     Remove results older than specified months (here defined as 30 days).
@@ -48,14 +50,15 @@ def prune_old_results(months=6):
         max_date = datetime.utcnow() - timedelta(days=months * DAYS_IN_MONTH)
         # delete artifact files older than max_date
         delete_statement = Result.__table__.delete().where(Result.start_time < max_date)
-        session.execute(delete_statement)
-        session.commit()
+        db.session.execute(delete_statement)
+        db.session.commit()
     except Exception:
         # we don't want to continually retry this task
         return
 
 
 @task
+@with_app_context
 def prune_old_runs(months=12):
     """
     Remove runs older than specified months (here defined as 30 days).
@@ -74,14 +77,15 @@ def prune_old_runs(months=12):
         max_date = datetime.utcnow() - timedelta(days=months * DAYS_IN_MONTH)
         # delete artifact files older than max_date
         delete_statement = Run.__table__.delete().where(Run.start_time < max_date)
-        session.execute(delete_statement)
-        session.commit()
+        db.session.execute(delete_statement)
+        db.session.commit()
     except Exception:
         # we don't want to continually retry this task
         return
 
 
 @task
+@with_app_context
 def seed_users(projects):
     """
     Add users and add users to projects in database.
@@ -138,8 +142,8 @@ def seed_users(projects):
                         is_active=True,
                     )
                 project.owner = project_owner
-                session.add(project)
-                session.commit()
+                db.session.add(project)
+                db.session.commit()
 
             # add the users
             for user_email in project_info.get("users", []):
@@ -154,8 +158,8 @@ def seed_users(projects):
                 if project not in user.projects:
                     user.projects.append(project)
 
-                session.add(user)
-            session.commit()
+                db.session.add(user)
+            db.session.commit()
     except Exception as e:
         # we don't want to continually retry this task
         print(e)

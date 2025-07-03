@@ -6,14 +6,15 @@ from flask import request
 from werkzeug.datastructures import FileStorage
 
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Import, ImportFile
 from ibutsu_server.tasks.importers import run_archive_import, run_junit_import
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.projects import get_project, project_has_user
 from ibutsu_server.util.uuid import validate_uuid
 
 
 @validate_uuid
+@with_app_context
 def get_import(id_, token_info=None, user=None):
     """Get a run
 
@@ -32,6 +33,7 @@ def get_import(id_, token_info=None, user=None):
     return import_.to_dict()
 
 
+@with_app_context
 def add_import(
     import_file: Optional[FileStorage] = None,
     project: Optional[str] = None,
@@ -79,11 +81,11 @@ def add_import(
             "data": data,
         }
     )
-    session.add(new_import)
-    session.commit()
+    db.session.add(new_import)
+    db.session.commit()
     new_file = ImportFile(import_id=new_import.id, content=import_file.read())
-    session.add(new_file)
-    session.commit()
+    db.session.add(new_file)
+    db.session.commit()
     if import_file.filename.endswith(".xml"):
         run_junit_import.delay(new_import.to_dict())
     elif import_file.filename.endswith(".tar.gz"):

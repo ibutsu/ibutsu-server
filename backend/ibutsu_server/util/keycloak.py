@@ -3,7 +3,6 @@ from flask import current_app
 
 from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import User
 from ibutsu_server.util.urls import build_url
 
@@ -66,8 +65,8 @@ def get_user_from_keycloak(auth_data):
                 is_active=True,
                 is_superadmin=False,
             )
-            session.add(user)
-            session.commit()
+            db.session.add(user)
+            db.session.commit()
         return user
     else:
         print("Error getting user, response:", response.text)

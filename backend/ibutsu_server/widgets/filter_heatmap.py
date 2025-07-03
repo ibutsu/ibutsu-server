@@ -2,7 +2,7 @@ from sqlalchemy import case, desc, func
 
 from ibutsu_server.constants import HEATMAP_MAX_BUILDS, HEATMAP_RUN_LIMIT
 from ibutsu_server.db import db
-from ibutsu_server.db.base import Float, session
+from ibutsu_server.db.base import Float
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
 
@@ -54,7 +54,7 @@ def _get_heatmap(filters, builds, group_field, project=None):
     )
 
     query = (
-        session.query(
+        db.session.query(
             Run.id.label("run_id"),
             group_field.label("group_field"),
             Run.start_time.label("start_time"),
@@ -81,21 +81,23 @@ def _get_heatmap(filters, builds, group_field, project=None):
         subquery.c.errors + subquery.c.failures + subquery.c.xpasses + subquery.c.xfailures
     )
 
-    query = db.select(session)(
-        subquery.c.group_field,
-        subquery.c.run_id,
-        subquery.c.start_time,
-        # handle potential division by 0 errors, if the total is 0, set the pass_percent to 0
-        case(
-            [
-                (subquery.c.total == 0, 0),
-            ],
-            else_=(100 * passes / subquery.c.total),
-        ).label("pass_percent"),
+    query = db.session.execute(
+        db.select(
+            subquery.c.group_field,
+            subquery.c.run_id,
+            subquery.c.start_time,
+            # handle potential division by 0 errors, if the total is 0, set the pass_percent to 0
+            case(
+                [
+                    (subquery.c.total == 0, 0),
+                ],
+                else_=(100 * passes / subquery.c.total),
+            ).label("pass_percent"),
+        )
     )
 
     # parse the data for the frontend
-    query_data = query.all()
+    query_data = db.session.execute(query).scalars().all()
     data = {datum.group_field: [] for datum in query_data}
     for key in data.keys():
         runs = [run for run in query_data if run.group_field == key]

@@ -10,25 +10,25 @@ from ibutsu_server.db.types import PortableUUID
 __version__ = 6
 
 
-def get_upgrade_op(session):
+def get_upgrade_op(current_session):
     """
     Create a migration context and an operations object for performing upgrades.
 
-    :param session: The SQLAlchemy session object.
+    :param current_session: The SQLAlchemy current_session object.
     """
-    # Flask-SQLAlchemy 3.0+ compatibility: use db.engine instead of session.get_bind()
-    bind = getattr(session, "bind", None) or db.engine
+    # Flask-SQLAlchemy 3.0+ compatibility: use db.engine instead of current_session.get_bind()
+    bind = getattr(current_session, "bind", None) or db.engine
     context = MigrationContext.configure(bind.connect())
     return Operations(context)
 
 
-def upgrade_1(session):
+def upgrade_1(current_session):
     """Version 1 upgrade
 
     This upgrade adds a dashboard_id to the widget_configs table
     """
-    engine = getattr(session, "bind", None) or db.engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     widget_configs = metadata.tables.get("widget_configs")
@@ -58,7 +58,7 @@ def upgrade_1(session):
         )
 
 
-def upgrade_2(session):
+def upgrade_2(current_session):
     """Version 2 upgrade
 
     This upgrade adds indices for the metadata.tags, metadata.requirements fields in the
@@ -72,8 +72,8 @@ def upgrade_2(session):
     """
     TABLES = ["runs", "results"]
 
-    engine = getattr(session, "bind", None) or db.engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
 
@@ -104,15 +104,15 @@ def upgrade_2(session):
                     )
 
 
-def upgrade_3(session):
+def upgrade_3(current_session):
     """Version 3 upgrade
 
     This upgrade:
         - makes the 'result_id' column of artifacts nullable
         - adds a 'run_id' to the artifacts table
     """
-    engine = getattr(session, "bind", None) or db.engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     artifacts = metadata.tables.get("artifacts")
@@ -134,14 +134,14 @@ def upgrade_3(session):
             )
 
 
-def upgrade_4(session):
+def upgrade_4(current_session):
     """Version 4 upgrade
 
     This upgrade removes the "nullable" constraint on the password field, and adds a "is_superadmin"
     field to the user table.
     """
-    engine = getattr(session, "bind", None) or db.engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     users = metadata.tables.get("users")
@@ -157,13 +157,13 @@ def upgrade_4(session):
         op.add_column("users", Column("activation_code", Text, default=None))
 
 
-def upgrade_5(session):
+def upgrade_5(current_session):
     """Version 5 upgrade
 
     This upgrade adds a default dashboard to a project
     """
-    engine = getattr(session, "bind", None) or db.engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     projects = metadata.tables.get("projects")
@@ -179,7 +179,7 @@ def upgrade_5(session):
         )
 
 
-def upgrade_6(session):
+def upgrade_6(current_session):
     """Version 6 upgrade
 
     This upgrade adds optimized database indexes for widget queries to improve performance.
@@ -194,8 +194,8 @@ def upgrade_6(session):
     - MySQL: Uses standard indexes with appropriate key lengths
     - SQLite: Uses simple indexes without advanced features
     """
-    engine = getattr(session, "bind", None) or db.engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     dialect = engine.url.get_dialect().name
@@ -234,12 +234,12 @@ def upgrade_6(session):
         existing_indexes = {idx.name for idx in results.indexes}
 
         # Composite index for common result filtering
-        if "ix_results_project_outcome_start" not in existing_indexes:
+        if "ix_results_project_result_start" not in existing_indexes:
             indexes_to_create.append(
                 {
-                    "name": "ix_results_project_outcome_start",
+                    "name": "ix_results_project_result_start",
                     "table": "results",
-                    "columns": ["project_id", "outcome", "start_time"],
+                    "columns": ["project_id", "result", "start_time"],
                 }
             )
 

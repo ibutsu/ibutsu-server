@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 
 from ibutsu_server.db import db
-from ibutsu_server.db.base import Float, session
+from ibutsu_server.db.base import Float
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
 
@@ -40,21 +40,23 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
         return data
 
     # create the query
-    query = db.select(session)(
-        group_field,
-        func.sum(Run.summary["failures"].cast(Float)),
-        func.sum(Run.summary["errors"].cast(Float)),
-        func.sum(Run.summary["skips"].cast(Float)),
-        func.sum(Run.summary["tests"].cast(Float)),
-        func.sum(Run.summary["xpassed"].cast(Float)),
-        func.sum(Run.summary["xfailed"].cast(Float)),
-    ).group_by(group_field)
+    query = db.session.execute(
+        db.select(
+            group_field,
+            func.sum(Run.summary["failures"].cast(Float)),
+            func.sum(Run.summary["errors"].cast(Float)),
+            func.sum(Run.summary["skips"].cast(Float)),
+            func.sum(Run.summary["tests"].cast(Float)),
+            func.sum(Run.summary["xpassed"].cast(Float)),
+            func.sum(Run.summary["xfailed"].cast(Float)),
+        ).group_by(group_field)
+    )
 
     # filter the query
     query = apply_filters(query, filters, Run)
 
     # make the query
-    query_data = query.all()
+    query_data = db.session.execute(query).scalars().all()
 
     # parse the data
     for group, failed, error, skipped, total, xpassed, xfailed in query_data:
