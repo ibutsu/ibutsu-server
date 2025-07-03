@@ -25,7 +25,8 @@ def _build_filters(group_field, days, project, run_id, additional_filters):
         filters.extend(additional_filters.split(","))
     if project and is_uuid(project):
         filters.append(f"project_id={project}")
-    if run_id and is_uuid(run_id):
+    # Only add run_id filter if it's a valid UUID, not "undefined" or empty
+    if run_id and run_id != "undefined" and run_id.strip() and is_uuid(run_id):
         filters.append(f"run_id={run_id}")
 
     return filters
@@ -38,7 +39,7 @@ def _get_distinct_values(group_field, filters, limit=FILTER_MODE_LIMIT):
         return []
 
     # Build query with DISTINCT - filters must be applied before limit
-    query = session.query(group_field_column).distinct()
+    query = db.session.query(group_field_column).distinct()
 
     # Add filters to the query first
     query = apply_filters(query, filters, Result)

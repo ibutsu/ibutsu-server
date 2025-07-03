@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { AuthService } from '../services/auth';
+import { AuthService } from '../utilities/auth';
 
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading, false = not authenticated, true = authenticated

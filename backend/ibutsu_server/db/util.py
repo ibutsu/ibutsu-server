@@ -6,7 +6,6 @@ from typing import Optional
 
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.orm import Query
 from sqlalchemy.sql.expression import ClauseElement, Executable
 
 from ibutsu_server.db import db, models
@@ -88,3 +87,4 @@ def add_superadmin(
             project = models.Project(name=own_project, owner=user)
         current_session.add(project)
         current_session.commit()
+    return None

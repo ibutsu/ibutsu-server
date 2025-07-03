@@ -207,7 +207,7 @@ def _make_row(old, parent_key=None):
     """
     new = {}
     for key, value in old.items():
-        new_key = f"{parent_key}.{str(key)}" if parent_key else str(key)
+        new_key = f"{parent_key}.{key!s}" if parent_key else str(key)
         if isinstance(value, dict):
             new.update(_make_row(value, new_key))
         elif isinstance(value, list):
@@ -272,7 +272,7 @@ def _make_dict(results):
     return report_dict
 
 
-def _build_tree(path, tree, result):
+def _build_tree(path, tree, result):  # noqa: PLR0912
     """Build a tree structure for the HTML report
 
     Returns: None
@@ -282,7 +282,7 @@ def _build_tree(path, tree, result):
         Recurses when path is not a individual test node
     """
     if isinstance(path, str):
-        path = path.split("::")[0].split("/") + [path.split("::")[-1]]
+        path = [*path.split("::")[0].split("/"), path.split("::")[-1]]
     root = path[0]
     remainder = path[1:]
 
@@ -483,7 +483,7 @@ def generate_html_report(report):
     # Write the report to the database
     report_file = ReportFile(
         filename=report["filename"],
-        data={"contentType": "text/hmtl"},
+        data={"contentType": "text/html"},
         report_id=report["id"],
         content=html_report.encode("utf8"),
     )
@@ -519,8 +519,8 @@ def generate_exception_report(report):
 
     # list of tuples for easy unpacking in the jinja template
     # exception_type, count, color designation
-    warn_count = int(round(FAILURE_PERC_WARN * total_count))
-    danger_count = int(round(FAILURE_PERC_DANGER * total_count))
+    warn_count = round(FAILURE_PERC_WARN * total_count)
+    danger_count = round(FAILURE_PERC_DANGER * total_count)
     exception_counts = []
     for exception_type, exceptions in exception_type_indexed.items():
         severity_level = BSTRAP_INFO

@@ -53,17 +53,15 @@ def test_ibutsu_task_after_return(flask_app):
     task.flask_app = client.application  # Use real app
 
     # Enable commit on teardown for this test
-    with client.application.app_context():
+    with (
+        client.application.app_context(),
+        patch("ibutsu_server.tasks.session.commit") as mock_commit,
+        patch("ibutsu_server.tasks.session.remove") as mock_remove,
+    ):
+        task.after_return("SUCCESS", None, "task_id", [], {}, None)
 
-        # Mock only the session methods to verify they're called
-        with (
-            patch("ibutsu_server.tasks.session.commit") as mock_commit,
-            patch("ibutsu_server.tasks.session.remove") as mock_remove,
-        ):
-            task.after_return("SUCCESS", None, "task_id", [], {}, None)
-
-            mock_commit.assert_called_once()
-            mock_remove.assert_called_once()
+        mock_commit.assert_called_once()
+        mock_remove.assert_called_once()
 
 
 def test_ibutsu_task_after_return_with_exception(flask_app):
@@ -73,17 +71,16 @@ def test_ibutsu_task_after_return_with_exception(flask_app):
     task = IbutsuTask()
     task.flask_app = client.application
 
-    with client.application.app_context():
+    with (
+        client.application.app_context(),
+        patch("ibutsu_server.tasks.session.commit") as mock_commit,
+        patch("ibutsu_server.tasks.session.remove") as mock_remove,
+    ):
+        # When retval is an Exception, commit should not be called
+        task.after_return("FAILURE", Exception("test"), "task_id", [], {}, None)
 
-        with (
-            patch("ibutsu_server.tasks.session.commit") as mock_commit,
-            patch("ibutsu_server.tasks.session.remove") as mock_remove,
-        ):
-            # When retval is an Exception, commit should not be called
-            task.after_return("FAILURE", Exception("test"), "task_id", [], {}, None)
-
-            mock_commit.assert_not_called()
-            mock_remove.assert_called_once()
+        mock_commit.assert_not_called()
+        mock_remove.assert_called_once()
 
 
 @patch("logging.info")
