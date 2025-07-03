@@ -229,7 +229,7 @@ podman run -d \
     $PYTHON_IMAGE \
     /bin/bash -c 'pip install -U pip wheel &&
                     pip install . &&
-                    ./celery_worker.sh'
+                    celery --app ibutsu_server.celery_app --no-color worker --events'
 echo -n "Waiting for celery to respond: "
 sleep 5
 until $(podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null | grep -q pong); do

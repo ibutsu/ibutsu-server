@@ -11,7 +11,6 @@ from ibutsu_server.db import db as ibutsu_db  # Rename import to avoid collision
 from ibutsu_server.db.models import Report
 
 LOCK_EXPIRE = 1
-task = None
 
 
 SOCKET_TIMEOUT = 5
@@ -20,7 +19,6 @@ SOCKET_CONNECT_TIMEOUT = 5
 
 def create_celery_app(app=None):
     """Create the Celery app, using the Flask app in app"""
-    global task
 
     class IbutsuTask(Task):
         abstract = True
@@ -73,32 +71,29 @@ def create_celery_app(app=None):
 
     celery_app = Celery(
         "ibutsu_server",
-        broker=app.config.get("CELERY_BROKER_URL"),
-        broker_connection_retry=True,
-        broker_connection_retry_on_startup=True,
-        worker_cancel_long_running_tasks_on_connection_loss=True,
-        include=[
-            "ibutsu_server.tasks.db",
-            "ibutsu_server.tasks.importers",
-            "ibutsu_server.tasks.query",
-            "ibutsu_server.tasks.reports",
-            "ibutsu_server.tasks.results",
-            "ibutsu_server.tasks.runs",
-        ],
+        task_cls=IbutsuTask,
     )
     celery_app.config_from_object(app.config, namespace="CELERY")
     app.extensions["celery"] = celery_app
     celery_app.conf.redis_socket_timeout = SOCKET_TIMEOUT
     celery_app.conf.redis_socket_connect_timeout = SOCKET_CONNECT_TIMEOUT
     celery_app.conf.redis_retry_on_timeout = True
-    celery_app.conf.broker_transport_options = app.conf.result_backend_transport_options = {
+    celery_app.conf.broker_transport_options = celery_app.conf.result_backend_transport_options = {
         "socket_timeout": SOCKET_TIMEOUT,
         "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
     }
     celery_app.conf.result_backend = app.config.get("CELERY_RESULT_BACKEND")
     celery_app.Task = IbutsuTask
-    # Shortcut for the decorator
-    task = celery_app.task
+    # TODO OLD PATTERN
+    # Make sure all task modules are imported so tasks are registered
+    # This is crucial for Celery task discovery
+    # import ibutsu_server.tasks.db
+    # import ibutsu_server.tasks.importers
+    # import ibutsu_server.tasks.query
+    # import ibutsu_server.tasks.reports
+    # import ibutsu_server.tasks.results
+    # import ibutsu_server.tasks.runs
+
     # Add in any periodic tasks
     celery_app.conf.beat_schedule = {
         "prune-old-artifact-files": {
@@ -166,4 +161,4 @@ def lock(name, timeout=LOCK_EXPIRE, app=None):
         logging.info(f"Task {name} is already locked, discarding")
 
 
-__all__ = ["create_celery_app", "lock", "task", "shared_task"]
+__all__ = ["create_celery_app", "lock", "shared_task"]

@@ -56,14 +56,15 @@ def make_celery_redis_url(config: flask.Config, *, envvar: str) -> str:
 
 
 def get_app(**extra_config):
-    """Create the WSGI application"""
+    """Create the WSGI application for ASGI wrapper"""
 
     app = connexion.FlaskApp(
         __name__, specification_dir="./openapi/", jsonifier=IbutsuJSONProvider()
     )
+    wrappedApp = app.app
 
     # Shortcut
-    config: flask.Config = app.app.config
+    config: flask.Config = wrappedApp.config
     config.setdefault("BCRYPT_LOG_ROUNDS", 12)
     config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False)
     config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
@@ -115,8 +116,24 @@ def get_app(**extra_config):
 
     # Load any extra config
     config.update(extra_config)
-
-    create_celery_app(app.app)
+    wrappedApp.config.from_mapping(
+        CELERY=dict(
+            broker=wrappedApp.config.get("CELERY_BROKER_URL"),
+            broker_connection_retry=True,
+            broker_connection_retry_on_startup=True,
+            worker_cancel_long_running_tasks_on_connection_loss=True,
+            include=[
+                "ibutsu_server.tasks.db",
+                "ibutsu_server.tasks.importers",
+                "ibutsu_server.tasks.query",
+                "ibutsu_server.tasks.reports",
+                "ibutsu_server.tasks.results",
+                "ibutsu_server.tasks.runs",
+            ],
+        )
+    )
+    wrappedApp.config.from_prefixed_env()
+    create_celery_app(wrappedApp)
 
     # Configure CORS middleware for Connexion 3 - MUST be before routes are added
     from connexion.middleware import MiddlewarePosition
@@ -141,12 +158,12 @@ def get_app(**extra_config):
     )
 
     # Initialize Flask extensions on the underlying Flask app
-    db.init_app(app.app)
-    bcrypt.init_app(app.app)
-    Mail(app.app)
+    db.init_app(wrappedApp)
+    bcrypt.init_app(wrappedApp)
+    Mail(wrappedApp)
 
     # Add Flask level CORS support for any Flask routes
-    @app.app.after_request
+    @wrappedApp.after_request
     def add_cors_headers(response):
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, *")
@@ -157,9 +174,9 @@ def get_app(**extra_config):
         return response
 
     # Add explicit handling for OPTIONS requests at the Flask level
-    @app.app.route("/api/<path:path>", methods=["OPTIONS"])
+    @wrappedApp.route("/api/<path:path>", methods=["OPTIONS"])
     def options_handler(path):
-        response = app.app.make_response("")
+        response = wrappedApp.make_response("")
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, *")
         response.headers.add(
@@ -168,7 +185,7 @@ def get_app(**extra_config):
         response.headers.add("Access-Control-Allow-Credentials", "true")
         return response
 
-    with app.app.app_context():
+    with wrappedApp.app_context():
         db.create_all()
         upgrade_db(db.session, upgrades)
         # add a superadmin user
@@ -195,7 +212,7 @@ def get_app(**extra_config):
         if not user_id:
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
         # db.session usage inside an app.route needs app context
-        with app.app.app_context():
+        with wrappedApp.app_context():
             user = db.session.get(User, user_id)
             if not user or not user.is_superadmin:
                 return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
@@ -220,3 +237,4 @@ def get_app(**extra_config):
 
 # ASGI app instance for uvicorn
 app = get_app()
+celery_app = app.app.extensions["celery"]
