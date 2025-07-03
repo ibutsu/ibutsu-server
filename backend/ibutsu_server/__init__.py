@@ -62,7 +62,8 @@ def get_app(**extra_config):
     connexion_app = connexion.FlaskApp(
         __name__, specification_dir="./openapi/", jsonifier=IbutsuJSONProvider()
     )
-    # Get the underlying Flask app (connexion_app is the Connexion wrapper, flask_app is the actual Flask application)
+    # Get the underlying Flask app
+    # (connexion_app is the Connexion wrapper, flask_app is the actual Flask application)
     flask_app = connexion_app.app
     # Shortcut to the Flask app config
     config: flask.Config = flask_app.config
@@ -133,12 +134,12 @@ def get_app(**extra_config):
 
     # Configure Celery in the Flask app config
     config.from_mapping(
-        CELERY=dict(
-            broker=config.get("CELERY_BROKER_URL"),
-            broker_connection_retry=True,
-            broker_connection_retry_on_startup=True,
-            worker_cancel_long_running_tasks_on_connection_loss=True,
-            include=[
+        CELERY={
+            "broker": config.get("CELERY_BROKER_URL"),
+            "broker_connection_retry": True,
+            "broker_connection_retry_on_startup": True,
+            "worker_cancel_long_running_tasks_on_connection_loss": True,
+            "include": [
                 "ibutsu_server.tasks.db",
                 "ibutsu_server.tasks.importers",
                 "ibutsu_server.tasks.query",
@@ -146,14 +147,14 @@ def get_app(**extra_config):
                 "ibutsu_server.tasks.results",
                 "ibutsu_server.tasks.runs",
             ],
-        )
+        }
     )
     flask_app.config.from_prefixed_env()
 
     # Configure CORS middleware for Connexion 3 - MUST be before routes are added
-    from connexion.middleware import MiddlewarePosition
+    from connexion.middleware import MiddlewarePosition  # noqa: PLC0415
 
-    from ibutsu_server.db import db
+    from ibutsu_server.db import db  # noqa: PLC0415
 
     create_celery_app(flask_app)
 
@@ -189,29 +190,29 @@ def get_app(**extra_config):
         return redirect("/api/ui/", code=HTTPStatus.FOUND)
 
     @flask_app.route("/admin/run-task", methods=["POST"])
-    def run_task():
-        from ibutsu_server.db import db
+    def run_task():  # noqa: PLR0911
+        from ibutsu_server.db import db  # noqa: PLC0415
 
         # Get params
         params = request.get_json(force=True, silent=True)
         if not params:
             return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-        
+
         # Get user info
         token = params.get("token")
         if not token:
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-        
+
         # Decode token - Flask routes already have app_context
         user_id = decode_token(token).get("sub")
         if not user_id:
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-        
+
         # Validate user permissions (Flask-SQLAlchemy 3.0+ pattern)
         user = db.session.get(User, user_id)
         if not user or not user.is_superadmin:
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-        
+
         # Get task info
         task_path = params.get("task")
         task_params = params.get("params", {})
@@ -240,4 +241,4 @@ flask_app = connexion_app.app
 celery_app = flask_app.extensions["celery"]
 
 # Export the app instances directly for use in celery tasks
-__all__ = ["connexion_app", "flask_app", "celery_app"]
+__all__ = ["celery_app", "connexion_app", "flask_app"]

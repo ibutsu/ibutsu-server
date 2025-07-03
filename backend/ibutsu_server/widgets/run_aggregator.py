@@ -72,11 +72,11 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
         total = query_data.total or 0
         xpassed = query_data.xpassed or 0
         xfailed = query_data.xfailed or 0
-        
+
         # Skip groups with zero total tests to avoid division by zero
         if not total or total == 0:
             return data
-        
+
         # convert all data to percentages
         data["failed"][group] = round(((failed or 0.0) / total) * 100.0)
         data["error"][group] = round(((error or 0.0) / total) * 100.0)

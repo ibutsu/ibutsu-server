@@ -117,7 +117,7 @@ def admin_delete_user(id_, token_info=None, user=None):
 
     # Prevent deletion of the last superadmin
     superadmin_count = db.session.execute(
-        db.select(db.func.count()).where(User.is_superadmin == True)
+        db.select(db.func.count()).where(User.is_superadmin)
     ).scalar()
     if user_to_delete.is_superadmin and superadmin_count <= 1:
         abort(HTTPStatus.BAD_REQUEST, description="Cannot delete the last superadmin user")

@@ -9,16 +9,15 @@ from ibutsu_server.constants import LOCK_EXPIRE, SOCKET_CONNECT_TIMEOUT, SOCKET_
 
 def get_redis_client(app=None):
     if not app:
-        from ibutsu_server.util.celery_task import get_flask_app
+        from ibutsu_server.util.celery_task import get_flask_app  # noqa: PLC0415
 
         app = get_flask_app()
 
-    redis_client = Redis.from_url(
+    return Redis.from_url(
         app.config["CELERY_BROKER_URL"],
         socket_timeout=SOCKET_TIMEOUT,
         socket_connect_timeout=SOCKET_CONNECT_TIMEOUT,
     )
-    return redis_client
 
 
 def is_locked(name, app=None):

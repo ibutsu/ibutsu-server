@@ -18,7 +18,8 @@ NO_PASS_RATE_TEXT = "Build failed"  # noqa: S105
 def _calculate_slope(pass_percentages):
     """Calculate the trend slope of the data using linear regression
 
-    :param pass_percentages: A list of pass percentages in chronological order, e.g. [98, 54, 97, 99]
+    :param pass_percentages: A list of pass percentages in chronological order,
+        e.g. [98, 54, 97, 99]
     :type pass_percentages: list
 
     :rtype float:
@@ -47,11 +48,10 @@ def _calculate_slope(pass_percentages):
         if denominator == 0:
             return 0
 
-        slope = numerator / denominator
+        return numerator / denominator
 
         # Scale the slope to be more interpretable for the frontend
         # Positive slope = upward trend, negative slope = downward trend
-        return slope
 
     except ZeroDivisionError:
         return 0
@@ -185,7 +185,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
     for key, value in data.items():
         slope_info = _calculate_slope([item[0] for item in value])
         # Insert slope as a single item at the beginning
-        data_with_slope[key] = [[slope_info, 0]] + value
+        data_with_slope[key] = [[slope_info, 0], *value]
 
     return data_with_slope, build_numbers
 

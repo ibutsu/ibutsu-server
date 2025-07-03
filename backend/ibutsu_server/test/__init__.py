@@ -1,6 +1,7 @@
 import logging
 from http import HTTPStatus
 from inspect import isfunction
+from typing import ClassVar
 
 from flask_testing import TestCase
 
@@ -12,7 +13,7 @@ from ibutsu_server.util import merge_dicts
 from ibutsu_server.util.jwt import generate_token
 
 
-def mock_task(*args, **kwargs):
+def mock_task(*args, **_kwargs):
     if args and isfunction(args[0]):
         func = args[0]
 
@@ -21,16 +22,15 @@ def mock_task(*args, **kwargs):
 
         wrap._orig_func = func
         return wrap
-    else:
 
-        def decorate(func):
-            def _wrapped(*args, **kwargs):
-                return func(*args, **kwargs)
+    def decorate(func):
+        def _wrapped(*args, **kwargs):
+            return func(*args, **kwargs)
 
-            _wrapped._orig_func = func
-            return _wrapped
+        _wrapped._orig_func = func
+        return _wrapped
 
-        return decorate
+    return decorate
 
 
 class BaseTestCase(TestCase):
@@ -53,7 +53,7 @@ class BaseTestCase(TestCase):
         app = get_app(**extra_config)
         create_celery_app(app)
 
-        from ibutsu_server.db import db
+        from ibutsu_server.db import db  # noqa: PLC0415
 
         # Add a test user
         with app.app_context():
@@ -88,21 +88,21 @@ class BaseTestCase(TestCase):
 
     def assert_equal(self, first, second, msg=None):
         """Alias"""
-        return self.assertEqual(first, second, msg)
+        assert first == second, msg or f"{first} != {second}"
 
     def assert_not_equal(self, first, second, msg=None):
         """Alias"""
-        return self.assertNotEqual(first, second, msg)
+        assert first != second, msg or f"{first} == {second}"
 
 
 class MockModel:
     """Mock model object"""
 
-    COLUMNS = ["id"]
+    COLUMNS: ClassVar[list] = ["id"]
 
     def __init__(self, **fields):
         for column in self.COLUMNS:
-            if column in fields.keys():
+            if column in fields:
                 setattr(self, column, fields[column])
             else:
                 setattr(self, column, None)
@@ -143,23 +143,23 @@ class MockModel:
 
 
 class MockArtifact(MockModel):
-    COLUMNS = ["id", "filename", "result_id", "data", "content", "result"]
+    COLUMNS: ClassVar[list] = ["id", "filename", "result_id", "data", "content", "result"]
 
 
 class MockGroup(MockModel):
-    COLUMNS = ["id", "name", "data"]
+    COLUMNS: ClassVar[list] = ["id", "name", "data"]
 
 
 class MockImport(MockModel):
-    COLUMNS = ["id", "filename", "format", "data", "status"]
+    COLUMNS: ClassVar[list] = ["id", "filename", "format", "data", "status"]
 
 
 class MockProject(MockModel):
-    COLUMNS = ["id", "name", "title", "owner_id", "group_id", "users"]
+    COLUMNS: ClassVar[list] = ["id", "name", "title", "owner_id", "group_id", "users"]
 
 
 class MockResult(MockModel):
-    COLUMNS = [
+    COLUMNS: ClassVar[list] = [
         "id",
         "component",
         "data",
@@ -177,7 +177,7 @@ class MockResult(MockModel):
 
 
 class MockReport(MockModel):
-    COLUMNS = [
+    COLUMNS: ClassVar[list] = [
         "id",
         "created",
         "download_url",
@@ -193,7 +193,7 @@ class MockReport(MockModel):
 
 
 class MockRun(MockModel):
-    COLUMNS = [
+    COLUMNS: ClassVar[list] = [
         "id",
         "component",
         "created",
@@ -209,11 +209,11 @@ class MockRun(MockModel):
 
 
 class MockDashboard(MockModel):
-    COLUMNS = []
+    COLUMNS: ClassVar[list] = []
 
 
 class MockWidgetConfig(MockModel):
-    COLUMNS = [
+    COLUMNS: ClassVar[list] = [
         "id",
         "navigable",
         "params",
@@ -229,7 +229,7 @@ class MockWidgetConfig(MockModel):
 
 
 class MockUser(MockModel):
-    COLUMNS = ["id", "email", "password", "name", "group_id", "is_superadmin"]
+    COLUMNS: ClassVar[list] = ["id", "email", "password", "name", "group_id", "is_superadmin"]
 
     def check_password(self, plain):
         self._test_password = plain

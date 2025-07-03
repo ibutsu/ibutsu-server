@@ -29,12 +29,11 @@ def with_app_context(func):
         if has_app_context():
             # If we're already in an app context, just call the function
             return func(*args, **kwargs)
-        else:
-            # Otherwise, create an app context first
-            from ibutsu_server import get_app
+        # Otherwise, create an app context first
+        from ibutsu_server import get_app  # noqa: PLC0415
 
-            app = get_app().app
-            with app.app_context():
-                return func(*args, **kwargs)
+        app = get_app().app
+        with app.app_context():
+            return func(*args, **kwargs)
 
     return wrapper

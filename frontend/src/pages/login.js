@@ -26,7 +26,7 @@ import {
   RedhatIcon,
   KeyIcon,
 } from '@patternfly/react-icons';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import OAuth2Login from 'react-simple-oauth2-login';
 import FacebookLogin from '@greatsumini/react-facebook-login';
@@ -58,7 +58,7 @@ const getAlert = (location) => {
   return alert;
 };
 
-const getUser = (location) => {
+const getSearchUser = (location) => {
   const userProperties = ['name', 'email', 'token'];
   const urlParams = new URLSearchParams(location.search);
   let user = null;
@@ -75,6 +75,7 @@ const getUser = (location) => {
 
 const Login = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const context = useContext(IbutsuContext);
 
   const { setPrimaryObject } = context;
@@ -92,12 +93,12 @@ const Login = () => {
   const from = useMemo(() => getLocationFrom(location), [location]);
 
   useEffect(() => {
-    const user = getUser(location);
+    const user = getSearchUser(location);
     if (user) {
       AuthService.setUser(user);
-      window.location = '/';
+      navigate('/', { replace: true });
     }
-  }, [location]);
+  }, [location, navigate]);
 
   const onLoginButtonClick = useCallback(
     async (event) => {
@@ -123,7 +124,7 @@ const Login = () => {
           const isLoggedIn = await AuthService.login(emailValue, passwordValue);
           if (isLoggedIn) {
             setPrimaryObject();
-            window.location = from?.pathname;
+            navigate(from?.pathname || '/', { replace: true });
           } else {
             setAlertMessage({
               message: AuthService.loginError.message,
@@ -143,7 +144,7 @@ const Login = () => {
         setIsLoggingIn(false);
       }
     },
-    [emailValue, passwordValue, from, setPrimaryObject],
+    [emailValue, passwordValue, from, setPrimaryObject, navigate],
   );
 
   const onEnterKeyPress = useCallback(
@@ -159,9 +160,9 @@ const Login = () => {
     (response) => {
       setPrimaryObject();
       AuthService.setUser(response);
-      window.location = from?.pathname;
+      navigate(from?.pathname || '/', { replace: true });
     },
-    [from, setPrimaryObject],
+    [from, setPrimaryObject, navigate],
   );
 
   const onGoogleLogin = useCallback(
@@ -174,12 +175,12 @@ const Login = () => {
         const user = await res.json();
         setPrimaryObject();
         AuthService.setUser(user);
-        window.location = from?.pathname;
+        navigate(from?.pathname || '/', { replace: true });
       } catch (error) {
         console.error(error);
       }
     },
-    [externalLogins.google, from, setPrimaryObject],
+    [externalLogins.google, from, setPrimaryObject, navigate],
   );
 
   const onKeycloakLogin = useCallback(() => {

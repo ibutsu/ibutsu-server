@@ -4,9 +4,6 @@ from flask import json
 
 from ibutsu_server.test import BaseTestCase, MockWidgetConfig
 
-# from ibutsu_server.test import MockDashboard
-# from ibutsu_server.test import MockProject
-
 MOCK_ID = "91e750be-2ef2-4d85-a50e-2c9366cefd9f"
 MOCK_PROJECT_ID = "5ac7d645-45a3-4cbe-acb2-c8d6f7e05468"
 MOCK_DASHBOARD_ID = "5af74747-3b75-4b00-afc3-6304c6f255d7"
@@ -127,7 +124,8 @@ class TestWidgetConfigController(BaseTestCase):
         Get the list of widget_configs.
         """
         mock_all = MagicMock(return_value=[MOCK_WIDGET_CONFIG])
-        # TODO how to mock into the db.session.execute that's necessry for the query.scalers.all chain?
+        # TODO how to mock into the db.session.execute that's necessary
+        # for the query.scalers.all chain?
         mock_query = self.mock_widget_config.query
 
         mock_query.order_by.return_value.offset.return_value.limit.return_value.all = mock_all
@@ -184,7 +182,7 @@ class TestWidgetConfigController(BaseTestCase):
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
 
     def test_delete_widget_config_404(self):
-        """Test that trying to delete a non-existant widget_config throws a 404"""
+        """Test that trying to delete a non-existent widget_config throws a 404"""
         self.mock_widget_config.query.get.return_value = None
         headers = {
             "Accept": "application/json",
