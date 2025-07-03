@@ -29,7 +29,7 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
     old_id = None
     result_id = result.get("id")
     if is_uuid(result_id):
-        result_record = db.select(db.session)(Result).get(result_id)
+        result_record = db.session.get(Result, result_id)
     else:
         result_record = None
     if result_record:
@@ -67,11 +67,18 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
     return old_id
 
 
+@with_app_context
 def _update_import_status(import_record, status):
     """Update the status of the import"""
-    import_record.status = status
-    db.session.add(import_record)
-    db.session.commit()
+    # Make sure we have the latest data
+    import_obj = db.session.get(Import, import_record.id)
+    log.info(f"Updating import {import_record.id} status to {status}")
+    if import_obj:
+        import_obj.status = status
+        db.session.add(import_obj)
+        db.session.commit()
+    else:
+        log.error(f"Could not find import with ID {import_record.id} to update status to {status}")
 
 
 def _get_ts_element(tree):
@@ -392,14 +399,17 @@ def run_junit_import(import_):
 
 
 @task
+@with_app_context
 def run_archive_import(import_):
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
     import_record = db.session.get(Import, str(import_["id"]))
+    log.info(f"Starting archive import for import record {import_record.id}")
     metadata = {}
     if import_record.data.get("metadata"):
         # metadata is expected to be a json dict
         metadata = import_record.data["metadata"]
+    log.info("Setting import status to running")
     _update_import_status(import_record, "running")
     # Fetch the file contents
     import_file = db.session.execute(
@@ -460,7 +470,7 @@ def run_archive_import(import_):
 
         # If this run has a valid ID, check if this run exists
         if is_uuid(run_dict.get("id")):
-            run = db.select(db.session)(Run).get(run_dict["id"])
+            run = db.session.get(Run, run_dict["id"])
         if run:
             run.update(run_dict)
         else:
@@ -491,6 +501,7 @@ def run_archive_import(import_):
                 metadata=metadata,
             )
     # Update the import record
+    log.info("Setting import status to done")
     _update_import_status(import_record, "done")
     if run:
         update_run.delay(run.id)

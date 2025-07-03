@@ -234,12 +234,12 @@ def upgrade_6(current_session):
         existing_indexes = {idx.name for idx in results.indexes}
 
         # Composite index for common result filtering
-        if "ix_results_project_outcome_start" not in existing_indexes:
+        if "ix_results_project_result_start" not in existing_indexes:
             indexes_to_create.append(
                 {
-                    "name": "ix_results_project_outcome_start",
+                    "name": "ix_results_project_result_start",
                     "table": "results",
-                    "columns": ["project_id", "outcome", "start_time"],
+                    "columns": ["project_id", "result", "start_time"],
                 }
             )
 

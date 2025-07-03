@@ -1,7 +1,7 @@
 from sqlalchemy import func
 
 from ibutsu_server.db import db
-from ibutsu_server.db.base import Integer, session
+from ibutsu_server.db.base import Integer
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters
 
@@ -19,13 +19,15 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
         "xfailed": 0,
         "xpassed": 0,
     }
-    query = db.select(session)(
-        func.sum(Run.summary["errors"].cast(Integer)),
-        func.sum(Run.summary["skips"].cast(Integer)),
-        func.sum(Run.summary["failures"].cast(Integer)),
-        func.sum(Run.summary["tests"].cast(Integer)),
-        func.sum(Run.summary["xfailures"].cast(Integer)),
-        func.sum(Run.summary["xpasses"].cast(Integer)),
+    query = db.session.execute(
+        db.select(
+            func.sum(Run.summary["errors"].cast(Integer)),
+            func.sum(Run.summary["skips"].cast(Integer)),
+            func.sum(Run.summary["failures"].cast(Integer)),
+            func.sum(Run.summary["tests"].cast(Integer)),
+            func.sum(Run.summary["xfailures"].cast(Integer)),
+            func.sum(Run.summary["xpasses"].cast(Integer)),
+        )
     )
 
     # parse any filters
