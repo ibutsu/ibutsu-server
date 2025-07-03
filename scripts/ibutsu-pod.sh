@@ -305,7 +305,7 @@ if [[ $CREATE_PROJECT = true ]]; then
                     else
                         # Wait for import to complete with a retry limit
                         RETRY_COUNT=0
-                        MAX_RETRIES=10
+                        MAX_RETRIES=20
                         while [[ ("${IMPORT_STATUS}" == pending || "${IMPORT_STATUS}" == running) && ${RETRY_COUNT} -lt ${MAX_RETRIES} ]]; do
                             IMPORT_STATUS=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
                                 http://127.0.0.1:8080/api/import/${IMPORT_ID} | jq -r '.status')
@@ -440,7 +440,7 @@ if [[ $CREATE_PROJECT = true ]]; then
                     \"params\": {\"group_field\": \"result\", \
                                 \"chart_type\": \"donut\", \
                                 \"days\": 30, \
-                                \"additional_filters\": \"env*stage_proxy;stage\", \}}" \
+                                \"additional_filters\": \"env*stage_proxy;stage\"}}" \
             http://127.0.0.1:8080/api/widget-config | jq -r '.id')
         echo "  Result Aggregator ID: ${RESULT_AGGREGATOR}"
 

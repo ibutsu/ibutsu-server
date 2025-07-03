@@ -5,14 +5,15 @@ from flask import make_response, request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Report, ReportFile
 from ibutsu_server.tasks.reports import REPORTS
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
 
+@with_app_context
 def _build_report_response(id_):
     """Get a report and build a Response object
 
@@ -39,6 +40,7 @@ def get_report_types(token_info=None, user=None):
     return [{"type": key, "name": val["name"]} for key, val in REPORTS.items()]
 
 
+@with_app_context
 def add_report(report_parameters=None):
     """Create a new report
 
@@ -67,14 +69,15 @@ def add_report(report_parameters=None):
         report_dict["project_id"] = get_project_id(report_parameters["project"])
 
     report = Report.from_dict(**report_dict)
-    session.add(report)
-    session.commit()
+    db.session.add(report)
+    db.session.commit()
     report_dict.update(report.to_dict())
     REPORTS[report_parameters["type"]]["func"].delay(report_dict)
     return report_dict, HTTPStatus.CREATED
 
 
 @validate_uuid
+@with_app_context
 def get_report(id_, token_info=None, user=None):
     """Get a report
 
@@ -87,6 +90,7 @@ def get_report(id_, token_info=None, user=None):
     return report.to_dict()
 
 
+@with_app_context
 def get_report_list(page=1, page_size=25, project=None, token_info=None, user=None):
     """Get a list of reports
 
@@ -106,7 +110,11 @@ def get_report_list(page=1, page_size=25, project=None, token_info=None, user=No
         db.select(db.func.count()).select_from(query.select_from())
     ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    reports = query.order_by(Report.created.desc()).offset(offset).limit(page_size).all()
+    reports = (
+        db.session.execute(query.order_by(Report.created.desc()).offset(offset).limit(page_size))
+        .scalars()
+        .all()
+    )
     return {
         "reports": [report.to_dict() for report in reports],
         "pagination": {
@@ -119,6 +127,7 @@ def get_report_list(page=1, page_size=25, project=None, token_info=None, user=No
 
 
 @validate_uuid
+@with_app_context
 def delete_report(id_, user=None, token_info=None):
     """Deletes a report
 
@@ -134,10 +143,10 @@ def delete_report(id_, user=None, token_info=None):
     report_file = db.session.execute(
         db.select(ReportFile).where(ReportFile.report_id == report.id)
     ).scalar_one_or_none()
-    session.delete(report_file)
+    db.session.delete(report_file)
 
-    session.delete(report)
-    session.commit()
+    db.session.delete(report)
+    db.session.commit()
     return HTTPStatus.OK.phrase, HTTPStatus.OK
 
 

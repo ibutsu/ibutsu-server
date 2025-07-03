@@ -5,16 +5,17 @@ from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util import merge_dicts
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import add_user_filter, get_project, project_has_user
 from ibutsu_server.util.query import get_offset, query_as_task
 from ibutsu_server.util.uuid import validate_uuid
 
 
+@with_app_context
 def add_result(result=None, token_info=None, user=None):
     """Creates a test result
 
@@ -50,12 +51,13 @@ def add_result(result=None, token_info=None, user=None):
     result.run_id = result.data.get("run") if result.data else None
     result.start_time = result.start_time if result.start_time else datetime.utcnow()
 
-    session.add(result)
-    session.commit()
+    db.session.add(result)
+    db.session.commit()
     return result.to_dict(), HTTPStatus.CREATED
 
 
 @query_as_task
+@with_app_context
 def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_info=None, user=None):
     """Gets all results
 
@@ -124,7 +126,11 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
 
-    results = query.order_by(Result.start_time.desc()).offset(offset).limit(page_size).all()
+    results = (
+        db.session.execute(query.order_by(Result.start_time.desc()).offset(offset).limit(page_size))
+        .scalars()
+        .all()
+    )
     return {
         "results": [result.to_dict() for result in results],
         "pagination": {
@@ -137,6 +143,7 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
 
 
 @validate_uuid
+@with_app_context
 def get_result(id_, token_info=None, user=None):
     """Get a single result
 
@@ -154,6 +161,7 @@ def get_result(id_, token_info=None, user=None):
 
 
 @validate_uuid
+@with_app_context
 def update_result(id_, result=None, token_info=None, user=None, **kwargs):
     """Updates a single result
 
@@ -187,6 +195,6 @@ def update_result(id_, result=None, token_info=None, user=None, **kwargs):
     result.update(result_dict)
     result.env = result.data.get("env") if result.data else None
     result.component = result.data.get("component") if result.data else None
-    session.add(result)
-    session.commit()
+    db.session.add(result)
+    db.session.commit()
     return result.to_dict()

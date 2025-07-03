@@ -2,7 +2,7 @@ from sqlalchemy import case, desc, func
 
 from ibutsu_server.constants import HEATMAP_MAX_BUILDS, HEATMAP_RUN_LIMIT
 from ibutsu_server.db import db
-from ibutsu_server.db.base import Float, Integer, session
+from ibutsu_server.db.base import Float, Integer
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
 
@@ -57,7 +57,7 @@ def _get_builds(job_name, builds, project=None, additional_filters=None):
 
     # create the query
     query = (
-        session.query(
+        db.session.query(
             func.min(Run.start_time).label("min_start_time"),
             group_field.cast(Integer).label("build_number"),
         )
@@ -108,19 +108,21 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
     annotations = string_to_column("metadata.annotations", Run)
 
     # create the base query
-    query = db.select(session)(
-        Run.id.label("run_id"),
-        annotations.label("annotations"),
-        group_field.label("group_field"),
-        job_name.label("job_name"),
-        build_number.label("build_number"),
-        func.sum(Run.summary["failures"].cast(Float)).label("failures"),
-        func.sum(Run.summary["errors"].cast(Float)).label("errors"),
-        func.sum(Run.summary["skips"].cast(Float)).label("skips"),
-        func.sum(Run.summary["xfailures"].cast(Float)).label("xfailures"),
-        func.sum(Run.summary["xpasses"].cast(Float)).label("xpasses"),
-        func.sum(Run.summary["tests"].cast(Float)).label("total"),
-    ).group_by(group_field, job_name, build_number, Run.id)
+    query = db.session.execute(
+        db.select(
+            Run.id.label("run_id"),
+            annotations.label("annotations"),
+            group_field.label("group_field"),
+            job_name.label("job_name"),
+            build_number.label("build_number"),
+            func.sum(Run.summary["failures"].cast(Float)).label("failures"),
+            func.sum(Run.summary["errors"].cast(Float)).label("errors"),
+            func.sum(Run.summary["skips"].cast(Float)).label("skips"),
+            func.sum(Run.summary["xfailures"].cast(Float)).label("xfailures"),
+            func.sum(Run.summary["xpasses"].cast(Float)).label("xpasses"),
+            func.sum(Run.summary["tests"].cast(Float)).label("total"),
+        ).group_by(group_field, job_name, build_number, Run.id)
+    )
 
     # add filters to the query
     query = apply_filters(query, filters, Run)
@@ -142,22 +144,24 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
             subquery.c.errors + subquery.c.failures + subquery.c.xpasses + subquery.c.xfailures
         )
 
-    query = db.select(session)(
-        subquery.c.group_field,
-        subquery.c.build_number,
-        subquery.c.run_id,
-        subquery.c.annotations,
-        # handle potential division by 0 errors, if the total is 0, set the pass_percent to 0
-        case(
-            [
-                (subquery.c.total == 0, 0),
-            ],
-            else_=(100 * passes / subquery.c.total),
-        ).label("pass_percent"),
+    query = db.session.execute(
+        db.select(
+            subquery.c.group_field,
+            subquery.c.build_number,
+            subquery.c.run_id,
+            subquery.c.annotations,
+            # handle potential division by 0 errors, if the total is 0, set the pass_percent to 0
+            case(
+                [
+                    (subquery.c.total == 0, 0),
+                ],
+                else_=(100 * passes / subquery.c.total),
+            ).label("pass_percent"),
+        )
     )
 
     # parse the data for the frontend
-    query_data = query.all()
+    query_data = db.session.execute(query).scalars().all()
     data = {datum.group_field: [] for datum in query_data}
     for datum in query_data:
         data[datum.group_field].append(

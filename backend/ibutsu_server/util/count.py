@@ -4,12 +4,11 @@ from contextlib import contextmanager
 
 from ibutsu_server.constants import COUNT_ESTIMATE_LIMIT, COUNT_TIMEOUT
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.util import Explain
 
 
 def _get_count_from_explain(query):
-    explain_result = session.execute(Explain(query)).fetchall()[0][0]
+    explain_result = db.session.execute(Explain(query)).fetchall()[0][0]
     rows = int(explain_result.split("rows")[-1].split("=")[1].split(" ")[0])
     return rows
 
@@ -21,7 +20,7 @@ def get_count_estimate(query, no_filter=False, **kwargs):
     if no_filter:
         tablename = kwargs.get("tablename")
         sql = f"SELECT reltuples as approx_count FROM pg_class WHERE relname='{tablename}'"
-        return int(session.execute(sql).fetchall()[0][0])
+        return int(db.session.execute(sql).fetchall()[0][0])
     else:
         estimate = _get_count_from_explain(query)
         # if the estimate is < COUNT_ESTIMATE_LIMIT
@@ -42,6 +41,6 @@ def time_limited_db_operation(timeout=None):
     """
     timeout = int(timeout * 1000) if timeout else int(COUNT_TIMEOUT * 1000)
 
-    session.execute(f"SET statement_timeout TO {timeout}; commit;")
+    db.session.execute(f"SET statement_timeout TO {timeout}; commit;")
     yield
-    session.execute("SET statement_timeout TO 0; commit;")
+    db.session.execute("SET statement_timeout TO 0; commit;")

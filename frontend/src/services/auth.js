@@ -145,8 +145,10 @@ export class AuthService {
             Authorization: 'Bearer ' + user.token,
           },
         });
-        if (!response.ok) {
-          throw new Error(`User request not ok: ${response.message}`);
+        if (response.status === 401) {
+          // User is not authenticated, probably browser local storage has old token
+          AuthService.logout();
+          return Promise.resolve(false);
         }
         const json = await response.json();
         return json.is_superadmin;

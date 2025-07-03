@@ -2,7 +2,7 @@ from sqlalchemy import desc, func
 
 from ibutsu_server.constants import JJV_RUN_LIMIT
 from ibutsu_server.db import db
-from ibutsu_server.db.base import Integer, Text, session
+from ibutsu_server.db.base import Integer, Text
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
 
@@ -39,7 +39,7 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
 
     # create the base query
     query = (
-        session.query(
+        db.session.query(
             job_name.label("job_name"),
             build_number.label("build_number"),
             func.min(build_url.cast(Text)).label("build_url"),
@@ -65,7 +65,7 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
     query = apply_filters(query, filters, Run)
 
     # apply pagination and get data
-    query_data = query.offset(offset).limit(page_size).all()
+    query_data = db.session.execute(query.offset(offset).limit(page_size)).scalars().all()
 
     # parse the data for the frontend
     data = {

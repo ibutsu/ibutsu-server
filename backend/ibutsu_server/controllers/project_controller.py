@@ -5,14 +5,15 @@ from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project, Result, User
 from ibutsu_server.filters import convert_filter
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.projects import add_user_filter, project_has_user
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
 
 
+@with_app_context
 def add_project(project=None, token_info=None, user=None):
     """Create a project
 
@@ -31,12 +32,13 @@ def add_project(project=None, token_info=None, user=None):
     if user:
         project.owner = user
         project.users.append(user)
-    session.add(project)
-    session.commit()
+    db.session.add(project)
+    db.session.commit()
     return project.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
+@with_app_context
 def get_project(id_, token_info=None, user=None):
     """Get a single project by ID
 
@@ -57,6 +59,7 @@ def get_project(id_, token_info=None, user=None):
     return project.to_dict()
 
 
+@with_app_context
 def get_project_list(
     filter_=None,
     owner_id=None,
@@ -96,7 +99,7 @@ def get_project_list(
         db.select(db.func.count()).select_from(query.select_from())
     ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    projects = query.offset(offset).limit(page_size).all()
+    projects = db.session.execute(query.offset(offset).limit(page_size)).scalars().all()
     return {
         "projects": [project.to_dict() for project in projects],
         "pagination": {
@@ -109,6 +112,7 @@ def get_project_list(
 
 
 @validate_uuid
+@with_app_context
 def update_project(id_, project=None, token_info=None, user=None, **kwargs):
     """Update a project
 
@@ -143,12 +147,13 @@ def update_project(id_, project=None, token_info=None, user=None, **kwargs):
 
     # update the rest of the project info
     project.update(updates)
-    session.add(project)
-    session.commit()
+    db.session.add(project)
+    db.session.commit()
     return project.to_dict()
 
 
 @validate_uuid
+@with_app_context
 def get_filter_params(id_, user=None, token_info=None):
     """Get a list of filter parameters for a project
 
@@ -165,7 +170,7 @@ def get_filter_params(id_, user=None, token_info=None):
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
     result = (
-        session.query(Result)
+        db.session.query(Result)
         .filter(Result.project_id == id_)
         .order_by(Result.start_time.desc())
         .first()
