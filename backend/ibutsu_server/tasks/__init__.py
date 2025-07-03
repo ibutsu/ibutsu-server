@@ -1,7 +1,7 @@
 import logging
 from contextlib import contextmanager
 
-from celery import Celery, Task, signals
+from celery import Celery, Task, shared_task, signals
 from celery.schedules import crontab
 from flask import current_app
 from redis import Redis
@@ -12,26 +12,22 @@ from ibutsu_server.db.models import Report
 
 LOCK_EXPIRE = 1
 task = None
-_celery_app = None
 
 
 SOCKET_TIMEOUT = 5
 SOCKET_CONNECT_TIMEOUT = 5
 
 
-def create_celery_app(_app=None):
-    """Create the Celery app, using the Flask app in _app"""
-    global task, _celery_app
-
-    if _celery_app:
-        return _celery_app
+def create_celery_app(app=None):
+    """Create the Celery app, using the Flask app in app"""
+    global task
 
     class IbutsuTask(Task):
         abstract = True
 
         def __call__(self, *args, **kwargs):
-            with _app.app_context():
-                return super().__call__(*args, **kwargs)
+            with app.app_context():
+                return self.run(*args, **kwargs)
 
         def _set_report_error(self, report):
             report.status = "error"
@@ -61,7 +57,7 @@ def create_celery_app(_app=None):
             # if the task is related to a report, set that report to failed
             if isinstance(args[0], dict):
                 try:
-                    with _app.app_context():
+                    with app.app_context():
                         report_id = args[0].get("id")  # get the report ID from the task
                         report = ibutsu_db.session.get(Report, report_id)
                         # if this is actually a report ID, set it as an error
@@ -75,9 +71,9 @@ def create_celery_app(_app=None):
                 # the task is not related to a report
                 logging.info(f"Task {task_id} with args {args} is not related to a report")
 
-    app = Celery(
+    celery_app = Celery(
         "ibutsu_server",
-        broker=_app.config.get("CELERY_BROKER_URL"),
+        broker=app.config.get("CELERY_BROKER_URL"),
         broker_connection_retry=True,
         broker_connection_retry_on_startup=True,
         worker_cancel_long_running_tasks_on_connection_loss=True,
@@ -90,19 +86,21 @@ def create_celery_app(_app=None):
             "ibutsu_server.tasks.runs",
         ],
     )
-    app.conf.redis_socket_timeout = SOCKET_TIMEOUT
-    app.conf.redis_socket_connect_timeout = SOCKET_CONNECT_TIMEOUT
-    app.conf.redis_retry_on_timeout = True
-    app.conf.broker_transport_options = app.conf.result_backend_transport_options = {
+    celery_app.config_from_object(app.config, namespace="CELERY")
+    app.extensions["celery"] = celery_app
+    celery_app.conf.redis_socket_timeout = SOCKET_TIMEOUT
+    celery_app.conf.redis_socket_connect_timeout = SOCKET_CONNECT_TIMEOUT
+    celery_app.conf.redis_retry_on_timeout = True
+    celery_app.conf.broker_transport_options = app.conf.result_backend_transport_options = {
         "socket_timeout": SOCKET_TIMEOUT,
         "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
     }
-    app.conf.result_backend = _app.config.get("CELERY_RESULT_BACKEND")
-    app.Task = IbutsuTask
+    celery_app.conf.result_backend = app.config.get("CELERY_RESULT_BACKEND")
+    celery_app.Task = IbutsuTask
     # Shortcut for the decorator
-    task = app.task
+    task = celery_app.task
     # Add in any periodic tasks
-    app.conf.beat_schedule = {
+    celery_app.conf.beat_schedule = {
         "prune-old-artifact-files": {
             "task": "ibutsu_server.tasks.db.prune_old_files",
             "schedule": crontab(minute=0, hour=4, day_of_week=6),  # 4 am on Saturday, after DB dump
@@ -134,7 +132,7 @@ def create_celery_app(_app=None):
         backoff = min(2**task.request.retries, 3600)
         task.retry(countdown=backoff)
 
-    return app
+    return celery_app
 
 
 def get_redis_client(app=None):
@@ -168,4 +166,4 @@ def lock(name, timeout=LOCK_EXPIRE, app=None):
         logging.info(f"Task {name} is already locked, discarding")
 
 
-__all__ = ["create_celery_app", "lock", "task"]
+__all__ = ["create_celery_app", "lock", "task", "shared_task"]

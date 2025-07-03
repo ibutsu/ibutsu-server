@@ -2,12 +2,10 @@ import logging
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Result, Run
-from ibutsu_server.tasks import is_locked, lock, task
-from ibutsu_server.util.app_context import with_app_context
+from ibutsu_server.tasks import is_locked, lock, shared_task
 
 
-@task
-@with_app_context
+@shared_task
 def add_result_start_time(run_id):
     """Update all results in a run to add the 'start_time' field to a result"""
     if is_locked(run_id):

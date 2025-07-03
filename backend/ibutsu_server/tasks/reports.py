@@ -5,6 +5,7 @@ from csv import DictWriter
 from datetime import datetime
 from io import StringIO
 
+from celery import shared_task
 from flask import current_app
 from sqlalchemy.exc import OperationalError
 
@@ -12,9 +13,7 @@ from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Report, ReportFile, Result
 from ibutsu_server.filters import apply_filters
-from ibutsu_server.tasks import task
 from ibutsu_server.templating import render_template
-from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.projects import get_project_id
 
 TREE_ROOT = {
@@ -64,7 +63,7 @@ def _get_value(d, *keys):
     return d
 
 
-@with_app_context
+@shared_task
 def _update_report(report):
     """Update the report with the parameters, etc."""
     report_type = report["params"]["type"]
@@ -100,7 +99,7 @@ def _update_report(report):
     report.update(report_record.to_dict())
 
 
-@with_app_context
+@shared_task
 def _set_report_status(report_id, status):
     """Set a report's status"""
     report = db.session.get(Report, report_id)
@@ -122,7 +121,7 @@ def _set_report_empty(report):
     _set_report_status(report["id"], "empty")
 
 
-@with_app_context
+@shared_task
 def _build_query(report):
     """Build the filters from a report object"""
     query = db.select(Result)
@@ -137,7 +136,7 @@ def _build_query(report):
     return query
 
 
-@with_app_context
+@shared_task
 def _get_results(report):
     """Limit the number of documents to REPORT_MAX_DOCUMENTS so as not to crash the server."""
     query = _build_query(report)
@@ -349,8 +348,7 @@ def _exception_metadata_hack(result):
     return exception_name
 
 
-@task
-@with_app_context
+@shared_task
 def generate_csv_report(report):
     """Generate a CSV report"""
     _update_report(report)
@@ -382,8 +380,7 @@ def generate_csv_report(report):
     _set_report_done(report)
 
 
-@task
-@with_app_context
+@shared_task
 def generate_text_report(report):
     """Generate a text report"""
     _update_report(report)
@@ -431,8 +428,7 @@ def generate_text_report(report):
     _set_report_done(report)
 
 
-@task
-@with_app_context
+@shared_task
 def generate_json_report(report):
     """Generate a JSON report"""
     _update_report(report)
@@ -453,8 +449,7 @@ def generate_json_report(report):
     _set_report_done(report)
 
 
-@task
-@with_app_context
+@shared_task
 def generate_html_report(report):
     """Generate an HTML report"""
     _update_report(report)
@@ -500,8 +495,7 @@ def generate_html_report(report):
     _set_report_done(report)
 
 
-@task
-@with_app_context
+@shared_task
 def generate_exception_report(report):
     """Generate a text report"""
     _update_report(report)

@@ -4,15 +4,14 @@ import tarfile
 from datetime import datetime
 from io import BytesIO
 
+from celery import shared_task
 from celery.utils.log import get_task_logger
 from dateutil import parser
 from lxml import objectify
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
-from ibutsu_server.tasks import task
 from ibutsu_server.tasks.runs import update_run
-from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.uuid import is_uuid
 
@@ -23,7 +22,7 @@ uuid_pattern = re.compile(
 )
 
 
-@with_app_context
+@shared_task
 def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
     """Create a result with artifacts, used in the archive importer"""
     old_id = None
@@ -67,7 +66,7 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
     return old_id
 
 
-@with_app_context
+@shared_task
 def _update_import_status(import_record, status):
     """Update the status of the import"""
     # Make sure we have the latest data
@@ -117,7 +116,7 @@ def _process_result(result_dict, testcase):
     return result_dict, traceback
 
 
-@with_app_context
+@shared_task
 def _add_artifacts(result, testcase, traceback):
     """To reduce cognitive complexity"""
     if traceback:
@@ -214,8 +213,7 @@ def _get_test_name_path(testcase):
     return test_name, backup_fspath
 
 
-@task
-@with_app_context
+@shared_task
 def run_junit_import(import_):
     """Import a test run from a JUnit file"""
     # Update the status of the import
@@ -398,8 +396,7 @@ def run_junit_import(import_):
     _update_import_status(import_record, "done")
 
 
-@task
-@with_app_context
+@shared_task
 def run_archive_import(import_):
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
