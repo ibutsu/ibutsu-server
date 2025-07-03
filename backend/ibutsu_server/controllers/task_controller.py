@@ -20,10 +20,10 @@ def get_task(id_):
 
     :param id_: id of the task
     """
-    # lazy load the task app to avoid circular imports
-    from ibutsu_server.tasks.queues import app
+    # Use the global celery app instance
+    from ibutsu_server import celery_app
 
-    async_result = AsyncResult(id_, app=app)
+    async_result = AsyncResult(id_, app=celery_app)
     response = {"state": async_result.state}
 
     if async_result.state == "SUCCESS":

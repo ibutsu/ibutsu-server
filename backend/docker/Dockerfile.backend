@@ -17,5 +17,5 @@ RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 USER 1001
 
 # ASGI entrypoint
-# dev? CMD ["uvicorn", "ibutsu_server:app", "--host", "0.0.0.0", "--port", "8080"]
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "ibutsu_server:app"]
+# dev? CMD ["uvicorn", "ibutsu_server:connexion_app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "ibutsu_server:connexion_app"]

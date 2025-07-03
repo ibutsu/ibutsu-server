@@ -10,6 +10,7 @@ from flask import redirect, request
 from flask_mail import Mail
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL as SQLA_URL
+from starlette.middleware.cors import CORSMiddleware
 from yaml import full_load as yaml_load
 
 from ibutsu_server.auth import bcrypt
@@ -56,14 +57,15 @@ def make_celery_redis_url(config: flask.Config, *, envvar: str) -> str:
 
 
 def get_app(**extra_config):
-    """Create the WSGI application"""
+    """Create the WSGI application for ASGI wrapper"""
 
-    app = connexion.FlaskApp(
+    connexion_app = connexion.FlaskApp(
         __name__, specification_dir="./openapi/", jsonifier=IbutsuJSONProvider()
     )
-
-    # Shortcut
-    config: flask.Config = app.app.config
+    # Get the underlying Flask app (connexion_app is the Connexion wrapper, flask_app is the actual Flask application)
+    flask_app = connexion_app.app
+    # Shortcut to the Flask app config
+    config: flask.Config = flask_app.config
     config.setdefault("BCRYPT_LOG_ROUNDS", 12)
     config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False)
     config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
@@ -116,37 +118,54 @@ def get_app(**extra_config):
     # Load any extra config
     config.update(extra_config)
 
-    create_celery_app(app.app)
+    # Configure Celery in the Flask app config
+    config.from_mapping(
+        CELERY=dict(
+            broker=config.get("CELERY_BROKER_URL"),
+            broker_connection_retry=True,
+            broker_connection_retry_on_startup=True,
+            worker_cancel_long_running_tasks_on_connection_loss=True,
+            include=[
+                "ibutsu_server.tasks.db",
+                "ibutsu_server.tasks.importers",
+                "ibutsu_server.tasks.query",
+                "ibutsu_server.tasks.reports",
+                "ibutsu_server.tasks.results",
+                "ibutsu_server.tasks.runs",
+            ],
+        )
+    )
+    flask_app.config.from_prefixed_env()
 
     # Configure CORS middleware for Connexion 3 - MUST be before routes are added
     from connexion.middleware import MiddlewarePosition
-    from starlette.middleware.cors import CORSMiddleware
 
     from ibutsu_server.db import db
 
+    create_celery_app(flask_app)
+
     # Apply the middleware first, before routes
-    app.add_middleware(
+    connexion_app.add_middleware(
         CORSMiddleware,
-        position=MiddlewarePosition.BEFORE_ROUTING,  # Changed to BEFORE_ROUTING
+        position=MiddlewarePosition.BEFORE_ROUTING,
         allow_origins=["*"],
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-        allow_headers=["Content-Type", "Authorization", "*"],
-        expose_headers=["Content-Type", "Authorization"],
+        allow_methods=["ADD", "DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"],
+        allow_headers=["*"],
         allow_credentials=True,
     )
 
     # Add API routes after middleware
-    app.add_api(
+    connexion_app.add_api(
         "openapi.yaml", arguments={"title": "Ibutsu"}, base_path="/api", pythonic_params=True
     )
 
     # Initialize Flask extensions on the underlying Flask app
-    db.init_app(app.app)
-    bcrypt.init_app(app.app)
-    Mail(app.app)
+    db.init_app(flask_app)
+    bcrypt.init_app(flask_app)
+    Mail(flask_app)
 
     # Add Flask level CORS support for any Flask routes
-    @app.app.after_request
+    @flask_app.after_request
     def add_cors_headers(response):
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, *")
@@ -157,9 +176,9 @@ def get_app(**extra_config):
         return response
 
     # Add explicit handling for OPTIONS requests at the Flask level
-    @app.app.route("/api/<path:path>", methods=["OPTIONS"])
+    @flask_app.route("/api/<path:path>", methods=["OPTIONS"])
     def options_handler(path):
-        response = app.app.make_response("")
+        response = flask_app.make_response("")
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, *")
         response.headers.add(
@@ -168,7 +187,7 @@ def get_app(**extra_config):
         response.headers.add("Access-Control-Allow-Credentials", "true")
         return response
 
-    with app.app.app_context():
+    with flask_app.app_context():
         db.create_all()
         upgrade_db(db.session, upgrades)
         # add a superadmin user
@@ -176,11 +195,11 @@ def get_app(**extra_config):
         if superadmin_data := config.get_namespace("IBUTSU_SUPERADMIN_"):
             add_superadmin(db.session, **superadmin_data)
 
-    @app.route("/")
+    @flask_app.route("/")
     def index():
         return redirect("/api/ui/", code=HTTPStatus.FOUND)
 
-    @app.route("/admin/run-task", methods=["POST"])
+    @flask_app.route("/admin/run-task", methods=["POST"])
     def run_task():
         # get params
         params = request.get_json(force=True, silent=True)
@@ -195,7 +214,7 @@ def get_app(**extra_config):
         if not user_id:
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
         # db.session usage inside an app.route needs app context
-        with app.app.app_context():
+        with flask_app.app_context():
             user = db.session.get(User, user_id)
             if not user or not user.is_superadmin:
                 return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
@@ -215,8 +234,17 @@ def get_app(**extra_config):
         task.delay(**task_params)
         return HTTPStatus.ACCEPTED.phrase, HTTPStatus.ACCEPTED
 
-    return app  # Return Connexion app, not Flask app
+    return connexion_app  # Return Connexion app, not Flask app
 
 
 # ASGI app instance for uvicorn
-app = get_app()
+connexion_app = get_app()
+
+# Get the Flask app instance for direct use in Celery tasks
+flask_app = connexion_app.app
+
+# Now we can directly access the celery extension
+celery_app = flask_app.extensions["celery"]
+
+# Export the app instances directly for use in celery tasks
+__all__ = ["connexion_app", "flask_app", "celery_app"]

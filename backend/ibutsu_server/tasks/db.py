@@ -2,14 +2,12 @@ from datetime import datetime, timedelta
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Project, Result, Run, User
-from ibutsu_server.tasks import task
-from ibutsu_server.util.app_context import with_app_context
+from ibutsu_server.tasks import shared_task
 
 DAYS_IN_MONTH = 30
 
 
-@task
-@with_app_context
+@shared_task
 def prune_old_files(months=5):
     """Delete artifact files older than specified months (here defined as 30 days)."""
     try:
@@ -30,8 +28,7 @@ def prune_old_files(months=5):
         return
 
 
-@task
-@with_app_context
+@shared_task
 def prune_old_results(months=6):
     """
     Remove results older than specified months (here defined as 30 days).
@@ -57,8 +54,7 @@ def prune_old_results(months=6):
         return
 
 
-@task
-@with_app_context
+@shared_task
 def prune_old_runs(months=12):
     """
     Remove runs older than specified months (here defined as 30 days).
@@ -84,8 +80,7 @@ def prune_old_runs(months=12):
         return
 
 
-@task
-@with_app_context
+@shared_task
 def seed_users(projects):
     """
     Add users and add users to projects in database.
@@ -160,6 +155,7 @@ def seed_users(projects):
 
                 db.session.add(user)
             db.session.commit()
+
     except Exception as e:
         # we don't want to continually retry this task
         print(e)

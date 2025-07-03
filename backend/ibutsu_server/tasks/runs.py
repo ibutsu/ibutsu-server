@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 from ibutsu_server.constants import SYNC_RUN_TIME
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Result, Run
-from ibutsu_server.tasks import is_locked, lock, task
-from ibutsu_server.util.app_context import with_app_context
+from ibutsu_server.tasks import shared_task
+from ibutsu_server.util.redis_lock import is_locked, lock
 
 METADATA_TO_COPY = ["jenkins", "tags"]
 COLUMNS_TO_COPY = ["start_time", "env", "component", "project_id", "source"]
@@ -32,8 +32,7 @@ def _status_to_summary(status):
     }.get(status, status)
 
 
-@task(max_retries=1000)
-@with_app_context
+@shared_task(max_retries=1000)
 def update_run(run_id):
     """Update the run summary from the results, this task will retry 1000 times"""
     if is_locked(run_id):
@@ -100,8 +99,7 @@ def update_run(run_id):
         db.session.commit()
 
 
-@task(max_retries=1)
-@with_app_context
+@shared_task(max_retries=1)
 def sync_aborted_runs():
     """
     When test runs are prematurely aborted, e.g. due to a connection failure or outage, the number
