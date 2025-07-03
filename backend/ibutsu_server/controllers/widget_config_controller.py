@@ -7,6 +7,7 @@ from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, RESPONSE_JSON_REQ, WI
 from ibutsu_server.db import db
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.filters import convert_filter
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.projects import get_project, project_has_user
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
@@ -14,6 +15,7 @@ from ibutsu_server.util.uuid import validate_uuid
 # TODO: pydantic validation of request data structure
 
 
+@with_app_context
 def add_widget_config(widget_config=None, token_info=None, user=None):
     """Create a new widget config
 
@@ -49,6 +51,7 @@ def add_widget_config(widget_config=None, token_info=None, user=None):
 
 
 @validate_uuid
+@with_app_context
 def get_widget_config(id_, token_info=None, user=None):
     """Get a widget
 
@@ -63,6 +66,7 @@ def get_widget_config(id_, token_info=None, user=None):
     return widget_config.to_dict()
 
 
+@with_app_context
 def get_widget_config_list(filter_=None, page=1, page_size=25):
     """Get a list of widgets
 
@@ -111,6 +115,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
 
 
 @validate_uuid
+@with_app_context
 def update_widget_config(id_, body=None, widget_config=None, token_info=None, user=None):
     """Updates a single widget config
 
@@ -150,6 +155,7 @@ def update_widget_config(id_, body=None, widget_config=None, token_info=None, us
 
 
 @validate_uuid
+@with_app_context
 def delete_widget_config(id_, token_info=None, user=None):
     """Deletes a widget
 

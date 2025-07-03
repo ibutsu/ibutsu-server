@@ -4,14 +4,15 @@ from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Dashboard, Project, User, WidgetConfig
 from ibutsu_server.filters import convert_filter
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.projects import project_has_user
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
 
+@with_app_context
 def add_dashboard(dashboard=None, token_info=None, user=None):
     """Create a dashboard
 
@@ -27,12 +28,13 @@ def add_dashboard(dashboard=None, token_info=None, user=None):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     if dashboard.user_id and not db.session.get(User, dashboard.user_id):
         return f"User with ID {dashboard.user_id} doesn't exist", HTTPStatus.BAD_REQUEST
-    session.add(dashboard)
-    session.commit()
+    db.session.add(dashboard)
+    db.session.commit()
     return dashboard.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
+@with_app_context
 def get_dashboard(id_, token_info=None, user=None):
     """Get a single dashboard by ID
 
@@ -49,6 +51,7 @@ def get_dashboard(id_, token_info=None, user=None):
     return dashboard.to_dict()
 
 
+@with_app_context
 def get_dashboard_list(
     filter_=None, project_id=None, page=1, page_size=25, token_info=None, user=None
 ):
@@ -99,6 +102,7 @@ def get_dashboard_list(
 
 
 @validate_uuid
+@with_app_context
 def update_dashboard(id_, dashboard=None, token_info=None, user=None):
     """Update a dashboard
 
@@ -122,12 +126,13 @@ def update_dashboard(id_, dashboard=None, token_info=None, user=None):
     if not project_has_user(dashboard.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     dashboard.update(request.get_json())
-    session.add(dashboard)
-    session.commit()
+    db.session.add(dashboard)
+    db.session.commit()
     return dashboard.to_dict()
 
 
 @validate_uuid
+@with_app_context
 def delete_dashboard(id_, token_info=None, user=None):
     """Deletes a dashboard
 
@@ -145,7 +150,7 @@ def delete_dashboard(id_, token_info=None, user=None):
         db.select(WidgetConfig).where(WidgetConfig.dashboard_id == dashboard.id)
     ).scalars()
     for widget_config in widget_configs:
-        session.delete(widget_config)
-    session.delete(dashboard)
-    session.commit()
+        db.session.delete(widget_config)
+    db.session.delete(dashboard)
+    db.session.commit()
     return HTTPStatus.OK.phrase, HTTPStatus.OK

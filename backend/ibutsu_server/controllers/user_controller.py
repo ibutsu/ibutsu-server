@@ -5,8 +5,8 @@ from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.jwt import generate_token
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
@@ -24,6 +24,7 @@ def _hide_sensitive_fields(user_dict):
     return user_dict
 
 
+@with_app_context
 def get_current_user(token_info=None, user=None):
     """Return the current user"""
     user = db.session.get(User, user)
@@ -33,6 +34,7 @@ def get_current_user(token_info=None, user=None):
     return _hide_sensitive_fields(user.to_dict())
 
 
+@with_app_context
 def update_current_user(token_info=None, user=None):
     """Return the current user"""
     user = db.session.get(User, user)
@@ -41,11 +43,12 @@ def update_current_user(token_info=None, user=None):
     user_dict = request.get_json()
     user_dict.pop("is_superadmin", None)
     user.update(user_dict)
-    session.add(user)
-    session.commit()
+    db.session.add(user)
+    db.session.commit()
     return _hide_sensitive_fields(user.to_dict())
 
 
+@with_app_context
 def get_token_list(page=1, page_size=25, token_info=None, user=None):
     """Get a list of tokens
 
@@ -78,6 +81,7 @@ def get_token_list(page=1, page_size=25, token_info=None, user=None):
 
 
 @validate_uuid
+@with_app_context
 def get_token(id_, token_info=None, user=None):
     """Get a token
 
@@ -94,6 +98,7 @@ def get_token(id_, token_info=None, user=None):
 
 
 @validate_uuid
+@with_app_context
 def delete_token(id_, token_info=None, user=None):
     """Delete a token
 
@@ -106,11 +111,12 @@ def delete_token(id_, token_info=None, user=None):
     token = db.session.get(Token, id_)
     if token.user != user:
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-    session.delete(token)
-    session.commit()
+    db.session.delete(token)
+    db.session.commit()
     return HTTPStatus.OK.phrase, HTTPStatus.OK
 
 
+@with_app_context
 def add_token(token=None, token_info=None, user=None):
     """Create a new token
 
@@ -129,6 +135,6 @@ def add_token(token=None, token_info=None, user=None):
     token.expires = datetime.fromisoformat(token.expires.replace("Z", "+00:00"))
     token.token = generate_token(user.id, token.expires.timestamp())
 
-    session.add(token)
-    session.commit()
+    db.session.add(token)
+    db.session.commit()
     return token.to_dict(), HTTPStatus.CREATED

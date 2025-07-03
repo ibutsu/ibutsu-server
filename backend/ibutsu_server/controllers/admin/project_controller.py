@@ -5,7 +5,6 @@ from flask import abort
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Group, Project, User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.admin import check_user_is_admin
@@ -37,8 +36,8 @@ def admin_add_project(project=None, token_info=None, user=None):
     if user:
         project.owner = user
         project.users.append(user)
-    session.add(project)
-    session.commit()
+    db.session.add(project)
+    db.session.commit()
     return project.to_dict(), HTTPStatus.CREATED
 
 
@@ -159,8 +158,8 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
 
     # update the rest of the project info
     project.update(project_dict)
-    session.add(project)
-    session.commit()
+    db.session.add(project)
+    db.session.commit()
     return project.to_dict()
 
 
@@ -173,6 +172,6 @@ def admin_delete_project(id_, token_info=None, user=None):
     project = db.session.get(Project, id_)
     if not project:
         abort(HTTPStatus.NOT_FOUND)
-    session.delete(project)
-    session.commit()
+    db.session.delete(project)
+    db.session.commit()
     return HTTPStatus.OK.phrase, HTTPStatus.OK

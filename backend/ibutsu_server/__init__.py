@@ -130,18 +130,43 @@ def get_app(**extra_config):
 
     from ibutsu_server.db import db
 
+    # Configure CORS middleware with explicit OPTIONS handling
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
         allow_headers=["*"],
+        expose_headers=["Content-Type", "Authorization"],
+        max_age=600,  # Cache preflight requests for 10 minutes
     )
+
+    # Import the ensure_app_context decorator
+    from ibutsu_server.util.app_context import ensure_app_context
 
     # Initialize Flask extensions on the underlying Flask app
     db.init_app(app.app)
     bcrypt.init_app(app.app)
     Mail(app.app)
+
+    # Auto-wrap controller functions to ensure app context is always available
+    # This is critical for Flask-SQLAlchemy 3.0+ compatibility
+    import importlib
+    import inspect
+    import pkgutil
+
+    import ibutsu_server.controllers as controllers
+
+    # Find all controller modules and wrap their functions
+    for _, module_name, is_pkg in pkgutil.iter_modules(controllers.__path__):
+        if module_name.endswith("_controller"):
+            full_name = f"ibutsu_server.controllers.{module_name}"
+            module = importlib.import_module(full_name)
+            for name, obj in inspect.getmembers(module):
+                if inspect.isfunction(obj) and not name.startswith("_"):
+                    # Only wrap if not already wrapped
+                    if not hasattr(obj, "__wrapped__"):
+                        setattr(module, name, ensure_app_context(obj))
 
     with app.app.app_context():
         db.create_all()

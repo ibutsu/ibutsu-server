@@ -4,12 +4,13 @@ from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Group
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import is_uuid, validate_uuid
 
 
+@with_app_context
 def add_group(group=None):
     """Create a new group
 
@@ -25,12 +26,13 @@ def add_group(group=None):
         return f"The group with ID {group.id} already exists", HTTPStatus.BAD_REQUEST
     if not is_uuid(group.id):
         return f"Group ID {group.id} is not in UUID format", HTTPStatus.BAD_REQUEST
-    session.add(group)
-    session.commit()
+    db.session.add(group)
+    db.session.commit()
     return group.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
+@with_app_context
 def get_group(id_, token_info=None, user=None):
     """Get a group
 
@@ -46,6 +48,7 @@ def get_group(id_, token_info=None, user=None):
         return "Group not found", HTTPStatus.NOT_FOUND
 
 
+@with_app_context
 def get_group_list(page=1, page_size=25, token_info=None, user=None):
     """Get a list of groups
 
@@ -76,6 +79,7 @@ def get_group_list(page=1, page_size=25, token_info=None, user=None):
     }
 
 
+@with_app_context
 @validate_uuid
 def update_group(id_, group=None, **kwargs):
     """Update a group
@@ -95,6 +99,6 @@ def update_group(id_, group=None, **kwargs):
     if not group:
         return "Group not found", HTTPStatus.NOT_FOUND
     group.update(request.get_json())
-    session.add(group)
-    session.commit()
+    db.session.add(group)
+    db.session.commit()
     return group.to_dict()
