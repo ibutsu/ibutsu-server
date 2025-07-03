@@ -1,10 +1,9 @@
 import logging
 
-from celery import shared_task
-
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Result, Run
-from ibutsu_server.tasks import is_locked, lock
+from ibutsu_server.tasks import shared_task
+from ibutsu_server.util.redis_lock import is_locked, lock
 
 
 @shared_task

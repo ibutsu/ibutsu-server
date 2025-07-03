@@ -5,7 +5,6 @@ from csv import DictWriter
 from datetime import datetime
 from io import StringIO
 
-from celery import shared_task
 from flask import current_app
 from sqlalchemy.exc import OperationalError
 
@@ -13,6 +12,7 @@ from ibutsu_server.constants import LOCALHOST
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Report, ReportFile, Result
 from ibutsu_server.filters import apply_filters
+from ibutsu_server.tasks import shared_task
 from ibutsu_server.templating import render_template
 from ibutsu_server.util.projects import get_project_id
 

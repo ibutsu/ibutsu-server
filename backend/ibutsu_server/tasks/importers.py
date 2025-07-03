@@ -4,13 +4,13 @@ import tarfile
 from datetime import datetime
 from io import BytesIO
 
-from celery import shared_task
 from celery.utils.log import get_task_logger
 from dateutil import parser
 from lxml import objectify
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
+from ibutsu_server.tasks import shared_task
 from ibutsu_server.tasks.runs import update_run
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.uuid import is_uuid

@@ -6,11 +6,12 @@ export class AuthService {
   static recoverError = null;
 
   static async isLoggedIn() {
-    return Boolean(await AuthService.getToken());
+    return Boolean(await AuthService.getCurrentUser());
   }
 
   static getLocalUser() {
     let user = localStorage.getItem('user');
+    console.log('getLocalUser', user);
     if (user) {
       return JSON.parse(user);
     }
@@ -18,6 +19,7 @@ export class AuthService {
   }
 
   static async getCurrentUser(user = null) {
+    console.log('getCurrentUser', user);
     if (!user) {
       user = AuthService.getLocalUser();
     }
@@ -28,6 +30,7 @@ export class AuthService {
           Authorization: 'Bearer ' + user.token,
         },
       });
+      console.log('getCurrentUser response', response);
       if (response.ok) {
         return Promise.resolve(user);
       }
@@ -45,8 +48,10 @@ export class AuthService {
 
   static async getToken() {
     let user = AuthService.getLocalUser();
+    console.log('getToken', user);
     if (user?.token) {
-      return await AuthService.getCurrentUser(user);
+      const userObj = await AuthService.getCurrentUser(user);
+      return userObj?.token || null;
     }
     return null;
   }

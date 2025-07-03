@@ -1,79 +1,23 @@
 import logging
-from contextlib import contextmanager
 
-from celery import Celery, Task, shared_task, signals
+from celery import Celery, signals
 from celery.schedules import crontab
-from flask import current_app
-from redis import Redis
-from redis.exceptions import LockError
 
-from ibutsu_server.db import db as ibutsu_db  # Rename import to avoid collision
-from ibutsu_server.db.models import Report
-
-LOCK_EXPIRE = 1
-
-
-SOCKET_TIMEOUT = 5
-SOCKET_CONNECT_TIMEOUT = 5
+from ibutsu_server.constants import SOCKET_CONNECT_TIMEOUT, SOCKET_TIMEOUT
+from ibutsu_server.util.celery_task import IbutsuTask, set_flask_app, shared_task
 
 
 def create_celery_app(app=None):
     """Create the Celery app, using the Flask app in app"""
-
-    class IbutsuTask(Task):
-        abstract = True
-
-        def __call__(self, *args, **kwargs):
-            with app.app_context():
-                return self.run(*args, **kwargs)
-
-        def _set_report_error(self, report):
-            report.status = "error"
-            ibutsu_db.session.add(report)
-            ibutsu_db.session.commit()
-
-        def after_return(self, status, retval, task_id, args, kwargs, einfo):
-            """
-            After each Celery task, teardown our db session.
-            FMI: https://gist.github.com/twolfson/a1b329e9353f9b575131
-            Flask-SQLAlchemy uses create_scoped_session at startup which avoids any setup on a
-            per-request basis. This means Celery can piggyback off of this initialization.
-
-            Note: SQLALCHEMY_COMMIT_ON_TEARDOWN is deprecated in Flask-SQLAlchemy 3.0+
-            We now explicitly commit only on successful completion.
-            """
-            # Commit only on successful completion (no exception)
-            if not isinstance(retval, Exception):
-                try:
-                    ibutsu_db.session.commit()
-                except Exception:
-                    ibutsu_db.session.rollback()
-                    raise
-            ibutsu_db.session.remove()
-
-        def on_failure(self, exc, task_id, args, kwargs, einfo):
-            # if the task is related to a report, set that report to failed
-            if isinstance(args[0], dict):
-                try:
-                    with app.app_context():
-                        report_id = args[0].get("id")  # get the report ID from the task
-                        report = ibutsu_db.session.get(Report, report_id)
-                        # if this is actually a report ID, set it as an error
-                        if report:
-                            self._set_report_error(report)
-                except AttributeError as e:
-                    logging.error(f"Attribute error: {e}. Args are {args}")
-                except (IndexError, TypeError):
-                    pass
-            else:
-                # the task is not related to a report
-                logging.info(f"Task {task_id} with args {args} is not related to a report")
-
+    # Store the Flask app globally so it's available to our custom IbutsuTask class
+    if app is not None:
+        set_flask_app(app)
     celery_app = Celery(
         "ibutsu_server",
         task_cls=IbutsuTask,
     )
     celery_app.config_from_object(app.config, namespace="CELERY")
+    celery_app.set_default()
     app.extensions["celery"] = celery_app
     celery_app.conf.redis_socket_timeout = SOCKET_TIMEOUT
     celery_app.conf.redis_socket_connect_timeout = SOCKET_CONNECT_TIMEOUT
@@ -83,16 +27,17 @@ def create_celery_app(app=None):
         "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
     }
     celery_app.conf.result_backend = app.config.get("CELERY_RESULT_BACKEND")
-    celery_app.Task = IbutsuTask
-    # TODO OLD PATTERN
+
     # Make sure all task modules are imported so tasks are registered
     # This is crucial for Celery task discovery
-    # import ibutsu_server.tasks.db
-    # import ibutsu_server.tasks.importers
-    # import ibutsu_server.tasks.query
-    # import ibutsu_server.tasks.reports
-    # import ibutsu_server.tasks.results
-    # import ibutsu_server.tasks.runs
+    import ibutsu_server.tasks.db  # noqa: F401
+    import ibutsu_server.tasks.importers  # noqa: F401
+    import ibutsu_server.tasks.query  # noqa: F401
+    import ibutsu_server.tasks.reports  # noqa: F401
+    import ibutsu_server.tasks.results  # noqa: F401
+    import ibutsu_server.tasks.runs  # noqa: F401
+
+    celery_app.Task = IbutsuTask
 
     # Add in any periodic tasks
     celery_app.conf.beat_schedule = {
@@ -130,35 +75,6 @@ def create_celery_app(app=None):
     return celery_app
 
 
-def get_redis_client(app=None):
-    if not app:
-        app = current_app
+# Export shared_task is already imported from ibutsu_server.util.celery_task at the top
 
-    redis_client = Redis.from_url(
-        app.config["CELERY_BROKER_URL"],
-        socket_timeout=SOCKET_TIMEOUT,
-        socket_connect_timeout=SOCKET_CONNECT_TIMEOUT,
-    )
-    return redis_client
-
-
-def is_locked(name, app=None):
-    radis_client = get_redis_client(app=app)
-    return radis_client.exists(name)
-
-
-@contextmanager
-def lock(name, timeout=LOCK_EXPIRE, app=None):
-    redis_client = get_redis_client(app=app)
-
-    try:
-        # Get a lock so that we don't run this task concurrently
-        logging.info(f"Trying to get a lock for {name}")
-        with redis_client.lock(name, blocking_timeout=timeout):
-            yield
-    except LockError:
-        # If this task is locked, discard it so that it doesn't clog up the system
-        logging.info(f"Task {name} is already locked, discarding")
-
-
-__all__ = ["create_celery_app", "lock", "shared_task"]
+__all__ = ["create_celery_app", "shared_task"]

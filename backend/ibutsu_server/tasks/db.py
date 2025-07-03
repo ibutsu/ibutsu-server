@@ -1,9 +1,8 @@
 from datetime import datetime, timedelta
 
-from celery import shared_task
-
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Project, Result, Run, User
+from ibutsu_server.tasks import shared_task
 
 DAYS_IN_MONTH = 30
 
