@@ -5,6 +5,7 @@ from ibutsu_server.db import db
 from ibutsu_server.db.base import Float
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.util.uuid import is_uuid
 
 NO_RUN_TEXT = "None"
 NO_PASS_RATE_TEXT = "Build failed"
@@ -35,7 +36,7 @@ def _calculate_slope(x_data):
 def _get_heatmap(filters, builds, group_field, project=None):
     """Get Filtered Heatmap Data."""
     filters = filters.split(",")
-    if project:
+    if project and is_uuid(project):
         filters.append(f"project_id={project}")
 
     # generate the group_field

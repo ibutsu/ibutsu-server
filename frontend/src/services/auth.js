@@ -31,7 +31,10 @@ export class AuthService {
         return false;
       }
     } catch (error) {
-      console.error('Token validation failed:', error);
+      console.error(
+        'AuthService.isLoggedIn: Token validation failed with error:',
+        error,
+      );
       AuthService._tokenValidated = false;
       AuthService._cachedUser = null;
       return false;
@@ -40,7 +43,7 @@ export class AuthService {
 
   static getLocalUser() {
     let user = localStorage.getItem('user');
-    console.log('getLocalUser', user);
+
     if (user) {
       return JSON.parse(user);
     }
@@ -48,7 +51,6 @@ export class AuthService {
   }
 
   static async getCurrentUser(user = null) {
-    console.log('getCurrentUser', user);
     if (!user) {
       user = AuthService.getLocalUser();
     }
@@ -64,7 +66,7 @@ export class AuthService {
           Authorization: 'Bearer ' + user.token,
         },
       });
-      console.log('getCurrentUser response', response);
+
       if (response.ok) {
         const userData = await response.json();
         // Merge the server data with the local token
@@ -94,7 +96,7 @@ export class AuthService {
     }
 
     let user = AuthService.getLocalUser();
-    console.log('getToken', user);
+
     if (user?.token) {
       // Validate token before returning it
       const userObj = await AuthService.getCurrentUser(user);
@@ -198,11 +200,13 @@ export class AuthService {
       });
 
       const json = await response.json();
+
       if (json.token) {
         AuthService.setUser(json);
         // Reset validation flags on successful login
         AuthService._tokenValidated = true;
         AuthService._cachedUser = json;
+
         return true;
       } else if (json.code) {
         AuthService.loginError = json;
@@ -211,7 +215,7 @@ export class AuthService {
         return false;
       }
     } catch (error) {
-      console.error(error);
+      console.error('AuthService.login: Network error during login:', error);
       AuthService.loginError = { message: 'Network error during login' };
       return false;
     }
