@@ -6,7 +6,6 @@ from flask_testing import TestCase
 
 import ibutsu_server.tasks
 from ibutsu_server import get_app
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
 from ibutsu_server.tasks import create_celery_app
 from ibutsu_server.util import merge_dicts
@@ -54,16 +53,18 @@ class BaseTestCase(TestCase):
         app = get_app(**extra_config)
         create_celery_app(app)
 
+        from ibutsu_server.db import db
+
         # Add a test user
         with app.app_context():
             self.test_user = User(name="Test User", email="test@example.com", is_active=True)
-            session.add(self.test_user)
-            session.commit()
+            db.session.add(self.test_user)
+            db.session.commit()
             self.jwt_token = generate_token(self.test_user.id)
             token = Token(name="login-token", user=self.test_user, token=self.jwt_token)
-            session.add(token)
-            session.commit()
-            session.refresh(self.test_user)
+            db.session.add(token)
+            db.session.commit()
+            db.session.refresh(self.test_user)
 
         if ibutsu_server.tasks.task is None:
             ibutsu_server.tasks.task = mock_task

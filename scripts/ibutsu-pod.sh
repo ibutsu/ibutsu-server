@@ -12,7 +12,7 @@ IMPORT_FILES=true
 POSTGRES_EXTRA_ARGS=
 REDIS_EXTRA_ARGS=
 BACKEND_EXTRA_ARGS=
-PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-39:latest
+PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-311:latest
 
 ADMIN_EMAIL="admin@example.com"
 ADMIN_PASSWORD="admin12345"
@@ -198,8 +198,9 @@ podman run -d \
     -v ./backend:/mnt/:z \
     $PYTHON_IMAGE \
     /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
-                    pip install . &&
-                    python -m ibutsu_server --host 0.0.0.0'
+                  pip install . &&
+                  ls -lh /mnt &&
+                  uvicorn ibutsu_server:connexion_app --host 0.0.0.0 --port 8080 --reload --workers 1'
 echo -n "Waiting for backend to respond: "
 sleep 5
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); do
@@ -229,7 +230,7 @@ podman run -d \
     $PYTHON_IMAGE \
     /bin/bash -c 'pip install -U pip wheel &&
                     pip install . &&
-                    ./celery_worker.sh'
+                    celery --app ibutsu_server.celery_app --no-color worker --events'
 echo -n "Waiting for celery to respond: "
 sleep 5
 until $(podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null | grep -q pong); do
@@ -303,7 +304,7 @@ if [[ $CREATE_PROJECT = true ]]; then
                     else
                         # Wait for import to complete with a retry limit
                         RETRY_COUNT=0
-                        MAX_RETRIES=10
+                        MAX_RETRIES=20
                         while [[ ("${IMPORT_STATUS}" == pending || "${IMPORT_STATUS}" == running) && ${RETRY_COUNT} -lt ${MAX_RETRIES} ]]; do
                             IMPORT_STATUS=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
                                 http://127.0.0.1:8080/api/import/${IMPORT_ID} | jq -r '.status')
@@ -438,7 +439,7 @@ if [[ $CREATE_PROJECT = true ]]; then
                     \"params\": {\"group_field\": \"result\", \
                                 \"chart_type\": \"donut\", \
                                 \"days\": 30, \
-                                \"additional_filters\": \"env*stage_proxy;stage\", \}}" \
+                                \"additional_filters\": \"env*stage_proxy;stage\"}}" \
             http://127.0.0.1:8080/api/widget-config | jq -r '.id')
         echo "  Result Aggregator ID: ${RESULT_AGGREGATOR}"
 

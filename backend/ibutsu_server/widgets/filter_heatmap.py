@@ -1,9 +1,11 @@
 from sqlalchemy import case, desc, func
 
 from ibutsu_server.constants import HEATMAP_MAX_BUILDS, HEATMAP_RUN_LIMIT
-from ibutsu_server.db.base import Float, session
+from ibutsu_server.db import db
+from ibutsu_server.db.base import Float
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.util.uuid import is_uuid
 
 NO_RUN_TEXT = "None"
 NO_PASS_RATE_TEXT = "Build failed"
@@ -34,7 +36,7 @@ def _calculate_slope(x_data):
 def _get_heatmap(filters, builds, group_field, project=None):
     """Get Filtered Heatmap Data."""
     filters = filters.split(",")
-    if project:
+    if project and is_uuid(project):
         filters.append(f"project_id={project}")
 
     # generate the group_field
@@ -53,7 +55,7 @@ def _get_heatmap(filters, builds, group_field, project=None):
     )
 
     query = (
-        session.query(
+        db.session.query(
             Run.id.label("run_id"),
             group_field.label("group_field"),
             Run.start_time.label("start_time"),
@@ -80,7 +82,7 @@ def _get_heatmap(filters, builds, group_field, project=None):
         subquery.c.errors + subquery.c.failures + subquery.c.xpasses + subquery.c.xfailures
     )
 
-    query = session.query(
+    query = db.select(
         subquery.c.group_field,
         subquery.c.run_id,
         subquery.c.start_time,
@@ -94,7 +96,7 @@ def _get_heatmap(filters, builds, group_field, project=None):
     )
 
     # parse the data for the frontend
-    query_data = query.all()
+    query_data = db.session.execute(query).all()
     data = {datum.group_field: [] for datum in query_data}
     for key in data.keys():
         runs = [run for run in query_data if run.group_field == key]

@@ -66,6 +66,7 @@ class TestWidgetController(BaseTestCase):
         mocked_query.with_entities.return_value.order_by.return_value.first.side_effect = (
             MOCK_RUN_IDS
         )
+        # TODO how to mock into the db.session.execute that's necessry for the query.scalers.all chain?
         mocked_query.filter.return_value.order_by.return_value.all.side_effect = MOCKED_RESULTS
         query_string = {
             "filters": ["metadata.component=frontend", "metadata.component=frontend"],

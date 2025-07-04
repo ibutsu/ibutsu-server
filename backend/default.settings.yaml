@@ -3,4 +3,4 @@ POSTGRESQL_DATABASE: ibutsu
 POSTGRESQL_USER: ibutsu
 POSTGRESQL_PASSWORD: ibutsu
 CELERY_BROKER_URL: 'redis://ibutsu'
-CELERY_RESULT_BACKEND: 'redis://ibutsu'
+#CELERY_RESULT_BACKEND: 'redis://ibutsu'

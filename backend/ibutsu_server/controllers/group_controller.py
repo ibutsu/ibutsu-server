@@ -1,14 +1,16 @@
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Group
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import is_uuid, validate_uuid
 
 
+@with_app_context
 def add_group(group=None):
     """Create a new group
 
@@ -17,19 +19,20 @@ def add_group(group=None):
 
     :rtype: Group
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    group = Group.from_dict(**connexion.request.get_json())
-    if group.id and Group.query.get(group.id):
+    group = Group.from_dict(**request.get_json())
+    if group.id and db.session.get(Group, group.id):
         return f"The group with ID {group.id} already exists", HTTPStatus.BAD_REQUEST
     if not is_uuid(group.id):
         return f"Group ID {group.id} is not in UUID format", HTTPStatus.BAD_REQUEST
-    session.add(group)
-    session.commit()
+    db.session.add(group)
+    db.session.commit()
     return group.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
+@with_app_context
 def get_group(id_, token_info=None, user=None):
     """Get a group
 
@@ -38,13 +41,14 @@ def get_group(id_, token_info=None, user=None):
 
     :rtype: Group
     """
-    group = Group.query.get(id_)
+    group = db.session.get(Group, id_)
     if group:
         return group.to_dict()
     else:
         return "Group not found", HTTPStatus.NOT_FOUND
 
 
+@with_app_context
 def get_group_list(page=1, page_size=25, token_info=None, user=None):
     """Get a list of groups
 
@@ -58,10 +62,12 @@ def get_group_list(page=1, page_size=25, token_info=None, user=None):
     :rtype: List[Group]
     """
     offset = get_offset(page, page_size)
-    query = Group.query
-    total_items = query.count()
+    query = db.select(Group)
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.select_from())
+    ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    groups = query.limit(page_size).offset(offset).all()
+    groups = db.session.execute(query.limit(page_size).offset(offset)).scalars().all()
     return {
         "groups": [group.to_dict() for group in groups],
         "pagination": {
@@ -73,6 +79,7 @@ def get_group_list(page=1, page_size=25, token_info=None, user=None):
     }
 
 
+@with_app_context
 @validate_uuid
 def update_group(id_, group=None, **kwargs):
     """Update a group
@@ -86,12 +93,12 @@ def update_group(id_, group=None, **kwargs):
 
     :rtype: Group
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    group = Group.query.get(id_)
+    group = db.session.get(Group, id_)
     if not group:
         return "Group not found", HTTPStatus.NOT_FOUND
-    group.update(connexion.request.get_json())
-    session.add(group)
-    session.commit()
+    group.update(request.get_json())
+    db.session.add(group)
+    db.session.commit()
     return group.to_dict()

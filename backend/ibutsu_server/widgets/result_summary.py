@@ -1,8 +1,10 @@
 from sqlalchemy import func
 
-from ibutsu_server.db.base import Integer, session
+from ibutsu_server.db import db
+from ibutsu_server.db.base import Integer
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters
+from ibutsu_server.util.uuid import is_uuid
 
 PAGE_SIZE = 250
 
@@ -18,13 +20,15 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
         "xfailed": 0,
         "xpassed": 0,
     }
-    query = session.query(
-        func.sum(Run.summary["errors"].cast(Integer)),
-        func.sum(Run.summary["skips"].cast(Integer)),
-        func.sum(Run.summary["failures"].cast(Integer)),
-        func.sum(Run.summary["tests"].cast(Integer)),
-        func.sum(Run.summary["xfailures"].cast(Integer)),
-        func.sum(Run.summary["xpasses"].cast(Integer)),
+    query = db.session.execute(
+        db.select(
+            func.sum(Run.summary["errors"].cast(Integer)),
+            func.sum(Run.summary["skips"].cast(Integer)),
+            func.sum(Run.summary["failures"].cast(Integer)),
+            func.sum(Run.summary["tests"].cast(Integer)),
+            func.sum(Run.summary["xfailures"].cast(Integer)),
+            func.sum(Run.summary["xpasses"].cast(Integer)),
+        )
     )
 
     # parse any filters
@@ -35,7 +39,7 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
         filters.append(f"env={env}")
     if job_name:
         filters.append(f"metadata.jenkins.job_name={job_name}")
-    if project:
+    if project and is_uuid(project):
         filters.append(f"project_id={project}")
     if additional_filters:
         filters.extend(additional_filters.split(","))
@@ -45,7 +49,7 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
         query = apply_filters(query, filters, Run)
 
     # get the total number
-    query_data = query.all()
+    query_data = db.session.execute(query).scalars().all()
 
     # parse the data
     for error, skipped, failed, total, xfailed, xpassed in query_data:

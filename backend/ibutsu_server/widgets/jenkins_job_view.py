@@ -1,9 +1,11 @@
 from sqlalchemy import desc, func
 
 from ibutsu_server.constants import JJV_RUN_LIMIT
-from ibutsu_server.db.base import Integer, Text, session
+from ibutsu_server.db import db
+from ibutsu_server.db.base import Integer, Text
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.util.uuid import is_uuid
 
 
 def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, run_limit=None):
@@ -17,7 +19,7 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
             if "job_name" in filter or "build_number" in filter:
                 filters[idx] = f"metadata.jenkins.{filter}"
         query_filters.extend(filters)
-    if project:
+    if project and is_uuid(project):
         query_filters.append(f"project_id={project}")
     filters = query_filters
 
@@ -38,7 +40,7 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
 
     # create the base query
     query = (
-        session.query(
+        db.session.query(
             job_name.label("job_name"),
             build_number.label("build_number"),
             func.min(build_url.cast(Text)).label("build_url"),
@@ -64,7 +66,7 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
     query = apply_filters(query, filters, Run)
 
     # apply pagination and get data
-    query_data = query.offset(offset).limit(page_size).all()
+    query_data = db.session.execute(query.offset(offset).limit(page_size)).scalars().all()
 
     # parse the data for the frontend
     data = {
@@ -72,7 +74,9 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
         "pagination": {
             "page": page,
             "pageSize": page_size,
-            "totalItems": query.count(),  # TODO: examine performance here
+            "totalItems": db.session.execute(
+                db.select(db.func.count()).select_from(query.select_from())
+            ).scalar(),  # TODO: examine performance here
         },
     }
     for datum in query_data:

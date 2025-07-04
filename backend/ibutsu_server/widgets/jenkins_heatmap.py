@@ -1,9 +1,11 @@
 from sqlalchemy import case, desc, func
 
 from ibutsu_server.constants import HEATMAP_MAX_BUILDS, HEATMAP_RUN_LIMIT
-from ibutsu_server.db.base import Float, Integer, session
+from ibutsu_server.db import db
+from ibutsu_server.db.base import Float, Integer
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.util.uuid import is_uuid
 
 NO_RUN_TEXT = "None"
 NO_PASS_RATE_TEXT = "Build failed"
@@ -38,7 +40,7 @@ def _get_builds(job_name, builds, project=None, additional_filters=None):
     ]
     if additional_filters:
         filters.extend(additional_filters.split(","))
-    if project:
+    if project and is_uuid(project):
         filters.append(f"project_id={project}")
 
     # generate the group_field
@@ -56,7 +58,7 @@ def _get_builds(job_name, builds, project=None, additional_filters=None):
 
     # create the query
     query = (
-        session.query(
+        db.session.query(
             func.min(Run.start_time).label("min_start_time"),
             group_field.cast(Integer).label("build_number"),
         )
@@ -94,7 +96,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
         filters.extend(additional_filters.split(","))
     if min_start_time:
         filters.append(f"start_time){min_start_time}")
-    if project:
+    if project and is_uuid(project):
         filters.append(f"project_id={project}")
 
     # generate the group_fields
@@ -107,7 +109,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
     annotations = string_to_column("metadata.annotations", Run)
 
     # create the base query
-    query = session.query(
+    query = db.select(
         Run.id.label("run_id"),
         annotations.label("annotations"),
         group_field.label("group_field"),
@@ -141,7 +143,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
             subquery.c.errors + subquery.c.failures + subquery.c.xpasses + subquery.c.xfailures
         )
 
-    query = session.query(
+    query = db.select(
         subquery.c.group_field,
         subquery.c.build_number,
         subquery.c.run_id,
@@ -156,7 +158,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
     )
 
     # parse the data for the frontend
-    query_data = query.all()
+    query_data = db.session.execute(query).all()
     data = {datum.group_field: [] for datum in query_data}
     for datum in query_data:
         data[datum.group_field].append(
