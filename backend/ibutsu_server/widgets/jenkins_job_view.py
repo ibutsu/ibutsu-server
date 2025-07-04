@@ -5,6 +5,7 @@ from ibutsu_server.db import db
 from ibutsu_server.db.base import Integer, Text
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.util.uuid import is_uuid
 
 
 def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, run_limit=None):
@@ -18,7 +19,7 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
             if "job_name" in filter or "build_number" in filter:
                 filters[idx] = f"metadata.jenkins.{filter}"
         query_filters.extend(filters)
-    if project:
+    if project and is_uuid(project):
         query_filters.append(f"project_id={project}")
     filters = query_filters
 
