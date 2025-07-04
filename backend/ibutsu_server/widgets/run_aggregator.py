@@ -41,26 +41,35 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
         return data
 
     # create the query
-    query = db.session.execute(
+    query = (
         db.select(
-            group_field,
-            func.sum(Run.summary["failures"].cast(Float)),
-            func.sum(Run.summary["errors"].cast(Float)),
-            func.sum(Run.summary["skips"].cast(Float)),
-            func.sum(Run.summary["tests"].cast(Float)),
-            func.sum(Run.summary["xpassed"].cast(Float)),
-            func.sum(Run.summary["xfailed"].cast(Float)),
-        ).group_by(group_field)
+            group_field.label("group"),
+            func.sum(Run.summary["failures"].cast(Float)).label("failed"),
+            func.sum(Run.summary["errors"].cast(Float)).label("error"),
+            func.sum(Run.summary["skips"].cast(Float)).label("skipped"),
+            func.sum(Run.summary["tests"].cast(Float)).label("total"),
+            func.sum(Run.summary["xpassed"].cast(Float)).label("xpassed"),
+            func.sum(Run.summary["xfailed"].cast(Float)).label("xfailed"),
+        )
+        .select_from(Run)
+        .group_by(group_field)
     )
 
     # filter the query
     query = apply_filters(query, filters, Run)
 
     # make the query
-    query_data = db.session.execute(query).scalars().all()
+    query_data = db.session.execute(query).first()
 
     # parse the data
-    for group, failed, error, skipped, total, xpassed, xfailed in query_data:
+    if query_data:
+        group = query_data.group
+        failed = query_data.failed or 0
+        error = query_data.error or 0
+        skipped = query_data.skipped or 0
+        total = query_data.total or 0
+        xpassed = query_data.xpassed or 0
+        xfailed = query_data.xfailed or 0
         # convert all data to percentages
         data["failed"][group] = int(round((failed / total) * 100.0))
         data["error"][group] = int(round((error / total) * 100.0))

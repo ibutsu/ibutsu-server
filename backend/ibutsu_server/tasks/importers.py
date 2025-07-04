@@ -430,6 +430,7 @@ def run_archive_import(import_):
                 continue
             # Grab the run id
             run_id, rest = member.name.split("/", 1)
+            assert is_uuid(run_id), f"Invalid run ID {run_id} in archive import"
             if "/" not in rest:
                 if member.name.endswith("run.json"):
                     run = json.loads(tar.extractfile(member).read())
@@ -437,6 +438,7 @@ def run_archive_import(import_):
                     run_artifacts.append(member)
                 continue
             result_id, file_name = rest.split("/")
+            assert is_uuid(result_id), f"Invalid result ID {result_id} in archive import"
             if member.name.endswith("result.json"):
                 result = json.loads(tar.extractfile(member).read())
                 result_start_time = result.get("start_time")

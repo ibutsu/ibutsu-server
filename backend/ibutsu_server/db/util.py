@@ -21,6 +21,9 @@ class Explain(Executable, ClauseElement):
     cf. http://www.wmmi.net/documents/SQLAlchemy.pdf for more info
     """
 
+    # Enable SQL compilation caching for better performance in SQLAlchemy 2.x
+    inherit_cache = True
+
     def __init__(self, stmt, analyze=False):
         # SQLAlchemy 2.0+ compatibility: use text() for string conversion
         if hasattr(stmt, "statement"):

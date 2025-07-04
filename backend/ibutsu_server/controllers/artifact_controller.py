@@ -79,7 +79,6 @@ def get_artifact(id_, token_info=None, user=None):
 
 
 @with_app_context
-@with_app_context
 def get_artifact_list(
     result_id=None, run_id=None, page_size=25, page=1, token_info=None, user=None
 ):
@@ -96,7 +95,7 @@ def get_artifact_list(
         result_id = request.args["result_id"]
     if result_id:
         query = query.where(Artifact.result_id == result_id)
-    if run_id:
+    if run_id and is_uuid(run_id):
         query = query.where(Artifact.run_id == run_id)
     if user:
         query = add_user_filter(query, user)

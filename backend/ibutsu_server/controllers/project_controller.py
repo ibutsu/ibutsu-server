@@ -169,12 +169,9 @@ def get_filter_params(id_, user=None, token_info=None):
     if project and not project_has_user(project, user):
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
-    result = (
-        db.session.query(Result)
-        .filter(Result.project_id == id_)
-        .order_by(Result.start_time.desc())
-        .first()
-    )
+    query = db.select(Result).filter(Result.project_id == id_).order_by(Result.start_time.desc())
+
+    result = db.session.execute(query).scalar_one_or_none()
 
     fields = flatdict.FlatDict(result.__dict__, delimiter=".").keys()
     fields.remove("_sa_instance_state")
