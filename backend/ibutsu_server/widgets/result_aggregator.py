@@ -42,6 +42,7 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
     # create the query
     query = (
         db.select(group_field, func.count(Result.id).label("count"))
+        .select_from(Result)  # Explicitly select from Result to avoid implicit FROM clauses
         .group_by(group_field)
         .order_by(desc("count"))
     )

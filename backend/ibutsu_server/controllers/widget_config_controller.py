@@ -92,9 +92,8 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
             if filter_clause is not None:
                 query = query.where(filter_clause)
     offset = get_offset(page, page_size)
-    total_items = db.session.execute(
-        db.select(func.count(WidgetConfig.id)).select_from(query.subquery())
-    ).scalar()
+    count_query = query.with_only_columns(func.count(WidgetConfig.id))
+    total_items = db.session.execute(count_query).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     widgets = (
         db.session.execute(

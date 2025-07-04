@@ -12,14 +12,14 @@ def _get_results(job_name, builds, components, project):
     bnumdat = string_to_column("metadata.jenkins.build_number", Result).label("build_number")
     jnamedat = string_to_column("metadata.jenkins.job_name", Result).label("job_name")
     # Get the last 'builds' runs from a specific Jenkins Job as a subquery
-    build_numbers_subquery = db.session.execute(
+    build_numbers_subquery = (
         db.select(bnumdat.label("build_number"))
-        .where(jnamedat == job_name)
-        .where(Result.project_id == project)
+        .where(jnamedat == job_name, Result.project_id == project)
         .group_by(bnumdat)
         .order_by(desc(bnumdat))
         .limit(builds)
-    ).subquery()
+        .subquery()
+    )
     # Actually filter the results based on build_numbers, job_name, project_id and component.
     result_data = db.session.execute(
         db.select(

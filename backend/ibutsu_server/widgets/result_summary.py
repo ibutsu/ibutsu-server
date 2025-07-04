@@ -20,16 +20,14 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
         "xfailed": 0,
         "xpassed": 0,
     }
-    query = db.session.execute(
-        db.select(
-            func.sum(Run.summary["errors"].cast(Integer)),
-            func.sum(Run.summary["skips"].cast(Integer)),
-            func.sum(Run.summary["failures"].cast(Integer)),
-            func.sum(Run.summary["tests"].cast(Integer)),
-            func.sum(Run.summary["xfailures"].cast(Integer)),
-            func.sum(Run.summary["xpasses"].cast(Integer)),
-        )
-    )
+    query = db.select(
+        func.sum(Run.summary["errors"].cast(Integer)).label("error"),
+        func.sum(Run.summary["skips"].cast(Integer)).label("skipped"),
+        func.sum(Run.summary["failures"].cast(Integer)).label("failed"),
+        func.sum(Run.summary["tests"].cast(Integer)).label("total"),
+        func.sum(Run.summary["xfailures"].cast(Integer)).label("xfailed"),
+        func.sum(Run.summary["xpasses"].cast(Integer)).label("xpassed"),
+    ).select_from(Run)  # Explicitly select from Run to avoid implicit FROM clauses
 
     # parse any filters
     filters = []
@@ -49,22 +47,25 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
         query = apply_filters(query, filters, Run)
 
     # get the total number
-    query_data = db.session.execute(query).scalars().all()
+    query_result = db.session.execute(query).first()
 
-    # parse the data
-    for error, skipped, failed, total, xfailed, xpassed in query_data:
-        error = error or 0
-        skipped = skipped or 0
-        failed = failed or 0
-        total = total or 0
-        xfailed = xfailed or 0
-        xpassed = xpassed or 0
-        summary["error"] += error
-        summary["skipped"] += skipped
-        summary["failed"] += failed
-        summary["total"] += total
-        summary["xfailed"] += xfailed
-        summary["xpassed"] += xpassed
-        summary["passed"] += total - (error + skipped + failed + xpassed + xfailed)
+    # In SQLAlchemy 2.x, the result is a Row object with named or indexed access
+    # We only have one row since we're doing aggregates
+    if query_result:
+        error = query_result.error or 0
+        skipped = query_result.skipped or 0
+        failed = query_result.failed or 0
+        total = query_result.total or 0
+        xfailed = query_result.xfailed or 0
+        xpassed = query_result.xpassed or 0
+
+        # Update summary with the values
+        summary["error"] = error
+        summary["skipped"] = skipped
+        summary["failed"] = failed
+        summary["total"] = total
+        summary["xfailed"] = xfailed
+        summary["xpassed"] = xpassed
+        summary["passed"] = total - (error + skipped + failed + xpassed + xfailed)
 
     return summary
