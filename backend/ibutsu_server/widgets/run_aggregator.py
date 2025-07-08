@@ -1,13 +1,12 @@
 import time
 from datetime import datetime, timedelta
 
-from sqlalchemy import func
-
 from ibutsu_server.db import db
 from ibutsu_server.db.base import Float
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
 from ibutsu_server.util.uuid import is_uuid
+from ibutsu_server.util.widget import create_basic_summary_columns
 
 
 def _get_recent_run_data(weeks, group_field, project=None, additional_filters=None):
@@ -40,16 +39,19 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
     if group_field is None:
         return data
 
+    # Use shared utility for consistent summary columns
+    summary_cols = create_basic_summary_columns(Run, cast_type=Float, use_alternate_names=True)
+
     # create the query
     query = (
         db.select(
             group_field.label("group"),
-            func.sum(Run.summary["failures"].cast(Float)).label("failed"),
-            func.sum(Run.summary["errors"].cast(Float)).label("error"),
-            func.sum(Run.summary["skips"].cast(Float)).label("skipped"),
-            func.sum(Run.summary["tests"].cast(Float)).label("total"),
-            func.sum(Run.summary["xpassed"].cast(Float)).label("xpassed"),
-            func.sum(Run.summary["xfailed"].cast(Float)).label("xfailed"),
+            summary_cols["failures"].label("failed"),
+            summary_cols["errors"].label("error"),
+            summary_cols["skips"].label("skipped"),
+            summary_cols["tests"].label("total"),
+            summary_cols["xpassed"],
+            summary_cols["xfailed"],
         )
         .select_from(Run)
         .group_by(group_field)

@@ -4,8 +4,9 @@ from ibutsu_server.constants import JJV_RUN_LIMIT
 from ibutsu_server.db import db
 from ibutsu_server.db.base import Integer, Text
 from ibutsu_server.db.models import Run
-from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.filters import apply_filters
 from ibutsu_server.util.uuid import is_uuid
+from ibutsu_server.util.widget import create_jenkins_columns, create_summary_columns
 
 
 def _get_jenkins_aggregation(
@@ -37,36 +38,36 @@ def _get_jenkins_aggregation(
         runRef = run_query.order_by(desc(Run.start_time)).limit(run_limit).subquery()
         columnRef = runRef.c
 
-    # generate the group_fields
-    job_name = string_to_column("metadata.jenkins.job_name", runRef)
-    build_number = string_to_column("metadata.jenkins.build_number", runRef)
-    build_url = string_to_column("metadata.jenkins.build_url", runRef)
-    env = string_to_column("env", runRef)
+    # Use shared utility functions for consistent column creation
+    jenkins_cols = create_jenkins_columns(runRef)
+    summary_cols = create_summary_columns(columnRef, cast_type=Integer)
 
     # create the base query
     query = db.select(
-        job_name.label("job_name"),
-        build_number.label("build_number"),
-        func.min(build_url.cast(Text)).label("build_url"),
-        func.min(env).label("env"),
-        func.min(columnRef.source).label("source"),
-        func.sum(columnRef.summary["xfailures"].cast(Integer)).label("xfailures"),
-        func.sum(columnRef.summary["xpasses"].cast(Integer)).label("xpasses"),
-        func.sum(columnRef.summary["failures"].cast(Integer)).label("failures"),
-        func.sum(columnRef.summary["errors"].cast(Integer)).label("errors"),
-        func.sum(columnRef.summary["skips"].cast(Integer)).label("skips"),
-        func.sum(columnRef.summary["tests"].cast(Integer)).label("tests"),
-        func.min(columnRef.start_time).label("min_start_time"),
-        func.max(columnRef.start_time).label("max_start_time"),
-        func.sum(columnRef.duration).label("total_execution_time"),
-        func.max(columnRef.duration).label("max_duration"),
+        jenkins_cols["job_name"].label("job_name"),
+        jenkins_cols["build_number"].label("build_number"),
+        func.min(jenkins_cols["build_url"].cast(Text)).label("build_url"),
+        func.min(jenkins_cols["env"]).label("env"),
+        summary_cols["source"],
+        summary_cols["xfailures"],
+        summary_cols["xpasses"],
+        summary_cols["failures"],
+        summary_cols["errors"],
+        summary_cols["skips"],
+        summary_cols["tests"],
+        summary_cols["min_start_time"],
+        summary_cols["max_start_time"],
+        summary_cols["total_execution_time"],
+        summary_cols["max_duration"],
     ).select_from(runRef)
 
     # Apply the filters to the main query if no limit was set
     if run_limit is None:
         query = apply_filters(query, filters, runRef)
 
-    query = query.group_by(job_name, build_number).order_by(desc("max_start_time"))
+    query = query.group_by(jenkins_cols["job_name"], jenkins_cols["build_number"]).order_by(
+        desc("max_start_time")
+    )
 
     # form a count query
     count_query = query.subquery()
