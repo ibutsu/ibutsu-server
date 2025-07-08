@@ -1,10 +1,9 @@
-from sqlalchemy import func
-
 from ibutsu_server.db import db
 from ibutsu_server.db.base import Integer
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters
 from ibutsu_server.util.uuid import is_uuid
+from ibutsu_server.util.widget import create_basic_summary_columns
 
 PAGE_SIZE = 250
 
@@ -20,13 +19,16 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
         "xfailed": 0,
         "xpassed": 0,
     }
+    # Use shared utility for consistent summary columns
+    summary_cols = create_basic_summary_columns(Run, cast_type=Integer)
+
     query = db.select(
-        func.sum(Run.summary["errors"].cast(Integer)).label("error"),
-        func.sum(Run.summary["skips"].cast(Integer)).label("skipped"),
-        func.sum(Run.summary["failures"].cast(Integer)).label("failed"),
-        func.sum(Run.summary["tests"].cast(Integer)).label("total"),
-        func.sum(Run.summary["xfailures"].cast(Integer)).label("xfailed"),
-        func.sum(Run.summary["xpasses"].cast(Integer)).label("xpassed"),
+        summary_cols["errors"].label("error"),
+        summary_cols["skips"].label("skipped"),
+        summary_cols["failures"].label("failed"),
+        summary_cols["tests"].label("total"),
+        summary_cols["xfailures"].label("xfailed"),
+        summary_cols["xpasses"].label("xpassed"),
     ).select_from(Run)  # Explicitly select from Run to avoid implicit FROM clauses
 
     # parse any filters
