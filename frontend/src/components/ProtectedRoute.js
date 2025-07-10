@@ -5,7 +5,7 @@ import { AuthService } from '../services/auth';
 
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading, false = not authenticated, true = authenticated
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(null); // null = loading/unknown, false = not super admin, true = super admin
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -17,9 +17,17 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
         if (authenticated && requireSuperAdmin) {
           const superAdmin = await AuthService.isSuperAdmin();
           setIsSuperAdmin(superAdmin);
+        } else if (authenticated && !requireSuperAdmin) {
+          // If we don't require super admin, set it to true to avoid blocking
+          setIsSuperAdmin(true);
+        } else {
+          // Not authenticated, set super admin to false
+          setIsSuperAdmin(false);
         }
-      } catch {
+      } catch (error) {
+        console.error('ProtectedRoute: Auth check failed:', error);
         setIsAuthenticated(false);
+        setIsSuperAdmin(false);
       } finally {
         setIsLoading(false);
       }
@@ -28,7 +36,7 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
     checkAuth();
   }, [requireSuperAdmin]);
 
-  if (isLoading) {
+  if (isLoading || isAuthenticated === null) {
     return <div>Loading...</div>;
   }
 
@@ -36,7 +44,10 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (requireSuperAdmin && !isSuperAdmin) {
+  if (requireSuperAdmin && (isSuperAdmin === null || isSuperAdmin === false)) {
+    if (isSuperAdmin === null) {
+      return <div>Loading...</div>;
+    }
     return <Navigate to="/login" replace />;
   }
 

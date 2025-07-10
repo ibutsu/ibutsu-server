@@ -142,10 +142,7 @@ def _get_results(report):
     query = _build_query(report)
     try:
         db.session.execute(f"SET statement_timeout TO {int(REPORT_COUNT_TIMEOUT * 1000)}; commit;")
-        if (
-            db.session.execute(db.select(db.func.count()).select_from(query.select_from())).scalar()
-            == 0
-        ):
+        if db.session.execute(db.select(db.func.count()).select_from(query)).scalar() == 0:
             return None
     except OperationalError:
         pass

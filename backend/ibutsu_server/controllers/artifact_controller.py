@@ -99,9 +99,7 @@ def get_artifact_list(
         query = query.where(Artifact.run_id == run_id)
     if user:
         query = add_user_filter(query, user)
-    total_items = db.session.execute(
-        db.select(db.func.count()).select_from(query.select_from())
-    ).scalar()
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     artifacts = db.session.execute(query.limit(page_size).offset(offset)).scalars().all()

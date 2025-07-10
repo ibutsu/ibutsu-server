@@ -82,7 +82,8 @@ def get_project_list(
 
     :rtype: List[Project]
     """
-    query = add_user_filter(Project.query, user, model=Project)
+    query = db.select(Project)
+    query = add_user_filter(query, user, model=Project)
     if owner_id:
         query = query.where(Project.owner_id == owner_id)
     if group_id:
@@ -95,9 +96,7 @@ def get_project_list(
                 query = query.where(filter_clause)
 
     offset = get_offset(page, page_size)
-    total_items = db.session.execute(
-        db.select(db.func.count()).select_from(query.select_from())
-    ).scalar()
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     projects = db.session.execute(query.offset(offset).limit(page_size)).scalars().all()
     return {

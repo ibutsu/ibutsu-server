@@ -97,9 +97,7 @@ def admin_get_project_list(
         query = query.where(Project.group_id == group_id)
 
     offset = get_offset(page, page_size)
-    total_items = db.session.execute(
-        db.select(db.func.count()).select_from(query.select_from())
-    ).scalar()
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     if offset > 9223372036854775807:  # max value of bigint
         return "The page number is too big.", HTTPStatus.BAD_REQUEST

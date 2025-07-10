@@ -25,9 +25,7 @@ def query_task(filter_=None, page=1, page_size=25, estimate=False, tablename="re
     elif estimate:
         total_items = get_count_estimate(query)
     else:
-        total_items = db.session.execute(
-            db.select(db.func.count()).select_from(query.select_from())
-        ).scalar()
+        total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
 
     offset = (page * page_size) - page_size
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)

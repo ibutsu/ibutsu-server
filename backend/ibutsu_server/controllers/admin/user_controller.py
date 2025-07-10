@@ -48,9 +48,7 @@ def admin_get_user_list(filter_=None, page=1, page_size=25, token_info=None, use
                 query = query.where(filter_clause)
 
     offset = get_offset(page, page_size)
-    total_items = db.session.execute(
-        db.select(db.func.count()).select_from(query.select_from())
-    ).scalar()
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     users = (
         db.session.execute(query.order_by(User.email.asc()).offset(offset).limit(page_size))
