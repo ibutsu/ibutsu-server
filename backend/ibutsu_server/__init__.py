@@ -148,10 +148,9 @@ def get_app(**extra_config):
     connexion_app.add_middleware(
         CORSMiddleware,
         position=MiddlewarePosition.BEFORE_ROUTING,
-        allow_origins=["*"],
-        allow_methods=["ADD", "DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"],
-        allow_headers=["*"],
-        allow_credentials=True,
+        allow_origins=["*"],  # Allow all origins
+        allow_methods=["*"],  # Allow all HTTP methods
+        allow_headers=["*"],  # Allow all headers
     )
 
     # Add API routes after middleware
@@ -163,29 +162,6 @@ def get_app(**extra_config):
     db.init_app(flask_app)
     bcrypt.init_app(flask_app)
     Mail(flask_app)
-
-    # Add Flask level CORS support for any Flask routes
-    @flask_app.after_request
-    def add_cors_headers(response):
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, *")
-        response.headers.add(
-            "Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS, PATCH"
-        )
-        response.headers.add("Access-Control-Allow-Credentials", "true")
-        return response
-
-    # Add explicit handling for OPTIONS requests at the Flask level
-    @flask_app.route("/api/<path:path>", methods=["OPTIONS"])
-    def options_handler(path):
-        response = flask_app.make_response("")
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        response.headers.add("Access-Control-Allow-Headers", "Content-Type, Authorization, *")
-        response.headers.add(
-            "Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS, PATCH"
-        )
-        response.headers.add("Access-Control-Allow-Credentials", "true")
-        return response
 
     with flask_app.app_context():
         db.create_all()

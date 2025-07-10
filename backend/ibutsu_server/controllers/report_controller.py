@@ -106,9 +106,7 @@ def get_report_list(page=1, page_size=25, project=None, token_info=None, user=No
         project_id = get_project_id(project)
         query = query.where(Report.project_id == project_id)
     offset = get_offset(page, page_size)
-    total_items = db.session.execute(
-        db.select(db.func.count()).select_from(query.select_from())
-    ).scalar()
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     reports = (
         db.session.execute(query.order_by(Report.created.desc()).offset(offset).limit(page_size))

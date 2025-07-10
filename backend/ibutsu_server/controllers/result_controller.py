@@ -119,9 +119,7 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
     if estimate:
         total_items = get_count_estimate(query)
     else:
-        total_items = db.session.execute(
-            db.select(db.func.count()).select_from(query.select_from())
-        ).scalar()
+        total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
 
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)

@@ -203,9 +203,10 @@ export class AuthService {
 
       if (json.token) {
         AuthService.setUser(json);
-        // Reset validation flags on successful login
-        AuthService._tokenValidated = true;
-        AuthService._cachedUser = json;
+        // Don't set cached user and validation flags yet - let them be set properly
+        // when getCurrentUser is called, which will fetch complete user data
+        AuthService._tokenValidated = false;
+        AuthService._cachedUser = null;
 
         return true;
       } else if (json.code) {
@@ -234,7 +235,7 @@ export class AuthService {
   static async isSuperAdmin() {
     // Use cached user if available
     if (AuthService._cachedUser && AuthService._tokenValidated) {
-      return AuthService._cachedUser?.is_super_admin || false;
+      return AuthService._cachedUser?.is_superadmin || false;
     }
 
     // Otherwise, get current user
@@ -242,11 +243,12 @@ export class AuthService {
     if (!user) {
       return false;
     }
+
     const realUser = await AuthService.getCurrentUser(user);
     if (realUser) {
       AuthService._cachedUser = realUser;
       AuthService._tokenValidated = true;
-      return realUser?.is_super_admin || false;
+      return realUser?.is_superadmin || false;
     } else {
       return false;
     }

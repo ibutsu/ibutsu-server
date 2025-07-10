@@ -63,9 +63,7 @@ def get_token_list(page=1, page_size=25, token_info=None, user=None):
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
     query = db.select(Token).where(Token.user == user, Token.name != "login-token")
-    total_items = db.session.execute(
-        db.select(db.func.count()).select_from(query.select_from())
-    ).scalar()
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     result = db.session.execute(query.offset(offset).limit(page_size))
