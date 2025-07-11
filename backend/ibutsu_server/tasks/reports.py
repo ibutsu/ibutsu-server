@@ -9,10 +9,10 @@ from flask import current_app
 from sqlalchemy.exc import OperationalError
 
 from ibutsu_server.constants import LOCALHOST
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Report, ReportFile, Result
 from ibutsu_server.filters import apply_filters
-from ibutsu_server.tasks import task
+from ibutsu_server.tasks import shared_task
 from ibutsu_server.templating import render_template
 from ibutsu_server.util.projects import get_project_id
 
@@ -63,6 +63,7 @@ def _get_value(d, *keys):
     return d
 
 
+@shared_task
 def _update_report(report):
     """Update the report with the parameters, etc."""
     report_type = report["params"]["type"]
@@ -90,20 +91,21 @@ def _update_report(report):
             "status": "running",
         }
     )
-    report_record = Report.query.get(report["id"])
+    report_record = db.session.get(Report, report["id"])
     report_record.update(report)
-    session.add(report_record)
-    session.commit()
+    db.session.add(report_record)
+    db.session.commit()
     # Reference passing above removes the ID. Re-instate it via the to_dict() method
     report.update(report_record.to_dict())
 
 
+@shared_task
 def _set_report_status(report_id, status):
     """Set a report's status"""
-    report = Report.query.get(report_id)
+    report = db.session.get(Report, report_id)
     report.status = status
-    session.add(report)
-    session.commit()
+    db.session.add(report)
+    db.session.commit()
 
 
 def _set_report_done(report):
@@ -119,30 +121,32 @@ def _set_report_empty(report):
     _set_report_status(report["id"], "empty")
 
 
+@shared_task
 def _build_query(report):
     """Build the filters from a report object"""
-    query = Result.query
+    query = db.select(Result)
     if report["params"].get("filter"):
         filters = report["params"]["filter"].split(",")
         if filters:
             query = apply_filters(query, filters, Result)
     if report["params"]["source"]:
-        query = query.filter(Result.source == report["params"]["source"])
+        query = query.where(Result.source == report["params"]["source"])
     if report["params"].get("project"):
-        query = query.filter(Result.project_id == get_project_id(report["params"]["project"]))
+        query = query.where(Result.project_id == get_project_id(report["params"]["project"]))
     return query
 
 
+@shared_task
 def _get_results(report):
     """Limit the number of documents to REPORT_MAX_DOCUMENTS so as not to crash the server."""
     query = _build_query(report)
     try:
-        session.execute(f"SET statement_timeout TO {int(REPORT_COUNT_TIMEOUT * 1000)}; commit;")
-        if query.count() == 0:
+        db.session.execute(f"SET statement_timeout TO {int(REPORT_COUNT_TIMEOUT * 1000)}; commit;")
+        if db.session.execute(db.select(db.func.count()).select_from(query)).scalar() == 0:
             return None
     except OperationalError:
         pass
-    session.execute("SET statement_timeout TO 0; commit;")
+    db.session.execute("SET statement_timeout TO 0; commit;")
 
     results = query.order_by(Result.start_time.desc()).limit(REPORT_MAX_DOCUMENTS).all()
 
@@ -223,9 +227,9 @@ def _get_files(result):
                 str(report_file.id),
             ),
         }
-        for report_file in ReportFile.query.filter(
-            ReportFile.data["resultId"] == result["id"]
-        ).all()
+        for report_file in db.session.execute(
+            db.select(ReportFile).where(ReportFile.data["resultId"] == result["id"])
+        ).scalars()
     ]
 
 
@@ -341,7 +345,7 @@ def _exception_metadata_hack(result):
     return exception_name
 
 
-@task
+@shared_task
 def generate_csv_report(report):
     """Generate a CSV report"""
     _update_report(report)
@@ -368,12 +372,12 @@ def generate_csv_report(report):
         report_id=report["id"],
         content=csv_file.read().encode("utf8"),
     )
-    session.add(report_file)
-    session.commit()
+    db.session.add(report_file)
+    db.session.commit()
     _set_report_done(report)
 
 
-@task
+@shared_task
 def generate_text_report(report):
     """Generate a text report"""
     _update_report(report)
@@ -416,12 +420,12 @@ def generate_text_report(report):
         report_id=report["id"],
         content=text_file.read().encode("utf8"),
     )
-    session.add(report_file)
-    session.commit()
+    db.session.add(report_file)
+    db.session.commit()
     _set_report_done(report)
 
 
-@task
+@shared_task
 def generate_json_report(report):
     """Generate a JSON report"""
     _update_report(report)
@@ -437,12 +441,12 @@ def generate_json_report(report):
         report_id=report["id"],
         content=json.dumps(report_dict, indent=2).encode("utf8"),
     )
-    session.add(report_file)
-    session.commit()
+    db.session.add(report_file)
+    db.session.commit()
     _set_report_done(report)
 
 
-@task
+@shared_task
 def generate_html_report(report):
     """Generate an HTML report"""
     _update_report(report)
@@ -483,12 +487,12 @@ def generate_html_report(report):
         report_id=report["id"],
         content=html_report.encode("utf8"),
     )
-    session.add(report_file)
-    session.commit()
+    db.session.add(report_file)
+    db.session.commit()
     _set_report_done(report)
 
 
-@task
+@shared_task
 def generate_exception_report(report):
     """Generate a text report"""
     _update_report(report)
@@ -555,8 +559,8 @@ def generate_exception_report(report):
         report_id=report["id"],
         content=exception_report.encode("utf8"),
     )
-    session.add(report_file)
-    session.commit()
+    db.session.add(report_file)
+    db.session.commit()
     _set_report_done(report)
 
 

@@ -79,8 +79,10 @@ const ResultAggregateApex = ({
             group_field: filterGroupField,
             chart_type: 'donut',
             project: project.current,
-            additional_filters: additionalFilters.current,
-            run_id: runId.current,
+            ...(additionalFilters.current
+              ? { additional_filters: additionalFilters.current }
+              : {}),
+            ...(runId.current ? { run_id: runId.current } : {}),
           },
         );
         const data = await HttpClient.handleResponse(response);

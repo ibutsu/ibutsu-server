@@ -273,7 +273,7 @@ class Meta(Model):
     value = Column(Text)
 
 
-def upgrade_db(session, upgrades):
+def upgrade_db(current_session, upgrades):
     """Upgrade the database using Alembic
 
     :param session: An SQLAlchemy Session object
@@ -281,13 +281,13 @@ def upgrade_db(session, upgrades):
     """
     # Query the metadata table in the DB for the version number
     db_version = 0
-    meta_version = Meta.query.get("version")
+    meta_version = current_session.get(Meta, "version")
     if meta_version:
         db_version = int(meta_version.value)
     else:
         meta_version = Meta(key="version", value="0")
-        session.add(meta_version)
-        session.commit()
+        current_session.add(meta_version)
+        current_session.commit()
     if db_version > upgrades.__version__:
         return db_version, upgrades.__version__
     db_version += 1
@@ -295,8 +295,8 @@ def upgrade_db(session, upgrades):
         while hasattr(upgrades, f"upgrade_{db_version:d}"):
             try:
                 upgrade_func = getattr(upgrades, f"upgrade_{db_version:d}")
-                upgrade_func(session)
-                session.commit()
+                upgrade_func(current_session)
+                current_session.commit()
             except (SQLAlchemyError, DBAPIError) as e:
                 # Could not run the upgrade
                 if "already exists" not in str(e):
@@ -305,12 +305,12 @@ def upgrade_db(session, upgrades):
             # Update the version number AFTER a commit so that we are sure the previous
             # transaction happened
             meta_version.value = str(db_version)
-            session.commit()
+            current_session.commit()
             db_version += 1
     except (SQLAlchemyError, DBAPIError):
         version_meta = Meta(key="version", value=int(upgrades.__version__))
-        session.add(version_meta)
-        session.commit()
+        current_session.add(version_meta)
+        current_session.commit()
     upgrade_version = upgrades.__version__
     db_version = int(meta_version.value)
     return db_version, upgrade_version

@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from sqlalchemy import desc
 
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Result
 from ibutsu_server.filters import string_to_column
 
@@ -13,31 +13,28 @@ def _get_results(job_name, builds, components, project):
     jnamedat = string_to_column("metadata.jenkins.job_name", Result).label("job_name")
     # Get the last 'builds' runs from a specific Jenkins Job as a subquery
     build_numbers_subquery = (
-        session.query(bnumdat.label("build_number"))
-        .filter(jnamedat == job_name)
-        .filter(Result.project_id == project)
+        db.select(bnumdat.label("build_number"))
+        .where(jnamedat == job_name, Result.project_id == project)
         .group_by(bnumdat)
         .order_by(desc(bnumdat))
         .limit(builds)
         .subquery()
     )
     # Actually filter the results based on build_numbers, job_name, project_id and component.
-    result_data = (
-        Result.query.filter(
-            bnumdat.in_(build_numbers_subquery),
-            jnamedat == job_name,
-            Result.component.in_(components.split(",")),
-            Result.project_id == project,
-        )
-        .add_columns(
+    result_data = db.session.execute(
+        db.select(
             Result.component,
             Result.id,
             Result.result,
             mdat,
             bnumdat,
+        ).where(
+            bnumdat.in_(build_numbers_subquery),
+            jnamedat == job_name,
+            Result.component.in_(components.split(",")),
+            Result.project_id == project,
         )
-        .all()
-    )
+    ).all()
     return result_data
 
 

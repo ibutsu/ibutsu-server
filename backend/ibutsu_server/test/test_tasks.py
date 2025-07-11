@@ -64,11 +64,13 @@ class TestRunTasks(BaseTestCase):
         self, mocked_is_locked, mocked_lock, mocked_session, mocked_run, mocked_result
     ):
         """Test updating the run"""
+
         from ibutsu_server.tasks.runs import update_run
 
         mocked_is_locked.return_value = False
         mocked_lock.return_value.__enter__.return_value = None
         mocked_run.query.get.return_value = MOCK_RUN
+        # TODO how to mock into the db.session.execute that's necessry for the query.scalers.all chain?
         mocked_result.query.return_value.filter.return_value.all.return_value = MOCK_RESULTS
 
         update_run = update_run._orig_func

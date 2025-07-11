@@ -66,7 +66,7 @@ services:
       /bin/bash -c
         "pip install -U pip setuptools wheel &&
         pip install . &&
-        ./celery_worker.sh"
+        celery --app ibutsu_server.celery_app --no-color worker --events"
     working_dir: /mnt
     volumes:
       - "./backend:/mnt:z"

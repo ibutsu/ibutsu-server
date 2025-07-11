@@ -1,4 +1,2 @@
-from ibutsu_server import get_app
-from ibutsu_server.tasks import create_celery_app
-
-app = create_celery_app(get_app())
+# This file is kept for backwards compatibility
+# The Celery app instance should be imported from the main application
