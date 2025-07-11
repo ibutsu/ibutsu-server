@@ -581,7 +581,23 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
-                                              {passed}
+                                              {passed > 0 ? (
+                                                <Link
+                                                  to={{
+                                                    pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                                    search: new URLSearchParams(
+                                                      {
+                                                        run_id: `[eq]${run.id}`,
+                                                        result: `[eq]passed`,
+                                                      },
+                                                    ).toString(),
+                                                  }}
+                                                >
+                                                  {passed}
+                                                </Link>
+                                              ) : (
+                                                passed
+                                              )}
                                             </DataListCell>,
                                           ]}
                                         />
@@ -601,7 +617,23 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
-                                              {failed}
+                                              {failed > 0 ? (
+                                                <Link
+                                                  to={{
+                                                    pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                                    search: new URLSearchParams(
+                                                      {
+                                                        run_id: `[eq]${run.id}`,
+                                                        result: `[eq]failed`,
+                                                      },
+                                                    ).toString(),
+                                                  }}
+                                                >
+                                                  {failed}
+                                                </Link>
+                                              ) : (
+                                                failed
+                                              )}
                                             </DataListCell>,
                                           ]}
                                         />
@@ -621,7 +653,23 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
-                                              {errors}
+                                              {errors > 0 ? (
+                                                <Link
+                                                  to={{
+                                                    pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                                    search: new URLSearchParams(
+                                                      {
+                                                        run_id: `[eq]${run.id}`,
+                                                        result: `[eq]errors`,
+                                                      },
+                                                    ).toString(),
+                                                  }}
+                                                >
+                                                  {errors}
+                                                </Link>
+                                              ) : (
+                                                errors
+                                              )}
                                             </DataListCell>,
                                           ]}
                                         />
@@ -641,7 +689,23 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
-                                              {xfailed}
+                                              {xfailed > 0 ? (
+                                                <Link
+                                                  to={{
+                                                    pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                                    search: new URLSearchParams(
+                                                      {
+                                                        run_id: `[eq]${run.id}`,
+                                                        result: `[eq]xfailed`,
+                                                      },
+                                                    ).toString(),
+                                                  }}
+                                                >
+                                                  {xfailed}
+                                                </Link>
+                                              ) : (
+                                                xfailed
+                                              )}
                                             </DataListCell>,
                                           ]}
                                         />
@@ -661,7 +725,23 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
-                                              {xpassed}
+                                              {xpassed > 0 ? (
+                                                <Link
+                                                  to={{
+                                                    pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                                    search: new URLSearchParams(
+                                                      {
+                                                        run_id: `[eq]${run.id}`,
+                                                        result: `[eq]xpassed`,
+                                                      },
+                                                    ).toString(),
+                                                  }}
+                                                >
+                                                  {xpassed}
+                                                </Link>
+                                              ) : (
+                                                xpassed
+                                              )}
                                             </DataListCell>,
                                           ]}
                                         />
@@ -681,7 +761,23 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
-                                              {skipped}
+                                              {skipped > 0 ? (
+                                                <Link
+                                                  to={{
+                                                    pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                                    search: new URLSearchParams(
+                                                      {
+                                                        run_id: `[eq]${run.id}`,
+                                                        result: `[eq]skipped`,
+                                                      },
+                                                    ).toString(),
+                                                  }}
+                                                >
+                                                  {skipped}
+                                                </Link>
+                                              ) : (
+                                                skipped
+                                              )}
                                             </DataListCell>,
                                           ]}
                                         />
@@ -701,7 +797,23 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               </Label>
                                             </DataListCell>,
                                             <DataListCell key={2}>
-                                              {not_run}
+                                              {not_run > 0 ? (
+                                                <Link
+                                                  to={{
+                                                    pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                                    search: new URLSearchParams(
+                                                      {
+                                                        run_id: `[eq]${run.id}`,
+                                                        result: `[eq]manual`,
+                                                      },
+                                                    ).toString(),
+                                                  }}
+                                                >
+                                                  {not_run}
+                                                </Link>
+                                              ) : (
+                                                not_run
+                                              )}
                                             </DataListCell>,
                                           ]}
                                         />
