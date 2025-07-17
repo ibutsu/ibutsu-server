@@ -146,27 +146,32 @@ export const resultToRow = (result, filterFunc) => {
   let runLink = '';
   let classification = '';
   let componentBadge;
-  if (filterFunc) {
-    componentBadge = buildBadge('component', result.component, false, () =>
-      filterFunc({
-        field: 'component',
-        operator: 'eq',
-        value: result.component,
-      }),
-    );
-  } else {
-    componentBadge = buildBadge('component', result.component, false);
+  const resultComponent =
+    result.metadata?.component ?? result.component ?? null;
+  if (resultComponent) {
+    if (filterFunc) {
+      componentBadge = buildBadge('component', resultComponent, false, () =>
+        filterFunc({
+          field: 'component',
+          operator: 'eq',
+          value: resultComponent,
+        }),
+      );
+    } else {
+      componentBadge = buildBadge('component', resultComponent, false);
+    }
   }
   badges.push(componentBadge);
   badges.push(' ');
-  if (result.metadata && result.metadata.env) {
+  const resultEnv = result.metadata?.env ?? result.env ?? null;
+  if (resultEnv) {
     let envBadge;
     if (filterFunc) {
-      envBadge = buildBadge(result.env, result.env, false, () =>
-        filterFunc({ field: 'env', operator: 'eq', value: result.env }),
+      envBadge = buildBadge(resultEnv, resultEnv, false, () =>
+        filterFunc({ field: 'env', operator: 'eq', value: resultEnv }),
       );
     } else {
-      envBadge = buildBadge(result.env, result.env, false);
+      envBadge = buildBadge(resultEnv, resultEnv, false);
     }
     badges.push(envBadge);
     badges.push(' ');
