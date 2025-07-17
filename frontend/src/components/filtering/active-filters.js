@@ -127,7 +127,7 @@ const ActiveFilters = ({
                 </Badge>
                 <Badge isRead={false} style={BADGE_STYLE}>
                   <React.Fragment>
-                    {activeFilter?.value || 'N/A'}
+                    {activeFilter?.value ?? 'N/A'}
                   </React.Fragment>
                 </Badge>
               </CardBody>
