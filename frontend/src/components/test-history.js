@@ -114,7 +114,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
           {result.source}
         </span>,
         <React.Fragment key="exception">
-          {(exceptionToBadge(result?.metadata?.exception_name), filterFunc)}
+          {exceptionToBadge(result?.metadata?.exception_name, filterFunc)}
         </React.Fragment>,
         Math.ceil(result.duration) + 's',
         new Date(result.start_time).toLocaleString(),
