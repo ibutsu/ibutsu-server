@@ -19,8 +19,18 @@ import {
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { filtersToAPIParams, toTitleCase, buildBadge } from '../utilities';
-import { WEEKS, RESULT_STATES, ICON_RESULT_MAP } from '../constants';
+import {
+  filtersToAPIParams,
+  toTitleCase,
+  buildBadge,
+  exceptionToBadge,
+} from '../utilities';
+import {
+  WEEKS,
+  RESULT_STATES,
+  ICON_RESULT_MAP,
+  MISSING_META_EXCEPTION,
+} from '../constants';
 
 import RunSummary from './runsummary';
 import LastPassed from './last-passed';
@@ -75,30 +85,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   const [historySummary, setHistorySummary] = useState();
   const [rows, setRows] = useState([]);
 
-  // Function to convert result to test history row format (PatternFly v5)
-  const resultToTestHistoryRow = useCallback((result, index, filterFunc) => {
-    let exceptionBadge;
-
-    if (filterFunc) {
-      exceptionBadge = buildBadge(
-        'exception_name',
-        result.metadata.exception_name,
-        false,
-        () =>
-          filterFunc({
-            field: 'metadata.exception_name',
-            operator: 'eq',
-            value: result.metadata.exception_name,
-          }),
-      );
-    } else {
-      exceptionBadge = buildBadge(
-        'exception_name',
-        result.metadata.exception_name,
-        false,
-      );
-    }
-
+  const resultToTestHistoryRow = useCallback((result, filterFunc) => {
     // Create expanded content for the ResultView
     const expandedContent = (
       <ResultView
@@ -110,7 +97,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
       />
     );
 
-    return {
+    const rowData = {
       id: result.id,
       result: result,
       expandedContent: expandedContent,
@@ -126,11 +113,15 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         <span key="source" className={result.source}>
           {result.source}
         </span>,
-        <React.Fragment key="exception">{exceptionBadge}</React.Fragment>,
+        <React.Fragment key="exception">
+          {(exceptionToBadge(result?.metadata?.exception_name), filterFunc)}
+        </React.Fragment>,
         Math.ceil(result.duration) + 's',
         new Date(result.start_time).toLocaleString(),
       ],
     };
+
+    return rowData;
   }, []);
 
   // Set active filters for result, test_id, component, time, and env based on test result
@@ -157,35 +148,46 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
           }
         : {};
 
-      setActiveFilters((prevFilters) => [
-        {
-          field: 'result',
-          operator: 'in',
-          value:
-            'failed;error;manual' +
-            (onlyFailures
-              ? ';skipped;xfailed'
-              : ';skipped;xfailed;xpassed;passed'),
-        },
-        {
-          field: 'test_id',
-          operator: 'eq',
-          value: testResult?.test_id,
-        },
-        {
-          field: 'component',
-          operator: 'eq',
-          value: testResult?.component,
-        },
-        timeFilter,
-        envFilter,
-        ...prevFilters.filter(
-          (f) =>
-            !['result', 'test_id', 'component', 'start_time', 'env'].includes(
-              f.field,
-            ),
-        ),
-      ]);
+      setActiveFilters((prevFilters) => {
+        // Build filters array, only including non-empty filter objects
+        const newFilters = [
+          {
+            field: 'result',
+            operator: 'in',
+            value:
+              'failed;error;manual' +
+              (onlyFailures
+                ? ';skipped;xfailed'
+                : ';skipped;xfailed;xpassed;passed'),
+          },
+          {
+            field: 'test_id',
+            operator: 'eq',
+            value: testResult?.test_id,
+          },
+          {
+            field: 'component',
+            operator: 'eq',
+            value: testResult?.component,
+          },
+          ...prevFilters.filter(
+            (f) =>
+              !['result', 'test_id', 'component', 'start_time', 'env'].includes(
+                f.field,
+              ),
+          ),
+        ];
+
+        // Only add timeFilter and envFilter if they have a field property (not empty objects)
+        if (timeFilter?.field) {
+          newFilters.push(timeFilter);
+        }
+        if (envFilter?.field) {
+          newFilters.push(envFilter);
+        }
+
+        return newFilters;
+      });
     }
   }, [onlyFailures, setActiveFilters, testResult, selectedTimeRange]);
 
@@ -207,8 +209,8 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         );
         const data = await HttpClient.handleResponse(response);
         setRows(
-          data.results.map((result, index) =>
-            resultToTestHistoryRow(result, index, updateFilters),
+          data.results.map((result) =>
+            resultToTestHistoryRow(result, updateFilters),
           ),
         );
 
