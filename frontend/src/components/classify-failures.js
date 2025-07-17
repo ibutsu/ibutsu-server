@@ -18,7 +18,12 @@ import { TableVariant } from '@patternfly/react-table';
 
 import { HttpClient } from '../services/http';
 import { Settings } from '../settings';
-import { filtersToAPIParams, toTitleCase, buildBadge } from '../utilities';
+import {
+  filtersToAPIParams,
+  toTitleCase,
+  buildBadge,
+  exceptionToBadge,
+} from '../utilities';
 import { ICON_RESULT_MAP } from '../constants';
 import { MultiClassificationDropdown } from './classification-dropdown';
 import { ClassificationDropdown } from './classification-dropdown';
@@ -46,29 +51,8 @@ const ClassifyFailuresTable = () => {
   const { run_id } = useParams();
 
   // Function to convert result to classification row format
-  const resultToClassificationRow = useCallback((result, index, filterFunc) => {
+  const resultToClassificationRow = useCallback((result, filterFunc) => {
     let markers = [];
-    let exceptionBadge;
-
-    if (filterFunc) {
-      exceptionBadge = buildBadge(
-        `exception_name-${result.id}`,
-        result.metadata.exception_name,
-        false,
-        () =>
-          filterFunc({
-            field: 'metadata.exception_name',
-            operation: 'eq',
-            value: result.metadata.exception_name,
-          }),
-      );
-    } else {
-      exceptionBadge = buildBadge(
-        `exception_name-${result.id}`,
-        result.metadata.exception_name,
-        false,
-      );
-    }
 
     if (result.metadata && result.metadata.component) {
       markers.push(
@@ -124,7 +108,9 @@ const ClassifyFailuresTable = () => {
         >
           {toTitleCase(result.result)}
         </Label>,
-        <React.Fragment key="exception">{exceptionBadge}</React.Fragment>,
+        <React.Fragment key="exception">
+          {exceptionToBadge(result?.metadata?.exception_name, filterFunc)}
+        </React.Fragment>,
         <ClassificationDropdown key="classification" testResult={result} />,
         Math.ceil(result.duration) + 's',
       ],
@@ -258,8 +244,8 @@ const ClassifyFailuresTable = () => {
 
   useEffect(() => {
     // set rows when filtered items update
-    const newRows = filteredResults.map((result, index) =>
-      resultToClassificationRow(result, index, updateFilters),
+    const newRows = filteredResults.map((result) =>
+      resultToClassificationRow(result, updateFilters),
     );
     setRows(newRows);
   }, [filteredResults, updateFilters, resultToClassificationRow]);
