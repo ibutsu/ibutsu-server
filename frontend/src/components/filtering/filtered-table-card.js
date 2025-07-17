@@ -180,27 +180,36 @@ const FilterTable = ({
 
             {row.cells &&
               row.cells.map((cell, cellIndex) => {
+                // Sanitize cell content to prevent filter objects from being rendered
+                const sanitizedCell = cell;
+
                 // Handle different cell formats properly
                 let cellContent;
-                if (cell === null || cell === undefined) {
+                if (sanitizedCell === null || sanitizedCell === undefined) {
                   cellContent = null;
-                } else if (typeof cell === 'string') {
-                  cellContent = cell;
-                } else if (typeof cell === 'object') {
-                  // React elements can be directly rendered
-                  if (React.isValidElement(cell)) {
-                    cellContent = cell;
-                  }
+                } else if (
+                  // Strings, numbers, and arrays can be rendered directly
+                  typeof sanitizedCell === 'string' ||
+                  typeof sanitizedCell === 'number' ||
+                  Array.isArray(sanitizedCell) ||
+                  (typeof sanitizedCell === 'object' &&
+                    React.isValidElement(sanitizedCell))
+                ) {
+                  cellContent = sanitizedCell;
+                } else if (
+                  typeof sanitizedCell === 'object' &&
+                  'title' in sanitizedCell
+                ) {
                   // Objects with title property (PatternFly table cell format)
-                  else if ('title' in cell) {
-                    cellContent = cell.title;
-                  }
-                  // Fallback for other object types
-                  else {
-                    cellContent = cell;
-                  }
-                } else {
-                  cellContent = cell;
+                  cellContent = sanitizedCell.title;
+                }
+                // Fallback for other object types - convert to string to avoid React error
+                else {
+                  console.warn(
+                    'FilterTable: Non-renderable object in cell content:',
+                    sanitizedCell,
+                  );
+                  cellContent = JSON.stringify(sanitizedCell);
                 }
 
                 return <Td key={`${row.id}${cellIndex}`}>{cellContent}</Td>;
