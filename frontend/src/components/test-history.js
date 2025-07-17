@@ -22,15 +22,9 @@ import { Settings } from '../settings';
 import {
   filtersToAPIParams,
   toTitleCase,
-  buildBadge,
   exceptionToBadge,
 } from '../utilities';
-import {
-  WEEKS,
-  RESULT_STATES,
-  ICON_RESULT_MAP,
-  MISSING_META_EXCEPTION,
-} from '../constants';
+import { WEEKS, RESULT_STATES, ICON_RESULT_MAP } from '../constants';
 
 import RunSummary from './runsummary';
 import LastPassed from './last-passed';

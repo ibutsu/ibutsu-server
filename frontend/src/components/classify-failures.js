@@ -21,7 +21,6 @@ import { Settings } from '../settings';
 import {
   filtersToAPIParams,
   toTitleCase,
-  buildBadge,
   exceptionToBadge,
 } from '../utilities';
 import { ICON_RESULT_MAP } from '../constants';
