@@ -17,6 +17,7 @@ import {
   NUMERIC_RUN_FIELDS,
   THEME_KEY,
   ICON_RESULT_MAP,
+  MISSING_META_EXCEPTION,
 } from './constants';
 import RunSummary from './components/runsummary';
 
@@ -70,7 +71,14 @@ export const toTitleCase = (str, convertToSpace = false) => {
 export const filtersToAPIParams = (filters = []) => {
   if (filters?.length) {
     return filters.map((f) => {
-      const apiOperation = OPERATIONS[f.operator].opChar;
+      const apiOperation = OPERATIONS[f.operator]?.opChar;
+      if (!apiOperation) {
+        console.warn(
+          `filtersToAPIParams: No operation found for operator '${f.operator}' in filter:`,
+          f,
+        );
+        return `${f.field}eq${f.value}`; // Fallback to 'eq' if no operation found
+      }
       return `${f.field}${apiOperation}${f.value}`;
     });
   } else {
@@ -107,9 +115,19 @@ export const toAPIFilter = (filters) => {
 };
 
 export const buildBadge = (key, value, isRead, onClick) => {
+  // Ensure value is a string to avoid React child errors
+  let displayValue = value;
+
+  if (typeof value === 'object' && value !== null) {
+    console.error('buildBadge: Object value passed as badge content:', value);
+    displayValue = JSON.stringify(value);
+  } else if (value === null || value === undefined) {
+    displayValue = 'N/A';
+  }
+
   const badge = (
     <Badge key={key} isRead={isRead}>
-      {value}
+      {displayValue}
     </Badge>
   );
   if (onClick) {
@@ -124,7 +142,7 @@ export const buildBadge = (key, value, isRead, onClick) => {
 };
 
 export const resultToRow = (result, filterFunc) => {
-  let markers = [];
+  let badges = [];
   let runLink = '';
   let classification = '';
   let componentBadge;
@@ -139,8 +157,8 @@ export const resultToRow = (result, filterFunc) => {
   } else {
     componentBadge = buildBadge('component', result.component, false);
   }
-  markers.push(componentBadge);
-  markers.push(' ');
+  badges.push(componentBadge);
+  badges.push(' ');
   if (result.metadata && result.metadata.env) {
     let envBadge;
     if (filterFunc) {
@@ -150,16 +168,32 @@ export const resultToRow = (result, filterFunc) => {
     } else {
       envBadge = buildBadge(result.env, result.env, false);
     }
-    markers.push(envBadge);
-    markers.push(' ');
+    badges.push(envBadge);
+    badges.push(' ');
   }
   if (result.metadata && result.metadata.markers) {
     for (const marker of result.metadata.markers) {
-      // Don't add duplicate markers
-      if (markers.filter((m) => m.key === marker.name).length === 0) {
-        markers.push(
-          <Badge isRead key={marker.name}>
-            {marker.name}
+      // Handle case where marker might be an object or a string
+      let markName, markKey;
+      markName = markKey = String(marker);
+      if (marker?.name !== null && marker?.name !== undefined) {
+        markName = marker.name;
+        markKey = marker.name;
+      } else if (typeof marker === 'object') {
+        console.warn(
+          'resultToRow: Object marker passed but no name property found',
+          marker,
+        );
+      }
+      // Don't add duplicate markers - check against existing React elements with keys
+      const hasExistingMarker = badges.some((m) => {
+        return React.isValidElement(m) && m.key === markKey;
+      });
+
+      if (!hasExistingMarker) {
+        badges.push(
+          <Badge isRead key={markKey}>
+            {markName}
           </Badge>,
         );
       }
@@ -187,7 +221,7 @@ export const resultToRow = (result, filterFunc) => {
         >
           {result.test_id}
         </Link>{' '}
-        {markers}
+        {badges}
       </React.Fragment>,
       <React.Fragment key="result">
         <Label
@@ -487,3 +521,24 @@ export const setDocumentDarkTheme = (theme = null) => {
     document.firstElementChild.classList.remove('pf-v6-theme-dark');
   }
 };
+
+export const exceptionToBadge = (exception = null, filterFunc) => {
+  let exceptionBadge;
+  let exceptionName = exception || MISSING_META_EXCEPTION;
+
+  if (filterFunc && exception) {
+    exceptionBadge = buildBadge('exception_name', exceptionName, false, () =>
+      filterFunc({
+        field: 'metadata.exception_name',
+        operator: 'eq',
+        value: exceptionName,
+      }),
+    );
+  } else {
+    exceptionBadge = buildBadge('exception_name', exceptionName, false);
+  }
+
+  return exceptionBadge;
+};
+
+// TODO envToBadge and componentToBadge functions, with MISSING_ constants
