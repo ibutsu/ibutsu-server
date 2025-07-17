@@ -31,9 +31,28 @@ const ActiveFilters = ({
   const params = useParams();
   const navigate = useNavigate();
 
-  const shownFilters = activeFilters?.filter(
-    (filter) => !hideFilters?.includes(filter?.field),
-  );
+  const shownFilters = activeFilters?.filter((filter) => {
+    // Debug: Check for malformed filter objects
+    if (
+      typeof filter === 'object' &&
+      filter !== null &&
+      (!filter?.field ||
+        !filter?.operator ||
+        filter?.value === null ||
+        filter?.value === undefined)
+    ) {
+      console.warn('ActiveFilters: Malformed filter object detected:', filter);
+      return false;
+    }
+
+    return (
+      !hideFilters?.includes(filter?.field) &&
+      filter?.field && // Ensure filter has a field
+      filter?.operator && // Ensure filter has an operator
+      filter?.value !== null &&
+      filter?.value !== undefined // Ensure filter has a value
+    );
+  });
 
   // Get the proper button text based on transfer_target
   const transferText = useMemo(() => {
@@ -108,7 +127,7 @@ const ActiveFilters = ({
                 </Badge>
                 <Badge isRead={false} style={BADGE_STYLE}>
                   <React.Fragment>
-                    {activeFilter?.value || activeFilter}
+                    {activeFilter?.value || 'N/A'}
                   </React.Fragment>
                 </Badge>
               </CardBody>
