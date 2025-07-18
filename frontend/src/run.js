@@ -49,6 +49,7 @@ import { Settings } from './settings';
 import {
   resultToRow,
   filtersToAPIParams,
+  filtersToSearchParams,
   processPyTestPath,
   cleanPath,
 } from './utilities';
@@ -574,10 +575,18 @@ const Run = ({ defaultTab = 'summary' }) => {
                                       <Link
                                         to={{
                                           pathname: `/project/${primaryObject?.id || project_id}/results`,
-                                          search: new URLSearchParams({
-                                            run_id: `[eq]${run.id}`,
-                                            result: `[eq]passed`,
-                                          }).toString(),
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'passed',
+                                            },
+                                          ]),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -607,10 +616,18 @@ const Run = ({ defaultTab = 'summary' }) => {
                                       <Link
                                         to={{
                                           pathname: `/project/${primaryObject?.id || project_id}/results`,
-                                          search: new URLSearchParams({
-                                            run_id: `[eq]${run.id}`,
-                                            result: `[eq]failed`,
-                                          }).toString(),
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'failed',
+                                            },
+                                          ]),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -640,10 +657,18 @@ const Run = ({ defaultTab = 'summary' }) => {
                                       <Link
                                         to={{
                                           pathname: `/project/${primaryObject?.id || project_id}/results`,
-                                          search: new URLSearchParams({
-                                            run_id: `[eq]${run.id}`,
-                                            result: `[eq]errors`,
-                                          }).toString(),
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'error',
+                                            },
+                                          ]),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -673,10 +698,18 @@ const Run = ({ defaultTab = 'summary' }) => {
                                       <Link
                                         to={{
                                           pathname: `/project/${primaryObject?.id || project_id}/results`,
-                                          search: new URLSearchParams({
-                                            run_id: `[eq]${run.id}`,
-                                            result: `[eq]xfailed`,
-                                          }).toString(),
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'xfailed',
+                                            },
+                                          ]),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -706,10 +739,18 @@ const Run = ({ defaultTab = 'summary' }) => {
                                       <Link
                                         to={{
                                           pathname: `/project/${primaryObject?.id || project_id}/results`,
-                                          search: new URLSearchParams({
-                                            run_id: `[eq]${run.id}`,
-                                            result: `[eq]xpassed`,
-                                          }).toString(),
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'xpassed',
+                                            },
+                                          ]),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -739,10 +780,18 @@ const Run = ({ defaultTab = 'summary' }) => {
                                       <Link
                                         to={{
                                           pathname: `/project/${primaryObject?.id || project_id}/results`,
-                                          search: new URLSearchParams({
-                                            run_id: `[eq]${run.id}`,
-                                            result: `[eq]skipped`,
-                                          }).toString(),
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'skipped',
+                                            },
+                                          ]),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -772,10 +821,18 @@ const Run = ({ defaultTab = 'summary' }) => {
                                       <Link
                                         to={{
                                           pathname: `/project/${primaryObject?.id || project_id}/results`,
-                                          search: new URLSearchParams({
-                                            run_id: `[eq]${run.id}`,
-                                            result: `[eq]manual`,
-                                          }).toString(),
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'manual',
+                                            },
+                                          ]),
                                         }}
                                       >
                                         <DataListItemRow>
