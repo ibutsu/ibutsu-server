@@ -49,6 +49,7 @@ import { Settings } from './settings';
 import {
   resultToRow,
   filtersToAPIParams,
+  filtersToSearchParams,
   processPyTestPath,
   cleanPath,
 } from './utilities';
@@ -567,145 +568,292 @@ const Run = ({ defaultTab = 'summary' }) => {
                                         />
                                       </DataListItemRow>
                                     </DataListItem>
-                                    <DataListItem aria-labelledby="Passed">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>
-                                              <Label
-                                                variant="filled"
-                                                icon={ICON_RESULT_MAP.passed}
-                                                title="Passed"
-                                              >
-                                                Passed
-                                              </Label>
-                                            </DataListCell>,
-                                            <DataListCell key={2}>
-                                              {passed}
-                                            </DataListCell>,
-                                          ]}
-                                        />
-                                      </DataListItemRow>
+                                    <DataListItem
+                                      aria-labelledby="Passed"
+                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                    >
+                                      <Link
+                                        to={{
+                                          pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'passed',
+                                            },
+                                          ]).toString(),
+                                        }}
+                                      >
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>
+                                                <Label
+                                                  variant="filled"
+                                                  icon={ICON_RESULT_MAP.passed}
+                                                  title="Passed"
+                                                >
+                                                  Passed
+                                                </Label>
+                                              </DataListCell>,
+                                              <DataListCell key={2}>
+                                                {passed}
+                                              </DataListCell>,
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </Link>
                                     </DataListItem>
-                                    <DataListItem aria-labelledby="Failed">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>
-                                              <Label
-                                                variant="filled"
-                                                icon={ICON_RESULT_MAP.failed}
-                                                title="Failed"
-                                              >
-                                                Failed
-                                              </Label>
-                                            </DataListCell>,
-                                            <DataListCell key={2}>
-                                              {failed}
-                                            </DataListCell>,
-                                          ]}
-                                        />
-                                      </DataListItemRow>
+                                    <DataListItem
+                                      aria-labelledby="Failed"
+                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                    >
+                                      <Link
+                                        to={{
+                                          pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'failed',
+                                            },
+                                          ]).toString(),
+                                        }}
+                                      >
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>
+                                                <Label
+                                                  variant="filled"
+                                                  icon={ICON_RESULT_MAP.failed}
+                                                  title="Failed"
+                                                >
+                                                  Failed
+                                                </Label>
+                                              </DataListCell>,
+                                              <DataListCell key={2}>
+                                                {failed}
+                                              </DataListCell>,
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </Link>
                                     </DataListItem>
-                                    <DataListItem aria-labelledby="Error">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>
-                                              <Label
-                                                variant="filled"
-                                                icon={ICON_RESULT_MAP.error}
-                                                title="Error"
-                                              >
-                                                Error
-                                              </Label>
-                                            </DataListCell>,
-                                            <DataListCell key={2}>
-                                              {errors}
-                                            </DataListCell>,
-                                          ]}
-                                        />
-                                      </DataListItemRow>
+                                    <DataListItem
+                                      aria-labelledby="Error"
+                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                    >
+                                      <Link
+                                        to={{
+                                          pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'error',
+                                            },
+                                          ]).toString(),
+                                        }}
+                                      >
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>
+                                                <Label
+                                                  variant="filled"
+                                                  icon={ICON_RESULT_MAP.error}
+                                                  title="Error"
+                                                >
+                                                  Error
+                                                </Label>
+                                              </DataListCell>,
+                                              <DataListCell key={2}>
+                                                {errors}
+                                              </DataListCell>,
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </Link>
                                     </DataListItem>
-                                    <DataListItem aria-labelledby="Xfailed">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>
-                                              <Label
-                                                variant="filled"
-                                                icon={ICON_RESULT_MAP.xfailed}
-                                                title="Xfailed"
-                                              >
-                                                Xfailed
-                                              </Label>
-                                            </DataListCell>,
-                                            <DataListCell key={2}>
-                                              {xfailed}
-                                            </DataListCell>,
-                                          ]}
-                                        />
-                                      </DataListItemRow>
+                                    <DataListItem
+                                      aria-labelledby="Xfailed"
+                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                    >
+                                      <Link
+                                        to={{
+                                          pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'xfailed',
+                                            },
+                                          ]).toString(),
+                                        }}
+                                      >
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>
+                                                <Label
+                                                  variant="filled"
+                                                  icon={ICON_RESULT_MAP.xfailed}
+                                                  title="Xfailed"
+                                                >
+                                                  Xfailed
+                                                </Label>
+                                              </DataListCell>,
+                                              <DataListCell key={2}>
+                                                {xfailed}
+                                              </DataListCell>,
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </Link>
                                     </DataListItem>
-                                    <DataListItem aria-labelledby="Xpassed">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>
-                                              <Label
-                                                variant="filled"
-                                                icon={ICON_RESULT_MAP.xpassed}
-                                                title="Xpassed"
-                                              >
-                                                Xpassed
-                                              </Label>
-                                            </DataListCell>,
-                                            <DataListCell key={2}>
-                                              {xpassed}
-                                            </DataListCell>,
-                                          ]}
-                                        />
-                                      </DataListItemRow>
+                                    <DataListItem
+                                      aria-labelledby="Xpassed"
+                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                    >
+                                      <Link
+                                        to={{
+                                          pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'xpassed',
+                                            },
+                                          ]).toString(),
+                                        }}
+                                      >
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>
+                                                <Label
+                                                  variant="filled"
+                                                  icon={ICON_RESULT_MAP.xpassed}
+                                                  title="Xpassed"
+                                                >
+                                                  Xpassed
+                                                </Label>
+                                              </DataListCell>,
+                                              <DataListCell key={2}>
+                                                {xpassed}
+                                              </DataListCell>,
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </Link>
                                     </DataListItem>
-                                    <DataListItem aria-labelledby="Skipped">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>
-                                              <Label
-                                                variant="filled"
-                                                icon={ICON_RESULT_MAP.skipped}
-                                                title="Skipped"
-                                              >
-                                                Skipped
-                                              </Label>
-                                            </DataListCell>,
-                                            <DataListCell key={2}>
-                                              {skipped}
-                                            </DataListCell>,
-                                          ]}
-                                        />
-                                      </DataListItemRow>
+                                    <DataListItem
+                                      aria-labelledby="Skipped"
+                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                    >
+                                      <Link
+                                        to={{
+                                          pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'skipped',
+                                            },
+                                          ]).toString(),
+                                        }}
+                                      >
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>
+                                                <Label
+                                                  variant="filled"
+                                                  icon={ICON_RESULT_MAP.skipped}
+                                                  title="Skipped"
+                                                >
+                                                  Skipped
+                                                </Label>
+                                              </DataListCell>,
+                                              <DataListCell key={2}>
+                                                {skipped}
+                                              </DataListCell>,
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </Link>
                                     </DataListItem>
-                                    <DataListItem aria-labelledby="Not Run">
-                                      <DataListItemRow>
-                                        <DataListItemCells
-                                          dataListCells={[
-                                            <DataListCell key={1}>
-                                              <Label
-                                                variant="filled"
-                                                icon={ICON_RESULT_MAP.manual}
-                                                title="Not Run / Manual"
-                                              >
-                                                Not Run / Manual
-                                              </Label>
-                                            </DataListCell>,
-                                            <DataListCell key={2}>
-                                              {not_run}
-                                            </DataListCell>,
-                                          ]}
-                                        />
-                                      </DataListItemRow>
+                                    <DataListItem
+                                      aria-labelledby="Not Run"
+                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                    >
+                                      <Link
+                                        to={{
+                                          pathname: `/project/${primaryObject?.id || project_id}/results`,
+                                          search: filtersToSearchParams([
+                                            {
+                                              field: 'run_id',
+                                              operator: 'eq',
+                                              value: run.id,
+                                            },
+                                            {
+                                              field: 'result',
+                                              operator: 'eq',
+                                              value: 'manual',
+                                            },
+                                          ]).toString(),
+                                        }}
+                                      >
+                                        <DataListItemRow>
+                                          <DataListItemCells
+                                            dataListCells={[
+                                              <DataListCell key={1}>
+                                                <Label
+                                                  variant="filled"
+                                                  icon={ICON_RESULT_MAP.manual}
+                                                  title="Not Run / Manual"
+                                                >
+                                                  Not Run / Manual
+                                                </Label>
+                                              </DataListCell>,
+                                              <DataListCell key={2}>
+                                                {not_run}
+                                              </DataListCell>,
+                                            ]}
+                                          />
+                                        </DataListItemRow>
+                                      </Link>
                                     </DataListItem>
                                   </DataList>
                                 </DataListCell>,
