@@ -80,21 +80,19 @@ const FilterHeatmapWidget = ({
 
   const jenkinsAnalysisLink = useMemo(() => {
     if (type === HEATMAP_TYPES.jenkins && analysisViewId !== null) {
-      const searchString = new URLSearchParams(
-        filtersToSearchParams([
-          {
-            field: 'job_name',
-            operator: 'eq',
-            value: params?.job_name,
-          },
-        ]),
-      ).toString();
+      const searchString = filtersToSearchParams([
+        {
+          field: 'job_name',
+          operator: 'eq',
+          value: params?.job_name,
+        },
+      ]);
       return (
         <Link
           key="jenkins-analysis-link"
           to={{
             pathname: `/project/${primaryObject?.id || params?.project}/view/${analysisViewId}`,
-            search: searchString,
+            search: searchString.toString(),
             hash: 'heatmap',
           }}
         >
@@ -244,20 +242,18 @@ const FilterHeatmapWidget = ({
       renderData.push(values);
       values.forEach((item) => {
         if (!!item && item.length > 2 && !!item[3]) {
-          const newSearchParams = new URLSearchParams(
-            filtersToSearchParams([
-              {
-                field: 'metadata.jenkins.build_number',
-                operator: 'eq',
-                value: item[3],
-              },
-              {
-                field: 'metadata.jenkins.job_name',
-                operator: 'eq',
-                value: params?.job_name,
-              },
-            ]),
-          );
+          const newSearchParams = filtersToSearchParams([
+            {
+              field: 'metadata.jenkins.build_number',
+              operator: 'eq',
+              value: item[3],
+            },
+            {
+              field: 'metadata.jenkins.job_name',
+              operator: 'eq',
+              value: params?.job_name,
+            },
+          ]);
           newLabels.push(
             <Link
               to={{

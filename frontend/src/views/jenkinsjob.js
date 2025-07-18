@@ -89,15 +89,13 @@ const JenkinsJobView = ({ view }) => {
           value: job.build_number,
         },
       ];
-      const searchString = new URLSearchParams(
-        filtersToSearchParams([
-          {
-            field: 'job_name',
-            operator: 'eq',
-            value: job.job_name,
-          },
-        ]),
-      ).toString();
+      const searchString = filtersToSearchParams([
+        {
+          field: 'job_name',
+          operator: 'eq',
+          value: job.job_name,
+        },
+      ]);
       return {
         cells: [
           analysisViewId
@@ -106,7 +104,7 @@ const JenkinsJobView = ({ view }) => {
                   <Link
                     to={{
                       pathname: `../view/${analysisViewId}`,
-                      search: searchString,
+                      search: searchString.toString(),
                     }}
                     relative="Path"
                   >
@@ -131,7 +129,7 @@ const JenkinsJobView = ({ view }) => {
             key="see-runs"
             to={{
               pathname: `/project/${project_id}/runs`,
-              search: `${filtersToSearchParams(runFilters)}`,
+              search: `${filtersToSearchParams(runFilters).toString()}`,
             }}
           >
             See runs <ChevronRightIcon />

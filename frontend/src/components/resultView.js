@@ -153,7 +153,7 @@ const ResultView = ({
       <Link
         to={{
           pathname: `/project/${project_id}/results`,
-          search: componentSearch,
+          search: componentSearch.toString(),
         }}
       >
         {testResult.component}
@@ -177,7 +177,7 @@ const ResultView = ({
       <Link
         to={{
           pathname: `/project/${project_id}/results`,
-          search: sourceSearch,
+          search: sourceSearch.toString(),
         }}
         relative="Path"
       >

@@ -93,7 +93,7 @@ export const filtersToSearchParams = (filters = []) => {
   filters.forEach((filter) => {
     newSearchParams.set([filter.field], `[${filter.operator}]${filter.value}`);
   });
-  return newSearchParams.toString();
+  return newSearchParams;
 };
 
 export const toAPIFilter = (filters) => {
@@ -346,7 +346,7 @@ export const runToRow = (run, filterFunc) => {
           pathname: '../results',
           search: filtersToSearchParams([
             { field: 'run_id', operator: 'eq', value: run.id },
-          ]),
+          ]).toString(),
         }}
         relative="Path"
       >
