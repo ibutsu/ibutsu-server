@@ -586,7 +586,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               operator: 'eq',
                                               value: 'passed',
                                             },
-                                          ]),
+                                          ]).toString(),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -627,7 +627,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               operator: 'eq',
                                               value: 'failed',
                                             },
-                                          ]),
+                                          ]).toString(),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -668,7 +668,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               operator: 'eq',
                                               value: 'error',
                                             },
-                                          ]),
+                                          ]).toString(),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -709,7 +709,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               operator: 'eq',
                                               value: 'xfailed',
                                             },
-                                          ]),
+                                          ]).toString(),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -750,7 +750,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               operator: 'eq',
                                               value: 'xpassed',
                                             },
-                                          ]),
+                                          ]).toString(),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -791,7 +791,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               operator: 'eq',
                                               value: 'skipped',
                                             },
-                                          ]),
+                                          ]).toString(),
                                         }}
                                       >
                                         <DataListItemRow>
@@ -832,7 +832,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               operator: 'eq',
                                               value: 'manual',
                                             },
-                                          ]),
+                                          ]).toString(),
                                         }}
                                       >
                                         <DataListItemRow>

@@ -63,7 +63,7 @@ const ActiveFilters = ({
                       activeFilters.filter(
                         (filter) => filter?.field !== 'project_id',
                       ),
-                    ),
+                    ).toString(),
                   })
                 }
                 variant="tertiary"
