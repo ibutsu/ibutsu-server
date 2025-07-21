@@ -252,6 +252,37 @@ class User(Model, ModelMixin):
             user_dict["projects"] = [project.to_dict() for project in self.projects]
         return user_dict
 
+    def user_cleanup(self, new_owner, session):
+        """
+        Cleanup related records when a user is deleted
+
+        Allow exceptions to raise, and don't commit the session here
+        The controller should handle exceptions and commit/rollback
+
+        TODO: setup cascades to delete orphans automatically
+
+        :param new_owner: The user who will take ownership of linked records
+        :param session: The SQLAlchemy session to use for database operations
+        :return: None
+        """
+
+        # 1. Clear the many-to-many relationship with projects
+        self.projects.clear()
+
+        # 2. Delete tokens associated with the user
+        session.query(Token).filter_by(user_id=self.id).delete(synchronize_session=False)
+
+        # 3. Reassign owned projects to the current user (admin performing deletion)
+        session.query(Project).filter_by(owner_id=self.id).update(
+            {"owner_id": new_owner}, synchronize_session=False
+        )
+
+        # 4. Reassign dashboards to the current user (admin performing deletion)
+        # TODO: this field is null on every prod record, evaluate dropping the field or changing to creator_id
+        session.query(Dashboard).filter_by(user_id=self.id).update(
+            {"user_id": new_owner}, synchronize_session=False
+        )
+
 
 class Token(Model, ModelMixin):
     __tablename__ = "tokens"

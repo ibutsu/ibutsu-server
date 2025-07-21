@@ -96,11 +96,33 @@ def admin_update_user(id_, body=None, user_info=None, token_info=None, user=None
 
 @validate_uuid
 def admin_delete_user(id_, token_info=None, user=None):
-    """Delete a single user"""
+    """Delete a single user and handle all related records"""
     check_user_is_admin(user)
     requested_user = User.query.get(id_)
     if not requested_user:
         abort(HTTPStatus.NOT_FOUND)
-    session.delete(requested_user)
-    session.commit()
-    return HTTPStatus.OK.phrase, HTTPStatus.OK
+
+    # prevent deletion of self
+    # TODO just block in the frontend?
+    if id_ == user:
+        abort(HTTPStatus.BAD_REQUEST, description="Cannot delete yourself")
+
+    # Prevent deletion of the last superadmin
+    if requested_user.is_superadmin and (User.query.filter_by(is_superadmin=True).count() <= 1):
+        abort(HTTPStatus.BAD_REQUEST, description="Cannot delete the last superadmin user")
+
+    # Handle user deletion with proper cleanup of related records
+    try:
+        requested_user.user_cleanup(new_owner=user, session=session)
+
+        # 5. Finally delete the user
+        session.delete(requested_user)
+        session.commit()
+
+        return HTTPStatus.OK.phrase, HTTPStatus.OK
+
+    except Exception as e:
+        session.rollback()
+        # Log the actual error for debugging
+        print(f"Error deleting user {id_}: {str(e)}")
+        abort(HTTPStatus.INTERNAL_SERVER_ERROR)
