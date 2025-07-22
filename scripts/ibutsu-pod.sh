@@ -181,6 +181,7 @@ podman run -dt \
 
 echo "================================="
 echo -n "Adding backend to the pod:    "
+# https://docs.sqlalchemy.org/en/20/changelog/migration_20.html#migration-to-2-0-step-two-turn-on-removedin20warnings
 podman run -d \
     --rm \
     --pod $POD_NAME \
@@ -193,13 +194,14 @@ podman run -d \
     -e POSTGRESQL_PASSWORD=ibutsu \
     -e CELERY_BROKER_URL=redis://127.0.0.1:6379 \
     -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
+    -e SQLALCHEMY_WARN_20=1 \
     $BACKEND_EXTRA_ARGS \
     -w /mnt \
     -v ./backend:/mnt/:z \
     $PYTHON_IMAGE \
     /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
                     pip install . &&
-                    python -m ibutsu_server --host 0.0.0.0'
+                    python -W always::DeprecationWarning -m ibutsu_server --host 0.0.0.0'
 echo -n "Waiting for backend to respond: "
 sleep 5
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); do
