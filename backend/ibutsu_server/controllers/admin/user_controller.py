@@ -7,7 +7,7 @@ from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project, User
 from ibutsu_server.filters import convert_filter
-from ibutsu_server.util.admin import check_user_is_admin
+from ibutsu_server.util.admin import validate_admin
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
@@ -25,20 +25,20 @@ def _hide_sensitive_fields(user_dict):
 
 
 @validate_uuid
+@validate_admin
 def admin_get_user(id_, token_info=None, user=None):
     """Return the current user"""
-    check_user_is_admin(user)
     requested_user = User.query.get(id_)
     if not requested_user:
         abort(HTTPStatus.NOT_FOUND)
     return _hide_sensitive_fields(requested_user.to_dict(with_projects=True))
 
 
+@validate_admin
 def admin_get_user_list(filter_=None, page=1, page_size=25, token_info=None, user=None):
     """
     Return a list of users (only superadmins can run this function)
     """
-    check_user_is_admin(user)
     query = User.query
 
     if filter_:
@@ -62,9 +62,9 @@ def admin_get_user_list(filter_=None, page=1, page_size=25, token_info=None, use
     }
 
 
+@validate_admin
 def admin_add_user(new_user=None, token_info=None, user=None):
     """Create a new user in the system"""
-    check_user_is_admin(user)
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
     new_user = User.from_dict(**connexion.request.get_json())
@@ -77,9 +77,9 @@ def admin_add_user(new_user=None, token_info=None, user=None):
 
 
 @validate_uuid
+@validate_admin
 def admin_update_user(id_, body=None, user_info=None, token_info=None, user=None):
     """Update a single user in the system"""
-    check_user_is_admin(user)
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
     user_dict = connexion.request.get_json()
@@ -95,28 +95,29 @@ def admin_update_user(id_, body=None, user_info=None, token_info=None, user=None
 
 
 @validate_uuid
+@validate_admin
 def admin_delete_user(id_, token_info=None, user=None):
     """Delete a single user and handle all related records"""
-    check_user_is_admin(user)
-    requested_user = User.query.get(id_)
-    if not requested_user:
+    user_to_delete = User.query.get(id_)
+    if not user_to_delete:
         abort(HTTPStatus.NOT_FOUND)
 
+    user = User.query.get(user)
     # prevent deletion of self
     # TODO just block in the frontend?
-    if id_ == user:
+    if id_ == user.id:
         abort(HTTPStatus.BAD_REQUEST, description="Cannot delete yourself")
 
     # Prevent deletion of the last superadmin
-    if requested_user.is_superadmin and (User.query.filter_by(is_superadmin=True).count() <= 1):
+    if user_to_delete.is_superadmin and (User.query.filter_by(is_superadmin=True).count() <= 1):
         abort(HTTPStatus.BAD_REQUEST, description="Cannot delete the last superadmin user")
 
     # Handle user deletion with proper cleanup of related records
     try:
-        requested_user.user_cleanup(new_owner=user, session=session)
+        user_to_delete.user_cleanup(new_owner=user, session=session)
 
         # 5. Finally delete the user
-        session.delete(requested_user)
+        session.delete(user_to_delete)
         session.commit()
 
         return HTTPStatus.OK.phrase, HTTPStatus.OK

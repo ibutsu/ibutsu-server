@@ -7,11 +7,12 @@ from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Group, Project, User
 from ibutsu_server.filters import convert_filter
-from ibutsu_server.util.admin import check_user_is_admin
+from ibutsu_server.util.admin import validate_admin
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
 
 
+@validate_admin
 def admin_add_project(project=None, token_info=None, user=None):
     """Create a project
 
@@ -20,14 +21,13 @@ def admin_add_project(project=None, token_info=None, user=None):
 
     :rtype: Project
     """
-    check_user_is_admin(user)
+    user = User.query.get(user)
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
     project = Project.from_dict(**connexion.request.get_json())
     # check if project already exists
     if project.id and Project.query.get(project.id):
         return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
-    user = User.query.get(user)
     if project.group_id:
         # check if the group exists
         group = Group.query.get(project.group_id)
@@ -42,6 +42,7 @@ def admin_add_project(project=None, token_info=None, user=None):
 
 
 @validate_uuid
+@validate_admin
 def admin_get_project(id_, token_info=None, user=None):
     """Get a single project by ID
 
@@ -50,7 +51,6 @@ def admin_get_project(id_, token_info=None, user=None):
 
     :rtype: Project
     """
-    check_user_is_admin(user)
     project = Project.query.get(id_)
     if not project:
         project = Project.query.filter(Project.name == id_).first()
@@ -59,6 +59,7 @@ def admin_get_project(id_, token_info=None, user=None):
     return project.to_dict(with_owner=True)
 
 
+@validate_admin
 def admin_get_project_list(
     filter_=None,
     owner_id=None,
@@ -81,7 +82,6 @@ def admin_get_project_list(
 
     :rtype: List[Project]
     """
-    check_user_is_admin(user)
     query = Project.query
 
     if filter_:
@@ -112,6 +112,7 @@ def admin_get_project_list(
 
 
 @validate_uuid
+@validate_admin
 def admin_update_project(id_, project=None, body=None, token_info=None, user=None):
     """Update a project
 
@@ -122,7 +123,6 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
 
     :rtype: Project
     """
-    check_user_is_admin(user)
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
     if not is_uuid(id_):
@@ -158,9 +158,9 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
 
 
 @validate_uuid
+@validate_admin
 def admin_delete_project(id_, token_info=None, user=None):
     """Delete a single project"""
-    check_user_is_admin(user)
     if not is_uuid(id_):
         return f"Project ID {id_} is not in UUID format", HTTPStatus.BAD_REQUEST
     project = Project.query.get(id_)

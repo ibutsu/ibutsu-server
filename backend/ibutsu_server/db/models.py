@@ -274,13 +274,13 @@ class User(Model, ModelMixin):
 
         # 3. Reassign owned projects to the current user (admin performing deletion)
         session.query(Project).filter_by(owner_id=self.id).update(
-            {"owner_id": new_owner}, synchronize_session=False
+            {"owner_id": new_owner.id}, synchronize_session=False
         )
 
         # 4. Reassign dashboards to the current user (admin performing deletion)
         # TODO: this field is null on every prod record, evaluate dropping the field or changing to creator_id
         session.query(Dashboard).filter_by(user_id=self.id).update(
-            {"user_id": new_owner}, synchronize_session=False
+            {"user_id": new_owner.id}, synchronize_session=False
         )
 
 
