@@ -273,7 +273,8 @@ class User(Model, ModelMixin):
         session.query(Token).filter_by(user_id=self.id).delete(synchronize_session=False)
 
         # 3. Reassign owned projects to the current user (admin performing deletion)
-        # Ensure string consistency for UUID values
+        # The string coercion here is not ideal and PortableUUID needs a review
+        # without it, the bulk query fails comparing text == uuid
         session.query(Project).filter_by(owner_id=str(self.id)).update(
             {"owner_id": str(new_owner.id)}, synchronize_session=False
         )
