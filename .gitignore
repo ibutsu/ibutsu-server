@@ -105,6 +105,7 @@ sonar-project.properties
 .redis-data/
 .jwtsecret
 .archives/
+.archives-back/
 
 
 scripts/populate-users-data.py
