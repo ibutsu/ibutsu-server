@@ -256,7 +256,8 @@ class User(Model, ModelMixin):
         """
         Cleanup related records when a user is deleted
 
-        Allow exceptions to raise, and don't commit the session here
+        Allow exceptions to raise
+        SESSION COMMIT HAPPENS IN CALLER, NOT HERE
         The controller should handle exceptions and commit/rollback
 
         TODO: setup cascades to delete orphans automatically
@@ -275,9 +276,10 @@ class User(Model, ModelMixin):
         # 3. Reassign owned projects to the current user (admin performing deletion)
         # The string coercion here is not ideal and PortableUUID needs a review
         # without it, the bulk query fails comparing text == uuid
-        session.query(Project).filter_by(owner_id=str(self.id)).update(
-            {"owner_id": str(new_owner.id)}, synchronize_session=False
-        )
+        owned_projects = session.query(Project).filter(Project.owner_id == self.id)
+        for p in owned_projects:
+            p.owner_id = new_owner.id
+            session.add(p)
 
         # 4. Reassign dashboards to the current user (admin performing deletion)
         # TODO: this field is null on every prod record, evaluate dropping the field or changing to creator_id

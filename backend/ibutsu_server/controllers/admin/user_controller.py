@@ -63,7 +63,7 @@ def admin_get_user_list(filter_=None, page=1, page_size=25, token_info=None, use
 
 
 @validate_admin
-def admin_add_user(new_user=None, token_info=None, user=None):
+def admin_add_user(body=None, token_info=None, user=None):
     """Create a new user in the system"""
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ

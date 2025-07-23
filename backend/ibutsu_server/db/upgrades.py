@@ -16,7 +16,8 @@ def get_upgrade_op(session):
 
     :param session: The SQLAlchemy session object.
     """
-    context = MigrationContext.configure(session.get_bind().connect())
+    connection = session.connection()
+    context = MigrationContext.configure(connection)
     return Operations(context)
 
 
@@ -25,7 +26,7 @@ def upgrade_1(session):
 
     This upgrade adds a dashboard_id to the widget_configs table
     """
-    engine = session.get_bind()
+    engine = session.connection().engine
     op = get_upgrade_op(session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
@@ -69,8 +70,7 @@ def upgrade_2(session):
             USING gin ((data->'requirements'));
     """
     TABLES = ["runs", "results"]
-
-    engine = session.get_bind()
+    engine = session.connection().engine
     op = get_upgrade_op(session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
@@ -109,7 +109,7 @@ def upgrade_3(session):
         - makes the 'result_id' column of artifacts nullable
         - adds a 'run_id' to the artifacts table
     """
-    engine = session.get_bind()
+    engine = session.connection().engine
     op = get_upgrade_op(session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
@@ -138,7 +138,7 @@ def upgrade_4(session):
     This upgrade removes the "nullable" constraint on the password field, and adds a "is_superadmin"
     field to the user table.
     """
-    engine = session.get_bind()
+    engine = session.connection().engine
     op = get_upgrade_op(session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
@@ -160,7 +160,7 @@ def upgrade_5(session):
 
     This upgrade adds a default dashboard to a project
     """
-    engine = session.get_bind()
+    engine = session.connection().engine
     op = get_upgrade_op(session)
     metadata = MetaData()
     metadata.reflect(bind=engine)

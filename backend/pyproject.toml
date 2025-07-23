@@ -55,7 +55,7 @@ dependencies = [
     "redis",
     "setuptools",
     "sqlalchemy-json",
-    "sqlalchemy<1.4",
+    "sqlalchemy==1.4",
     "swagger-ui-bundle",
     "vine",
     "werkzeug",

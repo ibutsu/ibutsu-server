@@ -18,12 +18,21 @@ def _get_comparison_data(filters):
                     queries[i] = queries[i].filter(filter_clause)
 
     # Find run IDs for each filter
-    run_id_1 = queries[0].with_entities(Result.run_id).order_by(Result.start_time.desc()).first()
-    run_id_2 = queries[1].with_entities(Result.run_id).order_by(Result.start_time.desc()).first()
+    # Extract the ID value from the result row tuple
+    run_id_1 = queries[0].with_entities(Result.run_id).order_by(Result.start_time.desc()).first()[0]
+    run_id_2 = queries[1].with_entities(Result.run_id).order_by(Result.start_time.desc()).first()[0]
 
     # Get list of tests matching our filters and run IDs
-    results_1 = queries[0].filter(Result.run_id.in_(run_id_1)).order_by(Result.data["fspath"]).all()
-    results_2 = queries[1].filter(Result.run_id.in_(run_id_2)).order_by(Result.data["fspath"]).all()
+    results_1 = []
+    results_2 = []
+    if run_id_1:
+        results_1 = (
+            queries[0].filter(Result.run_id == run_id_1).order_by(Result.data["fspath"]).all()
+        )
+    if run_id_2:
+        results_2 = (
+            queries[1].filter(Result.run_id == run_id_2).order_by(Result.data["fspath"]).all()
+        )
 
     # Build matrix by matching results
     # Could revisit this if loading is taking too long

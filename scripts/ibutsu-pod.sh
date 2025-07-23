@@ -181,6 +181,7 @@ podman run -dt \
 
 echo "================================="
 echo -n "Adding backend to the pod:    "
+# https://docs.sqlalchemy.org/en/20/changelog/migration_20.html#migration-to-2-0-step-two-turn-on-removedin20warnings
 podman run -d \
     --rm \
     --pod $POD_NAME \
@@ -193,13 +194,14 @@ podman run -d \
     -e POSTGRESQL_PASSWORD=ibutsu \
     -e CELERY_BROKER_URL=redis://127.0.0.1:6379 \
     -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
+    -e SQLALCHEMY_WARN_20=1 \
     $BACKEND_EXTRA_ARGS \
     -w /mnt \
     -v ./backend:/mnt/:z \
     $PYTHON_IMAGE \
     /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
                     pip install . &&
-                    python -m ibutsu_server --host 0.0.0.0'
+                    python -W always::DeprecationWarning -m ibutsu_server --host 0.0.0.0'
 echo -n "Waiting for backend to respond: "
 sleep 5
 until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); do
@@ -442,6 +444,26 @@ if [[ $CREATE_PROJECT = true ]]; then
             http://127.0.0.1:8080/api/widget-config | jq -r '.id')
         echo "  Result Aggregator ID: ${RESULT_AGGREGATOR}"
 
+        # Create additional users and assign them to the project
+        echo "Creating 5 additional admin users..."
+        for i in {1..5}
+        do
+            # Create the user
+            USER_ID=$(curl --no-progress-meter --header "Content-Type: application/json" \
+                --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+                --request POST \
+                --data "{\"email\": \"extrauser${i}@example.com\", \"password\": \"admin12345\", \"is_active\": true, \"is_superadmin\": true, \"name\": \"Extra User ${i}\"}" \
+                http://127.0.0.1:8080/api/admin/user | jq -r '.id')
+
+            # Add user to the project by updating the user
+            curl --no-progress-meter --header "Content-Type: application/json" \
+                --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+                --request PUT \
+                --data "{\"projects\": [{\"id\": \"${PROJECT_ID}\"}]}" \
+                http://127.0.0.1:8080/api/admin/user/${USER_ID} > /dev/null
+
+            echo "  Created user extrauser${i}@example.com with password admin12345 and added to project"
+        done
     fi
 
 fi

@@ -81,6 +81,8 @@ google-auth-oauthlib==1.2.1
     # via ibutsu-server (pyproject.toml)
 googleapis-common-protos==1.65.0
     # via google-api-core
+greenlet==3.2.3
+    # via sqlalchemy
 gunicorn==23.0.0
     # via ibutsu-server (pyproject.toml)
 httplib2==0.22.0
@@ -181,7 +183,7 @@ setuptools==75.2.0
     # via ibutsu-server (pyproject.toml)
 six==1.16.0
     # via python-dateutil
-sqlalchemy==1.3.24
+sqlalchemy==1.4.0
     # via
     #   ibutsu-server (pyproject.toml)
     #   alembic
