@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/python-39:1
+FROM registry.access.redhat.com/ubi9/python-39:9.6
 
 ENV UPGRADE_PIP_TO_LATEST=1
 
