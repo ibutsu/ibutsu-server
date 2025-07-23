@@ -279,9 +279,9 @@ class User(Model, ModelMixin):
         # The string coercion here is not ideal and PortableUUID needs a review
         # The RH of the comparison is forced to a string by sqlalchemy even though it is a UUID
         # Cast the project field, also a UUID, to a string since the RH side is already a string
-        session.query(Project).filter(sa_cast(Project.owner_id, sa_text) == self.id).update(
-            {"owner_id": new_owner.id}, synchronize_session=False
-        )
+        session.query(Project).filter(
+            sa_cast(Project.owner_id, sa_text) == sa_cast(self.id, sa_text)
+        ).update({"owner_id": new_owner.id}, synchronize_session=False)
 
         # 4. Reassign dashboards to the current user (admin performing deletion)
         # TODO: this field is null on every prod record, evaluate dropping the field or changing to creator_id
