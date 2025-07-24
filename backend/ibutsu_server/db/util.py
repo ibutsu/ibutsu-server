@@ -5,6 +5,7 @@ Various utility DB functions
 from typing import Optional
 
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.orm import Query
 from sqlalchemy.sql.expression import ClauseElement, Executable
 
 from ibutsu_server.db import models
@@ -21,7 +22,8 @@ class Explain(Executable, ClauseElement):
     """
 
     def __init__(self, stmt, analyze=False):
-        self.statement = stmt
+        # In SQLAlchemy 1.4, Query objects need to be converted to statements
+        self.statement = stmt.statement if isinstance(stmt, Query) else stmt
         self.analyze = analyze
 
 
