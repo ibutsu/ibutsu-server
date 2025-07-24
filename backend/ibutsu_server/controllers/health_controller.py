@@ -3,6 +3,8 @@ from http import HTTPStatus
 from flask import current_app
 from sqlalchemy.exc import InterfaceError, OperationalError
 
+from ibutsu_server.util.app_context import with_app_context
+
 try:
     from ibutsu_server.db.model import Result
 
@@ -10,7 +12,9 @@ try:
 except ImportError:
     IS_CONNECTED = False
 
+
 from ibutsu_server.constants import LOCALHOST
+from ibutsu_server.db import db
 
 
 def get_health(token_info=None, user=None):
@@ -21,6 +25,7 @@ def get_health(token_info=None, user=None):
     return {"status": "OK", "message": "Service is running"}
 
 
+@with_app_context
 def get_database_health(token_info=None, user=None):
     """Get a health report for the database
 
@@ -35,7 +40,7 @@ def get_database_health(token_info=None, user=None):
                 HTTPStatus.SERVICE_UNAVAILABLE,
             )
         else:
-            Result.query.first()
+            db.session.execute(db.select(Result)).scalar_one_or_none()
             response = ({"status": "OK", "message": "Service is running"}, HTTPStatus.OK)
     except OperationalError:
         response = (

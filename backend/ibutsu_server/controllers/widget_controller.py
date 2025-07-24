@@ -1,6 +1,6 @@
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, WIDGET_TYPES
 from ibutsu_server.widgets.accessibility_analysis import (
@@ -109,8 +109,8 @@ def get_widget(id_):
     if id_ not in WIDGET_TYPES.keys():
         return "Widget not found", HTTPStatus.NOT_FOUND
     params = {}
-    for key in connexion.request.args.keys():
-        params[key] = connexion.request.args.getlist(key)
+    for key in request.args.keys():
+        params[key] = request.args.getlist(key)
     params = _pre_process_params(params)
     params = _typecast_params(id_, params)
     return WIDGET_METHODS[id_](**params)

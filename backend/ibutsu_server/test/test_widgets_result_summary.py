@@ -11,6 +11,7 @@ def test_get_result_summary(mocked_session: Mock, mocked_apply_filters: Mock):
     # GIVEN: Some mocked objects and data
     mocked_apply_filters.side_effect = lambda query, filters, run: query
     mocked_query = MagicMock()
+    # TODO how to mock into the db.session.execute that's necessry for the query.scalers.all chain?
     mocked_query.all.return_value = [
         # errors, skips, failures, tests, xfailures, xpasses
         (0, 0, 0, 17, 0, 0),

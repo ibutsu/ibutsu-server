@@ -1,14 +1,15 @@
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
+from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Run, User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks.runs import update_run as update_run_task
 from ibutsu_server.util import merge_dicts
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import (
     add_user_filter,
@@ -21,6 +22,7 @@ from ibutsu_server.util.uuid import validate_uuid
 
 
 @query_as_task
+@with_app_context
 def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=None, user=None):
     """Get a list of runs
 
@@ -65,8 +67,8 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
 
     :rtype: List[Run]
     """
-    user = User.query.get(user)
-    query = Run.query
+    user = db.session.get(User, user)
+    query = db.select(Run)
     if user:
         query = add_user_filter(query, user, model=Run)
 
@@ -74,16 +76,20 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Run)
             if filter_clause is not None:
-                query = query.filter(filter_clause)
+                query = query.where(filter_clause)
 
     if estimate:
         total_items = get_count_estimate(query)
     else:
-        total_items = query.count()
+        total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
 
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    runs = query.order_by(Run.start_time.desc()).offset(offset).limit(page_size).all()
+    runs = (
+        db.session.execute(query.order_by(Run.start_time.desc()).offset(offset).limit(page_size))
+        .scalars()
+        .all()
+    )
     return {
         "runs": [run.to_dict() for run in runs],
         "pagination": {
@@ -96,6 +102,7 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
 
 
 @validate_uuid
+@with_app_context
 def get_run(id_, token_info=None, user=None):
     """Get a run
 
@@ -104,7 +111,7 @@ def get_run(id_, token_info=None, user=None):
 
     :rtype: Run
     """
-    run = Run.query.get(id_)
+    run = db.session.get(Run, id_)
     if not run:
         return "Run not found", HTTPStatus.NOT_FOUND
     if not project_has_user(run.project, user):
@@ -112,6 +119,7 @@ def get_run(id_, token_info=None, user=None):
     return run.to_dict()
 
 
+@with_app_context
 def add_run(run=None, token_info=None, user=None):
     """Create a new run
 
@@ -120,9 +128,9 @@ def add_run(run=None, token_info=None, user=None):
 
     :rtype: Run
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    run = Run.from_dict(**connexion.request.get_json())
+    run = Run.from_dict(**request.get_json())
 
     if not run.data:
         return "Bad request, no data supplied", HTTPStatus.BAD_REQUEST
@@ -143,13 +151,14 @@ def add_run(run=None, token_info=None, user=None):
     # if not present, created is the time at which the run is added to the DB
     run.created = run.created if run.created else datetime.utcnow()
 
-    session.add(run)
-    session.commit()
+    db.session.add(run)
+    db.session.commit()
     update_run_task.apply_async((run.id,), countdown=5)
     return run.to_dict(), HTTPStatus.CREATED
 
 
 @validate_uuid
+@with_app_context
 def update_run(id_, run=None, body=None, token_info=None, user=None):
     """Updates a single run
 
@@ -160,25 +169,26 @@ def update_run(id_, run=None, body=None, token_info=None, user=None):
 
     :rtype: Run
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    run_dict = connexion.request.get_json()
+    run_dict = request.get_json()
     if run_dict.get("metadata", {}).get("project"):
         run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
         if not project_has_user(run_dict["project_id"], user):
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-    run = Run.query.get(id_)
+    run = db.session.get(Run, id_)
     if run and not project_has_user(run.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     if not run:
         return "Run not found", HTTPStatus.NOT_FOUND
     run.update(run_dict)
-    session.add(run)
-    session.commit()
+    db.session.add(run)
+    db.session.commit()
     update_run_task.apply_async((id_,), countdown=5)
     return run.to_dict()
 
 
+@with_app_context
 def bulk_update(filter_=None, page_size=1, token_info=None, user=None):
     """Updates multiple runs with common metadata
 
@@ -189,10 +199,10 @@ def bulk_update(filter_=None, page_size=1, token_info=None, user=None):
 
     :rtype: List[Run]
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
 
-    run_dict = connexion.request.get_json()
+    run_dict = request.get_json()
 
     if not run_dict.get("metadata"):
         return "Bad request, can only update metadata", HTTPStatus.UNAUTHORIZED
@@ -219,12 +229,12 @@ def bulk_update(filter_=None, page_size=1, token_info=None, user=None):
 
     model_runs = []
     for run_json in runs:
-        run = Run.query.get(run_json.get("id"))
+        run = db.session.get(Run, run_json.get("id"))
         # update the json dict of the run with the new metadata
         merge_dicts(run_dict, run_json)
         run.update(run_json)
-        session.add(run)
+        db.session.add(run)
         model_runs.append(run)
-    session.commit()
+    db.session.commit()
 
     return [run.to_dict() for run in model_runs]

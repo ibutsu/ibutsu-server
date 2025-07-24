@@ -4,15 +4,15 @@ from http import HTTPStatus
 from urllib.parse import urlencode
 from uuid import uuid4
 
-import connexion
 import requests
-from flask import current_app, make_response, redirect
+from flask import current_app, make_response, redirect, request
 from google.auth.transport.requests import Request
 from google.oauth2 import id_token
 
 from ibutsu_server.constants import LOCALHOST, RESPONSE_JSON_REQ
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Token, User
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.jwt import generate_token
 from ibutsu_server.util.keycloak import get_keycloak_config, get_user_from_keycloak
 from ibutsu_server.util.login import validate_activation_code
@@ -88,14 +88,18 @@ def _get_user_from_provider(provider, provider_config, code):
     return user
 
 
+@with_app_context
 def _find_or_create_token(token_name, user):
     """To reduce congnitive complexity"""
-    token = Token.query.filter(Token.name == token_name, Token.user_id == user.id).first()
+    token = db.session.execute(
+        db.select(Token).where(Token.name == token_name, Token.user_id == user.id)
+    ).scalar_one_or_none()
     if not token:
         token = Token(name=token_name, user_id=user.id)
     return token
 
 
+@with_app_context
 def login(email=None, password=None):
     """login
 
@@ -106,16 +110,16 @@ def login(email=None, password=None):
 
     :rtype: LoginToken
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    login = connexion.request.get_json()
+    login = request.get_json()
 
     if not login.get("email") or not login.get("password"):
         return {
             "code": "EMPTY",
             "message": "Username and/or password are empty",
         }, HTTPStatus.UNAUTHORIZED
-    user = User.query.filter_by(email=login["email"]).first()
+    user = db.session.execute(db.select(User).filter_by(email=login["email"])).scalar_one_or_none()
 
     # superadmins can login even if local login is disabled
     if user and not user.is_superadmin and not current_app.config.get("USER_LOGIN_ENABLED", True):
@@ -127,12 +131,14 @@ def login(email=None, password=None):
 
     if user and user.check_password(login["password"]):
         login_token = generate_token(user.id)
-        token = Token.query.filter(Token.name == "login-token", Token.user_id == user.id).first()
+        token = db.session.execute(
+            db.select(Token).where(Token.name == "login-token", Token.user_id == user.id)
+        ).scalar_one_or_none()
         if not token:
             token = Token(name="login-token", user_id=user.id)
         token.token = login_token
-        session.add(token)
-        session.commit()
+        db.session.add(token)
+        db.session.commit()
         return {"name": user.name, "email": user.email, "token": login_token}
     elif not current_app.config.get("USER_LOGIN_ENABLED", True):
         return {
@@ -167,11 +173,12 @@ def config(provider):
         return get_provider_config(provider, is_private=False)
 
 
+@with_app_context
 def auth(provider):
     """Auth redirect URL"""
-    if not connexion.request.args.get("code"):
+    if not request.args.get("code"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-    code = connexion.request.args["code"]
+    code = request.args["code"]
     frontend_url = build_url(
         current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login"
     )
@@ -182,8 +189,8 @@ def auth(provider):
     jwt_token = generate_token(user.id)
     token = _find_or_create_token("login-token", user)
     token.token = jwt_token
-    session.add(token)
-    session.commit()
+    db.session.add(token)
+    db.session.commit()
     if provider == "keycloak":
         query_params = urlencode({"email": user.email, "name": user.name, "token": jwt_token})
         return redirect(f"{frontend_url}?{query_params}")
@@ -197,6 +204,7 @@ def auth(provider):
         )
 
 
+@with_app_context
 def register(email=None, password=None):
     """Register a user
 
@@ -205,9 +213,9 @@ def register(email=None, password=None):
     :param password: The password for the user
     :type password: str
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    details = connexion.request.get_json()
+    details = request.get_json()
     if not details.get("email") or not details.get("password"):
         return {
             "code": "EMPTY",
@@ -222,11 +230,13 @@ def register(email=None, password=None):
         password=details["password"],
         activation_code=activation_code,
     )
-    user_exists = User.query.filter_by(email=user.email).first()
+    user_exists = db.session.execute(
+        db.select(User).filter_by(email=user.email)
+    ).scalar_one_or_none()
     if user_exists:
         return f"The user with email {user.email} already exists", HTTPStatus.BAD_REQUEST
-    session.add(user)
-    session.commit()
+    db.session.add(user)
+    db.session.commit()
 
     # Send an activation e-mail
     activation_url = build_url(
@@ -248,26 +258,30 @@ def register(email=None, password=None):
     return {}, HTTPStatus.CREATED
 
 
+@with_app_context
 def recover(email=None):
     """Recover a user account
 
     :param email: The e-mail address of the user
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    login = connexion.request.get_json()
+    login = request.get_json()
     if not login.get("email"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-    user = User.query.filter(User.email == login["email"]).first()
+    user = db.session.execute(
+        db.select(User).where(User.email == login["email"])
+    ).scalar_one_or_none()
     if not user:
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
     # Create a random activation code. Base64 just for funsies
     user.activation_code = urlsafe_b64encode(str(uuid4()).encode("utf8")).strip(b"=")
-    session.add(user)
-    session.commit()
+    db.session.add(user)
+    db.session.commit()
     return {}, HTTPStatus.CREATED
 
 
+@with_app_context
 def reset_password(activation_code=None, password=None):
     """Reset the password from the recover page
 
@@ -275,23 +289,26 @@ def reset_password(activation_code=None, password=None):
     :param activation_code: The activation_code supplied to the reset page
     :param password: The new password for the user
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    login = connexion.request.get_json()
+    login = request.get_json()
     if result := validate_activation_code(login.get("activation_code")):
         return result
     if not login.get("activation_code") or not login.get("password"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-    user = User.query.filter(User.activation_code == login["activation_code"]).first()
+    user = db.session.execute(
+        db.select(User).where(User.activation_code == login["activation_code"])
+    ).scalar_one_or_none()
     if not user:
         return "Invalid activation code", HTTPStatus.BAD_REQUEST
     user.password = login["password"]
     user.activation_code = None
-    session.add(user)
-    session.commit()
+    db.session.add(user)
+    db.session.commit()
     return {}, HTTPStatus.CREATED
 
 
+@with_app_context
 def activate(activation_code=None):
     """Activate a user's account
 
@@ -299,15 +316,17 @@ def activate(activation_code=None):
     """
     if result := validate_activation_code(activation_code):
         return result
-    user = User.query.filter(User.activation_code == activation_code).first()
+    user = db.session.execute(
+        db.select(User).where(User.activation_code == activation_code)
+    ).scalar_one_or_none()
     login_url = build_url(
         current_app.config.get("FRONTEND_URL", f"http://{LOCALHOST}:3000"), "login"
     )
     if user:
         user.is_active = True
         user.activation_code = None
-        session.add(user)
-        session.commit()
+        db.session.add(user)
+        db.session.commit()
         return redirect(f"{login_url}?st=success&msg=Account+activated,+please+log+in.")
     else:
         return redirect(

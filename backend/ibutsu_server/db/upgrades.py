@@ -4,30 +4,31 @@ from sqlalchemy import MetaData
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
-from ibutsu_server.db.base import Boolean, Column, ForeignKey, Text
+from ibutsu_server.db.base import Boolean, Column, ForeignKey, Text, db
 from ibutsu_server.db.types import PortableUUID
 
-__version__ = 5
+__version__ = 6
 
 
-def get_upgrade_op(session):
+def get_upgrade_op(current_session):
     """
     Create a migration context and an operations object for performing upgrades.
 
-    :param session: The SQLAlchemy session object.
+    :param current_session: The SQLAlchemy current_session object.
     """
-    connection = session.connection()
-    context = MigrationContext.configure(connection)
+    # Flask-SQLAlchemy 3.0+ compatibility: use db.engine instead of current_session.get_bind()
+    bind = getattr(current_session, "bind", None) or db.engine
+    context = MigrationContext.configure(bind.connect())
     return Operations(context)
 
 
-def upgrade_1(session):
+def upgrade_1(current_session):
     """Version 1 upgrade
 
     This upgrade adds a dashboard_id to the widget_configs table
     """
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     widget_configs = metadata.tables.get("widget_configs")
@@ -57,7 +58,7 @@ def upgrade_1(session):
         )
 
 
-def upgrade_2(session):
+def upgrade_2(current_session):
     """Version 2 upgrade
 
     This upgrade adds indices for the metadata.tags, metadata.requirements fields in the
@@ -70,8 +71,9 @@ def upgrade_2(session):
             USING gin ((data->'requirements'));
     """
     TABLES = ["runs", "results"]
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
 
@@ -102,15 +104,15 @@ def upgrade_2(session):
                     )
 
 
-def upgrade_3(session):
+def upgrade_3(current_session):
     """Version 3 upgrade
 
     This upgrade:
         - makes the 'result_id' column of artifacts nullable
         - adds a 'run_id' to the artifacts table
     """
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     artifacts = metadata.tables.get("artifacts")
@@ -132,14 +134,14 @@ def upgrade_3(session):
             )
 
 
-def upgrade_4(session):
+def upgrade_4(current_session):
     """Version 4 upgrade
 
     This upgrade removes the "nullable" constraint on the password field, and adds a "is_superadmin"
     field to the user table.
     """
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     users = metadata.tables.get("users")
@@ -155,13 +157,13 @@ def upgrade_4(session):
         op.add_column("users", Column("activation_code", Text, default=None))
 
 
-def upgrade_5(session):
+def upgrade_5(current_session):
     """Version 5 upgrade
 
     This upgrade adds a default dashboard to a project
     """
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     projects = metadata.tables.get("projects")
@@ -175,3 +177,141 @@ def upgrade_5(session):
             "projects",
             Column("default_dashboard_id", PortableUUID(), ForeignKey("dashboards.id")),
         )
+
+
+def upgrade_6(current_session):
+    """Version 6 upgrade
+
+    This upgrade adds optimized database indexes for widget queries to improve performance.
+    These indexes target the most common query patterns used by widget endpoints:
+    - Widget configs by project and dashboard
+    - Results filtering by project, outcome, start_time
+    - Runs filtering by project, summary, start_time
+    - Artifacts by result/run relationships
+
+    The indexes are database-specific:
+    - PostgreSQL: Uses GIN indexes for JSONB data and B-tree for other columns
+    - MySQL: Uses standard indexes with appropriate key lengths
+    - SQLite: Uses simple indexes without advanced features
+    """
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    dialect = engine.url.get_dialect().name
+
+    # Define indexes to create based on widget query analysis
+    indexes_to_create = []
+
+    # Widget Configs indexes
+    if "widget_configs" in metadata.tables:
+        widget_configs = metadata.tables["widget_configs"]
+        existing_indexes = {idx.name for idx in widget_configs.indexes}
+
+        # Composite index for project + dashboard filtering
+        if "ix_widget_configs_project_dashboard" not in existing_indexes:
+            indexes_to_create.append(
+                {
+                    "name": "ix_widget_configs_project_dashboard",
+                    "table": "widget_configs",
+                    "columns": ["project_id", "dashboard_id"],
+                }
+            )
+
+        # Project-only index for queries without dashboard filter
+        if "ix_widget_configs_project_id" not in existing_indexes:
+            indexes_to_create.append(
+                {
+                    "name": "ix_widget_configs_project_id",
+                    "table": "widget_configs",
+                    "columns": ["project_id"],
+                }
+            )
+
+    # Results indexes
+    if "results" in metadata.tables:
+        results = metadata.tables["results"]
+        existing_indexes = {idx.name for idx in results.indexes}
+
+        # Composite index for common result filtering
+        if "ix_results_project_result_start" not in existing_indexes:
+            indexes_to_create.append(
+                {
+                    "name": "ix_results_project_result_start",
+                    "table": "results",
+                    "columns": ["project_id", "result", "start_time"],
+                }
+            )
+
+        # Index for time-based queries
+        if "ix_results_start_time" not in existing_indexes:
+            indexes_to_create.append(
+                {"name": "ix_results_start_time", "table": "results", "columns": ["start_time"]}
+            )
+
+        # Index for run relationship lookups
+        if "ix_results_run_id" not in existing_indexes:
+            indexes_to_create.append(
+                {"name": "ix_results_run_id", "table": "results", "columns": ["run_id"]}
+            )
+
+    # Runs indexes
+    if "runs" in metadata.tables:
+        runs = metadata.tables["runs"]
+        existing_indexes = {idx.name for idx in runs.indexes}
+
+        # Composite index for run filtering
+        if "ix_runs_project_summary_start" not in existing_indexes:
+            indexes_to_create.append(
+                {
+                    "name": "ix_runs_project_summary_start",
+                    "table": "runs",
+                    "columns": ["project_id", "summary", "start_time"],
+                }
+            )
+
+        # Time-based index for runs
+        if "ix_runs_start_time" not in existing_indexes:
+            indexes_to_create.append(
+                {"name": "ix_runs_start_time", "table": "runs", "columns": ["start_time"]}
+            )
+
+    # Artifacts indexes
+    if "artifacts" in metadata.tables:
+        artifacts = metadata.tables["artifacts"]
+        existing_indexes = {idx.name for idx in artifacts.indexes}
+
+        # Index for result relationship lookups
+        if "ix_artifacts_result_id" not in existing_indexes:
+            indexes_to_create.append(
+                {"name": "ix_artifacts_result_id", "table": "artifacts", "columns": ["result_id"]}
+            )
+
+        # Index for run relationship lookups
+        if "ix_artifacts_run_id" not in existing_indexes:
+            indexes_to_create.append(
+                {"name": "ix_artifacts_run_id", "table": "artifacts", "columns": ["run_id"]}
+            )
+
+    # Create the indexes
+    for index_spec in indexes_to_create:
+        try:
+            if dialect == "postgresql":
+                # PostgreSQL can use concurrent index creation, but skip for migrations
+                op.create_index(index_spec["name"], index_spec["table"], index_spec["columns"])
+            elif dialect == "mysql":
+                # MySQL with appropriate key lengths for text columns
+                columns = []
+                for col in index_spec["columns"]:
+                    if col in ["summary"]:  # Text columns that might be long
+                        columns.append(quoted_name(f"{col}(255)", False))
+                    else:
+                        columns.append(col)
+                op.create_index(index_spec["name"], index_spec["table"], columns)
+            else:
+                # SQLite and other databases - simple indexes
+                op.create_index(index_spec["name"], index_spec["table"], index_spec["columns"])
+        except Exception as e:
+            # Continue if index already exists or other non-critical error
+            if "already exists" not in str(e).lower():
+                print(f"Warning: Could not create index {index_spec['name']}: {e}")

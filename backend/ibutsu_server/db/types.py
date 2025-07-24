@@ -14,6 +14,7 @@ class PortableUUID(TypeDecorator):
     """
 
     impl = CHAR
+    cache_ok = True  # Indicate this type is safe to use in a cache key
 
     def __init__(self, *args, **kwargs):
         if "as_uuid" in kwargs:
@@ -54,6 +55,7 @@ class PortableJSON(TypeDecorator):
     """
 
     impl = JSON
+    cache_ok = True  # Indicate this type is safe to use in a cache key
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":

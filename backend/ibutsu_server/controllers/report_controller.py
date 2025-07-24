@@ -1,27 +1,30 @@
 from datetime import datetime
 from http import HTTPStatus
 
-import connexion
-from flask import make_response
+from flask import make_response, request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Report, ReportFile
 from ibutsu_server.tasks.reports import REPORTS
+from ibutsu_server.util.app_context import with_app_context
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
 
+@with_app_context
 def _build_report_response(id_):
     """Get a report and build a Response object
 
     :rtype: tuple
     """
-    report = Report.query.get(id_)
+    report = db.session.get(Report, id_)
     if not report:
         return "Report not found", HTTPStatus.NOT_FOUND
-    report_file = ReportFile.query.filter(ReportFile.report_id == id_).first()
+    report_file = db.session.execute(
+        db.select(ReportFile).where(ReportFile.report_id == id_)
+    ).scalar_one_or_none()
     if not report_file:
         return "File not found", HTTPStatus.NOT_FOUND
     response = make_response(report_file.content, HTTPStatus.OK)
@@ -37,6 +40,7 @@ def get_report_types(token_info=None, user=None):
     return [{"type": key, "name": val["name"]} for key, val in REPORTS.items()]
 
 
+@with_app_context
 def add_report(report_parameters=None):
     """Create a new report
 
@@ -45,9 +49,9 @@ def add_report(report_parameters=None):
 
     :rtype: Report
     """
-    if not connexion.request.is_json:
+    if not request.is_json:
         return RESPONSE_JSON_REQ
-    report_parameters = connexion.request.json
+    report_parameters = request.json
     if report_parameters["type"] not in REPORTS:
         return "Bad request, report type does not exist", HTTPStatus.BAD_REQUEST
 
@@ -65,14 +69,15 @@ def add_report(report_parameters=None):
         report_dict["project_id"] = get_project_id(report_parameters["project"])
 
     report = Report.from_dict(**report_dict)
-    session.add(report)
-    session.commit()
+    db.session.add(report)
+    db.session.commit()
     report_dict.update(report.to_dict())
     REPORTS[report_parameters["type"]]["func"].delay(report_dict)
     return report_dict, HTTPStatus.CREATED
 
 
 @validate_uuid
+@with_app_context
 def get_report(id_, token_info=None, user=None):
     """Get a report
 
@@ -81,10 +86,11 @@ def get_report(id_, token_info=None, user=None):
 
     :rtype: Report
     """
-    report = Report.query.get(id_)
+    report = db.session.get(Report, id_)
     return report.to_dict()
 
 
+@with_app_context
 def get_report_list(page=1, page_size=25, project=None, token_info=None, user=None):
     """Get a list of reports
 
@@ -95,14 +101,18 @@ def get_report_list(page=1, page_size=25, project=None, token_info=None, user=No
 
     :rtype: ReportList
     """
-    query = Report.query
+    query = db.select(Report)
     if project:
         project_id = get_project_id(project)
-        query = query.filter(Report.project_id == project_id)
+        query = query.where(Report.project_id == project_id)
     offset = get_offset(page, page_size)
-    total_items = query.count()
+    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    reports = query.order_by(Report.created.desc()).offset(offset).limit(page_size).all()
+    reports = (
+        db.session.execute(query.order_by(Report.created.desc()).offset(offset).limit(page_size))
+        .scalars()
+        .all()
+    )
     return {
         "reports": [report.to_dict() for report in reports],
         "pagination": {
@@ -115,6 +125,7 @@ def get_report_list(page=1, page_size=25, project=None, token_info=None, user=No
 
 
 @validate_uuid
+@with_app_context
 def delete_report(id_, user=None, token_info=None):
     """Deletes a report
 
@@ -123,15 +134,17 @@ def delete_report(id_, user=None, token_info=None):
 
     :rtype: tuple
     """
-    report = Report.query.get(id_)
+    report = db.session.get(Report, id_)
     if not report:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
 
-    report_file = ReportFile.query.filter(ReportFile.report_id == report.id).first()
-    session.delete(report_file)
+    report_file = db.session.execute(
+        db.select(ReportFile).where(ReportFile.report_id == report.id)
+    ).scalar_one_or_none()
+    db.session.delete(report_file)
 
-    session.delete(report)
-    session.commit()
+    db.session.delete(report)
+    db.session.commit()
     return HTTPStatus.OK.phrase, HTTPStatus.OK
 
 
