@@ -50,6 +50,7 @@ def upgrade_1(session):
                 ["id"],
             )
     if metadata.tables["projects"].columns["owner_id"].type in ["TEXT", "CLOB"]:
+        # This is wrong and never worked. can't pass schema to alter_column
         op.alter_column(
             "projects",
             "owner_id",
@@ -175,3 +176,43 @@ def upgrade_5(session):
             "projects",
             Column("default_dashboard_id", PortableUUID(), ForeignKey("dashboards.id")),
         )
+
+
+def upgrade_6(session):
+    """Version 6 upgrade
+
+    This upgrade repairs broken field types on tables not matching schema
+
+    Investigating the failure of the controllers.admin.user_controller.admin_delete_user function
+    it was found that the Project.owner_id field in the stage and prod database are TEXT instead of PortableUUID.
+    """
+
+    engine = session.connection().engine
+    op = get_upgrade_op(session)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    projects = metadata.tables.get("projects")
+
+    if (
+        "projects" in metadata.tables
+        and projects is not None
+        and str(projects.columns["owner_id"].type).lower() in ["text"]
+    ):
+        op.alter_column(
+            table_name="projects",
+            column_name="owner_id",
+            existing_type=Text,
+            type_=PortableUUID(),
+            existing_nullable=True,
+        )
+        inspector = engine.dialect.get_inspector(engine)
+        if "projects_owner_id_fkey" not in [
+            fk["name"] for fk in inspector.get_foreign_keys("projects")
+        ]:
+            op.create_foreign_key(
+                constraint_name="projects_owner_id_fkey",
+                source_table="projects",
+                referent_table="users",
+                local_cols=["owner_id"],
+                remote_cols=["id"],
+            )
