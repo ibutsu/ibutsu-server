@@ -1,6 +1,6 @@
 {
   "name": "ibutsu-frontend",
-  "version": "2.7.2",
+  "version": "2.7.3",
   "private": true,
   "dependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
