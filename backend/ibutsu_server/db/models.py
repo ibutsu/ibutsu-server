@@ -1,8 +1,6 @@
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Text as sa_text
-from sqlalchemy import cast as sa_cast
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -276,12 +274,9 @@ class User(Model, ModelMixin):
         session.query(Token).filter_by(user_id=self.id).delete(synchronize_session=False)
 
         # 3. Reassign owned projects to the current user (admin performing deletion)
-        # The string coercion here is not ideal and PortableUUID needs a review
-        # The RH of the comparison is forced to a string by sqlalchemy even though it is a UUID
-        # Cast the project field, also a UUID, to a string since the RH side is already a string
-        session.query(Project).filter(
-            sa_cast(Project.owner_id, sa_text) == sa_cast(self.id, sa_text)
-        ).update({"owner_id": new_owner.id}, synchronize_session=False)
+        session.query(Project).filter_by(owner_id=self.id).update(
+            {"owner_id": new_owner.id}, synchronize_session=False
+        )
 
         # 4. Reassign dashboards to the current user (admin performing deletion)
         # TODO: this field is null on every prod record, evaluate dropping the field or changing to creator_id
