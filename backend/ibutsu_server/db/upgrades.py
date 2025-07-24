@@ -1,6 +1,6 @@
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, inspect
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
@@ -189,15 +189,16 @@ def upgrade_6(session):
 
     engine = session.connection().engine
     op = get_upgrade_op(session)
-    metadata = MetaData()
-    metadata.reflect(bind=engine)
-    projects = metadata.tables.get("projects")
 
-    if (
-        "projects" in metadata.tables
-        and projects is not None
-        and str(projects.columns["owner_id"].type).lower() in ["text"]
-    ):
+    inspector = inspect(engine)
+
+    text_columns = [
+        c
+        for c in inspector.get_columns("projects")
+        if (c["name"] == "owner_id" and isinstance(c["type"], Text))
+    ]
+
+    if len(text_columns) > 0:
         op.alter_column(
             table_name="projects",
             column_name="owner_id",
@@ -205,9 +206,11 @@ def upgrade_6(session):
             type_=PortableUUID(),
             existing_nullable=True,
         )
-        inspector = engine.dialect.get_inspector(engine)
+
+        # Check if the foreign key constraint exists before creating it
+        existing_fks = inspector.get_foreign_keys("projects")
         if "projects_owner_id_fkey" not in [
-            fk["name"] for fk in inspector.get_foreign_keys("projects")
+            fk["name"] for fk in existing_fks if fk["name"] is not None
         ]:
             op.create_foreign_key(
                 constraint_name="projects_owner_id_fkey",
