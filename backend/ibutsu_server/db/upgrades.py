@@ -204,6 +204,7 @@ def upgrade_6(session):
             existing_type=Text,
             type_=PortableUUID(),
             existing_nullable=True,
+            postgresql_using="owner_id::uuid",
         )
         inspector = engine.dialect.get_inspector(engine)
         if "projects_owner_id_fkey" not in [
