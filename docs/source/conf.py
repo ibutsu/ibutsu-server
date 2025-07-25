@@ -14,11 +14,11 @@
 # -- Project information -----------------------------------------------------
 
 project = "Ibutsu"
-copyright = "2020, Red Hat Quality Engineering"
+copyright = "2025, Red Hat Quality Engineering"
 author = "Red Hat Quality Engineering"
 
 # The full version, including alpha/beta/rc tags
-release = "1.6.0"
+release = "2.7.3"
 
 
 # -- General configuration ---------------------------------------------------

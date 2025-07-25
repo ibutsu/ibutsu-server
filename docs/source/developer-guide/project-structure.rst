@@ -58,7 +58,7 @@ rather do an editable installation:
 Server
 ------
 
-The server is further divided into two separate apps:
+The server is separated into two separate components:
 
 * Frontend
 * Backend
@@ -67,7 +67,7 @@ The server is further divided into two separate apps:
 Frontend
 ~~~~~~~~
 
-The frontend for the server is written in `ES6 <https://en.wikipedia.org/wiki/ECMAScript#6th_Edition_-_ECMAScript_2015>`_
+The frontend for the server is written in `ES7 <https://en.wikipedia.org/wiki/ECMAScript#6th_Edition_-_ECMAScript_2015>`_
 and `React <https://reactjs.org/>`_, and uses `Yarn <https://yarnpkg.com/>`_ to manage dependencies.
 
 
@@ -76,7 +76,7 @@ Backend
 
 The backend of the server is made up of 5 parts:
 
-* The API itself, written in Python/Flask/Connexion
+* The WSGI API, written in Python with Flask, Flask-SQLAlchemy, and Connexion
 * The task worker, which runs async tasks, written with Celery
 * The task monitor, which keeps tabs on task failures
 * A `PostgreSQL <https://www.postgresql.org/>`_ instance, which is the database

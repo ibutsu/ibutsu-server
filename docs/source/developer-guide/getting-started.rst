@@ -6,7 +6,7 @@ Getting Started
 Requirements
 ------------
 
-To run the server locally, you will need the following installed:
+To run the server locally, you will need the following:
 
 - Python 3.9+
 - NodeJS
@@ -26,44 +26,23 @@ Running Locally
 
 To run the server locally for development, you can use ``podman`` or ``docker-compose``.
 
-podman
+podman (Suggested)
 ^^^^^^
 
-To run Ibutsu using ``podman``, use the ``ibutsu-pod.sh`` utility script:
+To run Ibutsu using ``podman``, use the ``ibutsu-pod.sh`` utility script.
+This will create a pod and add the necessary resources, and will mount the working direcotry into the containers.
+
+uvicorn (backend) and node (frontend) are configured to automatically reload when files change, so you can edit the code and see the changes immediately.
 
 .. code-block:: shell
 
-   $ ./scripts/ibutsu-pod.sh --create-admin --create-project
+   $ ./scripts/ibutsu-pod.sh --create-admin --create-project --persistent
 
 This will start up the containers and create an administrator and a project.
+It can also import archives and create a dashboard and widget with the appropriate options.
 
-If you want to persistent the data in the containers, use the ``--persistent`` option:
+There are several more options available, run the script with ``--help`` to see them.
 
-.. code-block:: shell
-
-   $ ./scripts/ibutsu-pod.sh --persistent
-
-By default the script stores persistent data in two directories, ``.postgres-data`` and ``.redis-data``.
-If you would prefer to use ``podman`` volumes, specify the ``--use-volumes`` option:
-
-.. code-block:: shell
-
-   $ ./scripts/ibutsu-pod.sh --persistent --use-volumes
-
-To see all the options provided by the ``ibutsu-pod.sh`` script, use the ``-h`` option:
-
-.. code-block:: shell
-
-   $ ./scripts/ibutsu-pod.sh -h
-   Usage: ibutsu-pod.sh [-h|--help] [-p|--persistent] [-V|--use-volumes] [-A|--create-admin] [-P|--create-project] [POD_NAME]
-
-   optional arguments:
-     -h, --help            show this help message
-     -p, --persistent      persist the data in the containers
-     -V, --use-volumes     use podman volumes to store data
-     -A, --create-admin    create an administrator ('admin@example.com')
-     -P, --create-project  create a default project ('my-project')
-     POD_NAME              the name of the pod, 'ibutsu' if ommitted
 
 
 Docker Compose
@@ -102,12 +81,6 @@ Install Yarn on Fedora:
 .. code-block:: shell
 
    sudo dnf install -y yarnpkg
-
-Install Yarn on Debian:
-
-.. code-block:: shell
-
-   sudo apt install yarnpkg
 
 
 If you don't wnat to use the packaged version of Yarn, you can install it via ``npm``:
