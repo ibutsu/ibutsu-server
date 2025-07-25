@@ -83,7 +83,7 @@ Install Yarn on Fedora:
    sudo dnf install -y yarnpkg
 
 
-If you don't wnat to use the packaged version of Yarn, you can install it via ``npm``:
+If you don't want to use the packaged version of Yarn, you can install it via ``npm``:
 
 .. code-block:: shell
 
