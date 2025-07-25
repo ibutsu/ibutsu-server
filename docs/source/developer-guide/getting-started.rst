@@ -30,7 +30,7 @@ podman (Suggested)
 ^^^^^^
 
 To run Ibutsu using ``podman``, use the ``ibutsu-pod.sh`` utility script.
-This will create a pod and add the necessary resources, and will mount the working direcotry into the containers.
+This will create a pod and add the necessary resources, and will mount the working directory into the containers.
 
 uvicorn (backend) and node (frontend) are configured to automatically reload when files change, so you can edit the code and see the changes immediately.
 
