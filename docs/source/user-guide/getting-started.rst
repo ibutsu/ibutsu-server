@@ -103,6 +103,3 @@ You can install the API client via pip:
 .. code-block:: shell
 
    pip install ibutsu-client
-
-
-*TODO: How to use the client*
