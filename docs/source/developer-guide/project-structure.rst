@@ -67,7 +67,7 @@ The server is separated into two separate components:
 Frontend
 ~~~~~~~~
 
-The frontend for the server is written in `ES7 <https://en.wikipedia.org/wiki/ECMAScript#6th_Edition_-_ECMAScript_2015>`_
+The frontend for the server is written in `ES7 <https://en.wikipedia.org/wiki/ECMAScript>`_
 and `React <https://reactjs.org/>`_, and uses `Yarn <https://yarnpkg.com/>`_ to manage dependencies.
 
 
