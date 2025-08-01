@@ -22,6 +22,7 @@ import { Settings } from '../settings';
 import {
   filtersToAPIParams,
   toTitleCase,
+  buildBadge,
   exceptionToBadge,
 } from '../utilities';
 import { WEEKS, RESULT_STATES, ICON_RESULT_MAP } from '../constants';
@@ -108,7 +109,9 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
           {result.source}
         </span>,
         <React.Fragment key="exception">
-          {exceptionToBadge(result?.metadata?.exception_name, filterFunc)}
+          {(result.result === 'failed') | (result.result === 'error')
+            ? exceptionToBadge(result?.metadata?.exception_name, filterFunc)
+            : buildBadge('exception_name', 'N/A', false)}
         </React.Fragment>,
         Math.ceil(result.duration) + 's',
         new Date(result.start_time).toLocaleString(),
