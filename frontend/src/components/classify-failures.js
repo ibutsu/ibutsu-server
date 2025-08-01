@@ -21,6 +21,7 @@ import { Settings } from '../settings';
 import {
   filtersToAPIParams,
   toTitleCase,
+  buildBadge,
   exceptionToBadge,
 } from '../utilities';
 import { ICON_RESULT_MAP } from '../constants';
@@ -108,7 +109,9 @@ const ClassifyFailuresTable = () => {
           {toTitleCase(result.result)}
         </Label>,
         <React.Fragment key="exception">
-          {exceptionToBadge(result?.metadata?.exception_name, filterFunc)}
+          {(result.result === 'failed') | (result.result === 'error')
+            ? exceptionToBadge(result?.metadata?.exception_name, filterFunc)
+            : buildBadge('exception_name', 'N/A', false)}
         </React.Fragment>,
         <ClassificationDropdown key="classification" testResult={result} />,
         Math.ceil(result.duration) + 's',
