@@ -109,7 +109,7 @@ const ClassifyFailuresTable = () => {
           {toTitleCase(result.result)}
         </Label>,
         <React.Fragment key="exception">
-          {(result.result === 'failed') || (result.result === 'error')
+          {result.result === 'failed' || result.result === 'error'
             ? exceptionToBadge(result?.metadata?.exception_name, filterFunc)
             : buildBadge('exception_name', 'N/A', false)}
         </React.Fragment>,

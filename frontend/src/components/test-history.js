@@ -109,7 +109,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
           {result.source}
         </span>,
         <React.Fragment key="exception">
-          {(result.result === 'failed') || (result.result === 'error')
+          {result.result === 'failed' || result.result === 'error'
             ? exceptionToBadge(result?.metadata?.exception_name, filterFunc)
             : buildBadge('exception_name', 'N/A', false)}
         </React.Fragment>,
