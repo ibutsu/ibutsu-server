@@ -247,6 +247,17 @@ const Dashboard = () => {
     navigate(`/project/${project_id}/dashboard/`);
   }, [navigate, project_id]);
 
+  const onDashboardDelete = useCallback(() => {
+    if (selectedDashboard) {
+      // Remove the deleted dashboard from the dashboards array
+      setDashboards((prevDashboards) =>
+        prevDashboards.filter((d) => d.id !== selectedDashboard.id),
+      );
+    }
+    // Clear the selection and navigate away
+    onDashboardClear();
+  }, [selectedDashboard, onDashboardClear]);
+
   const onDashboardFilterInput = useCallback(
     (_, value) => {
       setSelectInputValue(value);
@@ -530,7 +541,7 @@ const Dashboard = () => {
           </>
         }
         isOpen={isDeleteDBOpen}
-        onDelete={onDashboardClear}
+        onDelete={onDashboardDelete}
         onClose={() => {
           setIsDeleteDBOpen(false);
         }}
