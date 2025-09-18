@@ -224,11 +224,15 @@ const Dashboard = () => {
   const onDashboardSelect = useCallback(
     (_event, selection) => {
       const selected = dashboards.find((d) => d.id === selection);
-      setSelectInputValue(selected.title);
-      setSelectFilterValue('');
-      setSelectedDashboard(selected);
-      setIsSelectOpen(false);
-      navigate(`/project/${project_id}/dashboard/${selected.id}`);
+      if (selected) {
+        setSelectInputValue(selected.title);
+        setSelectFilterValue('');
+        setSelectedDashboard(selected);
+        setIsSelectOpen(false);
+        navigate(`/project/${project_id}/dashboard/${selected.id}`);
+      } else {
+        console.warn('Dashboard not found with ID:', selection);
+      }
     },
     [dashboards, navigate, project_id],
   );
@@ -262,7 +266,12 @@ const Dashboard = () => {
       );
       const data = await HttpClient.handleResponse(response);
       setIsNewDBOpen(false);
-      onDashboardSelect(null, data);
+
+      // Add the new dashboard to the dashboards array
+      setDashboards((prevDashboards) => [...prevDashboards, data]);
+
+      // Now select the new dashboard using its ID
+      onDashboardSelect(null, data.id);
     } catch (error) {
       console.error(error);
     }
