@@ -24,7 +24,8 @@ def admin_add_project(body=None, token_info=None, user=None):
     user = User.query.get(user)
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    project = Project.from_dict(**connexion.request.get_json())
+    body_data = body if body is not None else connexion.request.get_json()
+    project = Project.from_dict(**body_data)
     # check if project already exists
     if project.id and Project.query.get(project.id):
         return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
@@ -133,7 +134,8 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
         abort(HTTPStatus.NOT_FOUND)
 
     # Grab the fields from the request
-    project_dict = connexion.request.get_json()
+    body_data = body if body is not None else connexion.request.get_json()
+    project_dict = body_data.copy()
 
     # If the "owner" field is set, ignore it
     project_dict.pop("owner", None)

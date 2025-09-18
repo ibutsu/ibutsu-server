@@ -37,17 +37,17 @@ def get_report_types(token_info=None, user=None):
     return [{"type": key, "name": val["name"]} for key, val in REPORTS.items()]
 
 
-def add_report(report_parameters=None):
+def add_report(body=None):
     """Create a new report
 
-    :param report: The report to generate
-    :type report: dict | bytes
+    :param body: The report parameters
+    :type body: dict | bytes
 
     :rtype: Report
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    report_parameters = connexion.request.json
+    report_parameters = body if body is not None else connexion.request.get_json()
     if report_parameters["type"] not in REPORTS:
         return "Bad request, report type does not exist", HTTPStatus.BAD_REQUEST
 

@@ -111,7 +111,7 @@ def get_artifact_list(
     }
 
 
-def upload_artifact(body, token_info=None, user=None):
+def upload_artifact(body=None, token_info=None, user=None):
     """Uploads a artifact artifact
 
     :param result_id: ID of result to attach artifact to
@@ -127,6 +127,9 @@ def upload_artifact(body, token_info=None, user=None):
 
     :rtype: tuple
     """
+    # Handle form data properly - body might be None for multipart/form-data
+    if body is None:
+        body = {}
     result_id = body.get("result_id") or body.get("resultId")
     run_id = body.get("run_id") or body.get("runId")
     if result_id and not is_uuid(result_id):

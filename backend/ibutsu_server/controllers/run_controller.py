@@ -122,7 +122,8 @@ def add_run(body=None, token_info=None, user=None):
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    run = Run.from_dict(**connexion.request.get_json())
+    body_data = body if body is not None else connexion.request.get_json()
+    run = Run.from_dict(**body_data)
 
     if not run.data:
         return "Bad request, no data supplied", HTTPStatus.BAD_REQUEST
@@ -162,17 +163,17 @@ def update_run(id_, body=None, token_info=None, user=None):
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    run_dict = connexion.request.get_json()
-    if run_dict.get("metadata", {}).get("project"):
-        run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
-        if not project_has_user(run_dict["project_id"], user):
+    body_data = body if body is not None else connexion.request.get_json()
+    if body_data.get("metadata", {}).get("project"):
+        body_data["project_id"] = get_project_id(body_data["metadata"]["project"])
+        if not project_has_user(body_data["project_id"], user):
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     run = Run.query.get(id_)
     if run and not project_has_user(run.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     if not run:
         return "Run not found", HTTPStatus.NOT_FOUND
-    run.update(run_dict)
+    run.update(body_data)
     session.add(run)
     session.commit()
     update_run_task.apply_async((id_,), countdown=5)
@@ -192,7 +193,7 @@ def bulk_update(filter_=None, page_size=1, body=None, token_info=None, user=None
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
 
-    run_dict = connexion.request.get_json()
+    run_dict = body if body is not None else connexion.request.get_json()
 
     if not run_dict.get("metadata"):
         return "Bad request, can only update metadata", HTTPStatus.UNAUTHORIZED

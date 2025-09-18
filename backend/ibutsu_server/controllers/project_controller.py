@@ -22,7 +22,8 @@ def add_project(body=None, token_info=None, user=None):
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    project = Project.from_dict(**connexion.request.get_json())
+    body_data = body if body is not None else connexion.request.get_json()
+    project = Project.from_dict(**body_data)
     # check if project already exists
     if project.id and Project.query.get(project.id):
         return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
@@ -130,7 +131,8 @@ def update_project(id_, body=None, token_info=None, user=None, **kwargs):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
 
     # handle updating users separately
-    updates = connexion.request.get_json()
+    body_data = body if body is not None else connexion.request.get_json()
+    updates = body_data.copy()
     for username in updates.pop("users", []):
         user_to_add = User.query.filter_by(email=username).first()
         if user_to_add and user_to_add not in project.users:

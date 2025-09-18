@@ -17,14 +17,15 @@ from ibutsu_server.util.uuid import validate_uuid
 def add_result(result=None, token_info=None, user=None):
     """Creates a test result
 
-    :param body: Result item
-    :type body: dict | bytes
+    :param result: Result item
+    :type result: dict | bytes
 
     :rtype: Result
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    result = Result.from_dict(**connexion.request.get_json())
+    result_data = result if result is not None else connexion.request.get_json()
+    result = Result.from_dict(**result_data)
 
     if result.id and Result.query.get(result.id):
         return f"Result id {result.id} already exist", HTTPStatus.BAD_REQUEST
@@ -156,32 +157,37 @@ def update_result(id_, result=None, token_info=None, user=None, **kwargs):
 
     :param id: ID of result to update
     :type id: int
-    :param body: Result
-    :type body: dict
+    :param result: Result
+    :type result: dict
 
     :rtype: Result
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    result_dict = connexion.request.get_json()
-    if result_dict.get("metadata", {}).get("project"):
-        project = get_project(result_dict["metadata"]["project"])
+    result_data = result if result is not None else connexion.request.get_json()
+    if result_data.get("metadata", {}).get("project"):
+        project = get_project(result_data["metadata"]["project"])
         if not project_has_user(project, user):
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         if project:
-            result_dict["project_id"] = project.id
+            result_data["project_id"] = project.id
 
     # promote user_properties to the level of metadata
-    if result_dict.get("metadata", {}).get("user_properties"):
-        user_properties = result_dict["metadata"].pop("user_properties")
-        merge_dicts(user_properties, result_dict["metadata"])
+    if result_data.get("metadata", {}).get("user_properties"):
+        user_properties = result_data["metadata"].pop("user_properties")
+        merge_dicts(user_properties, result_data["metadata"])
 
-    result = Result.query.get(id_)
-    if not result:
+    result_obj = Result.query.get(id_)
+    if not result_obj:
         return "Result not found", HTTPStatus.NOT_FOUND
-    if not project_has_user(result.project, user):
+    if not project_has_user(result_obj.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-    result.update(result_dict)
+    result_obj.update(result_data)
+    result_obj.env = result_obj.data.get("env") if result_obj.data else None
+    result_obj.component = result_obj.data.get("component") if result_obj.data else None
+    session.add(result_obj)
+    session.commit()
+    return result_obj.to_dict()
     result.env = result.data.get("env") if result.data else None
     result.component = result.data.get("component") if result.data else None
     session.add(result)

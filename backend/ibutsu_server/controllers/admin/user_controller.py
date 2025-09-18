@@ -67,7 +67,8 @@ def admin_add_user(body=None, token_info=None, user=None):
     """Create a new user in the system"""
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    new_user = User.from_dict(**connexion.request.get_json())
+    body_data = body if body is not None else connexion.request.get_json()
+    new_user = User.from_dict(**body_data)
     user_exists = User.query.filter_by(email=new_user.email).first()
     if user_exists:
         return f"The user with email {new_user.email} already exists", HTTPStatus.BAD_REQUEST
@@ -78,11 +79,11 @@ def admin_add_user(body=None, token_info=None, user=None):
 
 @validate_uuid
 @validate_admin
-def admin_update_user(id_, body=None, user_info=None, token_info=None, user=None):
+def admin_update_user(id_, body=None, token_info=None, user=None):
     """Update a single user in the system"""
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    user_dict = connexion.request.get_json()
+    user_dict = body if body is not None else connexion.request.get_json()
     projects = user_dict.pop("projects", [])
     requested_user = User.query.get(id_)
     if not requested_user:
