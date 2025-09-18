@@ -32,12 +32,18 @@ def get_current_user(token_info=None, user=None):
     return _hide_sensitive_fields(user.to_dict())
 
 
-def update_current_user(token_info=None, user=None):
-    """Return the current user"""
+def update_current_user(body=None, token_info=None, user=None):
+    """Update the current user
+
+    :param body: User update data
+    :type body: dict | bytes
+    """
+    if not connexion.request.is_json:
+        return RESPONSE_JSON_REQ
     user = User.query.get(user)
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-    user_dict = connexion.request.get_json()
+    user_dict = body if body is not None else connexion.request.get_json()
     user_dict.pop("is_superadmin", None)
     user.update(user_dict)
     session.add(user)
@@ -108,7 +114,7 @@ def delete_token(id_, token_info=None, user=None):
     return HTTPStatus.OK.phrase, HTTPStatus.OK
 
 
-def add_token(token=None, token_info=None, user=None):
+def add_token(body=None, token_info=None, user=None):
     """Create a new token
 
     :param body: Token object
@@ -121,7 +127,8 @@ def add_token(token=None, token_info=None, user=None):
     user = User.query.get(user)
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-    token = Token.from_dict(**connexion.request.get_json())
+    body_data = body if body is not None else connexion.request.get_json()
+    token = Token.from_dict(**body_data)
     token.user = user
     token.expires = datetime.fromisoformat(token.expires.replace("Z", "+00:00"))
     token.token = generate_token(user.id, token.expires.timestamp())

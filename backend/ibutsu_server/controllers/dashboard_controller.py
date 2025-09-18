@@ -21,7 +21,8 @@ def add_dashboard(body=None, token_info=None, user=None):
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    dashboard = Dashboard.from_dict(**connexion.request.get_json())
+    body_data = body if body is not None else connexion.request.get_json()
+    dashboard = Dashboard.from_dict(**body_data)
     if dashboard.project_id and not project_has_user(dashboard.project_id, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     if dashboard.user_id and not User.query.get(dashboard.user_id):
@@ -108,9 +109,9 @@ def update_dashboard(id_, body=None, token_info=None, user=None):
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    dashboard_dict = connexion.request.get_json()
-    if dashboard_dict.get("metadata", {}).get("project") and not project_has_user(
-        dashboard_dict["metadata"]["project"], user
+    body_data = body if body is not None else connexion.request.get_json()
+    if body_data.get("metadata", {}).get("project") and not project_has_user(
+        body_data["metadata"]["project"], user
     ):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     dashboard = Dashboard.query.get(id_)
@@ -118,7 +119,7 @@ def update_dashboard(id_, body=None, token_info=None, user=None):
         return "Dashboard not found", HTTPStatus.NOT_FOUND
     if project_has_user(dashboard.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-    dashboard.update(connexion.request.get_json())
+    dashboard.update(body_data)
     session.add(dashboard)
     session.commit()
     return dashboard.to_dict()

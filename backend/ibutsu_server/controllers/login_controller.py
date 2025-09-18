@@ -96,19 +96,17 @@ def _find_or_create_token(token_name, user):
     return token
 
 
-def login(email=None, password=None):
+def login(body=None):
     """login
 
-    :param email: The e-mail address of the user
-    :type email: str
-    :param password: The password for the user
-    :type password: str
+    :param body: Login credentials
+    :type body: dict | bytes
 
     :rtype: LoginToken
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    login = connexion.request.get_json()
+    login = body if body is not None else connexion.request.get_json()
 
     if not login.get("email") or not login.get("password"):
         return {
@@ -197,17 +195,15 @@ def auth(provider):
         )
 
 
-def register(email=None, password=None):
+def register(body=None):
     """Register a user
 
-    :param email: The e-mail address of the user
-    :type email: str
-    :param password: The password for the user
-    :type password: str
+    :param body: Registration details
+    :type body: dict | bytes
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    details = connexion.request.get_json()
+    details = body if body is not None else connexion.request.get_json()
     if not details.get("email") or not details.get("password"):
         return {
             "code": "EMPTY",
@@ -240,22 +236,23 @@ def register(email=None, password=None):
     if mail and hasattr(mail, "state") and mail.state is not None:
         mail.send_message(
             "[Ibutsu] Registration Confirmation",
-            recipients=[email],
+            recipients=[user.email],
             body=ACTIVATION_EMAIL.format(activation_url=activation_url),
         )
     else:
-        print(f"No e-mail configuration. Email: {email} - activation URL: {activation_url}")
+        print(f"No e-mail configuration. Email: {user.email} - activation URL: {activation_url}")
     return {}, HTTPStatus.CREATED
 
 
-def recover(email=None):
+def recover(body=None):
     """Recover a user account
 
-    :param email: The e-mail address of the user
+    :param body: Recovery details
+    :type body: dict | bytes
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    login = connexion.request.get_json()
+    login = body if body is not None else connexion.request.get_json()
     if not login.get("email"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
     user = User.query.filter(User.email == login["email"]).first()
@@ -268,16 +265,15 @@ def recover(email=None):
     return {}, HTTPStatus.CREATED
 
 
-def reset_password(activation_code=None, password=None):
+def reset_password(body=None):
     """Reset the password from the recover page
 
-    :param e-mail: The e-mail address of the user
-    :param activation_code: The activation_code supplied to the reset page
-    :param password: The new password for the user
+    :param body: Password reset details
+    :type body: dict | bytes
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    login = connexion.request.get_json()
+    login = body if body is not None else connexion.request.get_json()
     if result := validate_activation_code(login.get("activation_code")):
         return result
     if not login.get("activation_code") or not login.get("password"):

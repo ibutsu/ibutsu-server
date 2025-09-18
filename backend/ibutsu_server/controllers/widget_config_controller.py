@@ -14,17 +14,17 @@ from ibutsu_server.util.uuid import validate_uuid
 # TODO: pydantic validation of request data structure
 
 
-def add_widget_config(widget_config=None, token_info=None, user=None):
+def add_widget_config(body=None, token_info=None, user=None):
     """Create a new widget config
 
-    :param widget_config: The widget_config to save
-    :type widget_config: dict | bytes
+    :param body: The widget_config to save
+    :type body: dict | bytes
 
     :rtype: WidgetConfig
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    data = connexion.request.json
+    data = body if body is not None else connexion.request.get_json()
     if data["widget"] not in WIDGET_TYPES.keys():
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
 
@@ -103,19 +103,19 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
 
 
 @validate_uuid
-def update_widget_config(id_, body=None, widget_config=None, token_info=None, user=None):
+def update_widget_config(id_, body=None, token_info=None, user=None):
     """Updates a single widget config
 
     :param id: ID of widget to update
     :type id: int
-    :param body: Result
+    :param body: Widget config data
     :type body: dict
 
-    :rtype: Result
+    :rtype: WidgetConfig
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    data = connexion.request.get_json()
+    data = body if body is not None else connexion.request.get_json()
     if data.get("widget") and data["widget"] not in WIDGET_TYPES.keys():
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
     # Look up the project id

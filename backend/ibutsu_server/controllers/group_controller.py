@@ -19,7 +19,8 @@ def add_group(body=None):
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
-    group = Group.from_dict(**connexion.request.get_json())
+    body_data = body if body is not None else connexion.request.get_json()
+    group = Group.from_dict(**body_data)
     if group.id and Group.query.get(group.id):
         return f"The group with ID {group.id} already exists", HTTPStatus.BAD_REQUEST
     if not is_uuid(group.id):
@@ -88,10 +89,11 @@ def update_group(id_, body=None, **kwargs):
     """
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
+    body_data = body if body is not None else connexion.request.get_json()
     group = Group.query.get(id_)
     if not group:
         return "Group not found", HTTPStatus.NOT_FOUND
-    group.update(connexion.request.get_json())
+    group.update(body_data)
     session.add(group)
     session.commit()
     return group.to_dict()
