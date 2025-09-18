@@ -73,6 +73,38 @@ want to use the containers, the following must be installed:
 - redis (strongly recommend a container)
 - PostgreSQL (strongly recommend a container)
 
+## Development
+
+### OpenAPI Schema Validation
+
+The project includes pre-commit hooks for code quality and validation, including OpenAPI schema validation. The OpenAPI specification is validated using the OpenAPI Generator CLI to ensure it's compatible with client generation tools.
+
+To set up pre-commit hooks:
+
+```console
+pre-commit install
+```
+
+To run all pre-commit hooks manually:
+
+```console
+pre-commit run --all-files
+```
+
+To run only the OpenAPI validation:
+
+```console
+pre-commit run openapi-validate --all-files
+```
+
+Or run the validation script directly:
+
+```console
+./scripts/validate-openapi.sh
+```
+
+The validation uses the OpenAPI Generator CLI v7.15.0 and requires either `podman` or `docker` to be available. The pre-commit hook is configured as a local script with no additional Python dependencies.
+
 ## Container images
 
 Container images for Ibutsu are provided at [quay.io/organization/ibutsu](https://quay.io/organization/ibutsu).

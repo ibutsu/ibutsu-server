@@ -12,7 +12,7 @@ from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
 
 
-def add_project(project=None, token_info=None, user=None):
+def add_project(body=None, token_info=None, user=None):
     """Create a project
 
     :param body: Project
@@ -106,7 +106,7 @@ def get_project_list(
 
 
 @validate_uuid
-def update_project(id_, project=None, token_info=None, user=None, **kwargs):
+def update_project(id_, body=None, token_info=None, user=None, **kwargs):
     """Update a project
 
     :param id: ID of test project
@@ -166,7 +166,11 @@ def get_filter_params(id_, user=None, token_info=None):
         .first()
     )
 
+    if not result:
+        # Return empty list if no results exist for this project
+        return []
+
     fields = flatdict.FlatDict(result.__dict__, delimiter=".").keys()
     fields.remove("_sa_instance_state")
 
-    return fields
+    return list(fields)

@@ -9,7 +9,7 @@ from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import is_uuid, validate_uuid
 
 
-def add_group(group=None):
+def add_group(body=None):
     """Create a new group
 
     :param body: Group
@@ -74,7 +74,7 @@ def get_group_list(page=1, page_size=25, token_info=None, user=None):
 
 
 @validate_uuid
-def update_group(id_, group=None, **kwargs):
+def update_group(id_, body=None, **kwargs):
     """Update a group
 
 

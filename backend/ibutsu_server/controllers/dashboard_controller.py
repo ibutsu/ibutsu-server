@@ -11,7 +11,7 @@ from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
 
-def add_dashboard(dashboard=None, token_info=None, user=None):
+def add_dashboard(body=None, token_info=None, user=None):
     """Create a dashboard
 
     :param body: Dashboard
@@ -96,7 +96,7 @@ def get_dashboard_list(
 
 
 @validate_uuid
-def update_dashboard(id_, dashboard=None, token_info=None, user=None):
+def update_dashboard(id_, body=None, token_info=None, user=None):
     """Update a dashboard
 
     :param id: ID of test dashboard

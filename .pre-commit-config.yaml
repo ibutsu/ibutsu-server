@@ -1,30 +1,43 @@
 repos:
 
-## PYTHON
-- repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
-  hooks:
-  - id: trailing-whitespace
-  - id: end-of-file-fixer
-  - id: check-yaml
-    args: [ --allow-multiple-documents ]
-  - id: debug-statements
+  ## PYTHON
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: check-yaml
+      args: [ --allow-multiple-documents ]
+    - id: debug-statements
 
-- repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.9.9
-  hooks:
-    - id: ruff
-      args:
-        - '--fix'
-    - id: ruff-format
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.9
+    hooks:
+      - id: ruff
+        args:
+          - '--fix'
+      - id: ruff-format
 
-## TODO: enable
-# - repo: https://github.com/shellcheck-py/shellcheck-py
-#   rev: v0.10.0.1
-#   hooks:
-#     - id: shellcheck
+  ## TODO: enable
+  # - repo: https://github.com/shellcheck-py/shellcheck-py
+  #   rev: v0.10.0.1
+  #   hooks:
+  #     - id: shellcheck
 
-- repo: https://github.com/AleksaC/hadolint-py
-  rev: v2.12.1b3
-  hooks:
-    - id: hadolint
+  - repo: https://github.com/AleksaC/hadolint-py
+    rev: v2.12.1b3
+    hooks:
+      - id: hadolint
+
+  ## OpenAPI Validation
+  - repo: local
+    hooks:
+      - id: openapi-validate
+        name: OpenAPI Schema Validation
+        entry: scripts/validate-openapi.sh
+        language: script
+        files: backend/ibutsu_server/openapi/openapi.yaml
+        pass_filenames: false
+
+ci:
+  skip: ["openapi-validate"]
