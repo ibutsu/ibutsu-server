@@ -13,7 +13,7 @@ from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_
 
 
 @validate_admin
-def admin_add_project(project=None, token_info=None, user=None):
+def admin_add_project(body=None, token_info=None, user=None):
     """Create a project
 
     :param body: Project

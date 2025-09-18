@@ -464,11 +464,7 @@ paths:
     post:
       operationId: add_run
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Run'
-        description: Run item
+        $ref: '#/components/requestBodies/Run'
       responses:
         201:
           content:
@@ -498,12 +494,7 @@ paths:
           style: form
         - $ref: '#/components/parameters/PageSize'
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateRun'
-        description: The metadata to add to the test runs
-        required: true
+        $ref: '#/components/requestBodies/UpdateRun'
       responses:
         200:
           content:
@@ -562,12 +553,7 @@ paths:
             format: uuid
           style: simple
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Run'
-        description: The updated test run
-        required: true
+        $ref: '#/components/requestBodies/Run'
       responses:
         200:
           content:
@@ -629,12 +615,7 @@ paths:
     post:
       operationId: add_project
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Project'
-        description: Project
-        required: true
+        $ref: '#/components/requestBodies/Project'
       responses:
         201:
           content:
@@ -686,11 +667,7 @@ paths:
             format: uuid
           style: simple
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Project'
-        description: Project
+        $ref: '#/components/requestBodies/Project'
       responses:
         200:
           content:
@@ -724,7 +701,11 @@ paths:
             application/json:
               schema:
                 type: array
-          description: List of a result's parameters
+                items:
+                  type: string
+          description: List of filterable parameters from the project's results
+        401:
+          description: Unauthorized - user does not have access to this project
         404:
           description: Project not found
       summary: Get a project's filterable parameters
@@ -751,12 +732,7 @@ paths:
     post:
       operationId: add_group
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Group'
-        description: The group
-        required: true
+        $ref: '#/components/requestBodies/Group'
       responses:
         201:
           content:
@@ -809,12 +785,7 @@ paths:
             format: uuid
           style: simple
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Group'
-        description: The updated group
-        required: true
+        $ref: '#/components/requestBodies/Group'
       responses:
         200:
           content:
@@ -876,12 +847,7 @@ paths:
     post:
       operationId: add_dashboard
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Dashboard'
-        description: Dashboard
-        required: true
+        $ref: '#/components/requestBodies/Dashboard'
       responses:
         201:
           content:
@@ -934,11 +900,7 @@ paths:
             format: uuid
           style: simple
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Dashboard'
-        description: Dashboard
+        $ref: '#/components/requestBodies/Dashboard'
       responses:
         200:
           content:
@@ -1830,11 +1792,7 @@ paths:
     post:
       operationId: admin_add_user
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/User'
-        description: A user
+        $ref: '#/components/requestBodies/User'
       responses:
         201:
           content:
@@ -1894,10 +1852,7 @@ paths:
             format: uuid
           style: simple
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/requestBodies/User'
+        $ref: '#/components/requestBodies/User'
       responses:
         200:
           content:
@@ -1976,11 +1931,7 @@ paths:
     post:
       operationId: admin_add_project
       requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Project'
-        description: A project
+        $ref: '#/components/requestBodies/Project'
       responses:
         201:
           content:
@@ -2140,51 +2091,38 @@ components:
       content:
         application/json:
           schema:
-            example:
-              id: 81e2c9d6-1593-4559-af4f-90f6f1f8fa03
-              email: user@domain.com
-              name: Namey McNameface
-              is_superadmin: false
-              is_active: true
-              group_id: a16ad60e-bf23-4195-99dc-594858ad3e5e
-            properties:
-              id:
-                description: The ID of the user
-                example: 81e2c9d6-1593-4559-af4f-90f6f1f8fa03
-                type: string
-                format: uuid
-              email:
-                description: The user's e-mail address
-                example: user@domain.com
-                type: string
-                format: email
-              name:
-                description: The user's name
-                example: Namey McNameface
-                type: string
-                nullable: true
-              is_superadmin:
-                description: Flag to show if a user is a super-admin
-                example: false
-                type: boolean
-              is_active:
-                description: Flag to show if the user is active
-                example: true
-                type: boolean
-              group_id:
-                description: The ID of the group of this project
-                example: a16ad60e-bf23-4195-99dc-594858ad3e5e
-                type: string
-                format: uuid
-                nullable: true
-            required:
-              - email
-            type: object
+            $ref: '#/components/schemas/User'
+      description: A user object
     Project:
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Project'
+      description: A project object
+    Run:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Run'
+      description: A run object
+    UpdateRun:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateRun'
+      description: Run metadata updates
+    Group:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Group'
+      description: A group object
+    Dashboard:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Dashboard'
+      description: A dashboard object
   schemas:
     Result:
       example:
