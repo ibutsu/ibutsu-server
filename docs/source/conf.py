@@ -18,7 +18,7 @@ copyright = "2025, Red Hat Quality Engineering"
 author = "Red Hat Quality Engineering"
 
 # The full version, including alpha/beta/rc tags
-release = "2.7.3"
+release = "2.7.4"
 
 
 # -- General configuration ---------------------------------------------------
