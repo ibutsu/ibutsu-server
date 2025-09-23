@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge, Label } from '@patternfly/react-core';
 import { ChevronRightIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
-import { ICON_RESULT_MAP, MISSING_META_EXCEPTION } from '../constants';
+import { ICON_RESULT_MAP } from '../constants';
 import RunSummary from '../components/run-summary';
 import { buildBadge } from './badges';
 import { toTitleCase } from './strings';
@@ -256,25 +256,6 @@ export const runToRow = (run, filterFunc) => {
       </Link>,
     ],
   };
-};
-
-export const exceptionToBadge = (exception = null, filterFunc) => {
-  let exceptionBadge;
-  let exceptionName = exception || MISSING_META_EXCEPTION;
-
-  if (filterFunc && exception) {
-    exceptionBadge = buildBadge('exception_name', exceptionName, false, () =>
-      filterFunc({
-        field: 'metadata.exception_name',
-        operator: 'eq',
-        value: exceptionName,
-      }),
-    );
-  } else {
-    exceptionBadge = buildBadge('exception_name', exceptionName, false);
-  }
-
-  return exceptionBadge;
 };
 
 // TODO envToBadge and componentToBadge functions, with MISSING_ constants

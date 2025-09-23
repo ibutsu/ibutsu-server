@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   ActionGroup,
   Alert,
@@ -15,7 +15,7 @@ import {
 } from '@patternfly/react-core';
 import { NavLink, useNavigate } from 'react-router-dom';
 
-import { AuthService } from '../utilities/auth';
+import { AuthService } from '../services/auth';
 
 export const ForgotPassword = () => {
   const navigate = useNavigate();

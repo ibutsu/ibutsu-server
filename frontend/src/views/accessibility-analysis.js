@@ -31,14 +31,14 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router-dom';
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from '../pages/settings';
 import { resultToRow } from '../utilities';
 import FilterTable from '../components/filtering/filtered-table-card';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
-import TabTitle from '../components/tabs';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
+import TabTitle from '../components/tab-title';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
-import usePagination from '../components/hooks/use-pagination';
+import usePagination from '../componen../hooks/use-pagination';
 
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 

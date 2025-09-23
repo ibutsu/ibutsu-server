@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   BrowserRouter as Router,
   Route,
@@ -12,7 +13,7 @@ import { SignUp } from '../pages/sign-up';
 import ForgotPassword from '../pages/forgot-password';
 import ResetPassword from '../pages/reset-password';
 import { AuthService } from '../utilities/auth';
-import { IbutsuContextProvider } from '../components/contexts/ibutsu-context';
+import { IbutsuContextProvider } from '../contexts/ibutsu-context';
 
 export const Base = () => (
   <IbutsuContextProvider>

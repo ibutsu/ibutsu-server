@@ -5,9 +5,12 @@ from sqlalchemy import desc
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result
 from ibutsu_server.filters import string_to_column
+from ibutsu_server.util.uuid import is_uuid
 
 
 def _get_results(job_name, builds, components, project):
+    if not is_uuid(project):
+        return []
     mdat = string_to_column("metadata.importance", Result).label("importance")
     bnumdat = string_to_column("metadata.jenkins.build_number", Result).label("build_number")
     jnamedat = string_to_column("metadata.jenkins.job_name", Result).label("job_name")

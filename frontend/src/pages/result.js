@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import { PageSection, Content, Skeleton } from '@patternfly/react-core';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from './settings';
 import EmptyObject from '../components/empty-object';
 import ResultView from '../components/result-view';

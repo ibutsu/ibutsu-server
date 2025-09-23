@@ -1,11 +1,11 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import { ChevronRightIcon } from '@patternfly/react-icons';
 
 import { Link, useParams } from 'react-router-dom';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from '../pages/settings';
 import { filtersToAPIParams, filtersToSearchParams } from '../utilities';
 

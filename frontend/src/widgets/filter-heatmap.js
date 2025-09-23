@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -17,13 +17,13 @@ import {
   ChartLineIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
-import HeatMap from 'react-heatmap-grid';
+import HeatMapWrapper from '../components/heat-map-wrapper';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from '../pages/settings';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
 import { filtersToSearchParams } from '../utilities';
 import { CHART_COLOR_MAP } from '../constants';
 
@@ -299,7 +299,7 @@ const FilterHeatmapWidget = ({
         {!isError && isLoading && <Content component="h2">Loading ...</Content>}
         {!isError && !isLoading && renderData.length !== 0 && (
           <div className="ibutsu-widget-chart-container">
-            <HeatMap
+            <HeatMapWrapper
               xLabels={xLabels}
               yLabels={yLabels}
               yLabelWidth={labelWidth}

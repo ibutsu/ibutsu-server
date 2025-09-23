@@ -9,7 +9,7 @@ import { Outlet } from 'react-router-dom';
 import { EmptyState, EmptyStateBody, Page } from '@patternfly/react-core';
 
 import IbutsuHeader from '../components/ibutsu-header';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
 import IbutsuSidebar from '../components/sidebar';
 import { ArchiveIcon } from '@patternfly/react-icons';
 import { ToastContainer } from 'react-toastify';

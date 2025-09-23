@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
@@ -7,7 +7,7 @@ import { Thead, Th, Tbody, Tr, Td, Table } from '@patternfly/react-table';
 
 import { Link } from 'react-router-dom';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from '../pages/settings';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';

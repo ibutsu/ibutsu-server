@@ -14,11 +14,11 @@ import {
   SelectOption,
 } from '@patternfly/react-core';
 
-import { Settings } from '../../pages/settings';
-import { HttpClient } from '../utilities/http';
+import { Settings } from '../pages/settings';
+import { HttpClient } from '../services/http';
 import { toAPIFilter } from '../utilities';
 
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
 
 // TODO Extend this to contain the filter handling functions, and better integrate filter state
 // with FilterTable. See https://github.com/ibutsu/ibutsu-server/issues/230

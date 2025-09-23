@@ -2,8 +2,8 @@ import React, { useContext, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import UploadIcon from '@patternfly/react-icons/dist/esm/icons/upload-icon';
 
-import { HttpClient } from '../utilities/http';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { HttpClient } from '../services/http';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
 import {
   AlertActionLink,
   Button,

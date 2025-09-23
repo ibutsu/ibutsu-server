@@ -6,6 +6,7 @@ from sqlalchemy import func
 from ibutsu_server.db.base import Float, session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.util.uuid import is_uuid
 
 
 def _get_recent_run_data(weeks, group_field, project=None, additional_filters=None):
@@ -29,7 +30,7 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
     ]
     if additional_filters:
         filters.extend(additional_filters.split(","))
-    if project:
+    if project and is_uuid(project):
         filters.append(f"project_id={project}")
 
     # generate the group field

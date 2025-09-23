@@ -1,3 +1,4 @@
+import logging
 from http import HTTPStatus
 
 import connexion
@@ -14,6 +15,51 @@ from ibutsu_server.util.uuid import validate_uuid
 # TODO: pydantic validation of request data structure
 
 
+def _validate_widget_params(widget_type, params):
+    """Validate and clean widget parameters against widget type specification"""
+    if not params:
+        return {}
+
+    # Handle legacy parameter names for backward compatibility
+    params = params.copy()
+
+    # Handle jenkins_job_name -> job_name for jenkins-heatmap
+    if widget_type == "jenkins-heatmap" and "jenkins_job_name" in params:
+        params["job_name"] = params.pop("jenkins_job_name")
+
+    # Handle filters -> additional_filters for compare-runs-view and other widgets
+    if widget_type in ["compare-runs-view", "filter-heatmap"] and "filters" in params:
+        params["additional_filters"] = params.pop("filters")
+
+    # Handle filter -> additional_filters for jenkins-job-view
+    if widget_type == "jenkins-job-view" and "filter" in params:
+        params["additional_filters"] = params.pop("filter")
+
+    # Get valid parameter names for this widget type
+    valid_param_names = {p["name"] for p in WIDGET_TYPES.get(widget_type, {}).get("params", [])}
+
+    # Filter out invalid parameters and log warnings for dropped parameters
+    valid_params = {}
+    invalid_params = []
+
+    for k, v in params.items():
+        if k in valid_param_names:
+            valid_params[k] = v
+        else:
+            invalid_params.append(k)
+
+    # Log warning if any parameters were dropped
+    if invalid_params:
+        logging.warning(
+            "Invalid parameters dropped for widget type '%s': %s. Valid parameters are: %s",
+            widget_type,
+            invalid_params,
+            list(valid_param_names),
+        )
+
+    return valid_params
+
+
 def add_widget_config(body=None, token_info=None, user=None):
     """Create a new widget config
 
@@ -27,6 +73,10 @@ def add_widget_config(body=None, token_info=None, user=None):
     data = body if body is not None else connexion.request.get_json()
     if data["widget"] not in WIDGET_TYPES:
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
+
+    # Validate and clean widget parameters
+    if data.get("params"):
+        data["params"] = _validate_widget_params(data["widget"], data["params"])
 
     # add default weight of 10
     if not data.get("weight"):
@@ -60,6 +110,15 @@ def get_widget_config(id_, token_info=None, user=None):
     widget_config = WidgetConfig.query.get(id_)
     if not widget_config:
         return "Widget config not found", HTTPStatus.NOT_FOUND
+
+    # Clean up invalid parameters on retrieval
+    if widget_config.params:
+        cleaned_params = _validate_widget_params(widget_config.widget, widget_config.params)
+        if cleaned_params != widget_config.params:
+            widget_config.params = cleaned_params
+            session.add(widget_config)
+            session.commit()
+
     return widget_config.to_dict()
 
 
@@ -118,15 +177,22 @@ def update_widget_config(id_, body=None, token_info=None, user=None):
     data = body if body is not None else connexion.request.get_json()
     if data.get("widget") and data["widget"] not in WIDGET_TYPES:
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
+
+    widget_config = WidgetConfig.query.get(id_)
+    if not widget_config:
+        return "Widget config not found", HTTPStatus.NOT_FOUND
+
+    # Validate and clean widget parameters
+    widget_type = data.get("widget", widget_config.widget)
+    if data.get("params"):
+        data["params"] = _validate_widget_params(widget_type, data["params"])
+
     # Look up the project id
     if data.get("project"):
         project = get_project(data.pop("project"))
         if not project_has_user(project, user):
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         data["project_id"] = project.id
-    widget_config = WidgetConfig.query.get(id_)
-    if not widget_config:
-        return "Widget config not found", HTTPStatus.NOT_FOUND
     # add default weight of 10
     if not widget_config.weight:
         widget_config.weight = 10

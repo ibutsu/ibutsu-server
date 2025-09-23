@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useMemo } from 'react';
 
 import { PageSection, Content } from '@patternfly/react-core';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from './settings';
 import {
   resultToRow,
@@ -11,9 +11,9 @@ import {
 } from '../utilities';
 import FilterTable from '../components/filtering/filtered-table-card';
 import { RUN_RESULTS_COLUMNS } from '../constants';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
-import usePagination from '../components/hooks/use-pagination';
-import { FilterContext } from '../components/contexts/filter-context.js';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
+import usePagination from '../componen../hooks/use-pagination';
+import { FilterContext } from '../componen../contexts/filter-context';
 import ResultFilter from '../components/filtering/result-filter';
 
 const HIDE = ['project_id'];

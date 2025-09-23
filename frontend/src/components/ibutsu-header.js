@@ -42,7 +42,7 @@ import UserDropdown from './user-dropdown';
 import { VERSION } from '../constants';
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from '../contexts/ibutsu-context';
 import { useNavigate, useParams } from 'react-router-dom';
 import { setDocumentDarkTheme } from '../utilities';
 

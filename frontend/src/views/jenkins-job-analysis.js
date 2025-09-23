@@ -2,17 +2,17 @@ import React, { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Flex, FlexItem, Switch, Tab, Tabs } from '@patternfly/react-core';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from '../pages/settings';
 
 import GenericAreaWidget from '../widgets/generic-area';
 import GenericBarWidget from '../widgets/generic-bar';
 import { FilterHeatmapWidget, HEATMAP_TYPES } from '../widgets/filter-heatmap';
 import { HEATMAP_MAX_BUILDS } from '../constants';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
 import ParamDropdown from '../components/param-dropdown';
-import { useTabHook } from '../components/hooks/use-tab';
-import { FilterContext } from '../components/contexts/filter-context';
+import { useTabHook } from '../componen../hooks/use-tab';
+import { FilterContext } from '../componen../contexts/filter-context';
 
 const DEFAULT_BAR = 8;
 

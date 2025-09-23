@@ -1,6 +1,6 @@
 // Assisted by watsonx Code Assistant
-import { useState, useEffect, useMemo, useContext } from 'react';
-import { HttpClient } from '../../utilities/http';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
+import { HttpClient } from '../../services/http';
 import { KNOWN_WIDGETS } from '../../constants';
 import { Settings } from '../../pages/settings';
 import { GridItem } from '@patternfly/react-core';
@@ -11,7 +11,7 @@ import {
 import GenericAreaWidget from '../../widgets/generic-area';
 import GenericBarWidget from '../../widgets/generic-bar';
 import ImportanceComponentWidget from '../../widgets/importance-component';
-import { IbutsuContext } from '../../components/contexts/ibutsu-context';
+import { IbutsuContext } from '../../componen../contexts/ibutsu-context';
 import ResultSummaryApex from '../../widgets/result-summary-apex';
 import ResultAggregateApex from '../../widgets/result-aggregate-apex';
 import RunAggregateApex from '../../widgets/run-aggregate-apex';
@@ -72,15 +72,9 @@ export const useWidgets = ({
           { type: 'widget', filter: `dashboard_id=${dashboardId}` },
         );
         const data = await HttpClient.handleResponse(response);
-        // Create new widget objects instead of mutating existing ones
-        const widgetsWithProject = data?.widgets.map((widget) => ({
-          ...widget,
-          params: {
-            ...widget.params,
-            project: primaryObject.id,
-          },
-        }));
-        setWidgets(widgetsWithProject);
+        // Project parameter is now handled automatically during widget save/edit
+        // No need to force it on all widgets here
+        setWidgets(data?.widgets);
       } catch (error) {
         console.error(error);
       }
@@ -99,6 +93,12 @@ export const useWidgets = ({
   const widgetComponents = useMemo(() => {
     return widgets?.map((widget) => {
       if (KNOWN_WIDGETS.includes(widget.widget)) {
+        // Add project parameter from widget config's project_id to params
+        // This ensures widgets receive project context for API calls
+        const widgetParams = {
+          ...widget.params,
+          ...(widget.project_id && { project: widget.project_id }),
+        };
         return (
           <GridItem
             {...COLUMN_SPAN[widget.widget]}
@@ -109,7 +109,7 @@ export const useWidgets = ({
               widget.widget === 'jenkins-heatmap' && (
                 <FilterHeatmapWidget
                   title={widget.title}
-                  params={widget.params}
+                  params={widgetParams}
                   type={HEATMAP_TYPES.jenkins}
                   onDeleteClick={() => {
                     deleteCallback(widget.id);
@@ -180,7 +180,7 @@ export const useWidgets = ({
               widget.widget === 'jenkins-line-chart' && (
                 <GenericAreaWidget
                   title={widget.title}
-                  params={widget.params}
+                  params={widgetParams}
                   yLabel="Execution time"
                   widgetEndpoint="jenkins-line-chart"
                   onDeleteClick={() => {
@@ -195,7 +195,7 @@ export const useWidgets = ({
               widget.widget === 'jenkins-bar-chart' && (
                 <GenericBarWidget
                   title={widget.title}
-                  params={widget.params}
+                  params={widgetParams}
                   barWidth={20}
                   horizontal={true}
                   hideDropdown={true}
@@ -212,7 +212,7 @@ export const useWidgets = ({
               widget.widget === 'importance-component' && (
                 <ImportanceComponentWidget
                   title={widget.title}
-                  params={widget.params}
+                  params={widgetParams}
                   barWidth={20}
                   horizontal={true}
                   hideDropdown={true}

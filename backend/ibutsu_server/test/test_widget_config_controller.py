@@ -34,7 +34,7 @@ ADDED_WIDGET_CONFIG = MockWidgetConfig(
 UPDATED_WIDGET_CONFIG = MockWidgetConfig(
     id=MOCK_ID,
     navigable=False,
-    params={"jenkins_job_name": "stage"},
+    params={"job_name": "stage"},
     title="Stage builds",
     type="widget",
     weight=10,
@@ -192,3 +192,75 @@ class TestWidgetConfigController(BaseTestCase):
             headers=headers,
         )
         self.assert_404(response, "Response body is : " + response.data.decode("utf-8"))
+
+    @patch("ibutsu_server.controllers.widget_config_controller.logging")
+    def test_add_widget_config_with_invalid_params_logs_warning(self, mock_logging):
+        """Test that invalid parameters are logged when creating a widget config"""
+        widget_config = {
+            "title": "Test Widget",
+            "type": "widget",
+            "widget": "jenkins-heatmap",
+            "params": {
+                "job_name": "valid_param",  # This is valid for jenkins-heatmap
+                "invalid_param1": "value1",  # This should be dropped
+                "invalid_param2": "value2",  # This should be dropped
+            },
+        }
+        self.mock_widget_config.query.get.return_value = None
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        response = self.client.open(
+            "/api/widget-config",
+            method="POST",
+            headers=headers,
+            data=json.dumps(widget_config),
+            content_type="application/json",
+        )
+        self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
+
+        # Verify that logging.warning was called with the expected message
+        mock_logging.warning.assert_called_once()
+        call_args = mock_logging.warning.call_args[0]
+        # Check the format string and arguments
+        assert "Invalid parameters dropped for widget type '%s'" in call_args[0]
+        assert call_args[1] == "jenkins-heatmap"
+        # Check that invalid parameters are in the logged list
+        invalid_params_list = call_args[2]
+        assert "invalid_param1" in invalid_params_list
+        assert "invalid_param2" in invalid_params_list
+
+    @patch("ibutsu_server.controllers.widget_config_controller.logging")
+    def test_update_widget_config_with_invalid_params_logs_warning(self, mock_logging):
+        """Test that invalid parameters are logged when updating a widget config"""
+        widget_config = {
+            "params": {
+                "job_name": "valid_param",  # This is valid for jenkins-heatmap
+                "invalid_param": "value",  # This should be dropped
+            }
+        }
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        response = self.client.open(
+            f"/api/widget-config/{MOCK_ID}",
+            method="PUT",
+            headers=headers,
+            data=json.dumps(widget_config),
+            content_type="application/json",
+        )
+        self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+
+        # Verify that logging.warning was called with the expected message
+        mock_logging.warning.assert_called_once()
+        call_args = mock_logging.warning.call_args[0]
+        # Check the format string and arguments
+        assert "Invalid parameters dropped for widget type '%s'" in call_args[0]
+        assert call_args[1] == "jenkins-heatmap"
+        # Check that invalid parameter is in the logged list
+        invalid_params_list = call_args[2]
+        assert "invalid_param" in invalid_params_list
