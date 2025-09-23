@@ -17,7 +17,7 @@ import {
   ChartLineIcon,
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
-import HeatMap from 'react-heatmap-grid';
+import HeatMapWrapper from '../components/heat-map-wrapper';
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
@@ -299,7 +299,7 @@ const FilterHeatmapWidget = ({
         {!isError && isLoading && <Content component="h2">Loading ...</Content>}
         {!isError && !isLoading && renderData.length !== 0 && (
           <div className="ibutsu-widget-chart-container">
-            <HeatMap
+            <HeatMapWrapper
               xLabels={xLabels}
               yLabels={yLabels}
               yLabelWidth={labelWidth}

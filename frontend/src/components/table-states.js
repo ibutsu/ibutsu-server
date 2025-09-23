@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import {
   Bullseye,
@@ -22,7 +21,7 @@ const TableEmptyState = ({ onClearFilters }) => {
       >
         <EmptyStateFooter>
           {!!onClearFilters && (
-            <React.Fragment>
+            <>
               <EmptyStateBody>
                 No results match this filter criteria. Clear all filters to show
                 results.
@@ -32,7 +31,7 @@ const TableEmptyState = ({ onClearFilters }) => {
                   Clear all filters
                 </Button>
               </EmptyStateActions>
-            </React.Fragment>
+            </>
           )}
         </EmptyStateFooter>
       </EmptyState>
@@ -56,7 +55,7 @@ const TableErrorState = (props) => {
       >
         <EmptyStateFooter>
           {!!onClearFilters && (
-            <React.Fragment>
+            <>
               <EmptyStateBody>
                 An error occurred while fetching results. Try a different set of
                 filters.
@@ -66,7 +65,7 @@ const TableErrorState = (props) => {
                   Clear all filters
                 </Button>
               </EmptyStateActions>
-            </React.Fragment>
+            </>
           )}
         </EmptyStateFooter>
       </EmptyState>

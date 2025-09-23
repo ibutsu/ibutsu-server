@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useMemo,
-  useCallback,
-  useState,
-  useContext,
-} from 'react';
+import { useEffect, useMemo, useCallback, useState, useContext } from 'react';
 import {
   Alert,
   ActionGroup,
@@ -261,7 +255,7 @@ const Login = () => {
   }, [externalLogins.keycloak]);
 
   const socialMediaLoginContent = (
-    <React.Fragment>
+    <>
       {externalLogins.keycloak && (
         <LoginMainFooterLinksItem
           data-codemods="true"
@@ -390,7 +384,7 @@ const Login = () => {
           )}
         />
       )}
-    </React.Fragment>
+    </>
   );
 
   const signUpForAccountMessage = (

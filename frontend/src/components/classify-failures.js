@@ -1,4 +1,5 @@
-import React, {
+import {
+  Fragment,
   useCallback,
   useContext,
   useEffect,
@@ -101,12 +102,12 @@ const ClassifyFailuresTable = () => {
       result: result,
       expandedContent: expandedContent,
       cells: [
-        <React.Fragment key="test">
+        <Fragment key="test">
           <Link to={`../results/${result.id}#summary`} relative="Path">
             {result.test_id}
           </Link>{' '}
           {markers}
-        </React.Fragment>,
+        </Fragment>,
         <Label
           key="result-icon"
           variant="filled"
@@ -115,11 +116,11 @@ const ClassifyFailuresTable = () => {
         >
           {toTitleCase(result.result)}
         </Label>,
-        <React.Fragment key="exception">
+        <Fragment key="exception">
           {result.result === 'failed' || result.result === 'error'
             ? exceptionToBadge(result?.metadata?.exception_name, filterFunc)
             : buildBadge('exception_name', 'N/A', false)}
-        </React.Fragment>,
+        </Fragment>,
         <ClassificationDropdown key="classification" testResult={result} />,
         Math.ceil(result.duration) + 's',
       ],

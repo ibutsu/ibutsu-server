@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Checkbox,
@@ -107,11 +107,11 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         <span key="source" className={result.source}>
           {result.source}
         </span>,
-        <React.Fragment key="exception">
+        <Fragment key="exception">
           {result.result === 'failed' || result.result === 'error'
             ? exceptionToBadge(result?.metadata?.exception_name, filterFunc)
             : buildBadge('exception_name', 'N/A', false)}
-        </React.Fragment>,
+        </Fragment>,
         Math.ceil(result.duration) + 's',
         new Date(result.start_time).toLocaleString(),
       ],

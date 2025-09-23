@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import { PageSection, Content, Skeleton } from '@patternfly/react-core';
 
@@ -47,7 +47,7 @@ const Result = () => {
   }, [result_id, testResult]);
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false}>
         <Content>
           <Content component="h1">
@@ -70,7 +70,7 @@ const Result = () => {
         )}
         {fetching && <Skeleton />}
       </PageSection>
-    </React.Fragment>
+    </>
   );
 };
 

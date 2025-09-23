@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -17,13 +17,17 @@ import {
   TextInput,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import Linkify from 'react-linkify';
 
 import { HttpClient } from '../../utilities/http';
 import { Settings } from '../../pages/settings';
-import { linkifyDecorator } from '../decorators';
+import {
+  useWidgetFilters,
+  WidgetFilterComponent,
+} from '../hooks/use-widget-filters';
+import WidgetParameterFields from '../widget-parameter-fields';
 
 const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
+  // const { primaryObject } = useContext(IbutsuContext);
   const [widgetType, setWidgetType] = useState({});
   const [title, setTitle] = useState('');
   const [weight, setWeight] = useState(10);
@@ -31,11 +35,38 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
   const [params, setParams] = useState({});
   const [isTitleValid, setIsTitleValid] = useState(false);
   const [saveButtonDisabled, setSaveButtonDisabled] = useState(false);
+  // Use the custom widget filters hook
+  const {
+    isResultBasedWidget,
+    hasFilterParam,
+    getActiveFiltersAsAPIString,
+    resetFilterContext,
+    CustomFilterProvider,
+    resetCounter,
+    runs,
+  } = useWidgetFilters({
+    widgetType,
+    widgetId: data.widget,
+    initialFilterString:
+      data?.params?.additional_filters || data?.params?.filters,
+    componentLoaded,
+  });
 
   const onSaveModal = useCallback(() => {
+    const updatedParams = { ...params };
+
+    // Convert activeFilters to API filter string for widgets that support filters
+    const filterString = getActiveFiltersAsAPIString();
+    if (filterString && hasFilterParam) {
+      updatedParams.additional_filters = filterString;
+    }
+
+    // Note: project_id is handled at the widget config level, not in params
+    // The Dashboard component will add project_id when saving the widget
+
     const updatedWidget = {
       title,
-      params,
+      params: updatedParams,
       weight: parseInt(weight) || 0,
       type: 'widget',
       widget: data.widget,
@@ -46,7 +77,17 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
     setWeight(0);
     setIsTitleValid(false);
     setWidgetType({});
-  }, [title, params, weight, data.widget, onSave]);
+    resetFilterContext();
+  }, [
+    params,
+    getActiveFiltersAsAPIString,
+    hasFilterParam,
+    title,
+    weight,
+    data.widget,
+    onSave,
+    resetFilterContext,
+  ]);
 
   const onCloseModal = useCallback(() => {
     setTitle('');
@@ -54,8 +95,9 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
     setWeight(0);
     setIsTitleValid(false);
     setWidgetType({});
+    resetFilterContext();
     onClose();
-  }, [onClose]);
+  }, [onClose, resetFilterContext]);
 
   useEffect(() => {
     setTitle(data.title);
@@ -97,44 +139,35 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
     };
   }, [data.widget]);
 
-  const widgetParams = useMemo(
-    () =>
-      componentLoaded
-        ? widgetType?.params.map((param) => (
-            <React.Fragment key={param.name}>
-              <FormGroup
-                label={param.name}
-                fieldId={param.name}
-                isRequired={param.required}
-              >
-                <TextInput
-                  value={params[param.name]}
-                  type={
-                    param.type === 'integer' || param.type === 'float'
-                      ? 'number'
-                      : 'text'
-                  }
-                  id={param.name}
-                  aria-describedby={`${param.name}-helper`}
-                  name={param.name}
-                  onChange={(event, value) => onParamChange(value, event)}
-                  isRequired={param.required}
-                />
-                <FormHelperText>
-                  <HelperText>
-                    <HelperTextItem variant="default">
-                      <Linkify componentDecorator={linkifyDecorator}>
-                        {param.description}
-                      </Linkify>
-                    </HelperTextItem>
-                  </HelperText>
-                </FormHelperText>
-              </FormGroup>
-            </React.Fragment>
-          ))
-        : '',
-    [componentLoaded, widgetType, params, onParamChange],
+  // Wrapper for onParamChange to match WidgetParameterFields expected signature
+  const handleParamChange = useCallback(
+    (event, value) => {
+      onParamChange(value, event);
+    },
+    [onParamChange],
   );
+
+  const filterComponent = useMemo(() => {
+    if (!hasFilterParam || !componentLoaded) return null;
+
+    return (
+      <WidgetFilterComponent
+        isResultBasedWidget={isResultBasedWidget}
+        runs={runs}
+        CustomFilterProvider={CustomFilterProvider}
+        widgetId={data.widget}
+        resetCounter={resetCounter}
+      />
+    );
+  }, [
+    hasFilterParam,
+    componentLoaded,
+    isResultBasedWidget,
+    data.widget,
+    runs,
+    CustomFilterProvider,
+    resetCounter,
+  ]);
 
   return (
     <Modal variant={ModalVariant.medium} isOpen={isOpen} onClose={onCloseModal}>
@@ -181,7 +214,13 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
                 </HelperText>
               </FormHelperText>
             </FormGroup>
-            {widgetParams}
+            <WidgetParameterFields
+              widgetType={widgetType}
+              params={params}
+              onChange={handleParamChange}
+              isLoaded={componentLoaded}
+            />
+            {filterComponent}
           </Form>
         ) : (
           <div>

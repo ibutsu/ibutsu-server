@@ -83,7 +83,7 @@ frontend/public/version.json
 frontend/cypress/screenshots/*
 frontend/.cache_hs66v4
 frontend/build/*
-
+frontend/coverage/*
 
 # Settings
 backend/settings.yaml

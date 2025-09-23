@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { Label, LabelGroup } from '@patternfly/react-core';
 import { ICON_RESULT_MAP } from '../constants';
@@ -36,7 +35,7 @@ const RunSummary = ({ summary }) => {
     passed = summary.passes;
   }
   return (
-    <React.Fragment>
+    <>
       {summary && (
         <LabelGroup aria-label="Result Counts">
           {passed > 0 && (
@@ -91,7 +90,7 @@ const RunSummary = ({ summary }) => {
           )}
         </LabelGroup>
       )}
-    </React.Fragment>
+    </>
   );
 };
 

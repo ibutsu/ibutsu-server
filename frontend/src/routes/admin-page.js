@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 
 import {
   Nav,
@@ -45,7 +45,7 @@ const AdminPage = () => {
   }, []);
 
   return (
-    <React.Fragment>
+    <>
       <Page
         masthead={<IbutsuHeader />}
         sidebar={navigation}
@@ -54,7 +54,7 @@ const AdminPage = () => {
       >
         <Outlet />
       </Page>
-    </React.Fragment>
+    </>
   );
 };
 

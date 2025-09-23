@@ -1,5 +1,3 @@
-import React from 'react';
-
 import {
   Nav,
   NavList,
@@ -16,14 +14,14 @@ import { ALERT_TIMEOUT } from '../constants';
 
 const ProfilePage = () => {
   return (
-    <React.Fragment>
+    <>
       <ToastContainer autoclose={ALERT_TIMEOUT} />
       <Page
         masthead={<IbutsuHeader />}
         sidebar={
           <PageSidebar>
             <PageSidebarBody>
-              <Nav onSelect={React.Component.onNavSelect} aria-label="Nav">
+              <Nav aria-label="Nav">
                 <NavList>
                   <li className="pf-v6-c-nav__item">
                     <NavLink to="profile" className="pf-v6-c-nav__link">
@@ -45,7 +43,7 @@ const ProfilePage = () => {
       >
         <Outlet />
       </Page>
-    </React.Fragment>
+    </>
   );
 };
 

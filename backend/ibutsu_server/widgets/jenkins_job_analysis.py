@@ -10,7 +10,7 @@ def get_jenkins_line_chart(job_name, builds, group_field="build_number", project
     data = {"duration": {}}
     run_limit = int((JJV_RUN_LIMIT / BARCHART_MAX_BUILDS) * builds)
     jobs = get_jenkins_job_view(
-        filter_=f"job_name={job_name}",
+        additional_filters=f"job_name={job_name}",
         page_size=builds,
         project=project,
         run_limit=run_limit,
@@ -44,7 +44,7 @@ def get_jenkins_bar_chart(job_name, builds, group_field="build_number", project=
     }
     run_limit = int((JJV_RUN_LIMIT / BARCHART_MAX_BUILDS) * builds)
     jobs = get_jenkins_job_view(
-        filter_=f"job_name={job_name}",
+        additional_filters=f"job_name={job_name}",
         page_size=builds,
         project=project,
         run_limit=run_limit,

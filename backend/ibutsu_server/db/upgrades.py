@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 
 from alembic.migration import MigrationContext
@@ -6,10 +7,12 @@ from sqlalchemy import MetaData, inspect
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
+from ibutsu_server.constants import WIDGET_TYPES
 from ibutsu_server.db.base import Boolean, Column, DateTime, ForeignKey, Text
+from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.db.types import PortableUUID
 
-__version__ = 8
+__version__ = 9
 
 
 def get_upgrade_op(session):
@@ -186,8 +189,8 @@ def upgrade_6(session):
     This upgrade repairs broken field types on tables not matching schema
 
     Investigating the failure of the controllers.admin.user_controller.admin_delete_user function
-    it was found that the Project.owner_id field in the stage and prod database are TEXT
-    instead of PortableUUID.
+    it was found that the Project.owner_id field in the stage and prod database are TEXT instead of
+    PortableUUID.
     """
 
     engine = session.connection().engine
@@ -230,7 +233,17 @@ def upgrade_7(session):
 
     This upgrade adds a created column to the imports table
     to provide a timestamp for cleanup operations.
+
+    This upgrade migrates existing widget configurations to use validated
+    parameter names that match the widget type specifications. It handles:
+    - filters -> additional_filters migration for multiple widget types
+    - filter -> additional_filters migration for jenkins-job-view
+    - jenkins_job_name -> job_name migration for jenkins-heatmap
+    - Removal of deprecated chart_type from run-aggregator widgets
+    - Validation and cleanup of all parameters against widget type schemas
     """
+
+    # Get database connection and metadata
     engine = session.connection().engine
     op = get_upgrade_op(session)
     metadata = MetaData()
@@ -263,3 +276,170 @@ def upgrade_8(session):
     # Drop reports table
     if "reports" in metadata.tables:
         op.drop_table("reports")
+
+
+def _migrate_filters_to_additional_filters(widget_config, migration_stats, logger):
+    """Handle filters -> additional_filters migration for multiple widget types."""
+    if (
+        widget_config.widget in ["compare-runs-view", "filter-heatmap", "jenkins-job-view"]
+        and "filters" in widget_config.params
+    ):
+        widget_config.params["additional_filters"] = widget_config.params.pop("filters")
+        migration_stats["filters_to_additional_filters"] += 1
+        logger.debug(
+            f"Widget {widget_config.id} ({widget_config.widget}): filters -> additional_filters"
+        )
+        return True
+    return False
+
+
+def _migrate_filter_to_additional_filters(widget_config, migration_stats, logger):
+    """Handle filter -> additional_filters migration for jenkins-job-view."""
+    if widget_config.widget == "jenkins-job-view" and "filter" in widget_config.params:
+        widget_config.params["additional_filters"] = widget_config.params.pop("filter")
+        migration_stats["filter_to_additional_filters"] += 1
+        logger.debug(
+            f"Widget {widget_config.id} ({widget_config.widget}): filter -> additional_filters"
+        )
+        return True
+    return False
+
+
+def _migrate_jenkins_job_name(widget_config, migration_stats, logger):
+    """Handle jenkins_job_name -> job_name migration for jenkins-heatmap."""
+    if widget_config.widget == "jenkins-heatmap" and "jenkins_job_name" in widget_config.params:
+        widget_config.params["job_name"] = widget_config.params.pop("jenkins_job_name")
+        migration_stats["jenkins_job_name_to_job_name"] += 1
+        logger.debug(
+            f"Widget {widget_config.id} ({widget_config.widget}): jenkins_job_name -> job_name"
+        )
+        return True
+    return False
+
+
+def _remove_deprecated_chart_type(widget_config, migration_stats, logger):
+    """Remove deprecated chart_type from run-aggregator widgets."""
+    if widget_config.widget == "run-aggregator" and "chart_type" in widget_config.params:
+        removed_chart_type = widget_config.params.pop("chart_type")
+        migration_stats["chart_type_removed"] += 1
+        logger.debug(
+            f"Widget {widget_config.id} ({widget_config.widget}): removed deprecated "
+            f"chart_type='{removed_chart_type}'"
+        )
+        return True
+    return False
+
+
+def _validate_and_clean_params(widget_config, migration_stats, logger):
+    """Validate all parameters against widget type schema and remove invalid ones."""
+    if widget_config.widget not in WIDGET_TYPES:
+        logger.warning(
+            f"Widget {widget_config.id}: unknown widget type '{widget_config.widget}', "
+            "skipping parameter validation"
+        )
+        return False
+
+    valid_param_names = {p["name"] for p in WIDGET_TYPES[widget_config.widget].get("params", [])}
+    invalid_params = []
+
+    for param_name in list(widget_config.params.keys()):
+        if param_name not in valid_param_names:
+            invalid_params.append(param_name)
+            widget_config.params.pop(param_name)
+            migration_stats["invalid_params_removed"] += 1
+
+    if invalid_params:
+        logger.warning(
+            f"Widget {widget_config.id} ({widget_config.widget}): removed invalid "
+            f"parameters: {invalid_params}"
+        )
+        return True
+    return False
+
+
+def _migrate_widget_config(widget_config, migration_stats, logger):
+    """Migrate a single widget configuration."""
+    if not widget_config.params:
+        return False
+
+    original_params = widget_config.params.copy()
+    params_updated = False
+
+    # Apply all migrations
+    params_updated |= _migrate_filters_to_additional_filters(widget_config, migration_stats, logger)
+    params_updated |= _migrate_filter_to_additional_filters(widget_config, migration_stats, logger)
+    params_updated |= _migrate_jenkins_job_name(widget_config, migration_stats, logger)
+    params_updated |= _remove_deprecated_chart_type(widget_config, migration_stats, logger)
+    params_updated |= _validate_and_clean_params(widget_config, migration_stats, logger)
+
+    if params_updated:
+        migration_stats["widgets_updated"] += 1
+        logger.info(
+            f"Updated widget {widget_config.id} ({widget_config.widget}): "
+            f"{original_params} -> {widget_config.params}"
+        )
+
+    return params_updated
+
+
+def upgrade_9(session):
+    """Version 9 upgrade
+
+    This upgrade migrates existing widget configurations to use validated
+    parameter names that match the widget type specifications.
+    """
+    logger = logging.getLogger(__name__)
+
+    # Get database connection and metadata
+
+    # Migration statistics for logging
+    migration_stats = {
+        "filters_to_additional_filters": 0,
+        "filter_to_additional_filters": 0,
+        "jenkins_job_name_to_job_name": 0,
+        "chart_type_removed": 0,
+        "invalid_params_removed": 0,
+        "widgets_updated": 0,
+        "total_widgets_processed": 0,
+    }
+
+    # Query all widget configs for comprehensive migration
+    widget_configs = session.query(WidgetConfig).all()
+    migration_stats["total_widgets_processed"] = len(widget_configs)
+
+    logger.info(f"Starting widget config parameter migration for {len(widget_configs)} widgets")
+
+    # Track widgets that need to be updated to minimize session.add calls
+    widgets_to_update = []
+
+    for widget_config in widget_configs:
+        if _migrate_widget_config(widget_config, migration_stats, logger):
+            widgets_to_update.append(widget_config)
+
+    # Bulk add all updated widgets to session and commit once
+    if widgets_to_update:
+        for widget_config in widgets_to_update:
+            session.add(widget_config)
+        session.commit()
+        logger.info(f"Committed {len(widgets_to_update)} widget config updates to database")
+
+    # Log final migration statistics
+    logger.info("Widget config migration completed successfully:")
+    logger.info(f"  Total widgets processed: {migration_stats['total_widgets_processed']}")
+    logger.info(f"  Widgets updated: {migration_stats['widgets_updated']}")
+    logger.info(
+        f"  filters -> additional_filters: {migration_stats['filters_to_additional_filters']}"
+    )
+    logger.info(
+        f"  filter -> additional_filters: {migration_stats['filter_to_additional_filters']}"
+    )
+    logger.info(
+        f"  jenkins_job_name -> job_name: {migration_stats['jenkins_job_name_to_job_name']}"
+    )
+    logger.info(f"  chart_type removed: {migration_stats['chart_type_removed']}")
+    logger.info(f"  Invalid parameters removed: {migration_stats['invalid_params_removed']}")
+
+    print(
+        f"upgrade_9 completed: {migration_stats['widgets_updated']}/"
+        f"{migration_stats['total_widgets_processed']} widgets updated"
+    )

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import {
   AboutModal,
   Brand,
@@ -42,7 +42,7 @@ import UserDropdown from './user-dropdown';
 import { VERSION } from '../constants';
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from './contexts/ibutsu-context';
 import { useNavigate, useParams } from 'react-router-dom';
 import { setDocumentDarkTheme } from '../utilities';
 
@@ -340,7 +340,7 @@ const IbutsuHeader = () => {
   );
 
   return (
-    <React.Fragment>
+    <>
       <AboutModal
         isOpen={isAboutOpen}
         onClose={() => {
@@ -413,7 +413,7 @@ const IbutsuHeader = () => {
         </MastheadMain>
         <MastheadContent>{headerTools}</MastheadContent>
       </Masthead>
-    </React.Fragment>
+    </>
   );
 };
 

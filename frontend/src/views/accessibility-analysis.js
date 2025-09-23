@@ -2,7 +2,7 @@
 // and should not be implemented as a view type widget, but as a normal component
 // The class was converted to functional react, but needs additional work.
 // It's not in use in downstream environments at the moment
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Button,
@@ -36,7 +36,7 @@ import { Settings } from '../pages/settings';
 import { resultToRow } from '../utilities';
 import FilterTable from '../components/filtering/filtered-table-card';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
-import TabTitle from '../components/tabs';
+import TabTitle from '../components/TabTitle';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 import usePagination from '../components/hooks/use-pagination';
 
@@ -298,7 +298,7 @@ const AccessibilityAnalysisView = ({ view }) => {
   }, [run?.id]);
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false}>
         <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
           <Tab
@@ -396,7 +396,7 @@ const AccessibilityAnalysisView = ({ view }) => {
           {artifactTabs && artifactTabs.length > 0 ? artifactTabs : null}
         </Tabs>
       </PageSection>
-    </React.Fragment>
+    </>
   );
 };
 

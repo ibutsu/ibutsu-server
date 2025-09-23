@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useContext,
-  useMemo,
-  useCallback,
-} from 'react';
+import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 
 import {
@@ -56,7 +50,7 @@ import {
 import EmptyObject from '../components/empty-object';
 import FilterTable from '../components/filtering/filtered-table-card';
 import ResultView from '../components/result-view';
-import TabTitle from '../components/tabs';
+import TabTitle from '../components/TabTitle';
 import ClassifyFailuresTable from '../components/classify-failures';
 import ArtifactTab from '../components/artifact-tab';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
@@ -373,7 +367,7 @@ const Run = ({ defaultTab = 'summary' }) => {
   }
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false}>
         <Content>
           <Content component="h1">Run {run.id}</Content>
@@ -917,7 +911,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                       </GridItem>
                     )}
                     {resultsTree.length !== 0 && (
-                      <React.Fragment>
+                      <>
                         <GridItem span={5}>
                           <TreeView
                             data={resultsTree}
@@ -959,7 +953,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                             </Card>
                           )}
                         </GridItem>
-                      </React.Fragment>
+                      </>
                     )}
                   </Grid>
                 </CardBody>
@@ -999,7 +993,7 @@ const Run = ({ defaultTab = 'summary' }) => {
           </Tabs>
         )}
       </PageSection>
-    </React.Fragment>
+    </>
   );
 };
 

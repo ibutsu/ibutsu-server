@@ -1,4 +1,5 @@
-import React, {
+import {
+  Fragment,
   useCallback,
   useContext,
   useEffect,
@@ -74,7 +75,7 @@ const UserList = () => {
         user.projects
           ? user.projects.map((project) => project.title).join(', ')
           : '',
-        <React.Fragment key="status">
+        <Fragment key="status">
           {user.is_active ? (
             <Label
               key="active"
@@ -109,7 +110,7 @@ const UserList = () => {
           ) : (
             ''
           )}
-        </React.Fragment>,
+        </Fragment>,
         <TableText key="edit">
           <Button
             icon={<PencilAltIcon />}
@@ -244,7 +245,7 @@ const UserList = () => {
   }, [isDeleteModalOpen, isDeleting, selectedUser, onModalDeleteClick]);
 
   return (
-    <React.Fragment>
+    <Fragment>
       <PageSection hasBodyWrapper={false} id="page">
         <Content>
           <Title headingLevel="h1" ouiaId="users-title">
@@ -268,7 +269,7 @@ const UserList = () => {
         />
       </PageSection>
       {deleteModal}
-    </React.Fragment>
+    </Fragment>
   );
 };
 

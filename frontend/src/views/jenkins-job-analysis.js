@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Flex, FlexItem, Switch, Tab, Tabs } from '@patternfly/react-core';
 
@@ -144,7 +144,7 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
   );
 
   return (
-    <React.Fragment>
+    <>
       <Tabs activeKey={activeTab} onSelect={onTabSelect}>
         <Tab eventKey="heatmap" title="Heatmap">
           <Flex
@@ -234,7 +234,7 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
           )}
         </Tab>
       </Tabs>
-    </React.Fragment>
+    </>
   );
 };
 

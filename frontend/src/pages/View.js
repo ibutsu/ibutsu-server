@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
 import { PageSection, Title, Content } from '@patternfly/react-core';
@@ -10,7 +10,7 @@ import JenkinsJobView from '../views/jenkins-job';
 import JenkinsJobAnalysisView from '../views/jenkins-job-analysis';
 import AccessibilityAnalysisView from '../views/accessibility-analysis';
 import CompareRunsView from '../views/compare-runs';
-import FilterProvider from './contexts/filter-context';
+import FilterProvider from '../components/contexts/filter-context';
 
 const VIEW_MAP = {
   'accessibility-dashboard-view': AccessibilityDashboardView,
@@ -59,7 +59,7 @@ const View = () => {
   const ViewComponent = viewSpec ? VIEW_MAP[viewSpec.widget] : null;
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false} id="page">
         <Content>
           <Title headingLevel="h1">
@@ -74,7 +74,7 @@ const View = () => {
           </FilterProvider>
         )}
       </PageSection>
-    </React.Fragment>
+    </>
   );
 };
 

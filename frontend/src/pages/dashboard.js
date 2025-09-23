@@ -1,4 +1,4 @@
-import React, {
+import {
   useCallback,
   useContext,
   useEffect,
@@ -411,7 +411,7 @@ const Dashboard = () => {
   );
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false}>
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <Flex>
@@ -570,7 +570,7 @@ const Dashboard = () => {
       ) : (
         ''
       )}
-    </React.Fragment>
+    </>
   );
 };
 

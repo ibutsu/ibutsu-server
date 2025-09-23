@@ -27,6 +27,7 @@ const useTableFilters = ({
   hideFilters, // hides it in the render, not in activeFilters
   blockRemove,
   removeCallback = () => {},
+  initialFilters = [], // Initial filters for widget editing
 }) => {
   const { project_id } = useParams();
   const navigate = useNavigate();
@@ -58,15 +59,22 @@ const useTableFilters = ({
   // default the project_id if primaryObject is set in context
   const [searchParams] = useSearchParams();
 
-  // Start with search params, ignore pagination
+  // Start with search params or initialFilters, ignore pagination
   // set project_id in activeFilters
-  const [activeFilters, setActiveFilters] = useState([
-    ...Object.entries(Object.fromEntries(searchParams))
-      .filter(([k]) => k !== 'page' && k !== 'pageSize')
-      .map(([searchKey, searchValue]) => {
-        return parseSearchToFilter([searchKey, searchValue]);
-      }),
-  ]);
+  const [activeFilters, setActiveFilters] = useState(() => {
+    if (initialFilters.length > 0) {
+      // Use initialFilters for widget editing (don't use URL params)
+      return [...initialFilters];
+    }
+    // Use search params for normal table filtering
+    return [
+      ...Object.entries(Object.fromEntries(searchParams))
+        .filter(([k]) => k !== 'page' && k !== 'pageSize')
+        .map(([searchKey, searchValue]) => {
+          return parseSearchToFilter([searchKey, searchValue]);
+        }),
+    ];
+  });
 
   useEffect(() => {
     if (project_id) {
@@ -114,11 +122,15 @@ const useTableFilters = ({
 
       // TODO deduplicate newFilters by field
       setActiveFilters(newFilters);
-      navigate({
-        pathname: location.pathname,
-        search: newSearchParams.toString(),
-        hash: location.hash,
-      });
+
+      // Only navigate if not in widget editing mode (initialFilters provided)
+      if (initialFilters.length === 0) {
+        navigate({
+          pathname: location.pathname,
+          search: newSearchParams.toString(),
+          hash: location.hash,
+        });
+      }
 
       callback();
     },
@@ -129,6 +141,7 @@ const useTableFilters = ({
       location.pathname,
       navigate,
       searchParams,
+      initialFilters,
     ],
   );
 

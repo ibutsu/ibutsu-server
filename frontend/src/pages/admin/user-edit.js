@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import {
   ActionGroup,
@@ -245,7 +245,7 @@ const UserEdit = () => {
   };
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false}>
         <Title headingLevel="h1" size="2xl">
           Users / {formName}{' '}
@@ -370,7 +370,7 @@ const UserEdit = () => {
           </Card>
         )}
       </PageSection>
-    </React.Fragment>
+    </>
   );
 };
 

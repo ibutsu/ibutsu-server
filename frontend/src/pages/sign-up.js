@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Component, lazy, Suspense } from 'react';
 import PropTypes from 'prop-types';
 import {
   ActionGroup,
@@ -22,12 +22,10 @@ import { NavLink } from 'react-router-dom';
 import { AuthService } from '../utilities/auth';
 
 // Lazy import the password strength indicator, it uses a very big library
-const PasswordStrengthBar = React.lazy(
-  () => import('react-password-strength-bar'),
-);
+const PasswordStrengthBar = lazy(() => import('react-password-strength-bar'));
 
 // This catches any potential errors if the password strength indicator fails to load
-class PasswordErrorBoundary extends React.Component {
+class PasswordErrorBoundary extends Component {
   static propTypes = {
     children: PropTypes.node,
   };
@@ -54,7 +52,7 @@ class PasswordErrorBoundary extends React.Component {
   }
 }
 
-export class SignUp extends React.Component {
+export class SignUp extends Component {
   static propTypes = {};
 
   constructor(props) {

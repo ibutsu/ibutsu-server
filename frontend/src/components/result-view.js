@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useContext,
-  useMemo,
-  useCallback,
-} from 'react';
+import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -40,10 +34,10 @@ import { Settings } from '../pages/settings';
 import { filtersToSearchParams, toTitleCase } from '../utilities';
 import { ICON_RESULT_MAP } from '../constants';
 
-import TabTitle from './tabs';
+import TabTitle from './TabTitle';
 import TestHistoryTable from './test-history';
 import ArtifactTab from './artifact-tab';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from './contexts/ibutsu-context';
 import { useTabHook } from './hooks/use-tab';
 
 const ResultView = ({
@@ -242,7 +236,7 @@ const ResultView = ({
   );
 
   return (
-    <React.Fragment>
+    <>
       {testResult && (
         <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
           {!hideSummary && (
@@ -515,7 +509,7 @@ const ResultView = ({
                                 </DataListItem>
                                 {testResult.metadata &&
                                   testResult.metadata.durations && (
-                                    <React.Fragment>
+                                    <>
                                       {testResult.metadata.durations.setup && (
                                         <DataListItem
                                           className="pf-v6-u-p-0"
@@ -604,7 +598,7 @@ const ResultView = ({
                                           </DataListItemRow>
                                         </DataListItem>
                                       )}
-                                    </React.Fragment>
+                                    </>
                                   )}
                               </DataList>
                             </DataListCell>,
@@ -833,7 +827,7 @@ const ResultView = ({
           )}
         </Tabs>
       )}
-    </React.Fragment>
+    </>
   );
 };
 

@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 import {
-  Checkbox,
   Content,
   Form,
   FormGroup,
@@ -16,7 +15,6 @@ import {
   Radio,
   Stack,
   StackItem,
-  TextArea,
   TextInput,
   Title,
   Wizard,
@@ -26,11 +24,13 @@ import {
 
 import { Tbody, Td, Th, Thead, Tr, Table } from '@patternfly/react-table';
 
-import Linkify from 'react-linkify';
-import { linkifyDecorator } from '../decorators';
-
 import { HttpClient } from '../../utilities/http';
 import { Settings } from '../../pages/settings';
+import {
+  useWidgetFilters,
+  WidgetFilterComponent,
+} from '../hooks/use-widget-filters';
+import WidgetParameterFields from '../widget-parameter-fields';
 
 const NewWidgetWizard = ({
   dashboard,
@@ -38,6 +38,7 @@ const NewWidgetWizard = ({
   closeCallback,
   isOpen,
 }) => {
+  // const { primaryObject } = useContext(IbutsuContext);
   const [widgetTypes, setWidgetTypes] = useState([]);
   const [title, setTitle] = useState('');
   const [params, setParams] = useState({});
@@ -47,6 +48,21 @@ const NewWidgetWizard = ({
   const [selectedType, setSelectedType] = useState({});
   const [selectedTypeId, setSelectedTypeId] = useState();
   const [stepIdReached, setStepIdReached] = useState(1);
+  // Use the custom widget filters hook
+  const {
+    isResultBasedWidget,
+    hasFilterParam,
+    getActiveFiltersAsAPIString,
+    resetFilterContext,
+    CustomFilterProvider,
+    resetCounter,
+    runs,
+  } = useWidgetFilters({
+    widgetType: selectedType,
+    widgetId: selectedTypeId,
+    initialFilterString: '',
+    componentLoaded: !!selectedTypeId, // Only fetch runs when a widget type is selected
+  });
 
   const clearState = useCallback(() => {
     setTitle('');
@@ -57,7 +73,8 @@ const NewWidgetWizard = ({
     setSelectedType();
     setSelectedTypeId();
     setStepIdReached(1);
-  }, []);
+    resetFilterContext();
+  }, [resetFilterContext]);
 
   const onSave = useCallback(() => {
     let newParams = {};
@@ -75,6 +92,16 @@ const NewWidgetWizard = ({
         newParams[paramPair[0]] = newValue;
       }
     });
+
+    // Convert activeFilters to API filter string for widgets that support filters
+    const filterString = getActiveFiltersAsAPIString();
+    if (filterString && hasFilterParam) {
+      newParams.additional_filters = filterString;
+    }
+
+    // Note: project_id is handled at the widget config level, not in params
+    // The Dashboard component will add project_id when saving the widget
+
     const newWidget = {
       title,
       params: newParams,
@@ -91,6 +118,8 @@ const NewWidgetWizard = ({
   }, [
     params,
     selectedType,
+    getActiveFiltersAsAPIString,
+    hasFilterParam,
     title,
     weight,
     selectedTypeId,
@@ -145,31 +174,22 @@ const NewWidgetWizard = ({
     }
   }, []);
 
-  const handleRequiredParam = useCallback(
-    (param) => {
-      if (param.required && params[param.name] === '') {
-        return 'error';
-      }
-      return 'default';
-    },
-    [params],
-  );
-
-  const onNext = useCallback(
-    (_, currentStep) => {
-      if (currentStep.id === 3) {
-        onParamChange(null, '');
-      }
-      setStepIdReached((prevStepId) => Math.max(prevStepId, currentStep.id));
-    },
-    [onParamChange],
-  );
+  const onNext = useCallback((_, currentStep) => {
+    setStepIdReached((prevStepId) => Math.max(prevStepId, currentStep.id));
+  }, []);
 
   useEffect(() => {
     let areParamsFilled = true;
     selectedType?.params?.forEach((widgetParam) => {
-      if (widgetParam.required && !params[widgetParam.name]) {
-        areParamsFilled = false;
+      if (widgetParam.required) {
+        const paramValue = params[widgetParam.name];
+        // Check if parameter is missing or invalid based on type
+        if (paramValue === undefined || paramValue === null) {
+          areParamsFilled = false;
+        } else if (widgetParam.type === 'string' && paramValue === '') {
+          areParamsFilled = false;
+        }
+        // For numeric and boolean types, 0 and false are valid values
       }
     });
     setParamsFilled(areParamsFilled);
@@ -190,6 +210,24 @@ const NewWidgetWizard = ({
     };
     fetchWidgetTypes();
   }, []);
+
+  // Validation function for required parameters
+  const handleRequiredParam = useCallback(
+    (param) => {
+      if (param.required) {
+        const paramValue = params[param.name];
+        // Check if parameter is missing or invalid based on type
+        if (paramValue === undefined || paramValue === null) {
+          return 'error';
+        } else if (param.type === 'string' && paramValue === '') {
+          return 'error';
+        }
+        // For numeric and boolean types, 0 and false are valid values
+      }
+      return 'default';
+    },
+    [params],
+  );
 
   const steps = useMemo(
     () => [
@@ -276,86 +314,44 @@ const NewWidgetWizard = ({
             <Title headingLevel="h1" size="xl">
               Set widget parameters
             </Title>
-            {!!selectedType &&
-              selectedType.params?.map((param) => (
-                <React.Fragment key={param.name}>
-                  {(param.type === 'string' ||
-                    param.type === 'integer' ||
-                    param.type === 'float') && (
-                    <FormGroup
-                      label={param.name}
-                      fieldId={param.name}
-                      isRequired={param.required}
-                    >
-                      <TextInput
-                        value={params[param.name]}
-                        type={
-                          param.type === 'integer' || param.type === 'float'
-                            ? 'number'
-                            : 'text'
-                        }
-                        id={param.name}
-                        aria-describedby={`${param.name}-helper`}
-                        name={param.name}
-                        onChange={(event, value) => onParamChange(event, value)}
-                        isRequired={param.required}
-                        validated={handleRequiredParam(param)}
-                      />
-                      <FormHelperText>
-                        <HelperText>
-                          <HelperTextItem variant="default">
-                            <Linkify componentDecorator={linkifyDecorator}>
-                              {param.description}
-                            </Linkify>
-                          </HelperTextItem>
-                        </HelperText>
-                      </FormHelperText>
-                    </FormGroup>
-                  )}
-                  {param.type === 'boolean' && (
-                    <FormGroup
-                      label={param.name}
-                      fieldId={param.name}
-                      isRequired={param.required}
-                      hasNoPaddingTop
-                    >
-                      <Checkbox
-                        isChecked={params[param.name]}
-                        onChange={(event, value) => onParamChange(event, value)}
-                        id={param.name}
-                        name={param.name}
-                        label={param.description}
-                      />
-                    </FormGroup>
-                  )}
-                  {param.type === 'list' && (
-                    <FormGroup label={param.name} fieldId={param.name}>
-                      <TextArea
-                        id={param.name}
-                        name={param.name}
-                        isRequired={param.required}
-                        value={params[param.name]}
-                        onChange={(event, value) => onParamChange(event, value)}
-                        resizeOrientation="vertical"
-                      />
-                      <FormHelperText>
-                        <HelperText>
-                          <HelperTextItem variant="default">
-                            {`${param.description}. Place items on separate lines.`}
-                          </HelperTextItem>
-                        </HelperText>
-                      </FormHelperText>
-                    </FormGroup>
-                  )}
-                </React.Fragment>
-              ))}
+            <WidgetParameterFields
+              widgetType={selectedType}
+              params={params}
+              onChange={onParamChange}
+              handleRequiredParam={handleRequiredParam}
+              isLoaded={!!selectedType}
+            />
           </Form>
         ),
       },
+      ...(hasFilterParam
+        ? [
+            {
+              id: 4,
+              name: 'Set filters',
+              canJumpTo: stepIdReached >= 4,
+              enableNext: true,
+              component: (
+                <Form isHorizontal>
+                  <Title headingLevel="h1" size="xl">
+                    Configure filters
+                  </Title>
+                  <WidgetFilterComponent
+                    isResultBasedWidget={isResultBasedWidget}
+                    runs={runs}
+                    CustomFilterProvider={CustomFilterProvider}
+                    widgetId={selectedTypeId}
+                    resetCounter={resetCounter}
+                  />
+                </Form>
+              ),
+            },
+          ]
+        : []),
       {
-        id: 4,
+        id: hasFilterParam ? 5 : 4,
         name: 'Review details',
-        canJumpTo: stepIdReached >= 4,
+        canJumpTo: stepIdReached >= (hasFilterParam ? 5 : 4),
         enableNext: true,
         nextButtonText: 'Finish',
         component: (
@@ -428,6 +424,11 @@ const NewWidgetWizard = ({
       onTitleChange,
       handleRequiredParam,
       onParamChange,
+      hasFilterParam,
+      isResultBasedWidget,
+      runs,
+      CustomFilterProvider,
+      resetCounter,
     ],
   );
 

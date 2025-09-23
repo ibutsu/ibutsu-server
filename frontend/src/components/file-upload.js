@@ -1,9 +1,9 @@
-import React, { useContext, useRef, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import UploadIcon from '@patternfly/react-icons/dist/esm/icons/upload-icon';
 
 import { HttpClient } from '../utilities/http';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from './contexts/ibutsu-context';
 import {
   AlertActionLink,
   Button,
@@ -114,7 +114,7 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
 
   const { primaryObject } = context;
   return (
-    <React.Fragment>
+    <>
       <input
         type="file"
         multiple={false}
@@ -141,7 +141,7 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
         triggerRef={toolTipRef}
         id="file-upload-tip"
       />
-    </React.Fragment>
+    </>
   );
 };
 

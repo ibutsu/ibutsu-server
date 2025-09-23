@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   MenuToggle,
@@ -28,7 +28,7 @@ const ParamDropdown = ({
   }, [defaultValue, setValue]);
 
   return (
-    <React.Fragment>
+    <>
       <div data-id="widget-param-dropdown">
         <Content component="h3">{tooltip}</Content>
         <Select
@@ -55,7 +55,7 @@ const ParamDropdown = ({
           </SelectList>
         </Select>
       </div>
-    </React.Fragment>
+    </>
   );
 };
 

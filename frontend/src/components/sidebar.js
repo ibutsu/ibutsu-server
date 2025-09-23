@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 
 import { Link } from 'react-router-dom';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from './contexts/ibutsu-context';
 import {
   PageSidebar,
   PageSidebarBody,
@@ -34,13 +34,8 @@ const IbutsuSidebar = () => {
           params,
         );
         const data = await HttpClient.handleResponse(response);
-        data.widgets?.forEach((widget) => {
-          if (primaryObject && widget?.params) {
-            widget.params['project'] = primaryObject.id;
-          } else if (widget?.params) {
-            delete widget.params['project'];
-          }
-        });
+        // Note: project_id is handled at the widget config level, not in params
+        // Views already have project_id from the database query filter
         setViews(data.widgets);
       } catch (error) {
         console.error('Error fetching project views:', error);
