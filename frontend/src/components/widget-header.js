@@ -1,4 +1,3 @@
-import React from 'react';
 import PropTypes from 'prop-types';
 import { Button, CardHeader, Title } from '@patternfly/react-core';
 import {
@@ -16,7 +15,7 @@ const WidgetHeader = ({
   onEditClick,
 }) => {
   const headerActions = (
-    <React.Fragment>
+    <>
       {actions ? actions : []}
       {getDataFunc && (
         <Button
@@ -57,7 +56,7 @@ const WidgetHeader = ({
           isInline
         />
       )}
-    </React.Fragment>
+    </>
   );
 
   return (

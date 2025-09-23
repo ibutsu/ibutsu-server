@@ -3,6 +3,7 @@ from sqlalchemy import func
 from ibutsu_server.db.base import Integer, session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters
+from ibutsu_server.util.uuid import is_uuid
 
 PAGE_SIZE = 250
 
@@ -35,7 +36,7 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
         filters.append(f"env={env}")
     if job_name:
         filters.append(f"metadata.jenkins.job_name={job_name}")
-    if project:
+    if project and is_uuid(project):
         filters.append(f"project_id={project}")
     if additional_filters:
         filters.extend(additional_filters.split(","))

@@ -4,20 +4,23 @@ from ibutsu_server.constants import JJV_RUN_LIMIT
 from ibutsu_server.db.base import Integer, Text, session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.util.uuid import is_uuid
 
 
-def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, run_limit=None):
+def _get_jenkins_aggregation(
+    additional_filters=None, project=None, page=1, page_size=25, run_limit=None
+):
     """Get a list of Jenkins jobs"""
     offset = (page * page_size) - page_size
 
     # first create the filters
     query_filters = ["metadata.jenkins.build_number@y", "metadata.jenkins.job_name@y"]
-    if filters:
-        for idx, filter in enumerate(filters):
+    if additional_filters:
+        for idx, filter in enumerate(additional_filters):
             if "job_name" in filter or "build_number" in filter:
-                filters[idx] = f"metadata.jenkins.{filter}"
-        query_filters.extend(filters)
-    if project:
+                additional_filters[idx] = f"metadata.jenkins.{filter}"
+        query_filters.extend(additional_filters)
+    if project and is_uuid(project):
         query_filters.append(f"project_id={project}")
     filters = query_filters
 
@@ -103,12 +106,18 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
     return data
 
 
-def get_jenkins_job_view(filter_=None, project=None, page=1, page_size=25, run_limit=None):
+def get_jenkins_job_view(
+    additional_filters=None, project=None, page=1, page_size=25, run_limit=None
+):
     filters = []
 
-    if filter_:
-        for filter_string in filter_.split(","):
-            filters.append(filter_string)
+    if additional_filters:
+        if isinstance(additional_filters, str):
+            # Handle string format (comma-separated)
+            filters.extend(iter(additional_filters.split(",")))
+        elif isinstance(additional_filters, list):
+            # Handle list format
+            filters = additional_filters
 
     jenkins_jobs = _get_jenkins_aggregation(filters, project, page, page_size, run_limit)
     total_items = jenkins_jobs["pagination"]["totalItems"]

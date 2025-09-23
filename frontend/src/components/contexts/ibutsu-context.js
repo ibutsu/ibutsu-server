@@ -1,4 +1,4 @@
-import { createContext, useState, useMemo } from 'react';
+import { createContext, useState } from 'react';
 import PropTypes from 'prop-types';
 import { getDarkTheme } from '../../utilities';
 
@@ -10,32 +10,19 @@ const IbutsuContextProvider = (props) => {
   const [defaultDashboard, setDefaultDashboard] = useState();
   const [darkTheme, setDarkTheme] = useState(getDarkTheme());
 
-  // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useMemo(
-    () => ({
-      primaryType,
-      setPrimaryType,
-      primaryObject,
-      setPrimaryObject,
-      defaultDashboard,
-      setDefaultDashboard,
-      darkTheme,
-      setDarkTheme,
-    }),
-    [
-      primaryType,
-      setPrimaryType,
-      primaryObject,
-      setPrimaryObject,
-      defaultDashboard,
-      setDefaultDashboard,
-      darkTheme,
-      setDarkTheme,
-    ],
-  );
-
   return (
-    <IbutsuContext.Provider value={contextValue}>
+    <IbutsuContext.Provider
+      value={{
+        primaryType: primaryType,
+        setPrimaryType: setPrimaryType,
+        primaryObject: primaryObject,
+        setPrimaryObject: setPrimaryObject,
+        defaultDashboard: defaultDashboard,
+        setDefaultDashboard: setDefaultDashboard,
+        darkTheme: darkTheme,
+        setDarkTheme: setDarkTheme,
+      }}
+    >
       {props.children}
     </IbutsuContext.Provider>
   );

@@ -6,6 +6,7 @@ from sqlalchemy import desc, func
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result
 from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.util.uuid import is_uuid
 
 
 def _get_min_count(days):
@@ -26,9 +27,9 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
         filters.append(f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}")
     if additional_filters:
         filters.extend(additional_filters.split(","))
-    if project:
+    if project and is_uuid(project):
         filters.append(f"project_id={project}")
-    if run_id:
+    if run_id and is_uuid(run_id):
         filters.append(f"run_id={run_id}")
 
     # generate the group field
@@ -55,7 +56,6 @@ def get_recent_result_data(
     group_field,
     days=None,
     project=None,
-    _chart_type="pie",
     run_id=None,
     additional_filters=None,
 ):

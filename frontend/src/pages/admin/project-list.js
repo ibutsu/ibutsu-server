@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import {
   Button,
@@ -154,7 +154,7 @@ const ProjectList = () => {
   }, []);
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false} id="page">
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <Flex>
@@ -243,7 +243,7 @@ const ProjectList = () => {
           </Button>
         </ModalFooter>
       </Modal>
-    </React.Fragment>
+    </>
   );
 };
 

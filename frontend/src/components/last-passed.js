@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { Badge } from '@patternfly/react-core';
@@ -51,7 +51,7 @@ const LastPassed = ({ filters = [] }) => {
   }, [filters]);
 
   return (
-    <React.Fragment>
+    <>
       {resultData && (
         <Link
           target="_blank"
@@ -70,7 +70,7 @@ const LastPassed = ({ filters = [] }) => {
           Not Applicable
         </Badge>
       )}
-    </React.Fragment>
+    </>
   );
 };
 

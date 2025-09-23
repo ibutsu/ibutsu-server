@@ -1,7 +1,7 @@
 // TODO This component is incomplete
 // The class was converted to functional react, but needs additional work.
 // It's not in use in downstream environments at the moment
-import React, { useContext, useEffect, useState } from 'react';
+import { Fragment, useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -68,12 +68,12 @@ const runToRow = (run, filterFunc, analysisViewId) => {
   return {
     cells: [
       analysisViewId ? (
-        <React.Fragment key="run">
+        <Fragment key="run">
           <Link to={`../view/${analysisViewId}?run_list=${run.id}`}>
             {run.id}
           </Link>{' '}
           {badges}
-        </React.Fragment>
+        </Fragment>
       ) : (
         run.id
       ),
@@ -326,7 +326,7 @@ const AccessibilityDashboardView = ({ view }) => {
         ))}
       </SelectList>
     </Select>,
-    <React.Fragment key="value">
+    <Fragment key="value">
       {operationMode === 'bool' && (
         <Select
           id="single-select"
@@ -371,7 +371,7 @@ const AccessibilityDashboardView = ({ view }) => {
           style={{ height: 'inherit' }}
         />
       )}
-    </React.Fragment>,
+    </Fragment>,
   ];
 
   return (

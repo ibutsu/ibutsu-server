@@ -1,8 +1,8 @@
-import React from 'react';
+import { Fragment, isValidElement } from 'react';
 import { Badge, Label } from '@patternfly/react-core';
 import { ChevronRightIcon } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
-import { ICON_RESULT_MAP, MISSING_META_EXCEPTION } from '../constants';
+import { ICON_RESULT_MAP } from '../constants';
 import RunSummary from '../components/run-summary';
 import { buildBadge } from './badges';
 import { toTitleCase } from './strings';
@@ -94,7 +94,7 @@ export const resultToRow = (result, filterFunc) => {
       }
       // Don't add duplicate markers - check against existing React elements with keys
       const hasExistingMarker = badges.some((m) => {
-        return React.isValidElement(m) && m.key === markKey;
+        return isValidElement(m) && m.key === markKey;
       });
 
       if (!hasExistingMarker) {
@@ -120,7 +120,7 @@ export const resultToRow = (result, filterFunc) => {
   }
   return {
     cells: [
-      <React.Fragment key={result.id}>
+      <Fragment key={result.id}>
         <Link
           to={`../results/${result.id}#summary`}
           relative="Path"
@@ -129,8 +129,8 @@ export const resultToRow = (result, filterFunc) => {
           {result.test_id}
         </Link>{' '}
         {badges}
-      </React.Fragment>,
-      <React.Fragment key="result">
+      </Fragment>,
+      <Fragment key="result">
         <Label
           variant="filled"
           title={result.result}
@@ -139,7 +139,7 @@ export const resultToRow = (result, filterFunc) => {
           {toTitleCase(result.result)}
         </Label>
         {classification}
-      </React.Fragment>,
+      </Fragment>,
       Math.ceil(result.duration) + 's',
       runLink,
       new Date(result.start_time).toLocaleString(),
@@ -176,12 +176,12 @@ export const resultToComparisonRow = (result) => {
 
   let cells = [];
   cells.push(
-    <React.Fragment key="test">
+    <Fragment key="test">
       <Link to={`../results/${result[0].id}#summary`} relative="Path">
         {result[0].test_id}
       </Link>{' '}
       {markers}
-    </React.Fragment>,
+    </Fragment>,
   );
   result.forEach((result, index) => {
     cells.push(
@@ -236,9 +236,9 @@ export const runToRow = (run, filterFunc) => {
   }
   return {
     cells: [
-      <React.Fragment key="run">
+      <Fragment key="run">
         <Link to={`${run.id}#summary`}>{run.id}</Link> {badges}
-      </React.Fragment>,
+      </Fragment>,
       Math.ceil(run.duration) + 's',
       <RunSummary key="summary" summary={run.summary} />,
       created.toLocaleString(),
@@ -256,25 +256,6 @@ export const runToRow = (run, filterFunc) => {
       </Link>,
     ],
   };
-};
-
-export const exceptionToBadge = (exception = null, filterFunc) => {
-  let exceptionBadge;
-  let exceptionName = exception || MISSING_META_EXCEPTION;
-
-  if (filterFunc && exception) {
-    exceptionBadge = buildBadge('exception_name', exceptionName, false, () =>
-      filterFunc({
-        field: 'metadata.exception_name',
-        operator: 'eq',
-        value: exceptionName,
-      }),
-    );
-  } else {
-    exceptionBadge = buildBadge('exception_name', exceptionName, false);
-  }
-
-  return exceptionBadge;
 };
 
 // TODO envToBadge and componentToBadge functions, with MISSING_ constants

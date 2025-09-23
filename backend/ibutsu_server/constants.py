@@ -66,7 +66,7 @@ WIDGET_TYPES = {
         "description": "A summary of multiple ran test results filtered",
         "params": [
             {
-                "name": "filters",
+                "name": "additional_filters",
                 "description": "List of filters used for comparison",
                 "type": "list",
                 "required": True,
@@ -107,6 +107,12 @@ WIDGET_TYPES = {
                 "required": False,
                 "default": True,
             },
+            {
+                "name": "project",
+                "description": "Filter results by a specific project ID",
+                "type": "string",
+                "required": False,
+            },
             _ADDITIONAL_FILTERS_PARAM,
         ],
         "type": "widget",
@@ -117,7 +123,7 @@ WIDGET_TYPES = {
         "description": "A heatmap of filtered test runs.",
         "params": [
             {
-                "name": "filters",
+                "name": "additional_filters",
                 "description": "The filters for the runs to be included in the query.",
                 "type": "string",
                 "required": True,
@@ -135,6 +141,12 @@ WIDGET_TYPES = {
                 "type": "string",
                 "required": True,
                 "default": "component",
+            },
+            {
+                "name": "project",
+                "description": "Filter results by a specific project ID",
+                "type": "string",
+                "required": False,
             },
         ],
         "type": "widget",
@@ -157,6 +169,12 @@ WIDGET_TYPES = {
                 "type": "integer",
                 "required": True,
                 "default": 4,
+            },
+            {
+                "name": "project",
+                "description": "Filter results by a specific project ID",
+                "type": "string",
+                "required": False,
             },
             # TODO: write migration to force all widget configs to chart_type: "bar"
             # Separate line chart into a different widget using apex stacked lines
@@ -184,6 +202,12 @@ WIDGET_TYPES = {
             {
                 "name": "job_name",
                 "description": "Filter test results by a specific jenkins job",
+                "type": "string",
+                "required": False,
+            },
+            {
+                "name": "project",
+                "description": "Filter test results by a specific project ID",
                 "type": "string",
                 "required": False,
             },
@@ -218,11 +242,10 @@ WIDGET_TYPES = {
                 "required": False,
             },
             {
-                "name": "chart_type",
-                "description": "Type of chart with which to display results, e.g. 'pie' or 'donut'",
+                "name": "project",
+                "description": "Filter results by a specific project ID",
                 "type": "string",
                 "required": False,
-                "default": "pie",
             },
             _ADDITIONAL_FILTERS_PARAM,
         ],
@@ -275,6 +298,12 @@ WIDGET_TYPES = {
                 "required": False,
                 "default": False,
             },
+            {
+                "name": "project",
+                "description": "Filter results by a specific project ID",
+                "type": "string",
+                "required": False,
+            },
         ],
         "type": "widget",
     },
@@ -292,6 +321,12 @@ WIDGET_TYPES = {
                 "name": "run_list",
                 "description": "List of run IDs for the analysis to pull in",
                 "type": "list",
+            },
+            {
+                "name": "project",
+                "description": "Filter results by a specific project ID",
+                "type": "string",
+                "required": False,
             },
         ],
         "type": "view",
@@ -315,7 +350,7 @@ WIDGET_TYPES = {
         "title": "Jenkins Job View",
         "params": [
             {
-                "name": "filter",
+                "name": "additional_filters",
                 "description": "Filters for the Jenkins Jobs",
                 "type": "list",
             },
@@ -334,6 +369,12 @@ WIDGET_TYPES = {
                 "description": "Limit on runs from which to aggregate jenkins jobs",
                 "type": "integer",
             },
+            {
+                "name": "project",
+                "description": "Filter results by a specific project ID",
+                "type": "string",
+                "required": False,
+            },
         ],
         "type": "view",
     },
@@ -350,6 +391,12 @@ WIDGET_TYPES = {
                 "name": "builds",
                 "description": "The number of builds to fetch",
                 "type": "integer",
+            },
+            {
+                "name": "project",
+                "description": "Filter results by a specific project ID",
+                "type": "string",
+                "required": False,
             },
         ],
         "type": "view",
@@ -373,6 +420,12 @@ WIDGET_TYPES = {
                 "required": True,
                 "default": 30,
             },
+            {
+                "name": "project",
+                "description": "Filter results by a specific project ID",
+                "type": "string",
+                "required": False,
+            },
         ],
         "type": "widget",
     },
@@ -393,6 +446,12 @@ WIDGET_TYPES = {
                 "type": "integer",
                 "required": False,
                 "default": 30,
+            },
+            {
+                "name": "project",
+                "description": "Filter results by a specific project ID",
+                "type": "string",
+                "required": False,
             },
         ],
         "type": "widget",

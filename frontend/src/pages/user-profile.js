@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Button,
@@ -91,10 +91,10 @@ const UserProfile = () => {
   }, []);
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false}>
         <Title headingLevel="h1" size="2xl">
-          <React.Fragment>
+          <>
             <span> Profile </span>
             {user && user.is_superadmin && (
               <Label
@@ -105,7 +105,7 @@ const UserProfile = () => {
                 Administrator
               </Label>
             )}
-          </React.Fragment>
+          </>
         </Title>
       </PageSection>
       <PageSection hasBodyWrapper={false}>
@@ -252,7 +252,7 @@ const UserProfile = () => {
           </Card>
         )}
       </PageSection>
-    </React.Fragment>
+    </>
   );
 };
 

@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import React from 'react';
 
 import {
   Button,
@@ -14,7 +13,7 @@ import { NavLink } from 'react-router-dom';
 
 const EmptyObject = ({ headingText, bodyText, returnLink, returnLinkText }) => {
   return (
-    <React.Fragment>
+    <>
       <EmptyState icon={SearchIcon}>
         <Content component="h1" size="lg">
           {headingText ? headingText : "This object couldn't be found."}
@@ -35,7 +34,7 @@ const EmptyObject = ({ headingText, bodyText, returnLink, returnLinkText }) => {
           </NavLink>
         </EmptyStateFooter>
       </EmptyState>
-    </React.Fragment>
+    </>
   );
 };
 

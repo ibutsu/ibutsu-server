@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import {
   ActionGroup,
@@ -314,7 +314,7 @@ const ProjectEdit = () => {
   );
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false}>
         <Title headingLevel="h1" size="2xl">
           {isNewProject ? 'Add Project' : 'Projects / ' + crumbTitle}
@@ -462,7 +462,7 @@ const ProjectEdit = () => {
           </CardBody>
         </Card>
       </PageSection>
-    </React.Fragment>
+    </>
   );
 };
 

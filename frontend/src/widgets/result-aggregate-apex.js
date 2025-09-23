@@ -72,16 +72,26 @@ const ResultAggregateApex = ({
     setIsLoading(true);
     const fetchAggregated = async () => {
       try {
+        // Build params object, excluding undefined values
+        const params = {
+          days: filterDays,
+          group_field: filterGroupField,
+        };
+
+        // Only add optional parameters if they have valid values
+        if (project.current) {
+          params.project = project.current;
+        }
+        if (additionalFilters.current) {
+          params.additional_filters = additionalFilters.current;
+        }
+        if (runId.current) {
+          params.run_id = runId.current;
+        }
+
         const response = await HttpClient.get(
           [Settings.serverUrl, 'widget', 'result-aggregator'],
-          {
-            days: filterDays,
-            group_field: filterGroupField,
-            chart_type: 'donut',
-            project: project.current,
-            additional_filters: additionalFilters.current,
-            run_id: runId.current,
-          },
+          params,
         );
         const data = await HttpClient.handleResponse(response);
         let _chartData = [];

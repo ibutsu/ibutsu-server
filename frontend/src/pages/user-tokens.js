@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ToastContainer } from 'react-toastify';
 
 import {
@@ -115,7 +115,7 @@ const UserTokens = () => {
   }, []);
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false} id="page">
         <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
           <FlexItem spacer={{ default: 'spacerLg' }}>
@@ -165,7 +165,7 @@ const UserTokens = () => {
         }}
       />
       <ToastContainer autoClose={ALERT_TIMEOUT} stacked />
-    </React.Fragment>
+    </>
   );
 };
 

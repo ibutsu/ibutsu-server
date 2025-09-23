@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, Suspense } from 'react';
+import { lazy, useState, useCallback, useMemo, Suspense } from 'react';
 import {
   ActionGroup,
   Alert,
@@ -22,7 +22,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { AuthService } from '../utilities/auth';
 
 // Lazy import the password strength indicator, it uses a very big library
-const PasswordStrengthBar = React.lazy(() =>
+const PasswordStrengthBar = lazy(() =>
   import('react-password-strength-bar').catch(() => ({
     default: () => <div>Failed to load password strength indicator</div>,
   })),

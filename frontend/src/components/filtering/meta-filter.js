@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -14,11 +14,11 @@ import {
   SelectOption,
 } from '@patternfly/react-core';
 
-import { Settings } from '../../pages/settings';
-import { HttpClient } from '../utilities/http';
+import { Settings } from '../pages/settings';
+import { HttpClient } from '../../utilities/http';
 import { toAPIFilter } from '../utilities';
 
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from '../contexts/ibutsu-context';
 
 // TODO Extend this to contain the filter handling functions, and better integrate filter state
 // with FilterTable. See https://github.com/ibutsu/ibutsu-server/issues/230
@@ -116,7 +116,7 @@ const MetaFilter = ({
       : 'No values for selected field';
 
   return (
-    <React.Fragment>
+    <>
       <Flex>
         <FlexItem>
           <Select
@@ -204,9 +204,7 @@ const MetaFilter = ({
                       onClose={() => onRemoveFilter(id, key)}
                     >
                       {typeof activeFilters[key] === 'object' && (
-                        <React.Fragment>
-                          {activeFilters[key]['val']}
-                        </React.Fragment>
+                        <>{activeFilters[key]['val']}</>
                       )}
                       {typeof activeFilters[key] !== 'object' &&
                         activeFilters[key]}
@@ -228,7 +226,7 @@ const MetaFilter = ({
           )}
         </Flex>
       )}
-    </React.Fragment>
+    </>
   );
 };
 

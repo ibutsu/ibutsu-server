@@ -10,7 +10,7 @@ import {
 } from '@patternfly/react-core';
 
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { filtersToSearchParams, toTitleCase } from '../../utilities';
 import { OPERATIONS } from '../../constants';
@@ -126,9 +126,7 @@ const ActiveFilters = ({
                     activeFilter?.operator}
                 </Badge>
                 <Badge isRead={false} style={BADGE_STYLE}>
-                  <React.Fragment>
-                    {activeFilter?.value ?? 'N/A'}
-                  </React.Fragment>
+                  <>{activeFilter?.value ?? 'N/A'}</>
                 </Badge>
               </CardBody>
             </Card>

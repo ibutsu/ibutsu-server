@@ -2,7 +2,7 @@
   /* TODO: Consider renaming to projects-page, maybe updates for static routing? */
 }
 
-import React, { useContext, useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 
 import { Outlet } from 'react-router-dom';
 
@@ -23,7 +23,7 @@ const IbutsuPage = () => {
   }, []);
 
   return (
-    <React.Fragment>
+    <>
       <Page
         masthead={<IbutsuHeader />}
         sidebar={<IbutsuSidebar />}
@@ -46,7 +46,7 @@ const IbutsuPage = () => {
         )}
       </Page>
       <ToastContainer stacked autoclose={ALERT_TIMEOUT} />
-    </React.Fragment>
+    </>
   );
 };
 

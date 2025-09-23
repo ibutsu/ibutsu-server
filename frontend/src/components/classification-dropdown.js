@@ -10,7 +10,7 @@ import {
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
-import { CLASSIFICATION } from '../constants.js';
+import { CLASSIFICATION } from '../constants';
 
 const ClassificationDropdown = ({ testResult: initialTestResult }) => {
   const [testResult, setTestResult] = useState(initialTestResult);

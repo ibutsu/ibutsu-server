@@ -3,6 +3,7 @@ from http import HTTPStatus
 import connexion
 
 from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, WIDGET_TYPES
+from ibutsu_server.controllers.widget_config_controller import _validate_widget_params
 from ibutsu_server.widgets.accessibility_analysis import (
     get_accessibility_analysis_view,
     get_accessibility_bar_chart,
@@ -43,7 +44,7 @@ WIDGET_METHODS = {
 RESERVED_PARAMS = {"filter": "filter_"}
 
 
-def _pre_process_params(params):
+def _pre_process_params(params, widget_id=None):
     """Reduce congnitive complexity"""
     new_params = params.copy()
     for param in params:
@@ -51,6 +52,18 @@ def _pre_process_params(params):
         if param in RESERVED_PARAMS:
             new_params.pop(param)
             new_params[RESERVED_PARAMS.get(param)] = params[param]
+    # Special handling for jenkins-job-view widget
+    if widget_id == "jenkins-job-view" and "filter_" in new_params:
+        new_params["additional_filters"] = new_params.pop("filter_")
+
+    # Handle legacy parameter names for backward compatibility
+    if widget_id == "jenkins-heatmap" and "jenkins_job_name" in new_params:
+        new_params["job_name"] = new_params.pop("jenkins_job_name")
+
+    # Handle filters -> additional_filters migration for compare-runs-view
+    if widget_id == "compare-runs-view" and "filters" in new_params:
+        new_params["additional_filters"] = new_params.pop("filters")
+
     return new_params.copy()
 
 
@@ -110,6 +123,22 @@ def get_widget(id_):
     params = {}
     for key in connexion.request.args:
         params[key] = connexion.request.args.getlist(key)
-    params = _pre_process_params(params)
+    params = _pre_process_params(params, id_)
     params = _typecast_params(id_, params)
-    return WIDGET_METHODS[id_](**params)
+
+    # Validate against the central schema in WIDGET_TYPES[id_]["params"]
+    validated_params = _validate_widget_params(id_, params)
+
+    # Check if any invalid parameters were provided
+    invalid_params = set(params.keys()) - set(validated_params.keys())
+    if invalid_params:
+        return (
+            f"Invalid parameters for widget '{id_}': {', '.join(invalid_params)}",
+            HTTPStatus.BAD_REQUEST,
+        )
+
+    try:
+        return WIDGET_METHODS[id_](**validated_params)
+    except TypeError as e:
+        # Handle any remaining parameter issues
+        return f"Parameter error for widget '{id_}': {e!s}", HTTPStatus.BAD_REQUEST

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
+import { useState, useEffect, useContext, useMemo } from 'react';
 
 import { PageSection, Content } from '@patternfly/react-core';
 
@@ -11,7 +11,7 @@ import FilterTable from '../components/filtering/filtered-table-card';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import RunFilter from '../components/filtering/run-filter';
 import usePagination from '../components/hooks/use-pagination';
-import { FilterContext } from '../components/contexts/filter-context.js';
+import { FilterContext } from '../components/contexts/filter-context';
 
 const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
 const HIDE = ['project_id'];
@@ -109,7 +109,7 @@ const RunList = () => {
   }, []);
 
   return (
-    <React.Fragment>
+    <>
       <PageSection hasBodyWrapper={false} id="page">
         <Content>
           <Content className="title" component="h1">
@@ -142,7 +142,7 @@ const RunList = () => {
           }
         />
       </PageSection>
-    </React.Fragment>
+    </>
   );
 };
 

@@ -13,10 +13,13 @@ import {
   NUMERIC_RUN_FIELDS,
 } from '../constants';
 
-// Consolidated filter formatting and parsing utilities
-const OP_RE = /^\[(?<operator>[^\]]+)\](?<value>.*)$/;
+export const filtersToAPIParams = (filters = []) => {
+  return filters.length
+    ? filters.map((f) => formatFilterForAPI(f, { forAPI: true }))
+    : [];
+};
 
-export function formatFilter(
+export function formatFilterForAPI(
   { field, operator, value },
   { forAPI = false } = {},
 ) {
@@ -33,48 +36,46 @@ export function formatFilter(
   return `[${operator}]${value}`;
 }
 
+// Regex to match operator patterns in filter values
+const OP_RE = /^\[(.+)\](.+)$/;
+
 export function parseFilterParam([rawKey, rawVal]) {
   const match = OP_RE.exec(rawVal);
   if (match) {
-    const { operator, value } = match.groups;
+    const operator = match[1];
+    const value = match[2];
     return { field: rawKey, operator, value };
   }
   return { field: rawKey, operator: 'eq', value: rawVal };
 }
 
 // Simplified API functions using the consolidated utilities
-export const filtersToAPIParams = (filters = []) =>
-  filters.length ? filters.map((f) => formatFilter(f, { forAPI: true })) : [];
+export const filtersToAPIParamsV2 = (filters = []) =>
+  filters.length
+    ? filters.map((f) => formatFilterForAPI(f, { forAPI: true }))
+    : [];
 
 export const filtersToSearchParams = (filters = []) =>
   filters.reduce((qs, f) => {
-    qs.set(f.field, formatFilter(f));
+    qs.set(f.field, formatFilterForAPI(f, { forAPI: false }));
     return qs;
   }, new URLSearchParams());
 
-export const toAPIFilter = (filters) => {
-  // Take UI style filter object with field/op/val keys and generate an array of filter strings for the API
-  // TODO rework for array of filters instead of keyed object
-  const filter_strings = [];
-  for (const key in filters) {
-    if (
-      Object.prototype.hasOwnProperty.call(filters, key) &&
-      !!filters[key] &&
-      key !== 'id'
-    ) {
-      const val = filters[key]['val'];
-      const operator = filters[key]['operator'];
-      filter_strings.push(
-        formatFilter({ field: key, operator, value: val }, { forAPI: true }),
-      );
-    }
-  }
-  return filter_strings;
+export const toAPIFilter = (filterObj) => {
+  return Object.entries(filterObj)
+    .filter(([key, cfg]) => key !== 'id' && cfg)
+    .map(([key, { operator, val }]) =>
+      formatFilterForAPI(
+        { field: key, operator, value: val },
+        { forAPI: true },
+      ),
+    );
 };
 
 export const parseSearchToFilter = parseFilterParam;
 
-export const parseFilterValueToSearch = (filter) => formatFilter(filter);
+export const parseFilterValueToSearch = (filter) =>
+  formatFilterForAPI(filter, { forAPI: false });
 
 export const parseFilter = (paramKey) => {
   const re = /(.*?)\[(.*?)\]/;
@@ -90,6 +91,46 @@ export const parseFilter = (paramKey) => {
       operator: 'eq',
     };
   }
+};
+
+/**
+ * Convert API filter strings back to filter objects
+ * @param {string} filterString - Comma-separated API filter string like "field=value,field2>value2"
+ * @returns {Array} Array of filter objects with field, operator, and value
+ */
+export const apiParamsToFilters = (filterString = '') => {
+  if (typeof filterString !== 'string' || !filterString.trim()) return [];
+
+  // Create reverse mapping from opChar to operator key
+  const opCharToOperator = Object.entries(OPERATIONS).reduce(
+    (acc, [op, { opChar }]) => ({ ...acc, [opChar]: op }),
+    {},
+  );
+
+  // Build a regex that matches the longest ops first (>=, <=, !=, then =, >, <, etc)
+  const opCharsPattern = Object.keys(opCharToOperator)
+    .map((c) => c.replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1'))
+    .sort((a, b) => b.length - a.length)
+    .join('|');
+  const FILTER_RE = new RegExp(`^(.+)(${opCharsPattern})(.+)$`);
+
+  return filterString
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((str) => {
+      const m = str.match(FILTER_RE);
+      if (m) {
+        return {
+          field: m[1],
+          operator: opCharToOperator[m[2]],
+          value: m[3],
+        };
+      }
+      // fallback to eq if no match
+      const [field, value] = str.split('=');
+      return { field, operator: 'eq', value };
+    });
 };
 
 // Field to operations lookup map - replaces the long conditional chain

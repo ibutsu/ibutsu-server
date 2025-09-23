@@ -4,6 +4,7 @@ from ibutsu_server.constants import HEATMAP_MAX_BUILDS, HEATMAP_RUN_LIMIT
 from ibutsu_server.db.base import Float, session
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
+from ibutsu_server.util.uuid import is_uuid
 
 NO_RUN_TEXT = "None"
 NO_PASS_RATE_TEXT = "Build failed"  # noqa: S105
@@ -31,10 +32,10 @@ def _calculate_slope(x_data):
     return slope
 
 
-def _get_heatmap(filters, builds, group_field, project=None):
+def _get_heatmap(additional_filters, builds, group_field, project=None):
     """Get Filtered Heatmap Data."""
-    filters = filters.split(",")
-    if project:
+    filters = additional_filters.split(",")
+    if project and is_uuid(project):
         filters.append(f"project_id={project}")
 
     # generate the group_field
@@ -111,7 +112,7 @@ def _get_heatmap(filters, builds, group_field, project=None):
     return data_with_slope
 
 
-def get_filter_heatmap(filters, builds, group_field, project=None):
+def get_filter_heatmap(additional_filters, builds, group_field, project=None):
     """Generate JSON data for a filtered heatmap of runs"""
-    heatmap = _get_heatmap(filters, builds, group_field, project)
+    heatmap = _get_heatmap(additional_filters, builds, group_field, project)
     return {"heatmap": heatmap}

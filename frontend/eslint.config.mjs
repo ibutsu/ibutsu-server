@@ -9,7 +9,6 @@ import js from '@eslint/js';
 import pluginCypress from 'eslint-plugin-cypress/flat';
 import eslintPluginJsxA11y from 'eslint-plugin-jsx-a11y';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-import { reactRules, reactSettings } from './eslint.react.config.mjs';
 
 export default defineConfig([
   globalIgnores(
@@ -17,18 +16,27 @@ export default defineConfig([
     'Ignore build dir and node_modules',
   ),
   js.configs.recommended,
-  {
-    ...reactPlugin.configs.flat.recommended,
-    settings: reactSettings,
-  },
+  reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'],
   reactHooksPlugin.configs['recommended-latest'],
   eslintPluginJsxA11y.flatConfigs.recommended,
   pluginCypress.configs.recommended,
+  // Global settings for React
   {
-    files: ['src/**/*', 'public/**/*', 'cypress/**/*', 'bin/**/*'],
+    settings: {
+      react: {
+        version: '18.3.1',
+      },
+    },
+  },
+  {
+    files: ['src/*', 'cypress/*', 'bin/*'],
     plugins: {
       'unused-imports': unusedImports, // not flat config compatible
+      reactPlugin,
+      reactHooksPlugin,
+      eslintPluginJsxA11y,
+      pluginCypress,
     },
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
@@ -38,15 +46,9 @@ export default defineConfig([
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.jest,
         ...globals.cypress,
-        process: 'readonly',
-        global: 'readonly',
-        window: 'readonly',
-        describe: 'readonly',
-        it: 'readonly',
-        expect: 'readonly',
-        beforeEach: 'readonly',
+        process: 'readonly', // Explicitly define process for build-time env vars
+        es2020: true,
       },
       parser: babelParser,
       parserOptions: {
@@ -72,23 +74,54 @@ export default defineConfig([
       },
     },
     rules: {
-      // React and React Hooks rules (imported from separate config)
-      ...reactRules,
-
-      // General rules
+      'react/jsx-curly-brace-presence': [
+        'error',
+        {
+          props: 'never',
+          children: 'never',
+        },
+      ],
+      'react/react-in-jsx-scope': 'off',
       camelcase: 'off',
       quotes: ['warn', 'single'],
       'no-duplicate-imports': 'error',
+      'no-unused-vars': 'off', // Turn off base rule in favor of unused-imports
       'unused-imports/no-unused-imports': 'error',
+    },
+  },
+  // Override no-unused-vars globally to use unused-imports instead
+  {
+    plugins: {
+      'unused-imports': unusedImports,
+    },
+    rules: {
+      'no-unused-vars': 'off',
       'unused-imports/no-unused-vars': [
         'warn',
         {
-          vars: 'all',
-          varsIgnorePattern: '^_',
-          args: 'after-used',
           argsIgnorePattern: '^_',
         },
       ],
+    },
+  },
+  // Specific configuration for service-worker.js to handle process.env
+  {
+    files: ['src/pages/service-worker.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        process: 'readonly', // Allow process for build-time environment variables
+      },
+    },
+  },
+  // Specific configuration for test files to handle Jest globals
+  {
+    files: ['**/*.test.js', '**/*.test.jsx', '**/*.spec.js', '**/*.spec.jsx'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.jest, // Add Jest globals for test files
+      },
     },
   },
   eslintPluginPrettierRecommended,

@@ -1,4 +1,5 @@
 import { Badge, Button } from '@patternfly/react-core';
+import { MISSING_META_EXCEPTION } from '../constants';
 
 export const buildBadge = (key, value, isRead, onClick) => {
   // Ensure value is a string to avoid React child errors
@@ -26,3 +27,24 @@ export const buildBadge = (key, value, isRead, onClick) => {
     return badge;
   }
 };
+
+export const exceptionToBadge = (exception = null, filterFunc) => {
+  let exceptionBadge;
+  let exceptionName = exception || MISSING_META_EXCEPTION;
+
+  if (filterFunc && exception) {
+    exceptionBadge = buildBadge('exception_name', exceptionName, false, () =>
+      filterFunc({
+        field: 'metadata.exception_name',
+        operator: 'eq',
+        value: exceptionName,
+      }),
+    );
+  } else {
+    exceptionBadge = buildBadge('exception_name', exceptionName, false);
+  }
+
+  return exceptionBadge;
+};
+
+// TODO envToBadge and componentToBadge functions, with MISSING_ constants

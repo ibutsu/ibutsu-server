@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import { isValidElement, useState } from 'react';
 
 import {
   Card,
@@ -193,7 +193,7 @@ const FilterTable = ({
                   typeof sanitizedCell === 'number' ||
                   Array.isArray(sanitizedCell) ||
                   (typeof sanitizedCell === 'object' &&
-                    React.isValidElement(sanitizedCell))
+                    isValidElement(sanitizedCell))
                 ) {
                   cellContent = sanitizedCell;
                 } else if (
@@ -237,10 +237,10 @@ const FilterTable = ({
   return (
     <Card ouiaId="filter-table-card" className={cardClass}>
       {headerChildren ? (
-        <React.Fragment>
+        <>
           <CardHeader>{headerChildren}</CardHeader>
           <Divider />
-        </React.Fragment>
+        </>
       ) : null}
       {filters || null}
       {fetching && (

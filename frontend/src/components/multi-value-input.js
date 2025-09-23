@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Label,
@@ -64,7 +64,7 @@ const MultiValueInput = ({
   };
 
   return (
-    <React.Fragment>
+    <>
       <TextInputGroup>
         <TextInputGroupMain
           value={value}
@@ -100,7 +100,7 @@ const MultiValueInput = ({
           )}
         </TextInputGroupUtilities>
       </TextInputGroup>
-    </React.Fragment>
+    </>
   );
 };
 
