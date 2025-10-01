@@ -165,6 +165,32 @@ const ResultView = ({
     );
   }, [testResult, project_id]);
 
+  const importanceLink = useMemo(() => {
+    const importance = testResult.metadata?.importance;
+    const importanceSearch = filtersToSearchParams([
+      {
+        field: 'metadata.importance',
+        operator: 'eq',
+        value: importance,
+      },
+      {
+        field: 'run_id',
+        operator: 'eq',
+        value: testResult.run_id,
+      },
+    ]);
+    return (
+      <Link
+        to={{
+          pathname: `/project/${project_id}/results`,
+          search: importanceSearch.toString(),
+        }}
+      >
+        {importance}
+      </Link>
+    );
+  }, [testResult, project_id]);
+
   const sourceLink = useMemo(() => {
     const sourceSearch = filtersToSearchParams([
       {
@@ -280,6 +306,22 @@ const ResultView = ({
                               </DataListCell>,
                               <DataListCell key="component-data" width={4}>
                                 {componentLink}
+                              </DataListCell>,
+                            ]}
+                          />
+                        </DataListItemRow>
+                      </DataListItem>
+                    )}
+                    {testResult.metadata?.importance && (
+                      <DataListItem aria-labelledby="importance-label">
+                        <DataListItemRow>
+                          <DataListItemCells
+                            dataListCells={[
+                              <DataListCell key="importance-label" width={2}>
+                                <strong>Importance:</strong>
+                              </DataListCell>,
+                              <DataListCell key="importance-data" width={4}>
+                                {importanceLink}
                               </DataListCell>,
                             ]}
                           />
