@@ -95,6 +95,11 @@ def create_celery_app(_app=None):
     task = app.task
     # Add in any periodic tasks
     app.conf.beat_schedule = {
+        "prune-old-imports": {
+            "task": "ibutsu_server.tasks.db.prune_old_imports",
+            "schedule": crontab(minute=0, hour=3, day_of_week=6),  # 3 am on Saturday
+            "args": (1,),  # delete any import older than 1 months
+        },
         "prune-old-artifact-files": {
             "task": "ibutsu_server.tasks.db.prune_old_files",
             "schedule": crontab(minute=0, hour=4, day_of_week=6),  # 4 am on Saturday, after DB dump

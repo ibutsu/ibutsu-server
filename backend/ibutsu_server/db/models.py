@@ -1,6 +1,6 @@
-from datetime import datetime
 from uuid import uuid4
 
+from sqlalchemy import func
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -86,7 +86,7 @@ class Artifact(Model, FileMixin):
     run_id = Column(PortableUUID(), ForeignKey("runs.id"), index=True)
     filename = Column(Text, index=True)
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
-    upload_date = Column(DateTime, default=datetime.utcnow, index=True)
+    upload_date = Column(DateTime, default=func.now(), index=True)
 
 
 class Dashboard(Model, ModelMixin):
@@ -114,6 +114,7 @@ class Import(Model, ModelMixin):
     format = Column(Text, index=True)
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
     status = Column(Text, index=True)
+    created = Column(DateTime, default=func.now(), index=True)
 
 
 class ImportFile(Model, FileMixin):
@@ -149,7 +150,7 @@ class Project(Model, ModelMixin):
 
 class Report(Model, ModelMixin):
     __tablename__ = "reports"
-    created = Column(DateTime, default=datetime.utcnow, index=True)
+    created = Column(DateTime, default=func.now(), index=True)
     download_url = Column(Text, index=True)
     filename = Column(Text, index=True)
     mimetype = Column(Text, index=True)
@@ -182,7 +183,7 @@ class Result(Model, ModelMixin):
     result = Column(Text, index=True)
     run_id = Column(PortableUUID(), ForeignKey("runs.id"), index=True)
     source = Column(Text, index=True)
-    start_time = Column(DateTime, default=datetime.utcnow, index=True)
+    start_time = Column(DateTime, default=func.now(), index=True)
     test_id = Column(Text, index=True)
     artifacts = relationship("Artifact", backref="result")
 
@@ -191,7 +192,7 @@ class Run(Model, ModelMixin):
     __tablename__ = "runs"
     artifacts = relationship("Artifact")
     component = Column(Text, index=True)
-    created = Column(DateTime, default=datetime.utcnow, index=True)
+    created = Column(DateTime, default=func.now(), index=True)
     # this is metadata but it is a reserved attr
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
     duration = Column(Float, index=True)
@@ -199,7 +200,7 @@ class Run(Model, ModelMixin):
     project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True)
     results = relationship("Result")
     source = Column(Text, index=True)
-    start_time = Column(DateTime, default=datetime.utcnow, index=True)
+    start_time = Column(DateTime, default=func.now(), index=True)
     summary = Column(mutable_json_type(dbtype=PortableJSON()))
     artifacts = relationship("Artifact", backref="run")
 

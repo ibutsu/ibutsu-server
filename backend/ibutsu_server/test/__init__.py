@@ -150,7 +150,7 @@ class MockGroup(MockModel):
 
 
 class MockImport(MockModel):
-    COLUMNS = ["id", "filename", "format", "data", "status"]
+    COLUMNS = ["id", "filename", "format", "data", "status", "created"]
 
 
 class MockProject(MockModel):
