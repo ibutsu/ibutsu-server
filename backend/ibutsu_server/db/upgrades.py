@@ -1,13 +1,15 @@
+from datetime import datetime, timezone
+
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import MetaData, inspect
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
-from ibutsu_server.db.base import Boolean, Column, ForeignKey, Text
+from ibutsu_server.db.base import Boolean, Column, DateTime, ForeignKey, Text
 from ibutsu_server.db.types import PortableUUID
 
-__version__ = 5
+__version__ = 7
 
 
 def get_upgrade_op(session):
@@ -220,3 +222,23 @@ def upgrade_6(session):
                 local_cols=["owner_id"],
                 remote_cols=["id"],
             )
+
+
+def upgrade_7(session):
+    """Version 7 upgrade
+
+    This upgrade adds a created column to the imports table
+    to provide a timestamp for cleanup operations.
+    """
+    engine = session.connection().engine
+    op = get_upgrade_op(session)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+    imports = metadata.tables.get("imports")
+
+    # Add created column if it doesn't exist
+    if imports is not None and "created" not in [col.name for col in imports.columns]:
+        op.add_column(
+            "imports",
+            Column("created", DateTime, default=lambda: datetime.now(timezone.utc), index=True),
+        )

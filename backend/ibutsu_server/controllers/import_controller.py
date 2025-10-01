@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Optional
 
@@ -77,6 +78,7 @@ def add_import(
             "filename": import_file.filename,
             "format": "",
             "data": data,
+            "created": datetime.now(timezone.utc),
         }
     )
     session.add(new_import)
