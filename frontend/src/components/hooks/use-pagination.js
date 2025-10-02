@@ -22,7 +22,7 @@ const usePagination = ({ setParams = true }) => {
       setSearchParams(newSearchParams.toString());
       // TODO maintain window hash for Run and Result pages to have pagination params on multiple tabs
     }
-  }, [page, pageSize, setParams, searchParams, setSearchParams]);
+  }, [page, pageSize, setParams, searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSetPage = useCallback((_, newPage) => {
     setPage(newPage);

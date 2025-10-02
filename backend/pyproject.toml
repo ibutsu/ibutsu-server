@@ -168,6 +168,10 @@ ignore = [
     "ARG001",  # Unused function argument (Connexion passes token_info/user automatically)
     "ARG002",  # Unused method argument
 ]
+"**/widgets/**/*.py" = [
+    "ARG001",  # Unused function argument (Widget functions must accept all WIDGET_TYPES parameters)
+    "ARG002",  # Unused method argument
+]
 "**/test/**/*.py" = [
     "S105",   # Possible hardcoded password string
     "S106",   # Possible hardcoded password assigned to argument
