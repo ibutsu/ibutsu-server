@@ -1,4 +1,4 @@
-def info_from_api_key(api_key, required_scopes):
+def info_from_api_key(_api_key, _required_scopes):
     """
     Check and retrieve authentication information from api_key.
     Returned value will be passed in 'token_info' parameter of your operation function, if there is

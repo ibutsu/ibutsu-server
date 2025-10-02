@@ -280,7 +280,8 @@ class User(Model, ModelMixin):
         )
 
         # 4. Reassign dashboards to the current user (admin performing deletion)
-        # TODO: this field is null on every prod record, evaluate dropping the field or changing to creator_id
+        # TODO: this field is null on every prod record, evaluate dropping the field
+        # or changing to creator_id
         session.query(Dashboard).filter_by(user_id=self.id).update(
             {"user_id": new_owner.id}, synchronize_session=False
         )

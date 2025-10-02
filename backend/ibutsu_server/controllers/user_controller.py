@@ -91,9 +91,11 @@ def get_token(id_, token_info=None, user=None):
     """
     user = User.query.get(user)
     token = Token.query.get(id_)
+    if not token:
+        return "Token not found", HTTPStatus.NOT_FOUND
     if token.user != user:
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-    return token.to_dict() if token else ("Token not found", HTTPStatus.NOT_FOUND)
+    return token.to_dict()
 
 
 @validate_uuid

@@ -3,8 +3,5 @@ def build_url(*url_paths):
     for url in url_paths:
         if not url:
             continue
-        if "://" in url:
-            new_url = url.strip("/")
-        else:
-            new_url = "/".join([new_url, url.strip("/")])
+        new_url = url.strip("/") if "://" in url else "/".join([new_url, url.strip("/")])
     return new_url

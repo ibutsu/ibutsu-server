@@ -23,8 +23,7 @@ def validate_uuid(function):
         candidate = kwargs.get("id_")
         if not is_uuid(candidate):
             return f"ID: {candidate} is not a valid UUID", HTTPStatus.BAD_REQUEST
-        else:
-            return function(**kwargs)
+        return function(**kwargs)
 
     return validate
 

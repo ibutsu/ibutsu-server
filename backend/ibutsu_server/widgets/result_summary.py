@@ -48,13 +48,13 @@ def get_result_summary(source=None, env=None, job_name=None, project=None, addit
     query_data = query.all()
 
     # parse the data
-    for error, skipped, failed, total, xfailed, xpassed in query_data:
-        error = error or 0
-        skipped = skipped or 0
-        failed = failed or 0
-        total = total or 0
-        xfailed = xfailed or 0
-        xpassed = xpassed or 0
+    for error_val, skipped_val, failed_val, total_val, xfailed_val, xpassed_val in query_data:
+        error = error_val or 0
+        skipped = skipped_val or 0
+        failed = failed_val or 0
+        total = total_val or 0
+        xfailed = xfailed_val or 0
+        xpassed = xpassed_val or 0
         summary["error"] += error
         summary["skipped"] += skipped
         summary["failed"] += failed

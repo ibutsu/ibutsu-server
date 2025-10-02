@@ -82,7 +82,7 @@ def _get_jenkins_aggregation(filters=None, project=None, page=1, page_size=25, r
                 "build_number": datum.build_number,
                 "build_url": datum.build_url,
                 "duration": (datum.max_start_time.timestamp() - datum.min_start_time.timestamp())
-                + datum.max_duration,  # noqa
+                + datum.max_duration,
                 "env": datum.env,
                 "job_name": datum.job_name,
                 "source": datum.source,

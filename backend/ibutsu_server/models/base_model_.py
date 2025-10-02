@@ -1,5 +1,6 @@
 import pprint
 import typing
+from typing import ClassVar
 
 from ibutsu_server import util
 
@@ -9,11 +10,11 @@ T = typing.TypeVar("T")
 class Model:
     # openapiTypes: The key is attribute name and the
     # value is attribute type.
-    openapi_types = {}
+    openapi_types: ClassVar[dict] = {}
 
     # attributeMap: The key is attribute name and the
     # value is json key in definition.
-    attribute_map = {}
+    attribute_map: ClassVar[dict] = {}
 
     @classmethod
     def from_dict(cls: type[T], dikt) -> T:
@@ -30,9 +31,7 @@ class Model:
         for attr, _ in self.openapi_types.items():
             value = getattr(self, attr)
             if isinstance(value, list):
-                result[attr] = list(
-                    map(lambda x: x.to_dict() if hasattr(x, "to_dict") else x, value)
-                )
+                result[attr] = [x.to_dict() if hasattr(x, "to_dict") else x for x in value]
             elif hasattr(value, "to_dict"):
                 result[attr] = value.to_dict()
             elif isinstance(value, dict):
@@ -67,3 +66,7 @@ class Model:
     def __ne__(self, other):
         """Returns true if both objects are not equal"""
         return not self == other
+
+    def __hash__(self):
+        """Returns hash of the object"""
+        return hash(tuple(sorted(self.__dict__.items())))

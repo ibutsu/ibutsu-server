@@ -21,7 +21,7 @@ def admin_add_project(body=None, token_info=None, user=None):
 
     :rtype: Project
     """
-    user = User.query.get(user)
+    requesting_user = User.query.get(user)
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
     body_data = body if body is not None else connexion.request.get_json()
@@ -34,9 +34,9 @@ def admin_add_project(body=None, token_info=None, user=None):
         group = Group.query.get(project.group_id)
         if not group:
             return f"Group id {project.group_id} doesn't exist", HTTPStatus.BAD_REQUEST
-    if user:
-        project.owner = user
-        project.users.append(user)
+    if requesting_user is not None:
+        project.owner = requesting_user
+        project.users.append(requesting_user)
     session.add(project)
     session.commit()
     return project.to_dict(), HTTPStatus.CREATED
@@ -112,7 +112,6 @@ def admin_get_project_list(
     }
 
 
-@validate_uuid
 @validate_admin
 def admin_update_project(id_, project=None, body=None, token_info=None, user=None):
     """Update a project
@@ -163,8 +162,6 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
 @validate_admin
 def admin_delete_project(id_, token_info=None, user=None):
     """Delete a single project"""
-    if not is_uuid(id_):
-        return f"Project ID {id_} is not in UUID format", HTTPStatus.BAD_REQUEST
     project = Project.query.get(id_)
     if not project:
         abort(HTTPStatus.NOT_FOUND)

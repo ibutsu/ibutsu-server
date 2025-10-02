@@ -36,10 +36,7 @@ def add_user_filter(query, user, model=None):
         return query
     # filter the query by the list of user projects
     if model:
-        if model == Project:
-            attr = "id"
-        else:
-            attr = "project_id"
+        attr = "id" if model == Project else "project_id"
         query = query.filter(getattr(model, attr).in_([p.id for p in user.projects]))
 
     return query

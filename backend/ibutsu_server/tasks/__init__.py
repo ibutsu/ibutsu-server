@@ -21,7 +21,8 @@ SOCKET_CONNECT_TIMEOUT = 5
 
 def create_celery_app(_app=None):
     """Create the Celery app, using the Flask app in _app"""
-    global task, _celery_app
+    global task  # noqa: PLW0603
+    global _celery_app  # noqa: PLW0603
 
     if _celery_app:
         return _celery_app
@@ -38,7 +39,7 @@ def create_celery_app(_app=None):
             session.add(report)
             session.commit()
 
-        def after_return(self, status, retval, task_id, args, kwargs, einfo):
+        def after_return(self, _status, retval, _task_id, _args, _kwargs, _einfo):
             """
             After each Celery task, teardown our db session.
             FMI: https://gist.github.com/twolfson/a1b329e9353f9b575131
@@ -49,7 +50,7 @@ def create_celery_app(_app=None):
                 session.commit()
             session.remove()
 
-        def on_failure(self, exc, task_id, args, kwargs, einfo):
+        def on_failure(self, _exc, task_id, args, _kwargs, _einfo):
             # if the task is related to a report, set that report to failed
             if isinstance(args[0], dict):
                 try:
@@ -93,6 +94,8 @@ def create_celery_app(_app=None):
     app.Task = IbutsuTask
     # Shortcut for the decorator
     task = app.task
+    # Store the celery app globally
+    _celery_app = app
     # Add in any periodic tasks
     app.conf.beat_schedule = {
         "prune-old-imports": {
@@ -122,7 +125,7 @@ def create_celery_app(_app=None):
     }
 
     @signals.task_failure.connect
-    def retry_task_on_exception(*args, **kwargs):
+    def retry_task_on_exception(*_args, **kwargs):
         """Retry a task automatically when it fails"""
         task = kwargs.get("sender")
         einfo = kwargs.get("einfo")
@@ -138,12 +141,11 @@ def get_redis_client(app=None):
     if not app:
         app = current_app
 
-    redis_client = Redis.from_url(
+    return Redis.from_url(
         app.config["CELERY_BROKER_URL"],
         socket_timeout=SOCKET_TIMEOUT,
         socket_connect_timeout=SOCKET_CONNECT_TIMEOUT,
     )
-    return redis_client
 
 
 def is_locked(name, app=None):

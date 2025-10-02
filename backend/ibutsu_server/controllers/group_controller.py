@@ -42,8 +42,7 @@ def get_group(id_, token_info=None, user=None):
     group = Group.query.get(id_)
     if group:
         return group.to_dict()
-    else:
-        return "Group not found", HTTPStatus.NOT_FOUND
+    return "Group not found", HTTPStatus.NOT_FOUND
 
 
 def get_group_list(page=1, page_size=25, token_info=None, user=None):
@@ -75,7 +74,7 @@ def get_group_list(page=1, page_size=25, token_info=None, user=None):
 
 
 @validate_uuid
-def update_group(id_, body=None, **kwargs):
+def update_group(id_, body=None, **_kwargs):
     """Update a group
 
 

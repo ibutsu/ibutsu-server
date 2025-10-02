@@ -45,8 +45,7 @@ def _get_provider_config(provider):
     if provider == "keycloak":
         # Do the kc stuff
         return get_keycloak_config(is_private=True)
-    else:
-        return get_provider_config(provider, is_private=True)
+    return get_provider_config(provider, is_private=True)
 
 
 def _get_user_from_provider(provider, provider_config, code):
@@ -77,6 +76,7 @@ def _get_user_from_provider(provider, provider_config, code):
             data=payload,
             headers={"Accept": "application/json"},
             verify=provider_config.get("verify_ssl", True),
+            timeout=30,
         )
         if response.status_code == 200:
             if provider == "keycloak":
@@ -132,17 +132,16 @@ def login(body=None):
         session.add(token)
         session.commit()
         return {"name": user.name, "email": user.email, "token": login_token}
-    elif not current_app.config.get("USER_LOGIN_ENABLED", True):
+    if not current_app.config.get("USER_LOGIN_ENABLED", True):
         return {
             "code": "INVALID",
             "message": "Username/password auth is disabled. "
             "Please login via one of the links below.",
         }, HTTPStatus.UNAUTHORIZED
-    else:
-        return {
-            "code": "INVALID",
-            "message": "Username and/or password are invalid",
-        }, HTTPStatus.UNAUTHORIZED
+    return {
+        "code": "INVALID",
+        "message": "Username and/or password are invalid",
+    }, HTTPStatus.UNAUTHORIZED
 
 
 def support():
@@ -161,8 +160,7 @@ def config(provider):
     """Return the configuration for a particular login provider"""
     if provider == "keycloak":
         return get_keycloak_config(is_private=False)
-    else:
-        return get_provider_config(provider, is_private=False)
+    return get_provider_config(provider, is_private=False)
 
 
 def auth(provider):
@@ -185,14 +183,13 @@ def auth(provider):
     if provider == "keycloak":
         query_params = urlencode({"email": user.email, "name": user.name, "token": jwt_token})
         return redirect(f"{frontend_url}?{query_params}")
-    elif provider == "google":
+    if provider == "google":
         return {"email": user.email, "name": user.name, "token": jwt_token}
-    else:
-        return make_response(
-            AUTH_WINDOW.format(
-                data=json.dumps({"email": user.email, "name": user.name, "token": jwt_token})
-            )
+    return make_response(
+        AUTH_WINDOW.format(
+            data=json.dumps({"email": user.email, "name": user.name, "token": jwt_token})
         )
+    )
 
 
 def register(body=None):
@@ -305,8 +302,6 @@ def activate(activation_code=None):
         session.add(user)
         session.commit()
         return redirect(f"{login_url}?st=success&msg=Account+activated,+please+log+in.")
-    else:
-        return redirect(
-            f"{login_url}?st=error&msg=Invalid+activation+code,+please+check+the+link"
-            "+in+your+email."
-        )
+    return redirect(
+        f"{login_url}?st=error&msg=Invalid+activation+code,+please+check+the+link+in+your+email."
+    )

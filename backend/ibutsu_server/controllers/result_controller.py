@@ -103,10 +103,10 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
 
     :rtype: List[Result]
     """
-    user = User.query.get(user)
+    requesting_user = User.query.get(user)
     query = Result.query
-    if user:
-        query = add_user_filter(query, user, model=Result)
+    if requesting_user:
+        query = add_user_filter(query, requesting_user, model=Result)
 
     if filter_:
         for filter_string in filter_:
@@ -114,10 +114,7 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
             if filter_clause is not None:
                 query = query.filter(filter_clause)
 
-    if estimate:
-        total_items = get_count_estimate(query)
-    else:
-        total_items = query.count()
+    total_items = get_count_estimate(query) if estimate else query.count()
 
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
@@ -152,7 +149,7 @@ def get_result(id_, token_info=None, user=None):
 
 
 @validate_uuid
-def update_result(id_, result=None, token_info=None, user=None, **kwargs):
+def update_result(id_, result=None, token_info=None, user=None, **_kwargs):
     """Updates a single result
 
     :param id: ID of result to update

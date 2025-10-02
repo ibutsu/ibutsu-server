@@ -15,3 +15,4 @@ def validate_activation_code(activation_code):
         return f"Activation code {activation_code} is not valid", HTTPStatus.BAD_REQUEST
     if not decoded_value:
         return f"Activation code {activation_code} is not valid", HTTPStatus.BAD_REQUEST
+    return None

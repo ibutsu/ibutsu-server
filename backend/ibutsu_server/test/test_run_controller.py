@@ -94,7 +94,7 @@ class TestRunController(BaseTestCase):
         self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
         resp = response.json.copy()
         resp["project"] = None
-        self.assert_equal(resp, MOCK_RUN_DICT)
+        assert resp == MOCK_RUN_DICT
         self.mock_update_run_task.apply_async.assert_called_once_with((MOCK_ID,), countdown=5)
 
     def test_get_run(self):
@@ -110,7 +110,7 @@ class TestRunController(BaseTestCase):
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         resp = response.json.copy()
         resp["project"] = None
-        self.assert_equal(resp, MOCK_RUN_DICT)
+        assert resp == MOCK_RUN_DICT
 
     def test_get_run_list(self):
         """Test case for get_run_list
@@ -138,7 +138,7 @@ class TestRunController(BaseTestCase):
             "Content-Type": "multipart/form-data",
             "Authorization": f"Bearer {self.jwt_token}",
         }
-        data = dict(xml_file=(BytesIO(b"some file data"), "file.txt"))
+        data = {"xml_file": (BytesIO(b"some file data"), "file.txt")}
         response = self.client.open(
             "/api/run/import",
             method="POST",
@@ -173,4 +173,4 @@ class TestRunController(BaseTestCase):
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
         resp = response.json.copy()
         resp["project"] = None
-        self.assert_equal(resp, MOCK_RUN_DICT)
+        assert resp == MOCK_RUN_DICT

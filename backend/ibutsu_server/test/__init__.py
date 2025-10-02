@@ -13,7 +13,7 @@ from ibutsu_server.util import merge_dicts
 from ibutsu_server.util.jwt import generate_token
 
 
-def mock_task(*args, **kwargs):
+def mock_task(*args, **_kwargs):
     if args and isfunction(args[0]):
         func = args[0]
 
@@ -22,16 +22,15 @@ def mock_task(*args, **kwargs):
 
         wrap._orig_func = func
         return wrap
-    else:
 
-        def decorate(func):
-            def _wrapped(*args, **kwargs):
-                return func(*args, **kwargs)
+    def decorate(func):
+        def _wrapped(*args, **kwargs):
+            return func(*args, **kwargs)
 
-            _wrapped._orig_func = func
-            return _wrapped
+        _wrapped._orig_func = func
+        return _wrapped
 
-        return decorate
+    return decorate
 
 
 class BaseTestCase(TestCase):
@@ -44,9 +43,9 @@ class BaseTestCase(TestCase):
             "GOOGLE_CLIENT_ID": "123456@client.google.com",
             "GITHUB_CLIENT_ID": None,
             "FACEBOOK_APP_ID": None,
-            "GITLAB_CLIENT_ID": "dfgfdgh4563453456dsfgdsfg456",
+            "GITLAB_CLIENT_ID": "thisisafakegitlabclientid",
             "GITLAB_BASE_URL": "https://gitlab.com",
-            "JWT_SECRET": "89807erkjhdfgu768dfsgdsfg345r",
+            "JWT_SECRET": "thisisafakejwtsecretvalue",
             "KEYCLOAK_BASE_URL": None,
             "KEYCLOAK_CLIENT_ID": None,
             "KEYCLOAK_AUTH_PATH": "auth",
@@ -56,7 +55,9 @@ class BaseTestCase(TestCase):
 
         # Add a test user
         with app.app_context():
-            self.test_user = User(name="Test User", email="test@example.com", is_active=True)
+            self.test_user = User(
+                name="Test User", email="test@example.com", is_active=True, is_superadmin=True
+            )
             session.add(self.test_user)
             session.commit()
             self.jwt_token = generate_token(self.test_user.id)
@@ -85,14 +86,6 @@ class BaseTestCase(TestCase):
         """
         self.assert_status(response, HTTPStatus.SERVICE_UNAVAILABLE, message)
 
-    def assert_equal(self, first, second, msg=None):
-        """Alias"""
-        return self.assertEqual(first, second, msg)
-
-    def assert_not_equal(self, first, second, msg=None):
-        """Alias"""
-        return self.assertNotEqual(first, second, msg)
-
 
 class MockModel:
     """Mock model object"""
@@ -101,12 +94,12 @@ class MockModel:
 
     def __init__(self, **fields):
         for column in self.COLUMNS:
-            if column in fields.keys():
+            if column in fields:
                 setattr(self, column, fields[column])
             else:
                 setattr(self, column, None)
 
-    def to_dict(self):
+    def to_dict(self, **kwargs):
         record_dict = {col: self.__dict__[col] for col in self.COLUMNS}
         # when outputting info, translate data to metadata
         if record_dict.get("data"):
@@ -115,10 +108,21 @@ class MockModel:
         for key, value in record_dict.items():
             if isinstance(value, MockModel):
                 record_dict[key] = value.to_dict()
+            elif hasattr(value, "to_dict") and callable(value.to_dict):
+                # Handle SQLAlchemy models or other objects with to_dict method
+                record_dict[key] = value.to_dict()
             elif isinstance(value, list):
-                for index, item in enumerate(record_dict[key]):
+                # Create a new list to avoid modifying the original
+                new_list = []
+                for item in value:
                     if isinstance(item, MockModel):
-                        record_dict[key][index] = item.to_dict()
+                        new_list.append(item.to_dict())
+                    elif hasattr(item, "to_dict") and callable(item.to_dict):
+                        # Handle SQLAlchemy models or other objects with to_dict method
+                        new_list.append(item.to_dict())
+                    else:
+                        new_list.append(item)
+                record_dict[key] = new_list
         return record_dict
 
     @classmethod
@@ -155,6 +159,22 @@ class MockImport(MockModel):
 
 class MockProject(MockModel):
     COLUMNS = ["id", "name", "title", "owner_id", "group_id", "users"]
+
+    def __init__(self, **fields):
+        super().__init__(**fields)
+        if not hasattr(self, "users"):
+            self.users = []
+        if not hasattr(self, "owner"):
+            self.owner = None
+
+    def to_dict(self, with_owner=False, **kwargs):
+        """Override to match the real Project model's to_dict signature"""
+        project_dict = super().to_dict(**kwargs)
+        if with_owner and self.owner:
+            project_dict["owner"] = (
+                self.owner.to_dict() if hasattr(self.owner, "to_dict") else self.owner
+            )
+        return project_dict
 
 
 class MockResult(MockModel):
@@ -208,7 +228,7 @@ class MockRun(MockModel):
 
 
 class MockDashboard(MockModel):
-    COLUMNS = []
+    COLUMNS = ["id", "title", "project_id", "user_id", "project"]
 
 
 class MockWidgetConfig(MockModel):
@@ -233,6 +253,21 @@ class MockUser(MockModel):
     def check_password(self, plain):
         self._test_password = plain
         return self.password == plain
+
+    def user_cleanup(self):
+        """Mock user cleanup method"""
+        pass
+
+    def to_dict(self, with_projects=False, **kwargs):
+        """Override to match the real User model's to_dict signature"""
+        user_dict = super().to_dict(**kwargs)
+        if with_projects and hasattr(self, "projects"):
+            user_dict["projects"] = [project.to_dict() for project in self.projects]
+        return user_dict
+
+
+class MockToken(MockModel):
+    COLUMNS = ["id", "name", "user_id", "expires", "token", "user"]
 
 
 # Mock out the task decorator

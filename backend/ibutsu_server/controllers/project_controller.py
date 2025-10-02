@@ -27,10 +27,10 @@ def add_project(body=None, token_info=None, user=None):
     # check if project already exists
     if project.id and Project.query.get(project.id):
         return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
-    user = User.query.get(user)
-    if user:
-        project.owner = user
-        project.users.append(user)
+    requesting_user = User.query.get(user)
+    if requesting_user:
+        project.owner = requesting_user
+        project.users.append(requesting_user)
     session.add(project)
     session.commit()
     return project.to_dict(), HTTPStatus.CREATED
@@ -107,7 +107,7 @@ def get_project_list(
 
 
 @validate_uuid
-def update_project(id_, body=None, token_info=None, user=None, **kwargs):
+def update_project(id_, body=None, token_info=None, user=None, **_kwargs):
     """Update a project
 
     :param id: ID of test project
@@ -126,8 +126,10 @@ def update_project(id_, body=None, token_info=None, user=None, **kwargs):
     if not project:
         return "Project not found", HTTPStatus.NOT_FOUND
 
-    user = User.query.get(user)
-    if not user.is_superadmin and (not project.owner or project.owner.id != user.id):
+    requesting_user = User.query.get(user)
+    if not requesting_user.is_superadmin and (
+        not project.owner or project.owner.id != requesting_user.id
+    ):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
 
     # handle updating users separately

@@ -12,8 +12,7 @@ def get_offset(page, page_size):
     Get the offset for the query
     """
     offset = (page * page_size) - page_size
-    offset = 0 if offset < 0 else offset
-    return offset
+    return 0 if offset < 0 else offset
 
 
 def query_as_task(function):
@@ -23,10 +22,7 @@ def query_as_task(function):
     # determine tablename from function name
     # cf. https://regex101.com/r/ywW1xZ/1 for the regex used here
     search_result = re.search(r"^[^_]*_([^_]*)_", function.__name__)
-    if search_result:
-        tablename = search_result.group(1) + "s"
-    else:
-        tablename = "results"
+    tablename = search_result.group(1) + "s" if search_result else "results"
 
     def query(**kwargs):
         if kwargs.get("page_size", 25) > MAX_PAGE_SIZE:
@@ -48,7 +44,6 @@ def query_as_task(function):
                 "query_endpoint": f"/task/{async_result.id}",
             }
             return response, HTTPStatus.CREATED
-        else:
-            return function(**kwargs)
+        return function(**kwargs)
 
     return query

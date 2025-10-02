@@ -51,6 +51,7 @@ def get_user_from_keycloak(auth_data):
         config["user_url"],
         headers={"Authorization": "Bearer " + auth_data["access_token"]},
         verify=config.get("verify_ssl", True),
+        timeout=30,
     )
     if response.status_code == 200:
         user_json = response.json()
@@ -66,6 +67,5 @@ def get_user_from_keycloak(auth_data):
             session.add(user)
             session.commit()
         return user
-    else:
-        print("Error getting user, response:", response.text)
+    print("Error getting user, response:", response.text)
     return None

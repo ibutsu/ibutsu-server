@@ -48,11 +48,11 @@ def make_celery_redis_url(config: flask.Config, *, envvar: str) -> str:
     if var := config.get(envvar):
         return var
     redis = config.get_namespace("REDIS_")
-    assert "hostname" in redis and "port" in redis, redis
+    assert "hostname" in redis, f"Missing hostname in redis config: {redis}"
+    assert "port" in redis, f"Missing port in redis config: {redis}"
     if "password" in redis:
         return "redis://:{password}@{hostname}:{port}".format_map(redis)
-    else:
-        return "redis://{hostname}:{port}".format_map(redis)
+    return "redis://{hostname}:{port}".format_map(redis)
 
 
 def get_app(**extra_config):
@@ -135,34 +135,48 @@ def get_app(**extra_config):
 
     @app.route("/admin/run-task", methods=["POST"])
     def run_task():
-        # get params
-        params = request.get_json(force=True, silent=True)
-        if not params:
-            return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
-        # get user info
-        token = params.get("token")
-        if not token:
-            return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-        user_id = decode_token(token).get("sub")
-        if not user_id:
-            return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-        user = User.query.get(user_id)
-        if not user or not user.is_superadmin:
-            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-        # get task info
+        def _validate_request():
+            """Validate request parameters and return error status if invalid"""
+            params = request.get_json(force=True, silent=True)
+            if not params:
+                return None, HTTPStatus.BAD_REQUEST
+
+            token = params.get("token")
+            if not token:
+                return None, HTTPStatus.UNAUTHORIZED
+
+            user_id = decode_token(token).get("sub")
+            if not user_id:
+                return None, HTTPStatus.UNAUTHORIZED
+
+            user = User.query.get(user_id)
+            if not user or not user.is_superadmin:
+                return None, HTTPStatus.FORBIDDEN
+
+            task_path = params.get("task")
+            if not task_path:
+                return None, HTTPStatus.BAD_REQUEST
+
+            return params, None
+
+        # Validate request
+        params, error_status = _validate_request()
+        if error_status:
+            return error_status.phrase, error_status
+
+        # Execute task
         task_path = params.get("task")
         task_params = params.get("params", {})
-        if not task_path:
-            return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
         task_module, task_name = task_path.split(".", 2)
+
         try:
             mod = import_module(f"ibutsu_server.tasks.{task_module}")
+            if not hasattr(mod, task_name):
+                return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
+            task = getattr(mod, task_name)
+            task.delay(**task_params)
+            return HTTPStatus.ACCEPTED.phrase, HTTPStatus.ACCEPTED
         except ImportError:
             return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
-        if not hasattr(mod, task_name):
-            return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
-        task = getattr(mod, task_name)
-        task.delay(**task_params)
-        return HTTPStatus.ACCEPTED.phrase, HTTPStatus.ACCEPTED
 
     return app.app

@@ -55,6 +55,7 @@ def get_user_from_provider(provider, auth_data):
         response = requests.get(
             provider_config["user_url"],
             headers={"Authorization": f"Bearer {access_token}"},
+            timeout=30,
         )
         if response.status_code == 200:
             user_dict = response.json()
@@ -68,6 +69,7 @@ def get_user_from_provider(provider, auth_data):
             response = requests.get(
                 provider_config["email_url"],
                 headers={"Authorization": f"Bearer {access_token}"},
+                timeout=30,
             )
             if response.status_code == 200:
                 emails = response.json()
