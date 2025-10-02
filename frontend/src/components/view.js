@@ -3,14 +3,14 @@ import { useParams } from 'react-router';
 
 import { PageSection, Title, Content } from '@patternfly/react-core';
 
-import { HttpClient } from '../services/http';
-import { Settings } from '../settings';
-import AccessibilityDashboardView from '../views/accessibilitydashboard';
-import JenkinsJobView from '../views/jenkinsjob';
-import JenkinsJobAnalysisView from '../views/jenkinsjobanalysis';
-import AccessibilityAnalysisView from '../views/accessibilityanalysis';
-import CompareRunsView from '../views/compareruns';
-import FilterProvider from './contexts/filterContext';
+import { HttpClient } from '../utilities/http';
+import { Settings } from '../pages/settings';
+import AccessibilityDashboardView from '../views/accessibility-dashboard';
+import JenkinsJobView from '../views/jenkins-job';
+import JenkinsJobAnalysisView from '../views/jenkins-job-analysis';
+import AccessibilityAnalysisView from '../views/accessibility-analysis';
+import CompareRunsView from '../views/compare-runs';
+import FilterProvider from './contexts/filter-context';
 
 const VIEW_MAP = {
   'accessibility-dashboard-view': AccessibilityDashboardView,

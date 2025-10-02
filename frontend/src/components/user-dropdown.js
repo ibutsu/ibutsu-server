@@ -10,7 +10,7 @@ import {
 import { UserIcon } from '@patternfly/react-icons';
 import { useNavigate } from 'react-router-dom';
 
-import { AuthService } from '../services/auth';
+import { AuthService } from '../utilities/auth';
 
 const UserDropdown = () => {
   const [displayName, setDisplayName] = useState('User');

@@ -19,13 +19,13 @@ import {
   ModalVariant,
 } from '@patternfly/react-core';
 
-import { HttpClient } from '../../services/http';
-import { Settings } from '../../settings';
+import { HttpClient } from '../../utilities/http';
+import { Settings } from '../settings';
 import { filtersToAPIParams } from '../../utilities';
 import { USER_COLUMNS } from '../../constants';
-import usePagination from '../../components/hooks/usePagination';
+import usePagination from '../../components/hooks/use-pagination';
 import FilterTable from '../../components/filtering/filtered-table-card';
-import { FilterContext } from '../../components/contexts/filterContext';
+import { FilterContext } from '../../components/contexts/filter-context';
 import AdminFilter from '../../components/filtering/admin-filter';
 import {
   BanIcon,

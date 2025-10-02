@@ -1,15 +1,15 @@
 import { useContext, useEffect, useState } from 'react';
 
 import { Link } from 'react-router-dom';
-import { IbutsuContext } from '../components/contexts/ibutsuContext';
+import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import {
   PageSidebar,
   PageSidebarBody,
   Nav,
   NavList,
 } from '@patternfly/react-core';
-import { HttpClient } from '../services/http';
-import { Settings } from '../settings';
+import { HttpClient } from '../utilities/http';
+import { Settings } from '../pages/settings';
 
 const IbutsuSidebar = () => {
   const context = useContext(IbutsuContext);

@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 
 import { Button } from '@patternfly/react-core';
 
-import { HttpClient } from '../services/http';
+import { HttpClient } from '../utilities/http';
 
 const DownloadButton = ({ url, filename, children, ...rest }) => {
   if (!filename) {

@@ -16,7 +16,9 @@ import {
   LabelGroup,
   MenuToggle,
   PageSection,
+  Select,
   SelectList,
+  SelectOption,
   TextInput,
   TextInputGroup,
   TextInputGroupMain,
@@ -24,12 +26,10 @@ import {
   Title,
 } from '@patternfly/react-core';
 
-import { Select, SelectOption } from '@patternfly/react-core';
-
 import { TimesIcon } from '@patternfly/react-icons';
 
-import { HttpClient } from '../../services/http';
-import { Settings } from '../../settings';
+import { HttpClient } from '../../utilities/http';
+import { Settings } from '../settings';
 import { projectToOption } from '../../utilities';
 import { useNavigate, useParams } from 'react-router-dom';
 

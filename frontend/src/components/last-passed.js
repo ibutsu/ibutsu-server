@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { Badge } from '@patternfly/react-core';
-import { HttpClient } from '../services/http';
-import { Settings } from '../settings';
+import { HttpClient } from '../utilities/http';
+import { Settings } from '../pages/settings';
 import { filtersToAPIParams } from '../utilities';
 
 const LastPassed = ({ filters = [] }) => {

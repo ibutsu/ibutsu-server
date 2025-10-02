@@ -19,10 +19,10 @@ import PropTypes from 'prop-types';
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { TimesIcon } from '@patternfly/react-icons';
 
-import MultiValueInput from '../multivalueinput';
+import MultiValueInput from '../multi-value-input';
 import ActiveFilters from './active-filters';
 
-import { FilterContext } from '../contexts/filterContext';
+import { FilterContext } from '../contexts/filter-context';
 import { RESULT_STATES } from '../../constants';
 
 const RESULT_SELECT_OPTIONS = Object.keys(RESULT_STATES);

@@ -10,8 +10,8 @@ import {
   Content,
 } from '@patternfly/react-core';
 import DownloadButton from './download-button';
-import { Settings } from '../settings';
-import { HttpClient } from '../services/http';
+import { Settings } from '../pages/settings';
+import { HttpClient } from '../utilities/http';
 
 const ArtifactTab = ({ artifact }) => {
   const [blob, setBlob] = useState();

@@ -13,7 +13,9 @@ import {
   HelperTextItem,
   MenuToggle,
   PageSection,
+  Select,
   SelectList,
+  SelectOption,
   TextInput,
   TextInputGroup,
   TextInputGroupMain,
@@ -21,16 +23,15 @@ import {
   Title,
   ValidatedOptions,
 } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid/non-secure';
 
 import { TimesIcon } from '@patternfly/react-icons';
 
-import { HttpClient } from '../../services/http';
-import { Settings } from '../../settings';
+import { HttpClient } from '../../utilities/http';
+import { Settings } from '../settings';
 import { dashboardToOption, filtersToAPIParams } from '../../utilities';
-import { FilterContext } from '../../components/contexts/filterContext';
+import { FilterContext } from '../../components/contexts/filter-context';
 import AdminFilter from '../../components/filtering/admin-filter';
 
 const userToOption = (user) => {

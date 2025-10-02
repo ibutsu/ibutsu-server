@@ -12,8 +12,8 @@ import PropTypes from 'prop-types';
 import { useContext } from 'react';
 
 import ActiveFilters from './active-filters';
-import MultiValueInput from '../multivalueinput';
-import { FilterContext } from '../contexts/filterContext';
+import MultiValueInput from '../multi-value-input';
+import { FilterContext } from '../contexts/filter-context';
 
 const RunFilter = ({ hideFilters }) => {
   const {

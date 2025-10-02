@@ -19,12 +19,12 @@ import {
 } from '@patternfly/react-icons';
 import { Link } from 'react-router-dom';
 
-import { HttpClient } from '../../services/http';
-import { Settings } from '../../settings';
+import { HttpClient } from '../../utilities/http';
+import { Settings } from '../settings';
 import FilterTable from '../../components/filtering/filtered-table-card';
 import EmptyObject from '../../components/empty-object';
-import usePagination from '../../components/hooks/usePagination';
-import { FilterContext } from '../../components/contexts/filterContext';
+import usePagination from '../../components/hooks/use-pagination';
+import { FilterContext } from '../../components/contexts/filter-context';
 import AdminFilter from '../../components/filtering/admin-filter';
 import { filtersToAPIParams } from '../../utilities';
 

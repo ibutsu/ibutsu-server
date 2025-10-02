@@ -1,23 +1,28 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Badge, Label } from '@patternfly/react-core';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { nanoid } from 'nanoid/non-secure';
 
 import {
+  Badge,
   Card,
   CardHeader,
   CardBody,
   Checkbox,
+  Content,
   Flex,
   FlexItem,
-  Content,
+  Label,
   Title,
 } from '@patternfly/react-core';
 import { TableVariant } from '@patternfly/react-table';
 
-import { HttpClient } from '../services/http';
-import { Settings } from '../settings';
+import { HttpClient } from '../utilities/http';
+import { Settings } from '../pages/settings';
 import {
   filtersToAPIParams,
   toTitleCase,
@@ -25,14 +30,16 @@ import {
   exceptionToBadge,
 } from '../utilities';
 import { ICON_RESULT_MAP } from '../constants';
-import { MultiClassificationDropdown } from './classification-dropdown';
-import { ClassificationDropdown } from './classification-dropdown';
+import {
+  MultiClassificationDropdown,
+  ClassificationDropdown,
+} from './classification-dropdown';
 import FilterTable from './filtering/filtered-table-card';
-import ResultView from './resultView';
-import usePagination from './hooks/usePagination';
-import { FilterContext } from './contexts/filterContext';
+import ResultView from './result-view';
+import usePagination from './hooks/use-pagination';
+import { FilterContext } from './contexts/filter-context';
 import ResultFilter from './filtering/result-filter';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 
 const HIDE = ['project_id', 'run_id'];
 
