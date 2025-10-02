@@ -58,11 +58,11 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
     # parse the data
     for group, failed, error, skipped, total, xpassed, xfailed in query_data:
         # convert all data to percentages
-        data["failed"][group] = int(round((failed / total) * 100.0))
-        data["error"][group] = int(round((error / total) * 100.0))
-        data["skipped"][group] = int(round((skipped / total) * 100.0))
-        data["xpassed"][group] = int(round((xpassed or 0.0 / total) * 100.0))
-        data["xfailed"][group] = int(round((xfailed or 0.0 / total) * 100.0))
+        data["failed"][group] = round((failed / total) * 100.0)
+        data["error"][group] = round((error / total) * 100.0)
+        data["skipped"][group] = round((skipped / total) * 100.0)
+        data["xpassed"][group] = round((xpassed or 0.0 / total) * 100.0)
+        data["xfailed"][group] = round((xfailed or 0.0 / total) * 100.0)
         data["passed"][group] = int(
             100
             - (
@@ -77,8 +77,7 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
 
 
 def get_recent_run_data(
-    weeks, group_field, project=None, chart_type="bar", additional_filters=None
+    weeks, group_field, project=None, _chart_type="bar", additional_filters=None
 ):
     # TODO: Implement line chart by splitting weeks of data into distinct blocks of time
-    data = _get_recent_run_data(weeks, group_field, project, additional_filters)
-    return data
+    return _get_recent_run_data(weeks, group_field, project, additional_filters)

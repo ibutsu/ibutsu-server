@@ -28,7 +28,7 @@ class Explain(Executable, ClauseElement):
 
 
 @compiles(Explain, "postgresql")
-def pg_explain(element, compiler, **kw):
+def pg_explain(element, compiler, **_kw):
     text = "EXPLAIN "
     if element.analyze:
         text += "ANALYZE "
@@ -51,7 +51,7 @@ def add_superadmin(
     user = models.User.query.filter_by(email=email).first()
     if user and user.is_superadmin:
         return user
-    elif user and not user.is_superadmin:
+    if user and not user.is_superadmin:
         user.is_superadmin = True
     else:
         user = models.User(
@@ -72,3 +72,4 @@ def add_superadmin(
             project = models.Project(name=own_project, owner=user)
         session.add(project)
         session.commit()
+    return None

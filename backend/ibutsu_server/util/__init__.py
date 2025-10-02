@@ -1,7 +1,7 @@
 import datetime
 
 
-def _deserialize(data, klass):
+def _deserialize(data, klass):  # noqa: PLR0911
     """Deserializes dict, list, str into an object.
 
     :param data: dict, list or str.
@@ -12,20 +12,26 @@ def _deserialize(data, klass):
     if data is None:
         return None
 
+    # Handle primitive types
     if klass in (int, float, str, bool):
         return _deserialize_primitive(data, klass)
-    elif klass == object:
+
+    # Handle special object types
+    if isinstance(klass, type) and klass is object:
         return _deserialize_object(data)
-    elif klass == datetime.date:
-        return deserialize_date(data)
-    elif klass == datetime.datetime:
-        return deserialize_datetime(data)
-    elif isinstance(data, list):
-        return _deserialize_list(data, klass.__args__[0])
-    elif isinstance(data, dict):
+
+    # Handle datetime types
+    if klass in (datetime.date, datetime.datetime):
+        return deserialize_date(data) if klass == datetime.date else deserialize_datetime(data)
+
+    # Handle collections
+    if isinstance(data, (list, dict)):
+        if isinstance(data, list):
+            return _deserialize_list(data, klass.__args__[0])
         return _deserialize_dict(data, klass.__args__[1])
-    else:
-        return deserialize_model(data, klass)
+
+    # Default to model deserialization
+    return deserialize_model(data, klass)
 
 
 def _deserialize_primitive(data, klass):
@@ -152,8 +158,7 @@ def safe_string(o):
         o = str(o)
     if isinstance(o, bytes):
         o = o.decode("utf-8", "ignore")
-    o = o.encode("ascii", "xmlcharrefreplace").decode("ascii")
-    return o
+    return o.encode("ascii", "xmlcharrefreplace").decode("ascii")
 
 
 def get_test_idents(item):

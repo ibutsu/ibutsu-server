@@ -13,7 +13,7 @@ class IbutsuJSONProvider(DefaultJSONProvider):
                 value = getattr(o, attr)
                 if value is None and not self.include_nulls:
                     continue
-                attr = o.attribute_map[attr]
-                dikt[attr] = value
+                mapped_attr = o.attribute_map[attr]
+                dikt[mapped_attr] = value
             return dikt
         return DefaultJSONProvider.default(self, o)

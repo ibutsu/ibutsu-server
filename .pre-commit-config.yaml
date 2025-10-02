@@ -16,6 +16,7 @@ repos:
       - id: ruff
         args:
           - '--fix'
+          - '--unsafe-fixes'
       - id: ruff-format
 
   ## TODO: enable

@@ -1,7 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID as POSTGRES_UUID
 from sqlalchemy.types import CHAR, JSON, Text, TypeDecorator
 
 
@@ -24,27 +23,22 @@ class PortableUUID(TypeDecorator):
 
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
-            return dialect.type_descriptor(PostgresUUID(as_uuid=self.as_uuid))
-        else:
-            return dialect.type_descriptor(CHAR(32))
+            return dialect.type_descriptor(POSTGRES_UUID(as_uuid=self.as_uuid))
+        return dialect.type_descriptor(CHAR(32))
 
     def process_bind_param(self, value, dialect):
-        if value is None:
+        if value is None or dialect.name == "postgresql":
             return value
-        elif dialect.name == "postgresql":
-            return value
-        elif isinstance(value, UUID):
+        if isinstance(value, UUID):
             return str(value)
-        else:
-            return value
+        return value
 
-    def process_result_value(self, value, dialect):
+    def process_result_value(self, value, _dialect):
         if value is None:
             return value
-        else:
-            if self.as_uuid and not isinstance(value, UUID):
-                value = UUID(value)
-            return value
+        if self.as_uuid and not isinstance(value, UUID):
+            value = UUID(value)
+        return value
 
 
 class PortableJSON(TypeDecorator):
@@ -58,5 +52,4 @@ class PortableJSON(TypeDecorator):
     def load_dialect_impl(self, dialect):
         if dialect.name == "postgresql":
             return dialect.type_descriptor(JSONB(astext_type=Text))
-        else:
-            return dialect.type_descriptor(JSON())
+        return dialect.type_descriptor(JSON())

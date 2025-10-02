@@ -2,6 +2,8 @@
 
 from contextlib import contextmanager
 
+from sqlalchemy import text
+
 from ibutsu_server.constants import COUNT_ESTIMATE_LIMIT, COUNT_TIMEOUT
 from ibutsu_server.db.base import session
 from ibutsu_server.db.util import Explain
@@ -9,8 +11,7 @@ from ibutsu_server.db.util import Explain
 
 def _get_count_from_explain(query):
     explain_result = session.execute(Explain(query)).fetchall()[0][0]
-    rows = int(explain_result.split("rows")[-1].split("=")[1].split(" ")[0])
-    return rows
+    return int(explain_result.split("rows")[-1].split("=")[1].split(" ")[0])
 
 
 def get_count_estimate(query, no_filter=False, **kwargs):
@@ -19,15 +20,14 @@ def get_count_estimate(query, no_filter=False, **kwargs):
     """
     if no_filter:
         tablename = kwargs.get("tablename")
-        sql = f"SELECT reltuples as approx_count FROM pg_class WHERE relname='{tablename}'"
-        return int(session.execute(sql).fetchall()[0][0])
-    else:
-        estimate = _get_count_from_explain(query)
-        # if the estimate is < COUNT_ESTIMATE_LIMIT
-        # then probably there aren't too many rows, just regularly count them
-        if estimate < COUNT_ESTIMATE_LIMIT:
-            return query.count()
-        return estimate
+        sql = text("SELECT reltuples as approx_count FROM pg_class WHERE relname=:tablename")
+        return int(session.execute(sql, {"tablename": tablename}).fetchall()[0][0])
+    estimate = _get_count_from_explain(query)
+    # if the estimate is < COUNT_ESTIMATE_LIMIT
+    # then probably there aren't too many rows, just regularly count them
+    if estimate < COUNT_ESTIMATE_LIMIT:
+        return query.count()
+    return estimate
 
 
 @contextmanager
@@ -39,6 +39,6 @@ def time_limited_db_operation(timeout=None):
     """
     timeout = int(timeout * 1000) if timeout else int(COUNT_TIMEOUT * 1000)
 
-    session.execute(f"SET statement_timeout TO {timeout}; commit;")
+    session.execute(text("SET statement_timeout TO :timeout; commit;"), {"timeout": timeout})
     yield
-    session.execute("SET statement_timeout TO 0; commit;")
+    session.execute(text("SET statement_timeout TO 0; commit;"))

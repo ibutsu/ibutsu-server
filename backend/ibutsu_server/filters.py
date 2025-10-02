@@ -1,4 +1,5 @@
 import re
+from contextlib import suppress
 
 from sqlalchemy.dialects.postgresql import array
 
@@ -36,18 +37,12 @@ def _to_int_or_float(value):
     """To reduce cognitive complexity"""
     if value.isdigit():
         # Try to typecast if we get a digit
-        try:
+        with suppress(ValueError, TypeError):
             value = int(value)
-        except (ValueError, TypeError):
-            # Just ignore it and carry on if there's a problem
-            pass
     elif FLOAT_RE.match(value):
         # Lastly, try to convert to a float
-        try:
+        with suppress(ValueError, TypeError):
             value = float(value)
-        except (ValueError, TypeError):
-            # Just ignore it and carry on
-            pass
     return value
 
 
@@ -55,8 +50,7 @@ def _null_compare(column, value):
     """To reduce cognitive complexity"""
     if value[0].lower() in ["y", "t", "1"]:
         return column != None  # noqa
-    else:
-        return column == None  # noqa
+    return column == None  # noqa
 
 
 def _array_compare(oper, column, value):
@@ -65,15 +59,13 @@ def _array_compare(oper, column, value):
         return column.op("@>")(value)
     if oper == "*":
         return column.op("?|")(array(value))
+    return None
 
 
 def string_to_column(field, model):
     field_parts = field.split(".")
     if field_parts[0] == "data" or field_parts[0] == "metadata" or field_parts[0] == "summary":
-        if field_parts[0] == "summary":
-            column = model.summary
-        else:
-            column = model.data
+        column = model.summary if field_parts[0] == "summary" else model.data
         for idx, part in enumerate(field_parts):
             if idx == 0:
                 continue
@@ -104,19 +96,18 @@ def convert_filter(filter_string, model):
     field = match.group(1)
     oper = match.group(2)
     value = match.group(3).strip('"')
-    is_version = True if VERSION_RE.match(value) is not None else False
+    is_version = VERSION_RE.match(value) is not None
     column = string_to_column(field, model)
     # determine if the field is an array field, if so it requires some additional care
     is_array_field = field in ARRAY_FIELDS
     # Do some type casting
     if oper == "@":
         return _null_compare(column, value)
-    elif oper == "*":
+    if oper == "*":
         value = value.split(";")
     elif not is_version and "build_number" not in field:
         # This is a horrible hack, because Jenkins build numbers are strings :-(
         value = _to_int_or_float(value)
     if is_array_field:
         return _array_compare(oper, column, value)
-    else:
-        return OPER_COMPARE[oper](column, value)
+    return OPER_COMPARE[oper](column, value)

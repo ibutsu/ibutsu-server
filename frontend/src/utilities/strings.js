@@ -7,7 +7,7 @@ export const toTitleCase = (str, convertToSpace = false) => {
     processedStr = processedStr.replace(/_/g, ' ');
   }
   return processedStr.replace(/\w\S*/g, function (txt) {
-    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
   });
 };
 

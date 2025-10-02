@@ -4,9 +4,6 @@ from flask import json
 
 from ibutsu_server.test import BaseTestCase, MockWidgetConfig
 
-# from ibutsu_server.test import MockDashboard
-# from ibutsu_server.test import MockProject
-
 MOCK_ID = "91e750be-2ef2-4d85-a50e-2c9366cefd9f"
 MOCK_PROJECT_ID = "5ac7d645-45a3-4cbe-acb2-c8d6f7e05468"
 MOCK_DASHBOARD_ID = "5af74747-3b75-4b00-afc3-6304c6f255d7"

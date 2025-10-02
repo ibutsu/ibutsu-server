@@ -17,7 +17,7 @@ def get_jenkins_line_chart(job_name, builds, group_field="build_number", project
     ).get("jobs")
     # first determine duration differs from total_execution_time
     run_had_multiple_components = any(
-        [job.get("total_execution_time") != job.get("duration") for job in jobs]
+        job.get("total_execution_time") != job.get("duration") for job in jobs
     )
     if run_had_multiple_components:
         data["total_execution_time"] = {}

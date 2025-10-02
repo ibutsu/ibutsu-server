@@ -186,7 +186,8 @@ def upgrade_6(session):
     This upgrade repairs broken field types on tables not matching schema
 
     Investigating the failure of the controllers.admin.user_controller.admin_delete_user function
-    it was found that the Project.owner_id field in the stage and prod database are TEXT instead of PortableUUID.
+    it was found that the Project.owner_id field in the stage and prod database are TEXT
+    instead of PortableUUID.
     """
 
     engine = session.connection().engine

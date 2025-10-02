@@ -333,7 +333,7 @@ const Dashboard = () => {
   }, []);
 
   const onDashboardToggle = useCallback(() => {
-    setIsSelectOpen((prev) => !prev);
+    setIsSelectOpen((prevIsSelectOpen) => !prevIsSelectOpen);
     selectInputRef?.current?.focus();
   }, []);
 

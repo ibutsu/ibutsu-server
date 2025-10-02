@@ -126,5 +126,5 @@ def admin_delete_user(id_, token_info=None, user=None):
     except Exception as e:
         session.rollback()
         # Log the actual error for debugging
-        print(f"Error deleting user {id_}: {str(e)}")
+        print(f"Error deleting user {id_}: {e!s}")
         abort(HTTPStatus.INTERNAL_SERVER_ERROR)

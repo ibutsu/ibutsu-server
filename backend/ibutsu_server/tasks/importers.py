@@ -26,10 +26,7 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
     """Create a result with artifacts, used in the archive importer"""
     old_id = None
     result_id = result.get("id")
-    if is_uuid(result_id):
-        result_record = session.query(Result).get(result_id)
-    else:
-        result_record = None
+    result_record = session.query(Result).get(result_id) if is_uuid(result_id) else None
     if result_record:
         result_record.run_id = run_id
     else:
@@ -76,8 +73,7 @@ def _get_ts_element(tree):
     """To reduce cognitive complexity"""
     if tree.tag == "testsuite":
         return tree
-    else:
-        return tree.testsuite
+    return tree.testsuite
 
 
 def _parse_timestamp(ts):
@@ -205,7 +201,7 @@ def _get_test_name_path(testcase):
 
 
 @task
-def run_junit_import(import_):
+def run_junit_import(import_):  # noqa: PLR0912
     """Import a test run from a JUnit file"""
     # Update the status of the import
     import_record = Import.query.get(import_["id"])
@@ -386,7 +382,7 @@ def run_junit_import(import_):
 
 
 @task
-def run_archive_import(import_):
+def run_archive_import(import_):  # noqa: PLR0912
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
     import_record = Import.query.get(str(import_["id"]))
@@ -414,14 +410,14 @@ def run_archive_import(import_):
             if member.isdir():
                 continue
             # Grab the run id
-            run_id, rest = member.name.split("/", 1)
+            _run_id, rest = member.name.split("/", 1)
             if "/" not in rest:
                 if member.name.endswith("run.json"):
                     run = json.loads(tar.extractfile(member).read())
                 else:
                     run_artifacts.append(member)
                 continue
-            result_id, file_name = rest.split("/")
+            result_id, _file_name = rest.split("/")
             if member.name.endswith("result.json"):
                 result = json.loads(tar.extractfile(member).read())
                 result_start_time = result.get("start_time")

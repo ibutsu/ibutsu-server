@@ -6,7 +6,7 @@ from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
 
 NO_RUN_TEXT = "None"
-NO_PASS_RATE_TEXT = "Build failed"
+NO_PASS_RATE_TEXT = "Build failed"  # noqa: S105
 
 
 def _calculate_slope(x_data):
@@ -96,12 +96,12 @@ def _get_heatmap(filters, builds, group_field, project=None):
     # parse the data for the frontend
     query_data = query.all()
     data = {datum.group_field: [] for datum in query_data}
-    for key in data.keys():
+    for key, value in data.items():
         runs = [run for run in query_data if run.group_field == key]
         runs.sort(key=lambda run: run.start_time)
         for i, datum in enumerate(query_data):
-            if datum.group_field == key and len(data[key]) < builds:
-                data[key].insert(0, [round(datum.pass_percent, 2), datum.run_id, None, str(i + 1)])
+            if datum.group_field == key and len(value) < builds:
+                value.insert(0, [round(datum.pass_percent, 2), datum.run_id, None, str(i + 1)])
     # compute the slope for each component
     data_with_slope = data.copy()
     for key, value in data.items():

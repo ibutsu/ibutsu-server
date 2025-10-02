@@ -6,7 +6,7 @@ from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
 
 NO_RUN_TEXT = "None"
-NO_PASS_RATE_TEXT = "Build failed"
+NO_PASS_RATE_TEXT = "Build failed"  # noqa: S105
 
 
 def _calculate_slope(x_data):
@@ -69,12 +69,9 @@ def _get_builds(job_name, builds, project=None, additional_filters=None):
     query = apply_filters(query, filters, Run)
 
     # make the query
-    builds = [build for build in query.limit(builds)]
+    builds = list(query.limit(builds))
     min_start_times = [build.min_start_time for build in builds]
-    if min_start_times:
-        min_start_time = min(build.min_start_time for build in builds)
-    else:
-        min_start_time = None
+    min_start_time = min(build.min_start_time for build in builds) if min_start_times else None
     return min_start_time, [str(build.build_number) for build in builds]
 
 
@@ -182,13 +179,13 @@ def _pad_heatmap(heatmap, builds_in_db):
     if not heatmap:
         return heatmap
 
-    for group in heatmap.keys():
+    for group in heatmap:
         # skip first item in list which contains slope info
         run_list = heatmap[group][1:]
         padded_run_list = []
         completed_runs = {run[3]: run for run in run_list}
         for build in builds_in_db:
-            if build not in completed_runs.keys():
+            if build not in completed_runs:
                 padded_run_list.append((NO_PASS_RATE_TEXT, NO_RUN_TEXT, None, build))
             else:
                 padded_run_list.append(completed_runs[build])

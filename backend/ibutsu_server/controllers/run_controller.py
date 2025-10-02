@@ -65,10 +65,10 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
 
     :rtype: List[Run]
     """
-    user = User.query.get(user)
+    requesting_user = User.query.get(user)
     query = Run.query
-    if user:
-        query = add_user_filter(query, user, model=Run)
+    if requesting_user:
+        query = add_user_filter(query, requesting_user, model=Run)
 
     if filter_:
         for filter_string in filter_:
@@ -76,10 +76,7 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
             if filter_clause is not None:
                 query = query.filter(filter_clause)
 
-    if estimate:
-        total_items = get_count_estimate(query)
-    else:
-        total_items = query.count()
+    total_items = get_count_estimate(query) if estimate else query.count()
 
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)

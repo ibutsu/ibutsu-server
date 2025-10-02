@@ -37,10 +37,10 @@ def _get_comparison_data(filters):
     # Build matrix by matching results
     # Could revisit this if loading is taking too long
     results = []
-    for result_1 in results_1:
-        result_1 = result_1.to_dict()
-        for result_2 in results_2:
-            result_2 = result_2.to_dict()
+    for result_1_obj in results_1:
+        result_1 = result_1_obj.to_dict()
+        for result_2_obj in results_2:
+            result_2 = result_2_obj.to_dict()
             if (
                 result_1["metadata"]["fspath"] == result_2["metadata"]["fspath"]
                 and result_1["test_id"] == result_2["test_id"]
@@ -60,5 +60,4 @@ def _get_comparison_data(filters):
 
 
 def get_comparison_data(filters=None):
-    data = _get_comparison_data(filters=filters)
-    return data
+    return _get_comparison_data(filters=filters)

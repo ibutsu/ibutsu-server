@@ -11,8 +11,7 @@ from ibutsu_server.filters import apply_filters, string_to_column
 def _get_min_count(days):
     if days <= 1:
         return 2e2 * days
-    else:
-        return days**5
+    return days**5
 
 
 def _get_recent_result_data(group_field, days, project=None, run_id=None, additional_filters=None):
@@ -49,23 +48,21 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
 
     query_data = query.all()
     # parse the data for the frontend
-    data = [{"_id": _id, "count": count} for _id, count in query_data]
-    return data
+    return [{"_id": _id, "count": count} for _id, count in query_data]
 
 
 def get_recent_result_data(
     group_field,
     days=None,
     project=None,
-    chart_type="pie",
+    _chart_type="pie",
     run_id=None,
     additional_filters=None,
 ):
-    data = _get_recent_result_data(
+    return _get_recent_result_data(
         group_field,
         days=days,
         project=project,
         run_id=run_id,
         additional_filters=additional_filters,
     )
-    return data

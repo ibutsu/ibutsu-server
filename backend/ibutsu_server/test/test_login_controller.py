@@ -147,7 +147,7 @@ class TestLoginController(BaseTestCase):
         """Test getting the "gitlab" provider config"""
         expected_response = {
             "authorization_url": "https://gitlab.com/oauth/authorize",
-            "client_id": "dfgfdgh4563453456dsfgdsfg456",
+            "client_id": "thisisafakegitlabclientid",
             "redirect_uri": f"http://{LOCALHOST}:8080/api/login/auth/gitlab",
             "scope": "read_user",
         }

@@ -46,19 +46,18 @@ RESERVED_PARAMS = {"filter": "filter_"}
 def _pre_process_params(params):
     """Reduce congnitive complexity"""
     new_params = params.copy()
-    for param in params.keys():
+    for param in params:
         # Some parameters are Python reserved words
         if param in RESERVED_PARAMS:
             new_params.pop(param)
             new_params[RESERVED_PARAMS.get(param)] = params[param]
-    params = new_params.copy()
-    return params
+    return new_params.copy()
 
 
 def _typecast_params(widget_id, params):
     """Reduce congnitive complexity"""
     param_types = {p["name"]: p["type"] for p in WIDGET_TYPES[widget_id]["params"]}
-    for param in params.keys():
+    for param in params:
         if isinstance(params[param], list) and param_types.get(param) != "list":
             # This is a horrible hack to try to get around a problem in prod
             # that we can't reproduce locally
@@ -106,10 +105,10 @@ def get_widget(id_):
 
     :rtype: object
     """
-    if id_ not in WIDGET_TYPES.keys():
+    if id_ not in WIDGET_TYPES:
         return "Widget not found", HTTPStatus.NOT_FOUND
     params = {}
-    for key in connexion.request.args.keys():
+    for key in connexion.request.args:
         params[key] = connexion.request.args.getlist(key)
     params = _pre_process_params(params)
     params = _typecast_params(id_, params)

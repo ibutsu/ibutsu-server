@@ -36,9 +36,9 @@ def view_artifact(id_, token_info=None, user=None):
     :rtype: file
     """
     artifact, response = _build_artifact_response(id_)
-    if artifact.result and not project_has_user(artifact.result.project, user):
-        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-    elif artifact.run and not project_has_user(artifact.run.project, user):
+    if (artifact.result and not project_has_user(artifact.result.project, user)) or (
+        artifact.run and not project_has_user(artifact.run.project, user)
+    ):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     return response
 
@@ -87,7 +87,7 @@ def get_artifact_list(
     :rtype: List[Artifact]
     """
     query = Artifact.query
-    user = User.query.get(user)
+    User.query.get(user)
     if "result_id" in connexion.request.args:
         result_id = connexion.request.args["result_id"]
     if result_id:

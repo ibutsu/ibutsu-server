@@ -25,7 +25,7 @@ def add_widget_config(body=None, token_info=None, user=None):
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
     data = body if body is not None else connexion.request.get_json()
-    if data["widget"] not in WIDGET_TYPES.keys():
+    if data["widget"] not in WIDGET_TYPES:
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
 
     # add default weight of 10
@@ -116,7 +116,7 @@ def update_widget_config(id_, body=None, token_info=None, user=None):
     if not connexion.request.is_json:
         return RESPONSE_JSON_REQ
     data = body if body is not None else connexion.request.get_json()
-    if data.get("widget") and data["widget"] not in WIDGET_TYPES.keys():
+    if data.get("widget") and data["widget"] not in WIDGET_TYPES:
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
     # Look up the project id
     if data.get("project"):
@@ -153,9 +153,8 @@ def delete_widget_config(id_, token_info=None, user=None):
     widget_config = WidgetConfig.query.get(id_)
     if not widget_config:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
-    else:
-        if widget_config.project and not project_has_user(widget_config.project, user):
-            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-        session.delete(widget_config)
-        session.commit()
-        return HTTPStatus.OK.phrase, HTTPStatus.OK
+    if widget_config.project and not project_has_user(widget_config.project, user):
+        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+    session.delete(widget_config)
+    session.commit()
+    return HTTPStatus.OK.phrase, HTTPStatus.OK

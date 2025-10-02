@@ -160,13 +160,6 @@ WIDGET_TYPES = {
             },
             # TODO: write migration to force all widget configs to chart_type: "bar"
             # Separate line chart into a different widget using apex stacked lines
-            # {
-            #     "name": "chart_type",
-            #     "description": "Type of chart with which to display results, e.g. 'bar' or 'line'",
-            #     "type": "string",
-            #     "required": False,
-            #     "default": "bar",
-            # },
             _ADDITIONAL_FILTERS_PARAM,
         ],
         "type": "widget",

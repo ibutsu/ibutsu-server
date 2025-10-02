@@ -1,8 +1,7 @@
 import time
 
 from flask import current_app
-from jwt import decode as jwt_decode
-from jwt import encode as jwt_encode
+from jwt import decode as jwt_decode, encode as jwt_encode
 from jwt.exceptions import InvalidTokenError
 from werkzeug.exceptions import Unauthorized
 
@@ -30,8 +29,7 @@ def generate_token(user_id, expires=None):
     if not JWT_SECRET and not current_app.config.get("JWT_SECRET"):
         raise IbutsuError("JWT_SECRET is not defined in configuration or an environment variable")
     jwt_secret = current_app.config.get("JWT_SECRET") or JWT_SECRET
-    encoded_token = jwt_encode(claims, jwt_secret, algorithm="HS256")
-    return encoded_token
+    return jwt_encode(claims, jwt_secret, algorithm="HS256")
 
 
 def decode_token(token):

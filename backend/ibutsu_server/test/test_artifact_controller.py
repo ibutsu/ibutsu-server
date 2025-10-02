@@ -45,7 +45,7 @@ class TestArtifactController(BaseTestCase):
             "ibutsu_server.controllers.artifact_controller.add_user_filter"
         )
         self.mock_add_user_filter = self.add_user_filter_patcher.start()
-        self.mock_add_user_filter.side_effect = lambda query, user: query
+        self.mock_add_user_filter.side_effect = lambda query, _user: query
 
     def tearDown(self):
         """Teardown the mocks"""

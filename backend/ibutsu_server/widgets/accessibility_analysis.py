@@ -3,7 +3,7 @@ import yaml
 from ibutsu_server.db.models import Artifact
 
 
-def get_accessibility_bar_chart(run_list, filters=None):
+def get_accessibility_bar_chart(run_list, _filters=None):
     """
     This takes data from an accessibility run's 'axe_run_data.yaml' file
     and converts it into a format that can be used with a pie chart.
@@ -14,18 +14,17 @@ def get_accessibility_bar_chart(run_list, filters=None):
 
     axe_datas = []
     for datum in query_data:
-        # axe_data = yaml.safe_load(datum.content)
         axe_datas.append(yaml.safe_load(datum.content))
     # parse the data for the frontend
     # this format is specific to the patternfly donut chart
     axe_data = None
     for data in axe_datas:
-        if "passes" in data.keys():
+        if "passes" in data:
             axe_data = data
     if axe_data is None:
         return axe_data
     total = axe_data["passes"] + axe_data["violations"]
-    trimmed_data = [
+    return [
         {
             "x": "passes",
             "y": axe_data["passes"],
@@ -38,8 +37,7 @@ def get_accessibility_bar_chart(run_list, filters=None):
         },
         {"total": total},
     ]
-    return trimmed_data
 
 
-def get_accessibility_analysis_view(run_list, project=None):
+def get_accessibility_analysis_view(run_list, _project=None):
     return run_list

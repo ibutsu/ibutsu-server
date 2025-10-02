@@ -25,6 +25,7 @@ class TestProjectController(BaseTestCase):
     def setUp(self):
         """Set up a test data"""
         MOCK_PROJECT.owner = self.test_user
+        MOCK_PROJECT.users = [self.test_user]
         self.session_patcher = patch("ibutsu_server.controllers.project_controller.session")
         self.mock_session = self.session_patcher.start()
         self.project_has_user_patcher = patch(
@@ -77,7 +78,13 @@ class TestProjectController(BaseTestCase):
             content_type="application/json",
         )
         self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
-        self.assert_equal(response.json, MOCK_PROJECT_DICT)
+        # The response should include the requesting user in the users array
+        expected_dict = MOCK_PROJECT_DICT.copy()
+        expected_dict["users"] = [self.test_user.to_dict(), MOCK_USER.to_dict()]
+        assert response.json is not None, (
+            f"Response has no JSON content: {response.data.decode('utf-8')}"
+        )
+        assert response.json == expected_dict
         self.mock_session.add.assert_called_once_with(MOCK_PROJECT)
         self.mock_session.commit.assert_called_once()
         # teardown user patcher
@@ -95,7 +102,13 @@ class TestProjectController(BaseTestCase):
         }
         response = self.client.open(f"/api/project/{MOCK_ID}", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
-        self.assert_equal(response.json, MOCK_PROJECT_DICT)
+        # The response should include the owner in the users array
+        expected_dict = MOCK_PROJECT_DICT.copy()
+        expected_dict["users"] = [self.test_user.to_dict()]
+        assert response.json is not None, (
+            f"Response has no JSON content: {response.data.decode('utf-8')}"
+        )
+        assert response.json == expected_dict
         self.mock_project.query.get.assert_called_once_with(MOCK_ID)
 
     def test_get_project_by_name(self):
@@ -103,14 +116,21 @@ class TestProjectController(BaseTestCase):
 
         Get a single project by name
         """
-        self.mock_project.query.filter.return_value.first.return_value = MOCK_PROJECT
+        self.mock_project.query.filter.return_value.first.return_value = None
+        self.mock_project.query.get.return_value = MOCK_PROJECT
         headers = {
             "Accept": "application/json",
             "Authorization": f"Bearer {self.jwt_token}",
         }
         response = self.client.open(f"/api/project/{MOCK_ID}", method="GET", headers=headers)
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
-        self.assert_equal(response.json, MOCK_PROJECT_DICT)
+        # The response should include the owner in the users array
+        expected_dict = MOCK_PROJECT_DICT.copy()
+        expected_dict["users"] = [self.test_user.to_dict()]
+        assert response.json is not None, (
+            f"Response has no JSON content: {response.data.decode('utf-8')}"
+        )
+        assert response.json == expected_dict
 
     def test_get_project_list(self):
         """Test case for get_project_list
@@ -129,6 +149,8 @@ class TestProjectController(BaseTestCase):
             "/api/project", method="GET", headers=headers, query_string=query_string
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
+        expected_project_dict = MOCK_PROJECT_DICT.copy()
+        expected_project_dict["users"] = [self.test_user.to_dict()]
         expected_response = {
             "pagination": {
                 "page": 56,
@@ -136,7 +158,7 @@ class TestProjectController(BaseTestCase):
                 "totalItems": 1,
                 "totalPages": 1,
             },
-            "projects": [MOCK_PROJECT_DICT],
+            "projects": [expected_project_dict],
         }
         assert response.json == expected_response
 
@@ -151,6 +173,7 @@ class TestProjectController(BaseTestCase):
         }
         updated_dict = MOCK_PROJECT_DICT.copy()
         updated_dict.update(updates)
+        updated_dict["users"] = [self.test_user.to_dict()]
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -164,4 +187,4 @@ class TestProjectController(BaseTestCase):
             content_type="application/json",
         )
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
-        self.assert_equal(response.json, updated_dict)
+        assert response.json == updated_dict
