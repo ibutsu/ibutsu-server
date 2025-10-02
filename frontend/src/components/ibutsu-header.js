@@ -37,12 +37,12 @@ import ServerIcon from '@patternfly/react-icons/dist/esm/icons/server-icon';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import QuestionCircleIcon from '@patternfly/react-icons/dist/esm/icons/question-circle-icon';
 
-import FileUpload from './fileupload';
+import FileUpload from './file-upload';
 import UserDropdown from './user-dropdown';
 import { VERSION } from '../constants';
-import { HttpClient } from '../services/http';
-import { Settings } from '../settings';
-import { IbutsuContext } from '../components/contexts/ibutsuContext';
+import { HttpClient } from '../utilities/http';
+import { Settings } from '../pages/settings';
+import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { useNavigate, useParams } from 'react-router-dom';
 import { setDocumentDarkTheme } from '../utilities';
 

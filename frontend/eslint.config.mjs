@@ -9,27 +9,26 @@ import js from '@eslint/js';
 import pluginCypress from 'eslint-plugin-cypress/flat';
 import eslintPluginJsxA11y from 'eslint-plugin-jsx-a11y';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import { reactRules, reactSettings } from './eslint.react.config.mjs';
 
 export default defineConfig([
   globalIgnores(
     ['build/**/*', 'node_modules/'],
     'Ignore build dir and node_modules',
   ),
-  pluginCypress.configs.recommended,
-  reactHooksPlugin.configs['recommended-latest'],
-  reactPlugin.configs.flat.recommended,
-  reactPlugin.configs.flat['jsx-runtime'],
   js.configs.recommended,
-  pluginCypress.configs.recommended,
-  eslintPluginJsxA11y.flatConfigs.recommended,
   {
-    files: ['src/*', 'cypress/*', 'bin/*'],
+    ...reactPlugin.configs.flat.recommended,
+    settings: reactSettings,
+  },
+  reactPlugin.configs.flat['jsx-runtime'],
+  reactHooksPlugin.configs['recommended-latest'],
+  eslintPluginJsxA11y.flatConfigs.recommended,
+  pluginCypress.configs.recommended,
+  {
+    files: ['src/**/*', 'public/**/*', 'cypress/**/*', 'bin/**/*'],
     plugins: {
       'unused-imports': unusedImports, // not flat config compatible
-      reactPlugin,
-      reactHooksPlugin,
-      eslintPluginJsxA11y,
-      pluginCypress,
     },
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
@@ -39,8 +38,15 @@ export default defineConfig([
       globals: {
         ...globals.browser,
         ...globals.node,
+        ...globals.jest,
         ...globals.cypress,
-        es2020: true,
+        process: 'readonly',
+        global: 'readonly',
+        window: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
       },
       parser: babelParser,
       parserOptions: {
@@ -66,24 +72,23 @@ export default defineConfig([
       },
     },
     rules: {
-      'react/jsx-curly-brace-presence': [
-        'error',
-        {
-          props: 'never',
-          children: 'never',
-        },
-      ],
-      'react/react-in-jsx-scope': 'off',
+      // React and React Hooks rules (imported from separate config)
+      ...reactRules,
+
+      // General rules
       camelcase: 'off',
       quotes: ['warn', 'single'],
       'no-duplicate-imports': 'error',
       'unused-imports/no-unused-imports': 'error',
-      'unused-imports/no-unused-vars': ['warn'],
-    },
-    settings: {
-      react: {
-        version: 'detect',
-      },
+      'unused-imports/no-unused-vars': [
+        'warn',
+        {
+          vars: 'all',
+          varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+        },
+      ],
     },
   },
   eslintPluginPrettierRecommended,

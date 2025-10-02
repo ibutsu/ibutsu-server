@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import {
   Checkbox,
@@ -17,8 +16,8 @@ import {
   LabelGroup,
 } from '@patternfly/react-core';
 
-import { HttpClient } from '../services/http';
-import { Settings } from '../settings';
+import { HttpClient } from '../utilities/http';
+import { Settings } from '../pages/settings';
 import {
   filtersToAPIParams,
   toTitleCase,
@@ -27,13 +26,13 @@ import {
 } from '../utilities';
 import { WEEKS, RESULT_STATES, ICON_RESULT_MAP } from '../constants';
 
-import RunSummary from './runsummary';
+import RunSummary from './run-summary';
 import LastPassed from './last-passed';
-import ResultView from './resultView';
+import ResultView from './result-view';
 import ActiveFilters from './filtering/active-filters';
-import usePagination from './hooks/usePagination';
+import usePagination from './hooks/use-pagination';
 import FilterTable from './filtering/filtered-table-card';
-import useTableFilters from './hooks/useTableFilters';
+import useTableFilters from './hooks/use-table-filters';
 
 const HIDE = ['project_id', 'test_id'];
 const BLOCK = ['result', 'component', 'start_time', 'env'];

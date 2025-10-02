@@ -6,8 +6,8 @@ import './index.css';
 import './app.css';
 import { setDocumentDarkTheme } from './utilities';
 
-import { Base } from './base';
-import * as serviceWorker from './serviceWorker';
+import { Base } from './routes/base';
+import * as serviceWorker from './pages/service-worker';
 
 setDocumentDarkTheme();
 const container = document.getElementById('root');

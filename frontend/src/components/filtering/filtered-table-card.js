@@ -24,7 +24,7 @@ import {
   Table,
 } from '@patternfly/react-table';
 
-import { TableEmptyState, TableErrorState } from '../tablestates';
+import { TableEmptyState, TableErrorState } from '../table-states';
 
 const FilterTable = ({
   selectable = false,

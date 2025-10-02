@@ -8,8 +8,8 @@ import {
   MenuToggle,
 } from '@patternfly/react-core';
 
-import { HttpClient } from '../services/http';
-import { Settings } from '../settings';
+import { HttpClient } from '../utilities/http';
+import { Settings } from '../pages/settings';
 import { CLASSIFICATION } from '../constants.js';
 
 const ClassificationDropdown = ({ testResult: initialTestResult }) => {
