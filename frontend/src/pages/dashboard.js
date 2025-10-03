@@ -32,14 +32,14 @@ import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle-icon';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from './settings';
 import NewDashboardModal from '../components/modals/new-dashboard-modal';
 import NewWidgetWizard from '../components/modals/new-widget-wizard';
 import EditWidgetModal from '../components/modals/edit-widget-modal';
 import DeleteModal from '../components/modals/delete-modal';
-import { useWidgets } from '../components/hooks/use-widgets';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { useWidgets } from '../componen../hooks/use-widgets';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
 
 import { nanoid } from 'nanoid/non-secure';
 

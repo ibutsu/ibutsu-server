@@ -11,7 +11,7 @@ import {
 
 import { STRING_OPERATIONS } from '../../constants';
 import ActiveFilters from './active-filters';
-import { useContext } from 'react';
+import React, { useContext } from 'react';
 import { FilterContext } from '../contexts/filter-context';
 
 const AdminFilter = () => {

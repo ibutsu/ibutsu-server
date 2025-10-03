@@ -33,17 +33,17 @@ import { CodeEditor, Language } from '@patternfly/react-code-editor';
 import { Link, useParams } from 'react-router-dom';
 import Linkify from 'react-linkify';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { ClassificationDropdown } from './classification-dropdown';
 import { linkifyDecorator } from './decorators';
 import { Settings } from '../pages/settings';
 import { filtersToSearchParams, toTitleCase } from '../utilities';
 import { ICON_RESULT_MAP } from '../constants';
 
-import TabTitle from './tabs';
+import TabTitle from './tab-title';
 import TestHistoryTable from './test-history';
 import ArtifactTab from './artifact-tab';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from '../contexts/ibutsu-context';
 import { useTabHook } from './hooks/use-tab';
 
 const ResultView = ({

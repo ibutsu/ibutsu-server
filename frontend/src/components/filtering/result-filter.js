@@ -16,7 +16,7 @@ import {
 } from '@patternfly/react-core';
 
 import PropTypes from 'prop-types';
-import { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { TimesIcon } from '@patternfly/react-icons';
 
 import MultiValueInput from '../multi-value-input';

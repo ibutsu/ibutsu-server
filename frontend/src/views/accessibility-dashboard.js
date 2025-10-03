@@ -14,7 +14,7 @@ import {
 
 import { Link } from 'react-router-dom';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from '../pages/settings';
 import {
   buildBadge,
@@ -30,8 +30,8 @@ import {
   OPERATION_MODE_MAP,
   FILTER_MODE_MAP,
 } from '../constants';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
-import useTableFilters from '../components/hooks/use-table-filters';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
+import useTableFilters from '../componen../hooks/use-table-filters';
 
 const runToRow = (run, filterFunc, analysisViewId) => {
   let badges = [];

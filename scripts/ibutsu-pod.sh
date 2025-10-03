@@ -344,7 +344,7 @@ if [[ $CREATE_PROJECT = true ]]; then
     JENKINS_JOBS_VIEW=$(curl --no-progress-meter --header "Content-Type: application/json" \
         --header "Authorization: Bearer ${LOGIN_TOKEN}" \
         --request POST \
-        --data "{\"params\": {}, \"project_id\": \"${PROJECT_ID}\", \"title\": \"Jenkins Jobs\", \"type\": \"view\", \"widget\": \"jenkins-job-view\"}" \
+        --data "{\"params\": {\"additional_filters\": []}, \"project_id\": \"${PROJECT_ID}\", \"title\": \"Jenkins Jobs\", \"type\": \"view\", \"widget\": \"jenkins-job-view\"}" \
         http://127.0.0.1:8080/api/widget-config | jq -r '.id')
 
     echo "  Jenkins Jobs ID: ${JENKINS_JOBS_VIEW}"
@@ -398,7 +398,7 @@ if [[ $CREATE_PROJECT = true ]]; then
                     \"title\": \"FilteredHeatmap\", \
                     \"type\": \"widget\", \
                     \"widget\": \"filter-heatmap\", \
-                    \"params\": {\"filters\": \"component=${RUN_COMPONENT}\", \
+                    \"params\": {\"additional_filters\": \"component=${RUN_COMPONENT}\", \
                                \"group_field\": \"component\", \
                                \"builds\": 10}}" \
             http://127.0.0.1:8080/api/widget-config | jq -r '.id')
@@ -413,7 +413,8 @@ if [[ $CREATE_PROJECT = true ]]; then
                     \"type\": \"widget\", \
                     \"widget\": \"run-aggregator\", \
                     \"params\": {\"group_field\": \"component\", \
-                               \"weeks\": 12}}" \
+                               \"weeks\": 24, \
+                               \"additional_filters\": \"env=stage\"}}" \
             http://127.0.0.1:8080/api/widget-config | jq -r '.id')
         echo "  Run Aggregator ID: ${RUN_AGGREGATOR}"
 
@@ -425,7 +426,7 @@ if [[ $CREATE_PROJECT = true ]]; then
                     \"title\": \"Result Summary\", \
                     \"type\": \"widget\", \
                     \"widget\": \"result-summary\", \
-                    \"params\": {}}" \
+                    \"params\": {\"additional_filters\": \"component=${RUN_COMPONENT}\"}}" \
             http://127.0.0.1:8080/api/widget-config | jq -r '.id')
         echo "  Result Summary ID: ${RESULT_SUMMARY}"
 
@@ -439,8 +440,23 @@ if [[ $CREATE_PROJECT = true ]]; then
                     \"widget\": \"result-aggregator\", \
                     \"params\": {\"group_field\": \"result\", \
                                 \"chart_type\": \"donut\", \
-                                \"days\": 30, \
-                                \"additional_filters\": \"env*stage_proxy;stage\", \}}" \
+                                \"days\": 180, \
+                                \"additional_filters\": \"component=${RUN_COMPONENT}\"}}" \
+            http://127.0.0.1:8080/api/widget-config | jq -r '.id')
+        echo "  Result Aggregator ID: ${RESULT_AGGREGATOR}"
+
+        RESULT_AGGREGATOR_COMPONENT=$(curl --no-progress-meter --header "Content-Type: application/json" \
+            --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            --request POST \
+            --data "{\"dashboard_id\": \"${DASHBOARD_ID}\", \
+                    \"project_id\": \"${PROJECT_ID}\", \
+                    \"title\": \"Result Aggregation\", \
+                    \"type\": \"widget\", \
+                    \"widget\": \"result-aggregator\", \
+                    \"params\": {\"group_field\": \"component\", \
+                                \"chart_type\": \"donut\", \
+                                \"days\": 180, \
+                                \"additional_filters\": \"env=stage\"}}" \
             http://127.0.0.1:8080/api/widget-config | jq -r '.id')
         echo "  Result Aggregator ID: ${RESULT_AGGREGATOR}"
 

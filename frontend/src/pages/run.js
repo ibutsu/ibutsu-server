@@ -44,7 +44,7 @@ import {
 } from '@patternfly/react-icons';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from './settings';
 import {
   resultToRow,
@@ -56,19 +56,19 @@ import {
 import EmptyObject from '../components/empty-object';
 import FilterTable from '../components/filtering/filtered-table-card';
 import ResultView from '../components/result-view';
-import TabTitle from '../components/tabs';
+import TabTitle from '../components/tab-title';
 import ClassifyFailuresTable from '../components/classify-failures';
 import ArtifactTab from '../components/artifact-tab';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
-import { useTabHook } from '../components/hooks/use-tab';
-import usePagination from '../components/hooks/use-pagination';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
+import { useTabHook } from '../componen../hooks/use-tab';
+import usePagination from '../componen../hooks/use-pagination';
 import PropTypes from 'prop-types';
 import {
   ICON_RESULT_MAP,
   RESULT_FIELDS,
   RUN_RESULTS_COLUMNS,
 } from '../constants';
-import FilterProvider from '../components/contexts/filter-context';
+import FilterProvider from '../componen../contexts/filter-context';
 
 const RUN_BLOCK = ['run_id', 'result'];
 const CLASSIFY_FIELDS = RESULT_FIELDS.filter(

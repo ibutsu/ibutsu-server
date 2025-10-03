@@ -1,3 +1,4 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -9,7 +10,7 @@ import {
   ModalHeader,
   ModalVariant,
 } from '@patternfly/react-core';
-import { HttpClient } from '../../utilities/http';
+import { HttpClient } from '../../services/http';
 import { Settings } from '../../pages/settings';
 
 const DeleteModal = ({

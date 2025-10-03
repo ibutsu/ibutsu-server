@@ -1,3 +1,4 @@
+import React from 'react';
 import PropTypes from 'prop-types';
 import { TabTitleIcon, TabTitleText } from '@patternfly/react-core';
 

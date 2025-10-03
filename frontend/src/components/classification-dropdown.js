@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -10,7 +10,7 @@ import {
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
-import { CLASSIFICATION } from '../constants.js';
+import { CLASSIFICATION } from '../constants';
 
 const ClassificationDropdown = ({ testResult: initialTestResult }) => {
   const [testResult, setTestResult] = useState(initialTestResult);

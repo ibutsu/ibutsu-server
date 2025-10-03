@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 
 import { Navigate, Route, Routes } from 'react-router-dom';
 
@@ -9,7 +9,7 @@ import Run from '../pages/run';
 import ResultList from '../pages/result-list';
 import Result from '../pages/result';
 import IbutsuPage from './ibutsu-page';
-import View from '../components/view';
+import View from '../pages/View';
 
 import '../app.css';
 import FilterProvider from '../components/contexts/filter-context.js';

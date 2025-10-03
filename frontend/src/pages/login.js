@@ -41,7 +41,7 @@ import { HttpClient } from '../utilities/http';
 import { AuthService } from '../utilities/auth';
 import { KeycloakService } from '../utilities/keycloak';
 import { Settings } from './settings';
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from '../contexts/ibutsu-context';
 
 const getLocationFrom = (location) => {
   let { from } = location.state || { from: { pathname: '/' } };

@@ -2,15 +2,15 @@ from ibutsu_server.db.models import Result
 from ibutsu_server.filters import convert_filter
 
 
-def _get_comparison_data(filters):
+def _get_comparison_data(additional_filters):
     """Count occurrences of distinct fields within results."""
     queries = []
-    for _ in filters:
+    for _ in additional_filters:
         queries.append(Result.query)
 
     # Create DB ready filter strings
-    if filters:
-        for i, filter in enumerate(filters):
+    if additional_filters:
+        for i, filter in enumerate(additional_filters):
             filters = filter.split(",")
             for filter_string in filters:
                 filter_clause = convert_filter(filter_string, Result)
@@ -59,5 +59,5 @@ def _get_comparison_data(filters):
     }
 
 
-def get_comparison_data(filters=None):
-    return _get_comparison_data(filters=filters)
+def get_comparison_data(additional_filters=None):
+    return _get_comparison_data(additional_filters=additional_filters)

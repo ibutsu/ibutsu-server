@@ -19,7 +19,7 @@ import { EyeIcon, EyeSlashIcon } from '@patternfly/react-icons';
 import { NavLink, useParams } from 'react-router-dom';
 import { ErrorBoundary } from 'react-error-boundary';
 
-import { AuthService } from '../utilities/auth';
+import { AuthService } from '../services/auth';
 
 // Lazy import the password strength indicator, it uses a very big library
 const PasswordStrengthBar = React.lazy(() =>

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -17,7 +17,7 @@ import {
   TextInput,
   ValidatedOptions,
 } from '@patternfly/react-core';
-import { HttpClient } from '../../utilities/http';
+import { HttpClient } from '../../services/http';
 import { Settings } from '../../pages/settings';
 
 const AddTokenModal = ({ isOpen, onClose }) => {

@@ -9,7 +9,7 @@ import {
   TextInput,
 } from '@patternfly/react-core';
 import PropTypes from 'prop-types';
-import { useContext } from 'react';
+import React, { useContext } from 'react';
 
 import ActiveFilters from './active-filters';
 import MultiValueInput from '../multi-value-input';

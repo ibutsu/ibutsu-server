@@ -1,5 +1,5 @@
 // FilterContext.js
-import { createContext, useContext } from 'react';
+import React, { createContext, useContext } from 'react';
 import useTableFilters from '../hooks/use-table-filters';
 import PropTypes from 'prop-types';
 

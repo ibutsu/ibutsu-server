@@ -27,6 +27,25 @@ export const processPyTestPath = (path) => {
   return [segment, ...processPyTestPath(rest)];
 };
 
+export const convertDate = (s) => {
+  let remainingSeconds = s;
+  let days = 0;
+  let date = new Date(0);
+  days = Math.floor(remainingSeconds / (24 * 60 * 60));
+  if (days !== 0) {
+    remainingSeconds -= days * (24 * 60 * 60);
+  }
+  date.setSeconds(remainingSeconds);
+  let dayString = '';
+  let timeString = date.toISOString().substring(11, 19);
+  if (days === 1) {
+    dayString = '1 day, ';
+  } else if (days > 1) {
+    dayString = days + ' days, ';
+  }
+  return '[' + dayString + timeString + ']';
+};
+
 export const cleanPath = (path) => {
   if (!path) {
     // if xml imported results have no fspath

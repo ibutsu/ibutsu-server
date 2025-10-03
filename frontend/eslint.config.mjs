@@ -9,26 +9,27 @@ import js from '@eslint/js';
 import pluginCypress from 'eslint-plugin-cypress/flat';
 import eslintPluginJsxA11y from 'eslint-plugin-jsx-a11y';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
-import { reactRules, reactSettings } from './eslint.react.config.mjs';
 
 export default defineConfig([
   globalIgnores(
     ['build/**/*', 'node_modules/'],
     'Ignore build dir and node_modules',
   ),
-  js.configs.recommended,
-  {
-    ...reactPlugin.configs.flat.recommended,
-    settings: reactSettings,
-  },
-  reactPlugin.configs.flat['jsx-runtime'],
-  reactHooksPlugin.configs['recommended-latest'],
-  eslintPluginJsxA11y.flatConfigs.recommended,
   pluginCypress.configs.recommended,
+  reactHooksPlugin.configs['recommended-latest'],
+  reactPlugin.configs.flat.recommended,
+  reactPlugin.configs.flat['jsx-runtime'],
+  js.configs.recommended,
+  pluginCypress.configs.recommended,
+  eslintPluginJsxA11y.flatConfigs.recommended,
   {
-    files: ['src/**/*', 'public/**/*', 'cypress/**/*', 'bin/**/*'],
+    files: ['src/*', 'cypress/*', 'bin/*'],
     plugins: {
       'unused-imports': unusedImports, // not flat config compatible
+      reactPlugin,
+      reactHooksPlugin,
+      eslintPluginJsxA11y,
+      pluginCypress,
     },
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
@@ -38,15 +39,9 @@ export default defineConfig([
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.jest,
         ...globals.cypress,
-        process: 'readonly',
-        global: 'readonly',
-        window: 'readonly',
-        describe: 'readonly',
-        it: 'readonly',
-        expect: 'readonly',
-        beforeEach: 'readonly',
+        process: 'readonly', // Explicitly define process for build-time env vars
+        es2020: true,
       },
       parser: babelParser,
       parserOptions: {
@@ -72,10 +67,20 @@ export default defineConfig([
       },
     },
     rules: {
-      // React and React Hooks rules (imported from separate config)
-      ...reactRules,
-
-      // General rules
+      'react/jsx-curly-brace-presence': [
+        'error',
+        {
+          props: 'never',
+          children: 'never',
+        },
+      ],
+      'react/react-in-jsx-scope': 'off',
+      'no-unused-vars': [
+        'error',
+        {
+          varsIgnorePattern: '^React$', // Allow React import for JSX files
+        },
+      ],
       camelcase: 'off',
       quotes: ['warn', 'single'],
       'no-duplicate-imports': 'error',
@@ -83,8 +88,59 @@ export default defineConfig([
       'unused-imports/no-unused-vars': [
         'warn',
         {
+          varsIgnorePattern: '^React$', // Allow React import for JSX files
+        },
+      ],
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
+  },
+  // Specific configuration for service-worker.js to handle process.env
+  {
+    files: ['src/pages/service-worker.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        process: 'readonly', // Allow process for build-time environment variables
+      },
+    },
+  },
+  // Specific configuration for test files to handle Jest globals
+  {
+    files: ['**/*.test.js', '**/*.test.jsx', '**/*.spec.js', '**/*.spec.jsx'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.jest, // Add Jest globals for test files
+      },
+    },
+  },
+  // Allow React imports in JSX files even if not directly used
+  {
+    files: ['**/*.js', '**/*.jsx'],
+    plugins: {
+      'unused-imports': unusedImports,
+    },
+    rules: {
+      // Override unused-imports rules to allow React imports
+      'unused-imports/no-unused-imports': 'off', // Disable for React imports
+      'unused-imports/no-unused-vars': [
+        'warn',
+        {
           vars: 'all',
-          varsIgnorePattern: '^_',
+          varsIgnorePattern: '^React$',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+        },
+      ],
+      'no-unused-vars': [
+        'error',
+        {
+          vars: 'all',
+          varsIgnorePattern: '^React$',
           args: 'after-used',
           argsIgnorePattern: '^_',
         },

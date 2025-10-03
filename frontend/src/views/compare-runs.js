@@ -3,7 +3,13 @@
 // MetaFilter removal isn't working right now
 // The Apply Filters button needs connection to table rendering
 // It would be great to better control the selectable fields in MetaFilter for this view as not all fields are relevant
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 import {
   Flex,
@@ -15,7 +21,7 @@ import {
 import { TableVariant } from '@patternfly/react-table';
 
 import FilterTable from '../components/filtering/filtered-table-card';
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from '../pages/settings';
 import { toAPIFilter, resultToComparisonRow } from '../utilities';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';

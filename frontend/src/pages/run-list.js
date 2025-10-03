@@ -2,16 +2,16 @@ import React, { useState, useEffect, useContext, useMemo } from 'react';
 
 import { PageSection, Content } from '@patternfly/react-core';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from './settings';
 import { runToRow, filtersToAPIParams, tableSortFunctions } from '../utilities';
 
 import FilterTable from '../components/filtering/filtered-table-card';
 
-import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { IbutsuContext } from '../componen../contexts/ibutsu-context';
 import RunFilter from '../components/filtering/run-filter';
-import usePagination from '../components/hooks/use-pagination';
-import { FilterContext } from '../components/contexts/filter-context.js';
+import usePagination from '../componen../hooks/use-pagination';
+import { FilterContext } from '../componen../contexts/filter-context';
 
 const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
 const HIDE = ['project_id'];

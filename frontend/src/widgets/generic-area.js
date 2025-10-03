@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -14,7 +14,7 @@ import {
 } from '@patternfly/react-charts/victory';
 import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 
-import { HttpClient } from '../utilities/http';
+import { HttpClient } from '../services/http';
 import { Settings } from '../pages/settings';
 import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';

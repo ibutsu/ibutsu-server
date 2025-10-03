@@ -10,7 +10,7 @@ import JenkinsJobView from '../views/jenkins-job';
 import JenkinsJobAnalysisView from '../views/jenkins-job-analysis';
 import AccessibilityAnalysisView from '../views/accessibility-analysis';
 import CompareRunsView from '../views/compare-runs';
-import FilterProvider from './contexts/filter-context';
+import FilterProvider from '../components/contexts/filter-context';
 
 const VIEW_MAP = {
   'accessibility-dashboard-view': AccessibilityDashboardView,
