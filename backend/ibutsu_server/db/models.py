@@ -129,7 +129,6 @@ class Project(Model, ModelMixin):
     owner_id = Column(PortableUUID(), ForeignKey("users.id"), index=True)
     group_id = Column(PortableUUID(), ForeignKey("groups.id"), index=True)
     default_dashboard_id = Column(PortableUUID(), ForeignKey("dashboards.id"))
-    reports = relationship("Report")
     results = relationship("Result", backref="project")
     runs = relationship("Run", backref="project")
     default_dashboard = relationship("Dashboard", foreign_keys=[default_dashboard_id])
@@ -146,28 +145,6 @@ class Project(Model, ModelMixin):
         if self.default_dashboard:
             project_dict["defaultDashboard"] = self.default_dashboard.to_dict()
         return project_dict
-
-
-class Report(Model, ModelMixin):
-    __tablename__ = "reports"
-    created = Column(DateTime, default=func.now(), index=True)
-    download_url = Column(Text, index=True)
-    filename = Column(Text, index=True)
-    mimetype = Column(Text, index=True)
-    name = Column(Text, index=True)
-    params = Column(mutable_json_type(dbtype=PortableJSON()))
-    project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True)
-    file = relationship("ReportFile")
-    status = Column(Text, index=True)
-    url = Column(Text, index=True)
-    view_url = Column(Text, index=True)
-
-
-class ReportFile(Model, FileMixin):
-    __tablename__ = "report_files"
-    report_id = Column(PortableUUID(), ForeignKey("reports.id"), nullable=False, index=True)
-    filename = Column(Text, index=True)
-    data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
 
 
 class Result(Model, ModelMixin):

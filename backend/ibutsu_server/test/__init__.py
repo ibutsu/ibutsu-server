@@ -195,22 +195,6 @@ class MockResult(MockModel):
     ]
 
 
-class MockReport(MockModel):
-    COLUMNS = [
-        "id",
-        "created",
-        "download_url",
-        "filename",
-        "mimetype",
-        "name",
-        "params",
-        "project_id",
-        "status",
-        "url",
-        "view_url",
-    ]
-
-
 class MockRun(MockModel):
     COLUMNS = [
         "id",

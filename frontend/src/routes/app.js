@@ -3,7 +3,6 @@ import { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import Dashboard from '../pages/dashboard';
-import ReportBuilder from '../pages/report-builder';
 import RunList from '../pages/run-list';
 import Run from '../pages/run';
 import ResultList from '../pages/result-list';
@@ -52,7 +51,6 @@ const App = () => {
         />
         <Route path="results/:result_id" element={<Result />} />
 
-        <Route path="reports" element={<ReportBuilder />} />
 
         <Route path="view/:view_id" element={<View />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
