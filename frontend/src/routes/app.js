@@ -51,7 +51,6 @@ const App = () => {
         />
         <Route path="results/:result_id" element={<Result />} />
 
-
         <Route path="view/:view_id" element={<View />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Route>
