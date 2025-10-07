@@ -409,32 +409,53 @@ if [[ $CREATE_PROJECT = true ]]; then
     api_post() {
         local endpoint=$1
         local data=$2
-        curl --no-progress-meter \
+        local response
+        response=$(curl --no-progress-meter --fail-with-body \
             --header "Content-Type: application/json" \
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             --request POST \
             --data "$data" \
-            "http://127.0.0.1:8080${endpoint}"
+            "http://127.0.0.1:8080${endpoint}" 2>&1)
+        local exit_code=$?
+        if [[ $exit_code -ne 0 ]]; then
+            echo "API POST error (${endpoint}): ${response}" >&2
+        fi
+        echo "$response"
+        return $exit_code
     }
 
     # Helper function to make API PUT requests with JSON
     api_put() {
         local endpoint=$1
         local data=$2
-        curl --no-progress-meter \
+        local response
+        response=$(curl --no-progress-meter --fail-with-body \
             --header "Content-Type: application/json" \
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             --request PUT \
             --data "$data" \
-            "http://127.0.0.1:8080${endpoint}"
+            "http://127.0.0.1:8080${endpoint}" 2>&1)
+        local exit_code=$?
+        if [[ $exit_code -ne 0 ]]; then
+            echo "API PUT error (${endpoint}): ${response}" >&2
+        fi
+        echo "$response"
+        return $exit_code
     }
 
     # Helper function to make API GET requests
     api_get() {
         local endpoint=$1
-        curl --no-progress-meter \
+        local response
+        response=$(curl --no-progress-meter --fail-with-body \
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-            "http://127.0.0.1:8080${endpoint}"
+            "http://127.0.0.1:8080${endpoint}" 2>&1)
+        local exit_code=$?
+        if [[ $exit_code -ne 0 ]]; then
+            echo "API GET error (${endpoint}): ${response}" >&2
+        fi
+        echo "$response"
+        return $exit_code
     }
 
     # Helper function to create a widget config
@@ -446,13 +467,24 @@ if [[ $CREATE_PROJECT = true ]]; then
         local params=$5
         local config_type=${6:-widget}
 
-        api_post "/api/widget-config" \
-            "{\"dashboard_id\": \"${dashboard_id}\", \
+        # Build JSON payload, handling empty dashboard_id
+        local json_payload
+        if [[ -z "$dashboard_id" ]]; then
+            json_payload="{\"project_id\": \"${project_id}\", \
+              \"title\": \"${title}\", \
+              \"type\": \"${config_type}\", \
+              \"widget\": \"${widget_type}\", \
+              \"params\": ${params}}"
+        else
+            json_payload="{\"dashboard_id\": \"${dashboard_id}\", \
               \"project_id\": \"${project_id}\", \
               \"title\": \"${title}\", \
               \"type\": \"${config_type}\", \
               \"widget\": \"${widget_type}\", \
-              \"params\": ${params}}" | jq -r '.id'
+              \"params\": ${params}}"
+        fi
+
+        api_post "/api/widget-config" "$json_payload" | jq -r '.id'
     }
 
     # Function to extract component from first imported run for a project
@@ -495,11 +527,19 @@ if [[ $CREATE_PROJECT = true ]]; then
 
         # Create first widget config - Jenkins Jobs View
         JENKINS_JOBS_VIEW=$(create_widget_config "" "$PROJECT_ID" "Jenkins Jobs" "jenkins-job-view" "{}" "view")
-        echo "  Jenkins Jobs ID: ${JENKINS_JOBS_VIEW}"
+        if [[ -n "$JENKINS_JOBS_VIEW" && "$JENKINS_JOBS_VIEW" != "null" ]]; then
+            echo "  Jenkins Jobs ID: ${JENKINS_JOBS_VIEW}"
+        else
+            echo "  Warning: Failed to create Jenkins Jobs view"
+        fi
 
         # Create second widget config - Jenkins analysis View
         JENKINS_ANALYSIS_VIEW=$(create_widget_config "" "$PROJECT_ID" "Jenkins Analysis" "jenkins-analysis-view" "{}" "view")
-        echo "  Jenkins Analysis ID: ${JENKINS_ANALYSIS_VIEW}"
+        if [[ -n "$JENKINS_ANALYSIS_VIEW" && "$JENKINS_ANALYSIS_VIEW" != "null" ]]; then
+            echo "  Jenkins Analysis ID: ${JENKINS_ANALYSIS_VIEW}"
+        else
+            echo "  Warning: Failed to create Jenkins Analysis view"
+        fi
 
         # create a dashboard
         echo "  Creating dashboard for ${PROJECT_NAME}... "
