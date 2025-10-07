@@ -30,7 +30,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['src/*', 'cypress/*', 'bin/*'],
+    files: ['src/**/*', 'cypress/**/*', 'bin/**/*'],
     plugins: {
       'unused-imports': unusedImports, // not flat config compatible
       reactPlugin,

@@ -50,7 +50,7 @@ import {
 import EmptyObject from '../components/empty-object';
 import FilterTable from '../components/filtering/filtered-table-card';
 import ResultView from '../components/result-view';
-import TabTitle from '../components/TabTitle';
+import TabTitle from '../components/tab-title';
 import ClassifyFailuresTable from '../components/classify-failures';
 import ArtifactTab from '../components/artifact-tab';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';

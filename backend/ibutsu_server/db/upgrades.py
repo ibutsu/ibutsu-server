@@ -234,13 +234,6 @@ def upgrade_7(session):
     This upgrade adds a created column to the imports table
     to provide a timestamp for cleanup operations.
 
-    This upgrade migrates existing widget configurations to use validated
-    parameter names that match the widget type specifications. It handles:
-    - filters -> additional_filters migration for multiple widget types
-    - filter -> additional_filters migration for jenkins-job-view
-    - jenkins_job_name -> job_name migration for jenkins-heatmap
-    - Removal of deprecated chart_type from run-aggregator widgets
-    - Validation and cleanup of all parameters against widget type schemas
     """
 
     # Get database connection and metadata
@@ -386,7 +379,12 @@ def upgrade_9(session):
     """Version 9 upgrade
 
     This upgrade migrates existing widget configurations to use validated
-    parameter names that match the widget type specifications.
+    parameter names that match the widget type specifications. It handles:
+    - filters -> additional_filters migration for multiple widget types
+    - filter -> additional_filters migration for jenkins-job-view
+    - jenkins_job_name -> job_name migration for jenkins-heatmap
+    - Removal of deprecated chart_type from run-aggregator widgets
+    - Validation and cleanup of all parameters against widget type schemas
     """
     logger = logging.getLogger(__name__)
 
