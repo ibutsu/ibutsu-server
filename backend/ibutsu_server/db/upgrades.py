@@ -9,7 +9,7 @@ from sqlalchemy.sql.expression import null
 from ibutsu_server.db.base import Boolean, Column, DateTime, ForeignKey, Text
 from ibutsu_server.db.types import PortableUUID
 
-__version__ = 7
+__version__ = 8
 
 
 def get_upgrade_op(session):
@@ -243,3 +243,23 @@ def upgrade_7(session):
             "imports",
             Column("created", DateTime, default=lambda: datetime.now(timezone.utc), index=True),
         )
+
+
+def upgrade_8(session):
+    """Version 8 upgrade
+
+    This upgrade removes the Report Builder functionality by dropping
+    the reports and report_files tables.
+    """
+    engine = session.connection().engine
+    op = get_upgrade_op(session)
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
+
+    # Drop report_files table first (due to foreign key constraint)
+    if "report_files" in metadata.tables:
+        op.drop_table("report_files")
+
+    # Drop reports table
+    if "reports" in metadata.tables:
+        op.drop_table("reports")

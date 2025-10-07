@@ -8,7 +8,6 @@ from redis import Redis
 from redis.exceptions import LockError
 
 from ibutsu_server.db.base import session
-from ibutsu_server.db.models import Report
 
 LOCK_EXPIRE = 1
 task = None
@@ -34,11 +33,6 @@ def create_celery_app(_app=None):
             with _app.app_context():
                 return super().__call__(*args, **kwargs)
 
-        def _set_report_error(self, report):
-            report.status = "error"
-            session.add(report)
-            session.commit()
-
         def after_return(self, _status, retval, _task_id, _args, _kwargs, _einfo):
             """
             After each Celery task, teardown our db session.
@@ -51,22 +45,8 @@ def create_celery_app(_app=None):
             session.remove()
 
         def on_failure(self, _exc, task_id, args, _kwargs, _einfo):
-            # if the task is related to a report, set that report to failed
-            if isinstance(args[0], dict):
-                try:
-                    with _app.app_context():
-                        report_id = args[0].get("id")  # get the report ID from the task
-                        report = Report.query.get(report_id)
-                        # if this is actually a report ID, set it as an error
-                        if report:
-                            self._set_report_error(report)
-                except AttributeError as e:
-                    logging.error(f"Attribute error: {e}. Args are {args}")
-                except (IndexError, TypeError):
-                    pass
-            else:
-                # the task is not related to a report
-                logging.info(f"Task {task_id} with args {args} is not related to a report")
+            # Log task failure
+            logging.info(f"Task {task_id} with args {args} failed")
 
     app = Celery(
         "ibutsu_server",
@@ -78,7 +58,6 @@ def create_celery_app(_app=None):
             "ibutsu_server.tasks.db",
             "ibutsu_server.tasks.importers",
             "ibutsu_server.tasks.query",
-            "ibutsu_server.tasks.reports",
             "ibutsu_server.tasks.results",
             "ibutsu_server.tasks.runs",
         ],

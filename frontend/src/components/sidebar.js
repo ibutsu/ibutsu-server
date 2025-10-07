@@ -77,11 +77,6 @@ const IbutsuSidebar = () => {
                   Test Results
                 </Link>
               </li>
-              <li className="pf-v6-c-nav__item">
-                <Link to="reports/" className="pf-v6-c-nav__link">
-                  Report Builder
-                </Link>
-              </li>
               {views &&
                 views.map(
                   (view) =>
