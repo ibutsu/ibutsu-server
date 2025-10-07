@@ -242,56 +242,99 @@ echo " celery worker up."
 
 
 if [[ $CREATE_PROJECT = true ]]; then
-    echo -n "Creating default project... "
+    echo "Creating default projects... "
     LOGIN_TOKEN=$(curl --no-progress-meter --header "Content-Type: application/json" \
         --request POST \
         --data "{\"email\": \"${ADMIN_EMAIL}\", \"password\": \"${ADMIN_PASSWORD}\"}" \
         http://127.0.0.1:8080/api/login | jq -r '.token')
 
-    PROJECT_ID=$(curl --no-progress-meter --header "Content-Type: application/json" \
+    # Create first project
+    echo -n "  Creating my-project-1... "
+    PROJECT_ID_1=$(curl --no-progress-meter --header "Content-Type: application/json" \
     --header "Authorization: Bearer ${LOGIN_TOKEN}" \
     --request POST \
-    --data '{"name": "my-project", "title": "My Project"}' \
+    --data '{"name": "my-project-1", "title": "My Project 1"}' \
     http://127.0.0.1:8080/api/project | jq -r '.id')
+    echo "done (ID: ${PROJECT_ID_1})"
 
-    echo "Project created"
+    # Create second project
+    echo -n "  Creating my-project-2... "
+    PROJECT_ID_2=$(curl --no-progress-meter --header "Content-Type: application/json" \
+    --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+    --request POST \
+    --data '{"name": "my-project-2", "title": "My Project 2"}' \
+    http://127.0.0.1:8080/api/project | jq -r '.id')
+    echo "done (ID: ${PROJECT_ID_2})"
+
+    echo "Projects created"
 
 
-    # Import files if requested and project was created
+    # Import files if requested and projects were created
     if [[ $IMPORT_FILES = true ]] &&
-        [[ -n "$PROJECT_ID" ]] &&
+        [[ -n "$PROJECT_ID_1" ]] &&
+        [[ -n "$PROJECT_ID_2" ]] &&
         [[ -n "$LOGIN_TOKEN" ]]; then
         echo "Importing files from: ${IMPORT_FOLDER}"
 
         # Initialize counters for successful and failed imports
-        SUCCESSFUL_IMPORTS=0
-        FAILED_IMPORTS=0
+        SUCCESSFUL_IMPORTS_1=0
+        FAILED_IMPORTS_1=0
+        SUCCESSFUL_IMPORTS_2=0
+        FAILED_IMPORTS_2=0
+
+        # Track first imported file per project for component extraction
+        FIRST_IMPORT_ID_1=""
+        FIRST_IMPORT_ID_2=""
 
         # Check if the import folder exists
         if [[ ! -d "$IMPORT_FOLDER" ]]; then
             echo "Import folder not found: ${IMPORT_FOLDER}"
         else
-            # Get list of files in the import folder
-            FILES=$(ls -1 ${IMPORT_FOLDER}/*.tar.gz 2>/dev/null || true)
-            if [[ -z "${FILES}" ]]; then
-                echo "No files found in the import folder: ${IMPORT_FOLDER}"
+            # Get list of files in the import folder, sorted by modification time
+            # Using find with null-terminated strings for safe handling of paths with spaces
+            FILES_ARRAY=()
+            while IFS= read -r -d '' file; do
+                FILES_ARRAY+=("$file")
+            done < <(find "$IMPORT_FOLDER" -maxdepth 1 -name "*.tar.gz" -type f -printf '%T@\t%p\0' 2>/dev/null | sort -zrn | cut -z -f2-)
 
+            FILE_COUNT=${#FILES_ARRAY[@]}
+
+            if [[ $FILE_COUNT -eq 0 ]]; then
+                echo "No files found in the import folder: ${IMPORT_FOLDER}"
             else
-                for FILE in ${FILES}; do
-                    echo -n "Importing ${FILE}... "
+                echo "Found ${FILE_COUNT} files to import"
+
+                # Alternate between projects based on sorted date
+                for i in "${!FILES_ARRAY[@]}"; do
+                    FILE="${FILES_ARRAY[$i]}"
+
+                    # Alternate between projects (even indices go to project 1, odd to project 2)
+                    if (( i % 2 == 0 )); then
+                        CURRENT_PROJECT_ID="$PROJECT_ID_1"
+                        PROJECT_NAME="my-project-1"
+                    else
+                        CURRENT_PROJECT_ID="$PROJECT_ID_2"
+                        PROJECT_NAME="my-project-2"
+                    fi
+
+                    echo -n "Importing ${FILE} to ${PROJECT_NAME}... "
 
                     # Submit the file for import
                     IMPORT_RESPONSE=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
                         --request POST \
                         --form "importFile=@${FILE}" \
-                        --form "project=${PROJECT_ID}" \
+                        --form "project=${CURRENT_PROJECT_ID}" \
                         http://127.0.0.1:8080/api/import)
                     # Extract the import ID from the response
                     if [[ $? -ne 0 ]]; then
                         echo "Failed to submit import for ${FILE}."
                         echo "import response: ${IMPORT_RESPONSE}"
 
-                        ((FAILED_IMPORTS++))
+                        if (( i % 2 == 0 )); then
+                            ((FAILED_IMPORTS_1++))
+                        else
+                            ((FAILED_IMPORTS_2++))
+                        fi
                         continue
                     fi
 
@@ -300,7 +343,11 @@ if [[ $CREATE_PROJECT = true ]]; then
 
                     if [[ -z "$IMPORT_ID" ]]; then
                         echo "Failed to get import ID."
-                        ((FAILED_IMPORTS++))
+                        if (( i % 2 == 0 )); then
+                            ((FAILED_IMPORTS_1++))
+                        else
+                            ((FAILED_IMPORTS_2++))
+                        fi
                         continue
                     else
                         # Wait for import to complete with a retry limit
@@ -322,149 +369,254 @@ if [[ $CREATE_PROJECT = true ]]; then
                     # Check if we hit the retry limit
                     if [[ $RETRY_COUNT -ge $MAX_RETRIES ]]; then
                         echo "timed out after ${MAX_RETRIES} attempts."
-                        ((FAILED_IMPORTS++))
+                        if (( i % 2 == 0 )); then
+                            ((FAILED_IMPORTS_1++))
+                        else
+                            ((FAILED_IMPORTS_2++))
+                        fi
                     fi
 
                     if [[ "$IMPORT_STATUS" == "done" ]]; then
                         echo " completed."
-                        ((SUCCESSFUL_IMPORTS++))
+                        if (( i % 2 == 0 )); then
+                            ((SUCCESSFUL_IMPORTS_1++))
+                            # Track first successful import for project 1
+                            if [[ -z "$FIRST_IMPORT_ID_1" ]]; then
+                                FIRST_IMPORT_ID_1="$IMPORT_ID"
+                            fi
+                        else
+                            ((SUCCESSFUL_IMPORTS_2++))
+                            # Track first successful import for project 2
+                            if [[ -z "$FIRST_IMPORT_ID_2" ]]; then
+                                FIRST_IMPORT_ID_2="$IMPORT_ID"
+                            fi
+                        fi
                     fi
                 done
             fi
         fi
         RUNS_COUNT=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             http://127.0.0.1:8080/api/run | jq -r '.runs | length')
-        echo "Runs in the database: ${RUNS_COUNT}"
+        echo "Total runs in the database: ${RUNS_COUNT}"
+        echo ""
+        echo "Import Summary:"
+        echo "  my-project-1: ${SUCCESSFUL_IMPORTS_1} successful, ${FAILED_IMPORTS_1} failed"
+        echo "  my-project-2: ${SUCCESSFUL_IMPORTS_2} successful, ${FAILED_IMPORTS_2} failed"
+        echo "  Total: $((SUCCESSFUL_IMPORTS_1 + SUCCESSFUL_IMPORTS_2)) successful, $((FAILED_IMPORTS_1 + FAILED_IMPORTS_2)) failed"
     fi
 
-    # Create default widget configurations for the project
-    echo "Creating Jenkins views... "
+    # Helper function to make API POST requests with JSON
+    api_post() {
+        local endpoint=$1
+        local data=$2
+        local response
+        response=$(curl --no-progress-meter --fail-with-body \
+            --header "Content-Type: application/json" \
+            --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            --request POST \
+            --data "$data" \
+            "http://127.0.0.1:8080${endpoint}" 2>&1)
+        local exit_code=$?
+        if [[ $exit_code -ne 0 ]]; then
+            echo "API POST error (${endpoint}): ${response}" >&2
+        fi
+        echo "$response"
+        return $exit_code
+    }
 
-    # Create first widget config - Jenkins Jobs View
-    JENKINS_JOBS_VIEW=$(curl --no-progress-meter --header "Content-Type: application/json" \
-        --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-        --request POST \
-        --data "{\"params\": {}, \"project_id\": \"${PROJECT_ID}\", \"title\": \"Jenkins Jobs\", \"type\": \"view\", \"widget\": \"jenkins-job-view\"}" \
-        http://127.0.0.1:8080/api/widget-config | jq -r '.id')
-
-    echo "  Jenkins Jobs ID: ${JENKINS_JOBS_VIEW}"
-
-    # Create second widget config - Jenkins analysis View
-    JENKINS_ANALYSIS_VIEW=$(curl --no-progress-meter --header "Content-Type: application/json" \
-        --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-        --request POST \
-        --data "{\"params\": {}, \"project_id\": \"${PROJECT_ID}\", \"title\": \"Jenkins Analysis\", \"type\": \"view\", \"widget\": \"jenkins-analysis-view\"}" \
-        http://127.0.0.1:8080/api/widget-config | jq -r '.id')
-
-    echo "  Jenkins Analysis ID: ${JENKINS_ANALYSIS_VIEW}"
-
-    # create a dashboard
-    echo "Creating default dashboard... "
-    DASHBOARD_ID=$(curl --no-progress-meter --header "Content-Type: application/json" \
-        --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-        --request POST \
-        --data "{\"description\": \"Auto Dashboard\", \"title\": \"Auto Dashboard\", \"project_id\": \"${PROJECT_ID}\"}" \
-        http://127.0.0.1:8080/api/dashboard | jq -r '.id')
-
-    if [[ -z "$DASHBOARD_ID" ]]; then
-        echo "Failed to create dashboard."
-    else
-        echo "Dashboard created with ID: ${DASHBOARD_ID}"
-
-        # set dashboard as default for the project
-        PROJECT_PUT=$(curl --no-progress-meter --header "Content-Type: application/json" \
+    # Helper function to make API PUT requests with JSON
+    api_put() {
+        local endpoint=$1
+        local data=$2
+        local response
+        response=$(curl --no-progress-meter --fail-with-body \
+            --header "Content-Type: application/json" \
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             --request PUT \
-            --data "{\"default_dashboard_id\": \"${DASHBOARD_ID}\"}" \
-            http://127.0.0.1:8080/api/project/${PROJECT_ID} | jq -r '.default_dashboard_id')
-        if [[ "$PROJECT_PUT" != "$DASHBOARD_ID" ]]; then
-            echo "Failed to set dashboard as default for the project."
+            --data "$data" \
+            "http://127.0.0.1:8080${endpoint}" 2>&1)
+        local exit_code=$?
+        if [[ $exit_code -ne 0 ]]; then
+            echo "API PUT error (${endpoint}): ${response}" >&2
+        fi
+        echo "$response"
+        return $exit_code
+    }
+
+    # Helper function to make API GET requests
+    api_get() {
+        local endpoint=$1
+        local response
+        response=$(curl --no-progress-meter --fail-with-body \
+            --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            "http://127.0.0.1:8080${endpoint}" 2>&1)
+        local exit_code=$?
+        if [[ $exit_code -ne 0 ]]; then
+            echo "API GET error (${endpoint}): ${response}" >&2
+        fi
+        echo "$response"
+        return $exit_code
+    }
+
+    # Helper function to create a widget config
+    create_widget_config() {
+        local dashboard_id=$1
+        local project_id=$2
+        local title=$3
+        local widget_type=$4
+        local params=$5
+        local config_type=${6:-widget}
+
+        # Build JSON payload, handling empty dashboard_id
+        local json_payload
+        if [[ -z "$dashboard_id" ]]; then
+            json_payload="{\"project_id\": \"${project_id}\", \
+              \"title\": \"${title}\", \
+              \"type\": \"${config_type}\", \
+              \"widget\": \"${widget_type}\", \
+              \"params\": ${params}}"
         else
-            echo "Dashboard set as default for the project."
+            json_payload="{\"dashboard_id\": \"${dashboard_id}\", \
+              \"project_id\": \"${project_id}\", \
+              \"title\": \"${title}\", \
+              \"type\": \"${config_type}\", \
+              \"widget\": \"${widget_type}\", \
+              \"params\": ${params}}"
         fi
 
-        # Add widgets to the dashboard
-        echo "Adding widgets to the dashboard..."
-        RUN_COMPONENT=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-            http://127.0.0.1:8080/api/run | jq -r '.runs[0].component' | sort -u |tr -d '[:space:]')
+        api_post "/api/widget-config" "$json_payload" | jq -r '.id'
+    }
 
-        echo "Found unique components: ${RUN_COMPONENT}"
+    # Function to extract component from first imported run for a project
+    get_component_from_import() {
+        local import_id=$1
+        local project_id=$2
 
-        FILTERED_HEATMAP=$(curl --no-progress-meter --header "Content-Type: application/json" \
+        # Get the import details to find the run
+        local import_data=$(api_get "/api/import/${import_id}")
+        local run_id=$(echo "$import_data" | jq -r '.data.run_id // empty')
+
+        if [[ -n "$run_id" ]]; then
+            # Get the run details
+            local run_data=$(api_get "/api/run/${run_id}")
+            local component=$(echo "$run_data" | jq -r '.component // empty')
+            if [[ -n "$component" && "$component" != "null" ]]; then
+                echo "$component"
+                return 0
+            fi
+        fi
+
+        # Fallback: try to get component from first run in project
+        local runs_data=$(api_get "/api/run?project=${project_id}&page_size=1")
+        local component=$(echo "$runs_data" | jq -r '.runs[0].component // empty' 2>/dev/null)
+
+        if [[ -n "$component" && "$component" != "null" ]]; then
+            echo "$component"
+        else
+            echo ""
+        fi
+    }
+
+    # Function to create widget configurations for a project
+    create_widgets_for_project() {
+        local PROJECT_ID=$1
+        local PROJECT_NAME=$2
+        local FIRST_IMPORT_ID=$3
+
+        echo "Creating widgets for ${PROJECT_NAME}..."
+
+        # Create first widget config - Jenkins Jobs View
+        JENKINS_JOBS_VIEW=$(create_widget_config "" "$PROJECT_ID" "Jenkins Jobs" "jenkins-job-view" "{}" "view")
+        if [[ -n "$JENKINS_JOBS_VIEW" && "$JENKINS_JOBS_VIEW" != "null" ]]; then
+            echo "  Jenkins Jobs ID: ${JENKINS_JOBS_VIEW}"
+        else
+            echo "  Warning: Failed to create Jenkins Jobs view"
+        fi
+
+        # Create second widget config - Jenkins analysis View
+        JENKINS_ANALYSIS_VIEW=$(create_widget_config "" "$PROJECT_ID" "Jenkins Analysis" "jenkins-analysis-view" "{}" "view")
+        if [[ -n "$JENKINS_ANALYSIS_VIEW" && "$JENKINS_ANALYSIS_VIEW" != "null" ]]; then
+            echo "  Jenkins Analysis ID: ${JENKINS_ANALYSIS_VIEW}"
+        else
+            echo "  Warning: Failed to create Jenkins Analysis view"
+        fi
+
+        # create a dashboard
+        echo "  Creating dashboard for ${PROJECT_NAME}... "
+        DASHBOARD_ID=$(api_post "/api/dashboard" \
+            "{\"description\": \"Auto Dashboard\", \"title\": \"Auto Dashboard\", \"project_id\": \"${PROJECT_ID}\"}" | jq -r '.id')
+
+        if [[ -z "$DASHBOARD_ID" ]]; then
+            echo "  Failed to create dashboard for ${PROJECT_NAME}."
+        else
+            echo "  Dashboard created with ID: ${DASHBOARD_ID}"
+
+            # set dashboard as default for the project
+            PROJECT_PUT=$(api_put "/api/project/${PROJECT_ID}" \
+                "{\"default_dashboard_id\": \"${DASHBOARD_ID}\"}" | jq -r '.default_dashboard_id')
+            if [[ "$PROJECT_PUT" != "$DASHBOARD_ID" ]]; then
+                echo "  Failed to set dashboard as default for ${PROJECT_NAME}."
+            else
+                echo "  Dashboard set as default for ${PROJECT_NAME}."
+            fi
+
+            # Add widgets to the dashboard
+            echo "  Adding widgets to the dashboard..."
+
+            # Get component from first imported file for this project
+            RUN_COMPONENT=""
+            if [[ -n "$FIRST_IMPORT_ID" ]]; then
+                RUN_COMPONENT=$(get_component_from_import "$FIRST_IMPORT_ID" "$PROJECT_ID")
+            fi
+
+            if [[ -z "$RUN_COMPONENT" ]]; then
+                echo "  Warning: No component found for ${PROJECT_NAME}, widgets may not display data correctly"
+                RUN_COMPONENT="unknown"
+            else
+                echo "  Using component from first import: ${RUN_COMPONENT}"
+            fi
+
+            FILTERED_HEATMAP=$(create_widget_config "$DASHBOARD_ID" "$PROJECT_ID" "FilteredHeatmap" "filter-heatmap" \
+                "{\"filters\": \"component=${RUN_COMPONENT}\", \"group_field\": \"component\", \"builds\": 10}")
+            echo "    Filtered Heatmap ID: ${FILTERED_HEATMAP}"
+
+            RUN_AGGREGATOR=$(create_widget_config "$DASHBOARD_ID" "$PROJECT_ID" "Run Aggregation" "run-aggregator" \
+                "{\"group_field\": \"component\", \"weeks\": 12}")
+            echo "    Run Aggregator ID: ${RUN_AGGREGATOR}"
+
+            RESULT_SUMMARY=$(create_widget_config "$DASHBOARD_ID" "$PROJECT_ID" "Result Summary" "result-summary" "{}")
+            echo "    Result Summary ID: ${RESULT_SUMMARY}"
+
+            RESULT_AGGREGATOR=$(create_widget_config "$DASHBOARD_ID" "$PROJECT_ID" "Result Aggregation" "result-aggregator" \
+                "{\"group_field\": \"result\", \"chart_type\": \"donut\", \"days\": 30, \"additional_filters\": \"env*stage_proxy;stage\"}")
+            echo "    Result Aggregator ID: ${RESULT_AGGREGATOR}"
+        fi
+    }
+
+    # Create widgets for both projects
+    create_widgets_for_project "${PROJECT_ID_1}" "my-project-1" "${FIRST_IMPORT_ID_1}"
+    create_widgets_for_project "${PROJECT_ID_2}" "my-project-2" "${FIRST_IMPORT_ID_2}"
+
+    # Create additional users and assign them to both projects
+    echo "Creating 5 additional admin users..."
+    for i in {1..5}
+    do
+        # Create the user
+        USER_ID=$(curl --no-progress-meter --header "Content-Type: application/json" \
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             --request POST \
-            --data "{\"dashboard_id\": \"${DASHBOARD_ID}\", \
-                    \"project_id\": \"${PROJECT_ID}\", \
-                    \"title\": \"FilteredHeatmap\", \
-                    \"type\": \"widget\", \
-                    \"widget\": \"filter-heatmap\", \
-                    \"params\": {\"filters\": \"component=${RUN_COMPONENT}\", \
-                               \"group_field\": \"component\", \
-                               \"builds\": 10}}" \
-            http://127.0.0.1:8080/api/widget-config | jq -r '.id')
-        echo "  Filtered Heatmap ID: ${FILTERED_HEATMAP}"
+            --data "{\"email\": \"extrauser${i}@example.com\", \"password\": \"admin12345\", \"is_active\": true, \"is_superadmin\": true, \"name\": \"Extra User ${i}\"}" \
+            http://127.0.0.1:8080/api/admin/user | jq -r '.id')
 
-        RUN_AGGREGATOR=$(curl --no-progress-meter --header "Content-Type: application/json" \
+        # Add user to both projects by updating the user
+        curl --no-progress-meter --header "Content-Type: application/json" \
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-            --request POST \
-            --data "{\"dashboard_id\": \"${DASHBOARD_ID}\", \
-                    \"project_id\": \"${PROJECT_ID}\", \
-                    \"title\": \"Run Aggregation\", \
-                    \"type\": \"widget\", \
-                    \"widget\": \"run-aggregator\", \
-                    \"params\": {\"group_field\": \"component\", \
-                               \"weeks\": 12}}" \
-            http://127.0.0.1:8080/api/widget-config | jq -r '.id')
-        echo "  Run Aggregator ID: ${RUN_AGGREGATOR}"
+            --request PUT \
+            --data "{\"projects\": [{\"id\": \"${PROJECT_ID_1}\"}, {\"id\": \"${PROJECT_ID_2}\"}]}" \
+            http://127.0.0.1:8080/api/admin/user/${USER_ID} > /dev/null
 
-        RESULT_SUMMARY=$(curl --no-progress-meter --header "Content-Type: application/json" \
-            --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-            --request POST \
-            --data "{\"dashboard_id\": \"${DASHBOARD_ID}\", \
-                    \"project_id\": \"${PROJECT_ID}\", \
-                    \"title\": \"Result Summary\", \
-                    \"type\": \"widget\", \
-                    \"widget\": \"result-summary\", \
-                    \"params\": {}}" \
-            http://127.0.0.1:8080/api/widget-config | jq -r '.id')
-        echo "  Result Summary ID: ${RESULT_SUMMARY}"
-
-        RESULT_AGGREGATOR=$(curl --no-progress-meter --header "Content-Type: application/json" \
-            --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-            --request POST \
-            --data "{\"dashboard_id\": \"${DASHBOARD_ID}\", \
-                    \"project_id\": \"${PROJECT_ID}\", \
-                    \"title\": \"Result Aggregation\", \
-                    \"type\": \"widget\", \
-                    \"widget\": \"result-aggregator\", \
-                    \"params\": {\"group_field\": \"result\", \
-                                \"chart_type\": \"donut\", \
-                                \"days\": 30, \
-                                \"additional_filters\": \"env*stage_proxy;stage\", \}}" \
-            http://127.0.0.1:8080/api/widget-config | jq -r '.id')
-        echo "  Result Aggregator ID: ${RESULT_AGGREGATOR}"
-
-        # Create additional users and assign them to the project
-        echo "Creating 5 additional admin users..."
-        for i in {1..5}
-        do
-            # Create the user
-            USER_ID=$(curl --no-progress-meter --header "Content-Type: application/json" \
-                --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-                --request POST \
-                --data "{\"email\": \"extrauser${i}@example.com\", \"password\": \"admin12345\", \"is_active\": true, \"is_superadmin\": true, \"name\": \"Extra User ${i}\"}" \
-                http://127.0.0.1:8080/api/admin/user | jq -r '.id')
-
-            # Add user to the project by updating the user
-            curl --no-progress-meter --header "Content-Type: application/json" \
-                --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-                --request PUT \
-                --data "{\"projects\": [{\"id\": \"${PROJECT_ID}\"}]}" \
-                http://127.0.0.1:8080/api/admin/user/${USER_ID} > /dev/null
-
-            echo "  Created user extrauser${i}@example.com with password admin12345 and added to project"
-        done
-    fi
+        echo "  Created user extrauser${i}@example.com with password admin12345 and added to both projects"
+    done
 
 fi
 
@@ -497,17 +649,29 @@ if [[ $CREATE_ADMIN = true ]]; then
     echo "  Admin user: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}"
 fi
 
-# If the project was created, print the project ID and import results
+# If the projects were created, print the project IDs and import results
 if [[ $CREATE_PROJECT = true ]]; then
-    echo "  Project ID: ${PROJECT_ID}"
+    echo "  Project 1 ID: ${PROJECT_ID_1}"
+    echo "  Project 2 ID: ${PROJECT_ID_2}"
     echo "  JWT Bearer Token: ${LOGIN_TOKEN}"
 
     if [[ $IMPORT_FILES = true ]]; then
-        if [[ -n "$SUCCESSFUL_IMPORTS" ]] && [[ "$SUCCESSFUL_IMPORTS" -gt 0 ]]; then
-            echo "  Successfully imported: ${SUCCESSFUL_IMPORTS} files"
+        echo ""
+        echo "  Import results for my-project-1:"
+        if [[ -n "$SUCCESSFUL_IMPORTS_1" ]] && [[ "$SUCCESSFUL_IMPORTS_1" -gt 0 ]]; then
+            echo "    Successfully imported: ${SUCCESSFUL_IMPORTS_1} files"
         fi
-        if [[ -n "$FAILED_IMPORTS" ]] && [[ "$FAILED_IMPORTS" -gt 0 ]]; then
-            echo "  Failed to import: ${FAILED_IMPORTS} files"
+        if [[ -n "$FAILED_IMPORTS_1" ]] && [[ "$FAILED_IMPORTS_1" -gt 0 ]]; then
+            echo "    Failed to import: ${FAILED_IMPORTS_1} files"
+        fi
+
+        echo ""
+        echo "  Import results for my-project-2:"
+        if [[ -n "$SUCCESSFUL_IMPORTS_2" ]] && [[ "$SUCCESSFUL_IMPORTS_2" -gt 0 ]]; then
+            echo "    Successfully imported: ${SUCCESSFUL_IMPORTS_2} files"
+        fi
+        if [[ -n "$FAILED_IMPORTS_2" ]] && [[ "$FAILED_IMPORTS_2" -gt 0 ]]; then
+            echo "    Failed to import: ${FAILED_IMPORTS_2} files"
         fi
     fi
 fi
