@@ -34,7 +34,7 @@ import { Settings } from '../pages/settings';
 import { filtersToSearchParams, toTitleCase } from '../utilities';
 import { ICON_RESULT_MAP } from '../constants';
 
-import TabTitle from './TabTitle';
+import TabTitle from './tab-title';
 import TestHistoryTable from './test-history';
 import ArtifactTab from './artifact-tab';
 import { IbutsuContext } from './contexts/ibutsu-context';

@@ -36,7 +36,7 @@ import { Settings } from '../pages/settings';
 import { resultToRow } from '../utilities';
 import FilterTable from '../components/filtering/filtered-table-card';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
-import TabTitle from '../components/TabTitle';
+import TabTitle from '../components/tab-title';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 import usePagination from '../components/hooks/use-pagination';
 
