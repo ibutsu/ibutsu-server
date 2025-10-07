@@ -1,9 +1,11 @@
 import re
 from contextlib import suppress
 
+from sqlalchemy import Text, cast
 from sqlalchemy.dialects.postgresql import array
 
 from ibutsu_server.constants import ARRAY_FIELDS, NUMERIC_FIELDS
+from ibutsu_server.db.types import PortableUUID
 
 OPERATORS = {
     "=": "$eq",
@@ -110,4 +112,7 @@ def convert_filter(filter_string, model):
         value = _to_int_or_float(value)
     if is_array_field:
         return _array_compare(oper, column, value)
+    # Cast UUID columns to text when using regex operator to avoid UUID validation errors
+    if oper == "~" and isinstance(column.type, PortableUUID):
+        column = cast(column, Text)
     return OPER_COMPARE[oper](column, value)
