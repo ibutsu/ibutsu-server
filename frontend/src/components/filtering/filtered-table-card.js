@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { isValidElement, useState } from 'react';
+import React, { isValidElement, useState } from 'react';
 
 import {
   Card,
@@ -149,89 +149,93 @@ const FilterTable = ({
       return null;
     }
 
-    return rows.map((row, rowIndex) => {
-      const isExpanded = isRowExpanded(row);
-      const isSelected = row.selected || selectedRows.includes(row.id);
+    return (
+      <Tbody>
+        {rows.map((row, rowIndex) => {
+          const isExpanded = isRowExpanded(row);
+          const isSelected = row.selected || selectedRows.includes(row.id);
 
-      return (
-        <Tbody key={row.id} isExpanded={isExpanded}>
-          <Tr key={`${row.id}-tr`}>
-            {selectable && (
-              <Td
-                key={`${row.id}-select`}
-                select={{
-                  onSelect: (e, s) => onSelectRow(e, s, rowIndex),
-                  isSelected: isSelected,
-                  rowIndex,
-                }}
-              />
-            )}
-            {expandable && (
-              <Td
-                key={`${row.id}-expand`}
-                expand={{
-                  rowIndex,
-                  isExpanded: isExpanded,
-                  onToggle: handleToggle,
-                  expandId: `expandable-row-${row.id}`,
-                }}
-              />
-            )}
+          return (
+            <React.Fragment key={row.id}>
+              <Tr key={`${row.id}-tr`}>
+                {selectable && (
+                  <Td
+                    key={`${row.id}-select`}
+                    select={{
+                      onSelect: (e, s) => onSelectRow(e, s, rowIndex),
+                      isSelected: isSelected,
+                      rowIndex,
+                    }}
+                  />
+                )}
+                {expandable && (
+                  <Td
+                    key={`${row.id}-expand`}
+                    expand={{
+                      rowIndex,
+                      isExpanded: isExpanded,
+                      onToggle: handleToggle,
+                      expandId: `expandable-row-${row.id}`,
+                    }}
+                  />
+                )}
 
-            {row.cells &&
-              row.cells.map((cell, cellIndex) => {
-                // Sanitize cell content to prevent filter objects from being rendered
-                const sanitizedCell = cell;
+                {row.cells &&
+                  row.cells.map((cell, cellIndex) => {
+                    // Sanitize cell content to prevent filter objects from being rendered
+                    const sanitizedCell = cell;
 
-                // Handle different cell formats properly
-                let cellContent;
-                if (sanitizedCell === null || sanitizedCell === undefined) {
-                  cellContent = null;
-                } else if (
-                  // Strings, numbers, and arrays can be rendered directly
-                  typeof sanitizedCell === 'string' ||
-                  typeof sanitizedCell === 'number' ||
-                  Array.isArray(sanitizedCell) ||
-                  (typeof sanitizedCell === 'object' &&
-                    isValidElement(sanitizedCell))
-                ) {
-                  cellContent = sanitizedCell;
-                } else if (
-                  typeof sanitizedCell === 'object' &&
-                  'title' in sanitizedCell
-                ) {
-                  // Objects with title property (PatternFly table cell format)
-                  cellContent = sanitizedCell.title;
-                }
-                // Fallback for other object types - convert to string to avoid React error
-                else {
-                  console.warn(
-                    'FilterTable: Non-renderable object in cell content:',
-                    sanitizedCell,
-                  );
-                  cellContent = JSON.stringify(sanitizedCell);
-                }
+                    // Handle different cell formats properly
+                    let cellContent;
+                    if (sanitizedCell === null || sanitizedCell === undefined) {
+                      cellContent = null;
+                    } else if (
+                      // Strings, numbers, and arrays can be rendered directly
+                      typeof sanitizedCell === 'string' ||
+                      typeof sanitizedCell === 'number' ||
+                      Array.isArray(sanitizedCell) ||
+                      (typeof sanitizedCell === 'object' &&
+                        isValidElement(sanitizedCell))
+                    ) {
+                      cellContent = sanitizedCell;
+                    } else if (
+                      typeof sanitizedCell === 'object' &&
+                      'title' in sanitizedCell
+                    ) {
+                      // Objects with title property (PatternFly table cell format)
+                      cellContent = sanitizedCell.title;
+                    }
+                    // Fallback for other object types - convert to string to avoid React error
+                    else {
+                      console.warn(
+                        'FilterTable: Non-renderable object in cell content:',
+                        sanitizedCell,
+                      );
+                      cellContent = JSON.stringify(sanitizedCell);
+                    }
 
-                return <Td key={`${row.id}${cellIndex}`}>{cellContent}</Td>;
-              })}
-          </Tr>
-          {expandable && row.expandedContent && isExpanded && (
-            <Tr key={`${row.id}-tr-expanded`} isExpanded={isExpanded}>
-              {selectable && <Td />}
-              <Td
-                colSpan={columns.length + (expandable ? 1 : 0)}
-                noPadding
-                key={`${row.id}-td-expanded`}
-              >
-                <ExpandableRowContent>
-                  {row.expandedContent}
-                </ExpandableRowContent>
-              </Td>
-            </Tr>
-          )}
-        </Tbody>
-      );
-    });
+                    return <Td key={`${row.id}${cellIndex}`}>{cellContent}</Td>;
+                  })}
+              </Tr>
+              {expandable && row.expandedContent && isExpanded && (
+                <Tr key={`${row.id}-tr-expanded`} isExpanded={isExpanded}>
+                  {selectable && <Td key={`${row.id}-td-select-expanded`} />}
+                  <Td
+                    colSpan={columns.length + (expandable ? 1 : 0)}
+                    noPadding
+                    key={`${row.id}-td-expanded`}
+                  >
+                    <ExpandableRowContent>
+                      {row.expandedContent}
+                    </ExpandableRowContent>
+                  </Td>
+                </Tr>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </Tbody>
+    );
   };
 
   return (
