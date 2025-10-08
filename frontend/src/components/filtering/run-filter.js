@@ -15,7 +15,7 @@ import ActiveFilters from './active-filters';
 import MultiValueInput from '../multi-value-input';
 import { FilterContext } from '../contexts/filter-context';
 
-const RunFilter = ({ hideFilters }) => {
+const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
   const {
     // States
     activeFilters,
@@ -70,7 +70,10 @@ const RunFilter = ({ hideFilters }) => {
                 onOpenChange={() => setIsFieldOpen(false)}
                 toggle={fieldToggle}
               >
-                <SelectList id="select-typeahead-listbox">
+                <SelectList
+                  id="select-typeahead-listbox"
+                  style={{ maxHeight, overflowY: 'auto' }}
+                >
                   {filteredFieldOptions?.map((option) => (
                     <SelectOption
                       key={option.value}
@@ -93,7 +96,7 @@ const RunFilter = ({ hideFilters }) => {
                 key="operation"
                 toggle={operationToggle}
               >
-                <SelectList>
+                <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                   {Object.keys(operations)?.map((option, index) => (
                     <SelectOption key={index} value={option}>
                       {operations[option].opString}
@@ -112,7 +115,7 @@ const RunFilter = ({ hideFilters }) => {
                   onOpenChange={() => setIsBoolOpen(false)}
                   toggle={boolToggle}
                 >
-                  <SelectList>
+                  <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                     {['True', 'False'].map((option, index) => (
                       <SelectOption key={index} value={option}>
                         {option}
@@ -160,6 +163,7 @@ const RunFilter = ({ hideFilters }) => {
 
 RunFilter.propTypes = {
   hideFilters: PropTypes.arrayOf(PropTypes.string),
+  maxHeight: PropTypes.string,
 };
 
 export default RunFilter;
