@@ -13,6 +13,8 @@ import { CHART_COLOR_MAP } from '../constants';
 import ResultWidgetLegend from './result-widget-legend';
 import { useSVGContainerDimensions } from '../components/hooks/use-svg-container-dimensions';
 
+// React 19 compatibility: This component supports both forwardRef (current React)
+// and ref as a prop (React 19). The actualRef variable handles both cases.
 const RunAggregateApex = forwardRef(
   (
     {
@@ -22,9 +24,13 @@ const RunAggregateApex = forwardRef(
       dropdownItems,
       onDeleteClick,
       onEditClick,
+      // React 19 compatibility: accept ref as a prop
+      ref: refProp,
     },
     ref,
   ) => {
+    // Use the forwarded ref or the prop ref (React 19 compatibility)
+    const actualRef = ref || refProp;
     const [chartData, setChartData] = useState({});
     const [legendData, setLegendData] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -39,11 +45,16 @@ const RunAggregateApex = forwardRef(
     // Callback ref to handle both internal cardRef and forwarded ref
     const setCardRef = (node) => {
       cardRef.current = node;
-      if (ref) {
-        if (typeof ref === 'function') {
-          ref(node);
-        } else {
-          ref.current = node;
+      // Forward the ref to the parent component
+      if (actualRef) {
+        if (typeof actualRef === 'function') {
+          actualRef(node);
+        } else if (
+          actualRef &&
+          typeof actualRef === 'object' &&
+          'current' in actualRef
+        ) {
+          actualRef.current = node;
         }
       }
     };
@@ -391,6 +402,8 @@ RunAggregateApex.propTypes = {
   dropdownItems: PropTypes.array,
   onDeleteClick: PropTypes.func,
   onEditClick: PropTypes.func,
+  // React 19 compatibility: ref can be passed as a prop
+  ref: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
 };
 
 export default RunAggregateApex;
