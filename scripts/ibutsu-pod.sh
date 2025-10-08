@@ -581,14 +581,14 @@ if [[ $CREATE_PROJECT = true ]]; then
             echo "    Filtered Heatmap ID: ${FILTERED_HEATMAP}"
 
             RUN_AGGREGATOR=$(create_widget_config "$DASHBOARD_ID" "$PROJECT_ID" "Run Aggregation" "run-aggregator" \
-                "{\"group_field\": \"component\", \"weeks\": 12}")
+                "{\"group_field\": \"env\", \"weeks\": 52}")
             echo "    Run Aggregator ID: ${RUN_AGGREGATOR}"
 
             RESULT_SUMMARY=$(create_widget_config "$DASHBOARD_ID" "$PROJECT_ID" "Result Summary" "result-summary" "{}")
             echo "    Result Summary ID: ${RESULT_SUMMARY}"
 
             RESULT_AGGREGATOR=$(create_widget_config "$DASHBOARD_ID" "$PROJECT_ID" "Result Aggregation" "result-aggregator" \
-                "{\"group_field\": \"result\", \"chart_type\": \"donut\", \"days\": 30, \"additional_filters\": \"env*stage_proxy;stage\"}")
+                "{\"group_field\": \"metadata.assignee\", \"days\": 360, \"additional_filters\": \"env*stage_proxy;stage\"}")
             echo "    Result Aggregator ID: ${RESULT_AGGREGATOR}"
         fi
     }
