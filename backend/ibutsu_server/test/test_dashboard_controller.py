@@ -423,7 +423,59 @@ class TestDashboardController:
 
         # Verify that projects with default_dashboard_id were queried
         mocks["project"].query.filter.assert_called_once()
-        # Verify that projects were updated to clear default_dashboard_id
-        assert mocks["session"].add.call_count >= 2  # At least 2 projects updated
+        # Verify that the specific mock projects were updated to clear default_dashboard_id
+        add_calls = [call[0][0] for call in mocks["session"].add.call_args_list]
+        assert mock_projects[0] in add_calls, "First project should be added to session"
+        assert mock_projects[1] in add_calls, "Second project should be added to session"
         mocks["session"].commit.assert_called_once()
         assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+
+    def test_delete_dashboard_with_no_default_reference(
+        self, flask_app, dashboard_controller_mocks
+    ):
+        """Test case for delete_dashboard - no projects reference the dashboard as default"""
+        client, jwt_token = flask_app
+        mocks = dashboard_controller_mocks
+
+        # Mock no projects referencing this dashboard
+        mocks["project"].query.filter.return_value.all.return_value = []
+
+        headers = {
+            "Authorization": f"Bearer {jwt_token}",
+        }
+        response = client.open(
+            f"/api/dashboard/{MOCK_DASHBOARD_ID}",
+            method="DELETE",
+            headers=headers,
+        )
+
+        # Verify that projects were still queried
+        mocks["project"].query.filter.assert_called_once()
+        # Dashboard should still be deleted successfully
+        mocks["session"].delete.assert_called()
+        mocks["session"].commit.assert_called_once()
+        assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+
+    def test_delete_dashboard_with_update_failure(self, flask_app, dashboard_controller_mocks):
+        """Test case for delete_dashboard - database error when updating projects"""
+        client, jwt_token = flask_app
+        mocks = dashboard_controller_mocks
+
+        # Mock projects that reference this dashboard as default
+        mock_projects = [MockProject(id="project1")]
+        mocks["project"].query.filter.return_value.all.return_value = mock_projects
+
+        # Simulate a database error when committing
+        mocks["session"].commit.side_effect = Exception("Database update failed")
+
+        headers = {
+            "Authorization": f"Bearer {jwt_token}",
+        }
+
+        # Verify the exception is raised - Flask's test client re-raises exceptions by default
+        with pytest.raises(Exception, match="Database update failed"):
+            client.open(
+                f"/api/dashboard/{MOCK_DASHBOARD_ID}",
+                method="DELETE",
+                headers=headers,
+            )
