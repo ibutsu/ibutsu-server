@@ -27,7 +27,7 @@ import { RESULT_STATES } from '../../constants';
 
 const RESULT_SELECT_OPTIONS = Object.keys(RESULT_STATES);
 
-const ResultFilter = ({ hideFilters, runs }) => {
+const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
   const {
     // States
     activeFilters,
@@ -370,7 +370,10 @@ const ResultFilter = ({ hideFilters, runs }) => {
                 onOpenChange={() => setIsFieldOpen(false)}
                 toggle={fieldToggle}
               >
-                <SelectList id="select-typeahead-listbox">
+                <SelectList
+                  id="select-typeahead-listbox"
+                  style={{ maxHeight, overflowY: 'auto' }}
+                >
                   {filteredFieldOptions?.map((option) => (
                     <SelectOption
                       key={option.value}
@@ -397,7 +400,7 @@ const ResultFilter = ({ hideFilters, runs }) => {
                 key="operation"
                 toggle={operationToggle}
               >
-                <SelectList>
+                <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                   {Object.keys(operations).map((option, index) => (
                     <SelectOption key={index} value={option}>
                       {operations[option].opString}
@@ -416,7 +419,7 @@ const ResultFilter = ({ hideFilters, runs }) => {
                   onOpenChange={() => setIsBoolOpen(false)}
                   toggle={boolToggle}
                 >
-                  <SelectList>
+                  <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                     {['True', 'False'].map((option, index) => (
                       <SelectOption key={index} value={option}>
                         {option}
@@ -452,7 +455,7 @@ const ResultFilter = ({ hideFilters, runs }) => {
                     operationMode === 'multi' ? runMultiToggle : runToggle
                   }
                 >
-                  <SelectList>
+                  <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                     {filteredRuns?.length === 0 && (
                       <SelectOption isDisabled={true}>
                         {`No runs found for "${runFilterValue}"`}
@@ -477,7 +480,7 @@ const ResultFilter = ({ hideFilters, runs }) => {
                     operationMode === 'multi' ? resultMultiToggle : resultToggle
                   }
                 >
-                  <SelectList>
+                  <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                     {RESULT_SELECT_OPTIONS.map((option, index) => (
                       <SelectOption key={index} value={option}>
                         {option}
@@ -510,6 +513,7 @@ const ResultFilter = ({ hideFilters, runs }) => {
 ResultFilter.propTypes = {
   hideFilters: PropTypes.arrayOf(PropTypes.string),
   runs: PropTypes.arrayOf(PropTypes.string),
+  maxHeight: PropTypes.string,
 };
 
 export default ResultFilter;

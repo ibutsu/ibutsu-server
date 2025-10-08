@@ -162,6 +162,7 @@ export const WidgetFilterComponent = ({
         <FilterComponent
           hideFilters={hideFilters}
           runs={isResultBasedWidget ? runs : undefined}
+          maxHeight="300px"
         />
       </CustomFilterProvider>
       <FormHelperText>
