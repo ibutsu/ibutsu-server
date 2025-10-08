@@ -402,3 +402,28 @@ class TestDashboardController:
             headers=headers,
         )
         assert response.status_code == 403, f"Response body is : {response.data.decode('utf-8')}"
+
+    def test_delete_dashboard_with_default_reference(self, flask_app, dashboard_controller_mocks):
+        """Test case for delete_dashboard - dashboard referenced as default dashboard"""
+        client, jwt_token = flask_app
+        mocks = dashboard_controller_mocks
+
+        # Mock projects that reference this dashboard as default
+        mock_projects = [MockProject(id="project1"), MockProject(id="project2")]
+        mocks["project"].query.filter.return_value.all.return_value = mock_projects
+
+        headers = {
+            "Authorization": f"Bearer {jwt_token}",
+        }
+        response = client.open(
+            f"/api/dashboard/{MOCK_DASHBOARD_ID}",
+            method="DELETE",
+            headers=headers,
+        )
+
+        # Verify that projects with default_dashboard_id were queried
+        mocks["project"].query.filter.assert_called_once()
+        # Verify that projects were updated to clear default_dashboard_id
+        assert mocks["session"].add.call_count >= 2  # At least 2 projects updated
+        mocks["session"].commit.assert_called_once()
+        assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"

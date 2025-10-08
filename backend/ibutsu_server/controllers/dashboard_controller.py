@@ -139,9 +139,19 @@ def delete_dashboard(id_, token_info=None, user=None):
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     if not project_has_user(dashboard.project, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+
+    # Clear any projects that reference this dashboard as their default dashboard
+    projects_with_default = Project.query.filter(Project.default_dashboard_id == dashboard.id).all()
+    for project in projects_with_default:
+        project.default_dashboard_id = None
+        session.add(project)
+
+    # Delete all widget configs associated with this dashboard
     widget_configs = WidgetConfig.query.filter(WidgetConfig.dashboard_id == dashboard.id).all()
     for widget_config in widget_configs:
         session.delete(widget_config)
+
+    # Finally delete the dashboard
     session.delete(dashboard)
     session.commit()
     return HTTPStatus.OK.phrase, HTTPStatus.OK
