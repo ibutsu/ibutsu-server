@@ -74,10 +74,10 @@
   "scripts": {
     "start": "serve -s build -l tcp://0.0.0.0:3000",
     "build": "./bin/write-version-file.cjs && DISABLE_ESLINT_PLUGIN=true react-scripts build",
-    "test": "./bin/write-version-file.cjs && react-scripts test --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
+    "test": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
     "eject": "react-scripts eject",
     "devserver": "./bin/write-version-file.cjs && CI=true DISABLE_ESLINT_PLUGIN=true react-scripts start",
-    "lint": "eslint",
+    "lint": "eslint --fix",
     "format": "prettier \"src/**/*.{js,html}\" --write",
     "format-check": "prettier \"src/**/*.{js,html}\" --check"
   },
