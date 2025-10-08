@@ -27,6 +27,23 @@ import { getDarkTheme, setDocumentDarkTheme } from './themes';
 
 import { tableSortFunctions } from './tables';
 
+// Test constants
+const TEST_PATHS = {
+  SITE_PACKAGES: 'python3.7/lib/site-packages/my_package/tests/test_ui.py',
+  RELATIVE_UP: '../../my_package/tests/test_ui.py',
+  RELATIVE_MIXED: 'my_package/../tests/test_ui.py',
+  STANDARD: 'my_package/tests/test_ui.py',
+};
+
+const TEST_NAMES = {
+  URLS: 'test_urls',
+};
+
+const TEST_PARAMS = {
+  NORMAL: '[hostname]',
+  PATH: '[api/object/method]',
+};
+
 // Mock constants
 jest.mock('../constants', () => ({
   OPERATIONS: {
@@ -99,19 +116,21 @@ describe('String Utilities', () => {
 
   describe('cleanPath', () => {
     it('should remove anything before "site-packages"', () => {
-      const TEST_PATH =
-        'python3.7/lib/site-packages/my_package/tests/test_ui.py';
-      expect(cleanPath(TEST_PATH)).toEqual('my_package/tests/test_ui.py');
+      expect(cleanPath(TEST_PATHS.SITE_PACKAGES)).toEqual(
+        'my_package/tests/test_ui.py',
+      );
     });
 
     it('should remove any portions of the path with ".." before the rest of the path', () => {
-      const TEST_PATH = '../../my_package/tests/test_ui.py';
-      expect(cleanPath(TEST_PATH)).toEqual('my_package/tests/test_ui.py');
+      expect(cleanPath(TEST_PATHS.RELATIVE_UP)).toEqual(
+        'my_package/tests/test_ui.py',
+      );
     });
 
     it('should not remove any portions of the path with ".." anywhere else', () => {
-      const TEST_PATH = 'my_package/../tests/test_ui.py';
-      expect(cleanPath(TEST_PATH)).toEqual('my_package/../tests/test_ui.py');
+      expect(cleanPath(TEST_PATHS.RELATIVE_MIXED)).toEqual(
+        'my_package/../tests/test_ui.py',
+      );
     });
 
     it('should return "Tests" for null or undefined paths', () => {
@@ -122,20 +141,15 @@ describe('String Utilities', () => {
   });
 
   describe('processPyTestPath', () => {
-    const TEST_NAME = 'test_urls';
-    const TEST_PATH = 'my_package/tests/test_ui.py';
-    const TEST_NORM_PARAM = '[hostname]';
-    const TEST_PATH_PARAM = '[api/object/method]';
-
     it('should correctly parse a path without parameters', () => {
-      const PATH_TO_PROCESS = [TEST_PATH, TEST_NAME].join('/');
+      const PATH_TO_PROCESS = [TEST_PATHS.STANDARD, TEST_NAMES.URLS].join('/');
       const EXPECTED_PATH = ['my_package', 'tests', 'test_ui.py', 'test_urls'];
       expect(processPyTestPath(PATH_TO_PROCESS)).toEqual(EXPECTED_PATH);
     });
 
     it('should correctly parse a path with a normal parameter', () => {
       const PATH_TO_PROCESS =
-        [TEST_PATH, TEST_NAME].join('/') + TEST_NORM_PARAM;
+        [TEST_PATHS.STANDARD, TEST_NAMES.URLS].join('/') + TEST_PARAMS.NORMAL;
       const EXPECTED_PATH = [
         'my_package',
         'tests',
@@ -147,7 +161,7 @@ describe('String Utilities', () => {
 
     it('should correctly parse a path with a path parameter', () => {
       const PATH_TO_PROCESS =
-        [TEST_PATH, TEST_NAME].join('/') + TEST_PATH_PARAM;
+        [TEST_PATHS.STANDARD, TEST_NAMES.URLS].join('/') + TEST_PARAMS.PATH;
       const EXPECTED_PATH = [
         'my_package',
         'tests',
@@ -158,7 +172,8 @@ describe('String Utilities', () => {
     });
 
     it('should handle paths starting with /', () => {
-      const PATH_TO_PROCESS = '/' + [TEST_PATH, TEST_NAME].join('/');
+      const PATH_TO_PROCESS =
+        '/' + [TEST_PATHS.STANDARD, TEST_NAMES.URLS].join('/');
       const EXPECTED_PATH = ['my_package', 'tests', 'test_ui.py', 'test_urls'];
       expect(processPyTestPath(PATH_TO_PROCESS)).toEqual(EXPECTED_PATH);
     });

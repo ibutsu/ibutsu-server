@@ -14,7 +14,7 @@ import {
   SelectOption,
 } from '@patternfly/react-core';
 
-import { Settings } from '../pages/settings';
+import { Settings } from '../../pages/settings';
 import { HttpClient } from '../../utilities/http';
 import { toAPIFilter } from '../utilities';
 
