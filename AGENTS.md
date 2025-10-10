@@ -15,6 +15,9 @@
 - React imports are necessary for JSX
 
 
+# general
+- Do not create summary documents unless instructed to do so
+
 ## Testing instructions
 - Find the CI plan in the .github/workflows folder.
 - Use a virtual environment and install the test extras to run tests.
