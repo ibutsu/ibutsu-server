@@ -95,18 +95,14 @@ const ResultAggregateApex = ({
           params,
         );
 
-        // Check for non-200 responses and extract error message
+        // Check for non-200 responses and set error message
         if (!response.ok) {
           let errorText = 'Error fetching data';
-          try {
-            // Try to get error message from response body
-            const errorBody = await response.text();
-            if (errorBody) {
-              errorText = errorBody;
-            }
-          } catch (e) {
-            // If we can't parse the error, use default message
-            console.error('Error parsing error response:', e);
+          if (response.status === 400) {
+            errorText = 'Bad request for widget data, review settings';
+          } else if (response.status >= 500) {
+            errorText =
+              'Backend error processing widget data, review settings and contact administrator';
           }
           setErrorMessage(errorText);
           setIsLoading(false);
