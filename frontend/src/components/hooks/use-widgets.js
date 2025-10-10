@@ -122,7 +122,7 @@ export const useWidgets = ({
             {widget.type === 'widget' && widget.widget === 'filter-heatmap' && (
               <FilterHeatmapWidget
                 title={widget.title}
-                params={widget.params}
+                params={widgetParams}
                 onDeleteClick={() => {
                   deleteCallback(widget.id);
                 }}
@@ -134,7 +134,7 @@ export const useWidgets = ({
             {widget.type === 'widget' && widget.widget === 'run-aggregator' && (
               <RunAggregateApex
                 title={widget.title}
-                params={widget.params}
+                params={widgetParams}
                 horizontal={true}
                 onDeleteClick={() => {
                   deleteCallback(widget.id);
@@ -147,7 +147,7 @@ export const useWidgets = ({
             {widget.type === 'widget' && widget.widget === 'result-summary' && (
               <ResultSummaryApex
                 title="Test Results Summary"
-                params={widget.params}
+                params={widgetParams}
                 onEditClick={() => {
                   editCallback(widget.id);
                 }}
@@ -160,13 +160,9 @@ export const useWidgets = ({
               widget.widget === 'result-aggregator' && (
                 <ResultAggregateApex
                   title={widget.title}
-                  params={{
-                    project: widget.params.project,
-                    run_id: widget.params.run_id,
-                    additional_filters: widget.params.additional_filters,
-                  }}
-                  days={widget.params.days}
-                  groupField={widget.params.group_field}
+                  params={widgetParams}
+                  days={widgetParams.days}
+                  groupField={widgetParams.group_field}
                   onDeleteClick={() => {
                     deleteCallback(widget.id);
                   }}
