@@ -1,3 +1,4 @@
+import logging
 from http import HTTPStatus
 
 import connexion
@@ -24,6 +25,8 @@ from ibutsu_server.widgets.jenkins_job_view import get_jenkins_job_view
 from ibutsu_server.widgets.result_aggregator import get_recent_result_data
 from ibutsu_server.widgets.result_summary import get_result_summary
 from ibutsu_server.widgets.run_aggregator import get_recent_run_data
+
+logger = logging.getLogger(__name__)
 
 WIDGET_METHODS = {
     "compare-runs-view": get_comparison_data,
@@ -144,4 +147,5 @@ def get_widget(id_):
         return f"Parameter error for widget '{id_}': {e!s}", HTTPStatus.BAD_REQUEST
     except Exception as e:
         # Handle any runtime errors in widget processing
+        logger.exception(f"Error processing widget '{id_}': {e!s}")
         return f"Error processing widget '{id_}': {e!s}", HTTPStatus.INTERNAL_SERVER_ERROR
