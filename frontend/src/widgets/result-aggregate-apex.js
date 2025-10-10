@@ -48,6 +48,7 @@ const ResultAggregateApex = ({
   const [isLoading, setIsLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [resultAggregatorError, setResultAggregatorError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [filterDays, setFilterDays] = useState(days);
   const [filterGroupField, setFilterGroupField] = useState(groupField);
   const additionalFilters = useRef(params.additional_filters);
@@ -93,6 +94,26 @@ const ResultAggregateApex = ({
           [Settings.serverUrl, 'widget', 'result-aggregator'],
           params,
         );
+
+        // Check for non-200 responses and extract error message
+        if (!response.ok) {
+          let errorText = 'Error fetching data';
+          try {
+            // Try to get error message from response body
+            const errorBody = await response.text();
+            if (errorBody) {
+              errorText = errorBody;
+            }
+          } catch (e) {
+            // If we can't parse the error, use default message
+            console.error('Error parsing error response:', e);
+          }
+          setErrorMessage(errorText);
+          setIsLoading(false);
+          setResultAggregatorError(true);
+          return;
+        }
+
         const data = await HttpClient.handleResponse(response);
         let _chartData = [];
         let _total = 0;
@@ -109,9 +130,13 @@ const ResultAggregateApex = ({
 
         setIsLoading(false);
         setResultAggregatorError(false);
+        setErrorMessage('');
       } catch (error) {
         setIsLoading(false);
         setResultAggregatorError(true);
+        setErrorMessage(
+          error.message || 'Error fetching result aggregator data',
+        );
         console.error('Error fetching result aggregator data:', error);
       }
     };
@@ -276,12 +301,35 @@ const ResultAggregateApex = ({
           <div
             style={{
               textAlign: 'center',
+              padding: '20px',
             }}
           >
             <Content
+              component="h3"
               style={{ color: 'var(--pf-v6-global--danger-color--100)' }}
             >
-              Error fetching data
+              Widget Error
+            </Content>
+            <Content
+              style={{
+                color: 'var(--pf-t--global--text--color--regular)',
+                marginTop: '10px',
+              }}
+            >
+              {errorMessage && (
+                <div style={{ marginBottom: '10px', fontStyle: 'italic' }}>
+                  {errorMessage}
+                </div>
+              )}
+              <div>
+                Unable to load result aggregation data. Please review your
+                filter and group field combination to ensure a valid aggregation
+                can be created.
+              </div>
+              <div style={{ marginTop: '10px' }}>
+                If this issue persists, please contact your system
+                administrators.
+              </div>
             </Content>
           </div>
         )}
