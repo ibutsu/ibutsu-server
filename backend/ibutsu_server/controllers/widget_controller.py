@@ -142,3 +142,6 @@ def get_widget(id_):
     except TypeError as e:
         # Handle any remaining parameter issues
         return f"Parameter error for widget '{id_}': {e!s}", HTTPStatus.BAD_REQUEST
+    except Exception as e:
+        # Handle any runtime errors in widget processing
+        return f"Error processing widget '{id_}': {e!s}", HTTPStatus.INTERNAL_SERVER_ERROR
