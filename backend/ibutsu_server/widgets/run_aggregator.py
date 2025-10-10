@@ -58,6 +58,9 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
 
     # parse the data
     for group, failed, error, skipped, total, xpassed, xfailed in query_data:
+        # Skip groups with zero total tests to avoid division by zero
+        if not total or total == 0:
+            continue
         # convert all data to percentages
         data["failed"][group] = round((failed / total) * 100.0)
         data["error"][group] = round((error / total) * 100.0)
