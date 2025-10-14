@@ -54,7 +54,6 @@ const Dashboard = () => {
   const [dashboards, setDashboards] = useState([]);
   const [filteredDashboards, setFilteredDashboards] = useState([]);
   const [selectedDashboard, setSelectedDashboard] = useState();
-  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isNewDBOpen, setIsNewDBOpen] = useState(false);
   const [isDeleteDBOpen, setIsDeleteDBOpen] = useState(false);
 
@@ -75,12 +74,12 @@ const Dashboard = () => {
   const selectInputRef = useRef();
   const [loadKey, setLoadKey] = useState(nanoid(6));
 
-  const onDeleteWidgetClick = (id) => {
+  const onDeleteWidgetClick = useCallback((id) => {
     setIsDeleteWidgetOpen(true);
     setCurrentWidget(id);
-  };
+  }, []);
 
-  const onEditWidgetClick = (id) => {
+  const onEditWidgetClick = useCallback((id) => {
     setIsEditModalOpen(true);
 
     const fetchWidgetData = async (id) => {
@@ -106,7 +105,7 @@ const Dashboard = () => {
     return () => {
       clearTimeout(debouncer);
     };
-  };
+  }, []);
 
   // update widgets
   const { widgets, widgetComponents } = useWidgets({
@@ -171,7 +170,6 @@ const Dashboard = () => {
       const paramDashboard = dashboards.find((db) => db.id === dashboard_id);
       if (paramDashboard) {
         setSelectedDashboard(paramDashboard);
-        setIsDashboardOpen(false);
         setSelectInputValue(paramDashboard.title);
         setProcessedDashboardId(dashboard_id);
       }
@@ -210,9 +208,7 @@ const Dashboard = () => {
   useEffect(() => {
     let filteredOptions = [...dashboards];
     if (selectFilterValue && dashboards.length) {
-      filteredOptions = [...dashboards];
-
-      filteredOptions = filteredOptions.filter((dashboard) =>
+      filteredOptions = dashboards.filter((dashboard) =>
         dashboard.title.toLowerCase().includes(selectFilterValue.toLowerCase()),
       );
       if (!filteredOptions.length) {
@@ -223,13 +219,10 @@ const Dashboard = () => {
           },
         ];
       }
-      if (!isDashboardOpen) {
-        setIsDashboardOpen(true);
-      }
     }
 
     setFilteredDashboards(filteredOptions);
-  }, [selectFilterValue, dashboards, isDashboardOpen]);
+  }, [selectFilterValue, dashboards]);
 
   const onDashboardSelect = useCallback(
     (_event, selection) => {
@@ -250,7 +243,6 @@ const Dashboard = () => {
   const onDashboardClear = useCallback(() => {
     // state update
     setSelectedDashboard();
-    setIsDashboardOpen(false);
     setSelectInputValue('');
     setSelectFilterValue('');
     setProcessedDashboardId(null); // Reset processed dashboard ID
@@ -434,7 +426,6 @@ const Dashboard = () => {
                 aria-label="New dashboard"
                 variant="plain"
                 title="New dashboard"
-                isDisabled={isDashboardOpen}
                 onClick={() => {
                   setIsNewDBOpen(true);
                 }}
