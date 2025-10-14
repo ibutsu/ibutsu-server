@@ -1,0 +1,56 @@
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  range: "50...100"
+
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 1%
+        if_ci_failed: error
+
+    patch:
+      default:
+        target: auto
+        threshold: 1%
+        if_ci_failed: error
+
+flags:
+  backend:
+    paths:
+      - backend/ibutsu_server/
+    carryforward: true
+    after_n_builds: 3  # Wait for all 3 Python versions
+    target: 60%
+    threshold: 0.5%
+
+  frontend:
+    paths:
+      - frontend/src/
+    carryforward: true
+    target: 10%
+    threshold: 0.5%
+
+comment:
+  layout: "header, diff, flags, files, footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+  branches:
+    - main
+
+ignore:
+  - "backend/ibutsu_server/test/**"
+  - "backend/ibutsu_server/tests/**"
+  - "backend/ibutsu_server/migrations/**"
+  - "frontend/src/**/*.test.js"
+  - "frontend/src/**/*.spec.js"
+  - "frontend/src/setupTests.js"
+  - "frontend/src/index.js"
