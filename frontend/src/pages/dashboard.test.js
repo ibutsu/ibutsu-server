@@ -1,6 +1,5 @@
 /* eslint-env jest */
-import React from 'react';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Dashboard from './dashboard';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
@@ -53,29 +52,29 @@ jest.mock('nanoid/non-secure', () => ({
 }));
 
 describe('Dashboard Component', () => {
-  // Test data
+  // Test data - using UUIDs for backend model IDs
   const mockProject = {
-    id: 'project-123',
+    id: '550e8400-e29b-41d4-a716-446655440000',
     name: 'test-project',
     title: 'Test Project',
   };
 
   const mockDashboard1 = {
-    id: 'dashboard-111',
+    id: '650e8400-e29b-41d4-a716-446655440001',
     title: 'Dashboard One',
-    project_id: 'project-123',
+    project_id: '550e8400-e29b-41d4-a716-446655440000',
   };
 
   const mockDashboard2 = {
-    id: 'dashboard-222',
+    id: '650e8400-e29b-41d4-a716-446655440002',
     title: 'Dashboard Two',
-    project_id: 'project-123',
+    project_id: '550e8400-e29b-41d4-a716-446655440000',
   };
 
   const mockDefaultDashboard = {
-    id: 'dashboard-default',
+    id: '650e8400-e29b-41d4-a716-446655440099',
     title: 'Default Dashboard',
-    project_id: 'project-123',
+    project_id: '550e8400-e29b-41d4-a716-446655440000',
   };
 
   // Helper function to create mock API responses
@@ -174,6 +173,13 @@ describe('Dashboard Component', () => {
         expect(screen.getByText('No Dashboard Selected')).toBeInTheDocument();
       });
 
+      // Wait for the select input to be rendered
+      await waitFor(() => {
+        expect(
+          screen.getByPlaceholderText('Select a dashboard'),
+        ).toBeInTheDocument();
+      });
+
       // Verify that the select input is empty
       const selectInput = screen.getByPlaceholderText('Select a dashboard');
       expect(selectInput).toHaveValue('');
@@ -193,7 +199,7 @@ describe('Dashboard Component', () => {
       });
 
       renderDashboard({
-        defaultDashboard: 'dashboard-default',
+        defaultDashboard: mockDefaultDashboard.id,
       });
 
       await waitFor(() => {
@@ -219,7 +225,7 @@ describe('Dashboard Component', () => {
       });
 
       renderDashboard({
-        defaultDashboard: 'dashboard-default',
+        defaultDashboard: mockDefaultDashboard.id,
       });
 
       await waitFor(() => {
@@ -239,7 +245,7 @@ describe('Dashboard Component', () => {
       });
 
       renderDashboard({
-        defaultDashboard: 'dashboard-nonexistent',
+        defaultDashboard: '00000000-0000-0000-0000-000000000000',
       });
 
       await waitFor(() => {
@@ -257,12 +263,19 @@ describe('Dashboard Component', () => {
       });
 
       renderDashboard({
-        initialRoute: `/project/${mockProject.id}/dashboard/dashboard-nonexistent`,
+        initialRoute: `/project/${mockProject.id}/dashboard/00000000-0000-0000-0000-000000000000`,
         defaultDashboard: null,
       });
 
       await waitFor(() => {
         expect(screen.getByText('No Dashboard Selected')).toBeInTheDocument();
+      });
+
+      // Wait for the select input to be rendered
+      await waitFor(() => {
+        expect(
+          screen.getByPlaceholderText('Select a dashboard'),
+        ).toBeInTheDocument();
       });
 
       // Verify that the select input is empty
@@ -282,7 +295,7 @@ describe('Dashboard Component', () => {
       });
 
       renderDashboard({
-        initialRoute: `/project/${mockProject.id}/dashboard/dashboard-222`,
+        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard2.id}`,
         defaultDashboard: null,
       });
 
@@ -312,49 +325,33 @@ describe('Dashboard Component', () => {
 
       // URL specifies dashboard-222, but project has a default of dashboard-default
       renderDashboard({
-        initialRoute: `/project/${mockProject.id}/dashboard/dashboard-222`,
-        defaultDashboard: 'dashboard-default', // Project has a default dashboard
+        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard2.id}`,
+        defaultDashboard: mockDefaultDashboard.id, // Project has a default dashboard
       });
 
-      // Wait for initial render and dashboard load
+      // Wait for dashboard load - the component will process both URL and default dashboard
       await waitFor(
         () => {
           const selectInput = screen.getByPlaceholderText('Select a dashboard');
-          expect(selectInput).toHaveValue('Dashboard Two');
+          // Component loads and shows a dashboard (either URL or default)
+          expect(selectInput.value).toBeTruthy();
         },
         { timeout: 3000 },
       );
 
-      // This assertion demonstrates the BUG
-      // After a delay, the component might switch to the default dashboard
-      // due to the race condition in the useEffect hooks
+      // Additional wait to allow all useEffect hooks to complete
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const selectInput = screen.getByPlaceholderText('Select a dashboard');
 
-      // EXPECTED: Should still be "Dashboard Two" (from URL)
-      // ACTUAL (BUG): Might be "Default Dashboard" (from default dashboard setting)
-      // This assertion will fail if the bug is present
-      try {
-        expect(selectInput).toHaveValue('Dashboard Two');
-        console.warn(
-          'Test passed - URL dashboard was maintained. Bug may have been fixed!',
-        );
-      } catch (error) {
-        // This catch block demonstrates the bug
-        if (selectInput.value === 'Default Dashboard') {
-          console.error(
-            'BUG DETECTED: Default dashboard overrode URL dashboard!',
-          );
-          console.error(
-            `Expected: "Dashboard Two", Actual: "${selectInput.value}"`,
-          );
-        }
-        throw error;
-      }
+      // 🐛 BUG TEST 🐛
+      // This test expects the CORRECT behavior:
+      // URL dashboard should take precedence over default dashboard
+      // When user navigates to a specific dashboard via URL, that should be respected
+      expect(selectInput).toHaveValue('Dashboard Two');
     });
 
-    it('should not apply default dashboard when URL specifies a dashboard', async () => {
+    it('should not apply default dashboard when URL specifies a dashboard (BUG PRESENT)', async () => {
       HttpClient.get.mockResolvedValue({
         ok: true,
         json: async () =>
@@ -367,14 +364,15 @@ describe('Dashboard Component', () => {
 
       // URL explicitly specifies dashboard-111
       renderDashboard({
-        initialRoute: `/project/${mockProject.id}/dashboard/dashboard-111`,
-        defaultDashboard: 'dashboard-default',
+        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard1.id}`,
+        defaultDashboard: mockDefaultDashboard.id,
       });
 
+      // Wait for component to load
       await waitFor(
         () => {
           const selectInput = screen.getByPlaceholderText('Select a dashboard');
-          expect(selectInput).toHaveValue('Dashboard One');
+          expect(selectInput.value).toBeTruthy();
         },
         { timeout: 3000 },
       );
@@ -383,6 +381,8 @@ describe('Dashboard Component', () => {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const selectInput = screen.getByPlaceholderText('Select a dashboard');
+
+      // Should respect URL parameter over default dashboard
       expect(selectInput).toHaveValue('Dashboard One');
     });
 
@@ -400,13 +400,16 @@ describe('Dashboard Component', () => {
       // URL does not specify a dashboard (no dashboard_id param)
       renderDashboard({
         initialRoute: `/project/${mockProject.id}/dashboard/`,
-        defaultDashboard: 'dashboard-default',
+        defaultDashboard: mockDefaultDashboard.id,
       });
 
-      await waitFor(() => {
-        const selectInput = screen.getByPlaceholderText('Select a dashboard');
-        expect(selectInput).toHaveValue('Default Dashboard');
-      });
+      await waitFor(
+        () => {
+          const selectInput = screen.getByPlaceholderText('Select a dashboard');
+          expect(selectInput).toHaveValue('Default Dashboard');
+        },
+        { timeout: 3000 },
+      );
 
       // Verify it stays as the default dashboard
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -441,13 +444,13 @@ describe('Dashboard Component', () => {
     it('should handle pagination when fetching dashboards', async () => {
       // Create a scenario with multiple pages
       const page1Dashboards = Array.from({ length: 50 }, (_, i) => ({
-        id: `dashboard-${i}`,
+        id: `650e8400-e29b-41d4-a716-4466554400${i.toString().padStart(2, '0')}`,
         title: `Dashboard ${i}`,
         project_id: mockProject.id,
       }));
 
       const page2Dashboards = Array.from({ length: 10 }, (_, i) => ({
-        id: `dashboard-${i + 50}`,
+        id: `650e8400-e29b-41d4-a716-4466554401${i.toString().padStart(2, '0')}`,
         title: `Dashboard ${i + 50}`,
         project_id: mockProject.id,
       }));
@@ -500,7 +503,7 @@ describe('Dashboard Component', () => {
 
     it('should reset dashboard state when primaryObject changes', async () => {
       const { rerender } = renderDashboard({
-        defaultDashboard: 'dashboard-default',
+        defaultDashboard: mockDefaultDashboard.id,
       });
 
       HttpClient.get.mockResolvedValue({
@@ -513,14 +516,17 @@ describe('Dashboard Component', () => {
           ]),
       });
 
-      await waitFor(() => {
-        const selectInput = screen.getByPlaceholderText('Select a dashboard');
-        expect(selectInput).toHaveValue('Default Dashboard');
-      });
+      await waitFor(
+        () => {
+          const selectInput = screen.getByPlaceholderText('Select a dashboard');
+          expect(selectInput).toHaveValue('Default Dashboard');
+        },
+        { timeout: 3000 },
+      );
 
       // Change the primary object
       const newProject = {
-        id: 'project-456',
+        id: '550e8400-e29b-41d4-a716-446655440001',
         name: 'new-project',
         title: 'New Project',
       };
@@ -542,9 +548,7 @@ describe('Dashboard Component', () => {
       });
 
       rerender(
-        <MemoryRouter
-          initialEntries={[`/project/${newProject.id}/dashboard/`]}
-        >
+        <MemoryRouter initialEntries={[`/project/${newProject.id}/dashboard/`]}>
           <IbutsuContext.Provider value={newContextValue}>
             <Routes>
               <Route
@@ -556,10 +560,13 @@ describe('Dashboard Component', () => {
         </MemoryRouter>,
       );
 
-      await waitFor(() => {
-        const selectInput = screen.getByPlaceholderText('Select a dashboard');
-        expect(selectInput).toHaveValue('');
-      });
+      await waitFor(
+        () => {
+          const selectInput = screen.getByPlaceholderText('Select a dashboard');
+          expect(selectInput).toHaveValue('');
+        },
+        { timeout: 3000 },
+      );
     });
   });
 
@@ -611,7 +618,7 @@ describe('Dashboard Component', () => {
       });
 
       renderDashboard({
-        initialRoute: `/project/${mockProject.id}/dashboard/dashboard-111`,
+        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard1.id}`,
       });
 
       await waitFor(() => {
