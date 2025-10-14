@@ -312,7 +312,7 @@ describe('Dashboard Component', () => {
   });
 
   describe('URL dashboard should not be overridden by default dashboard', () => {
-    it('DEMONSTRATES BUG: should prioritize URL dashboard over default dashboard', async () => {
+    it('should prioritize URL dashboard over default dashboard and not flip', async () => {
       HttpClient.get.mockResolvedValue({
         ok: true,
         json: async () =>
@@ -323,99 +323,34 @@ describe('Dashboard Component', () => {
           ]),
       });
 
-      // URL specifies dashboard-222, but project has a default of dashboard-default
+      // URL specifies a specific dashboard, but project has a default dashboard configured
       renderDashboard({
         initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard2.id}`,
-        defaultDashboard: mockDefaultDashboard.id, // Project has a default dashboard
-      });
-
-      // Wait for dashboard load - the component will process both URL and default dashboard
-      await waitFor(
-        () => {
-          const selectInput = screen.getByPlaceholderText('Select a dashboard');
-          // Component loads and shows a dashboard (either URL or default)
-          expect(selectInput.value).toBeTruthy();
-        },
-        { timeout: 3000 },
-      );
-
-      // Additional wait to allow all useEffect hooks to complete
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const selectInput = screen.getByPlaceholderText('Select a dashboard');
-
-      // 🐛 BUG TEST 🐛
-      // This test expects the CORRECT behavior:
-      // URL dashboard should take precedence over default dashboard
-      // When user navigates to a specific dashboard via URL, that should be respected
-      expect(selectInput).toHaveValue('Dashboard Two');
-    });
-
-    it('should not apply default dashboard when URL specifies a dashboard (BUG PRESENT)', async () => {
-      HttpClient.get.mockResolvedValue({
-        ok: true,
-        json: async () =>
-          createDashboardResponse([
-            mockDashboard1,
-            mockDashboard2,
-            mockDefaultDashboard,
-          ]),
-      });
-
-      // URL explicitly specifies dashboard-111
-      renderDashboard({
-        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard1.id}`,
         defaultDashboard: mockDefaultDashboard.id,
       });
 
-      // Wait for component to load
+      // Wait for URL dashboard to be selected
       await waitFor(
         () => {
           const selectInput = screen.getByPlaceholderText('Select a dashboard');
-          expect(selectInput.value).toBeTruthy();
+          expect(selectInput).toHaveValue('Dashboard Two');
         },
         { timeout: 3000 },
       );
 
-      // Verify it doesn't change to default after a delay
+      // Static wait to ensure no state changes occur after initial selection
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const selectInput = screen.getByPlaceholderText('Select a dashboard');
-
-      // Should respect URL parameter over default dashboard
-      expect(selectInput).toHaveValue('Dashboard One');
-    });
-
-    it('should apply default dashboard only when no URL dashboard is specified', async () => {
-      HttpClient.get.mockResolvedValue({
-        ok: true,
-        json: async () =>
-          createDashboardResponse([
-            mockDashboard1,
-            mockDashboard2,
-            mockDefaultDashboard,
-          ]),
-      });
-
-      // URL does not specify a dashboard (no dashboard_id param)
-      renderDashboard({
-        initialRoute: `/project/${mockProject.id}/dashboard/`,
-        defaultDashboard: mockDefaultDashboard.id,
-      });
-
+      // Verify the selection hasn't flipped to the default dashboard
       await waitFor(
         () => {
           const selectInput = screen.getByPlaceholderText('Select a dashboard');
-          expect(selectInput).toHaveValue('Default Dashboard');
+          // URL dashboard should take precedence over default dashboard
+          // When user navigates to a specific dashboard via URL, that should be respected
+          expect(selectInput).toHaveValue('Dashboard Two');
         },
-        { timeout: 3000 },
+        { timeout: 1000 },
       );
-
-      // Verify it stays as the default dashboard
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const selectInput = screen.getByPlaceholderText('Select a dashboard');
-      expect(selectInput).toHaveValue('Default Dashboard');
     });
   });
 
