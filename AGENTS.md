@@ -23,3 +23,4 @@
 - Use a virtual environment and install the test extras to run tests.
 - From the package root you can just call `hatch test` or `pytest -x`. The commit should pass all tests before proceeding
 - Add or update tests for the code you change, even if nobody asked.
+- Do not make tests pass when a bug is identified by the test. Investigate and suggest fixes for root causes of test case failures.
