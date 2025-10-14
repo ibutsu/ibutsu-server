@@ -182,8 +182,17 @@ const Dashboard = () => {
   useEffect(() => {
     const hasDashboards = dashboards.length > 0;
 
-    // selectedDashboard is undefined until user picks one or this sets it
-    if (hasDashboards && defaultDashboard && selectedDashboard === undefined) {
+    // Only apply default dashboard if:
+    // 1. We have dashboards loaded
+    // 2. There's a default dashboard configured
+    // 3. No dashboard is currently selected
+    // 4. There's NO dashboard_id in the URL (user didn't navigate to specific dashboard)
+    if (
+      hasDashboards &&
+      defaultDashboard &&
+      selectedDashboard === undefined &&
+      !dashboard_id
+    ) {
       const default_db = dashboards
         .filter((dash) => dash.id == defaultDashboard)
         .pop();
@@ -195,7 +204,7 @@ const Dashboard = () => {
         );
       }
     }
-  }, [dashboards, selectedDashboard, defaultDashboard, navigate]); // only when they switch from undefined on first set
+  }, [dashboards, selectedDashboard, defaultDashboard, navigate, dashboard_id]);
 
   // Apply filter inputs
   useEffect(() => {
