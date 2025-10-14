@@ -16,8 +16,6 @@ tags:
     name: project
   - description: A group of projects
     name: group
-  - description: A report
-    name: report
   - description: A health report
     name: health
   - description: Widgets
