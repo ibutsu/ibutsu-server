@@ -138,6 +138,10 @@ Container images for Ibutsu are provided at [quay.io/organization/ibutsu](https:
 **Scheduler:**
 [![Scheduler](https://quay.io/repository/ibutsu/scheduler/status "Scheduler")](https://quay.io/repository/ibutsu/scheduler)
 
+**Build Configuration:**
+- Pull request builds are validated in GitHub Actions CI
+- Main branch image builds are triggered automatically via Quay.io repository build triggers
+
 
 ## Documentation
 
