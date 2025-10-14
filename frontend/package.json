@@ -75,6 +75,8 @@
     "start": "serve -s build -l tcp://0.0.0.0:3000",
     "build": "./bin/write-version-file.cjs && DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
+    "test:coverage": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --coverage --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
+    "test:coverage:ci": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --coverage --ci --maxWorkers=2 --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
     "eject": "react-scripts eject",
     "devserver": "./bin/write-version-file.cjs && CI=true DISABLE_ESLINT_PLUGIN=true react-scripts start",
     "lint": "eslint --fix",
@@ -105,6 +107,29 @@
     "resetMocks": false,
     "transformIgnorePatterns": [
       "node_modules/(?!(@patternfly|@testing-library)/)"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!src/index.js",
+      "!src/setupTests.js",
+      "!src/**/*.test.js",
+      "!src/**/*.spec.js",
+      "!src/jest.polyfills.cjs"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 5,
+        "functions": 4,
+        "lines": 7,
+        "statements": 7
+      }
+    },
+    "coverageReporters": [
+      "text",
+      "text-summary",
+      "html",
+      "lcov",
+      "json-summary"
     ]
   }
 }
