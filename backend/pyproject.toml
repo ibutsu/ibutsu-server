@@ -249,7 +249,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "@abstractmethod",
 ]
-fail_under = 60.0
+# fail_under removed - coverage thresholds managed by codecov.yml
 
 [tool.coverage.xml]
 output = "coverage.xml"

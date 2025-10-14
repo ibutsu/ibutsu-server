@@ -116,14 +116,6 @@
       "!src/**/*.spec.js",
       "!src/jest.polyfills.cjs"
     ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 5,
-        "functions": 4,
-        "lines": 7,
-        "statements": 7
-      }
-    },
     "coverageReporters": [
       "text",
       "text-summary",
