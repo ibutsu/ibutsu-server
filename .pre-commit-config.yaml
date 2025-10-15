@@ -29,8 +29,10 @@ repos:
     hooks:
       - id: codespell
         args:
-          - '-L connexion'
-          - '--skip="./frontend/yarn.lock,./frontend/public/images"'
+          - '-L'
+          - 'connexion'
+          - '--skip'
+          - 'frontend/yarn.lock,frontend/public/images/*'
           - '-w'
 
   - repo: https://github.com/AleksaC/hadolint-py

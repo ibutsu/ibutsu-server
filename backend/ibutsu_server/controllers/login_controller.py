@@ -41,7 +41,7 @@ Ibutsu"""
 
 
 def _get_provider_config(provider):
-    """To reduce congnitive complexity"""
+    """To reduce cognitive complexity"""
     if provider == "keycloak":
         # Do the kc stuff
         return get_keycloak_config(is_private=True)
@@ -49,7 +49,7 @@ def _get_provider_config(provider):
 
 
 def _get_user_from_provider(provider, provider_config, code):
-    """To reduce congnitive complexity"""
+    """To reduce cognitive complexity"""
     user = None
     if provider == "google":
         # Google does things its own way...
@@ -89,7 +89,7 @@ def _get_user_from_provider(provider, provider_config, code):
 
 
 def _find_or_create_token(token_name, user):
-    """To reduce congnitive complexity"""
+    """To reduce cognitive complexity"""
     token = Token.query.filter(Token.name == token_name, Token.user_id == user.id).first()
     if not token:
         token = Token(name=token_name, user_id=user.id)

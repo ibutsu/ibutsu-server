@@ -179,7 +179,7 @@ class TestWidgetConfigController(BaseTestCase):
         self.assert_200(response, "Response body is : " + response.data.decode("utf-8"))
 
     def test_delete_widget_config_404(self):
-        """Test that trying to delete a non-existant widget_config throws a 404"""
+        """Test that trying to delete a non-existent widget_config throws a 404"""
         self.mock_widget_config.query.get.return_value = None
         headers = {
             "Accept": "application/json",
