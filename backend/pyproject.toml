@@ -98,7 +98,30 @@ raw-options.package_data = {"" = ["openapi/openapi.yaml"]}
 # don't package tests, so they can be run without editable install
 [tool.hatch.build.targets.wheel]
 packages = ["ibutsu_server"]
-exclude = ["docker/"]
+exclude = [
+    "docker/",
+    "tests/",
+    "**/test/",
+    "**/tests/",
+    "test_*.py",
+    "*_test.py",
+    "conftest.py",
+]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "tests/",
+    "**/test/",
+    "**/tests/",
+    "test_*.py",
+    "*_test.py",
+    "conftest.py",
+    "coverage.xml",
+    "htmlcov/",
+    ".pytest_cache/",
+    ".coverage",
+    ".coverage.*",
+]
 
 
 [tool.hatch.envs.default]
