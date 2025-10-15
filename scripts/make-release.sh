@@ -71,7 +71,7 @@ echo "Current version: $CURRENT_VERSION"
 if [[ -z "$NEW_VERSION" ]]; then
     DEFAULT_VERSION=$(increment_version "$CURRENT_VERSION")
     echo ""
-    read -p "Enter new version [$DEFAULT_VERSION]: " NEW_VERSION
+    read -r -p "Enter new version [$DEFAULT_VERSION]: " NEW_VERSION
     NEW_VERSION="${NEW_VERSION:-$DEFAULT_VERSION}"
 fi
 
@@ -80,14 +80,14 @@ echo "Updating files from $CURRENT_VERSION to $NEW_VERSION"
 echo ""
 
 # Escape all relevant regex special characters in current version for sed
-SED_VERSION=$(echo "$CURRENT_VERSION" | sed -e 's/[.[\*^$()+?{|\\]/\\&/g')
+SED_VERSION=${CURRENT_VERSION//./\\.}
 
 # Update each file
 for FNAME in "${VERSIONED_FILES[@]}"; do
     if [[ -f "$FNAME" ]]; then
         echo "  Updating: ${FNAME/$BASE_DIR\//}"
         sed -i "s/$SED_VERSION/$NEW_VERSION/g" "$FNAME"
-        if [[ $? -ne 0 ]]; then
+        if ! sed -i "s/$SED_VERSION/$NEW_VERSION/g" "$FNAME"; then
             echo "  Error: Failed to update ${FNAME/$BASE_DIR\//}" >&2
             exit 1
         fi

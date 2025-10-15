@@ -28,7 +28,7 @@ function print_usage() {
     echo "  -p, --create-project       create a default project ('my-project')"
     echo "  -s, --skip-import          skip importing files from the import folder"
     echo "  -f, --import-folder        folder containing files to import (./.archives/ by default)"
-    echo "  POD_NAME                   the name of the pod, 'ibutsu' if ommitted"
+    echo "  POD_NAME                   the name of the pod, 'ibutsu' if omitted"
     echo ""
 }
 
@@ -78,15 +78,15 @@ while [[ $i -le $# ]]; do
 done
 
 for TOOL in jq curl podman tr fold head cut; do
-    if ! command -v $TOOL &> /dev/null; then
+    if ! command -v "$TOOL" &> /dev/null; then
         echo "Error: $TOOL is required but not installed."
         exit 1
     fi
 done
 
 # Check this is being run in the correct directory
-DIRS=$(ls -p | grep '/')
-if [[ ! ${DIRS[*]} =~ "backend" ]] && [[ ! ${DIRS[*]} =~ "frontend" ]]; then
+# Check this is being run in the correct directory
+if [[ ! -d "backend" ]] || [[ ! -d "frontend" ]]; then
     echo "This script needs to be run from the root of the project"
     exit 1
 fi
@@ -94,7 +94,7 @@ fi
 # If the data is persistent, check if there's a JWT secret in a file, or save it
 if [[ $DATA_PERSISTENT = true ]]; then
     if [[ ! -f ".jwtsecret" ]]; then
-        echo $JWT_SECRET > .jwtsecret
+        echo "$JWT_SECRET" > .jwtsecret
     else
         JWT_SECRET=$(<.jwtsecret)
     fi
@@ -156,17 +156,17 @@ echo ""
 
 # Get the pods up and running
 echo -n "Creating ibutsu pod:    "
-podman pod create -p 8080:8080 -p 3000:3000 --name $POD_NAME
+podman pod create -p 8080:8080 -p 3000:3000 --name "$POD_NAME"
 
 echo "================================="
 echo -n "Adding postgres to the pod:    "
 podman run -dt \
     --rm \
-    --pod $POD_NAME \
+    --pod "$POD_NAME" \
     -e POSTGRESQL_USER=ibutsu \
     -e POSTGRESQL_DATABASE=ibutsu \
     -e POSTGRESQL_PASSWORD=ibutsu \
-    $POSTGRES_EXTRA_ARGS \
+    "$POSTGRES_EXTRA_ARGS" \
     --name ibutsu-postgres \
     registry.redhat.io/rhel8/postgresql-12
 
@@ -174,8 +174,8 @@ echo "================================="
 echo -n "Adding redis to the pod:    "
 podman run -dt \
     --rm \
-    --pod $POD_NAME \
-    $REDIS_EXTRA_ARGS \
+    --pod "$POD_NAME" \
+    "$REDIS_EXTRA_ARGS" \
     --name ibutsu-redis \
     quay.io/fedora/redis-7
 
@@ -184,9 +184,9 @@ echo -n "Adding backend to the pod:    "
 # https://docs.sqlalchemy.org/en/20/changelog/migration_20.html#migration-to-2-0-step-two-turn-on-removedin20warnings
 podman run -d \
     --rm \
-    --pod $POD_NAME \
+    --pod "$POD_NAME" \
     --name ibutsu-backend \
-    -e JWT_SECRET=$JWT_SECRET \
+    -e JWT_SECRET="$JWT_SECRET" \
     -e POSTGRESQL_HOST=127.0.0.1 \
     -e POSTGRESQL_PORT=5432 \
     -e POSTGRESQL_DATABASE=ibutsu \
@@ -195,7 +195,7 @@ podman run -d \
     -e CELERY_BROKER_URL=redis://127.0.0.1:6379 \
     -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
     -e SQLALCHEMY_WARN_20=1 \
-    $BACKEND_EXTRA_ARGS \
+    "$BACKEND_EXTRA_ARGS" \
     -w /mnt \
     -v ./backend:/mnt/:z \
     $PYTHON_IMAGE \
@@ -204,7 +204,7 @@ podman run -d \
                     python -W always::DeprecationWarning -m ibutsu_server --host 0.0.0.0'
 echo -n "Waiting for backend to respond: "
 sleep 5
-until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:8080); do
+until curl --output /dev/null --silent --head --fail http://127.0.0.1:8080; do
   echo -n ' .'
   sleep 2
 done
@@ -216,7 +216,7 @@ echo "================================="
 echo -n "Adding celery worker to the pod:    "
 podman run -d \
     --rm \
-    --pod $POD_NAME \
+    --pod "$POD_NAME" \
     --name ibutsu-worker \
     -e COLUMNS=80 \
     -e POSTGRESQL_HOST=127.0.0.1 \
@@ -234,7 +234,7 @@ podman run -d \
                     ./celery_worker.sh'
 echo -n "Waiting for celery to respond: "
 sleep 5
-until $(podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null | grep -q pong); do
+until podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null | grep -q pong; do
     echo -n ' .'
     sleep 2
 done
@@ -320,13 +320,11 @@ if [[ $CREATE_PROJECT = true ]]; then
                     echo -n "Importing ${FILE} to ${PROJECT_NAME}... "
 
                     # Submit the file for import
-                    IMPORT_RESPONSE=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+                    if ! IMPORT_RESPONSE=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
                         --request POST \
                         --form "importFile=@${FILE}" \
                         --form "project=${CURRENT_PROJECT_ID}" \
-                        http://127.0.0.1:8080/api/import)
-                    # Extract the import ID from the response
-                    if [[ $? -ne 0 ]]; then
+                        http://127.0.0.1:8080/api/import); then
                         echo "Failed to submit import for ${FILE}."
                         echo "import response: ${IMPORT_RESPONSE}"
 
@@ -338,8 +336,8 @@ if [[ $CREATE_PROJECT = true ]]; then
                         continue
                     fi
 
-                    IMPORT_ID=$(echo ${IMPORT_RESPONSE} | jq -r '.id')
-                    IMPORT_STATUS=$(echo ${IMPORT_RESPONSE} | jq -r '.status')
+                    IMPORT_ID=$(echo "${IMPORT_RESPONSE}" | jq -r '.id')
+                    IMPORT_STATUS=$(echo "${IMPORT_RESPONSE}" | jq -r '.status')
 
                     if [[ -z "$IMPORT_ID" ]]; then
                         echo "Failed to get import ID."
@@ -355,7 +353,7 @@ if [[ $CREATE_PROJECT = true ]]; then
                         MAX_RETRIES=10
                         while [[ ("${IMPORT_STATUS}" == pending || "${IMPORT_STATUS}" == running) && ${RETRY_COUNT} -lt ${MAX_RETRIES} ]]; do
                             IMPORT_STATUS=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-                                http://127.0.0.1:8080/api/import/${IMPORT_ID} | jq -r '.status')
+                                http://127.0.0.1:8080/api/import/"${IMPORT_ID}" | jq -r '.status')
 
                             # Increment retry counter
                             ((RETRY_COUNT++))
@@ -493,13 +491,17 @@ if [[ $CREATE_PROJECT = true ]]; then
         local project_id=$2
 
         # Get the import details to find the run
-        local import_data=$(api_get "/api/import/${import_id}")
-        local run_id=$(echo "$import_data" | jq -r '.data.run_id // empty')
+        local import_data
+        import_data=$(api_get "/api/import/${import_id}")
+        local run_id
+        run_id=$(echo "$import_data" | jq -r '.data.run_id // empty')
 
         if [[ -n "$run_id" ]]; then
             # Get the run details
-            local run_data=$(api_get "/api/run/${run_id}")
-            local component=$(echo "$run_data" | jq -r '.component // empty')
+            local run_data
+            run_data=$(api_get "/api/run/${run_id}")
+            local component
+            component=$(echo "$run_data" | jq -r '.component // empty')
             if [[ -n "$component" && "$component" != "null" ]]; then
                 echo "$component"
                 return 0
@@ -507,8 +509,10 @@ if [[ $CREATE_PROJECT = true ]]; then
         fi
 
         # Fallback: try to get component from first run in project
-        local runs_data=$(api_get "/api/run?project=${project_id}&page_size=1")
-        local component=$(echo "$runs_data" | jq -r '.runs[0].component // empty' 2>/dev/null)
+        local runs_data
+        runs_data=$(api_get "/api/run?project=${project_id}&page_size=1")
+        local component
+        component=$(echo "$runs_data" | jq -r '.runs[0].component // empty' 2>/dev/null)
 
         if [[ -n "$component" && "$component" != "null" ]]; then
             echo "$component"
@@ -613,7 +617,7 @@ if [[ $CREATE_PROJECT = true ]]; then
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             --request PUT \
             --data "{\"projects\": [{\"id\": \"${PROJECT_ID_1}\"}, {\"id\": \"${PROJECT_ID_2}\"}]}" \
-            http://127.0.0.1:8080/api/admin/user/${USER_ID} > /dev/null
+            http://127.0.0.1:8080/api/admin/user/"${USER_ID}" > /dev/null
 
         echo "  Created user extrauser${i}@example.com with password admin12345 and added to both projects"
     done
@@ -624,18 +628,18 @@ echo "================================="
 echo -n "Adding frontend to the pod:    "
 podman run -d \
     --rm \
-    --pod $POD_NAME \
+    --pod "$POD_NAME" \
     --name ibutsu-frontend \
     -w /mnt \
     -v ./frontend:/mnt/:Z \
-    node:$(cut -d 'v' -f 2 < './frontend/.nvmrc') \
+    "node:$(cut -d 'v' -f 2 < './frontend/.nvmrc')" \
     /bin/bash -c "node --dns-result-order=ipv4first /usr/local/bin/npm install --no-save --no-package-lock yarn &&
         yarn install &&
         CI=1 yarn devserver"
 echo "done."
 
 echo -n "Waiting for frontend to respond: "
-until $(curl --output /dev/null --silent --head --fail http://127.0.0.1:3000); do
+until curl --output /dev/null --silent --head --fail http://127.0.0.1:3000; do
   printf ' .'
   sleep 5
 done

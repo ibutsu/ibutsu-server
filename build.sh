@@ -1,8 +1,8 @@
 #!/bin/bash +x
 
-DC=`command -v docker-compose`
-NPM=`command -v npm`
-YARN=`command -v yarn`
+DC=$(command -v docker-compose)
+NPM=$(command -v npm)
+YARN=$(command -v yarn)
 CURDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 FEDIR="$CURDIR/frontend"
 
@@ -16,26 +16,25 @@ if [[ "$NPM" == "" ]]; then
 fi
 if [[ "$YARN" == "" ]]; then
     echo "yarn is not installed, installing..."
-    cd $FEDIR
-    npm install --prefix $FEDIR yarn
+    cd "$FEDIR" || exit
+    npm install --prefix "$FEDIR" yarn
     YARN=$FEDIR/node_modules/.bin/yarn
-    if [[ $? -ne 0 ]]; then
+    if ! npm install --prefix "$FEDIR" yarn; then
         echo "There was an error installing yarn"
         exit 1
     fi
 fi
-cd $FEDIR
+cd "$FEDIR" || exit
 echo "Installing frontend packages"
 $YARN -s install
-if [[ $? -ne 0 ]]; then
+if ! $YARN -s install; then
     echo "There was a problem running yarn"
     exit 1
 fi
 echo "Building frontend"
-$YARN build > /dev/null
-if [[ $? -ne 0 ]]; then
+if ! $YARN build > /dev/null; then
     echo "There was a problem building the frontend"
     exit 1
 fi
-cd $CURDIR
+cd "$CURDIR" || exit
 $DC build
