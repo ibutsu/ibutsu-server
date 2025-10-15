@@ -4,6 +4,14 @@ from ibutsu_server.filters import convert_filter
 
 def _get_comparison_data(additional_filters):
     """Count occurrences of distinct fields within results."""
+    if not additional_filters:
+        return {
+            "results": [],
+            "pagination": {
+                "totalItems": 0,
+            },
+        }
+
     queries = []
     for _ in additional_filters:
         queries.append(Result.query)

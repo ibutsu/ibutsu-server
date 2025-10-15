@@ -2,25 +2,38 @@
 Consolidated test fixtures for controller tests.
 """
 
+import logging
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
+import connexion
 import pytest
 
-from ibutsu_server.test import (
-    MockDashboard,
-    MockGroup,
-    MockProject,
-    MockToken,
-    MockUser,
-)
+from ibutsu_server.encoder import IbutsuJSONProvider
+from tests.test_util import MockDashboard, MockGroup, MockProject, MockToken, MockUser
 
-# Common mock IDs
+# Common mock IDs - Standardized across all tests
 MOCK_USER_ID = "70202589-4781-4eb9-bcfc-685b1d2c583a"
+MOCK_ADMIN_USER_ID = "12345678-1234-1234-1234-123456789012"
 MOCK_PROJECT_ID = "23cd86d5-a27e-45a4-83a3-12c74d219709"
-MOCK_GROUP_ID = "12345678-1234-1234-1234-123456789012"
-MOCK_DASHBOARD_ID = "87654321-4321-4321-4321-210987654321"
-MOCK_TOKEN_ID = "11111111-2222-3333-4444-555555555555"
+MOCK_GROUP_ID = "23cd86d5-a27e-45a4-83a3-12c74d219709"
+MOCK_DASHBOARD_ID = "70202589-4781-4eb9-bcfc-685b1d2c583a"
+MOCK_TOKEN_ID = "23cd86d5-a27e-45a4-83a3-12c74d219709"
+MOCK_IMPORT_ID = "70202589-4781-4eb9-bcfc-685b1d2c583a"
+MOCK_RESULT_ID = "23cd86d5-a27e-45a4-83a3-12c74d219709"
+MOCK_RUN_ID = "6b26876f-bcd9-49f3-b5bd-35f895a345d1"
+MOCK_ARTIFACT_ID = "70202589-4781-4eb9-bcfc-685b1d2c583a"
+MOCK_WIDGET_CONFIG_ID = "91e750be-2ef2-4d85-a50e-2c9366cefd9f"
+MOCK_TASK_ID = "70202589-4781-4eb9-bcfc-685b1d2c583a"
+
+
+@pytest.fixture(scope="session")
+def create_app():
+    logging.getLogger("connexion.operation").setLevel("ERROR")
+    app = connexion.App(__name__, specification_dir="../openapi/")
+    app.app.json_provider_class = IbutsuJSONProvider
+    app.add_api("openapi.yaml")
+    return app.app
 
 
 @pytest.fixture
@@ -216,3 +229,71 @@ def auth_headers(http_headers):
     """HTTP headers with authorization."""
     # This will be set by individual tests that need authentication
     return lambda token: {**http_headers, "Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def flask_app():
+    """Create Flask app for testing - consolidated fixture for all controller tests."""
+    import ibutsu_server.tasks
+    from ibutsu_server import get_app
+    from ibutsu_server.db.base import session
+    from ibutsu_server.db.models import Token, User
+    from ibutsu_server.tasks import create_celery_app
+    from ibutsu_server.test import mock_task
+    from ibutsu_server.util.jwt import generate_token
+
+    logging.getLogger("connexion.operation").setLevel("ERROR")
+    extra_config = {
+        "TESTING": True,
+        "LIVESERVER_PORT": 0,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "GOOGLE_CLIENT_ID": "123456@client.google.com",
+        "GITHUB_CLIENT_ID": None,
+        "FACEBOOK_APP_ID": None,
+        "GITLAB_CLIENT_ID": "thisisafakegitlabclientid",
+        "GITLAB_BASE_URL": "https://gitlab.com",
+        "JWT_SECRET": "thisisafakejwtsecretvalue",
+        "KEYCLOAK_BASE_URL": None,
+        "KEYCLOAK_CLIENT_ID": None,
+        "KEYCLOAK_AUTH_PATH": "auth",
+    }
+    app = get_app(**extra_config)
+    create_celery_app(app)
+
+    # Add a test user
+    with app.app_context():
+        test_user = User(
+            name="Test User", email="test@example.com", is_active=True, is_superadmin=True
+        )
+        session.add(test_user)
+        session.commit()
+        jwt_token = generate_token(test_user.id)
+        token = Token(name="login-token", user=test_user, token=jwt_token)
+        session.add(token)
+        session.commit()
+        session.refresh(test_user)
+
+    if ibutsu_server.tasks.task is None:
+        ibutsu_server.tasks.task = mock_task
+
+    with app.test_client() as client:
+        yield client, jwt_token
+
+
+def mock_task(*args, **kwargs):
+    pass
+
+
+@pytest.fixture
+def app_context(flask_app):
+    """Create an application context for testing."""
+    client, _ = flask_app
+    with client.application.app_context():
+        yield
+
+
+@pytest.fixture
+def mocked_celery():
+    """Mock Celery app for testing."""
+    with patch("ibutsu_server.tasks.celery") as mock:
+        yield mock

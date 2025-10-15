@@ -84,9 +84,6 @@ test = [
 [project.scripts]
 ibutsu_server = "ibutsu_server.__main__:main"
 
-[project.entry-points.pytest11]
-ibutsu_server = "ibutsu_server.pytest_plugin"
-
 [build-system]
 requires = [
     "hatchling",
@@ -101,7 +98,30 @@ raw-options.package_data = {"" = ["openapi/openapi.yaml"]}
 # don't package tests, so they can be run without editable install
 [tool.hatch.build.targets.wheel]
 packages = ["ibutsu_server"]
-exclude = ["docker/"]
+exclude = [
+    "docker/",
+    "tests/",
+    "**/test/",
+    "**/tests/",
+    "test_*.py",
+    "*_test.py",
+    "conftest.py",
+]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "tests/",
+    "**/test/",
+    "**/tests/",
+    "test_*.py",
+    "*_test.py",
+    "conftest.py",
+    "coverage.xml",
+    "htmlcov/",
+    ".pytest_cache/",
+    ".coverage",
+    ".coverage.*",
+]
 
 
 [tool.hatch.envs.default]
@@ -200,7 +220,7 @@ ignore = [
     "ARG001",  # Unused function argument (Widget functions must accept all WIDGET_TYPES parameters)
     "ARG002",  # Unused method argument
 ]
-"**/test/**/*.py" = [
+"**/tests/**/*.py" = [
     "S105",   # Possible hardcoded password string
     "S106",   # Possible hardcoded password assigned to argument
     "ARG002", # Unused method argument (common in test mocks)
@@ -231,7 +251,6 @@ quote-style = "double"
 source = ["ibutsu_server"]
 branch = true
 omit = [
-    "*/test/*",
     "*/tests/*",
     "*/__pycache__/*",
     "*/migrations/*",
@@ -258,7 +277,7 @@ output = "coverage.xml"
 directory = "htmlcov"
 
 [tool.pytest.ini_options]
-testpaths = ["ibutsu_server/test"]
+testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

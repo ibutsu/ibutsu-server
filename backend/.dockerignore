@@ -54,6 +54,16 @@ coverage.xml
 venv/
 .python-version
 
+# Test directories and files
+tests/
+**/test/
+**/tests/
+test_*.py
+*_test.py
+conftest.py
+pytest.ini
+.pytest_cache/
+
 # Translations
 *.mo
 *.pot
