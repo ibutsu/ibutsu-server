@@ -22,6 +22,15 @@ uuid_pattern = re.compile(
 )
 
 
+def prune_fields(data, fields_to_prune=None):
+    """Prune fields from a dictionary."""
+    fields_to_prune = fields_to_prune or ["id", "_id"]
+    for field in fields_to_prune:
+        if field in data:
+            del data[field]
+    return data
+
+
 def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
     """Create a result with artifacts, used in the archive importer"""
     old_id = None
