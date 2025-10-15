@@ -48,7 +48,7 @@ RESERVED_PARAMS = {"filter": "filter_"}
 
 
 def _pre_process_params(params, widget_id=None):
-    """Reduce congnitive complexity"""
+    """Reduce cognitive complexity"""
     new_params = params.copy()
     for param in params:
         # Some parameters are Python reserved words
@@ -71,7 +71,7 @@ def _pre_process_params(params, widget_id=None):
 
 
 def _typecast_params(widget_id, params):
-    """Reduce congnitive complexity"""
+    """Reduce cognitive complexity"""
     param_types = {p["name"]: p["type"] for p in WIDGET_TYPES[widget_id]["params"]}
     for param in params:
         if isinstance(params[param], list) and param_types.get(param) != "list":

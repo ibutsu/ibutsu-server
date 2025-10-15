@@ -63,7 +63,7 @@ def get_user_from_provider(provider, auth_data):
             return None
     if not user_dict.get("email"):
         if provider_config.get("email_url"):
-            # GitHub only returns the publically visible e-mail address with the user, so we need
+            # GitHub only returns the publicly visible e-mail address with the user, so we need
             # to make another request to get the e-mail address, see the this answer for more info:
             # https://stackoverflow.com/a/35387123
             response = requests.get(

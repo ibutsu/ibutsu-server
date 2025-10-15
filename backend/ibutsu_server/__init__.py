@@ -99,7 +99,7 @@ def get_app(**extra_config):
         engine.dispose()
 
         # Set celery broker URL
-        # hackishly indented to only be part of the setup where extra config wont pass the db
+        # hackishly indented to only be part of the setup where extra config won't pass the db
         config.update(
             CELERY_BROKER_URL=make_celery_redis_url(config, envvar="CELERY_BROKER_URL"),
             CELERY_RESULT_BACKEND=make_celery_redis_url(config, envvar="CELERY_RESULT_BACKEND"),

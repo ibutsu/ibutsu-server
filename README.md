@@ -29,7 +29,7 @@ user interface.
 ## About the API
 
 Ibutsu has a RESTful API built using the [OpenAPI specification](https://github.com/swagger-api/swagger-core/wiki)
-which is browseable from `/api/ui/`
+which is browsable from `/api/ui/`
 
 ## Running locally
 
@@ -70,7 +70,7 @@ optional arguments:
   -V, --use-volumes     use podman volumes to store data
   -A, --create-admin    create an administrator ('admin@example.com')
   -P, --create-project  create a default project ('my-project')
-  POD_NAME              the name of the pod, 'ibutsu' if ommitted
+  POD_NAME              the name of the pod, 'ibutsu' if omitted
 
 ```
 

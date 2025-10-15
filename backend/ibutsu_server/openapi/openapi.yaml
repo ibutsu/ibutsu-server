@@ -167,7 +167,7 @@ paths:
                 $ref: '#/components/schemas/Result'
           description: successful operation
         400:
-          description: Bad reqest, JSON required or not enough parameters
+          description: Bad request, JSON required or not enough parameters
         404:
           description: Result not found
       summary: Updates a single result
@@ -1085,7 +1085,7 @@ paths:
                 $ref: '#/components/schemas/WidgetConfig'
           description: successful operation
         400:
-          description: Bad reqest, JSON required or not enough parameters
+          description: Bad request, JSON required or not enough parameters
         404:
           description: Widget configuration not found
       summary: Updates a single widget configuration
@@ -1638,7 +1638,7 @@ paths:
                 $ref: '#/components/schemas/User'
           description: successful operation
         400:
-          description: Bad reqest, JSON required or not enough parameters
+          description: Bad request, JSON required or not enough parameters
         401:
           description: The user needs to be logged in
         403:
@@ -1778,7 +1778,7 @@ paths:
                 $ref: '#/components/schemas/Project'
           description: successful operation
         400:
-          description: Bad reqest, JSON required or not enough parameters
+          description: Bad request, JSON required or not enough parameters
         401:
           description: The user needs to be logged in
         403:

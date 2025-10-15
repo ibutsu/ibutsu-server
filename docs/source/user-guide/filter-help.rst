@@ -36,7 +36,7 @@ the user. For all filters, the following translation is used:
    * - (
      - lte
      - ``Result.<column> <= <value>``
-     - Less than or eqaul to
+     - Less than or equal to
    * - ``*``
      - in
      - ``Result.<column>.in_(<values>)``
