@@ -1,5 +1,6 @@
 #!/bin/bash
-. /ibutsu_venv/bin/activate
+# shellcheck source=/dev/null
+source /ibutsu_venv/bin/activate
 
 
 print_help() {
@@ -23,5 +24,5 @@ case $1 in
       FLASK_ENV=development \
       flask run  --host 0.0.0.0 --port 8080;;
     worker) ./celery_worker.sh;;
-    *) echo $0 unknown; print_help;;
+    *) echo "$0" unknown; print_help;;
 esac

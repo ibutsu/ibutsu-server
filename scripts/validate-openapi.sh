@@ -35,12 +35,10 @@ validate_openapi() {
     # Run the validation
     # Mount the openapi directory directly to the container's working directory
     # Use :Z for SELinux systems to allow container access
-    $container_cmd run --rm \
+    if $container_cmd run --rm \
         -v "$(pwd)/$OPENAPI_DIR:/local:Z" \
         "$GENERATOR_IMAGE" \
-        validate -i "/local/$OPENAPI_FILE"
-
-    if [ $? -eq 0 ]; then
+        validate -i "/local/$OPENAPI_FILE"; then
         echo "OpenAPI specification is valid!"
         exit 0
     else

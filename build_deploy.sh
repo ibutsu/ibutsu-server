@@ -26,7 +26,7 @@ IMAGE_PREFIX="quay.io/cloudservices/ibutsu-"
 BACKEND_IMAGES=("backend" "scheduler" "worker" "flower")
 for IMAGE in "${BACKEND_IMAGES[@]}"; do
     echo "---- BUILDING: $IMAGE ----"
-    docker build -t "${IMAGE_PREFIX}${IMAGE}:${IMAGE_TAG}" -f backend/docker/Dockerfile.$IMAGE ./backend/
+    docker build -t "${IMAGE_PREFIX}${IMAGE}:${IMAGE_TAG}" -f backend/docker/Dockerfile."$IMAGE" ./backend/
     docker push "${IMAGE_PREFIX}${IMAGE}:${IMAGE_TAG}"
     docker tag "${IMAGE_PREFIX}${IMAGE}:${IMAGE_TAG}" "${IMAGE}:latest"
     docker push "${IMAGE_PREFIX}${IMAGE}:latest"

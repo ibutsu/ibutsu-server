@@ -34,25 +34,25 @@ fi
 IMAGE_TAG=$(git rev-parse --short=7 HEAD)
 
 # Let the user know what we're going to do
-printf "\nCurrent SHA for image tags: %s\n" ${IMAGE_TAG}
+printf "\nCurrent SHA for image tags: %s\n" "${IMAGE_TAG}"
 echo "Building image(s): ${IMAGES_TO_BUILD[*]}"
 
 
 # Iterate and build images sequentially
 declare -A RESULTS
 for IMAGE in "${IMAGES_TO_BUILD[@]}"; do
-    printf -- "\n---------------- BUILDING: %s%s:%s ----------------\n" ${IMAGE_PREFIX} ${IMAGE} ${IMAGE_TAG}
+    printf -- "\n---------------- BUILDING: %s%s:%s ----------------\n" ${IMAGE_PREFIX} "${IMAGE}" "${IMAGE_TAG}"
     if [[ "${IMAGE}" == "frontend" ]]; then
         BASE_DIR=frontend
     else
         BASE_DIR=backend
     fi
-    podman build -t "${IMAGE_PREFIX}${IMAGE}:${IMAGE_TAG}" -f $BASE_DIR/docker/Dockerfile.$IMAGE ./$BASE_DIR/
+    podman build -t "${IMAGE_PREFIX}${IMAGE}:${IMAGE_TAG}" -f $BASE_DIR/docker/Dockerfile."$IMAGE" ./$BASE_DIR/
     RESULTS[${IMAGE}]=$?
 done
 
 # dump results to console at the end
 echo "BUILD RESULTS:"
 for IMAGE in "${!RESULTS[@]}"; do
-    printf "%s: %d\n" $IMAGE ${RESULTS[${IMAGE}]}
+    printf "%s: %d\n" "$IMAGE" "${RESULTS[${IMAGE}]}"
 done
