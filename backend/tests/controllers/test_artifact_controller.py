@@ -1,138 +1,185 @@
 from io import BytesIO
 from unittest import skip
-from unittest.mock import MagicMock, patch
-
-import pytest
-
-from tests.conftest import MOCK_ARTIFACT_ID, MOCK_RESULT_ID
-from tests.test_util import MockArtifact, MockResult
-
-MOCK_ARTIFACT = MockArtifact(
-    id=MOCK_ARTIFACT_ID,
-    data={
-        "resultId": MOCK_RESULT_ID,
-        "filename": "log.txt",
-        "contentType": "text/plain",
-        "additionalMetadata": {"key": "value"},
-    },
-    content="filecontent",
-    result=MockResult(id=MOCK_RESULT_ID),
-)
 
 
-@pytest.fixture
-def artifact_controller_mocks():
-    """Mocks for the artifact controller tests"""
-    with (
-        patch("ibutsu_server.controllers.artifact_controller.session") as mock_session,
-        patch(
-            "ibutsu_server.controllers.artifact_controller.project_has_user"
-        ) as mock_project_has_user,
-        patch("ibutsu_server.controllers.artifact_controller.Artifact") as mock_artifact_class,
-        patch(
-            "ibutsu_server.controllers.artifact_controller.add_user_filter"
-        ) as mock_add_user_filter,
-    ):
-        mock_project_has_user.return_value = True
-        mock_artifact_class.return_value = MOCK_ARTIFACT
-        mock_artifact_class.query.get.return_value = MOCK_ARTIFACT
-        mock_limit = MagicMock()
-        mock_limit.return_value.offset.return_value.all.return_value = [MOCK_ARTIFACT]
-        mock_artifact_class.query.limit = mock_limit
-        mock_artifact_class.query.filter.return_value.limit = mock_limit
-        mock_artifact_class.query.count.return_value = 1
-        mock_artifact_class.query.filter.return_value.count.return_value = 1
-        mock_add_user_filter.side_effect = lambda query, _user: query
-
-        yield {
-            "session": mock_session,
-            "project_has_user": mock_project_has_user,
-            "artifact_class": mock_artifact_class,
-            "add_user_filter": mock_add_user_filter,
-            "limit": mock_limit,
-        }
-
-
-def test_delete_artifact(flask_app, artifact_controller_mocks):
+def test_delete_artifact(flask_app, make_project, make_run, make_result):
     """Test case for delete_artifact"""
     client, jwt_token = flask_app
-    mocks = artifact_controller_mocks
+
+    # Create test data hierarchy
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+    result = make_result(run_id=run.id, project_id=project.id, test_id="test.example")
+
+    # Create artifact
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import Artifact
+
+        artifact = Artifact(
+            filename="test.log",
+            content=b"test content",
+            result_id=result.id,
+        )
+        session.add(artifact)
+        session.commit()
+        session.refresh(artifact)
+        artifact_id = artifact.id
+
     headers = {"Authorization": f"Bearer {jwt_token}"}
-    response = client.open(f"/api/artifact/{MOCK_ARTIFACT_ID}", method="DELETE", headers=headers)
-    mocks["artifact_class"].query.get.assert_called_once_with(MOCK_ARTIFACT_ID)
-    mocks["session"].delete.assert_called_once_with(MOCK_ARTIFACT)
-    mocks["session"].commit.assert_called_once()
+    response = client.delete(
+        f"/api/artifact/{artifact_id}",
+        headers=headers,
+    )
     assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
 
+    # Verify artifact was deleted from database
+    with client.application.app_context():
+        from ibutsu_server.db.models import Artifact
 
-def test_download_artifact(flask_app, artifact_controller_mocks):
+        deleted_artifact = Artifact.query.get(str(artifact_id))
+        assert deleted_artifact is None
+
+
+def test_download_artifact(flask_app, make_project, make_run, make_result):
     """Test case for download_artifact"""
     client, jwt_token = flask_app
-    mocks = artifact_controller_mocks
+
+    # Create test data hierarchy
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+    result = make_result(run_id=run.id, project_id=project.id, test_id="test.example")
+
+    # Create artifact with content
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import Artifact
+
+        artifact = Artifact(
+            filename="test.log",
+            content=b"test file content",
+            result_id=result.id,
+        )
+        session.add(artifact)
+        session.commit()
+        session.refresh(artifact)
+        artifact_id = artifact.id
+
     headers = {
         "Accept": "application/octet-stream",
         "Authorization": f"Bearer {jwt_token}",
     }
-    response = client.open(
-        f"/api/artifact/{MOCK_ARTIFACT_ID}/download",
-        method="GET",
+    response = client.get(
+        f"/api/artifact/{artifact_id}/download",
         headers=headers,
     )
-    mocks["artifact_class"].query.get.assert_called_once_with(MOCK_ARTIFACT_ID)
     assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    # Verify content is returned
+    assert b"test file content" in response.data
 
 
-def test_get_artifact(flask_app, artifact_controller_mocks):
+def test_get_artifact(flask_app, make_project, make_run, make_result):
     """Test case for get_artifact"""
     client, jwt_token = flask_app
-    mocks = artifact_controller_mocks
+
+    # Create test data hierarchy
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+    result = make_result(run_id=run.id, project_id=project.id, test_id="test.example")
+
+    # Create artifact
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import Artifact
+
+        artifact = Artifact(
+            filename="test.log",
+            content=b"test content",
+            result_id=result.id,
+        )
+        session.add(artifact)
+        session.commit()
+        session.refresh(artifact)
+        artifact_id = artifact.id
+
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {jwt_token}",
     }
-    response = client.open(
-        f"/api/artifact/{MOCK_ARTIFACT_ID}",
-        method="GET",
+    response = client.get(
+        f"/api/artifact/{artifact_id}",
         headers=headers,
     )
-    mocks["artifact_class"].query.get.assert_called_once_with(MOCK_ARTIFACT_ID)
     assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
 
+    response_data = response.get_json()
+    assert response_data["filename"] == "test.log"
+    assert response_data["result_id"] == str(result.id)
 
-def test_get_artifact_list(flask_app, artifact_controller_mocks):
+
+def test_get_artifact_list(flask_app, make_project, make_run, make_result):
     """Test case for get_artifact_list"""
     client, jwt_token = flask_app
-    mocks = artifact_controller_mocks
-    query_string = [("resultId", MOCK_RESULT_ID), ("page", 56), ("pageSize", 56)]
+
+    # Create test data hierarchy
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+    result = make_result(run_id=run.id, project_id=project.id, test_id="test.example")
+
+    # Create multiple artifacts
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import Artifact
+
+        for i in range(5):
+            artifact = Artifact(
+                filename=f"test{i}.log",
+                content=b"test content",
+                result_id=result.id,
+            )
+            session.add(artifact)
+        session.commit()
+
+    query_string = [("resultId", str(result.id)), ("page", 1), ("pageSize", 56)]
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {jwt_token}",
     }
-    response = client.open(
-        "/api/artifact", method="GET", headers=headers, query_string=query_string
+    response = client.get(
+        "/api/artifact",
+        headers=headers,
+        query_string=query_string,
     )
-    mocks["limit"].return_value.offset.return_value.all.assert_called_once()
     assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
 
+    response_data = response.get_json()
+    assert "artifacts" in response_data
+    assert len(response_data["artifacts"]) == 5
 
-@skip("Something is getting crossed in the validation layer")
-def test_upload_artifact(flask_app, artifact_controller_mocks):
+
+@skip("Multipart form data handling needs investigation")
+def test_upload_artifact(flask_app, make_project, make_run, make_result):
     """Test case for upload_artifact"""
     client, jwt_token = flask_app
+
+    # Create test data hierarchy
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+    result = make_result(run_id=run.id, project_id=project.id, test_id="test.example")
+
     headers = {
         "Accept": "application/json",
         "Content-Type": "multipart/form-data",
         "Authorization": f"Bearer {jwt_token}",
     }
     data = {
-        "resultId": MOCK_ARTIFACT_ID,
+        "resultId": str(result.id),
         "filename": "log.txt",
         "additionalMetadata": {"key": "value"},
         "file": (BytesIO(b"filecontent"), "log.txt"),
     }
-    response = client.open(
+    response = client.post(
         "/api/artifact",
-        method="POST",
         headers=headers,
         data=data,
         content_type="multipart/form-data",

@@ -21,10 +21,11 @@ def add_group(body=None):
         return RESPONSE_JSON_REQ
     body_data = body if body is not None else connexion.request.get_json()
     group = Group.from_dict(**body_data)
-    if group.id and Group.query.get(group.id):
-        return f"The group with ID {group.id} already exists", HTTPStatus.BAD_REQUEST
-    if not is_uuid(group.id):
-        return f"Group ID {group.id} is not in UUID format", HTTPStatus.BAD_REQUEST
+    if group.id:
+        if Group.query.get(group.id):
+            return f"The group with ID {group.id} already exists", HTTPStatus.BAD_REQUEST
+        if not is_uuid(group.id):
+            return f"Group ID {group.id} is not in UUID format", HTTPStatus.BAD_REQUEST
     session.add(group)
     session.commit()
     return group.to_dict(), HTTPStatus.CREATED

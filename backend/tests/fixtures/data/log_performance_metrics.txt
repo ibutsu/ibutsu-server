@@ -1,0 +1,53 @@
+Performance Test Execution Report
+==================================
+
+Test Configuration:
+- Concurrent Users: 100
+- Test Duration: 300 seconds
+- Target Endpoint: /api/data/query
+- Request Method: POST
+
+Execution Timeline:
+[00:00:00] Test started - ramping up users
+[00:00:30] Reached 25 concurrent users
+[00:01:00] Reached 50 concurrent users
+[00:01:30] Reached 75 concurrent users
+[00:02:00] Reached 100 concurrent users - full load
+[00:04:45] Performance degradation detected
+[00:05:00] Test completed
+
+Performance Metrics:
+--------------------
+Total Requests: 135000
+Successful Requests: 128250
+Failed Requests: 6750
+Error Rate: 5.00%
+
+Response Times (ms):
+- Average: 234
+- Minimum: 45
+- Maximum: 2345
+- P50 (Median): 198
+- P75: 345
+- P90: 456
+- P95: 567
+- P99: 890
+
+Throughput:
+- Requests/sec: 450
+- Data Transferred: 1.2 GB
+- Transfer Rate: 4.1 MB/sec
+
+Error Breakdown:
+- Timeout errors: 4500 (66.7%)
+- Connection errors: 1350 (20.0%)
+- HTTP 500 errors: 675 (10.0%)
+- HTTP 503 errors: 225 (3.3%)
+
+Resource Utilization:
+- CPU: 78%
+- Memory: 4.2 GB
+- Network I/O: 125 MB/s
+- Disk I/O: 45 MB/s
+
+FAILURE: Error rate 5.00% exceeds threshold of 1.00%

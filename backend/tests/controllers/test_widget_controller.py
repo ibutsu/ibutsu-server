@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 from ibutsu_server.db.models import Run
 from ibutsu_server.widgets.run_aggregator import get_recent_run_data
-from tests.conftest import MOCK_RESULT_ID, MOCK_RUN_ID
+from tests.fixtures.constants import MOCK_RESULT_ID, MOCK_RUN_ID
 from tests.test_util import MockProject, MockResult
 
 MOCK_ID_2 = "99fba7d2-4d32-4b9b-b07f-4200c9717662"
@@ -52,34 +52,39 @@ MOCK_RESULTS = [
 MOCK_RESULTS_DICT = [result.to_dict() for result in MOCK_RESULTS]
 
 
-@patch("ibutsu_server.widgets.compare_runs_view.Result.query")
-def test_get_comparison_result_list(mocked_query, flask_app):
+def test_get_comparison_result_list(flask_app):
     """Test case for compare_runs_view.py::get_comparison_data"""
     client, jwt_token = flask_app
     MOCK_RUN_IDS = [MOCK_RUN_ID, MOCK_RUN_ID_2]
     MOCKED_RESULTS = [[mocked_result] for mocked_result in MOCK_RESULTS]
-    mocked_query = mocked_query.filter.return_value
-    mocked_query.with_entities.return_value.order_by.return_value.first.side_effect = MOCK_RUN_IDS
-    mocked_query.filter.return_value.order_by.return_value.all.side_effect = MOCKED_RESULTS
-    query_string = {
-        "filters": ["metadata.component=frontend", "metadata.component=frontend"],
-    }
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
-    response = client.open(
-        "/api/widget/compare-runs-view",
-        method="GET",
-        headers=headers,
-        query_string=query_string,
-    )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
-    expected_response = {
-        "pagination": {"totalItems": 1},
-        "results": [MOCK_RESULTS_DICT],
-    }
-    assert response.json == expected_response
+
+    with patch("ibutsu_server.widgets.compare_runs_view.Result.query") as mocked_query:
+        mocked_query_return = mocked_query.filter.return_value
+        mocked_query_return.with_entities.return_value.order_by.return_value.first.side_effect = (
+            MOCK_RUN_IDS
+        )
+        mocked_query_return.filter.return_value.order_by.return_value.all.side_effect = (
+            MOCKED_RESULTS
+        )
+        query_string = {
+            "filters": ["metadata.component=frontend", "metadata.component=frontend"],
+        }
+        headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {jwt_token}",
+        }
+        response = client.open(
+            "/api/widget/compare-runs-view",
+            method="GET",
+            headers=headers,
+            query_string=query_string,
+        )
+        assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+        expected_response = {
+            "pagination": {"totalItems": 1},
+            "results": [MOCK_RESULTS_DICT],
+        }
+        assert response.json == expected_response
 
 
 @patch("ibutsu_server.widgets.run_aggregator.string_to_column")

@@ -1,0 +1,532 @@
+{
+  "project": {
+    "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+    "name": "sample-test-project",
+    "title": "Sample Test Project"
+  },
+  "runs": [
+    {
+      "id": "a1b2c3d4-1234-5678-9abc-def012345678",
+      "component": "frontend",
+      "env": "staging",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "ci-pipeline-main-build-1001",
+      "start_time": "2025-10-01T10:00:00+00:00",
+      "duration": 125.5,
+      "metadata": {
+        "project": "sample-project",
+        "build_system": {
+          "name": "continuous-integration",
+          "job_name": "main-pipeline/test-suite",
+          "build_number": "1001",
+          "build_url": "https://ci.example.com/job/main-pipeline/test-suite/1001/"
+        },
+        "environment": {
+          "os": "linux",
+          "python_version": "3.11.5",
+          "browser": "chrome",
+          "browser_version": "118.0.5993.88"
+        },
+        "git": {
+          "branch": "main",
+          "commit": "abc123def456",
+          "repository": "example/test-repo"
+        }
+      },
+      "summary": {
+        "failures": 2,
+        "errors": 1,
+        "xfailures": 1,
+        "xpasses": 0,
+        "skips": 3,
+        "tests": 15,
+        "collected": 15,
+        "not_run": 0
+      }
+    },
+    {
+      "id": "b2c3d4e5-2345-6789-0bcd-ef1234567890",
+      "component": "backend-api",
+      "env": "production",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "ci-pipeline-release-build-2050",
+      "start_time": "2025-10-05T14:30:00+00:00",
+      "duration": 89.3,
+      "metadata": {
+        "project": "sample-project",
+        "build_system": {
+          "name": "continuous-integration",
+          "job_name": "release-pipeline/smoke-tests",
+          "build_number": "2050",
+          "build_url": "https://ci.example.com/job/release-pipeline/smoke-tests/2050/"
+        },
+        "environment": {
+          "os": "linux",
+          "python_version": "3.12.0"
+        },
+        "git": {
+          "branch": "release-1.5",
+          "commit": "def789ghi012",
+          "tag": "v1.5.0"
+        },
+        "deployment": {
+          "region": "us-east-1",
+          "cluster": "prod-cluster-01"
+        }
+      },
+      "summary": {
+        "failures": 0,
+        "errors": 0,
+        "xfailures": 0,
+        "xpasses": 0,
+        "skips": 1,
+        "tests": 8,
+        "collected": 8,
+        "not_run": 0
+      }
+    },
+    {
+      "id": "c3d4e5f6-3456-7890-1cde-f23456789012",
+      "component": "integration",
+      "env": "qa",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "nightly-test-run-3100",
+      "start_time": "2025-10-10T02:00:00+00:00",
+      "duration": 3456.7,
+      "metadata": {
+        "project": "sample-project",
+        "build_system": {
+          "name": "continuous-integration",
+          "job_name": "nightly/full-regression",
+          "build_number": "3100"
+        },
+        "test_suite": {
+          "name": "regression",
+          "tags": ["smoke", "regression", "critical"],
+          "parallel_workers": 4,
+          "test_framework": "pytest",
+          "test_framework_version": "7.4.2"
+        },
+        "environment": {
+          "os": "linux",
+          "python_version": "3.11.5",
+          "database": "postgresql",
+          "database_version": "15.4"
+        }
+      },
+      "summary": {
+        "failures": 5,
+        "errors": 2,
+        "xfailures": 3,
+        "xpasses": 1,
+        "skips": 12,
+        "tests": 52,
+        "collected": 52,
+        "not_run": 0
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "r1a2b3c4-1111-2222-3333-444455556666",
+      "test_id": "test_user_authentication_valid_credentials",
+      "component": "frontend",
+      "env": "staging",
+      "result": "passed",
+      "run_id": "a1b2c3d4-1234-5678-9abc-def012345678",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "ci-pipeline-main-build-1001",
+      "start_time": "2025-10-01T10:00:15+00:00",
+      "duration": 2.345,
+      "metadata": {
+        "statuses": {
+          "setup": ["passed", false],
+          "call": ["passed", false],
+          "teardown": ["passed", false]
+        },
+        "durations": {
+          "setup": 0.5,
+          "call": 1.745,
+          "teardown": 0.1
+        },
+        "fspath": "tests/auth/test_authentication.py",
+        "markers": ["smoke", "critical", "auth"],
+        "node_id": "tests/auth/test_authentication.py::test_user_authentication_valid_credentials",
+        "title": "User Authentication with Valid Credentials",
+        "description": "Verify that users can authenticate with valid credentials",
+        "test_steps": [
+          "Navigate to login page",
+          "Enter valid username and password",
+          "Click login button",
+          "Verify redirect to dashboard"
+        ],
+        "expected_results": "User should be successfully authenticated and redirected to dashboard",
+        "assignee": "test-engineer-1",
+        "importance": "critical",
+        "automation_status": "automated",
+        "interface_type": "ui",
+        "negative": false,
+        "type": "functional"
+      },
+      "params": {
+        "username": "testuser",
+        "auth_method": "password"
+      }
+    },
+    {
+      "id": "r2b3c4d5-2222-3333-4444-555566667777",
+      "test_id": "test_user_authentication_invalid_password",
+      "component": "frontend",
+      "env": "staging",
+      "result": "failed",
+      "run_id": "a1b2c3d4-1234-5678-9abc-def012345678",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "ci-pipeline-main-build-1001",
+      "start_time": "2025-10-01T10:00:20+00:00",
+      "duration": 5.678,
+      "metadata": {
+        "statuses": {
+          "setup": ["passed", false],
+          "call": ["failed", false],
+          "teardown": ["passed", false]
+        },
+        "durations": {
+          "setup": 0.3,
+          "call": 5.278,
+          "teardown": 0.1
+        },
+        "fspath": "tests/auth/test_authentication.py",
+        "markers": ["negative", "auth"],
+        "node_id": "tests/auth/test_authentication.py::test_user_authentication_invalid_password",
+        "title": "User Authentication with Invalid Password",
+        "description": "Verify that authentication fails with invalid password",
+        "assignee": "test-engineer-1",
+        "importance": "high",
+        "automation_status": "automated",
+        "interface_type": "ui",
+        "negative": true,
+        "type": "functional",
+        "short_tb": ">       assert 'Invalid credentials' in error_message\nE       AssertionError: Expected error message not found\nE       assert 'Invalid credentials' in 'Login failed'\n\ntests/auth/test_authentication.py:145: AssertionError",
+        "exception_name": "AssertionError",
+        "artifacts": ["test_user_authentication_invalid_password.log", "screenshot_failure.png"]
+      },
+      "params": {
+        "username": "testuser",
+        "password": "wrong_password",
+        "auth_method": "password"
+      }
+    },
+    {
+      "id": "r3c4d5e6-3333-4444-5555-666677778888",
+      "test_id": "test_database_connection_timeout",
+      "component": "backend-api",
+      "env": "staging",
+      "result": "error",
+      "run_id": "a1b2c3d4-1234-5678-9abc-def012345678",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "ci-pipeline-main-build-1001",
+      "start_time": "2025-10-01T10:01:00+00:00",
+      "duration": 30.5,
+      "metadata": {
+        "statuses": {
+          "setup": ["error", false],
+          "call": ["not_run", false],
+          "teardown": ["passed", false]
+        },
+        "durations": {
+          "setup": 30.4,
+          "call": 0.0,
+          "teardown": 0.1
+        },
+        "fspath": "tests/database/test_connections.py",
+        "markers": ["database", "infrastructure"],
+        "node_id": "tests/database/test_connections.py::test_database_connection_timeout",
+        "title": "Database Connection Timeout",
+        "description": "Test database connection handling when timeout occurs",
+        "assignee": "test-engineer-2",
+        "importance": "medium",
+        "automation_status": "automated",
+        "interface_type": "non_ui",
+        "type": "integration",
+        "short_tb": ">       raise ConnectionError('Database connection timeout')\nE       ConnectionError: Database connection timeout after 30 seconds\n\ntests/database/test_connections.py:67: ConnectionError",
+        "exception_name": "ConnectionError",
+        "artifacts": ["traceback.log"]
+      },
+      "params": {
+        "timeout": 30,
+        "database": "test_db"
+      }
+    },
+    {
+      "id": "r4d5e6f7-4444-5555-6666-777788889999",
+      "test_id": "test_legacy_feature_deprecated",
+      "component": "frontend",
+      "env": "staging",
+      "result": "skipped",
+      "run_id": "a1b2c3d4-1234-5678-9abc-def012345678",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "ci-pipeline-main-build-1001",
+      "start_time": "2025-10-01T10:02:00+00:00",
+      "duration": 0.001,
+      "metadata": {
+        "statuses": {
+          "setup": ["skipped", false],
+          "call": ["not_run", false],
+          "teardown": ["not_run", false]
+        },
+        "durations": {
+          "setup": 0.001,
+          "call": 0.0,
+          "teardown": 0.0
+        },
+        "fspath": "tests/legacy/test_deprecated_features.py",
+        "markers": ["skip", "legacy"],
+        "node_id": "tests/legacy/test_deprecated_features.py::test_legacy_feature_deprecated",
+        "title": "Legacy Feature - Deprecated",
+        "description": "Test for deprecated legacy feature",
+        "skip_reason": "Feature removed in version 2.0",
+        "assignee": "test-engineer-3",
+        "importance": "low",
+        "automation_status": "automated",
+        "type": "functional"
+      },
+      "params": {}
+    },
+    {
+      "id": "r5e6f7g8-5555-6666-7777-888899990000",
+      "test_id": "test_known_bug_data_validation",
+      "component": "backend-api",
+      "env": "staging",
+      "result": "xfailed",
+      "run_id": "a1b2c3d4-1234-5678-9abc-def012345678",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "ci-pipeline-main-build-1001",
+      "start_time": "2025-10-01T10:03:00+00:00",
+      "duration": 1.234,
+      "metadata": {
+        "statuses": {
+          "setup": ["passed", false],
+          "call": ["xfailed", true],
+          "teardown": ["passed", false]
+        },
+        "durations": {
+          "setup": 0.1,
+          "call": 1.034,
+          "teardown": 0.1
+        },
+        "fspath": "tests/api/test_data_validation.py",
+        "markers": ["xfail", "api", "known_issue"],
+        "node_id": "tests/api/test_data_validation.py::test_known_bug_data_validation",
+        "title": "Known Bug - Data Validation",
+        "description": "Test for known bug in data validation (BUG-1234)",
+        "xfail_reason": "Known issue tracked in BUG-1234",
+        "assignee": "test-engineer-2",
+        "importance": "medium",
+        "automation_status": "automated",
+        "interface_type": "non_ui",
+        "type": "functional",
+        "bug_id": "BUG-1234"
+      },
+      "params": {
+        "input_type": "json",
+        "validation_level": "strict"
+      }
+    },
+    {
+      "id": "r6f7g8h9-6666-7777-8888-999900001111",
+      "test_id": "test_api_endpoint_health_check",
+      "component": "backend-api",
+      "env": "production",
+      "result": "passed",
+      "run_id": "b2c3d4e5-2345-6789-0bcd-ef1234567890",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "ci-pipeline-release-build-2050",
+      "start_time": "2025-10-05T14:30:15+00:00",
+      "duration": 0.456,
+      "metadata": {
+        "statuses": {
+          "setup": ["passed", false],
+          "call": ["passed", false],
+          "teardown": ["passed", false]
+        },
+        "durations": {
+          "setup": 0.05,
+          "call": 0.356,
+          "teardown": 0.05
+        },
+        "fspath": "tests/api/test_health.py",
+        "markers": ["smoke", "api", "critical"],
+        "node_id": "tests/api/test_health.py::test_api_endpoint_health_check",
+        "title": "API Health Check Endpoint",
+        "description": "Verify API health check endpoint returns 200 OK",
+        "assignee": "test-engineer-1",
+        "importance": "critical",
+        "automation_status": "automated",
+        "interface_type": "non_ui",
+        "type": "smoke"
+      },
+      "params": {
+        "endpoint": "/health",
+        "expected_status": 200
+      }
+    },
+    {
+      "id": "r7g8h9i0-7777-8888-9999-000011112222",
+      "test_id": "test_integration_full_workflow",
+      "component": "integration",
+      "env": "qa",
+      "result": "passed",
+      "run_id": "c3d4e5f6-3456-7890-1cde-f23456789012",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "nightly-test-run-3100",
+      "start_time": "2025-10-10T02:05:00+00:00",
+      "duration": 125.789,
+      "metadata": {
+        "statuses": {
+          "setup": ["passed", false],
+          "call": ["passed", false],
+          "teardown": ["passed", false]
+        },
+        "durations": {
+          "setup": 15.2,
+          "call": 105.389,
+          "teardown": 5.2
+        },
+        "fspath": "tests/integration/test_workflows.py",
+        "markers": ["integration", "critical", "regression"],
+        "node_id": "tests/integration/test_workflows.py::test_integration_full_workflow",
+        "title": "Full Workflow Integration Test",
+        "description": "End-to-end test of complete user workflow",
+        "test_steps": [
+          "Create user account",
+          "Authenticate user",
+          "Perform main operations",
+          "Generate reports",
+          "Verify data consistency",
+          "Clean up test data"
+        ],
+        "assignee": "test-engineer-3",
+        "importance": "critical",
+        "automation_status": "automated",
+        "interface_type": "non_ui",
+        "type": "integration",
+        "coverage": {
+          "modules": ["auth", "api", "database", "reporting"],
+          "endpoints_tested": 12
+        }
+      },
+      "params": {
+        "workflow_type": "full",
+        "user_type": "standard"
+      }
+    },
+    {
+      "id": "r8h9i0j1-8888-9999-0000-111122223333",
+      "test_id": "test_ui_form_validation_simple",
+      "component": "frontend",
+      "env": "staging",
+      "result": "passed",
+      "run_id": "a1b2c3d4-1234-5678-9abc-def012345678",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "ci-pipeline-main-build-1001",
+      "start_time": "2025-10-01T10:00:05+00:00",
+      "duration": 3.456,
+      "metadata": {
+        "statuses": {
+          "setup": ["passed", false],
+          "call": ["passed", false],
+          "teardown": ["passed", false]
+        },
+        "durations": {
+          "setup": 0.8,
+          "call": 2.456,
+          "teardown": 0.2
+        },
+        "fspath": "tests/ui/test_forms.py",
+        "markers": ["ui", "forms"],
+        "node_id": "tests/ui/test_forms.py::test_ui_form_validation_simple",
+        "title": "Simple Form Validation",
+        "importance": "medium",
+        "interface_type": "ui"
+      },
+      "params": {}
+    },
+    {
+      "id": "r9i0j1k2-9999-0000-1111-222233334444",
+      "test_id": "test_performance_load_test",
+      "component": "backend-api",
+      "env": "qa",
+      "result": "failed",
+      "run_id": "c3d4e5f6-3456-7890-1cde-f23456789012",
+      "project_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "source": "nightly-test-run-3100",
+      "start_time": "2025-10-10T02:30:00+00:00",
+      "duration": 300.5,
+      "metadata": {
+        "statuses": {
+          "setup": ["passed", false],
+          "call": ["failed", false],
+          "teardown": ["passed", false]
+        },
+        "durations": {
+          "setup": 10.0,
+          "call": 285.5,
+          "teardown": 5.0
+        },
+        "fspath": "tests/performance/test_load.py",
+        "markers": ["performance", "load"],
+        "node_id": "tests/performance/test_load.py::test_performance_load_test",
+        "title": "API Load Test",
+        "description": "Test API performance under load",
+        "assignee": "test-engineer-2",
+        "importance": "high",
+        "type": "performance",
+        "performance_metrics": {
+          "concurrent_users": 100,
+          "requests_per_second": 450,
+          "average_response_time": 234,
+          "p95_response_time": 567,
+          "p99_response_time": 890,
+          "error_rate": 0.05
+        },
+        "short_tb": ">       assert metrics['error_rate'] < 0.01\nE       AssertionError: Error rate 0.05 exceeds threshold 0.01\n\ntests/performance/test_load.py:89: AssertionError",
+        "exception_name": "AssertionError",
+        "artifacts": ["performance_metrics.log"]
+      },
+      "params": {
+        "users": 100,
+        "duration": 300
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "a1111111-aaaa-bbbb-cccc-ddddeeeeeeee",
+      "result_id": "r2b3c4d5-2222-3333-4444-555566667777",
+      "filename": "test_user_authentication_invalid_password.log",
+      "content_type": "text/plain",
+      "content_reference": "log_authentication_failure.txt"
+    },
+    {
+      "id": "a2222222-bbbb-cccc-dddd-eeeeffffffff",
+      "result_id": "r2b3c4d5-2222-3333-4444-555566667777",
+      "filename": "screenshot_failure.png",
+      "content_type": "image/png",
+      "content_reference": "screenshot_failure.png"
+    },
+    {
+      "id": "a3333333-cccc-dddd-eeee-ffff00001111",
+      "result_id": "r3c4d5e6-3333-4444-5555-666677778888",
+      "filename": "traceback.log",
+      "content_type": "text/plain",
+      "content_reference": "log_traceback.txt"
+    },
+    {
+      "id": "a4444444-dddd-eeee-ffff-000011112222",
+      "result_id": "r9i0j1k2-9999-0000-1111-222233334444",
+      "filename": "performance_metrics.log",
+      "content_type": "text/plain",
+      "content_reference": "log_performance_metrics.txt"
+    }
+  ]
+}
