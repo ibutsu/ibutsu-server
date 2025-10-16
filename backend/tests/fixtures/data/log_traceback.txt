@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "/app/tests/database/test_connections.py", line 65, in test_database_connection_timeout
+    conn = database.connect(timeout=30)
+  File "/app/lib/database.py", line 145, in connect
+    return self._establish_connection()
+  File "/app/lib/database.py", line 178, in _establish_connection
+    socket = self._create_socket()
+  File "/app/lib/database.py", line 203, in _create_socket
+    raise ConnectionError(f'Database connection timeout after {self.timeout} seconds')
+ConnectionError: Database connection timeout after 30 seconds
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/site-packages/pytest_ibutsu/plugin.py", line 234, in pytest_runtest_makereport
+    outcome.get_result()
+  File "/usr/lib/python3.11/site-packages/_pytest/runner.py", line 341, in get_result
+    raise ex[1].with_traceback(ex[2])
+  File "/app/tests/database/test_connections.py", line 67, in test_database_connection_timeout
+    raise ConnectionError('Database connection timeout')
+ConnectionError: Database connection timeout after 30 seconds

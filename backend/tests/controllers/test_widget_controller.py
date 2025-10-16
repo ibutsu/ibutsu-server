@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 from ibutsu_server.db.models import Run
 from ibutsu_server.widgets.run_aggregator import get_recent_run_data
-from tests.conftest import MOCK_RESULT_ID, MOCK_RUN_ID
+from tests.fixtures.constants import MOCK_RESULT_ID, MOCK_RUN_ID
 from tests.test_util import MockProject, MockResult
 
 MOCK_ID_2 = "99fba7d2-4d32-4b9b-b07f-4200c9717662"

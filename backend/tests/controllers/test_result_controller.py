@@ -1,187 +1,215 @@
-from datetime import datetime
-from unittest.mock import MagicMock, patch
-
 import pytest
 from flask import json
 
-from tests.conftest import MOCK_RESULT_ID
-from tests.test_util import MockProject, MockResult
 
-START_TIME = datetime.utcnow()
-MOCK_RESULT = MockResult(
-    id=MOCK_RESULT_ID,
-    duration=6.027456183070403,
-    result="passed",
-    component="fake-component",
-    data={
-        "jenkins_build": 145,
-        "commit_hash": "F4BA3E12",
-        "assignee": "jdoe",
-        "component": "fake-component",
-        "project": "test-project",
-    },
-    start_time=str(START_TIME),
-    source="source",
-    params={"provider": "vmware", "ip_stack": "ipv4"},
-    test_id="test_id",
-    project=MockProject(),
-)
-MOCK_RESULT_DICT = MOCK_RESULT.to_dict()
-# the result to be POST'ed to Ibutsu, we expect it to transformed into MOCK_RESULT
-ADDED_RESULT = MockResult(
-    id=MOCK_RESULT_ID,
-    duration=6.027456183070403,
-    result="passed",
-    data={
-        "jenkins_build": 145,
-        "commit_hash": "F4BA3E12",
-        "user_properties": {"assignee": "jdoe", "component": "fake-component"},
-        "project": "test-project",
-    },
-    start_time=str(START_TIME),
-    source="source",
-    params={"provider": "vmware", "ip_stack": "ipv4"},
-    test_id="test_id",
-    project=MockProject(),
-)
-UPDATED_RESULT = MockResult(
-    id=MOCK_RESULT_ID,
-    duration=6.027456183070403,
-    result="failed",
-    component="blah",
-    data={
-        "jenkins_build": 146,
-        "commit_hash": "F4BA3E12",
-        "assignee": "new_assignee",
-        "component": "blah",
-        "project": "test-project",
-    },
-    start_time=str(START_TIME),
-    source="source_updated",
-    params={"provider": "vmware", "ip_stack": "ipv4"},
-    test_id="test_id_updated",
-    project=MockProject(),
-)
-
-
-@pytest.fixture
-def result_controller_mocks():
-    """Mocks for the result controller tests"""
-    with (
-        patch("ibutsu_server.controllers.result_controller.session") as mock_session,
-        patch(
-            "ibutsu_server.controllers.result_controller.project_has_user"
-        ) as mock_project_has_user,
-        patch("ibutsu_server.controllers.result_controller.Result") as mock_result_class,
-        patch(
-            "ibutsu_server.controllers.result_controller.add_user_filter"
-        ) as mock_add_user_filter,
-    ):
-        mock_project_has_user.return_value = True
-        mock_result_class.return_value = MOCK_RESULT
-        mock_result_class.query.get.return_value = MOCK_RESULT
-        mock_result_class.from_dict.return_value = ADDED_RESULT
-        mock_add_user_filter.return_value.count.return_value = 1
-        mock_add_user_filter.return_value.get.return_value = MOCK_RESULT
-
-        yield {
-            "session": mock_session,
-            "project_has_user": mock_project_has_user,
-            "result_class": mock_result_class,
-            "add_user_filter": mock_add_user_filter,
-        }
-
-
-def test_add_result(flask_app, result_controller_mocks):
+def test_add_result(flask_app, make_project, make_run):
     """Test case for add_result"""
     client, jwt_token = flask_app
-    mocks = result_controller_mocks
-    result = ADDED_RESULT.to_dict()
-    mocks["result_class"].query.get.return_value = None
+
+    # Create project and run
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+
+    result_data = {
+        "duration": 6.027456183070403,
+        "result": "passed",
+        "metadata": {
+            "jenkins_build": 145,
+            "commit_hash": "F4BA3E12",
+            "component": "fake-component",
+        },
+        "test_id": "test.example",
+        "run_id": str(run.id),
+        "project_id": str(project.id),
+    }
+
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
         "Authorization": f"Bearer {jwt_token}",
     }
-    response = client.open(
+    response = client.post(
         "/api/result",
-        method="POST",
         headers=headers,
-        data=json.dumps(result),
+        data=json.dumps(result_data),
         content_type="application/json",
     )
     assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
-    assert response.json == MOCK_RESULT_DICT
+
+    response_data = response.get_json()
+    assert response_data["result"] == "passed"
+    assert response_data["test_id"] == "test.example"
+
+    # Verify in database
+    with client.application.app_context():
+        from ibutsu_server.db.models import Result
+
+        result = Result.query.filter_by(test_id="test.example").first()
+        assert result is not None
+        assert result.result == "passed"
 
 
-def test_get_result(flask_app, result_controller_mocks):
+def test_get_result(flask_app, make_project, make_run, make_result):
     """Test case for get_result"""
     client, jwt_token = flask_app
+
+    # Create test data
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+    result = make_result(
+        run_id=run.id, project_id=project.id, test_id="test.example", result="passed"
+    )
+
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {jwt_token}",
     }
-    response = client.open(f"/api/result/{MOCK_RESULT_ID}", method="GET", headers=headers)
+    response = client.get(
+        f"/api/result/{result.id}",
+        headers=headers,
+    )
     assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
-    assert response.json == MOCK_RESULT_DICT
+
+    response_data = response.get_json()
+    assert response_data["id"] == str(result.id)
+    assert response_data["test_id"] == "test.example"
 
 
-def test_get_result_list(flask_app, result_controller_mocks):
-    """Test case for get_result_list"""
+@pytest.mark.parametrize(
+    ("page", "page_size"),
+    [
+        (1, 25),
+        (2, 10),
+        (1, 56),
+    ],
+)
+def test_get_result_list(flask_app, make_project, make_run, make_result, page, page_size):
+    """Test case for get_result_list with pagination"""
     client, jwt_token = flask_app
-    mocks = result_controller_mocks
-    mock_all = MagicMock(return_value=[MOCK_RESULT])
-    mock_filter = MagicMock()
-    mock_filter.order_by.return_value.offset.return_value.limit.return_value.all = mock_all
-    mock_filter.count.return_value = 1
-    mocks["add_user_filter"].return_value.filter.return_value = mock_filter
-    query_string = [
-        ("filter", "metadata.component=frontend"),
-        ("page", 56),
-        ("pageSize", 56),
-    ]
+
+    # Create test data
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+
+    # Create multiple results
+    for i in range(30):
+        make_result(
+            run_id=run.id, project_id=project.id, test_id=f"test.example.{i}", result="passed"
+        )
+
+    query_string = [("page", page), ("pageSize", page_size)]
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {jwt_token}",
     }
-    response = client.open("/api/result", method="GET", headers=headers, query_string=query_string)
+    response = client.get(
+        "/api/result",
+        headers=headers,
+        query_string=query_string,
+    )
     assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
-    expected_response = {
-        "pagination": {
-            "page": 56,
-            "pageSize": 56,
-            "totalItems": 1,
-            "totalPages": 1,
-        },
-        "results": [MOCK_RESULT_DICT],
+
+    response_data = response.get_json()
+    assert "results" in response_data
+    assert "pagination" in response_data
+    assert response_data["pagination"]["page"] == page
+    assert response_data["pagination"]["pageSize"] == page_size
+
+
+def test_get_result_list_filter_by_result_status(flask_app, make_project, make_run, make_result):
+    """Test case for get_result_list with result status filter"""
+    client, jwt_token = flask_app
+
+    # Create test data
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+
+    # Create results with different statuses
+    for i in range(5):
+        make_result(
+            run_id=run.id,
+            project_id=project.id,
+            test_id=f"test.passed.{i}",
+            result="passed",
+        )
+
+    for i in range(3):
+        make_result(
+            run_id=run.id,
+            project_id=project.id,
+            test_id=f"test.failed.{i}",
+            result="failed",
+        )
+
+    query_string = [("filter", "result=passed")]
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {jwt_token}",
     }
-    assert response.json == expected_response
+    response = client.get(
+        "/api/result",
+        headers=headers,
+        query_string=query_string,
+    )
+    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+
+    response_data = response.get_json()
+    # Should only return passed results
+    assert len(response_data["results"]) >= 5
+    for result in response_data["results"]:
+        assert result["result"] == "passed"
 
 
-def test_update_result(flask_app, result_controller_mocks):
+def test_update_result(flask_app, make_project, make_run, make_result):
     """Test case for update_result"""
     client, jwt_token = flask_app
-    result = {
-        "result": "failed",
-        "metadata": {
-            "jenkins_build": 146,
-            "commit_hash": "F4BA3E12",
-            "user_properties": {"assignee": "new_assignee", "component": "blah"},
-        },
-        "source": "source_updated",
-        "test_id": "test_id_updated",
-    }
+
+    # Create test data
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+    result = make_result(
+        run_id=run.id, project_id=project.id, test_id="test.example", result="passed"
+    )
+
+    update_data = {"result": "failed", "metadata": {"component": "updated-component"}}
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
         "Authorization": f"Bearer {jwt_token}",
     }
-    response = client.open(
-        f"/api/result/{MOCK_RESULT_ID}",
-        method="PUT",
+    response = client.put(
+        f"/api/result/{result.id}",
         headers=headers,
-        data=json.dumps(result),
+        data=json.dumps(update_data),
         content_type="application/json",
     )
     assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
-    assert response.json == UPDATED_RESULT.to_dict()
+
+    response_data = response.get_json()
+    assert response_data["result"] == "failed"
+
+    # Verify in database
+    with client.application.app_context():
+        from ibutsu_server.db.models import Result
+
+        updated_result = Result.query.get(str(result.id))
+        assert updated_result.result == "failed"
+
+
+def test_update_result_not_found(flask_app):
+    """Test case for update_result - result not found"""
+    client, jwt_token = flask_app
+
+    update_data = {"result": "failed"}
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {jwt_token}",
+    }
+    response = client.put(
+        "/api/result/00000000-0000-0000-0000-000000000000",
+        headers=headers,
+        data=json.dumps(update_data),
+        content_type="application/json",
+    )
+    assert response.status_code == 404
