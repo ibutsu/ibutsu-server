@@ -1,110 +1,199 @@
-from unittest.mock import patch
-
 import pytest
 from flask import json
 
-from tests.conftest import MOCK_PROJECT_ID, MOCK_WIDGET_CONFIG_ID
-from tests.test_util import MockWidgetConfig
 
-
-@pytest.fixture
-def widget_config_controller_mocks():
-    """Mocks for the widget config controller tests"""
-    with (
-        patch(
-            "ibutsu_server.controllers.widget_config_controller.WidgetConfig"
-        ) as mock_widget_config_class,
-        patch("ibutsu_server.controllers.widget_config_controller.session") as mock_session,
-    ):
-        mock_widget_config = MockWidgetConfig(id=MOCK_WIDGET_CONFIG_ID, project_id=MOCK_PROJECT_ID)
-        mock_widget_config_class.query.filter.return_value.all.return_value = [mock_widget_config]
-        mock_widget_config_class.query.get.return_value = mock_widget_config
-        mock_widget_config_class.from_dict.return_value = mock_widget_config
-        yield {
-            "widget_config_class": mock_widget_config_class,
-            "session": mock_session,
-            "widget_config": mock_widget_config,
-        }
-
-
-def test_get_widget_config_list(widget_config_controller_mocks, flask_app):
+def test_get_widget_config_list(flask_app, make_project, make_widget_config):
     """Test get_widget_config_list"""
     client, jwt_token = flask_app
 
+    # Create project and widget configs
+    project = make_project(name="test-project")
+
+    for i in range(5):
+        make_widget_config(
+            project_id=project.id, widget=f"widget-{i}", params={"config_key": f"value{i}"}
+        )
+
     headers = {"Authorization": f"Bearer {jwt_token}", "Content-Type": "application/json"}
 
-    response = client.get(f"/api/widget-config?project_id={MOCK_PROJECT_ID}", headers=headers)
+    response = client.get(f"/api/widget-config?project_id={project.id}", headers=headers)
 
     assert response.status_code == 200
     json_response = response.json
-    assert isinstance(json_response, list)
-    assert len(json_response) == 1
-    assert json_response[0]["id"] == MOCK_WIDGET_CONFIG_ID
+    # Response should have pagination structure
+    assert "widgets" in json_response
+    assert "pagination" in json_response
+    assert len(json_response["widgets"]) == 5
 
 
-def test_add_widget_config(widget_config_controller_mocks, flask_app):
-    """Test add_widget_config"""
+@pytest.mark.parametrize(
+    ("page", "page_size"),
+    [
+        (1, 25),
+        (2, 10),
+        (1, 50),
+    ],
+)
+def test_get_widget_config_list_pagination(
+    flask_app, make_project, make_widget_config, page, page_size
+):
+    """Test get_widget_config_list with pagination"""
     client, jwt_token = flask_app
-    mocks = widget_config_controller_mocks
-    widget_config_data = {
-        "widget": "my-widget",
-        "project_id": MOCK_PROJECT_ID,
-        "data": {"config_key": "config_value"},
-        "title": "My Widget",
-    }
+
+    # Create project and widget configs
+    project = make_project(name="test-project")
+
+    for i in range(30):
+        make_widget_config(project_id=project.id, widget=f"widget-{i}")
 
     headers = {"Authorization": f"Bearer {jwt_token}", "Content-Type": "application/json"}
 
-    response = client.post(
-        "/api/widget-config", headers=headers, data=json.dumps(widget_config_data)
-    )
+    query_string = [("project_id", str(project.id)), ("page", page), ("pageSize", page_size)]
+    response = client.get("/api/widget-config", headers=headers, query_string=query_string)
 
-    assert response.status_code == 201
-    mocks["session"].add.assert_called_once()
-    mocks["session"].commit.assert_called_once()
-
-
-def test_get_widget_config(widget_config_controller_mocks, flask_app):
-    """Test case for get_widget_config"""
-    client, jwt_token = flask_app
-    headers = {"Accept": "application/json", "Authorization": f"Bearer {jwt_token}"}
-    response = client.get(f"/api/widget-config/{MOCK_WIDGET_CONFIG_ID}", headers=headers)
     assert response.status_code == 200
-    assert response.json["id"] == MOCK_WIDGET_CONFIG_ID
+    json_response = response.json
+    assert "widgets" in json_response
+    assert "pagination" in json_response
+    assert json_response["pagination"]["page"] == page
+    assert json_response["pagination"]["pageSize"] == page_size
 
 
-def test_update_widget_config(widget_config_controller_mocks, flask_app):
-    """Test case for update_widget_config"""
+def test_add_widget_config(flask_app, make_project):
+    """Test add_widget_config"""
     client, jwt_token = flask_app
-    mocks = widget_config_controller_mocks
-    body = {
-        "widget": "run-aggregator",
-        "project_id": MOCK_PROJECT_ID,
-        "data": {"group_field": "component"},
-        "title": "Run Aggregator",
-        "weight": 3,
+
+    # Create project
+    project = make_project(name="test-project")
+
+    widget_config_data = {
+        "widget": "run-aggregator",  # Use a valid widget type
+        "project_id": str(project.id),
+        "params": {},
+        "title": "My Widget",
     }
+
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {jwt_token}",
+    }
+    response = client.post(
+        "/api/widget-config",
+        headers=headers,
+        data=json.dumps(widget_config_data),
+        content_type="application/json",
+    )
+    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+
+    response_data = response.get_json()
+    assert response_data["widget"] == "run-aggregator"
+    assert response_data["title"] == "My Widget"
+
+    # Verify in database
+    with client.application.app_context():
+        from ibutsu_server.db.models import WidgetConfig
+
+        widget = WidgetConfig.query.filter_by(widget="run-aggregator").first()
+        assert widget is not None
+        assert widget.title == "My Widget"
+
+
+def test_get_widget_config(flask_app, make_project, make_widget_config):
+    """Test get_widget_config"""
+    client, jwt_token = flask_app
+
+    # Create widget config
+    project = make_project(name="test-project")
+    widget = make_widget_config(project_id=project.id, widget="test-widget", title="Test Widget")
+
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {jwt_token}",
+    }
+    response = client.get(
+        f"/api/widget-config/{widget.id}",
+        headers=headers,
+    )
+    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+
+    response_data = response.get_json()
+    assert response_data["id"] == str(widget.id)
+    assert response_data["widget"] == "test-widget"
+
+
+def test_update_widget_config(flask_app, make_project, make_widget_config):
+    """Test update_widget_config"""
+    client, jwt_token = flask_app
+
+    # Create widget config
+    project = make_project(name="test-project")
+    widget = make_widget_config(project_id=project.id, widget="test-widget", title="Original Title")
+
+    update_data = {
+        "title": "Updated Title",
+        "params": {"new_key": "new_value"},
+    }
+
     headers = {
         "Accept": "application/json",
         "Content-Type": "application/json",
         "Authorization": f"Bearer {jwt_token}",
     }
     response = client.put(
-        f"/api/widget-config/{MOCK_WIDGET_CONFIG_ID}",
+        f"/api/widget-config/{widget.id}",
         headers=headers,
-        data=json.dumps(body),
+        data=json.dumps(update_data),
+        content_type="application/json",
     )
-    assert response.status_code == 200
-    mocks["session"].add.assert_called_once()
-    mocks["session"].commit.assert_called_once()
+    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+
+    response_data = response.get_json()
+    assert response_data["title"] == "Updated Title"
+
+    # Verify in database
+    with client.application.app_context():
+        from ibutsu_server.db.models import WidgetConfig
+
+        updated_widget = WidgetConfig.query.get(str(widget.id))
+        assert updated_widget.title == "Updated Title"
 
 
-def test_delete_widget_config(widget_config_controller_mocks, flask_app):
-    """Test case for delete_widget_config"""
+def test_delete_widget_config(flask_app, make_project, make_widget_config):
+    """Test delete_widget_config"""
     client, jwt_token = flask_app
-    mocks = widget_config_controller_mocks
-    headers = {"Accept": "application/json", "Authorization": f"Bearer {jwt_token}"}
-    response = client.delete(f"/api/widget-config/{MOCK_WIDGET_CONFIG_ID}", headers=headers)
-    assert response.status_code == 204
-    mocks["session"].delete.assert_called_once()
-    mocks["session"].commit.assert_called_once()
+
+    # Create widget config
+    project = make_project(name="test-project")
+    widget = make_widget_config(project_id=project.id, widget="test-widget")
+    widget_id = widget.id
+
+    headers = {
+        "Authorization": f"Bearer {jwt_token}",
+    }
+    response = client.delete(
+        f"/api/widget-config/{widget_id}",
+        headers=headers,
+    )
+    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+
+    # Verify widget config was deleted
+    with client.application.app_context():
+        from ibutsu_server.db.models import WidgetConfig
+
+        deleted_widget = WidgetConfig.query.get(str(widget_id))
+        assert deleted_widget is None
+
+
+def test_delete_widget_config_not_found(flask_app):
+    """Test delete_widget_config - widget config not found"""
+    client, jwt_token = flask_app
+
+    headers = {
+        "Authorization": f"Bearer {jwt_token}",
+    }
+    response = client.delete(
+        "/api/widget-config/00000000-0000-0000-0000-000000000000",
+        headers=headers,
+    )
+    assert response.status_code == 404

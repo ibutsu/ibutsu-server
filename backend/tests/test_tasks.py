@@ -4,49 +4,39 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from celery import Celery
-from flask import Flask
 from redis.exceptions import LockError
 
 from ibutsu_server.tasks import IbutsuTask, create_celery_app, lock
 
 
-@pytest.fixture
-def mock_flask_app():
-    """Fixture for a mock Flask app."""
-    app = Flask("test_app")
-    app.config.update(
-        {
-            "CELERY_BROKER_URL": "redis://localhost:6379/0",
-            "CELERY_RESULT_BACKEND": "redis://localhost:6379/0",
-            "SQLALCHEMY_COMMIT_ON_TEARDOWN": True,
-        }
-    )
-    return app
+def test_create_celery_app(flask_app):
+    """Test creating a Celery app with real Flask app."""
+    client, _ = flask_app
 
-
-def test_create_celery_app(mock_flask_app):
-    """Test creating a Celery app."""
-    with patch("ibutsu_server.tasks.Celery") as mocked_celery:
-        app_instance = MagicMock(spec=Celery)
-        mocked_celery.return_value = app_instance
-
-        celery_app = create_celery_app(mock_flask_app)
+    with client.application.app_context():
+        celery_app = create_celery_app(client.application)
 
         assert celery_app is not None
-        mocked_celery.assert_called_once()
+        assert isinstance(celery_app, Celery)
 
 
-@patch("ibutsu_server.tasks.session")
-def test_ibutsu_task_after_return(mock_session, mock_flask_app):
+def test_ibutsu_task_after_return(flask_app):
     """Test the after_return method of IbutsuTask."""
-    task = IbutsuTask()
-    task.app = mock_flask_app  # Simulate app binding
+    client, _ = flask_app
 
-    with mock_flask_app.app_context():
+    task = IbutsuTask()
+    task.app = client.application  # Use real app
+
+    # Mock only the session methods to verify they're called
+    with (
+        client.application.app_context(),
+        patch("ibutsu_server.tasks.session.commit") as mock_commit,
+        patch("ibutsu_server.tasks.session.remove") as mock_remove,
+    ):
         task.after_return("SUCCESS", None, "task_id", [], {}, None)
 
-    mock_session.commit.assert_called_once()
-    mock_session.remove.assert_called_once()
+        mock_commit.assert_called_once()
+        mock_remove.assert_called_once()
 
 
 @patch("logging.info")
@@ -58,14 +48,17 @@ def test_ibutsu_task_on_failure(mock_log_info):
 
 
 @patch("ibutsu_server.tasks.Redis.from_url")
-def test_lock_successful(mock_redis_from_url):
+def test_lock_successful(mock_redis_from_url, flask_app):
     """Test that the lock works when it is acquired."""
+    client, _ = flask_app
+
+    # Mock only the Redis external service
     mock_redis_client = MagicMock()
     mock_lock = MagicMock()
     mock_redis_client.lock.return_value.__enter__.return_value = mock_lock
     mock_redis_from_url.return_value = mock_redis_client
 
-    with lock("my-lock"):
+    with client.application.app_context(), lock("my-lock"):
         # This code should run
         pass
 
@@ -74,13 +67,16 @@ def test_lock_successful(mock_redis_from_url):
 
 @patch("logging.info")
 @patch("ibutsu_server.tasks.Redis.from_url")
-def test_lock_locked(mock_redis_from_url, mock_log_info):
+def test_lock_locked(mock_redis_from_url, mock_log_info, flask_app):
     """Test that the lock works when it is already locked."""
+    client, _ = flask_app
+
+    # Mock only the Redis external service
     mock_redis_client = MagicMock()
     mock_redis_client.lock.side_effect = LockError("Already locked")
     mock_redis_from_url.return_value = mock_redis_client
 
-    with lock("my-lock"):
+    with client.application.app_context(), lock("my-lock"):
         # This code should not run
         pytest.fail("Should not have acquired lock")
 

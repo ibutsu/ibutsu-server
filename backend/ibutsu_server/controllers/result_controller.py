@@ -14,6 +14,32 @@ from ibutsu_server.util.query import get_offset, query_as_task
 from ibutsu_server.util.uuid import validate_uuid
 
 
+def _validate_and_set_project(result, user):
+    """Validate and set project for a result.
+
+    Returns error response tuple if validation fails, None otherwise.
+    """
+    if result.data and not (result.data.get("project") or result.project_id):
+        return "Bad request, project or project_id is required", HTTPStatus.BAD_REQUEST
+
+    if not result.project:
+        # Get project from metadata or project_id (get_project handles both names and UUIDs)
+        if result.data and result.data.get("project"):
+            project = get_project(result.data["project"])
+        elif result.project_id:
+            project = get_project(result.project_id)
+        else:
+            return "Bad request, project or project_id is required", HTTPStatus.BAD_REQUEST
+
+        if not project:
+            return "Invalid project", HTTPStatus.BAD_REQUEST
+        if not project_has_user(project, user):
+            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+        result.project = project
+
+    return None
+
+
 def add_result(result=None, token_info=None, user=None):
     """Creates a test result
 
@@ -27,17 +53,14 @@ def add_result(result=None, token_info=None, user=None):
     result_data = result if result is not None else connexion.request.get_json()
     result = Result.from_dict(**result_data)
 
+    # Validate result doesn't already exist
     if result.id and Result.query.get(result.id):
         return f"Result id {result.id} already exist", HTTPStatus.BAD_REQUEST
 
-    if result.data and not (result.data.get("project") or result.project_id):
-        return "Bad request, project or project_id is required", HTTPStatus.BAD_REQUEST
-
-    if not result.project:
-        project = get_project(result.data["project"])
-        if not project_has_user(project, user):
-            return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-        result.project = project
+    # Validate and get project
+    error_response = _validate_and_set_project(result, user)
+    if error_response:
+        return error_response
 
     # promote user_properties to the level of metadata
     if result.data and result.data.get("user_properties"):

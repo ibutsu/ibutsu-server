@@ -250,21 +250,22 @@ def test_run_task_route_non_superadmin(flask_app):
     from ibutsu_server.db.models import Token, User
     from ibutsu_server.util.jwt import generate_token
 
-    non_superadmin_user = User(
-        name="Non-Superadmin User",
-        email="nonsuper@example.com",
-        is_active=True,
-        is_superadmin=False,
-    )
-    session.add(non_superadmin_user)
-    session.commit()
+    with client.application.app_context():
+        non_superadmin_user = User(
+            name="Non-Superadmin User",
+            email="nonsuper@example.com",
+            is_active=True,
+            is_superadmin=False,
+        )
+        session.add(non_superadmin_user)
+        session.commit()
 
-    non_superadmin_token = generate_token(non_superadmin_user.id)
-    token_obj = Token(
-        name="non-superadmin-token", user=non_superadmin_user, token=non_superadmin_token
-    )
-    session.add(token_obj)
-    session.commit()
+        non_superadmin_token = generate_token(non_superadmin_user.id)
+        token_obj = Token(
+            name="non-superadmin-token", user=non_superadmin_user, token=non_superadmin_token
+        )
+        session.add(token_obj)
+        session.commit()
 
     response = client.post(
         "/admin/run-task",

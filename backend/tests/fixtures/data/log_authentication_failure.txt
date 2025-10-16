@@ -1,0 +1,15 @@
+INFO: Starting authentication test
+DEBUG: Navigating to login page at /auth/login
+DEBUG: Page loaded successfully
+INFO: Entering credentials
+DEBUG: Username field: testuser
+DEBUG: Password field: [REDACTED]
+INFO: Clicking login button
+DEBUG: HTTP POST /api/auth/login
+DEBUG: Response status: 401 Unauthorized
+DEBUG: Response body: {"error": "Login failed", "code": "AUTH_FAILED"}
+ERROR: Authentication failed - unexpected error message
+ERROR: Expected message: "Invalid credentials"
+ERROR: Actual message: "Login failed"
+DEBUG: Taking screenshot at failure point
+INFO: Test completed with FAILED status

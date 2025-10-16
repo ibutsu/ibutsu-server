@@ -1882,8 +1882,8 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Project'
-      description: A project object
+            $ref: '#/components/schemas/ProjectInput'
+      description: A project object for creation/update
     Run:
       content:
         application/json:
@@ -2118,6 +2118,7 @@ components:
         title: My Project
         owner_id: 6b8b01ad-a17e-4ca1-8df5-fadb41439567
         group_id: a16ad60e-bf23-4195-99dc-594858ad3e5e
+        users: []
       properties:
         id:
           description: Unique ID of the project
@@ -2144,6 +2145,51 @@ components:
           type: string
           format: uuid
           nullable: true
+        users:
+          description: List of users associated with this project
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+      type: object
+    ProjectInput:
+      example:
+        name: my-project
+        title: My Project
+        owner_id: 6b8b01ad-a17e-4ca1-8df5-fadb41439567
+        group_id: a16ad60e-bf23-4195-99dc-594858ad3e5e
+        users: ["user1@example.com", "user2@example.com"]
+      properties:
+        id:
+          description: Unique ID of the project (optional, for updates)
+          example: 44941c55-9736-42f6-acce-ca3c4739d0f3
+          type: string
+          format: uuid
+        name:
+          description: The machine name of the project
+          example: my-project
+          type: string
+        title:
+          description: The human-readable title of the project
+          example: My project
+          type: string
+        owner_id:
+          description: The ID of the owner of this project
+          example: 6b8b01ad-a17e-4ca1-8df5-fadb41439567
+          type: string
+          format: uuid
+          nullable: true
+        group_id:
+          description: The ID of the group of this project
+          example: a16ad60e-bf23-4195-99dc-594858ad3e5e
+          type: string
+          format: uuid
+          nullable: true
+        users:
+          description: List of user email addresses to associate with this project
+          type: array
+          items:
+            type: string
+            format: email
       type: object
     Dashboard:
       example:

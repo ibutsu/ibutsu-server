@@ -20,8 +20,16 @@
 
 ## Testing instructions
 - Find the CI plan in the .github/workflows folder.
-- Use a virtual environment and install the test extras to run tests.
-- From the package root you can just call `hatch test` or `pytest -x`. The commit should pass all tests before proceeding
+- Use `hatch run test` to execute tests. `hatch run test-cov` to include coverage.
+- Pass arguments to pytest through `hatch run test -- <-arg>`
 - Add or update tests for the code you change, even if nobody asked.
-- Do not make tests pass when a bug is identified by the test. Investigate and suggest fixes for root causes of test case failures.
+- Do not make changse to cause tests to pass when a bug is identified by the test. Always first investigate for bugs in the tested application component.
 - Use full UUID strings for all `id` fields including `run_id` and `result_id` when mocking unless an invalid UUID is specifically being tested
+
+### Integration Testing Approach
+- **Prefer integration tests over mocking**: Use `flask_app` fixture with real SQLite database operations
+- **Use builder fixtures**: `make_project`, `make_run`, `make_result`, etc. instead of mocks
+- **Mock only external services**: Celery tasks, Redis, external HTTP calls, email - not database operations
+- **See TEST_GUIDE.md**: Comprehensive guide at `backend/tests/TEST_GUIDE.md` with examples and patterns
+- **Avoid database mocking**: Don't patch `session`, `Model.query`, or SQLAlchemy operations
+- **Don't skip tests**: If mocking is too complex, use integration approach with real data instead

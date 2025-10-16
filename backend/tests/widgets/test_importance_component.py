@@ -1,79 +1,55 @@
 """Tests for importance_component widget"""
 
-import uuid
-from unittest.mock import MagicMock, patch
-
 import pytest
 
 from ibutsu_server.widgets.importance_component import get_importance_component
 
 
-@pytest.fixture
-def mock_results():
-    """Mock results for importance component"""
-    result1 = MagicMock()
-    result1.component = "component1"
-    result1.id = str(uuid.uuid4())
-    result1.result = "passed"
-    result1.importance = "high"
-    result1.build_number = "100"
-
-    result2 = MagicMock()
-    result2.component = "component1"
-    result2.id = str(uuid.uuid4())
-    result2.result = "failed"
-    result2.importance = "high"
-    result2.build_number = "100"
-
-    result3 = MagicMock()
-    result3.component = "component1"
-    result3.id = str(uuid.uuid4())
-    result3.result = "passed"
-    result3.importance = "medium"
-    result3.build_number = "100"
-
-    result4 = MagicMock()
-    result4.component = "component2"
-    result4.id = str(uuid.uuid4())
-    result4.result = "passed"
-    result4.importance = "low"
-    result4.build_number = "101"
-
-    return [result1, result2, result3, result4]
-
-
-@pytest.mark.skip(
-    reason="Mocking SQLAlchemy string_to_column with desc() is complex - requires integration test"
-)
-def test_get_importance_component_with_valid_project(mock_results):
+def test_get_importance_component_with_valid_project(make_project, make_run, make_result):
     """Test getting importance component with valid project ID"""
-    project_id = str(uuid.uuid4())
+    # Create project and runs with results
+    project = make_project(name="test-project")
 
-    with (
-        patch("ibutsu_server.widgets.importance_component.session") as mock_session,
-        patch("ibutsu_server.widgets.importance_component.Result") as mock_result_class,
-        patch(
-            "ibutsu_server.widgets.importance_component.string_to_column"
-        ) as mock_string_to_column,
-    ):
-        mock_query = MagicMock()
-        mock_result_class.query.filter.return_value = mock_query
-        mock_query.add_columns.return_value = mock_query
-        mock_query.all.return_value = mock_results
+    # Create two runs (builds)
+    run1 = make_run(project_id=project.id, metadata={"job_name": "test-job", "build_number": "100"})
+    run2 = make_run(project_id=project.id, metadata={"job_name": "test-job", "build_number": "101"})
 
-        mock_column = MagicMock()
-        mock_column.label.return_value = mock_column
-        mock_string_to_column.return_value = mock_column
+    # Create results for component1 in build 100
+    make_result(
+        run_id=run1.id,
+        project_id=project.id,
+        result="passed",
+        metadata={"component": "component1", "importance": "high", "build_number": "100"},
+    )
+    make_result(
+        run_id=run1.id,
+        project_id=project.id,
+        result="failed",
+        metadata={"component": "component1", "importance": "high", "build_number": "100"},
+    )
+    make_result(
+        run_id=run1.id,
+        project_id=project.id,
+        result="passed",
+        metadata={"component": "component1", "importance": "medium", "build_number": "100"},
+    )
 
-        mock_session.query.return_value = mock_query
+    # Create results for component2 in build 101
+    make_result(
+        run_id=run2.id,
+        project_id=project.id,
+        result="passed",
+        metadata={"component": "component2", "importance": "low", "build_number": "101"},
+    )
 
-        result = get_importance_component(
-            job_name="test-job", builds=5, components="component1,component2", project=project_id
-        )
+    # Test the widget function with real data
+    result = get_importance_component(
+        job_name="test-job", builds=5, components="component1,component2", project=str(project.id)
+    )
 
-        assert result is not None
-        assert "table_data" in result
-        assert isinstance(result["table_data"], list)
+    assert result is not None
+    assert "table_data" in result
+    assert isinstance(result["table_data"], list)
 
 
 def test_get_importance_component_with_invalid_project():
@@ -96,121 +72,76 @@ def test_get_importance_component_with_none_project():
     assert result == {"table_data": []}
 
 
-@pytest.mark.skip(
-    reason="Mocking SQLAlchemy string_to_column with desc() is complex - requires integration test"
-)
-def test_get_importance_component_with_count_skips(mock_results):
+def test_get_importance_component_with_count_skips(make_project, make_run, make_result):
     """Test getting importance component with count_skips enabled"""
-    project_id = str(uuid.uuid4())
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id, metadata={"job_name": "test-job", "build_number": "100"})
 
-    with (
-        patch("ibutsu_server.widgets.importance_component.session") as mock_session,
-        patch("ibutsu_server.widgets.importance_component.Result") as mock_result_class,
-        patch(
-            "ibutsu_server.widgets.importance_component.string_to_column"
-        ) as mock_string_to_column,
-    ):
-        mock_query = MagicMock()
-        mock_result_class.query.filter.return_value = mock_query
-        mock_query.add_columns.return_value = mock_query
-        mock_query.all.return_value = mock_results
+    # Create results with various statuses including skipped
+    make_result(
+        run_id=run.id,
+        project_id=project.id,
+        result="passed",
+        metadata={"component": "component1", "importance": "high", "build_number": "100"},
+    )
+    make_result(
+        run_id=run.id,
+        project_id=project.id,
+        result="skipped",
+        metadata={"component": "component1", "importance": "high", "build_number": "100"},
+    )
 
-        mock_column = MagicMock()
-        mock_column.label.return_value = mock_column
-        mock_string_to_column.return_value = mock_column
+    result = get_importance_component(
+        job_name="test-job",
+        builds=5,
+        components="component1,component2",
+        project=str(project.id),
+        count_skips=True,
+    )
 
-        mock_session.query.return_value = mock_query
-
-        result = get_importance_component(
-            job_name="test-job",
-            builds=5,
-            components="component1,component2",
-            project=project_id,
-            count_skips=True,
-        )
-
-        assert result is not None
-        assert "table_data" in result
+    assert result is not None
+    assert "table_data" in result
 
 
-@pytest.mark.skip(
-    reason="Mocking SQLAlchemy string_to_column with desc() is complex - requires integration test"
-)
-def test_get_importance_component_empty_results():
+def test_get_importance_component_empty_results(make_project):
     """Test getting importance component with no results"""
-    project_id = str(uuid.uuid4())
+    project = make_project(name="test-project")
 
-    with (
-        patch("ibutsu_server.widgets.importance_component.session") as mock_session,
-        patch("ibutsu_server.widgets.importance_component.Result") as mock_result_class,
-        patch(
-            "ibutsu_server.widgets.importance_component.string_to_column"
-        ) as mock_string_to_column,
-    ):
-        mock_query = MagicMock()
-        mock_result_class.query.filter.return_value = mock_query
-        mock_query.add_columns.return_value = mock_query
-        mock_query.all.return_value = []
+    # No results created, should return empty table_data
+    result = get_importance_component(
+        job_name="test-job", builds=5, components="component1", project=str(project.id)
+    )
 
-        mock_column = MagicMock()
-        mock_column.label.return_value = mock_column
-        mock_string_to_column.return_value = mock_column
-
-        mock_session.query.return_value = mock_query
-
-        result = get_importance_component(
-            job_name="test-job", builds=5, components="component1", project=project_id
-        )
-
-        assert result is not None
-        assert "table_data" in result
-        assert len(result["table_data"]) == 0
+    assert result is not None
+    assert "table_data" in result
+    assert len(result["table_data"]) == 0
 
 
-@pytest.mark.skip(
-    reason="Mocking SQLAlchemy string_to_column with desc() is complex - requires integration test"
-)
-def test_get_importance_component_different_builds():
+def test_get_importance_component_different_builds(make_project, make_run, make_result):
     """Test getting importance component with different build numbers"""
-    project_id = str(uuid.uuid4())
+    project = make_project(name="test-project")
 
-    result1 = MagicMock()
-    result1.component = "component1"
-    result1.id = str(uuid.uuid4())
-    result1.result = "passed"
-    result1.importance = "high"
-    result1.build_number = "100"
+    # Create runs with different build numbers
+    run1 = make_run(project_id=project.id, metadata={"job_name": "test-job", "build_number": "100"})
+    run2 = make_run(project_id=project.id, metadata={"job_name": "test-job", "build_number": "101"})
 
-    result2 = MagicMock()
-    result2.component = "component1"
-    result2.id = str(uuid.uuid4())
-    result2.result = "passed"
-    result2.importance = "high"
-    result2.build_number = "101"
+    # Create results for each build
+    make_result(
+        run_id=run1.id,
+        project_id=project.id,
+        result="passed",
+        metadata={"component": "component1", "importance": "high", "build_number": "100"},
+    )
+    make_result(
+        run_id=run2.id,
+        project_id=project.id,
+        result="passed",
+        metadata={"component": "component1", "importance": "high", "build_number": "101"},
+    )
 
-    mock_results = [result1, result2]
+    result = get_importance_component(
+        job_name="test-job", builds=5, components="component1", project=str(project.id)
+    )
 
-    with (
-        patch("ibutsu_server.widgets.importance_component.session") as mock_session,
-        patch("ibutsu_server.widgets.importance_component.Result") as mock_result_class,
-        patch(
-            "ibutsu_server.widgets.importance_component.string_to_column"
-        ) as mock_string_to_column,
-    ):
-        mock_query = MagicMock()
-        mock_result_class.query.filter.return_value = mock_query
-        mock_query.add_columns.return_value = mock_query
-        mock_query.all.return_value = mock_results
-
-        mock_column = MagicMock()
-        mock_column.label.return_value = mock_column
-        mock_string_to_column.return_value = mock_column
-
-        mock_session.query.return_value = mock_query
-
-        result = get_importance_component(
-            job_name="test-job", builds=5, components="component1", project=project_id
-        )
-
-        assert result is not None
-        assert "table_data" in result
+    assert result is not None
+    assert "table_data" in result

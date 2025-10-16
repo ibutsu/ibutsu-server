@@ -1,219 +1,198 @@
 """Tests for compare_runs_view widget"""
 
-import uuid
-from unittest.mock import MagicMock, patch
-
-import pytest
+from datetime import datetime, timedelta, timezone
 
 from ibutsu_server.widgets.compare_runs_view import get_comparison_data
 
 
-@pytest.fixture
-def mock_results():
-    """Mock results for comparison"""
-    run_id_1 = str(uuid.uuid4())
-    run_id_2 = str(uuid.uuid4())
-    result_id_1 = str(uuid.uuid4())
-    result_id_2 = str(uuid.uuid4())
-    result_id_3 = str(uuid.uuid4())
-
-    result1_obj = MagicMock()
-    result1_obj.run_id = run_id_1
-    result1_obj.start_time = MagicMock()
-    result1_obj.data = {"fspath": "/path/to/test1.py"}
-
-    def result1_to_dict():
-        return {
-            "id": result_id_1,
-            "run_id": run_id_1,
-            "test_id": "test1",
-            "result": "passed",
-            "metadata": {"fspath": "/path/to/test1.py"},
-        }
-
-    result1_obj.to_dict = result1_to_dict
-
-    result2_obj = MagicMock()
-    result2_obj.run_id = run_id_2
-    result2_obj.start_time = MagicMock()
-    result2_obj.data = {"fspath": "/path/to/test1.py"}
-
-    def result2_to_dict():
-        return {
-            "id": result_id_2,
-            "run_id": run_id_2,
-            "test_id": "test1",
-            "result": "failed",
-            "metadata": {"fspath": "/path/to/test1.py"},
-        }
-
-    result2_obj.to_dict = result2_to_dict
-
-    result3_obj = MagicMock()
-    result3_obj.run_id = run_id_1
-    result3_obj.start_time = MagicMock()
-    result3_obj.data = {"fspath": "/path/to/test2.py"}
-
-    def result3_to_dict():
-        return {
-            "id": result_id_3,
-            "run_id": run_id_1,
-            "test_id": "test2",
-            "result": "passed",
-            "metadata": {"fspath": "/path/to/test2.py"},
-        }
-
-    result3_obj.to_dict = result3_to_dict
-
-    return [result1_obj, result2_obj, result3_obj]
-
-
-@pytest.mark.skip(
-    reason="Complex query mocking with multiple filter chains - requires integration test"
-)
-def test_get_comparison_data_with_different_results(mock_results):
-    """Test getting comparison data with different results"""
-    additional_filters = ["env=production", "env=staging"]
-
-    with (
-        patch("ibutsu_server.widgets.compare_runs_view.Result") as mock_result_class,
-        patch("ibutsu_server.widgets.compare_runs_view.convert_filter") as mock_convert_filter,
-    ):
-        mock_query1 = MagicMock()
-        mock_query2 = MagicMock()
-
-        # Set up the query chain
-        mock_result_class.query = mock_query1
-        mock_query1.filter.return_value = mock_query1
-        mock_query1.with_entities.return_value = mock_query1
-        mock_query1.order_by.return_value = mock_query1
-        mock_query1.first.return_value = (str(uuid.uuid4()),)
-
-        mock_query2.filter.return_value = mock_query2
-        mock_query2.with_entities.return_value = mock_query2
-        mock_query2.order_by.return_value = mock_query2
-        mock_query2.first.return_value = (str(uuid.uuid4()),)
-
-        # Mock the all() to return results
-        mock_query1.all.return_value = [mock_results[0], mock_results[2]]
-        mock_query2.all.return_value = [mock_results[1]]
-
-        mock_convert_filter.return_value = MagicMock()
-
-        result = get_comparison_data(additional_filters)
-
-        assert result is not None
-        assert "results" in result
-        assert "pagination" in result
-        assert result["pagination"]["totalItems"] == 1
-
-
 def test_get_comparison_data_no_filters():
     """Test getting comparison data with no filters"""
-    with patch("ibutsu_server.widgets.compare_runs_view.Result") as mock_result_class:
-        mock_query = MagicMock()
-        mock_result_class.query = mock_query
-        mock_query.with_entities.return_value = mock_query
-        mock_query.order_by.return_value = mock_query
-        mock_query.first.return_value = None
+    result = get_comparison_data(additional_filters=None)
 
-        result = get_comparison_data(additional_filters=None)
-
-        assert result is not None
-        assert "results" in result
-        assert "pagination" in result
+    assert result is not None
+    assert "results" in result
+    assert "pagination" in result
+    assert result["pagination"]["totalItems"] == 0
+    assert len(result["results"]) == 0
 
 
-def test_get_comparison_data_empty_results():
-    """Test getting comparison data with no matching results"""
+def test_get_comparison_data_same_results(make_project, make_run, make_result):
+    """Test getting comparison data when all results are the same (no differences)"""
+    project = make_project()
+
+    # Create two runs with different environments
+    now = datetime.now(timezone.utc)
+    run1 = make_run(
+        project_id=project.id,
+        metadata={"build": "100"},
+        start_time=now - timedelta(hours=1),
+    )
+    run2 = make_run(
+        project_id=project.id, metadata={"build": "101"}, start_time=now - timedelta(hours=2)
+    )
+
+    # Create identical results in both runs (both pass)
+    # Note: env is a column on Result, fspath goes in data (becomes metadata in to_dict)
+    make_result(
+        run_id=run1.id,
+        project_id=project.id,
+        test_id="test1",
+        result="passed",
+        env="production",
+        data={"fspath": "/path/to/test1.py"},
+        start_time=now - timedelta(hours=1),
+    )
+
+    make_result(
+        run_id=run2.id,
+        project_id=project.id,
+        test_id="test1",
+        result="passed",
+        env="staging",
+        data={"fspath": "/path/to/test1.py"},
+        start_time=now - timedelta(hours=2),
+    )
+
     additional_filters = ["env=production", "env=staging"]
+    result = get_comparison_data(additional_filters)
 
-    with (
-        patch("ibutsu_server.widgets.compare_runs_view.Result") as mock_result_class,
-        patch("ibutsu_server.widgets.compare_runs_view.convert_filter") as mock_convert_filter,
-    ):
-        mock_query = MagicMock()
-        mock_result_class.query = mock_query
-        mock_query.filter.return_value = mock_query
-        mock_query.with_entities.return_value = mock_query
-        mock_query.order_by.return_value = mock_query
-        mock_query.first.return_value = (str(uuid.uuid4()),)
-        mock_query.all.return_value = []
-
-        mock_convert_filter.return_value = MagicMock()
-
-        result = get_comparison_data(additional_filters)
-
-        assert result is not None
-        assert "results" in result
-        assert len(result["results"]) == 0
-        assert result["pagination"]["totalItems"] == 0
+    assert result is not None
+    assert "results" in result
+    # No differences should be found since both tests passed
+    assert len(result["results"]) == 0
+    assert result["pagination"]["totalItems"] == 0
 
 
-@pytest.mark.skip(
-    reason="Complex query mocking with multiple filter chains - requires integration test"
-)
-def test_get_comparison_data_matching_results():
+def test_get_comparison_data_with_different_results(make_project, make_run, make_result):
+    """Test getting comparison data with different results between runs"""
+    project = make_project()
+
+    # Create two runs with different environments and set start times
+    now = datetime.now(timezone.utc)
+    run1 = make_run(
+        project_id=project.id,
+        metadata={"build": "100"},
+        start_time=now - timedelta(hours=1),
+    )
+    run2 = make_run(
+        project_id=project.id, metadata={"build": "101"}, start_time=now - timedelta(hours=2)
+    )
+
+    # Create results for run1 (production)
+    # Test1 passes in production
+    make_result(
+        run_id=run1.id,
+        project_id=project.id,
+        test_id="test1",
+        result="passed",
+        env="production",
+        data={"fspath": "/path/to/test1.py"},
+        start_time=now - timedelta(hours=1),
+    )
+
+    # Test2 passes in production (will not match as both pass)
+    make_result(
+        run_id=run1.id,
+        project_id=project.id,
+        test_id="test2",
+        result="passed",
+        env="production",
+        data={"fspath": "/path/to/test2.py"},
+        start_time=now - timedelta(hours=1),
+    )
+
+    # Create results for run2 (staging)
+    # Test1 fails in staging (different result - should be included)
+    make_result(
+        run_id=run2.id,
+        project_id=project.id,
+        test_id="test1",
+        result="failed",
+        env="staging",
+        data={"fspath": "/path/to/test1.py"},
+        start_time=now - timedelta(hours=2),
+    )
+
+    # Test2 passes in staging (same as production - will not be included)
+    make_result(
+        run_id=run2.id,
+        project_id=project.id,
+        test_id="test2",
+        result="passed",
+        env="staging",
+        data={"fspath": "/path/to/test2.py"},
+        start_time=now - timedelta(hours=2),
+    )
+
+    additional_filters = ["env=production", "env=staging"]
+    result = get_comparison_data(additional_filters)
+
+    assert result is not None
+    assert "results" in result
+    assert "pagination" in result
+    # Should find 1 difference: test1 passed in production but failed in staging
+    assert result["pagination"]["totalItems"] == 1
+    assert len(result["results"]) == 1
+
+    # Verify the comparison contains the correct test
+    comparison_pair = result["results"][0]
+    result_prod, result_stag = comparison_pair
+    assert result_prod["test_id"] == "test1"
+    assert result_stag["test_id"] == "test1"
+    assert result_prod["result"] == "passed"
+    assert result_stag["result"] == "failed"
+    assert result_prod["metadata"]["fspath"] == "/path/to/test1.py"
+    assert result_stag["metadata"]["fspath"] == "/path/to/test1.py"
+
+
+def test_get_comparison_data_matching_results(make_project, make_run, make_result):
     """Test getting comparison data with matching test IDs but different results"""
+    project = make_project()
+
+    # Create two runs with different environments
+    now = datetime.now(timezone.utc)
+    run1 = make_run(
+        project_id=project.id,
+        metadata={"build": "200"},
+        start_time=now - timedelta(hours=1),
+    )
+    run2 = make_run(
+        project_id=project.id, metadata={"build": "201"}, start_time=now - timedelta(hours=2)
+    )
+
+    # Create results with same test_id and fspath but different outcomes
+    make_result(
+        run_id=run1.id,
+        project_id=project.id,
+        test_id="test::path",
+        result="passed",
+        env="production",
+        data={"fspath": "/test.py"},
+        start_time=now - timedelta(hours=1),
+    )
+
+    make_result(
+        run_id=run2.id,
+        project_id=project.id,
+        test_id="test::path",
+        result="failed",
+        env="staging",
+        data={"fspath": "/test.py"},
+        start_time=now - timedelta(hours=2),
+    )
+
     additional_filters = ["env=production", "env=staging"]
+    result = get_comparison_data(additional_filters)
 
-    run_id_1 = str(uuid.uuid4())
-    run_id_2 = str(uuid.uuid4())
-    result_id_1 = str(uuid.uuid4())
-    result_id_2 = str(uuid.uuid4())
+    assert result is not None
+    assert "results" in result
+    assert "pagination" in result
+    assert result["pagination"]["totalItems"] == 1
 
-    result1_obj = MagicMock()
-    result1_obj.run_id = run_id_1
-
-    def result1_to_dict():
-        return {
-            "id": result_id_1,
-            "run_id": run_id_1,
-            "test_id": "test::path",
-            "result": "passed",
-            "metadata": {"fspath": "/test.py"},
-        }
-
-    result1_obj.to_dict = result1_to_dict
-
-    result2_obj = MagicMock()
-    result2_obj.run_id = run_id_2
-
-    def result2_to_dict():
-        return {
-            "id": result_id_2,
-            "run_id": run_id_2,
-            "test_id": "test::path",
-            "result": "failed",
-            "metadata": {"fspath": "/test.py"},
-        }
-
-    result2_obj.to_dict = result2_to_dict
-
-    with (
-        patch("ibutsu_server.widgets.compare_runs_view.Result") as mock_result_class,
-        patch("ibutsu_server.widgets.compare_runs_view.convert_filter") as mock_convert_filter,
-    ):
-        mock_query1 = MagicMock()
-        mock_query2 = MagicMock()
-
-        mock_result_class.query = mock_query1
-        mock_query1.filter.return_value = mock_query1
-        mock_query1.with_entities.return_value = mock_query1
-        mock_query1.order_by.return_value = mock_query1
-        mock_query1.first.return_value = (run_id_1,)
-        mock_query1.all.return_value = [result1_obj]
-
-        mock_query2.filter.return_value = mock_query2
-        mock_query2.with_entities.return_value = mock_query2
-        mock_query2.order_by.return_value = mock_query2
-        mock_query2.first.return_value = (run_id_2,)
-        mock_query2.all.return_value = [result2_obj]
-
-        mock_convert_filter.return_value = MagicMock()
-
-        result = get_comparison_data(additional_filters)
-
-        assert result is not None
-        assert "results" in result
-        assert result["pagination"]["totalItems"] == 1
+    # Verify the comparison
+    comparison_pair = result["results"][0]
+    result_prod, result_stag = comparison_pair
+    assert result_prod["test_id"] == "test::path"
+    assert result_stag["test_id"] == "test::path"
+    assert result_prod["result"] == "passed"
+    assert result_stag["result"] == "failed"
