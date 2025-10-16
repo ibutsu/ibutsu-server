@@ -239,7 +239,6 @@ def flask_app():
     from ibutsu_server.db.base import session
     from ibutsu_server.db.models import Token, User
     from ibutsu_server.tasks import create_celery_app
-    from ibutsu_server.test import mock_task
     from ibutsu_server.util.jwt import generate_token
 
     logging.getLogger("connexion.operation").setLevel("ERROR")

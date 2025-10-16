@@ -45,31 +45,38 @@ def test_prune_fields():
 @patch("ibutsu_server.tasks.importers.session")
 @patch("ibutsu_server.tasks.importers.Result")
 @patch("ibutsu_server.tasks.importers.Run")
-def test_run_junit_import(mock_run_class, mock_result_class, mock_session, mock_result_and_run):
+@patch("ibutsu_server.tasks.importers.Import")
+def test_run_junit_import(
+    mock_import_class, mock_run_class, mock_result_class, mock_session, mock_result_and_run
+):
     """Test the run_junit_import task."""
     mock_result, mock_run = mock_result_and_run
     mock_result_class.from_dict.return_value = mock_result
     mock_run_class.from_dict.return_value = mock_run
 
-    filepath = TEST_DATA_DIR / "junit.xml"
-    import_task = MagicMock()
+    # Mock the Import record
+    mock_import_record = MagicMock()
+    mock_import_record.filename = str(TEST_DATA_DIR / "junit.xml")
+    mock_import_class.query.get.return_value = mock_import_record
 
-    run_junit_import._orig_func(filepath, import_task)  # Call the original function
+    import_id = "import_id"
+
+    # Call the function directly (not as a Celery task)
+    run_junit_import(import_id)
 
     mock_result_class.from_dict.assert_called()
     mock_session.add.assert_called()
     mock_session.commit.assert_called()
-    assert import_task.update.call_count > 0
 
 
 @patch("ibutsu_server.tasks.importers.Artifact")
 @patch("ibutsu_server.tasks.importers.Run")
 @patch("ibutsu_server.tasks.importers.Result")
-@patch("ibutsu_server.tasks.importers.etree")
+@patch("ibutsu_server.tasks.importers.Import")
 @patch("ibutsu_server.tasks.importers.session")
 def test_run_archive_import(
     mock_session,
-    _mock_etree,  # noqa: PT019
+    mock_import_class,
     mock_result_class,
     mock_run_class,
     mock_artifact_class,
@@ -80,13 +87,17 @@ def test_run_archive_import(
     mock_result_class.from_dict.return_value = mock_result
     mock_run_class.from_dict.return_value = mock_run
 
-    filepath = TEST_DATA_DIR / "archive.tar.gz"
-    import_task = MagicMock()
+    # Mock the Import record
+    mock_import_record = MagicMock()
+    mock_import_record.filename = str(TEST_DATA_DIR / "archive.tar.gz")
+    mock_import_class.query.get.return_value = mock_import_record
 
-    run_archive_import._orig_func(filepath, import_task)  # Call the original function
+    import_id = "import_id"
+
+    # Call the function directly (not as a Celery task)
+    run_archive_import(import_id)
 
     mock_result_class.from_dict.assert_called()
     mock_artifact_class.assert_called()
     mock_session.add.assert_called()
     mock_session.commit.assert_called()
-    assert import_task.update.call_count > 0

@@ -9,14 +9,21 @@ from tests.conftest import MOCK_TASK_ID
 @pytest.fixture
 def task_controller_mocks():
     """Mocks for the task controller tests"""
-    with patch("ibutsu_server.controllers.task_controller.get_celery_app") as mock_get_celery_app:
+    with (
+        patch("ibutsu_server.controllers.task_controller._get_celery_app") as mock_get_celery_app,
+        patch("ibutsu_server.controllers.task_controller.AsyncResult") as mock_async_result_class,
+    ):
         mock_celery_app = MagicMock()
         mock_async_result = MagicMock()
         mock_async_result.state = "PENDING"
         mock_async_result.info = {}
-        mock_celery_app.AsyncResult.return_value = mock_async_result
+        mock_async_result_class.return_value = mock_async_result
         mock_get_celery_app.return_value = mock_celery_app
-        yield {"get_celery_app": mock_get_celery_app, "async_result": mock_async_result}
+        yield {
+            "get_celery_app": mock_get_celery_app,
+            "async_result": mock_async_result,
+            "async_result_class": mock_async_result_class,
+        }
 
 
 def test_get_task_states(flask_app, task_controller_mocks):
@@ -41,9 +48,9 @@ def test_get_task_states(flask_app, task_controller_mocks):
     )
 
     # Verify AsyncResult was called with correct parameters
-    args, kwargs = mocks["async_result_class"].call_args
-    assert args[0] == MOCK_TASK_ID
-    assert kwargs["app"] == mocks["celery_app"]
+    mocks["async_result_class"].assert_called_once_with(
+        MOCK_TASK_ID, app=mocks["get_celery_app"].return_value
+    )
 
     # Verify response status
     assert response.status_code == expected_status

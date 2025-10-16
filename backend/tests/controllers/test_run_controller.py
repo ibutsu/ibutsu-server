@@ -88,7 +88,7 @@ def test_add_run(flask_app, run_controller_mocks):
         )
         assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
         resp = response.json.copy()
-        resp["project"] = None
+        resp.pop("project", None)
         assert resp == MOCK_RUN_DICT
         mocks["update_run_task"].apply_async.assert_called_once_with((MOCK_RUN_ID,), countdown=5)
 
@@ -103,7 +103,7 @@ def test_get_run(flask_app, run_controller_mocks):
     response = client.open(f"/api/run/{MOCK_RUN_ID}", method="GET", headers=headers)
     assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
     resp = response.json.copy()
-    resp["project"] = None
+    resp.pop("project", None)
     assert resp == MOCK_RUN_DICT
 
 
@@ -162,5 +162,5 @@ def test_update_run(flask_app, run_controller_mocks):
     mocks["update_run_task"].apply_async.assert_called_once_with((MOCK_RUN_ID,), countdown=5)
     assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
     resp = response.json.copy()
-    resp["project"] = None
+    resp.pop("project", None)
     assert resp == MOCK_RUN_DICT

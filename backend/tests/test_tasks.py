@@ -26,14 +26,10 @@ def mock_flask_app():
 
 def test_create_celery_app(mock_flask_app):
     """Test creating a Celery app."""
-    with patch("ibutsu_server.tasks.Celery") as mocked_celery:
-        app_instance = MagicMock(spec=Celery)
-        mocked_celery.return_value = app_instance
+    celery_app = create_celery_app(mock_flask_app)
 
-        celery_app = create_celery_app(mock_flask_app)
-
-        assert celery_app is not None
-        mocked_celery.assert_called_once()
+    assert celery_app is not None
+    assert isinstance(celery_app, Celery)
 
 
 @patch("ibutsu_server.tasks.session")
@@ -58,14 +54,14 @@ def test_ibutsu_task_on_failure(mock_log_info):
 
 
 @patch("ibutsu_server.tasks.Redis.from_url")
-def test_lock_successful(mock_redis_from_url):
+def test_lock_successful(mock_redis_from_url, mock_flask_app):
     """Test that the lock works when it is acquired."""
     mock_redis_client = MagicMock()
     mock_lock = MagicMock()
     mock_redis_client.lock.return_value.__enter__.return_value = mock_lock
     mock_redis_from_url.return_value = mock_redis_client
 
-    with lock("my-lock"):
+    with mock_flask_app.app_context(), lock("my-lock"):
         # This code should run
         pass
 
@@ -74,13 +70,13 @@ def test_lock_successful(mock_redis_from_url):
 
 @patch("logging.info")
 @patch("ibutsu_server.tasks.Redis.from_url")
-def test_lock_locked(mock_redis_from_url, mock_log_info):
+def test_lock_locked(mock_redis_from_url, mock_log_info, mock_flask_app):
     """Test that the lock works when it is already locked."""
     mock_redis_client = MagicMock()
     mock_redis_client.lock.side_effect = LockError("Already locked")
     mock_redis_from_url.return_value = mock_redis_client
 
-    with lock("my-lock"):
+    with mock_flask_app.app_context(), lock("my-lock"):
         # This code should not run
         pytest.fail("Should not have acquired lock")
 

@@ -22,8 +22,13 @@ def user_controller_mocks():
         patch("ibutsu_server.controllers.user_controller.Token") as mock_token_class,
         patch("ibutsu_server.controllers.user_controller.generate_token") as mock_generate_token,
     ):
+        # Create a mock token with expires attribute
+        mock_token_instance = MagicMock()
+        mock_token_instance.expires = "2024-12-31T23:59:59Z"
+        mock_token_instance.to_dict.return_value = MOCK_TOKEN_DICT
+
         mock_user_class.query.get.return_value = MOCK_USER
-        mock_token_class.from_dict.return_value = MOCK_TOKEN
+        mock_token_class.from_dict.return_value = mock_token_instance
         mock_token_class.query.get.return_value = MOCK_TOKEN
         mock_token_query = MagicMock()
         mock_token_query.count.return_value = 1

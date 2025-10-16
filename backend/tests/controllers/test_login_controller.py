@@ -5,7 +5,6 @@ import pytest
 from flask import json
 
 from ibutsu_server.constants import LOCALHOST
-from ibutsu_server.util.jwt import generate_token
 from tests.conftest import MOCK_USER_ID
 from tests.test_util import MockUser
 
@@ -33,7 +32,7 @@ def test_login(mocked_generate_token, flask_app, login_controller_mocks):
     """Test case for login"""
     client, _jwt_token = flask_app
     login_details = {"email": MOCK_EMAIL, "password": MOCK_PASSWORD}
-    expected_token = generate_token(MOCK_USER_ID)
+    expected_token = "mocked-jwt-token"
     mocked_generate_token.return_value = expected_token
     expected_response = {
         "name": "Test User",

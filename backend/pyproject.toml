@@ -128,6 +128,12 @@ exclude = [
 python = "3.9"
 dependencies = [
   "psycopg2-binary",  # Use binary version to avoid compilation issues
+  "pytest",
+  "pytest-xdist",
+  "pytest-mock",
+  "Flask-Testing",
+  "coverage[toml]",
+  "pre-commit",
 ]
 
 [tool.hatch.envs.default.scripts]
@@ -147,11 +153,11 @@ lint-check = "pre-commit run --all-files --show-diff-on-failure"
 [tool.hatch.envs.test]
 dependencies = [
   "psycopg2-binary",  # Use binary version to avoid compilation issues
-  "Flask-Testing",
-]
-extra-dependencies = [
-  "coverage[toml]",
+  "pytest",
   "pytest-xdist",
+  "pytest-mock",
+  "Flask-Testing",
+  "coverage[toml]",
 ]
 
 [tool.hatch.envs.test.scripts]
@@ -281,4 +287,4 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "--tb=short -n 4"
+addopts = "--tb=short -n 8"
