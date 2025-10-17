@@ -62,11 +62,11 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
         if not total or total == 0:
             continue
         # convert all data to percentages
-        data["failed"][group] = round((failed / total) * 100.0)
-        data["error"][group] = round((error / total) * 100.0)
-        data["skipped"][group] = round((skipped / total) * 100.0)
-        data["xpassed"][group] = round((xpassed or 0.0 / total) * 100.0)
-        data["xfailed"][group] = round((xfailed or 0.0 / total) * 100.0)
+        data["failed"][group] = round(((failed or 0.0) / total) * 100.0)
+        data["error"][group] = round(((error or 0.0) / total) * 100.0)
+        data["skipped"][group] = round(((skipped or 0.0) / total) * 100.0)
+        data["xpassed"][group] = round(((xpassed or 0.0) / total) * 100.0)
+        data["xfailed"][group] = round(((xfailed or 0.0) / total) * 100.0)
         data["passed"][group] = int(
             100
             - (
