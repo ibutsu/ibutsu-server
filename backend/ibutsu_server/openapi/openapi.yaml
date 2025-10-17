@@ -238,6 +238,17 @@ paths:
                 - file
                 - filename
               type: object
+            encoding:
+              file:
+                contentType: application/octet-stream
+              resultId:
+                contentType: text/plain
+              runId:
+                contentType: text/plain
+              filename:
+                contentType: text/plain
+              additionalMetadata:
+                contentType: application/json
       responses:
         201:
           content:

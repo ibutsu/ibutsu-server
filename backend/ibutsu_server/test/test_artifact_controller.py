@@ -6,6 +6,7 @@ from ibutsu_server.test import BaseTestCase, MockArtifact, MockResult
 
 MOCK_ID = "70202589-4781-4eb9-bcfc-685b1d2c583a"
 MOCK_RESULT_ID = "23cd86d5-a27e-45a4-83a3-12c74d219709"
+MOCK_RUN_ID = "33cd86d5-a27e-45a4-83a3-12c74d219709"
 MOCK_ARTIFACT = MockArtifact(
     id=MOCK_ID,
     data={
@@ -47,8 +48,22 @@ class TestArtifactController(BaseTestCase):
         self.mock_add_user_filter = self.add_user_filter_patcher.start()
         self.mock_add_user_filter.side_effect = lambda query, _user: query
 
+        # Mock Result and Run models for permission checks
+        self.result_patcher = patch("ibutsu_server.controllers.artifact_controller.Result")
+        self.mock_result = self.result_patcher.start()
+        self.mock_result.query.get.return_value = MockResult(id=MOCK_RESULT_ID)
+
+        self.run_patcher = patch("ibutsu_server.controllers.artifact_controller.Run")
+        self.mock_run = self.run_patcher.start()
+        mock_run_instance = MagicMock()
+        mock_run_instance.id = MOCK_RUN_ID
+        mock_run_instance.project = MagicMock()
+        self.mock_run.query.get.return_value = mock_run_instance
+
     def tearDown(self):
         """Teardown the mocks"""
+        self.run_patcher.stop()
+        self.result_patcher.stop()
         self.add_user_filter_patcher.stop()
         self.artifact_patcher.stop()
         self.project_patcher.stop()
@@ -141,3 +156,89 @@ class TestArtifactController(BaseTestCase):
             content_type="multipart/form-data",
         )
         self.assert_201(response, "Response body is : " + response.data.decode("utf-8"))
+
+    def test_upload_artifact_with_both_result_and_run_id(self):
+        """Test case for upload_artifact with both resultId and runId
+
+        Should reject when both resultId and runId are provided
+        """
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "multipart/form-data",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        data = {
+            "resultId": MOCK_RESULT_ID,
+            "runId": MOCK_RUN_ID,
+            "filename": "log.txt",
+            "file": (BytesIO(b"filecontent"), "log.txt"),
+        }
+        response = self.client.open(
+            "/api/artifact",
+            method="POST",
+            headers=headers,
+            data=data,
+            content_type="multipart/form-data",
+        )
+        self.assert_400(response, "Should reject when both resultId and runId are provided")
+        assert b"cannot provide both resultId and runId" in response.data, (
+            "Error message should mention mutual exclusivity"
+        )
+
+    def test_upload_artifact_with_invalid_metadata_list(self):
+        """Test case for upload_artifact with additionalMetadata as a JSON list
+
+        Should reject when additionalMetadata is not a JSON object
+        """
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "multipart/form-data",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        data = {
+            "resultId": MOCK_RESULT_ID,
+            "filename": "log.txt",
+            "additionalMetadata": '["item1", "item2"]',  # JSON list, not object
+            "file": (BytesIO(b"filecontent"), "log.txt"),
+        }
+        response = self.client.open(
+            "/api/artifact",
+            method="POST",
+            headers=headers,
+            data=data,
+            content_type="multipart/form-data",
+        )
+        self.assert_400(response, "Should reject when additionalMetadata is a JSON list")
+        # Check for either OpenAPI validation error or our custom error
+        assert (
+            b"not of type 'object'" in response.data or b"must be a JSON object" in response.data
+        ), "Error message should indicate JSON object requirement"
+
+    def test_upload_artifact_with_invalid_metadata_number(self):
+        """Test case for upload_artifact with additionalMetadata as a JSON number
+
+        Should reject when additionalMetadata is not a JSON object
+        """
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "multipart/form-data",
+            "Authorization": f"Bearer {self.jwt_token}",
+        }
+        data = {
+            "resultId": MOCK_RESULT_ID,
+            "filename": "log.txt",
+            "additionalMetadata": "123",  # JSON number, not object
+            "file": (BytesIO(b"filecontent"), "log.txt"),
+        }
+        response = self.client.open(
+            "/api/artifact",
+            method="POST",
+            headers=headers,
+            data=data,
+            content_type="multipart/form-data",
+        )
+        self.assert_400(response, "Should reject when additionalMetadata is a JSON number")
+        # Check for either OpenAPI validation error or our custom error
+        assert (
+            b"not of type 'object'" in response.data or b"must be a JSON object" in response.data
+        ), "Error message should indicate JSON object requirement"
