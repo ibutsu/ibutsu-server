@@ -215,13 +215,17 @@ paths:
         content:
           multipart/form-data:
             schema:
+              type: object
+              description: |
+                Upload artifact for a result or run. Exactly one of resultId or runId must be provided (mutually exclusive).
+                The server will reject requests that provide both or neither.
               properties:
                 resultId:
-                  description: ID of result to attach artifact to
+                  description: ID of result to attach artifact to (mutually exclusive with runId)
                   type: string
                   format: uuid
                 runId:
-                  description: ID of run to attach artifact to
+                  description: ID of run to attach artifact to (mutually exclusive with resultId)
                   type: string
                   format: uuid
                 filename:
@@ -237,7 +241,17 @@ paths:
               required:
                 - file
                 - filename
-              type: object
+            encoding:
+              file:
+                contentType: application/octet-stream
+              resultId:
+                contentType: text/plain
+              runId:
+                contentType: text/plain
+              filename:
+                contentType: text/plain
+              additionalMetadata:
+                contentType: application/json
       responses:
         201:
           content:
