@@ -24,16 +24,23 @@ def get_accessibility_bar_chart(run_list, _filters=None):
     if axe_data is None:
         return axe_data
     total = axe_data["passes"] + axe_data["violations"]
+    # Guard against division by zero
+    if total == 0:
+        return [
+            {"x": "passes", "y": 0, "ratio": 0.0},
+            {"x": "violations", "y": 0, "ratio": 0.0},
+            {"total": 0},
+        ]
     return [
         {
             "x": "passes",
             "y": axe_data["passes"],
-            "ratio": round(100 * axe_data["passes"] / total, 2),
+            "ratio": round((100 * axe_data["passes"]) / total, 2),
         },
         {
             "x": "violations",
             "y": axe_data["violations"],
-            "ratio": round(100 * axe_data["violations"] / total, 2),
+            "ratio": round((100 * axe_data["violations"]) / total, 2),
         },
         {"total": total},
     ]
