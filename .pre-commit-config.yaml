@@ -11,9 +11,9 @@ repos:
     - id: debug-statements
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.0
+    rev: v0.14.1
     hooks:
-      - id: ruff
+      - id: ruff-check
         args:
           - '--fix'
           - '--unsafe-fixes'

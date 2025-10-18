@@ -10,7 +10,6 @@ from redis.exceptions import LockError
 from ibutsu_server.db.base import session
 
 LOCK_EXPIRE = 1
-task = None
 _celery_app = None
 
 
@@ -18,63 +17,63 @@ SOCKET_TIMEOUT = 5
 SOCKET_CONNECT_TIMEOUT = 5
 
 
+def get_celery_app():
+    """Get the celery app, creating it if necessary"""
+    global _celery_app  # noqa: PLW0603
+    if not _celery_app:
+        _celery_app = Celery("ibutsu_server")
+    return _celery_app
+
+
+def task(*args, **kwargs):
+    """A decorator that returns a celery task"""
+    return get_celery_app().task(*args, **kwargs)
+
+
+class IbutsuTask(Task):
+    abstract = True
+
+    def __call__(self, *args, **kwargs):
+        with self.app.app_context():
+            return super().__call__(*args, **kwargs)
+
+    def after_return(self, _status, retval, _task_id, _args, _kwargs, _einfo):
+        """
+        After each Celery task, teardown our db session.
+        FMI: https://gist.github.com/twolfson/a1b329e9353f9b575131
+        Flask-SQLAlchemy uses create_scoped_session at startup which avoids any setup on a
+        per-request basis. This means Celery can piggyback off of this initialization.
+        """
+        if self.app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] and not isinstance(retval, Exception):
+            session.commit()
+        session.remove()
+
+    def on_failure(self, _exc, task_id, args, _kwargs, _einfo):
+        # Log task failure
+        logging.info(f"Task {task_id} with args {args} failed")
+
+
 def create_celery_app(_app=None):
     """Create the Celery app, using the Flask app in _app"""
-    global task  # noqa: PLW0603
-    global _celery_app  # noqa: PLW0603
+    app = get_celery_app()
 
-    if _celery_app:
-        return _celery_app
+    IbutsuTask.app = _app
 
-    class IbutsuTask(Task):
-        abstract = True
-
-        def __call__(self, *args, **kwargs):
-            with _app.app_context():
-                return super().__call__(*args, **kwargs)
-
-        def after_return(self, _status, retval, _task_id, _args, _kwargs, _einfo):
-            """
-            After each Celery task, teardown our db session.
-            FMI: https://gist.github.com/twolfson/a1b329e9353f9b575131
-            Flask-SQLAlchemy uses create_scoped_session at startup which avoids any setup on a
-            per-request basis. This means Celery can piggyback off of this initialization.
-            """
-            if _app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] and not isinstance(retval, Exception):
-                session.commit()
-            session.remove()
-
-        def on_failure(self, _exc, task_id, args, _kwargs, _einfo):
-            # Log task failure
-            logging.info(f"Task {task_id} with args {args} failed")
-
-    app = Celery(
-        "ibutsu_server",
-        broker=_app.config.get("CELERY_BROKER_URL"),
+    app.conf.update(
+        broker_url=_app.config.get("CELERY_BROKER_URL"),
+        result_backend=_app.config.get("CELERY_RESULT_BACKEND"),
         broker_connection_retry=True,
         broker_connection_retry_on_startup=True,
         worker_cancel_long_running_tasks_on_connection_loss=True,
-        include=[
-            "ibutsu_server.tasks.db",
-            "ibutsu_server.tasks.importers",
-            "ibutsu_server.tasks.query",
-            "ibutsu_server.tasks.results",
-            "ibutsu_server.tasks.runs",
-        ],
+        redis_socket_timeout=SOCKET_TIMEOUT,
+        redis_socket_connect_timeout=SOCKET_CONNECT_TIMEOUT,
+        redis_retry_on_timeout=True,
     )
-    app.conf.redis_socket_timeout = SOCKET_TIMEOUT
-    app.conf.redis_socket_connect_timeout = SOCKET_CONNECT_TIMEOUT
-    app.conf.redis_retry_on_timeout = True
     app.conf.broker_transport_options = app.conf.result_backend_transport_options = {
         "socket_timeout": SOCKET_TIMEOUT,
         "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
     }
-    app.conf.result_backend = _app.config.get("CELERY_RESULT_BACKEND")
     app.Task = IbutsuTask
-    # Shortcut for the decorator
-    task = app.task
-    # Store the celery app globally
-    _celery_app = app
     # Add in any periodic tasks
     app.conf.beat_schedule = {
         "prune-old-imports": {
@@ -127,11 +126,6 @@ def get_redis_client(app=None):
     )
 
 
-def is_locked(name, app=None):
-    radis_client = get_redis_client(app=app)
-    return radis_client.exists(name)
-
-
 @contextmanager
 def lock(name, timeout=LOCK_EXPIRE, app=None):
     redis_client = get_redis_client(app=app)
@@ -146,4 +140,4 @@ def lock(name, timeout=LOCK_EXPIRE, app=None):
         logging.info(f"Task {name} is already locked, discarding")
 
 
-__all__ = ["create_celery_app", "lock", "task"]
+__all__ = ["IbutsuTask", "create_celery_app", "get_celery_app", "lock", "task"]

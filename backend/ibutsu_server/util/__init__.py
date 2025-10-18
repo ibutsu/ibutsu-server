@@ -1,4 +1,19 @@
 import datetime
+import json
+
+from flask import Response
+from werkzeug.exceptions import BadRequest, Forbidden, InternalServerError, NotFound, Unauthorized
+
+__all__ = [
+    "deserialize_date",
+    "deserialize_datetime",
+    "get_test_idents",
+    "json_response",
+    "merge_dicts",
+    "safe_string",
+    "serialize",
+    "serialize_error",
+]
 
 
 def _deserialize(data, klass):  # noqa: PLR0911
@@ -190,3 +205,40 @@ def serialize(mongo_dict):
     if mongo_dict and "_id" in mongo_dict:
         mongo_dict["id"] = str(mongo_dict.pop("_id"))
     return mongo_dict
+
+
+def json_response(obj, status_code=200):
+    """
+    Create a Flask Response object from a dict.
+
+    :param obj: The object to serialize
+    :param status_code: The HTTP status for this response
+    """
+    return Response(json.dumps(obj), status=status_code, mimetype="application/json")
+
+
+def serialize_error(e):
+    """
+    Catch-all for all exceptions.
+
+    :param e: The exception that was raised
+    """
+    # Try to serialize the error as a connexion error, otherwise just turn it into a string
+    try:
+        error_dict = e.to_dict()
+    except AttributeError:
+        error_dict = {"title": "Error", "detail": str(e), "status": 500}
+    if isinstance(e, BadRequest):
+        status = 400
+    elif isinstance(e, Unauthorized):
+        status = 401
+    elif isinstance(e, Forbidden):
+        status = 403
+    elif isinstance(e, NotFound):
+        status = 404
+    elif isinstance(e, InternalServerError):
+        status = 500
+    else:
+        status = 500
+    error_dict["status"] = status
+    return Response(json.dumps(error_dict), status=status, mimetype="application/problem+json")

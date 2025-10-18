@@ -22,6 +22,7 @@ from ibutsu_server.db.base import (
     relationship,
 )
 from ibutsu_server.db.types import PortableJSON, PortableUUID
+from ibutsu_server.util import merge_dicts
 
 
 def _gen_uuid():
@@ -62,6 +63,10 @@ class ModelMixin:
         if "id" in record_dict:
             record_dict.pop("id")
         values_dict = self.to_dict()
+        # Deep merge metadata to preserve existing fields not in the update
+        if "metadata" in values_dict and "metadata" in record_dict:
+            merge_dicts(values_dict["metadata"], record_dict["metadata"])
+            values_dict["metadata"] = record_dict.pop("metadata")
         values_dict.update(record_dict)
         if "metadata" in values_dict:
             values_dict["data"] = values_dict.pop("metadata")
@@ -138,13 +143,31 @@ class Project(Model, ModelMixin):
     widget_configs = relationship("WidgetConfig", back_populates="project")
 
     def to_dict(self, with_owner=False):
-        """An overridden method to include the owner"""
+        """An overridden method to include the owner and users"""
         project_dict = super().to_dict()
         if with_owner and self.owner:
             project_dict["owner"] = self.owner.to_dict()
         if self.default_dashboard:
             project_dict["defaultDashboard"] = self.default_dashboard.to_dict()
+        # Include the users relationship
+        if hasattr(self, "users"):
+            project_dict["users"] = [user.to_dict() for user in self.users]
         return project_dict
+
+    def update(self, record_dict):
+        """Override update to exclude relationship fields that shouldn't be set directly"""
+        if "id" in record_dict:
+            record_dict.pop("id")
+        # Get current values but exclude relationships that are added in to_dict
+        values_dict = super().to_dict()  # Call ModelMixin.to_dict, not Project.to_dict
+        values_dict.update(record_dict)
+        if "metadata" in values_dict:
+            values_dict["data"] = values_dict.pop("metadata")
+        # Remove relationship fields that shouldn't be set via setattr
+        for key in ["users", "owner", "defaultDashboard"]:
+            values_dict.pop(key, None)
+        for key, value in values_dict.items():
+            setattr(self, key, value)
 
 
 class Result(Model, ModelMixin):
