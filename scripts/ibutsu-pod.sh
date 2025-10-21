@@ -9,9 +9,9 @@ CREATE_ADMIN=false
 CREATE_PROJECT=false
 IMPORT_FOLDER="./.archives"
 IMPORT_FILES=true
-POSTGRES_EXTRA_ARGS=
-REDIS_EXTRA_ARGS=
-BACKEND_EXTRA_ARGS=
+POSTGRES_EXTRA_ARGS=()
+REDIS_EXTRA_ARGS=()
+BACKEND_EXTRA_ARGS=()
 PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-39:latest
 
 ADMIN_EMAIL="admin@example.com"
@@ -102,7 +102,7 @@ fi
 
 # Persist the data
 if [[ $DATA_PERSISTENT = true ]]; then
-    POSTGRES_EXTRA_ARGS+=' -e PGDATA=/var/lib/postgres/data/pgdata'
+    POSTGRES_EXTRA_ARGS+=(-e PGDATA=/var/lib/postgres/data/pgdata)
     if [[ $DATA_VOLUMES = true ]]; then
         podman volume exists postgres-data > /dev/null
         PG_VOLUME_EXISTS=$?
@@ -114,11 +114,11 @@ if [[ $DATA_PERSISTENT = true ]]; then
         if [[ $RD_VOLUME_EXISTS -eq 1 ]]; then
             podman volume create redis-data > /dev/null
         fi
-        POSTGRES_EXTRA_ARGS+=' -v postgres-data:/var/lib/postgres/data:Z'
-        REDIS_EXTRA_ARGS+=' -v redis-data:/data:Z'
+        POSTGRES_EXTRA_ARGS+=(-v postgres-data:/var/lib/postgres/data:Z)
+        REDIS_EXTRA_ARGS+=(-v redis-data:/data:Z)
     else
-        POSTGRES_EXTRA_ARGS+=' -v ./.postgres-data:/var/lib/postgres/data:Z'
-        REDIS_EXTRA_ARGS+=' -v ./.redis-data:/data:Z'
+        POSTGRES_EXTRA_ARGS+=(-v ./.postgres-data:/var/lib/postgres/data:Z)
+        REDIS_EXTRA_ARGS+=(-v ./.redis-data:/data:Z)
     fi
     if [[ ! -d ".postgres-data" ]]; then
         mkdir .postgres-data
@@ -130,7 +130,7 @@ fi
 
 # Create the administrator
 if [[ $CREATE_ADMIN = true ]]; then
-    BACKEND_EXTRA_ARGS+=" -e IBUTSU_SUPERADMIN_EMAIL=${ADMIN_EMAIL} -e IBUTSU_SUPERADMIN_PASSWORD=${ADMIN_PASSWORD} -e IBUTSU_SUPERADMIN_NAME=Administrator"
+    BACKEND_EXTRA_ARGS+=(-e "IBUTSU_SUPERADMIN_EMAIL=${ADMIN_EMAIL}" -e "IBUTSU_SUPERADMIN_PASSWORD=${ADMIN_PASSWORD}" -e IBUTSU_SUPERADMIN_NAME=Administrator)
 fi
 
 # Print out a quick summary of actions
@@ -166,7 +166,7 @@ podman run -dt \
     -e POSTGRESQL_USER=ibutsu \
     -e POSTGRESQL_DATABASE=ibutsu \
     -e POSTGRESQL_PASSWORD=ibutsu \
-    "$POSTGRES_EXTRA_ARGS" \
+    "${POSTGRES_EXTRA_ARGS[@]}" \
     --name ibutsu-postgres \
     registry.redhat.io/rhel8/postgresql-12
 
@@ -175,7 +175,7 @@ echo -n "Adding redis to the pod:    "
 podman run -dt \
     --rm \
     --pod "$POD_NAME" \
-    "$REDIS_EXTRA_ARGS" \
+    "${REDIS_EXTRA_ARGS[@]}" \
     --name ibutsu-redis \
     quay.io/fedora/redis-7
 
@@ -195,7 +195,7 @@ podman run -d \
     -e CELERY_BROKER_URL=redis://127.0.0.1:6379 \
     -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
     -e SQLALCHEMY_WARN_20=1 \
-    "$BACKEND_EXTRA_ARGS" \
+    "${BACKEND_EXTRA_ARGS[@]}" \
     -w /mnt \
     -v ./backend:/mnt/:z \
     $PYTHON_IMAGE \
