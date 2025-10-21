@@ -1,4 +1,11 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import PropTypes from 'prop-types';
 import {
   Checkbox,
@@ -78,12 +85,15 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   const [onlyFailures, setOnlyFailures] = useState(false);
   const [historySummary, setHistorySummary] = useState();
   const [rows, setRows] = useState([]);
+  const prevRowsRef = useRef([]);
 
+  // Memoize the row transformation function to prevent unnecessary re-renders
+  // This function is stable and doesn't depend on any external state
   const resultToTestHistoryRow = useCallback((result, filterFunc) => {
     // Create expanded content for the ResultView
     const expandedContent = (
       <ResultView
-        key="expanded-content"
+        key={`expanded-content-${result.id}`}
         defaultTab="summary"
         hideTestHistory={true}
         testResult={result}
@@ -91,7 +101,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
       />
     );
 
-    const rowData = {
+    return {
       id: result.id,
       result: result,
       expandedContent: expandedContent,
@@ -116,9 +126,28 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         new Date(result.start_time).toLocaleString(),
       ],
     };
-
-    return rowData;
   }, []);
+
+  // Use refs to store the latest callbacks without causing re-renders
+  const updateFiltersRef = useRef(updateFilters);
+  const resultToTestHistoryRowRef = useRef(resultToTestHistoryRow);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    updateFiltersRef.current = updateFilters;
+    resultToTestHistoryRowRef.current = resultToTestHistoryRow;
+  }, [updateFilters, resultToTestHistoryRow]);
+
+  // Memoize the computed start_time filter value to prevent it from changing on every render
+  // This ensures the filter value is stable unless the actual inputs change
+  const computedStartTimeValue = useMemo(() => {
+    if (testResult?.start_time && selectedTimeRange) {
+      const startTimeMs = new Date(testResult.start_time).getTime();
+      const offsetMs = WEEKS[selectedTimeRange] * millisecondsInMonth;
+      return new Date(startTimeMs - offsetMs).toISOString();
+    }
+    return null;
+  }, [testResult?.start_time, selectedTimeRange]);
 
   // Set active filters for result, test_id, component, time, and env based on test result
   useEffect(() => {
@@ -131,16 +160,12 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
           }
         : {};
 
-      // default to filter only from 1 weeks ago to the most test's start_time.
-
-      const timeFilter = testResult?.start_time
+      // Use the memoized start_time value
+      const timeFilter = computedStartTimeValue
         ? {
             field: 'start_time',
             operator: 'gt',
-            value: new Date(
-              new Date(testResult?.start_time).getTime() -
-                WEEKS[selectedTimeRange] * millisecondsInMonth,
-            ).toISOString(),
+            value: computedStartTimeValue,
           }
         : {};
 
@@ -182,10 +207,26 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
           newFilters.push(envFilter);
         }
 
+        // Deep comparison to prevent unnecessary state updates
+        // Sort both arrays by field name for consistent comparison
+        const sortedPrev = [...prevFilters].sort((a, b) =>
+          a.field.localeCompare(b.field),
+        );
+        const sortedNew = [...newFilters].sort((a, b) =>
+          a.field.localeCompare(b.field),
+        );
+
+        const filtersEqual =
+          JSON.stringify(sortedPrev) === JSON.stringify(sortedNew);
+
+        if (filtersEqual) {
+          return prevFilters; // Return same reference if filters haven't changed
+        }
+
         return newFilters;
       });
     }
-  }, [onlyFailures, setActiveFilters, testResult, selectedTimeRange]);
+  }, [onlyFailures, setActiveFilters, testResult, computedStartTimeValue]);
 
   // fetch result data with active filters
   useEffect(() => {
@@ -204,11 +245,29 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
           apiParams,
         );
         const data = await HttpClient.handleResponse(response);
-        setRows(
-          data.results.map((result) =>
-            resultToTestHistoryRow(result, updateFilters),
-          ),
-        );
+
+        // Only update rows if the data has actually changed (compare by content, not reference)
+        const newRowsData = data.results.map((r) => ({
+          id: r.id,
+          result: r.result,
+          duration: r.duration,
+          start_time: r.start_time,
+        }));
+
+        const currentJSON = JSON.stringify(newRowsData);
+        const prevJSON = JSON.stringify(prevRowsRef.current);
+
+        if (currentJSON !== prevJSON) {
+          setRows(
+            data.results.map((result) =>
+              resultToTestHistoryRowRef.current(
+                result,
+                updateFiltersRef.current,
+              ),
+            ),
+          );
+          prevRowsRef.current = newRowsData;
+        }
 
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);

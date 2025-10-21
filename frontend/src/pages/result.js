@@ -36,7 +36,7 @@ const Result = () => {
       }
     };
 
-    if (result_id !== testResult?.id) {
+    if (result_id && result_id !== testResult?.id) {
       const debouncer = setTimeout(() => {
         fetchTestResult();
       }, 100);

@@ -131,7 +131,7 @@ const ResultList = () => {
       fetchData();
     }, 150);
     return () => clearTimeout(debouncer);
-  }, [activeFilters, page, pageSize, primaryObject, updateFilters]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeFilters, page, pageSize, primaryObject, updateFilters, setPage, setPageSize, setTotalItems]);
 
   // fetch 100 runs with estimate on count
   useEffect(() => {
