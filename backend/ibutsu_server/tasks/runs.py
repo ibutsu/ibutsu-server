@@ -1,10 +1,9 @@
-import logging
 from datetime import datetime, timedelta
 
 from ibutsu_server.constants import SYNC_RUN_TIME
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, Run
-from ibutsu_server.tasks import is_locked, lock, task
+from ibutsu_server.tasks import lock, task
 
 METADATA_TO_COPY = ["jenkins", "tags"]
 COLUMNS_TO_COPY = ["start_time", "env", "component", "project_id", "source"]
@@ -34,10 +33,6 @@ def _status_to_summary(status):
 @task(max_retries=1000)
 def update_run(run_id):
     """Update the run summary from the results, this task will retry 1000 times"""
-    if is_locked(run_id):
-        logging.warning(f"{run_id}: Already locked.")
-        return
-
     with lock(f"update-run-lock-{run_id}"):
         run = Run.query.get(run_id)
         if not run:

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+  <!-- Test Suite 1: Frontend Tests -->
+  <testsuite name="frontend-tests" tests="5" failures="1" errors="0" skipped="1" time="11.482" timestamp="2025-10-01T10:00:00+00:00">
+    <properties>
+      <property name="component" value="frontend"/>
+      <property name="env" value="staging"/>
+      <property name="run_id" value="a1b2c3d4-1234-5678-9abc-def012345678"/>
+      <property name="project_id" value="f47ac10b-58cc-4372-a567-0e02b2c3d479"/>
+      <property name="source" value="ci-pipeline-main-build-1001"/>
+      <property name="build_number" value="1001"/>
+      <property name="build_url" value="https://ci.example.com/job/main-pipeline/test-suite/1001/"/>
+    </properties>
+
+    <testcase classname="tests.auth.test_authentication" name="test_user_authentication_valid_credentials" time="2.345">
+      <properties>
+        <property name="test_id" value="test_user_authentication_valid_credentials"/>
+        <property name="importance" value="critical"/>
+        <property name="assignee" value="test-engineer-1"/>
+        <property name="markers" value="smoke,critical,auth"/>
+      </properties>
+    </testcase>
+
+    <testcase classname="tests.auth.test_authentication" name="test_user_authentication_invalid_password" time="5.678">
+      <properties>
+        <property name="test_id" value="test_user_authentication_invalid_password"/>
+        <property name="importance" value="high"/>
+        <property name="assignee" value="test-engineer-1"/>
+        <property name="negative" value="true"/>
+      </properties>
+      <failure message="AssertionError: Expected error message not found" type="AssertionError">
+assert 'Invalid credentials' in 'Login failed'
+
+tests/auth/test_authentication.py:145: AssertionError
+
+Captured log output:
+INFO: Starting authentication test
+DEBUG: Navigating to login page at /auth/login
+ERROR: Authentication failed - unexpected error message
+      </failure>
+      <system-out>
+Authentication test failed with invalid password.
+Screenshot captured: screenshot_failure.png
+      </system-out>
+    </testcase>
+
+    <testcase classname="tests.ui.test_forms" name="test_ui_form_validation_simple" time="3.456">
+      <properties>
+        <property name="test_id" value="test_ui_form_validation_simple"/>
+        <property name="importance" value="medium"/>
+        <property name="markers" value="ui,forms"/>
+      </properties>
+    </testcase>
+
+    <testcase classname="tests.legacy.test_deprecated_features" name="test_legacy_feature_deprecated" time="0.001">
+      <properties>
+        <property name="test_id" value="test_legacy_feature_deprecated"/>
+        <property name="importance" value="low"/>
+        <property name="assignee" value="test-engineer-3"/>
+      </properties>
+      <skipped message="Feature removed in version 2.0" type="pytest.skip"/>
+    </testcase>
+
+    <testcase classname="tests.api.test_data_validation" name="test_known_bug_data_validation" time="1.234">
+      <properties>
+        <property name="test_id" value="test_known_bug_data_validation"/>
+        <property name="importance" value="medium"/>
+        <property name="assignee" value="test-engineer-2"/>
+        <property name="bug_id" value="BUG-1234"/>
+        <property name="xfail" value="true"/>
+      </properties>
+    </testcase>
+  </testsuite>
+
+  <!-- Test Suite 2: Backend API Tests -->
+  <testsuite name="backend-api-tests" tests="2" failures="0" errors="1" skipped="0" time="31.456" timestamp="2025-10-01T10:01:00+00:00">
+    <properties>
+      <property name="component" value="backend-api"/>
+      <property name="env" value="staging"/>
+      <property name="run_id" value="a1b2c3d4-1234-5678-9abc-def012345678"/>
+      <property name="project_id" value="f47ac10b-58cc-4372-a567-0e02b2c3d479"/>
+    </properties>
+
+    <testcase classname="tests.database.test_connections" name="test_database_connection_timeout" time="30.5">
+      <properties>
+        <property name="test_id" value="test_database_connection_timeout"/>
+        <property name="importance" value="medium"/>
+        <property name="assignee" value="test-engineer-2"/>
+        <property name="markers" value="database,infrastructure"/>
+      </properties>
+      <error message="ConnectionError: Database connection timeout after 30 seconds" type="ConnectionError">
+Traceback (most recent call last):
+  File "/app/tests/database/test_connections.py", line 65, in test_database_connection_timeout
+    conn = database.connect(timeout=30)
+  File "/app/lib/database.py", line 145, in connect
+    return self._establish_connection()
+ConnectionError: Database connection timeout after 30 seconds
+      </error>
+      <system-err>
+ERROR: Database connection timeout
+See traceback.log for full details
+      </system-err>
+    </testcase>
+
+    <testcase classname="tests.api.test_health" name="test_api_endpoint_health_check" time="0.456">
+      <properties>
+        <property name="test_id" value="test_api_endpoint_health_check"/>
+        <property name="importance" value="critical"/>
+        <property name="assignee" value="test-engineer-1"/>
+        <property name="markers" value="smoke,api,critical"/>
+      </properties>
+    </testcase>
+  </testsuite>
+
+  <!-- Test Suite 3: Production Smoke Tests -->
+  <testsuite name="production-smoke-tests" tests="1" failures="0" errors="0" skipped="0" time="0.456" timestamp="2025-10-05T14:30:00+00:00">
+    <properties>
+      <property name="component" value="backend-api"/>
+      <property name="env" value="production"/>
+      <property name="run_id" value="b2c3d4e5-2345-6789-0bcd-ef1234567890"/>
+      <property name="project_id" value="f47ac10b-58cc-4372-a567-0e02b2c3d479"/>
+      <property name="source" value="ci-pipeline-release-build-2050"/>
+      <property name="git_tag" value="v1.5.0"/>
+      <property name="deployment_region" value="us-east-1"/>
+    </properties>
+
+    <testcase classname="tests.api.test_health" name="test_api_endpoint_health_check" time="0.456">
+      <properties>
+        <property name="test_id" value="test_api_endpoint_health_check"/>
+        <property name="run_id" value="b2c3d4e5-2345-6789-0bcd-ef1234567890"/>
+      </properties>
+    </testcase>
+  </testsuite>
+
+  <!-- Test Suite 4: Integration Tests -->
+  <testsuite name="integration-tests" tests="2" failures="1" errors="0" skipped="0" time="426.289" timestamp="2025-10-10T02:05:00+00:00">
+    <properties>
+      <property name="component" value="integration"/>
+      <property name="env" value="qa"/>
+      <property name="run_id" value="c3d4e5f6-3456-7890-1cde-f23456789012"/>
+      <property name="project_id" value="f47ac10b-58cc-4372-a567-0e02b2c3d479"/>
+      <property name="source" value="nightly-test-run-3100"/>
+      <property name="test_suite" value="regression"/>
+      <property name="parallel_workers" value="4"/>
+    </properties>
+
+    <testcase classname="tests.integration.test_workflows" name="test_integration_full_workflow" time="125.789">
+      <properties>
+        <property name="test_id" value="test_integration_full_workflow"/>
+        <property name="importance" value="critical"/>
+        <property name="assignee" value="test-engineer-3"/>
+        <property name="markers" value="integration,critical,regression"/>
+        <property name="endpoints_tested" value="12"/>
+      </properties>
+      <system-out>
+Full workflow test completed successfully.
+Modules tested: auth, api, database, reporting
+Total operations: 156
+Data consistency: verified
+      </system-out>
+    </testcase>
+
+    <testcase classname="tests.performance.test_load" name="test_performance_load_test" time="300.5">
+      <properties>
+        <property name="test_id" value="test_performance_load_test"/>
+        <property name="importance" value="high"/>
+        <property name="assignee" value="test-engineer-2"/>
+        <property name="markers" value="performance,load"/>
+        <property name="concurrent_users" value="100"/>
+        <property name="requests_per_second" value="450"/>
+        <property name="error_rate" value="0.05"/>
+      </properties>
+      <failure message="AssertionError: Error rate 0.05 exceeds threshold 0.01" type="AssertionError">
+assert metrics['error_rate'] &lt; 0.01
+
+tests/performance/test_load.py:89: AssertionError
+
+Performance Metrics:
+- Total Requests: 135000
+- Failed Requests: 6750
+- Error Rate: 5.00%
+- Average Response Time: 234ms
+- P95 Response Time: 567ms
+- P99 Response Time: 890ms
+      </failure>
+      <system-out>
+See performance_metrics.log for detailed metrics
+      </system-out>
+    </testcase>
+  </testsuite>
+</testsuites>

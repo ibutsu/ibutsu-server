@@ -20,6 +20,35 @@ from ibutsu_server.util.query import get_offset, query_as_task
 from ibutsu_server.util.uuid import validate_uuid
 
 
+def _validate_and_get_project(run, user):
+    """Validate and get project for a run.
+
+    Returns (project, error_response) tuple.
+    If validation fails, project is None and error_response contains the error.
+    If validation succeeds, project is set and error_response is None.
+    """
+    if not run.data:
+        return None, ("Bad request, no data supplied", HTTPStatus.BAD_REQUEST)
+
+    if run.data and not (run.data.get("project") or run.project_id):
+        return None, ("Bad request, project or project_id is required", HTTPStatus.BAD_REQUEST)
+
+    # Get project from metadata or project_id (get_project handles both names and UUIDs)
+    if run.data and run.data.get("project"):
+        project = get_project(run.data["project"])
+    elif run.project_id:
+        project = get_project(run.project_id)
+    else:
+        return None, ("Bad request, project or project_id is required", HTTPStatus.BAD_REQUEST)
+
+    if not project:
+        return None, ("Invalid project", HTTPStatus.BAD_REQUEST)
+    if not project_has_user(project, user):
+        return None, (HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN)
+
+    return project, None
+
+
 @query_as_task
 def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=None, user=None):
     """Get a list of runs
@@ -122,17 +151,10 @@ def add_run(body=None, token_info=None, user=None):
     body_data = body if body is not None else connexion.request.get_json()
     run = Run.from_dict(**body_data)
 
-    if not run.data:
-        return "Bad request, no data supplied", HTTPStatus.BAD_REQUEST
-
-    if run.data and not (run.data.get("project") or run.project_id):
-        return "Bad request, project or project_id is required", HTTPStatus.BAD_REQUEST
-
-    project = get_project(run.data["project"])
-    if not project:
-        return "Invalid project", HTTPStatus.BAD_REQUEST
-    if not project_has_user(project, user):
-        return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
+    # Validate and get project
+    project, error_response = _validate_and_get_project(run, user)
+    if error_response:
+        return error_response
     run.project = project
     run.env = run.data.get("env") if run.data else None
     run.component = run.data.get("component") if run.data else None
