@@ -1,4 +1,11 @@
-import { useState, useCallback, useMemo, useContext, useEffect } from 'react';
+import {
+  useState,
+  useCallback,
+  useMemo,
+  useContext,
+  useEffect,
+  useRef,
+} from 'react';
 import {
   useSearchParams,
   useParams,
@@ -78,24 +85,49 @@ const useTableFilters = ({
 
   useEffect(() => {
     if (project_id) {
-      setActiveFilters((prevActive) =>
-        prevActive
-          .filter((f) => f.field !== 'project_id')
-          .concat({
-            field: 'project_id',
-            operator: 'eq',
-            value: primaryObject?.id || project_id,
-          }),
-      );
+      setActiveFilters((prevActive) => {
+        const projectIdValue = primaryObject?.id || project_id;
+        const existingProjectFilter = prevActive.find(
+          (f) => f.field === 'project_id',
+        );
+
+        // Only update if the project_id filter doesn't exist or has a different value
+        if (
+          !existingProjectFilter ||
+          existingProjectFilter.value !== projectIdValue
+        ) {
+          return prevActive
+            .filter((f) => f.field !== 'project_id')
+            .concat({
+              field: 'project_id',
+              operator: 'eq',
+              value: projectIdValue,
+            });
+        }
+
+        return prevActive;
+      });
     }
   }, [project_id, primaryObject?.id]);
+
+  // Use refs to store the latest values to avoid recreating updateFilters
+  const activeFiltersRef = useRef(activeFilters);
+  const searchParamsRef = useRef(searchParams);
+  const locationRef = useRef(location);
+
+  useEffect(() => {
+    // Update all refs with latest values
+    activeFiltersRef.current = activeFilters;
+    searchParamsRef.current = searchParams;
+    locationRef.current = location;
+  }, [activeFilters, searchParams, location]);
 
   // Update activeFilters state and search params, handle removal when value is null/empty
   const updateFilters = useCallback(
     ({ field, operator, value, callback = () => {} }) => {
-      const newFilters = [...activeFilters];
+      const newFilters = [...activeFiltersRef.current];
       const newFilter = { field: field, operator: operator, value: value };
-      const newSearchParams = new URLSearchParams(searchParams);
+      const newSearchParams = new URLSearchParams(searchParamsRef.current);
 
       const existingFilterIndex = newFilters.findIndex(
         (filter) => filter.field === field,
@@ -126,21 +158,18 @@ const useTableFilters = ({
       // Only navigate if not in widget editing mode (initialFilters provided)
       if (initialFilters.length === 0) {
         navigate({
-          pathname: location.pathname,
+          pathname: locationRef.current.pathname,
           search: newSearchParams.toString(),
-          hash: location.hash,
+          hash: locationRef.current.hash,
         });
       }
 
       callback();
     },
     [
-      activeFilters,
+      // activeFilters, searchParams, and location are accessed via refs to prevent recreating this callback
       hideFilters,
-      location.hash,
-      location.pathname,
       navigate,
-      searchParams,
       initialFilters,
     ],
   );

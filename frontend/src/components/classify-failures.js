@@ -213,7 +213,7 @@ const ClassifyFailuresTable = () => {
     return () => {
       clearTimeout(debouncer);
     };
-  }, [page, pageSize, activeFilters, apiFilters]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, pageSize, apiFilters, setPage, setPageSize, setTotalItems]);
 
   const onTableRowSelect = useCallback(
     (event, isSelected, rowId) => {

@@ -97,7 +97,7 @@ const RunList = () => {
       fetchData();
     }, 150);
     return () => clearTimeout(debouncer);
-  }, [pageSize, page, primaryObject, updateFilters, activeFilters]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [pageSize, page, primaryObject, updateFilters, activeFilters, setPage, setPageSize, setTotalItems]);
 
   // apparently this is better to do in an effect
   useEffect(() => {

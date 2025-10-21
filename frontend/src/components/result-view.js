@@ -55,6 +55,7 @@ const ResultView = ({
 
   // State
   const [artifacts, setArtifacts] = useState([]);
+  const [lastFetchedResultId, setLastFetchedResultId] = useState(null);
 
   const artifactTabs = useMemo(
     () =>
@@ -70,7 +71,7 @@ const ResultView = ({
     [artifacts],
   );
 
-  const artifactKeys = useCallback(() => {
+  const artifactKeys = useMemo(() => {
     if (artifactTabs && artifactTabs.length > 0) {
       return artifactTabs.map((tab) => tab.key);
     } else {
@@ -78,36 +79,37 @@ const ResultView = ({
     }
   }, [artifactTabs]);
 
+  // Memoize validTabIndicies to prevent creating a new array on every render
+  const validTabIndicies = useMemo(() => {
+    return ['summary', 'testHistory', 'testObject', ...artifactKeys];
+  }, [artifactKeys]);
+
   // Tab state and navigation hooks/effects
   const { activeTab, onTabSelect } = useTabHook({
-    validTabIndicies: [
-      'summary',
-      'testHistory',
-      'testObject',
-      ...artifactKeys(),
-    ],
+    validTabIndicies,
     defaultTab: defaultTab,
     skipHash: skipHash,
   });
 
-  useEffect(() => {
-    // Get artifacts when the test result changes
-    const fetchArtifacts = async () => {
-      try {
-        const response = await HttpClient.get(
-          [Settings.serverUrl, 'artifact'],
-          {
-            resultId: testResult.id,
-          },
-        );
-        const data = await HttpClient.handleResponse(response);
-        setArtifacts(data['artifacts']);
-      } catch (error) {
-        console.error('Error fetching artifacts:', error);
-      }
-    };
+  const fetchArtifacts = useCallback(async () => {
+    if (!testResult?.id) return;
 
-    if (testResult && testResult.id) {
+    try {
+      const response = await HttpClient.get([Settings.serverUrl, 'artifact'], {
+        resultId: testResult.id,
+      });
+      const data = await HttpClient.handleResponse(response);
+      console.log('[ResultView] Artifacts fetched:', data['artifacts']?.length);
+      setArtifacts(data['artifacts']);
+      setLastFetchedResultId(testResult.id);
+    } catch (error) {
+      console.error('Error fetching artifacts:', error);
+    }
+  }, [testResult?.id]);
+
+  useEffect(() => {
+    // Only fetch if the result ID has actually changed
+    if (testResult && testResult.id && testResult.id !== lastFetchedResultId) {
       const debouncer = setTimeout(() => {
         fetchArtifacts();
       }, 100);
@@ -115,7 +117,7 @@ const ResultView = ({
         clearTimeout(debouncer);
       };
     }
-  }, [testResult]);
+  }, [testResult, testResult?.id, lastFetchedResultId, fetchArtifacts]);
 
   const resultIcon = useMemo(() => {
     return testResult?.result
@@ -124,7 +126,7 @@ const ResultView = ({
   }, [testResult]);
 
   const runLink = useMemo(() => {
-    return testResult.run_id ? (
+    return testResult?.run_id ? (
       <Link to={`../runs/${testResult.run_id}#summary`} relative="Path">
         {testResult.run_id}
       </Link>
@@ -140,10 +142,10 @@ const ResultView = ({
       {
         field: 'component',
         operator: 'eq',
-        value: testResult.component,
+        value: testResult?.component,
       },
     ]);
-    return testResult.component ? (
+    return testResult?.component ? (
       <Link
         to={{
           pathname: `/project/${project_id}/results`,
@@ -160,7 +162,7 @@ const ResultView = ({
   }, [testResult, project_id]);
 
   const importanceLink = useMemo(() => {
-    const importance = testResult.metadata?.importance;
+    const importance = testResult?.metadata?.importance;
     const importanceSearch = filtersToSearchParams([
       {
         field: 'metadata.importance',
@@ -170,7 +172,7 @@ const ResultView = ({
       {
         field: 'run_id',
         operator: 'eq',
-        value: testResult.run_id,
+        value: testResult?.run_id,
       },
     ]);
     return (
@@ -190,10 +192,10 @@ const ResultView = ({
       {
         field: 'source',
         operator: 'eq',
-        value: testResult.source,
+        value: testResult?.source,
       },
     ]);
-    return testResult.source ? (
+    return testResult?.source ? (
       <Link
         to={{
           pathname: `/project/${project_id}/results`,
@@ -211,7 +213,7 @@ const ResultView = ({
   }, [testResult, project_id]);
 
   const resultParameters = useMemo(() => {
-    return testResult.params?.length ? (
+    return testResult?.params?.length ? (
       Object.keys(testResult.params).map((key) => (
         <div key={key}>
           {key} = {testResult.params[key]}
@@ -223,16 +225,16 @@ const ResultView = ({
   }, [testResult]);
 
   const startTime = useMemo(() => {
-    return testResult.start_time
+    return testResult?.start_time
       ? new Date(testResult.start_time)
-      : testResult.startTime
+      : testResult?.startTime
         ? new Date(testResult.startTime)
         : new Date();
   }, [testResult]);
 
   const testJson = useMemo(
     () => JSON.stringify(testResult, null, '\t'),
-    [testResult],
+    [testResult], // Recompute when testResult changes
   );
 
   return (
