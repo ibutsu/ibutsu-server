@@ -6,7 +6,7 @@ import connexion
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result, User
-from ibutsu_server.filters import convert_filter
+from ibutsu_server.filters import convert_filter, has_project_filter
 from ibutsu_server.util import merge_dicts
 from ibutsu_server.util.count import get_count_estimate
 from ibutsu_server.util.projects import add_user_filter, get_project, project_has_user
@@ -127,9 +127,30 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
     :rtype: List[Result]
     """
     requesting_user = User.query.get(user)
+
+    # Validate query scope to prevent full table scans
+    # If user is superadmin or query is not properly scoped by user projects,
+    # require a project filter to prevent timeout
+    query_has_project_filter = has_project_filter(filter_)
+    if requesting_user and requesting_user.is_superadmin and not query_has_project_filter:
+        return (
+            "Bad request, project_id filter is required for unscoped queries",
+            HTTPStatus.BAD_REQUEST,
+        )
+
     query = Result.query
     if requesting_user:
         query = add_user_filter(query, requesting_user, model=Result)
+        # For non-superadmin users without projects, require project filter
+        if (
+            not requesting_user.is_superadmin
+            and not requesting_user.projects
+            and not query_has_project_filter
+        ):
+            return (
+                "Bad request, project_id filter is required",
+                HTTPStatus.BAD_REQUEST,
+            )
 
     if filter_:
         for filter_string in filter_:
