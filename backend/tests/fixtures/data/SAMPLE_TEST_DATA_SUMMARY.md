@@ -166,7 +166,7 @@ def test_specific_scenario(db_session):
 ```python
 from tests.fixtures.loader import load_json_data
 
-def test_import_functionality(flask_app):
+def test_import_functionality(flask_app, auth_headers):
     """Test importing via API."""
     client, jwt_token = flask_app
     data = load_json_data()
@@ -174,7 +174,7 @@ def test_import_functionality(flask_app):
     response = client.post(
         '/api/project',
         json=data['project'],
-        headers={'Authorization': f'Bearer {jwt_token}'}
+        headers=auth_headers(jwt_token)
     )
     assert response.status_code == 201
 ```
@@ -257,7 +257,7 @@ def test_example(flask_app, db_session):
     # Test with flask_app client
     response = client.get(
         f'/api/project/{project.id}',
-        headers={'Authorization': f'Bearer {jwt_token}'}
+        headers=auth_headers(jwt_token)
     )
     assert response.status_code == 200
 ```
