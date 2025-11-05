@@ -2,7 +2,7 @@ import json
 from io import BytesIO
 
 
-def test_delete_artifact(flask_app, make_project, make_run, make_result):
+def test_delete_artifact(flask_app, make_project, make_run, make_result, auth_headers):
     """Test case for delete_artifact"""
     client, jwt_token = flask_app
 
@@ -26,7 +26,7 @@ def test_delete_artifact(flask_app, make_project, make_run, make_result):
         session.refresh(artifact)
         artifact_id = artifact.id
 
-    headers = {"Authorization": f"Bearer {jwt_token}"}
+    headers = auth_headers(jwt_token)
     response = client.delete(
         f"/api/artifact/{artifact_id}",
         headers=headers,
@@ -41,7 +41,7 @@ def test_delete_artifact(flask_app, make_project, make_run, make_result):
         assert deleted_artifact is None
 
 
-def test_download_artifact(flask_app, make_project, make_run, make_result):
+def test_download_artifact(flask_app, make_project, make_run, make_result, auth_headers):
     """Test case for download_artifact"""
     client, jwt_token = flask_app
 
@@ -65,10 +65,7 @@ def test_download_artifact(flask_app, make_project, make_run, make_result):
         session.refresh(artifact)
         artifact_id = artifact.id
 
-    headers = {
-        "Accept": "application/octet-stream",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/artifact/{artifact_id}/download",
         headers=headers,
@@ -78,7 +75,7 @@ def test_download_artifact(flask_app, make_project, make_run, make_result):
     assert b"test file content" in response.data
 
 
-def test_get_artifact(flask_app, make_project, make_run, make_result):
+def test_get_artifact(flask_app, make_project, make_run, make_result, auth_headers):
     """Test case for get_artifact"""
     client, jwt_token = flask_app
 
@@ -103,10 +100,7 @@ def test_get_artifact(flask_app, make_project, make_run, make_result):
         session.refresh(artifact)
         artifact_id = artifact.id
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/artifact/{artifact_id}",
         headers=headers,
@@ -118,7 +112,7 @@ def test_get_artifact(flask_app, make_project, make_run, make_result):
     assert response_data["result_id"] == result_id
 
 
-def test_get_artifact_list(flask_app, make_project, make_run, make_result):
+def test_get_artifact_list(flask_app, make_project, make_run, make_result, auth_headers):
     """Test case for get_artifact_list"""
     client, jwt_token = flask_app
 
@@ -143,10 +137,7 @@ def test_get_artifact_list(flask_app, make_project, make_run, make_result):
         session.commit()
 
     query_string = [("resultId", result_id), ("page", 1), ("pageSize", 56)]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/artifact",
         headers=headers,
@@ -159,7 +150,7 @@ def test_get_artifact_list(flask_app, make_project, make_run, make_result):
     assert len(response_data["artifacts"]) == 5
 
 
-def test_upload_artifact(flask_app, make_project, make_run, make_result):
+def test_upload_artifact(flask_app, make_project, make_run, make_result, auth_headers):
     """Test case for upload_artifact"""
     client, jwt_token = flask_app
 
@@ -168,10 +159,7 @@ def test_upload_artifact(flask_app, make_project, make_run, make_result):
     run = make_run(project_id=project.id)
     result = make_result(run_id=run.id, project_id=project.id, test_id="test.example")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     # additionalMetadata must be a JSON string in multipart form data
     data = {
         "resultId": str(result.id),

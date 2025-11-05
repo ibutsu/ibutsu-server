@@ -9,17 +9,14 @@ def _mock_task(*args, **kwargs):
     pass
 
 
-def test_admin_get_user_success(flask_app, make_user):
+def test_admin_get_user_success(flask_app, make_user, auth_headers):
     """Test case for admin_get_user - successful retrieval"""
     client, jwt_token = flask_app
 
     # Create user
     user = make_user(name="Test User", email="testuser@example.com")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/admin/user/{user.id}",
         headers=headers,
@@ -34,14 +31,11 @@ def test_admin_get_user_success(flask_app, make_user):
     assert response_data["email"] == "testuser@example.com"
 
 
-def test_admin_get_user_not_found(flask_app):
+def test_admin_get_user_not_found(flask_app, auth_headers):
     """Test case for admin_get_user - user not found"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/admin/user/00000000-0000-0000-0000-000000000000",
         headers=headers,
@@ -57,7 +51,9 @@ def test_admin_get_user_not_found(flask_app):
         (3, 5, 10),
     ],
 )
-def test_admin_get_user_list_pagination(flask_app, make_user, page, page_size, expected_offset):
+def test_admin_get_user_list_pagination(
+    flask_app, make_user, page, page_size, expected_offset, auth_headers
+):
     """Test case for admin_get_user_list with different pagination parameters"""
     client, jwt_token = flask_app
 
@@ -65,10 +61,7 @@ def test_admin_get_user_list_pagination(flask_app, make_user, page, page_size, e
     for i in range(100):
         make_user(name=f"User {i}", email=f"user{i}@example.com")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     query_string = [("page", page), ("pageSize", page_size)]
     response = client.get(
         "/api/admin/user",
@@ -83,7 +76,7 @@ def test_admin_get_user_list_pagination(flask_app, make_user, page, page_size, e
     assert response_data["pagination"]["pageSize"] == page_size
 
 
-def test_admin_get_user_list_with_filters(flask_app, make_user):
+def test_admin_get_user_list_with_filters(flask_app, make_user, auth_headers):
     """Test case for admin_get_user_list with filters"""
     client, jwt_token = flask_app
 
@@ -94,10 +87,7 @@ def test_admin_get_user_list_with_filters(flask_app, make_user):
     make_user(name="Other User 1", email="other1@example.com")
     make_user(name="Other User 2", email="other2@example.com")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     query_string = [("filter", "email=target@example.com")]
     response = client.get(
         "/api/admin/user",
@@ -113,7 +103,7 @@ def test_admin_get_user_list_with_filters(flask_app, make_user):
     assert found_target
 
 
-def test_admin_add_user_success(flask_app):
+def test_admin_add_user_success(flask_app, auth_headers):
     """Test case for admin_add_user - successful creation"""
     client, jwt_token = flask_app
 
@@ -122,11 +112,7 @@ def test_admin_add_user_success(flask_app):
         "email": "newuser@example.com",
         "password": "password123",
     }
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/admin/user",
         headers=headers,
@@ -144,7 +130,7 @@ def test_admin_add_user_success(flask_app):
         assert user.name == "New User"
 
 
-def test_admin_add_user_already_exists(flask_app, make_user):
+def test_admin_add_user_already_exists(flask_app, make_user, auth_headers):
     """Test case for admin_add_user - user already exists"""
     client, jwt_token = flask_app
 
@@ -156,11 +142,7 @@ def test_admin_add_user_already_exists(flask_app, make_user):
         "email": "existing@example.com",  # Same as existing user
         "password": "password123",
     }
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/admin/user",
         headers=headers,
@@ -171,7 +153,7 @@ def test_admin_add_user_already_exists(flask_app, make_user):
     assert "already exists" in response.data.decode("utf-8")
 
 
-def test_admin_update_user_success(flask_app, make_user, make_project):
+def test_admin_update_user_success(flask_app, make_user, make_project, auth_headers):
     """Test case for admin_update_user - successful update"""
     client, jwt_token = flask_app
 
@@ -184,11 +166,7 @@ def test_admin_update_user_success(flask_app, make_user, make_project):
         "email": "updated@example.com",
         "projects": [{"id": str(project.id)}],
     }
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         f"/api/admin/user/{user.id}",
         headers=headers,
@@ -206,16 +184,12 @@ def test_admin_update_user_success(flask_app, make_user, make_project):
         assert updated_user.email == "updated@example.com"
 
 
-def test_admin_update_user_not_found(flask_app):
+def test_admin_update_user_not_found(flask_app, auth_headers):
     """Test case for admin_update_user - user not found"""
     client, jwt_token = flask_app
 
     update_data = {"name": "Updated User Name", "email": "updated@example.com"}
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         "/api/admin/user/00000000-0000-0000-0000-000000000000",
         headers=headers,
@@ -225,7 +199,7 @@ def test_admin_update_user_not_found(flask_app):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_admin_delete_user_success(flask_app, make_user):
+def test_admin_delete_user_success(flask_app, make_user, auth_headers):
     """Test case for admin_delete_user - successful deletion"""
     client, jwt_token = flask_app
 
@@ -233,9 +207,7 @@ def test_admin_delete_user_success(flask_app, make_user):
     user = make_user(name="User to Delete", email="todelete@example.com", is_superadmin=False)
     user_id = user.id
 
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.delete(
         f"/api/admin/user/{user_id}",
         headers=headers,
@@ -250,13 +222,11 @@ def test_admin_delete_user_success(flask_app, make_user):
         assert deleted_user is None
 
 
-def test_admin_delete_user_not_found(flask_app):
+def test_admin_delete_user_not_found(flask_app, auth_headers):
     """Test case for admin_delete_user - user not found"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.delete(
         "/api/admin/user/00000000-0000-0000-0000-000000000000",
         headers=headers,
@@ -264,7 +234,7 @@ def test_admin_delete_user_not_found(flask_app):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_admin_delete_user_cannot_delete_self(flask_app):
+def test_admin_delete_user_cannot_delete_self(flask_app, auth_headers):
     """Test case for admin_delete_user - cannot delete self"""
     client, jwt_token = flask_app
 
@@ -274,9 +244,7 @@ def test_admin_delete_user_cannot_delete_self(flask_app):
 
         test_user = User.query.filter_by(email="test@example.com").first()
 
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.delete(
         f"/api/admin/user/{test_user.id}",
         headers=headers,
@@ -368,7 +336,9 @@ class TestAdminDeleteLastSuperadmin:
         with app.test_client() as client:
             yield client, jwt_token, second_user_id
 
-    def test_admin_delete_user_cannot_delete_last_superadmin(self, two_superadmin_flask_app):
+    def test_admin_delete_user_cannot_delete_last_superadmin(
+        self, two_superadmin_flask_app, auth_headers
+    ):
         """Test case for admin_delete_user - cannot delete last superadmin after deleting one"""
         client, jwt_token, second_user_id = two_superadmin_flask_app
 
@@ -379,9 +349,7 @@ class TestAdminDeleteLastSuperadmin:
             superadmin_count = User.query.filter_by(is_superadmin=True).count()
             assert superadmin_count == 2, "Test requires exactly two superadmins initially"
 
-        headers = {
-            "Authorization": f"Bearer {jwt_token}",
-        }
+        headers = auth_headers(jwt_token)
 
         # First, successfully delete the second superadmin (authenticated user is different)
         response = client.delete(

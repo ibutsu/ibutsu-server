@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 
 
-def test_get_import_success(flask_app, make_project):
+def test_get_import_success(flask_app, make_project, auth_headers):
     """Test case for get_import - successful retrieval"""
     client, jwt_token = flask_app
 
@@ -26,10 +26,7 @@ def test_get_import_success(flask_app, make_project):
         session.refresh(import_obj)
         import_id = import_obj.id
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/import/{import_id}",
         headers=headers,
@@ -41,14 +38,11 @@ def test_get_import_success(flask_app, make_project):
     assert response_data["format"] == "junit"
 
 
-def test_get_import_not_found(flask_app):
+def test_get_import_not_found(flask_app, auth_headers):
     """Test case for get_import - import not found"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/import/00000000-0000-0000-0000-000000000000",
         headers=headers,
@@ -56,7 +50,7 @@ def test_get_import_not_found(flask_app):
     assert response.status_code == 404, f"Response body is : {response.data.decode('utf-8')}"
 
 
-def test_get_import_forbidden_project_access(flask_app, make_project, make_user):
+def test_get_import_forbidden_project_access(flask_app, make_project, make_user, auth_headers):
     """Test case for get_import - forbidden project access"""
     client, jwt_token = flask_app
 
@@ -79,10 +73,7 @@ def test_get_import_forbidden_project_access(flask_app, make_project, make_user)
         session.refresh(import_obj)
         import_id = import_obj.id
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/import/{import_id}",
         headers=headers,
@@ -100,7 +91,7 @@ def test_get_import_forbidden_project_access(flask_app, make_project, make_user)
         (1, 50),
     ],
 )
-def test_get_import_list(flask_app, make_project, page, page_size):
+def test_get_import_list(flask_app, make_project, page, page_size, auth_headers):
     """Test case for get_import_list with pagination"""
     client, jwt_token = flask_app
 
@@ -122,10 +113,7 @@ def test_get_import_list(flask_app, make_project, page, page_size):
         session.commit()
 
     query_string = [("page", page), ("pageSize", page_size)]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/import",
         headers=headers,
@@ -140,7 +128,7 @@ def test_get_import_list(flask_app, make_project, page, page_size):
     assert response_data["pagination"]["pageSize"] == page_size
 
 
-def test_get_import_list_filter_by_status(flask_app, make_project):
+def test_get_import_list_filter_by_status(flask_app, make_project, auth_headers):
     """Test case for get_import_list with status filter"""
     client, jwt_token = flask_app
 
@@ -171,10 +159,7 @@ def test_get_import_list_filter_by_status(flask_app, make_project):
         session.commit()
 
     query_string = [("filter", "status=completed")]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/import",
         headers=headers,
@@ -190,7 +175,7 @@ def test_get_import_list_filter_by_status(flask_app, make_project):
 
 
 @patch("ibutsu_server.controllers.import_controller.run_junit_import")
-def test_upload_import_junit(mock_run_junit_import, flask_app, make_project):
+def test_upload_import_junit(mock_run_junit_import, flask_app, make_project, auth_headers):
     """Test case for upload_import - JUnit format"""
     client, jwt_token = flask_app
 
@@ -200,10 +185,7 @@ def test_upload_import_junit(mock_run_junit_import, flask_app, make_project):
     # Mock the Celery task
     mock_run_junit_import.delay.return_value = None
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
 
     # Create a file-like object
     xml_content = b'<?xml version="1.0"?><testsuites><testsuite name="test"/></testsuites>'
@@ -224,7 +206,7 @@ def test_upload_import_junit(mock_run_junit_import, flask_app, make_project):
 
 
 @patch("ibutsu_server.controllers.import_controller.run_archive_import")
-def test_upload_import_archive(mock_run_archive_import, flask_app, make_project):
+def test_upload_import_archive(mock_run_archive_import, flask_app, make_project, auth_headers):
     """Test case for upload_import - archive format"""
     client, jwt_token = flask_app
 
@@ -234,10 +216,7 @@ def test_upload_import_archive(mock_run_archive_import, flask_app, make_project)
     # Mock the Celery task
     mock_run_archive_import.delay.return_value = None
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
 
     # Create a file-like object with archive-like content
     archive_content = b"PK\x03\x04"  # ZIP file signature
@@ -257,17 +236,14 @@ def test_upload_import_archive(mock_run_archive_import, flask_app, make_project)
     assert response.status_code in [201, 200, 202]
 
 
-def test_upload_import_missing_file(flask_app, make_project):
+def test_upload_import_missing_file(flask_app, make_project, auth_headers):
     """Test case for upload_import - missing file"""
     client, jwt_token = flask_app
 
     # Create project
     project = make_project(name="test-project")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
 
     data = {
         "project": str(project.id),
@@ -285,14 +261,11 @@ def test_upload_import_missing_file(flask_app, make_project):
     assert response.status_code in [400, 422]
 
 
-def test_upload_import_invalid_project(flask_app):
+def test_upload_import_invalid_project(flask_app, auth_headers):
     """Test case for upload_import - invalid project"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
 
     xml_content = b'<?xml version="1.0"?><testsuites><testsuite name="test"/></testsuites>'
     data = {

@@ -52,7 +52,7 @@ MOCK_RESULTS = [
 MOCK_RESULTS_DICT = [result.to_dict() for result in MOCK_RESULTS]
 
 
-def test_get_comparison_result_list(flask_app):
+def test_get_comparison_result_list(flask_app, auth_headers):
     """Test case for compare_runs_view.py::get_comparison_data"""
     client, jwt_token = flask_app
     MOCK_RUN_IDS = [MOCK_RUN_ID, MOCK_RUN_ID_2]
@@ -72,10 +72,7 @@ def test_get_comparison_result_list(flask_app):
         query_string = {
             "filters": ["metadata.component=frontend", "metadata.component=frontend"],
         }
-        headers = {
-            "Accept": "application/json",
-            "Authorization": f"Bearer {jwt_token}",
-        }
+        headers = auth_headers(jwt_token)
         response = client.open(
             "/api/widget/compare-runs-view",
             method="GET",
@@ -137,13 +134,10 @@ def test_run_aggregator_with_zero_total(
     assert result["skipped"]["component-c"] == 4
 
 
-def test_run_aggregator_endpoint_error_handling(flask_app):
+def test_run_aggregator_endpoint_error_handling(flask_app, auth_headers):
     """Test case for widget controller error handling with run-aggregator"""
     client, jwt_token = flask_app
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
 
     # Test with invalid parameters that might cause errors
     query_string = {

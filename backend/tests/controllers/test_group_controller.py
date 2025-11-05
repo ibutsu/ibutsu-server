@@ -2,15 +2,11 @@ import pytest
 from flask import json
 
 
-def test_add_group(flask_app):
+def test_add_group(flask_app, auth_headers):
     """Test case for add_group - Create a new group"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/group",
         headers=headers,
@@ -30,17 +26,14 @@ def test_add_group(flask_app):
         assert group is not None
 
 
-def test_get_group(flask_app, make_group):
+def test_get_group(flask_app, make_group, auth_headers):
     """Test case for get_group - Get a group"""
     client, jwt_token = flask_app
 
     # Create group
     group = make_group(name="Test Group")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/group/{group.id}",
         headers=headers,
@@ -60,7 +53,7 @@ def test_get_group(flask_app, make_group):
         (1, 56),
     ],
 )
-def test_get_group_list(flask_app, make_group, page, page_size):
+def test_get_group_list(flask_app, make_group, page, page_size, auth_headers):
     """Test case for get_group_list - Get a list of groups"""
     client, jwt_token = flask_app
 
@@ -69,10 +62,7 @@ def test_get_group_list(flask_app, make_group, page, page_size):
         make_group(name=f"Group {i}")
 
     query_string = [("page", page), ("pageSize", page_size)]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/group",
         headers=headers,
@@ -87,18 +77,14 @@ def test_get_group_list(flask_app, make_group, page, page_size):
     assert response_data["pagination"]["pageSize"] == page_size
 
 
-def test_update_group(flask_app, make_group):
+def test_update_group(flask_app, make_group, auth_headers):
     """Test case for update_group - Update a group"""
     client, jwt_token = flask_app
 
     # Create group
     group = make_group(name="Original Name")
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         f"/api/group/{group.id}",
         headers=headers,
