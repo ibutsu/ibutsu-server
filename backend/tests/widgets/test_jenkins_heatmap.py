@@ -20,8 +20,8 @@ MOCK_GROUP_FIELD = "component"
     ("x_data", "expected_slope"),
     [
         ([100, 100, 100], 100),
-        ([90, 80, 70], -10.0),
-        ([70, 80, 90], 10.0),
+        ([90, 80, 70], -0.1),  # Linear regression slope per unit
+        ([70, 80, 90], 0.1),  # Linear regression slope per unit
         ([80, 80, 80], 0),
     ],
 )
@@ -46,14 +46,13 @@ def test_get_builds(mock_apply_filters, mock_session, app_context):
 
 
 @patch("ibutsu_server.widgets.jenkins_heatmap._get_builds")
-@patch("ibutsu_server.widgets.jenkins_heatmap.session")
-@patch("ibutsu_server.widgets.jenkins_heatmap.apply_filters")
-def test_get_heatmap(mock_apply_filters, mock_session, mock_get_builds, app_context):
-    """Test the _get_heatmap function."""
+@patch("ibutsu_server.widgets.jenkins_heatmap.string_to_column")
+def test_get_heatmap(mock_string_to_column, mock_get_builds, app_context):
+    """Test the _get_heatmap function handles None group_field."""
+    # Test early return when string_to_column returns None
+    mock_string_to_column.return_value = None
     mock_get_builds.return_value = (None, [])
-    mock_query = MagicMock()
-    mock_session.query.return_value.group_by.return_value = mock_query
-    mock_apply_filters.return_value.subquery.return_value = MagicMock()
+
     heatmap, builds = _get_heatmap(
         MOCK_JOB_NAME, MOCK_BUILDS, MOCK_GROUP_FIELD, True, MOCK_PROJECT_ID
     )

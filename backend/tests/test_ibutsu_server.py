@@ -21,10 +21,15 @@ def test_health_check(mocked_add_user_filter, flask_app):
     assert response.status_code == 200
 
 
-def test_run_list(mocked_add_user_filter, flask_app):
+def test_run_list(mocked_add_user_filter, flask_app, make_project):
     """Test the run list endpoint."""
     client, jwt_token = flask_app
-    mocked_add_user_filter.side_effect = lambda query, _user: query
+    mocked_add_user_filter.side_effect = lambda query, _user, **_kwargs: query
+
+    # Create a project so the user has something to query
+    project = make_project(name="test-project")
+
     headers = {"Authorization": f"Bearer {jwt_token}"}
-    response = client.get("/api/run", headers=headers)
+    # Add project filter for superadmin users to avoid full table scan requirement
+    response = client.get(f"/api/run?filter=project_id={project.id}", headers=headers)
     assert response.status_code == 200
