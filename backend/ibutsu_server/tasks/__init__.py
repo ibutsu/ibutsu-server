@@ -32,9 +32,10 @@ def task(*args, **kwargs):
 
 class IbutsuTask(Task):
     abstract = True
+    flask_app = None  # This will hold the Flask app instance
 
     def __call__(self, *args, **kwargs):
-        with self.app.app_context():
+        with self.flask_app.app_context():
             return super().__call__(*args, **kwargs)
 
     def after_return(self, _status, retval, _task_id, _args, _kwargs, _einfo):
@@ -44,7 +45,9 @@ class IbutsuTask(Task):
         Flask-SQLAlchemy uses create_scoped_session at startup which avoids any setup on a
         per-request basis. This means Celery can piggyback off of this initialization.
         """
-        if self.app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] and not isinstance(retval, Exception):
+        if self.flask_app.config["SQLALCHEMY_COMMIT_ON_TEARDOWN"] and not isinstance(
+            retval, Exception
+        ):
             session.commit()
         session.remove()
 
@@ -57,7 +60,7 @@ def create_celery_app(_app=None):
     """Create the Celery app, using the Flask app in _app"""
     app = get_celery_app()
 
-    IbutsuTask.app = _app
+    IbutsuTask.flask_app = _app
 
     app.conf.update(
         broker_url=_app.config.get("CELERY_BROKER_URL"),

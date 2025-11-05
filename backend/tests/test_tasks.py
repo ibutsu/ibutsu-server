@@ -24,7 +24,7 @@ def test_ibutsu_task_after_return(flask_app):
     client, _ = flask_app
 
     task = IbutsuTask()
-    task.app = client.application  # Use real app
+    task.flask_app = client.application  # Use real app
 
     # Enable commit on teardown for this test
     with client.application.app_context():
