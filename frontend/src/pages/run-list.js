@@ -97,7 +97,16 @@ const RunList = () => {
       fetchData();
     }, 150);
     return () => clearTimeout(debouncer);
-  }, [pageSize, page, primaryObject, updateFilters, activeFilters, setPage, setPageSize, setTotalItems]);
+  }, [
+    pageSize,
+    page,
+    primaryObject,
+    updateFilters,
+    activeFilters,
+    setPage,
+    setPageSize,
+    setTotalItems,
+  ]);
 
   // apparently this is better to do in an effect
   useEffect(() => {

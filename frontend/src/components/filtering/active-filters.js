@@ -26,7 +26,7 @@ const ActiveFilters = ({
   activeFilters,
   onRemoveFilter,
   hideFilters,
-  transferTarget = 'reports',
+  transferTarget = null,
 }) => {
   const params = useParams();
   const navigate = useNavigate();
@@ -55,17 +55,13 @@ const ActiveFilters = ({
   });
 
   // Get the proper button text based on transfer_target
-  const transferText = useMemo(() => {
-    switch (transferTarget) {
-      case 'reports':
-        return 'Transfer active filters to Report Builder';
-      case undefined:
-      case null:
-        return null;
-      default:
-        return `Customize filters on the ${toTitleCase(transferTarget)} page`;
-    }
-  }, [transferTarget]);
+  const transferText = useMemo(
+    () =>
+      transferTarget
+        ? `Customize filters on the ${toTitleCase(transferTarget)} page`
+        : null,
+    [transferTarget],
+  );
 
   return (
     <Flex style={{ marginTop: '.75rem' }} direction={{ default: 'column' }}>
