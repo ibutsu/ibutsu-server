@@ -124,6 +124,11 @@ def login(body=None):
         }, HTTPStatus.UNAUTHORIZED
 
     if user and user.check_password(login["password"]):
+        if not user.is_active:
+            return {
+                "code": "INACTIVE",
+                "message": "User account is inactive",
+            }, HTTPStatus.UNAUTHORIZED
         login_token = generate_token(user.id)
         token = Token.query.filter(Token.name == "login-token", Token.user_id == user.id).first()
         if not token:
@@ -132,15 +137,16 @@ def login(body=None):
         session.add(token)
         session.commit()
         return {"name": user.name, "email": user.email, "token": login_token}
+
+    # Invalid credentials or login disabled
     if not current_app.config.get("USER_LOGIN_ENABLED", True):
-        return {
-            "code": "INVALID",
-            "message": "Username/password auth is disabled. "
-            "Please login via one of the links below.",
-        }, HTTPStatus.UNAUTHORIZED
+        message = "Username/password auth is disabled. Please login via one of the links below."
+    else:
+        message = "Username and/or password are invalid"
+
     return {
         "code": "INVALID",
-        "message": "Username and/or password are invalid",
+        "message": message,
     }, HTTPStatus.UNAUTHORIZED
 
 
