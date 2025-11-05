@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import func
@@ -52,6 +53,15 @@ class ModelMixin:
         # because metadata is a reserved attr name, translate it to data
         if "metadata" in record_dict:
             record_dict["data"] = record_dict.pop("metadata") or {}
+
+        # Parse datetime strings to datetime objects
+        mapper = inspect(cls)
+        for column in mapper.columns:
+            if isinstance(column.type, DateTime) and column.key in record_dict:
+                value = record_dict[column.key]
+                if isinstance(value, str):
+                    # Parse ISO format datetime strings
+                    record_dict[column.key] = datetime.fromisoformat(value.replace("Z", "+00:00"))
 
         # remove empty keys
         for key in list(record_dict.keys()):
