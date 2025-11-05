@@ -6,7 +6,7 @@ from flask import json
 
 
 @patch("ibutsu_server.controllers.run_controller.update_run_task")
-def test_add_run(mock_update_run_task, flask_app, make_project):
+def test_add_run(mock_update_run_task, flask_app, make_project, auth_headers):
     """Test case for add_run"""
     client, jwt_token = flask_app
 
@@ -27,11 +27,7 @@ def test_add_run(mock_update_run_task, flask_app, make_project):
         "start_time": datetime.now(timezone.utc).isoformat(),
     }
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/run",
         headers=headers,
@@ -48,7 +44,7 @@ def test_add_run(mock_update_run_task, flask_app, make_project):
     mock_update_run_task.apply_async.assert_called_once()
 
 
-def test_get_run(flask_app, make_project, make_run):
+def test_get_run(flask_app, make_project, make_run, auth_headers):
     """Test case for get_run"""
     client, jwt_token = flask_app
 
@@ -60,10 +56,7 @@ def test_get_run(flask_app, make_project, make_run):
         duration=540.05433,
     )
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/run/{run.id}",
         headers=headers,
@@ -83,7 +76,7 @@ def test_get_run(flask_app, make_project, make_run):
         (1, 56),
     ],
 )
-def test_get_run_list(flask_app, make_project, make_run, page, page_size):
+def test_get_run_list(flask_app, make_project, make_run, page, page_size, auth_headers):
     """Test case for get_run_list with pagination"""
     client, jwt_token = flask_app
 
@@ -99,10 +92,7 @@ def test_get_run_list(flask_app, make_project, make_run, page, page_size):
         )
 
     query_string = [("page", page), ("pageSize", page_size), ("filter", f"project_id={project.id}")]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/run",
         headers=headers,
@@ -117,7 +107,7 @@ def test_get_run_list(flask_app, make_project, make_run, page, page_size):
     assert response_data["pagination"]["pageSize"] == page_size
 
 
-def test_get_run_list_filter_by_project(flask_app, make_project, make_run):
+def test_get_run_list_filter_by_project(flask_app, make_project, make_run, auth_headers):
     """Test case for get_run_list with project filter"""
     client, jwt_token = flask_app
 
@@ -129,10 +119,7 @@ def test_get_run_list_filter_by_project(flask_app, make_project, make_run):
     run2 = make_run(project_id=project2.id, metadata={"project": "2"})
 
     query_string = [("filter", f"project_id={project1.id}")]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/run",
         headers=headers,
@@ -148,7 +135,7 @@ def test_get_run_list_filter_by_project(flask_app, make_project, make_run):
 
 
 @patch("ibutsu_server.controllers.run_controller.update_run_task")
-def test_update_run(mock_update_run_task, flask_app, make_project, make_run):
+def test_update_run(mock_update_run_task, flask_app, make_project, make_run, auth_headers):
     """Test case for update_run"""
     client, jwt_token = flask_app
 
@@ -166,11 +153,7 @@ def test_update_run(mock_update_run_task, flask_app, make_project, make_run):
         "summary": {"tests": 100, "failures": 5},
         "metadata": {"component": "updated"},
     }
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         f"/api/run/{run.id}",
         headers=headers,
@@ -190,16 +173,12 @@ def test_update_run(mock_update_run_task, flask_app, make_project, make_run):
         assert updated_run.summary["failures"] == 5
 
 
-def test_update_run_not_found(flask_app):
+def test_update_run_not_found(flask_app, auth_headers):
     """Test case for update_run - run not found"""
     client, jwt_token = flask_app
 
     update_data = {"summary": {"tests": 100}}
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         "/api/run/00000000-0000-0000-0000-000000000000",
         headers=headers,
@@ -209,7 +188,9 @@ def test_update_run_not_found(flask_app):
     assert response.status_code == 404
 
 
-def test_get_run_list_requires_project_filter_for_superadmin(flask_app, make_project, make_run):
+def test_get_run_list_requires_project_filter_for_superadmin(
+    flask_app, make_project, make_run, auth_headers
+):
     """Test that superadmin queries without project filter are rejected"""
     client, jwt_token = flask_app
 
@@ -218,10 +199,7 @@ def test_get_run_list_requires_project_filter_for_superadmin(flask_app, make_pro
     make_run(project_id=project.id, summary={"tests": 100, "failures": 0})
 
     # Try to query without a project filter (should fail for superadmin)
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/run",
         headers=headers,
@@ -230,7 +208,9 @@ def test_get_run_list_requires_project_filter_for_superadmin(flask_app, make_pro
     assert "project_id filter is required" in response.data.decode("utf-8")
 
 
-def test_get_run_list_with_project_filter_for_superadmin(flask_app, make_project, make_run):
+def test_get_run_list_with_project_filter_for_superadmin(
+    flask_app, make_project, make_run, auth_headers
+):
     """Test that superadmin queries with project filter work correctly"""
     client, jwt_token = flask_app
 
@@ -240,10 +220,7 @@ def test_get_run_list_with_project_filter_for_superadmin(flask_app, make_project
 
     # Query with a project filter (should succeed)
     query_string = [("filter", f"project_id={project.id}")]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/run",
         headers=headers,

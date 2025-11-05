@@ -2,7 +2,7 @@ import pytest
 from flask import json
 
 
-def test_add_project(flask_app, make_group):
+def test_add_project(flask_app, make_group, auth_headers):
     """Test case for add_project"""
     client, jwt_token = flask_app
 
@@ -15,11 +15,7 @@ def test_add_project(flask_app, make_group):
         "group_id": str(group.id),
     }
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/project",
         headers=headers,
@@ -41,17 +37,14 @@ def test_add_project(flask_app, make_group):
         assert project.title == "My Project"
 
 
-def test_get_project_by_id(flask_app, make_project):
+def test_get_project_by_id(flask_app, make_project, auth_headers):
     """Test case for get_project by ID"""
     client, jwt_token = flask_app
 
     # Create project
     project = make_project(name="test-project", title="Test Project")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/project/{project.id}",
         headers=headers,
@@ -64,17 +57,14 @@ def test_get_project_by_id(flask_app, make_project):
     assert response_data["title"] == "Test Project"
 
 
-def test_get_project_by_name(flask_app, make_project):
+def test_get_project_by_name(flask_app, make_project, auth_headers):
     """Test case for get_project by name"""
     client, jwt_token = flask_app
 
     # Create project
     project = make_project(name="my-project", title="My Project")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/project/{project.id}",
         headers=headers,
@@ -93,7 +83,7 @@ def test_get_project_by_name(flask_app, make_project):
         (1, 56),
     ],
 )
-def test_get_project_list(flask_app, make_project, page, page_size):
+def test_get_project_list(flask_app, make_project, page, page_size, auth_headers):
     """Test case for get_project_list with pagination"""
     client, jwt_token = flask_app
 
@@ -105,10 +95,7 @@ def test_get_project_list(flask_app, make_project, page, page_size):
         ("page", page),
         ("pageSize", page_size),
     ]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/project",
         headers=headers,
@@ -123,7 +110,7 @@ def test_get_project_list(flask_app, make_project, page, page_size):
     assert response_data["pagination"]["pageSize"] == page_size
 
 
-def test_get_project_list_filter_by_owner(flask_app, make_project, make_user):
+def test_get_project_list_filter_by_owner(flask_app, make_project, make_user, auth_headers):
     """Test case for get_project_list with owner filter"""
     client, jwt_token = flask_app
 
@@ -135,10 +122,7 @@ def test_get_project_list_filter_by_owner(flask_app, make_project, make_user):
     make_project(name="project-2", owner_id=owner2.id)
 
     query_string = [("filter", f"owner_id={owner1.id}")]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/project",
         headers=headers,
@@ -153,7 +137,7 @@ def test_get_project_list_filter_by_owner(flask_app, make_project, make_user):
     # Depending on user access, owner2's project may or may not be in results
 
 
-def test_update_project(flask_app, make_project):
+def test_update_project(flask_app, make_project, auth_headers):
     """Test case for update_project"""
     client, jwt_token = flask_app
 
@@ -163,11 +147,7 @@ def test_update_project(flask_app, make_project):
     update_data = {
         "title": "Updated Title",
     }
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         f"/api/project/{project.id}",
         headers=headers,
@@ -187,16 +167,12 @@ def test_update_project(flask_app, make_project):
         assert updated_project.title == "Updated Title"
 
 
-def test_update_project_not_found(flask_app):
+def test_update_project_not_found(flask_app, auth_headers):
     """Test case for update_project - project not found"""
     client, jwt_token = flask_app
 
     update_data = {"title": "Updated Title"}
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         "/api/project/00000000-0000-0000-0000-000000000000",
         headers=headers,

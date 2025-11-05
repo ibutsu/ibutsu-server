@@ -2,7 +2,7 @@ import pytest
 from flask import json
 
 
-def test_add_result(flask_app, make_project, make_run):
+def test_add_result(flask_app, make_project, make_run, auth_headers):
     """Test case for add_result"""
     client, jwt_token = flask_app
 
@@ -23,11 +23,7 @@ def test_add_result(flask_app, make_project, make_run):
         "project_id": str(project.id),
     }
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/result",
         headers=headers,
@@ -49,7 +45,7 @@ def test_add_result(flask_app, make_project, make_run):
         assert result.result == "passed"
 
 
-def test_get_result(flask_app, make_project, make_run, make_result):
+def test_get_result(flask_app, make_project, make_run, make_result, auth_headers):
     """Test case for get_result"""
     client, jwt_token = flask_app
 
@@ -60,10 +56,7 @@ def test_get_result(flask_app, make_project, make_run, make_result):
         run_id=run.id, project_id=project.id, test_id="test.example", result="passed"
     )
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/result/{result.id}",
         headers=headers,
@@ -83,7 +76,9 @@ def test_get_result(flask_app, make_project, make_run, make_result):
         (1, 56),
     ],
 )
-def test_get_result_list(flask_app, make_project, make_run, make_result, page, page_size):
+def test_get_result_list(
+    flask_app, make_project, make_run, make_result, page, page_size, auth_headers
+):
     """Test case for get_result_list with pagination"""
     client, jwt_token = flask_app
 
@@ -98,10 +93,7 @@ def test_get_result_list(flask_app, make_project, make_run, make_result, page, p
         )
 
     query_string = [("page", page), ("pageSize", page_size), ("filter", f"project_id={project.id}")]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/result",
         headers=headers,
@@ -116,7 +108,9 @@ def test_get_result_list(flask_app, make_project, make_run, make_result, page, p
     assert response_data["pagination"]["pageSize"] == page_size
 
 
-def test_get_result_list_filter_by_result_status(flask_app, make_project, make_run, make_result):
+def test_get_result_list_filter_by_result_status(
+    flask_app, make_project, make_run, make_result, auth_headers
+):
     """Test case for get_result_list with result status filter"""
     client, jwt_token = flask_app
 
@@ -142,10 +136,7 @@ def test_get_result_list_filter_by_result_status(flask_app, make_project, make_r
         )
 
     query_string = [("filter", "result=passed"), ("filter", f"project_id={project.id}")]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/result",
         headers=headers,
@@ -160,7 +151,7 @@ def test_get_result_list_filter_by_result_status(flask_app, make_project, make_r
         assert result["result"] == "passed"
 
 
-def test_update_result(flask_app, make_project, make_run, make_result):
+def test_update_result(flask_app, make_project, make_run, make_result, auth_headers):
     """Test case for update_result"""
     client, jwt_token = flask_app
 
@@ -172,11 +163,7 @@ def test_update_result(flask_app, make_project, make_run, make_result):
     )
 
     update_data = {"result": "failed", "metadata": {"component": "updated-component"}}
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         f"/api/result/{result.id}",
         headers=headers,
@@ -196,16 +183,12 @@ def test_update_result(flask_app, make_project, make_run, make_result):
         assert updated_result.result == "failed"
 
 
-def test_update_result_not_found(flask_app):
+def test_update_result_not_found(flask_app, auth_headers):
     """Test case for update_result - result not found"""
     client, jwt_token = flask_app
 
     update_data = {"result": "failed"}
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         "/api/result/00000000-0000-0000-0000-000000000000",
         headers=headers,
@@ -216,7 +199,7 @@ def test_update_result_not_found(flask_app):
 
 
 def test_get_result_list_requires_project_filter_for_superadmin(
-    flask_app, make_project, make_run, make_result
+    flask_app, make_project, make_run, make_result, auth_headers
 ):
     """Test that superadmin queries without project filter are rejected"""
     client, jwt_token = flask_app
@@ -227,10 +210,7 @@ def test_get_result_list_requires_project_filter_for_superadmin(
     make_result(run_id=run.id, project_id=project.id, test_id="test.example", result="passed")
 
     # Try to query without a project filter (should fail for superadmin)
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/result",
         headers=headers,
@@ -240,7 +220,7 @@ def test_get_result_list_requires_project_filter_for_superadmin(
 
 
 def test_get_result_list_with_project_filter_for_superadmin(
-    flask_app, make_project, make_run, make_result
+    flask_app, make_project, make_run, make_result, auth_headers
 ):
     """Test that superadmin queries with project filter work correctly"""
     client, jwt_token = flask_app
@@ -252,10 +232,7 @@ def test_get_result_list_with_project_filter_for_superadmin(
 
     # Query with a project filter (should succeed)
     query_string = [("filter", f"project_id={project.id}")]
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/result",
         headers=headers,

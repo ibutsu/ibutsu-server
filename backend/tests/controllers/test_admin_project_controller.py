@@ -4,7 +4,7 @@ import pytest
 from flask import json
 
 
-def test_admin_add_project_success(flask_app, make_group):
+def test_admin_add_project_success(flask_app, make_group, auth_headers):
     """Test case for admin_add_project - successful creation"""
     client, jwt_token = flask_app
 
@@ -16,11 +16,7 @@ def test_admin_add_project_success(flask_app, make_group):
         "title": "New Project",
         "group_id": str(group.id),
     }
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/admin/project",
         headers=headers,
@@ -44,7 +40,7 @@ def test_admin_add_project_success(flask_app, make_group):
         assert project.title == "New Project"
 
 
-def test_admin_add_project_already_exists(flask_app, make_project):
+def test_admin_add_project_already_exists(flask_app, make_project, auth_headers):
     """Test case for admin_add_project - project already exists"""
     client, jwt_token = flask_app
 
@@ -57,11 +53,7 @@ def test_admin_add_project_already_exists(flask_app, make_project):
         "name": "new-project",
         "title": "New Project",
     }
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/admin/project",
         headers=headers,
@@ -72,7 +64,7 @@ def test_admin_add_project_already_exists(flask_app, make_project):
     assert "already exist" in response.data.decode("utf-8")
 
 
-def test_admin_add_project_group_not_found(flask_app):
+def test_admin_add_project_group_not_found(flask_app, auth_headers):
     """Test case for admin_add_project - group not found"""
     client, jwt_token = flask_app
 
@@ -81,11 +73,7 @@ def test_admin_add_project_group_not_found(flask_app):
         "title": "New Project",
         "group_id": "00000000-0000-0000-0000-000000000000",
     }
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/admin/project",
         headers=headers,
@@ -96,7 +84,7 @@ def test_admin_add_project_group_not_found(flask_app):
     assert "doesn't exist" in response.data.decode("utf-8")
 
 
-def test_admin_add_project_with_user_as_owner(flask_app):
+def test_admin_add_project_with_user_as_owner(flask_app, auth_headers):
     """Test case for admin_add_project - user becomes owner and is added to users list"""
     client, jwt_token = flask_app
 
@@ -104,11 +92,7 @@ def test_admin_add_project_with_user_as_owner(flask_app):
         "name": "new-project",
         "title": "New Project",
     }
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/admin/project",
         headers=headers,
@@ -129,17 +113,14 @@ def test_admin_add_project_with_user_as_owner(flask_app):
         assert test_user in project.users
 
 
-def test_admin_get_project_success(flask_app, make_project):
+def test_admin_get_project_success(flask_app, make_project, auth_headers):
     """Test case for admin_get_project - successful retrieval by ID"""
     client, jwt_token = flask_app
 
     # Create project
     project = make_project(name="test-project", title="Test Project")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/admin/project/{project.id}",
         headers=headers,
@@ -151,17 +132,14 @@ def test_admin_get_project_success(flask_app, make_project):
     assert response_data["name"] == "test-project"
 
 
-def test_admin_get_project_by_name(flask_app, make_project):
+def test_admin_get_project_by_name(flask_app, make_project, auth_headers):
     """Test case for admin_get_project - successful retrieval by name"""
     client, jwt_token = flask_app
 
     # Create project
     project = make_project(name="test-project", title="Test Project")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/admin/project/{project.id}",
         headers=headers,
@@ -169,14 +147,11 @@ def test_admin_get_project_by_name(flask_app, make_project):
     assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
 
 
-def test_admin_get_project_not_found(flask_app):
+def test_admin_get_project_not_found(flask_app, auth_headers):
     """Test case for admin_get_project - project not found"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
 
     response = client.get(
         "/api/admin/project/00000000-0000-0000-0000-000000000000",
@@ -194,7 +169,7 @@ def test_admin_get_project_not_found(flask_app):
     ],
 )
 def test_admin_get_project_list_pagination(
-    flask_app, make_project, page, page_size, expected_offset
+    flask_app, make_project, page, page_size, expected_offset, auth_headers
 ):
     """Test case for admin_get_project_list with pagination parameters"""
     client, jwt_token = flask_app
@@ -203,10 +178,7 @@ def test_admin_get_project_list_pagination(
     for i in range(100):
         make_project(name=f"project-{i}", title=f"Project {i}")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     query_string = [("page", page), ("pageSize", page_size)]
     response = client.get(
         "/api/admin/project",
@@ -221,7 +193,9 @@ def test_admin_get_project_list_pagination(
     assert response_data["pagination"]["pageSize"] == page_size
 
 
-def test_admin_get_project_list_with_filters(flask_app, make_project, make_user, make_group):
+def test_admin_get_project_list_with_filters(
+    flask_app, make_project, make_user, make_group, auth_headers
+):
     """Test case for admin_get_project_list with owner and group filters"""
     client, jwt_token = flask_app
 
@@ -234,10 +208,7 @@ def test_admin_get_project_list_with_filters(flask_app, make_project, make_user,
     make_project(name="other-project-1")
     make_project(name="other-project-2")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     query_string = [
         ("ownerId", str(user.id)),
         ("groupId", str(group.id)),
@@ -255,14 +226,11 @@ def test_admin_get_project_list_with_filters(flask_app, make_project, make_user,
     assert response_data["projects"][0]["name"] == "filtered-project"
 
 
-def test_admin_get_project_list_page_too_big(flask_app):
+def test_admin_get_project_list_page_too_big(flask_app, auth_headers):
     """Test case for admin_get_project_list - page number too big"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     # Use a very large page number that would cause overflow
     query_string = [("page", 999999999999999999), ("pageSize", 25)]
     response = client.get(
@@ -274,7 +242,7 @@ def test_admin_get_project_list_page_too_big(flask_app):
     assert "too big" in response.data.decode("utf-8")
 
 
-def test_admin_update_project_success(flask_app, make_project, make_user):
+def test_admin_update_project_success(flask_app, make_project, make_user, auth_headers):
     """Test case for admin_update_project - successful update"""
     client, jwt_token = flask_app
 
@@ -290,11 +258,7 @@ def test_admin_update_project_success(flask_app, make_project, make_user):
         "owner_id": str(new_user.id),
     }
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         f"/api/admin/project/{project.id}",
         headers=headers,
@@ -313,16 +277,12 @@ def test_admin_update_project_success(flask_app, make_project, make_user):
         assert new_user in updated_project.users
 
 
-def test_admin_update_project_not_found(flask_app):
+def test_admin_update_project_not_found(flask_app, auth_headers):
     """Test case for admin_update_project - project not found"""
     client, jwt_token = flask_app
 
     update_data = {"title": "Updated Project Title"}
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
 
     response = client.put(
         "/api/admin/project/00000000-0000-0000-0000-000000000000",
@@ -334,7 +294,7 @@ def test_admin_update_project_not_found(flask_app):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_admin_update_project_converts_objectid(flask_app, make_project):
+def test_admin_update_project_converts_objectid(flask_app, make_project, auth_headers):
     """Test case for admin_update_project - converts ObjectId to UUID"""
     client, jwt_token = flask_app
 
@@ -345,11 +305,7 @@ def test_admin_update_project_converts_objectid(flask_app, make_project):
     object_id = "507f1f77bcf86cd799439011"
 
     update_data = {"title": "Updated Project Title"}
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         f"/api/admin/project/{object_id}",
         headers=headers,
@@ -361,7 +317,7 @@ def test_admin_update_project_converts_objectid(flask_app, make_project):
     assert response.status_code in [200, 400, 404]
 
 
-def test_admin_delete_project_success(flask_app, make_project):
+def test_admin_delete_project_success(flask_app, make_project, auth_headers):
     """Test case for admin_delete_project - successful deletion"""
     client, jwt_token = flask_app
 
@@ -369,9 +325,7 @@ def test_admin_delete_project_success(flask_app, make_project):
     project = make_project(name="test-project", title="Test Project")
     project_id = project.id
 
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.delete(
         f"/api/admin/project/{project_id}",
         headers=headers,
@@ -387,13 +341,11 @@ def test_admin_delete_project_success(flask_app, make_project):
         assert project is None
 
 
-def test_admin_delete_project_not_found(flask_app):
+def test_admin_delete_project_not_found(flask_app, auth_headers):
     """Test case for admin_delete_project - project not found"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
 
     response = client.delete(
         "/api/admin/project/00000000-0000-0000-0000-000000000000",
@@ -403,14 +355,12 @@ def test_admin_delete_project_not_found(flask_app):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_admin_delete_project_invalid_uuid(flask_app):
+def test_admin_delete_project_invalid_uuid(flask_app, auth_headers):
     """Test case for admin_delete_project - invalid UUID format"""
     client, jwt_token = flask_app
     invalid_id = "not-a-valid-uuid"
 
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.delete(
         f"/api/admin/project/{invalid_id}",
         headers=headers,

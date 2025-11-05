@@ -4,14 +4,11 @@ from unittest.mock import patch
 from flask import json
 
 
-def test_get_current_user_success(flask_app):
+def test_get_current_user_success(flask_app, auth_headers):
     """Test case for get_current_user - successful retrieval"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/user",
         headers=headers,
@@ -43,7 +40,7 @@ def test_get_current_user_unauthorized(flask_app):
 
 
 @patch("ibutsu_server.controllers.user_controller.generate_token")
-def test_create_token(mock_generate_token, flask_app):
+def test_create_token(mock_generate_token, flask_app, auth_headers):
     """Test case for create_token"""
     client, jwt_token = flask_app
 
@@ -57,11 +54,7 @@ def test_create_token(mock_generate_token, flask_app):
         "expires": expiry.isoformat(),
     }
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/user/token",
         headers=headers,
@@ -82,7 +75,7 @@ def test_create_token(mock_generate_token, flask_app):
         assert token is not None
 
 
-def test_get_token_list(flask_app):
+def test_get_token_list(flask_app, auth_headers):
     """Test case for get_token_list"""
     client, jwt_token = flask_app
 
@@ -103,10 +96,7 @@ def test_get_token_list(flask_app):
             session.add(token)
         session.commit()
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         "/api/user/token",
         headers=headers,
@@ -118,7 +108,7 @@ def test_get_token_list(flask_app):
     assert len(response_data["tokens"]) >= 3
 
 
-def test_delete_token(flask_app):
+def test_delete_token(flask_app, auth_headers):
     """Test case for delete_token"""
     client, jwt_token = flask_app
 
@@ -140,9 +130,7 @@ def test_delete_token(flask_app):
         session.refresh(token)
         token_id = token.id
 
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.delete(
         f"/api/user/token/{token_id}",
         headers=headers,
@@ -157,13 +145,11 @@ def test_delete_token(flask_app):
         assert deleted_token is None
 
 
-def test_delete_token_not_found(flask_app):
+def test_delete_token_not_found(flask_app, auth_headers):
     """Test case for delete_token - token not found"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.delete(
         "/api/user/token/00000000-0000-0000-0000-000000000000",
         headers=headers,

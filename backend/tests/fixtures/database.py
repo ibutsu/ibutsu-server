@@ -45,10 +45,10 @@ def flask_app():
         tuple: (test_client, jwt_token)
 
     Example:
-        def test_my_endpoint(flask_app):
+        def test_my_endpoint(flask_app, auth_headers):
             client, jwt_token = flask_app
             response = client.get('/api/projects',
-                                headers={'Authorization': f'Bearer {jwt_token}'})
+                                headers=auth_headers(jwt_token))
             assert response.status_code == 200
     """
     import ibutsu_server.tasks

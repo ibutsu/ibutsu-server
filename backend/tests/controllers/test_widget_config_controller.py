@@ -2,7 +2,7 @@ import pytest
 from flask import json
 
 
-def test_get_widget_config_list(flask_app, make_project, make_widget_config):
+def test_get_widget_config_list(flask_app, make_project, make_widget_config, auth_headers):
     """Test get_widget_config_list"""
     client, jwt_token = flask_app
 
@@ -14,7 +14,7 @@ def test_get_widget_config_list(flask_app, make_project, make_widget_config):
             project_id=project.id, widget=f"widget-{i}", params={"config_key": f"value{i}"}
         )
 
-    headers = {"Authorization": f"Bearer {jwt_token}", "Content-Type": "application/json"}
+    headers = auth_headers(jwt_token)
 
     response = client.get(f"/api/widget-config?project_id={project.id}", headers=headers)
 
@@ -35,7 +35,7 @@ def test_get_widget_config_list(flask_app, make_project, make_widget_config):
     ],
 )
 def test_get_widget_config_list_pagination(
-    flask_app, make_project, make_widget_config, page, page_size
+    flask_app, make_project, make_widget_config, page, page_size, auth_headers
 ):
     """Test get_widget_config_list with pagination"""
     client, jwt_token = flask_app
@@ -46,7 +46,7 @@ def test_get_widget_config_list_pagination(
     for i in range(30):
         make_widget_config(project_id=project.id, widget=f"widget-{i}")
 
-    headers = {"Authorization": f"Bearer {jwt_token}", "Content-Type": "application/json"}
+    headers = auth_headers(jwt_token)
 
     query_string = [("project_id", str(project.id)), ("page", page), ("pageSize", page_size)]
     response = client.get("/api/widget-config", headers=headers, query_string=query_string)
@@ -59,7 +59,7 @@ def test_get_widget_config_list_pagination(
     assert json_response["pagination"]["pageSize"] == page_size
 
 
-def test_add_widget_config(flask_app, make_project):
+def test_add_widget_config(flask_app, make_project, auth_headers):
     """Test add_widget_config"""
     client, jwt_token = flask_app
 
@@ -73,11 +73,7 @@ def test_add_widget_config(flask_app, make_project):
         "title": "My Widget",
     }
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.post(
         "/api/widget-config",
         headers=headers,
@@ -99,7 +95,7 @@ def test_add_widget_config(flask_app, make_project):
         assert widget.title == "My Widget"
 
 
-def test_get_widget_config(flask_app, make_project, make_widget_config):
+def test_get_widget_config(flask_app, make_project, make_widget_config, auth_headers):
     """Test get_widget_config"""
     client, jwt_token = flask_app
 
@@ -107,10 +103,7 @@ def test_get_widget_config(flask_app, make_project, make_widget_config):
     project = make_project(name="test-project")
     widget = make_widget_config(project_id=project.id, widget="test-widget", title="Test Widget")
 
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/widget-config/{widget.id}",
         headers=headers,
@@ -122,7 +115,7 @@ def test_get_widget_config(flask_app, make_project, make_widget_config):
     assert response_data["widget"] == "test-widget"
 
 
-def test_update_widget_config(flask_app, make_project, make_widget_config):
+def test_update_widget_config(flask_app, make_project, make_widget_config, auth_headers):
     """Test update_widget_config"""
     client, jwt_token = flask_app
 
@@ -135,11 +128,7 @@ def test_update_widget_config(flask_app, make_project, make_widget_config):
         "params": {"new_key": "new_value"},
     }
 
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.put(
         f"/api/widget-config/{widget.id}",
         headers=headers,
@@ -159,7 +148,7 @@ def test_update_widget_config(flask_app, make_project, make_widget_config):
         assert updated_widget.title == "Updated Title"
 
 
-def test_delete_widget_config(flask_app, make_project, make_widget_config):
+def test_delete_widget_config(flask_app, make_project, make_widget_config, auth_headers):
     """Test delete_widget_config"""
     client, jwt_token = flask_app
 
@@ -168,9 +157,7 @@ def test_delete_widget_config(flask_app, make_project, make_widget_config):
     widget = make_widget_config(project_id=project.id, widget="test-widget")
     widget_id = widget.id
 
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.delete(
         f"/api/widget-config/{widget_id}",
         headers=headers,
@@ -185,13 +172,11 @@ def test_delete_widget_config(flask_app, make_project, make_widget_config):
         assert deleted_widget is None
 
 
-def test_delete_widget_config_not_found(flask_app):
+def test_delete_widget_config_not_found(flask_app, auth_headers):
     """Test delete_widget_config - widget config not found"""
     client, jwt_token = flask_app
 
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-    }
+    headers = auth_headers(jwt_token)
     response = client.delete(
         "/api/widget-config/00000000-0000-0000-0000-000000000000",
         headers=headers,
