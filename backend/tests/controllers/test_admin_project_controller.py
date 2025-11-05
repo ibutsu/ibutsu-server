@@ -239,8 +239,8 @@ def test_admin_get_project_list_with_filters(flask_app, make_project, make_user,
         "Authorization": f"Bearer {jwt_token}",
     }
     query_string = [
-        ("owner_id", str(user.id)),
-        ("group_id", str(group.id)),
+        ("ownerId", str(user.id)),
+        ("groupId", str(group.id)),
     ]
     response = client.get(
         "/api/admin/project",
