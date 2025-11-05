@@ -92,11 +92,11 @@ backend/tests/
 Creates a Flask application with SQLite in-memory database and test user.
 
 ```python
-def test_my_endpoint(flask_app):
+def test_my_endpoint(flask_app, auth_headers):
     client, jwt_token = flask_app
     response = client.get(
         '/api/projects',
-        headers={'Authorization': f'Bearer {jwt_token}'}
+        headers=auth_headers(jwt_token)
     )
     assert response.status_code == 200
 ```
@@ -227,9 +227,9 @@ def test_with_group(make_group):
 Standard HTTP headers for API requests.
 
 ```python
-def test_api_call(flask_app, http_headers):
+def test_api_call(flask_app, auth_headers):
     client, jwt_token = flask_app
-    headers = {**http_headers, 'Authorization': f'Bearer {jwt_token}'}
+    headers = auth_headers(jwt_token)
     response = client.get('/api/projects', headers=headers)
 ```
 
@@ -244,7 +244,7 @@ def test_pagination(flask_app, pagination_test_cases):
         response = client.get(
             '/api/results',
             query_string={'page': page, 'pageSize': page_size},
-            headers={'Authorization': f'Bearer {jwt_token}'}
+            headers=auth_headers(jwt_token)
         )
         assert response.status_code == 200
 ```
@@ -283,7 +283,7 @@ def test_list_endpoint(flask_app):
     response = client.get(
         '/api/projects',
         query_string={'page': 1, 'pageSize': 25},
-        headers={'Authorization': f'Bearer {jwt_token}'}
+        headers=auth_headers(jwt_token)
     )
 
     # Validate response
@@ -317,7 +317,7 @@ def test_create_project(flask_app):
     response = client.post(
         '/api/project',
         json=project_data,
-        headers={'Authorization': f'Bearer {jwt_token}'}
+        headers=auth_headers(jwt_token)
     )
 
     assert response.status_code == 201
@@ -437,7 +437,7 @@ def test_result_counts(make_project, make_run, make_result, result_status, expec
 def test_full_api_flow(flask_app, make_project):
     """Test complete CRUD operations via API."""
     client, jwt_token = flask_app
-    headers = {'Authorization': f'Bearer {jwt_token}'}
+    headers = auth_headers(jwt_token)
 
     # CREATE
     response = client.post(
@@ -514,7 +514,7 @@ def test_invalid_project_id(flask_app):
 
     response = client.get(
         '/api/project/invalid-uuid',
-        headers={'Authorization': f'Bearer {jwt_token}'}
+        headers=auth_headers(jwt_token)
     )
 
     assert response.status_code == 400
@@ -528,7 +528,7 @@ def test_missing_required_fields(flask_app):
     response = client.post(
         '/api/result',
         json={},  # Missing required fields
-        headers={'Authorization': f'Bearer {jwt_token}'}
+        headers=auth_headers(jwt_token)
     )
 
     assert response.status_code in [400, 422]

@@ -187,7 +187,7 @@ def test_with_builders(db_session):
 #### Option 3: API Import
 
 ```python
-def test_import_via_api(flask_app):
+def test_import_via_api(flask_app, auth_headers):
     """Test importing data via the API."""
     client, jwt_token = flask_app
 
@@ -198,7 +198,7 @@ def test_import_via_api(flask_app):
     response = client.post(
         '/api/project',
         json=data['project'],
-        headers={'Authorization': f'Bearer {jwt_token}'}
+        headers=auth_headers(jwt_token)
     )
     assert response.status_code == 201
 ```
@@ -208,7 +208,7 @@ def test_import_via_api(flask_app):
 The JUnit XML file can be imported using the existing import functionality:
 
 ```python
-def test_junit_import(flask_app):
+def test_junit_import(flask_app, auth_headers):
     """Test importing JUnit XML data."""
     client, jwt_token = flask_app
 
@@ -220,7 +220,7 @@ def test_junit_import(flask_app):
     response = client.post(
         '/api/import',
         data={'file': (io.BytesIO(xml_content), 'test_data.xml')},
-        headers={'Authorization': f'Bearer {jwt_token}'}
+        headers=auth_headers(jwt_token)
     )
 ```
 
