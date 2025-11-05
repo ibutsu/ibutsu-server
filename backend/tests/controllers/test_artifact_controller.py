@@ -86,6 +86,7 @@ def test_get_artifact(flask_app, make_project, make_run, make_result):
     project = make_project(name="test-project")
     run = make_run(project_id=project.id)
     result = make_result(run_id=run.id, project_id=project.id, test_id="test.example")
+    result_id = str(result.id)
 
     # Create artifact
     with client.application.app_context():
@@ -95,7 +96,7 @@ def test_get_artifact(flask_app, make_project, make_run, make_result):
         artifact = Artifact(
             filename="test.log",
             content=b"test content",
-            result_id=result.id,
+            result_id=result_id,
         )
         session.add(artifact)
         session.commit()
@@ -114,7 +115,7 @@ def test_get_artifact(flask_app, make_project, make_run, make_result):
 
     response_data = response.get_json()
     assert response_data["filename"] == "test.log"
-    assert response_data["result_id"] == str(result.id)
+    assert response_data["result_id"] == result_id
 
 
 def test_get_artifact_list(flask_app, make_project, make_run, make_result):
@@ -125,6 +126,7 @@ def test_get_artifact_list(flask_app, make_project, make_run, make_result):
     project = make_project(name="test-project")
     run = make_run(project_id=project.id)
     result = make_result(run_id=run.id, project_id=project.id, test_id="test.example")
+    result_id = str(result.id)
 
     # Create multiple artifacts
     with client.application.app_context():
@@ -135,12 +137,12 @@ def test_get_artifact_list(flask_app, make_project, make_run, make_result):
             artifact = Artifact(
                 filename=f"test{i}.log",
                 content=b"test content",
-                result_id=result.id,
+                result_id=result_id,
             )
             session.add(artifact)
         session.commit()
 
-    query_string = [("resultId", str(result.id)), ("page", 1), ("pageSize", 56)]
+    query_string = [("resultId", result_id), ("page", 1), ("pageSize", 56)]
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {jwt_token}",

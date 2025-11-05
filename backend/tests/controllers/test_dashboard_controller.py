@@ -154,7 +154,7 @@ def test_get_dashboard_list_filter_by_project(flask_app, make_project, make_dash
     dashboard1 = make_dashboard(title="Dashboard 1", project_id=project1.id)
     dashboard2 = make_dashboard(title="Dashboard 2", project_id=project2.id)
 
-    query_string = [("project", str(project1.id))]
+    query_string = [("project_id", str(project1.id))]
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {jwt_token}",

@@ -33,10 +33,18 @@ def task_controller_mocks():
     ("task_state", "expected_status", "expected_message"),
     [
         ("SUCCESS", HTTPStatus.OK, "Task has succeeded"),
-        ("PENDING", HTTPStatus.OK, "Task is still pending"),
-        ("STARTED", HTTPStatus.OK, "Task has started"),
-        ("RETRY", HTTPStatus.OK, "Task is being retried"),
-        ("FAILURE", HTTPStatus.OK, "Task has failed"),
+        (
+            "PENDING",
+            HTTPStatus.PARTIAL_CONTENT,
+            "Task not yet started or invalid, check back later",
+        ),
+        (
+            "STARTED",
+            HTTPStatus.PARTIAL_CONTENT,
+            "Task has started but is still running, check back later",
+        ),
+        ("RETRY", HTTPStatus.PARTIAL_CONTENT, "Task has been retried, possibly due to failure"),
+        ("FAILURE", HTTPStatus.NON_AUTHORITATIVE_INFORMATION, "Task has failed!"),
     ],
 )
 def test_get_task_states(
@@ -46,13 +54,14 @@ def test_get_task_states(
     client, jwt_token = flask_app
     mocks = task_controller_mocks
 
-    task_id = "test-task-id-123"
+    task_id = "12345678-1234-1234-1234-123456789abc"
     mocks["async_result"].state = task_state
 
     if task_state == "SUCCESS":
         mocks["async_result"].get.return_value = {"result": "success_data"}
     elif task_state == "FAILURE":
         mocks["async_result"].info = Exception("Task failed")
+        mocks["async_result"].traceback = "Traceback line 1\nTraceback line 2"
 
     headers = {
         "Accept": "application/json",
@@ -82,7 +91,7 @@ def test_get_task_success_with_no_result(flask_app, task_controller_mocks):
     client, jwt_token = flask_app
     mocks = task_controller_mocks
 
-    task_id = "test-task-id-456"
+    task_id = "12345678-1234-1234-1234-456456456456"
     mocks["async_result"].state = "SUCCESS"
     mocks["async_result"].get.return_value = None
 
@@ -107,7 +116,7 @@ def test_get_task_pending(flask_app, task_controller_mocks):
     client, jwt_token = flask_app
     mocks = task_controller_mocks
 
-    task_id = "test-task-id-789"
+    task_id = "12345678-1234-1234-1234-789789789789"
     mocks["async_result"].state = "PENDING"
 
     headers = {
@@ -118,7 +127,7 @@ def test_get_task_pending(flask_app, task_controller_mocks):
         f"/api/task/{task_id}",
         headers=headers,
     )
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.PARTIAL_CONTENT
 
     response_data = response.get_json()
     assert response_data["state"] == "PENDING"
@@ -129,9 +138,10 @@ def test_get_task_failure(flask_app, task_controller_mocks):
     client, jwt_token = flask_app
     mocks = task_controller_mocks
 
-    task_id = "test-task-id-error"
+    task_id = "12345678-1234-1234-1234-eeee00011122"
     mocks["async_result"].state = "FAILURE"
     mocks["async_result"].info = Exception("Something went wrong")
+    mocks["async_result"].traceback = "Error traceback\nMore error details"
 
     headers = {
         "Accept": "application/json",
@@ -141,8 +151,8 @@ def test_get_task_failure(flask_app, task_controller_mocks):
         f"/api/task/{task_id}",
         headers=headers,
     )
-    assert response.status_code == HTTPStatus.OK
+    assert response.status_code == HTTPStatus.NON_AUTHORITATIVE_INFORMATION
 
     response_data = response.get_json()
     assert response_data["state"] == "FAILURE"
-    assert response_data["message"] == "Task has failed"
+    assert response_data["message"] == "Task has failed!"
