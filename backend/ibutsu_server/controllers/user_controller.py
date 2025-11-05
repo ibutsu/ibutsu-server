@@ -109,6 +109,8 @@ def delete_token(id_, token_info=None, user=None):
     """
     user = User.query.get(user)
     token = Token.query.get(id_)
+    if not token:
+        return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     if token.user != user:
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     session.delete(token)
@@ -132,7 +134,9 @@ def add_token(body=None, token_info=None, user=None):
     body_data = body if body is not None else connexion.request.get_json()
     token = Token.from_dict(**body_data)
     token.user = user
-    token.expires = datetime.fromisoformat(token.expires.replace("Z", "+00:00"))
+    # token.expires is already parsed by from_dict if it was a string
+    if isinstance(token.expires, str):
+        token.expires = datetime.fromisoformat(token.expires.replace("Z", "+00:00"))
     token.token = generate_token(user.id, token.expires.timestamp())
 
     session.add(token)
