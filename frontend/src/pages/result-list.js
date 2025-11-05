@@ -146,10 +146,17 @@ const ResultList = () => {
   useEffect(() => {
     const fetchRuns = async () => {
       try {
-        const response = await HttpClient.get([Settings.serverUrl, 'run'], {
+        const apiParams = {
           pageSize: 100,
           estimate: true,
-        });
+        };
+
+        // Add project_id filter if primaryObject is available
+        if (primaryObject?.id) {
+          apiParams.filter = [`project_id=${primaryObject.id}`];
+        }
+
+        const response = await HttpClient.get([Settings.serverUrl, 'run'], apiParams);
         const data = await HttpClient.handleResponse(response);
         const runIds = data.runs.map((run) => run.id);
         setRuns(runIds);
@@ -162,7 +169,7 @@ const ResultList = () => {
       fetchRuns();
     }, 100);
     return () => clearTimeout(debouncer);
-  }, []);
+  }, [primaryObject]);
 
   useEffect(() => {
     document.title = 'Test Results | Ibutsu';
