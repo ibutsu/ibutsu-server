@@ -8,8 +8,10 @@ from werkzeug.datastructures import FileStorage
 
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Import, ImportFile
+from ibutsu_server.filters import convert_filter
 from ibutsu_server.tasks.importers import run_archive_import, run_junit_import
 from ibutsu_server.util.projects import get_project, project_has_user
+from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import validate_uuid
 
 
@@ -30,6 +32,41 @@ def get_import(id_, token_info=None, user=None):
     if not import_:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     return import_.to_dict()
+
+
+def get_import_list(filter_=None, page=1, page_size=25, token_info=None, user=None):
+    """Get a list of imports
+
+    :param filter_: A list of filters to apply
+    :type filter_: list
+    :param page: Set the page of items to return, defaults to 1
+    :type page: int
+    :param page_size: Set the number of items per page, defaults to 25
+    :type page_size: int
+
+    :rtype: ImportList
+    """
+    query = Import.query
+    if filter_:
+        for filter_string in filter_:
+            filter_clause = convert_filter(filter_string, Import)
+            if filter_clause is not None:
+                query = query.filter(filter_clause)
+
+    query = query.order_by(Import.created.desc())
+    offset = get_offset(page, page_size)
+    total_items = query.count()
+    total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
+    imports = query.offset(offset).limit(page_size).all()
+    return {
+        "imports": [import_.to_dict() for import_ in imports],
+        "pagination": {
+            "page": page,
+            "pageSize": page_size,
+            "totalItems": total_items,
+            "totalPages": total_pages,
+        },
+    }
 
 
 def add_import(
