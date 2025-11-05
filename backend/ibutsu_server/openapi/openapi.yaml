@@ -1177,6 +1177,32 @@ paths:
         - health
       x-openapi-router-controller: ibutsu_server.controllers.health_controller
   /import:
+    get:
+      operationId: get_import_list
+      parameters:
+        - description: Fields to filter by
+          explode: true
+          in: query
+          name: filter
+          required: false
+          schema:
+            items:
+              type: string
+            type: array
+          style: form
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportList'
+          description: List of imports
+      summary: Get a list of imports
+      tags:
+        - import
+      x-openapi-router-controller: ibutsu_server.controllers.import_controller
     post:
       operationId: add_import
       requestBody:
@@ -1701,6 +1727,22 @@ paths:
             items:
               type: string
             type: array
+          style: form
+        - description: Filter projects by owner ID
+          explode: true
+          in: query
+          name: ownerId
+          required: false
+          schema:
+            type: string
+          style: form
+        - description: Filter projects by group ID
+          explode: true
+          in: query
+          name: groupId
+          required: false
+          schema:
+            type: string
           style: form
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/PageSize'
@@ -2273,6 +2315,15 @@ components:
           example: 64c2ab9e-cd64-4815-bf73-83b00c2e650f
           type: string
           format: uuid
+      type: object
+    ImportList:
+      properties:
+        imports:
+          items:
+            $ref: '#/components/schemas/Import'
+          type: array
+        pagination:
+          $ref: '#/components/schemas/Pagination'
       type: object
     WidgetConfig:
       example:
