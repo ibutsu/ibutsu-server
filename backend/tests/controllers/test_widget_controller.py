@@ -58,7 +58,10 @@ def test_get_comparison_result_list(flask_app):
     MOCK_RUN_IDS = [MOCK_RUN_ID, MOCK_RUN_ID_2]
     MOCKED_RESULTS = [[mocked_result] for mocked_result in MOCK_RESULTS]
 
-    with patch("ibutsu_server.widgets.compare_runs_view.Result.query") as mocked_query:
+    with (
+        client.application.app_context(),
+        patch("ibutsu_server.widgets.compare_runs_view.Result.query") as mocked_query,
+    ):
         mocked_query_return = mocked_query.filter.return_value
         mocked_query_return.with_entities.return_value.order_by.return_value.first.side_effect = (
             MOCK_RUN_IDS

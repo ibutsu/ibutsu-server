@@ -15,10 +15,20 @@ def mock_widget_types():
     """Fixture to mock registered widget types."""
     return {
         "test-widget": {
+            "id": "test-widget",
             "title": "Test Widget",
             "description": "A widget for testing.",
-            "params": {"param1": "default1"},
-            "generate": lambda **_kwargs: "widget data",
+            "params": [
+                {
+                    "name": "param1",
+                    "description": "Test parameter",
+                    "type": "string",
+                    "default": "default1",
+                    "required": False,
+                }
+            ],
+            "type": "view",
+            "generate": lambda **_kwargs: {"data": "widget data"},
         }
     }
 
@@ -47,23 +57,31 @@ def test_get_widget_found(flask_app, mock_widget_types):
         ),
     ):
         widget_data = get_widget("test-widget")
-        assert widget_data == "widget data"
+        assert widget_data == {"data": "widget data"}
 
 
 def test_get_widget_with_params(flask_app, mock_widget_types):
     """Test getting a widget with parameters."""
     client, _ = flask_app
-    mock_widget_types["test-widget"]["generate"] = MagicMock(return_value="custom data")
+    # Create a mock that will be called
+    mock_generate = MagicMock(return_value={"data": "custom data"})
+
     with (
         client.application.test_request_context("/?param1=custom_value"),
         patch("ibutsu_server.controllers.widget_controller.WIDGET_TYPES", mock_widget_types),
+        patch("ibutsu_server.controllers.widget_config_controller.WIDGET_TYPES", mock_widget_types),
         patch(
             "ibutsu_server.controllers.widget_controller.WIDGET_METHODS",
-            {"test-widget": mock_widget_types["test-widget"]["generate"]},
+            {"test-widget": mock_generate},
         ),
     ):
         get_widget("test-widget")
-        mock_widget_types["test-widget"]["generate"].assert_called_once()
+        # Widget should be called with param1 parameter
+        mock_generate.assert_called_once()
+        # Verify it was called with param1
+        call_kwargs = mock_generate.call_args[1]
+        assert "param1" in call_kwargs
+        assert call_kwargs["param1"] == "custom_value"
 
 
 def test_get_widget_not_found(flask_app):
@@ -81,13 +99,14 @@ def test_get_widget_not_found(flask_app):
 def test_get_widget_exception_on_generate(flask_app, mock_widget_types):
     """Test exception handling during widget generation."""
     client, _ = flask_app
-    mock_widget_types["test-widget"]["generate"] = MagicMock(side_effect=Exception("Test error"))
+    mock_generate = MagicMock(side_effect=Exception("Test error"))
+    mock_widget_types["test-widget"]["generate"] = mock_generate
     with (
         client.application.test_request_context(),
         patch("ibutsu_server.controllers.widget_controller.WIDGET_TYPES", mock_widget_types),
         patch(
             "ibutsu_server.controllers.widget_controller.WIDGET_METHODS",
-            {"test-widget": mock_widget_types["test-widget"]["generate"]},
+            {"test-widget": mock_generate},
         ),
     ):
         response, status = get_widget("test-widget")

@@ -138,14 +138,17 @@ dependencies = [
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args}"
-test-cov = "coverage run -m pytest {args}"
+test-cov = [
+  "coverage run -m pytest {args}",
+  "coverage xml",
+  "coverage report",
+]
 cov-report = "coverage report"
 cov-xml = "coverage xml"
 cov-html = "coverage html"
 cov = [
   "test-cov",
-  "cov-xml",
-  "cov-report",
+  "cov-html",
 ]
 lint = "pre-commit run --all-files"
 lint-check = "pre-commit run --all-files --show-diff-on-failure"
