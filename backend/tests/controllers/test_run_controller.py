@@ -98,7 +98,7 @@ def test_get_run_list(flask_app, make_project, make_run, page, page_size):
             summary={"tests": 100, "failures": i},
         )
 
-    query_string = [("page", page), ("pageSize", page_size)]
+    query_string = [("page", page), ("pageSize", page_size), ("filter", f"project_id={project.id}")]
     headers = {
         "Accept": "application/json",
         "Authorization": f"Bearer {jwt_token}",
@@ -207,3 +207,49 @@ def test_update_run_not_found(flask_app):
         content_type="application/json",
     )
     assert response.status_code == 404
+
+
+def test_get_run_list_requires_project_filter_for_superadmin(flask_app, make_project, make_run):
+    """Test that superadmin queries without project filter are rejected"""
+    client, jwt_token = flask_app
+
+    # Create some test data
+    project = make_project(name="test-project")
+    make_run(project_id=project.id, summary={"tests": 100, "failures": 0})
+
+    # Try to query without a project filter (should fail for superadmin)
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {jwt_token}",
+    }
+    response = client.get(
+        "/api/run",
+        headers=headers,
+    )
+    assert response.status_code == 400
+    assert "project_id filter is required" in response.data.decode("utf-8")
+
+
+def test_get_run_list_with_project_filter_for_superadmin(flask_app, make_project, make_run):
+    """Test that superadmin queries with project filter work correctly"""
+    client, jwt_token = flask_app
+
+    # Create test data
+    project = make_project(name="test-project")
+    make_run(project_id=project.id, summary={"tests": 100, "failures": 0})
+
+    # Query with a project filter (should succeed)
+    query_string = [("filter", f"project_id={project.id}")]
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {jwt_token}",
+    }
+    response = client.get(
+        "/api/run",
+        headers=headers,
+        query_string=query_string,
+    )
+    assert response.status_code == 200
+    response_data = response.get_json()
+    assert "runs" in response_data
+    assert len(response_data["runs"]) >= 1

@@ -1,5 +1,5 @@
+import json
 from io import BytesIO
-from unittest import skip
 
 
 def test_delete_artifact(flask_app, make_project, make_run, make_result):
@@ -159,7 +159,6 @@ def test_get_artifact_list(flask_app, make_project, make_run, make_result):
     assert len(response_data["artifacts"]) == 5
 
 
-@skip("Multipart form data handling needs investigation")
 def test_upload_artifact(flask_app, make_project, make_run, make_result):
     """Test case for upload_artifact"""
     client, jwt_token = flask_app
@@ -171,13 +170,13 @@ def test_upload_artifact(flask_app, make_project, make_run, make_result):
 
     headers = {
         "Accept": "application/json",
-        "Content-Type": "multipart/form-data",
         "Authorization": f"Bearer {jwt_token}",
     }
+    # additionalMetadata must be a JSON string in multipart form data
     data = {
         "resultId": str(result.id),
         "filename": "log.txt",
-        "additionalMetadata": {"key": "value"},
+        "additionalMetadata": json.dumps({"key": "value"}),
         "file": (BytesIO(b"filecontent"), "log.txt"),
     }
     response = client.post(
@@ -187,3 +186,9 @@ def test_upload_artifact(flask_app, make_project, make_run, make_result):
         content_type="multipart/form-data",
     )
     assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+
+    # Verify the artifact was created
+    response_data = response.get_json()
+    assert response_data["filename"] == "log.txt"
+    assert response_data["result_id"] == str(result.id)
+    assert "id" in response_data
