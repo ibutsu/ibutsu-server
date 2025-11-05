@@ -91,6 +91,25 @@ def apply_filters(query, filter_list, model):
     return query
 
 
+def has_project_filter(filter_list):
+    """Check if any filter in the list filters by project_id or data.project.
+
+    :param filter_list: List of filter strings
+    :return: True if a project filter exists, False otherwise
+    """
+    if not filter_list:
+        return False
+
+    for filter_string in filter_list:
+        match = FILTER_RE.match(filter_string)
+        if match:
+            field = match.group(1)
+            # Check for project_id or metadata.project filters
+            if field in {"project_id", "data.project", "metadata.project"}:
+                return True
+    return False
+
+
 def convert_filter(filter_string, model):
     match = FILTER_RE.match(filter_string)
     if not match:
