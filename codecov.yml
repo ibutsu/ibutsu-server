@@ -27,14 +27,8 @@ flags:
       - backend/ibutsu_server/
     carryforward: true
     after_n_builds: 3  # Wait for all 3 Python versions
-    target: 7%
+    target: 90%
     threshold: 0.5%
-  widgets:
-    paths:
-      - backend/ibutsu_server/widgets/
-    carryforward: true
-    target: 85%
-    threshold: 5%
 
   frontend:
     paths:
