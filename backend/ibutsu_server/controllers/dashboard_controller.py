@@ -72,7 +72,7 @@ def get_dashboard_list(
     if project:
         if not project_has_user(project, user):
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
-        query = query.filter(Dashboard.project_id == project_id)
+        query = query.filter(Dashboard.project_id == project.id)
 
     if filter_:
         for filter_string in filter_:
