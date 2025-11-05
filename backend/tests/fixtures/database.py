@@ -201,7 +201,7 @@ def make_run(db_session):
             "metadata": {},
         }
         defaults.update(kwargs)
-        run = Run(**defaults)
+        run = Run.from_dict(**defaults)
         db_session.add(run)
         db_session.commit()
         db_session.refresh(run)
@@ -240,7 +240,7 @@ def make_result(db_session):
             "metadata": {},
         }
         defaults.update(kwargs)
-        result = Result(**defaults)
+        result = Result.from_dict(**defaults)
         db_session.add(result)
         db_session.commit()
         db_session.refresh(result)
@@ -315,6 +315,52 @@ def make_widget_config(db_session):
         return widget_config
 
     return _make_widget_config
+
+
+@pytest.fixture
+def make_artifact(db_session):
+    """
+    Factory to create test artifacts in the database.
+
+    Artifacts can be associated with either a result (via result_id) or a run (via run_id).
+
+    Example:
+        def test_with_artifact(make_run, make_result, make_artifact):
+            run = make_run()
+            result = make_result(run_id=run.id)
+            # Artifact associated with a result
+            artifact = make_artifact(
+                result_id=result.id,
+                filename='test.log',
+                content=b'test content'
+            )
+            assert artifact.id is not None
+            # Artifact associated with a run
+            run_artifact = make_artifact(
+                run_id=run.id,
+                filename='run.log',
+                content=b'run content'
+            )
+            assert run_artifact.id is not None
+    """
+    from uuid import uuid4
+
+    from ibutsu_server.db.models import Artifact
+
+    def _make_artifact(**kwargs):
+        defaults = {
+            "id": str(uuid4()),
+            "filename": f"test-file-{uuid4().hex[:8]}.txt",
+            "data": {"contentType": "text/plain"},
+        }
+        defaults.update(kwargs)
+        artifact = Artifact(**defaults)
+        db_session.add(artifact)
+        db_session.commit()
+        db_session.refresh(artifact)
+        return artifact
+
+    return _make_artifact
 
 
 @pytest.fixture
