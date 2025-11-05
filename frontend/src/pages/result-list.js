@@ -131,7 +131,16 @@ const ResultList = () => {
       fetchData();
     }, 150);
     return () => clearTimeout(debouncer);
-  }, [activeFilters, page, pageSize, primaryObject, updateFilters, setPage, setPageSize, setTotalItems]);
+  }, [
+    activeFilters,
+    page,
+    pageSize,
+    primaryObject,
+    updateFilters,
+    setPage,
+    setPageSize,
+    setTotalItems,
+  ]);
 
   // fetch 100 runs with estimate on count
   useEffect(() => {

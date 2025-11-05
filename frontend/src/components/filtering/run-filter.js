@@ -153,7 +153,7 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
             activeFilters={activeFilters}
             onRemoveFilter={onRemoveFilter}
             hideFilters={hideFilters}
-            transferTarget="reports"
+            transferTarget={null}
           />
         </Flex>
       </Flex>

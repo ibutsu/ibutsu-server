@@ -502,7 +502,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
             activeFilters={activeFilters}
             onRemoveFilter={onRemoveFilter}
             hideFilters={hideFilters}
-            transferTarget="reports"
+            transferTarget={null}
           />
         </Flex>
       </Flex>
