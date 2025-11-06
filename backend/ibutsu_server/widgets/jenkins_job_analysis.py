@@ -25,11 +25,11 @@ def get_jenkins_line_chart(job_name, builds, group_field="build_number", project
     # now format the data
     for job in jobs:
         data_id = job.get(group_field)
-        data["duration"][data_id] = round(job.get("duration") / (60 * 60), 2)  # convert s to hrs
+        duration = job.get("duration") or 0
+        data["duration"][data_id] = round(duration / (60 * 60), 2)  # convert s to hrs
         if run_had_multiple_components:
-            data["total_execution_time"][data_id] = round(
-                job.get("total_execution_time") / (60 * 60), 2
-            )
+            total_exec_time = job.get("total_execution_time") or 0
+            data["total_execution_time"][data_id] = round(total_exec_time / (60 * 60), 2)
     return data
 
 
