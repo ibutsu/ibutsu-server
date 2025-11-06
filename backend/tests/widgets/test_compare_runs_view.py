@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from ibutsu_server.widgets.compare_runs_view import get_comparison_data
 
 
-def test_get_comparison_data_no_filters():
+def test_get_comparison_data_no_filters(db_session):
     """Test getting comparison data with no filters"""
     result = get_comparison_data(additional_filters=None)
 
@@ -16,7 +16,7 @@ def test_get_comparison_data_no_filters():
     assert len(result["results"]) == 0
 
 
-def test_get_comparison_data_same_results(make_project, make_run, make_result):
+def test_get_comparison_data_same_results(db_session, make_project, make_run, make_result):
     """Test getting comparison data when all results are the same (no differences)"""
     project = make_project()
 
@@ -32,14 +32,14 @@ def test_get_comparison_data_same_results(make_project, make_run, make_result):
     )
 
     # Create identical results in both runs (both pass)
-    # Note: env is a column on Result, fspath goes in data (becomes metadata in to_dict)
+    # Note: env is a column on Result, fspath goes in metadata (becomes data column)
     make_result(
         run_id=run1.id,
         project_id=project.id,
         test_id="test1",
         result="passed",
         env="production",
-        data={"fspath": "/path/to/test1.py"},
+        metadata={"fspath": "/path/to/test1.py"},
         start_time=now - timedelta(hours=1),
     )
 
@@ -49,7 +49,7 @@ def test_get_comparison_data_same_results(make_project, make_run, make_result):
         test_id="test1",
         result="passed",
         env="staging",
-        data={"fspath": "/path/to/test1.py"},
+        metadata={"fspath": "/path/to/test1.py"},
         start_time=now - timedelta(hours=2),
     )
 
@@ -63,7 +63,9 @@ def test_get_comparison_data_same_results(make_project, make_run, make_result):
     assert result["pagination"]["totalItems"] == 0
 
 
-def test_get_comparison_data_with_different_results(make_project, make_run, make_result):
+def test_get_comparison_data_with_different_results(
+    db_session, make_project, make_run, make_result
+):
     """Test getting comparison data with different results between runs"""
     project = make_project()
 
@@ -86,7 +88,7 @@ def test_get_comparison_data_with_different_results(make_project, make_run, make
         test_id="test1",
         result="passed",
         env="production",
-        data={"fspath": "/path/to/test1.py"},
+        metadata={"fspath": "/path/to/test1.py"},
         start_time=now - timedelta(hours=1),
     )
 
@@ -97,7 +99,7 @@ def test_get_comparison_data_with_different_results(make_project, make_run, make
         test_id="test2",
         result="passed",
         env="production",
-        data={"fspath": "/path/to/test2.py"},
+        metadata={"fspath": "/path/to/test2.py"},
         start_time=now - timedelta(hours=1),
     )
 
@@ -109,7 +111,7 @@ def test_get_comparison_data_with_different_results(make_project, make_run, make
         test_id="test1",
         result="failed",
         env="staging",
-        data={"fspath": "/path/to/test1.py"},
+        metadata={"fspath": "/path/to/test1.py"},
         start_time=now - timedelta(hours=2),
     )
 
@@ -120,7 +122,7 @@ def test_get_comparison_data_with_different_results(make_project, make_run, make
         test_id="test2",
         result="passed",
         env="staging",
-        data={"fspath": "/path/to/test2.py"},
+        metadata={"fspath": "/path/to/test2.py"},
         start_time=now - timedelta(hours=2),
     )
 
@@ -145,7 +147,7 @@ def test_get_comparison_data_with_different_results(make_project, make_run, make
     assert result_stag["metadata"]["fspath"] == "/path/to/test1.py"
 
 
-def test_get_comparison_data_matching_results(make_project, make_run, make_result):
+def test_get_comparison_data_matching_results(db_session, make_project, make_run, make_result):
     """Test getting comparison data with matching test IDs but different results"""
     project = make_project()
 
@@ -167,7 +169,7 @@ def test_get_comparison_data_matching_results(make_project, make_run, make_resul
         test_id="test::path",
         result="passed",
         env="production",
-        data={"fspath": "/test.py"},
+        metadata={"fspath": "/test.py"},
         start_time=now - timedelta(hours=1),
     )
 
@@ -177,7 +179,7 @@ def test_get_comparison_data_matching_results(make_project, make_run, make_resul
         test_id="test::path",
         result="failed",
         env="staging",
-        data={"fspath": "/test.py"},
+        metadata={"fspath": "/test.py"},
         start_time=now - timedelta(hours=2),
     )
 
