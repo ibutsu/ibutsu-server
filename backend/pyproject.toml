@@ -130,6 +130,7 @@ dependencies = [
   "psycopg2-binary",  # Use binary version to avoid compilation issues
   "pytest",
   "pytest-xdist",
+  "pytest-cov",
   "pytest-mock",
   "Flask-Testing",
   "coverage[toml]",
@@ -138,47 +139,19 @@ dependencies = [
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args}"
-test-cov = [
-  "coverage run -m pytest {args}",
-  "coverage combine",
-  "coverage xml",
-  "coverage report",
-]
+test-cov = "pytest --cov=ibutsu_server --cov-report=xml --cov-report=term --cov-report=html {args}"
 cov-report = "coverage report"
 cov-xml = "coverage xml"
 cov-html = "coverage html"
-cov = [
-  "test-cov",
-  "cov-html",
-]
+cov = "pytest --cov=ibutsu_server --cov-report=xml --cov-report=term --cov-report=html"
 lint = "pre-commit run --all-files"
 lint-check = "pre-commit run --all-files --show-diff-on-failure"
 
-[tool.hatch.envs.test]
-dependencies = [
-  "psycopg2-binary",  # Use binary version to avoid compilation issues
-  "pytest",
-  "pytest-xdist",
-  "pytest-mock",
-  "Flask-Testing",
-  "coverage[toml]",
-]
+# CI environment for testing multiple Python versions
+[tool.hatch.envs.test-matrix]
+template = "default"
 
-[tool.hatch.envs.test.scripts]
-run = "pytest {args}"
-run-cov = "coverage run -m pytest {args}"
-cov-combine = "coverage combine"
-cov-report = "coverage report"
-cov-xml = "coverage xml"
-cov-html = "coverage html"
-cov = [
-  "run-cov",
-  "cov-combine",
-  "cov-xml",
-  "cov-report",
-]
-
-[[tool.hatch.envs.test.matrix]]
+[[tool.hatch.envs.test-matrix.matrix]]
 python = ["3.9", "3.10", "3.11"]
 
 
@@ -262,7 +235,7 @@ quote-style = "double"
 [tool.coverage.run]
 source = ["ibutsu_server"]
 branch = true
-concurrency = ["multiprocessing"]
+concurrency = ["thread", "multiprocessing"]
 parallel = true
 omit = [
     "*/tests/*",
