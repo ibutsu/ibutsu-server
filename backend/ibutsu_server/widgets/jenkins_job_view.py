@@ -85,7 +85,7 @@ def _get_jenkins_aggregation(
                 "build_number": datum.build_number,
                 "build_url": datum.build_url,
                 "duration": (datum.max_start_time.timestamp() - datum.min_start_time.timestamp())
-                + datum.max_duration,
+                + (datum.max_duration or 0),
                 "env": datum.env,
                 "job_name": datum.job_name,
                 "source": datum.source,
@@ -97,7 +97,14 @@ def _get_jenkins_aggregation(
                     "failures": datum.failures,
                     "skips": datum.skips,
                     "tests": datum.tests,
-                    "passes": datum.tests - (datum.errors + datum.failures + datum.skips),
+                    "passes": datum.tests
+                    - (
+                        datum.errors
+                        + datum.failures
+                        + datum.skips
+                        + datum.xfailures
+                        + datum.xpasses
+                    ),
                 },
                 "total_execution_time": datum.total_execution_time,
             }
