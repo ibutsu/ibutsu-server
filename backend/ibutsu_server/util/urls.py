@@ -3,5 +3,9 @@ def build_url(*url_paths):
     for url in url_paths:
         if not url:
             continue
-        new_url = url.strip("/") if "://" in url else "/".join([new_url, url.strip("/")])
+        # If the URL contains a protocol or new_url is empty, use it directly
+        # Otherwise, join with the existing path
+        new_url = (
+            url.strip("/") if "://" in url or not new_url else "/".join([new_url, url.strip("/")])
+        )
     return new_url

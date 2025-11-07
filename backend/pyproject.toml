@@ -208,6 +208,7 @@ ignore = [
 "**/tests/**/*.py" = [
     "S105",   # Possible hardcoded password string
     "S106",   # Possible hardcoded password assigned to argument
+    "ARG001", # Unused function argument (pytest fixtures in function signatures aren't directly called)
     "ARG002", # Unused method argument (common in test mocks)
     "RUF012", # Mutable class attributes should be annotated with ClassVar (not needed in test mocks)
     "PLC0415", # Import should be at the top-level of a file (needed for test fixtures)
