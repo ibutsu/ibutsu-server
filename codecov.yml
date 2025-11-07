@@ -57,3 +57,16 @@ ignore:
   - "frontend/src/**/*.spec.js"
   - "frontend/src/setupTests.js"
   - "frontend/src/index.js"
+
+# Exclude patterns for lines with low testing value
+# Note: These patterns work with coverage.py's exclude_lines configuration
+# and should match patterns in pyproject.toml [tool.coverage.report]
+parsers:
+  python:
+    # Skip import lines - low value to cover
+    skip:
+      - "^from .+ import .+$"
+      - "^import .+$"
+    # Skip type checking blocks
+    skip_branches:
+      - "if TYPE_CHECKING:"
