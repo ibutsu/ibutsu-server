@@ -13,8 +13,6 @@ maintainers = [
 keywords = ["OpenAPI", "Ibutsu"]
 requires-python = ">=3.9"
 
-
-
 classifiers = [
   "Development Status :: 4 - Beta",
   "Framework :: Pytest",
