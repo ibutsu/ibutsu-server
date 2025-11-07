@@ -6,18 +6,32 @@ codecov:
 coverage:
   precision: 2
   round: down
-  range: "50...100"
+  range: "70...100"
 
   status:
     project:
       default:
-        target: auto
+        target: 85%
         threshold: 1%
         if_ci_failed: error
 
+      backend:
+        target: 85%
+        threshold: 1%
+        if_ci_failed: error
+        flags:
+          - backend
+
+      frontend:
+        target: 85%
+        threshold: 1%
+        if_ci_failed: error
+        flags:
+          - frontend
+
     patch:
       default:
-        target: auto
+        target: 85%
         threshold: 1%
         if_ci_failed: error
 
@@ -26,50 +40,19 @@ flags:
     paths:
       - backend/ibutsu_server/
     carryforward: true
-    target: 85%
-    threshold: 0.5%
-
-  util:
-    paths:
-      - backend/ibutsu_server/util/
-    carryforward: true
-    target: 85%
-    threshold: 0.5%
-
-  widgets:
-    paths:
-      - backend/ibutsu_server/widgets/
-    carryforward: true
-    target: 85%
-    threshold: 0.5%
-
-  tasks:
-    paths:
-      - backend/ibutsu_server/tasks/
-    carryforward: true
-    target: 85%
-    threshold: 0.5%
 
   frontend:
     paths:
       - frontend/src/
     carryforward: true
-    target: 7%
-    threshold: 0.5%
 
 comment:
   layout: "header, diff, flags, files, footer"
   behavior: default
   require_changes: false
-  require_base: false
-  require_head: true
-  branches:
-    - main
 
 ignore:
-  - "backend/ibutsu_server/test/**"
-  - "backend/ibutsu_server/tests/**"
-  - "backend/ibutsu_server/migrations/**"
+  - "backend/tests/**"
   - "frontend/src/**/*.test.js"
   - "frontend/src/**/*.spec.js"
   - "frontend/src/setupTests.js"
