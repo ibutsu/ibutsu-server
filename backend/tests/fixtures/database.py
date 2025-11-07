@@ -420,3 +420,55 @@ def make_dashboard(db_session):
         return dashboard
 
     return _make_dashboard
+
+
+@pytest.fixture
+def make_import(db_session):
+    """
+    Factory to create test import records in the database.
+
+    Example:
+        def test_with_import(make_import):
+            import_record = make_import(filename='test.xml', format='junit')
+            assert import_record.id is not None
+    """
+    from uuid import uuid4
+
+    from ibutsu_server.db.models import Import
+
+    def _make_import(**kwargs):
+        defaults = {
+            "id": str(uuid4()),
+            "filename": f"test-import-{uuid4().hex[:8]}.xml",
+            "format": "junit",
+            "data": {},
+            "status": "done",
+        }
+        defaults.update(kwargs)
+        import_record = Import(**defaults)
+        db_session.add(import_record)
+        db_session.commit()
+        db_session.refresh(import_record)
+        return import_record
+
+    return _make_import
+
+
+@pytest.fixture
+def fixed_time():
+    """
+    Provide a fixed datetime for consistent testing.
+
+    Using a fixed time prevents flakiness in time-dependent assertions.
+    Returns a timezone-aware datetime that can be used throughout tests.
+
+    Note: Set to current time to work with widgets that filter by recent dates.
+
+    Example:
+        def test_time_based_query(fixed_time, make_run):
+            run = make_run(start_time=fixed_time)
+            assert run.start_time == fixed_time
+    """
+    from datetime import datetime, timezone
+
+    return datetime.now(timezone.utc)
