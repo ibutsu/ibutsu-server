@@ -253,8 +253,9 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
     "@abstractmethod",
+    "^from .+ import .+$",
+    "^import .+$",
 ]
-# fail_under removed - coverage thresholds managed by codecov.yml
 
 [tool.coverage.xml]
 output = "coverage.xml"
