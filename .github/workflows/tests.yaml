@@ -41,14 +41,6 @@ jobs:
           name: frontend-coverage
           path: frontend/coverage/
           retention-days: 30
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./frontend/coverage/lcov.info
-          flags: frontend
-          name: frontend-coverage
-          fail_ci_if_error: false
 
   test-backend:
     runs-on: ubuntu-latest
@@ -71,19 +63,11 @@ jobs:
         run: hatch run test-cov
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && matrix.python-version == '3.11'
         with:
-          name: backend-coverage-py${{ matrix.python-version }}
+          name: backend-coverage
           path: backend/coverage.xml
           retention-days: 30
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./backend/coverage.xml
-          flags: backend
-          name: backend-coverage-py${{ matrix.python-version }}
-          fail_ci_if_error: false
 
   build-backend:
     runs-on: ubuntu-latest
@@ -101,6 +85,28 @@ jobs:
           image: ibutsu-${{ matrix.app }}
           dockerfiles: |
             ./backend/docker/Dockerfile.${{ matrix.app }}
+
+  upload-coverage:
+    runs-on: ubuntu-latest
+    needs: [test-backend, lint-test-frontend]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: coverage-reports
+          pattern: '*-coverage*'
+      - name: Display structure of downloaded files
+        run: ls -R coverage-reports
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          directory: ./coverage-reports
+          name: codecov-umbrella
+          fail_ci_if_error: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          verbose: true
 
   build-frontend:
     runs-on: ubuntu-latest
