@@ -68,7 +68,7 @@ jobs:
           pip install hatch
       - name: Run backend tests with coverage
         working-directory: ./backend
-        run: hatch run test:cov
+        run: hatch run test-cov
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         if: always()
