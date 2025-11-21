@@ -7,9 +7,21 @@
 
 ### Test Coverage
 
-[![codecov](https://codecov.io/gh/ibutsu/ibutsu-server/branch/main/graph/badge.svg)](https://codecov.io/gh/ibutsu/ibutsu-server)
-[![Backend Coverage](https://codecov.io/gh/ibutsu/ibutsu-server/branch/main/graph/badge.svg?flag=backend)](https://codecov.io/gh/ibutsu/ibutsu-server/tree/main/backend)
-[![Frontend Coverage](https://codecov.io/gh/ibutsu/ibutsu-server/branch/main/graph/badge.svg?flag=frontend)](https://codecov.io/gh/ibutsu/ibutsu-server/tree/main/frontend)
+[![codecov](https://codecov.io/gh/ibutsu/ibutsu-server/branch/main/graph/badge.svg?token=49WSIBKXZ9)](https://codecov.io/gh/ibutsu/ibutsu-server)
+[![Backend Coverage](https://codecov.io/gh/ibutsu/ibutsu-server/branch/main/graph/badge.svg?token=49WSIBKXZ9&flag=backend)](https://app.codecov.io/gh/ibutsu/ibutsu-server/flags)
+[![Frontend Coverage](https://codecov.io/gh/ibutsu/ibutsu-server/branch/main/graph/badge.svg?token=49WSIBKXZ9&flag=frontend)](https://app.codecov.io/gh/ibutsu/ibutsu-server/flags)
+
+**Overall Coverage Grid:**
+
+[![Overall Grid](https://codecov.io/gh/ibutsu/ibutsu-server/graphs/tree.svg?token=49WSIBKXZ9)](https://codecov.io/gh/ibutsu/ibutsu-server)
+
+**Backend Coverage Grid:**
+
+[![Backend Grid](https://codecov.io/gh/ibutsu/ibutsu-server/graphs/tree.svg?token=49WSIBKXZ9&flag=backend)](https://app.codecov.io/gh/ibutsu/ibutsu-server/tree/main/backend)
+
+**Frontend Coverage Grid:**
+
+[![Frontend Grid](https://codecov.io/gh/ibutsu/ibutsu-server/graphs/tree.svg?token=49WSIBKXZ9&flag=frontend)](https://app.codecov.io/gh/ibutsu/ibutsu-server/tree/main/frontend)
 
 | Component | Lines | Statements | Functions | Branches | Target |
 |-----------|-------|------------|-----------|----------|--------|
