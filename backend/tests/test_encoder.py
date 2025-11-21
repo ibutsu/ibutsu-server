@@ -38,7 +38,7 @@ class TestIbutsuJSONProvider:
         with client.application.app_context():
             provider = IbutsuJSONProvider(client.application)
             assert provider is not None
-            assert provider.include_nulls is False
+            assert not provider.include_nulls
 
     def test_provider_include_nulls_default(self, flask_app):
         """Test default include_nulls is False"""
@@ -46,7 +46,7 @@ class TestIbutsuJSONProvider:
 
         with client.application.app_context():
             provider = IbutsuJSONProvider(client.application)
-            assert provider.include_nulls is False
+            assert not provider.include_nulls
 
     def test_provider_include_nulls_can_be_modified(self, flask_app):
         """Test include_nulls can be set to True"""
@@ -55,7 +55,7 @@ class TestIbutsuJSONProvider:
         with client.application.app_context():
             provider = IbutsuJSONProvider(client.application)
             provider.include_nulls = True
-            assert provider.include_nulls is True
+            assert provider.include_nulls
 
     def test_default_method_with_model_excludes_nulls(self, flask_app):
         """Test default method excludes null values from Model objects"""
@@ -290,3 +290,24 @@ class TestIbutsuJSONProvider:
             assert isinstance(result, dict)
             assert result["id"] == "container"
             assert "nested" in result
+
+    def test_default_method_with_non_model_delegates_to_parent(self, flask_app):
+        """Test default method delegates to Flask's DefaultJSONProvider for non-Model objects"""
+        import pytest
+
+        client, _ = flask_app
+
+        with client.application.app_context():
+            provider = IbutsuJSONProvider(client.application)
+
+            # Test with a standard dict (should pass through)
+            standard_dict = {"key": "value"}
+            result = provider.default(standard_dict)
+            assert result == standard_dict
+
+            # Test with a non-serializable object (should raise TypeError from parent)
+            class NonSerializable:
+                pass
+
+            with pytest.raises(TypeError):
+                provider.default(NonSerializable())

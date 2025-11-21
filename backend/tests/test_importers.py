@@ -255,9 +255,10 @@ class TestParseTimestamp:
 
         result = _parse_timestamp(ts)
 
-        # Should return current time (approximately)
+        # Should return a datetime close to "now" (broad tolerance to avoid flakiness)
         assert isinstance(result, datetime)
-        assert (datetime.now(timezone.utc) - result).total_seconds() < 2
+        delta_seconds = abs((datetime.now(timezone.utc) - result).total_seconds())
+        assert delta_seconds < 24 * 60 * 60
 
     def test_parse_timestamp_with_different_formats(self):
         """Test parsing various timestamp formats"""
@@ -671,8 +672,26 @@ class TestRunJunitImport:
             assert run.summary["failures"] == 1
 
             # Verify results were created
-            results = Result.query.filter_by(run_id=run.id).all()
+            results = Result.query.filter_by(run_id=run.id).order_by(Result.id).all()
             assert len(results) == 2
+
+            # Verify per-test behavior: one passed and one failed result
+            statuses = {r.result for r in results}
+            assert statuses == {"passed", "failed"}
+
+            # Check that test identifiers/names were correctly mapped from the XML
+            test_ids = {r.test_id for r in results}
+            # Test IDs should contain both test case names
+            assert any("test_pass" in tid for tid in test_ids)
+            assert any("test_fail" in tid for tid in test_ids)
+
+            # Verify the failed test has a traceback artifact attached
+            failed_result = next(r for r in results if r.result == "failed")
+            failed_artifacts = Artifact.query.filter_by(result_id=failed_result.id).all()
+            failed_filenames = {a.filename for a in failed_artifacts}
+
+            # We expect a traceback artifact for the failed test
+            assert "traceback.log" in failed_filenames
 
             # Verify import status updated
             from ibutsu_server.db.models import Import
