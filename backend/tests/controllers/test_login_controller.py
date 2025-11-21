@@ -124,3 +124,28 @@ def test_login_inactive_user(flask_app):
 
     response_data = response.get_json()
     assert response_data["code"] == "INACTIVE"
+
+
+def test_login_support(flask_app):
+    """Test case for getting login support configuration"""
+    client, _jwt_token = flask_app
+
+    headers = {"Accept": "application/json"}
+    response = client.get("/api/login/support", headers=headers)
+    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+
+    response_data = response.get_json()
+    # Should always return a dict with these keys
+    assert "user" in response_data
+    assert "keycloak" in response_data
+    assert "google" in response_data
+    assert "github" in response_data
+    assert "facebook" in response_data
+    assert "gitlab" in response_data
+    # All values should be booleans
+    assert isinstance(response_data["user"], bool)
+    assert isinstance(response_data["keycloak"], bool)
+    assert isinstance(response_data["google"], bool)
+    assert isinstance(response_data["github"], bool)
+    assert isinstance(response_data["facebook"], bool)
+    assert isinstance(response_data["gitlab"], bool)

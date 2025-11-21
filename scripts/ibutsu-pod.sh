@@ -393,9 +393,13 @@ if [[ $CREATE_PROJECT = true ]]; then
                 done
             fi
         fi
-        RUNS_COUNT=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-            http://127.0.0.1:8080/api/run | jq -r '.runs | length')
-        echo "Total runs in the database: ${RUNS_COUNT}"
+        # Get runs count from both projects
+        RUNS_COUNT_1=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            "http://127.0.0.1:8080/api/run?filter=project_id=${PROJECT_ID_1}&page_size=1" 2>/dev/null | jq -r '.pagination.totalItems // 0')
+        RUNS_COUNT_2=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+            "http://127.0.0.1:8080/api/run?filter=project_id=${PROJECT_ID_2}&page_size=1" 2>/dev/null | jq -r '.pagination.totalItems // 0')
+        TOTAL_RUNS=$((RUNS_COUNT_1 + RUNS_COUNT_2))
+        echo "Total runs in the database: ${TOTAL_RUNS}"
         echo ""
         echo "Import Summary:"
         echo "  my-project-1: ${SUCCESSFUL_IMPORTS_1} successful, ${FAILED_IMPORTS_1} failed"
@@ -510,7 +514,7 @@ if [[ $CREATE_PROJECT = true ]]; then
 
         # Fallback: try to get component from first run in project
         local runs_data
-        runs_data=$(api_get "/api/run?project=${project_id}&page_size=1")
+        runs_data=$(api_get "/api/run?filter=project_id=${project_id}&page_size=1")
         local component
         component=$(echo "$runs_data" | jq -r '.runs[0].component // empty' 2>/dev/null)
 

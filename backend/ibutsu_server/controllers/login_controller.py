@@ -152,14 +152,32 @@ def login(body=None):
 
 def support():
     """Return the authentication types that the server supports"""
-    return {
-        "user": current_app.config.get("USER_LOGIN_ENABLED", True),
-        "keycloak": get_keycloak_config().get("client_id") is not None,
-        "google": get_provider_config("google")["client_id"] is not None,
-        "github": get_provider_config("github")["client_id"] is not None,
-        "facebook": get_provider_config("facebook")["app_id"] is not None,
-        "gitlab": get_provider_config("gitlab")["client_id"] is not None,
-    }
+    try:
+        keycloak_config = get_keycloak_config()
+        google_config = get_provider_config("google")
+        github_config = get_provider_config("github")
+        facebook_config = get_provider_config("facebook")
+        gitlab_config = get_provider_config("gitlab")
+
+        return {
+            "user": current_app.config.get("USER_LOGIN_ENABLED", True),
+            "keycloak": keycloak_config.get("client_id") is not None,
+            "google": google_config.get("client_id") is not None,
+            "github": github_config.get("client_id") is not None,
+            "facebook": facebook_config.get("app_id") is not None,
+            "gitlab": gitlab_config.get("client_id") is not None,
+        }
+    except Exception as e:
+        # Log error but return default config with user login enabled
+        print(f"Error getting login support configuration: {e}")
+        return {
+            "user": current_app.config.get("USER_LOGIN_ENABLED", True),
+            "keycloak": False,
+            "google": False,
+            "github": False,
+            "facebook": False,
+            "gitlab": False,
+        }
 
 
 def config(provider):
