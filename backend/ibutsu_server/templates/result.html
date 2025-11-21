@@ -1,4 +1,7 @@
 {{raw_data|safe}}
+{% if duration %}
+<p>Duration: {{duration|pretty_duration}}</p>
+{% endif %}
 <table>
     {% for art in artifacts %}
     <tr><td><a href="/api/artifact/{{art._id}}">{{art.filename}}</a></td></tr>
