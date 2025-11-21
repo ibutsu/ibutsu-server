@@ -515,3 +515,352 @@ def test_sync_aborted_runs(make_project, make_run, make_result, flask_app):
             mock_apply.assert_called_once()
             call_args = mock_apply.call_args
             assert call_args[0][0][0] == run.id
+
+
+# Tests for tasks.db seed_users
+
+
+def test_seed_users_create_new_users_and_add_to_project(make_project, flask_app):
+    """Test seed_users creates new users and adds them to project"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import User
+        from ibutsu_server.tasks.db import seed_users
+
+        project = make_project(name="test-project")
+
+        projects_data = {
+            "test-project": {
+                "users": ["alice@example.com", "bob@example.com"],
+            }
+        }
+
+        seed_users(projects_data)
+
+        # Verify users were created
+        alice = User.query.filter_by(email="alice@example.com").first()
+        bob = User.query.filter_by(email="bob@example.com").first()
+
+        assert alice is not None
+        assert bob is not None
+        assert alice.name == "alice"
+        assert bob.name == "bob"
+
+        # Verify users were added to project
+        assert project in alice.projects
+        assert project in bob.projects
+
+
+def test_seed_users_with_owner(make_project, flask_app):
+    """Test seed_users sets project owner"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import Project, User
+        from ibutsu_server.tasks.db import seed_users
+
+        project = make_project(name="test-project")
+
+        projects_data = {
+            "test-project": {
+                "owner": "owner@example.com",
+                "users": ["user1@example.com"],
+            }
+        }
+
+        seed_users(projects_data)
+
+        # Verify owner was created
+        owner = User.query.filter_by(email="owner@example.com").first()
+        assert owner is not None
+
+        # Verify owner was set on project
+        updated_project = Project.query.get(project.id)
+        assert updated_project.owner == owner
+
+
+def test_seed_users_existing_user(make_project, make_user, flask_app):
+    """Test seed_users handles existing users"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import User
+        from ibutsu_server.tasks.db import seed_users
+
+        project = make_project(name="test-project")
+        existing_user = make_user(email="existing@example.com", name="Existing User")
+
+        projects_data = {
+            "test-project": {
+                "users": ["existing@example.com", "new@example.com"],
+            }
+        }
+
+        seed_users(projects_data)
+
+        # Verify existing user was not duplicated
+        users = User.query.filter_by(email="existing@example.com").all()
+        assert len(users) == 1
+        assert users[0].id == existing_user.id
+
+        # Verify existing user was added to project
+        assert project in existing_user.projects
+
+        # Verify new user was created
+        new_user = User.query.filter_by(email="new@example.com").first()
+        assert new_user is not None
+        assert project in new_user.projects
+
+
+def test_seed_users_user_already_in_project(make_project, make_user, flask_app):
+    """Test seed_users doesn't duplicate project membership"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.tasks.db import seed_users
+
+        project = make_project(name="test-project")
+        user = make_user(email="user@example.com")
+
+        # Manually add user to project first
+        user.projects.append(project)
+        from ibutsu_server.db.base import session
+
+        session.add(user)
+        session.commit()
+
+        # Try to add same user again via seed_users
+        projects_data = {
+            "test-project": {
+                "users": ["user@example.com"],
+            }
+        }
+
+        seed_users(projects_data)
+
+        # Verify user is still only in project once
+        session.refresh(user)
+        assert user.projects.count(project) == 1
+
+
+def test_seed_users_nonexistent_project(flask_app):
+    """Test seed_users handles non-existent project"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.tasks.db import seed_users
+
+        projects_data = {
+            "nonexistent-project": {
+                "users": ["user@example.com"],
+            }
+        }
+
+        # Should not raise error
+        seed_users(projects_data)
+
+        # Verify user was not created since project doesn't exist
+        from ibutsu_server.db.models import User
+
+        user = User.query.filter_by(email="user@example.com").first()
+        assert user is None
+
+
+def test_seed_users_empty_projects(flask_app):
+    """Test seed_users with empty projects dict"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.tasks.db import seed_users
+
+        # Should not raise error
+        result = seed_users({})
+        assert result is None
+
+
+def test_seed_users_none_projects(flask_app):
+    """Test seed_users with None projects"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.tasks.db import seed_users
+
+        # Should not raise error
+        result = seed_users(None)
+        assert result is None
+
+
+def test_seed_users_multiple_projects(make_project, flask_app):
+    """Test seed_users with multiple projects"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import User
+        from ibutsu_server.tasks.db import seed_users
+
+        project1 = make_project(name="project-1")
+        project2 = make_project(name="project-2")
+
+        projects_data = {
+            "project-1": {
+                "users": ["alice@example.com", "bob@example.com"],
+            },
+            "project-2": {
+                "users": ["bob@example.com", "charlie@example.com"],
+            },
+        }
+
+        seed_users(projects_data)
+
+        # Verify users were created
+        alice = User.query.filter_by(email="alice@example.com").first()
+        bob = User.query.filter_by(email="bob@example.com").first()
+        charlie = User.query.filter_by(email="charlie@example.com").first()
+
+        assert alice is not None
+        assert bob is not None
+        assert charlie is not None
+
+        # Verify alice is only in project1
+        assert project1 in alice.projects
+        assert project2 not in alice.projects
+
+        # Verify bob is in both projects
+        assert project1 in bob.projects
+        assert project2 in bob.projects
+
+        # Verify charlie is only in project2
+        assert project1 not in charlie.projects
+        assert project2 in charlie.projects
+
+
+def test_seed_users_owner_is_also_user(make_project, flask_app):
+    """Test seed_users when owner is also in users list"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import Project, User
+        from ibutsu_server.tasks.db import seed_users
+
+        project = make_project(name="test-project")
+
+        projects_data = {
+            "test-project": {
+                "owner": "owner@example.com",
+                "users": ["owner@example.com", "user1@example.com"],
+            }
+        }
+
+        seed_users(projects_data)
+
+        # Verify owner was created once
+        owners = User.query.filter_by(email="owner@example.com").all()
+        assert len(owners) == 1
+
+        owner = owners[0]
+
+        # Verify owner is set on project
+        updated_project = Project.query.get(project.id)
+        assert updated_project.owner == owner
+
+        # Verify owner is in project users
+        assert project in owner.projects
+
+
+def test_seed_users_updates_existing_owner(make_project, make_user, flask_app):
+    """Test seed_users updates project owner if already exists"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import Project
+        from ibutsu_server.tasks.db import seed_users
+
+        project = make_project(name="test-project")
+        old_owner = make_user(email="old@example.com")
+        project.owner = old_owner
+        from ibutsu_server.db.base import session
+
+        session.add(project)
+        session.commit()
+
+        projects_data = {
+            "test-project": {
+                "owner": "new@example.com",
+                "users": [],
+            }
+        }
+
+        seed_users(projects_data)
+
+        # Verify new owner was set
+        updated_project = Project.query.get(project.id)
+        assert updated_project.owner.email == "new@example.com"
+        assert updated_project.owner.email != old_owner.email
+
+
+def test_seed_users_empty_users_list(make_project, flask_app):
+    """Test seed_users with empty users list"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.tasks.db import seed_users
+
+        make_project(name="test-project")
+
+        projects_data = {
+            "test-project": {
+                "users": [],
+            }
+        }
+
+        # Should not raise error
+        seed_users(projects_data)
+
+
+def test_seed_users_no_users_key(make_project, flask_app):
+    """Test seed_users when users key is missing"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.tasks.db import seed_users
+
+        project = make_project(name="test-project")
+
+        projects_data = {
+            "test-project": {
+                "owner": "owner@example.com",
+            }
+        }
+
+        # Should not raise error
+        seed_users(projects_data)
+
+        # Verify owner was still set
+        from ibutsu_server.db.models import Project
+
+        updated_project = Project.query.get(project.id)
+        assert updated_project.owner is not None
+
+
+def test_seed_users_exception_handling(make_project, flask_app):
+    """Test seed_users handles exceptions gracefully"""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.tasks.db import seed_users
+
+        make_project(name="test-project")
+
+        # Create invalid data that might cause an exception
+        projects_data = {
+            "test-project": {
+                "users": ["valid@example.com"],
+            }
+        }
+
+        # Mock the session.add to raise an exception
+        with patch("ibutsu_server.tasks.db.session.add", side_effect=Exception("DB Error")):
+            # Should not raise, should return None
+            result = seed_users(projects_data)
+            assert result is None
