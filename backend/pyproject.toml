@@ -266,12 +266,11 @@ exclude_lines = [
     "^\\s*import .+$",
     # Pass statements
     "^\\s*pass\\s*$",
-    # Ellipsis
+    # Ellipsis (standalone only, not in strings)
     "^\\s*\\.\\.\\.\\s*$",
     # Protocol and overload definitions
     "@overload",
     "@typing.overload",
-    "\\.\\.\\.",
     # Debug-only code
     "if.*__debug__:",
 ]

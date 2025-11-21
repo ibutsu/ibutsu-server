@@ -40,15 +40,11 @@ flags:
     paths:
       - backend/ibutsu_server/
     carryforward: true
-    # Enable flag-specific badges
-    assume_all_flags: false
 
   frontend:
     paths:
       - frontend/src/
     carryforward: true
-    # Enable flag-specific badges
-    assume_all_flags: false
 
 comment:
   layout: "header, diff, flags, files, footer"

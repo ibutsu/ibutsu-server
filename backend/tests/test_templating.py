@@ -184,8 +184,10 @@ class TestRenderTemplate:
         }
         result = render_template("result.html", **context)
 
-        # Template should be able to use the filter
+        # Template should be able to use the filter and render the formatted duration
         assert isinstance(result, str)
+        # 125 seconds should be rendered as 0:02:05 by the pretty_duration filter
+        assert "0:02:05" in result
 
     def test_render_template_with_special_characters(self):
         """Test rendering with special characters in data"""
