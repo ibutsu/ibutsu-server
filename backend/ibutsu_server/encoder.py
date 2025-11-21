@@ -16,4 +16,7 @@ class IbutsuJSONProvider(DefaultJSONProvider):
                 mapped_attr = o.attribute_map[attr]
                 dikt[mapped_attr] = value
             return dikt
-        return DefaultJSONProvider.default(self, o)
+        # For basic JSON-serializable types, return as-is
+        if isinstance(o, (dict, list, str, int, float, bool, type(None))):
+            return o
+        return super().default(o)

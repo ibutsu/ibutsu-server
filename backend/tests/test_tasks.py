@@ -529,6 +529,7 @@ def test_seed_users_create_new_users_and_add_to_project(make_project, flask_app)
         from ibutsu_server.tasks.db import seed_users
 
         project = make_project(name="test-project")
+        project_id = project.id
 
         projects_data = {
             "test-project": {
@@ -548,8 +549,8 @@ def test_seed_users_create_new_users_and_add_to_project(make_project, flask_app)
         assert bob.name == "bob"
 
         # Verify users were added to project
-        assert project in alice.projects
-        assert project in bob.projects
+        assert project_id in [p.id for p in alice.projects]
+        assert project_id in [p.id for p in bob.projects]
 
 
 def test_seed_users_with_owner(make_project, flask_app):
@@ -561,6 +562,7 @@ def test_seed_users_with_owner(make_project, flask_app):
         from ibutsu_server.tasks.db import seed_users
 
         project = make_project(name="test-project")
+        project_id = project.id
 
         projects_data = {
             "test-project": {
@@ -576,7 +578,7 @@ def test_seed_users_with_owner(make_project, flask_app):
         assert owner is not None
 
         # Verify owner was set on project
-        updated_project = Project.query.get(project.id)
+        updated_project = Project.query.get(project_id)
         assert updated_project.owner == owner
 
 
@@ -589,7 +591,9 @@ def test_seed_users_existing_user(make_project, make_user, flask_app):
         from ibutsu_server.tasks.db import seed_users
 
         project = make_project(name="test-project")
+        project_id = project.id
         existing_user = make_user(email="existing@example.com", name="Existing User")
+        existing_user_id = existing_user.id
 
         projects_data = {
             "test-project": {
@@ -602,15 +606,16 @@ def test_seed_users_existing_user(make_project, make_user, flask_app):
         # Verify existing user was not duplicated
         users = User.query.filter_by(email="existing@example.com").all()
         assert len(users) == 1
-        assert users[0].id == existing_user.id
+        assert users[0].id == existing_user_id
 
         # Verify existing user was added to project
-        assert project in existing_user.projects
+        updated_existing_user = User.query.filter_by(email="existing@example.com").first()
+        assert project_id in [p.id for p in updated_existing_user.projects]
 
         # Verify new user was created
         new_user = User.query.filter_by(email="new@example.com").first()
         assert new_user is not None
-        assert project in new_user.projects
+        assert project_id in [p.id for p in new_user.projects]
 
 
 def test_seed_users_user_already_in_project(make_project, make_user, flask_app):
@@ -618,9 +623,11 @@ def test_seed_users_user_already_in_project(make_project, make_user, flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
+        from ibutsu_server.db.models import User
         from ibutsu_server.tasks.db import seed_users
 
         project = make_project(name="test-project")
+        project_id = project.id
         user = make_user(email="user@example.com")
 
         # Manually add user to project first
@@ -640,8 +647,9 @@ def test_seed_users_user_already_in_project(make_project, make_user, flask_app):
         seed_users(projects_data)
 
         # Verify user is still only in project once
-        session.refresh(user)
-        assert user.projects.count(project) == 1
+        updated_user = User.query.filter_by(email="user@example.com").first()
+        project_ids = [p.id for p in updated_user.projects]
+        assert project_ids.count(project_id) == 1
 
 
 def test_seed_users_nonexistent_project(flask_app):
@@ -701,6 +709,8 @@ def test_seed_users_multiple_projects(make_project, flask_app):
 
         project1 = make_project(name="project-1")
         project2 = make_project(name="project-2")
+        project1_id = project1.id
+        project2_id = project2.id
 
         projects_data = {
             "project-1": {
@@ -723,16 +733,19 @@ def test_seed_users_multiple_projects(make_project, flask_app):
         assert charlie is not None
 
         # Verify alice is only in project1
-        assert project1 in alice.projects
-        assert project2 not in alice.projects
+        alice_project_ids = [p.id for p in alice.projects]
+        assert project1_id in alice_project_ids
+        assert project2_id not in alice_project_ids
 
         # Verify bob is in both projects
-        assert project1 in bob.projects
-        assert project2 in bob.projects
+        bob_project_ids = [p.id for p in bob.projects]
+        assert project1_id in bob_project_ids
+        assert project2_id in bob_project_ids
 
         # Verify charlie is only in project2
-        assert project1 not in charlie.projects
-        assert project2 in charlie.projects
+        charlie_project_ids = [p.id for p in charlie.projects]
+        assert project1_id not in charlie_project_ids
+        assert project2_id in charlie_project_ids
 
 
 def test_seed_users_owner_is_also_user(make_project, flask_app):
@@ -744,6 +757,7 @@ def test_seed_users_owner_is_also_user(make_project, flask_app):
         from ibutsu_server.tasks.db import seed_users
 
         project = make_project(name="test-project")
+        project_id = project.id
 
         projects_data = {
             "test-project": {
@@ -761,11 +775,11 @@ def test_seed_users_owner_is_also_user(make_project, flask_app):
         owner = owners[0]
 
         # Verify owner is set on project
-        updated_project = Project.query.get(project.id)
+        updated_project = Project.query.get(project_id)
         assert updated_project.owner == owner
 
         # Verify owner is in project users
-        assert project in owner.projects
+        assert project_id in [p.id for p in owner.projects]
 
 
 def test_seed_users_updates_existing_owner(make_project, make_user, flask_app):
@@ -777,7 +791,9 @@ def test_seed_users_updates_existing_owner(make_project, make_user, flask_app):
         from ibutsu_server.tasks.db import seed_users
 
         project = make_project(name="test-project")
+        project_id = project.id
         old_owner = make_user(email="old@example.com")
+        old_owner_email = old_owner.email
         project.owner = old_owner
         from ibutsu_server.db.base import session
 
@@ -794,9 +810,9 @@ def test_seed_users_updates_existing_owner(make_project, make_user, flask_app):
         seed_users(projects_data)
 
         # Verify new owner was set
-        updated_project = Project.query.get(project.id)
+        updated_project = Project.query.get(project_id)
         assert updated_project.owner.email == "new@example.com"
-        assert updated_project.owner.email != old_owner.email
+        assert updated_project.owner.email != old_owner_email
 
 
 def test_seed_users_empty_users_list(make_project, flask_app):
@@ -823,9 +839,11 @@ def test_seed_users_no_users_key(make_project, flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
+        from ibutsu_server.db.models import Project
         from ibutsu_server.tasks.db import seed_users
 
         project = make_project(name="test-project")
+        project_id = project.id
 
         projects_data = {
             "test-project": {
@@ -837,9 +855,7 @@ def test_seed_users_no_users_key(make_project, flask_app):
         seed_users(projects_data)
 
         # Verify owner was still set
-        from ibutsu_server.db.models import Project
-
-        updated_project = Project.query.get(project.id)
+        updated_project = Project.query.get(project_id)
         assert updated_project.owner is not None
 
 

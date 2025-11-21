@@ -650,54 +650,52 @@ class TestRunJunitImport:
             </testsuite>
             """
 
-            import_record = make_import(filename="test.xml", format="junit", status="pending")
+        import_record = make_import(filename="test.xml", format="junit", status="pending")
 
-            # Create import file
-            import_file = ImportFile(
-                id=str(uuid4()), import_id=import_record.id, filename="test.xml", content=junit_xml
-            )
-            from ibutsu_server.db.base import session
+        # Create import file
+        import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
+        from ibutsu_server.db.base import session
 
-            session.add(import_file)
-            session.commit()
+        session.add(import_file)
+        session.commit()
 
-            # Run the import
-            run_junit_import({"id": str(import_record.id)})
+        # Run the import
+        run_junit_import({"id": str(import_record.id)})
 
-            # Verify run was created
-            runs = Run.query.all()
-            assert len(runs) > 0
-            run = runs[-1]  # Get the latest run
-            assert run.summary["tests"] == 2
-            assert run.summary["failures"] == 1
+        # Verify run was created
+        runs = Run.query.all()
+        assert len(runs) > 0
+        run = runs[-1]  # Get the latest run
+        assert run.summary["tests"] == 2
+        assert run.summary["failures"] == 1
 
-            # Verify results were created
-            results = Result.query.filter_by(run_id=run.id).order_by(Result.id).all()
-            assert len(results) == 2
+        # Verify results were created
+        results = Result.query.filter_by(run_id=run.id).order_by(Result.id).all()
+        assert len(results) == 2
 
-            # Verify per-test behavior: one passed and one failed result
-            statuses = {r.result for r in results}
-            assert statuses == {"passed", "failed"}
+        # Verify per-test behavior: one passed and one failed result
+        statuses = {r.result for r in results}
+        assert statuses == {"passed", "failed"}
 
-            # Check that test identifiers/names were correctly mapped from the XML
-            test_ids = {r.test_id for r in results}
-            # Test IDs should contain both test case names
-            assert any("test_pass" in tid for tid in test_ids)
-            assert any("test_fail" in tid for tid in test_ids)
+        # Check that test identifiers/names were correctly mapped from the XML
+        test_ids = {r.test_id for r in results}
+        # Test IDs should contain both test case names
+        assert any("test_pass" in tid for tid in test_ids)
+        assert any("test_fail" in tid for tid in test_ids)
 
-            # Verify the failed test has a traceback artifact attached
-            failed_result = next(r for r in results if r.result == "failed")
-            failed_artifacts = Artifact.query.filter_by(result_id=failed_result.id).all()
-            failed_filenames = {a.filename for a in failed_artifacts}
+        # Verify the failed test has a traceback artifact attached
+        failed_result = next(r for r in results if r.result == "failed")
+        failed_artifacts = Artifact.query.filter_by(result_id=failed_result.id).all()
+        failed_filenames = {a.filename for a in failed_artifacts}
 
-            # We expect a traceback artifact for the failed test
-            assert "traceback.log" in failed_filenames
+        # We expect a traceback artifact for the failed test
+        assert "traceback.log" in failed_filenames
 
-            # Verify import status updated
-            from ibutsu_server.db.models import Import
+        # Verify import status updated
+        from ibutsu_server.db.models import Import
 
-            updated_import = Import.query.get(import_record.id)
-            assert updated_import.status == "done"
+        updated_import = Import.query.get(import_record.id)
+        assert updated_import.status == "done"
 
     def test_run_junit_import_with_properties(self, make_import, make_project, flask_app):
         """Test JUnit import with properties"""
@@ -723,9 +721,7 @@ class TestRunJunitImport:
                 data={"project_id": project.id},
             )
 
-            import_file = ImportFile(
-                id=str(uuid4()), import_id=import_record.id, filename="test.xml", content=junit_xml
-            )
+            import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
             from ibutsu_server.db.base import session
 
             session.add(import_file)
@@ -809,7 +805,6 @@ class TestRunArchiveImport:
             import_file = ImportFile(
                 id=str(uuid4()),
                 import_id=import_record.id,
-                filename="archive.tar.gz",
                 content=tar_content,
             )
             from ibutsu_server.db.base import session
@@ -825,8 +820,8 @@ class TestRunArchiveImport:
             run = Run.query.get(run_id)
             assert run is not None
 
-            # Verify result was created
-            result = Result.query.get(result_id)
+            # Verify result was created (archive import creates new IDs for results)
+            result = Result.query.filter_by(test_id="test.example", run_id=run.id).first()
             assert result is not None
             assert result.test_id == "test.example"
 
