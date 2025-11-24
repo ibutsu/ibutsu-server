@@ -14,6 +14,10 @@ const prepareUrl = (url, params = {}) => {
   let newUrl = url;
   if (url instanceof Array) {
     newUrl = url[0];
+    // Trim trailing slash from first segment to avoid double slashes
+    if (newUrl.endsWith('/')) {
+      newUrl = newUrl.slice(0, -1);
+    }
     url.slice(1).forEach((fragment) => {
       newUrl = [newUrl, trim(fragment)].join('/');
     });
