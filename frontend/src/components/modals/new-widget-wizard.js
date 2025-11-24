@@ -31,6 +31,7 @@ import {
   WidgetFilterComponent,
 } from '../hooks/use-widget-filters';
 import WidgetParameterFields from '../widget-parameter-fields';
+import { filterNonFilterParams } from '../../utilities/widget';
 
 const NewWidgetWizard = ({
   dashboard,
@@ -178,22 +179,35 @@ const NewWidgetWizard = ({
     setStepIdReached((prevStepId) => Math.max(prevStepId, currentStep.id));
   }, []);
 
-  useEffect(() => {
-    let areParamsFilled = true;
-    selectedType?.params?.forEach((widgetParam) => {
-      if (widgetParam.required) {
-        const paramValue = params[widgetParam.name];
-        // Check if parameter is missing or invalid based on type
-        if (paramValue === undefined || paramValue === null) {
-          areParamsFilled = false;
-        } else if (widgetParam.type === 'string' && paramValue === '') {
-          areParamsFilled = false;
-        }
-        // For numeric and boolean types, 0 and false are valid values
+  // Centralized validation function for required parameters
+  // Checks if a parameter value is valid based on its type and required status
+  const isParamValid = useCallback(
+    (param) => {
+      if (!param.required) {
+        return true;
       }
-    });
+      const paramValue = params[param.name];
+      // Check if parameter is missing or invalid based on type
+      if (paramValue === undefined || paramValue === null) {
+        return false;
+      }
+      if (param.type === 'string' && paramValue === '') {
+        return false;
+      }
+      // For numeric and boolean types, 0 and false are valid values
+      return true;
+    },
+    [params],
+  );
+
+  useEffect(() => {
+    // Filter out 'additional_filters' and 'project' params as they're handled separately
+    const nonFilterParams = filterNonFilterParams(selectedType?.params || []);
+    const areParamsFilled = nonFilterParams.every((param) =>
+      isParamValid(param),
+    );
     setParamsFilled(areParamsFilled);
-  }, [params, selectedType]);
+  }, [params, selectedType, isParamValid]);
 
   useEffect(() => {
     const fetchWidgetTypes = async () => {
@@ -211,22 +225,13 @@ const NewWidgetWizard = ({
     fetchWidgetTypes();
   }, []);
 
-  // Validation function for required parameters
+  // Validation state for form field rendering
+  // Translates the validation result to PatternFly's validation state
   const handleRequiredParam = useCallback(
     (param) => {
-      if (param.required) {
-        const paramValue = params[param.name];
-        // Check if parameter is missing or invalid based on type
-        if (paramValue === undefined || paramValue === null) {
-          return 'error';
-        } else if (param.type === 'string' && paramValue === '') {
-          return 'error';
-        }
-        // For numeric and boolean types, 0 and false are valid values
-      }
-      return 'default';
+      return isParamValid(param) ? 'default' : 'error';
     },
-    [params],
+    [isParamValid],
   );
 
   const steps = useMemo(

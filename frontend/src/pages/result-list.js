@@ -156,7 +156,10 @@ const ResultList = () => {
           apiParams.filter = [`project_id=${primaryObject.id}`];
         }
 
-        const response = await HttpClient.get([Settings.serverUrl, 'run'], apiParams);
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'run'],
+          apiParams,
+        );
         const data = await HttpClient.handleResponse(response);
         const runIds = data.runs.map((run) => run.id);
         setRuns(runIds);
