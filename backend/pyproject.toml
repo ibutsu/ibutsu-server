@@ -1,5 +1,5 @@
 [project]
-version = "2.8.3"
+version = "2.8.5"
 name = "ibutsu_server"
 description = "A system to store and query test results and artifacts"
 authors = [
@@ -246,34 +246,15 @@ omit = [
 precision = 2
 skip_empty = true
 exclude_lines = [
-    # Pragmas and docstrings
     "pragma: no cover",
     "def __repr__",
-    # Defensive programming patterns
     "raise AssertionError",
     "raise NotImplementedError",
-    "assert False",
-    # Type checking blocks
-    "if TYPE_CHECKING:",
-    "if typing.TYPE_CHECKING:",
-    # Abstract methods
-    "@abstractmethod",
-    "@abc.abstractmethod",
-    # Main guard
     "if __name__ == .__main__.:",
-    # Import statements (allow leading whitespace)
-    "^\\s*from .+ import .+$",
-    "^\\s*import .+$",
-    # Pass statements
-    "^\\s*pass\\s*$",
-    # Ellipsis (standalone only, not in strings)
-    "^\\s*\\.\\.\\.\\s*$",
-    # Protocol and overload definitions
-    "@overload",
-    "@typing.overload",
-    # Debug-only code
-    "if.*__debug__:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
 ]
+# fail_under removed - coverage thresholds managed by codecov.yml
 
 [tool.coverage.xml]
 output = "coverage.xml"
