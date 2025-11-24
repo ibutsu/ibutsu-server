@@ -124,5 +124,15 @@ export default defineConfig([
       },
     },
   },
+  // Specific configuration for test utility files to handle Jest globals
+  {
+    files: ['src/test-utils/**/*.js', 'src/setupTests.js'],
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.jest, // Add Jest globals for test utility files
+      },
+    },
+  },
   eslintPluginPrettierRecommended,
 ]);

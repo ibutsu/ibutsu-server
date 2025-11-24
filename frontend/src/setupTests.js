@@ -1,6 +1,7 @@
 // src/setupTests.js
 import '../jest.polyfills.cjs';
 import '@testing-library/jest-dom';
+import { resetTestCounters } from './test-utils/mock-data';
 
 // Suppress console errors from PatternFly Popper component
 // These warnings are about internal PatternFly animations that use timers
@@ -36,3 +37,8 @@ console.warn = (...args) => {
   }
   originalWarn.call(console, ...args);
 };
+
+// Reset test counters before each test to avoid cross-test leakage
+beforeEach(() => {
+  resetTestCounters();
+});
