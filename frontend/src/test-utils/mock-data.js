@@ -125,10 +125,9 @@ export function createMockResult(overrides = {}) {
  * @returns {Object} Mock failed result object
  */
 export function createMockFailedResult(overrides = {}) {
-  testIdCounter++;
   return createMockResult({
     id: TEST_UUIDS.RESULT_2,
-    test_id: `test.example.module.test_failed_${testIdCounter}`,
+    test_id: `test.example.module.test_failed_${testIdCounter + 1}`,
     result: TEST_RESULTS.FAILED,
     metadata: {
       file: 'tests/test_module.py',

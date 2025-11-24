@@ -130,13 +130,13 @@ describe('HTTP Utilities', () => {
       expect(headers.get('Authorization')).toBe('Bearer test-token');
     });
 
-    it('should handle URL array with leading/trailing slashes', async () => {
+    it('should handle URL array with leading/trailing slashes correctly', async () => {
       await HttpClient.get(['http://localhost/api/', '/test/', '/resource']);
 
-      // The implementation trims subsequent fragments but joins with /
-      // If first segment has trailing /, it results in //
+      // The implementation normalizes slashes to prevent double slashes
+      // Should result in 'http://localhost/api/test/resource' not 'http://localhost/api//test//resource'
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost/api//test/resource',
+        'http://localhost/api/test/resource',
         {},
       );
     });

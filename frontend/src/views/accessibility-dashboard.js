@@ -31,7 +31,7 @@ import {
   FILTER_MODE_MAP,
 } from '../constants';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
-import useTableFilters from '../components/hooks/use-table-filters';
+import { useFilterContext } from '../components/contexts/filter-context';
 
 const runToRow = (run, filterFunc, analysisViewId) => {
   let badges = [];
@@ -169,7 +169,7 @@ const AccessibilityDashboardView = ({ view }) => {
     // isMultiSelect: selection === 'in',  Wasn't in state originally, is only set here and never read?
   };
 
-  const { updateFilters } = useTableFilters();
+  const { updateFilters } = useFilterContext();
 
   const applyFilter = () => {
     const operationMode = OPERATION_MODE_MAP[operationSelection];
@@ -202,7 +202,7 @@ const AccessibilityDashboardView = ({ view }) => {
     const { primaryObject } = context;
     if (primaryObject) {
       // todo array of filters
-      newFilters['project_id'] = { val: primaryObject.id, operator: 'eq' };
+      newFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
     } else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
       delete newFilters['project_id'];
     }
@@ -249,7 +249,7 @@ const AccessibilityDashboardView = ({ view }) => {
   }, [view, filters, context]);
 
   useEffect(() => {
-    let newSelectOptionsField = { ...fieldOptions };
+    let newSelectOptionsField = [...fieldOptions];
     if (fieldInputValue) {
       newSelectOptionsField = fieldOptions.filter((menuItem) =>
         menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase()),

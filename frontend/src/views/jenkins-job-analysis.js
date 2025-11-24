@@ -24,7 +24,7 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
   const { activeFilters } = useContext(FilterContext);
 
   const [isAreaChart, setIsAreaChart] = useState(false);
-  const [isLoading, setIsLoading] = useState();
+  const [isLoading, setIsLoading] = useState(true);
 
   const [barWidth, setBarWidth] = useState(DEFAULT_BAR);
   const [builds, setBuilds] = useState(20);

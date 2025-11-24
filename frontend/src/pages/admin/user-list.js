@@ -69,6 +69,7 @@ const UserList = () => {
       userName = `${user.name}`;
     }
     return {
+      id: user.id,
       cells: [
         userName,
         user.email,
@@ -111,7 +112,7 @@ const UserList = () => {
             ''
           )}
         </Fragment>,
-        <TableText key="edit">
+        <div style={{ textAlign: 'right' }} key="actions">
           <Button
             icon={<PencilAltIcon />}
             variant="primary"
@@ -122,8 +123,7 @@ const UserList = () => {
             size="sm"
             aria-label="Edit"
           ></Button>
-        </TableText>,
-        <TableText key="delete">
+          &nbsp;
           <Button
             icon={<TrashIcon />}
             variant="danger"
@@ -134,7 +134,7 @@ const UserList = () => {
             }}
             size="sm"
           ></Button>
-        </TableText>,
+        </div>,
       ],
     };
   };
@@ -144,13 +144,17 @@ const UserList = () => {
       setFetching(true);
       setIsError(false);
       try {
+        const filters = filtersToAPIParams(activeFilters);
+        const params = {
+          page: page,
+          pageSize: pageSize,
+        };
+        if (filters.length > 0) {
+          params.filter = filters.join(',');
+        }
         const response = await HttpClient.get(
           [Settings.serverUrl, 'admin', 'user'],
-          {
-            page: page,
-            pageSize: pageSize,
-            filter: filtersToAPIParams(activeFilters),
-          },
+          params,
         );
         const data = await HttpClient.handleResponse(response);
         setRows(

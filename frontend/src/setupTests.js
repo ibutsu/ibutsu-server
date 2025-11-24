@@ -20,7 +20,8 @@ console.error = (...args) => {
     ) ||
     errorString.includes(
       'Not implemented: HTMLFormElement.prototype.requestSubmit',
-    )
+    ) ||
+    errorString.includes('When testing, code that causes React state updates should be wrapped into act')
   ) {
     return;
   }

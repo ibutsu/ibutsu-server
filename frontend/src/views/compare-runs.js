@@ -106,7 +106,7 @@ const CompareRunsView = () => {
 
       // Retrieve results from database
       HttpClient.get([Settings.serverUrl, 'widget', 'compare-runs-view'], {
-        filters: filtersWithProject.map((f) => toAPIFilter(f)),
+        filters: toAPIFilter(filtersWithProject),
       })
         .then((response) => HttpClient.handleResponse(response))
         .then((data) => {
