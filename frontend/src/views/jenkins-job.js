@@ -177,7 +177,7 @@ const JenkinsJobView = ({ view }) => {
       setFetching(false);
     };
 
-    if (view && activeFilters?.length) {
+    if (view && activeFilters !== undefined) {
       const debouncer = setTimeout(() => {
         fetchData();
       }, 100);

@@ -53,6 +53,7 @@ const ProjectList = () => {
   const { activeFilters, clearFilters } = useContext(FilterContext);
 
   const projectToRow = (project) => ({
+    id: project.id,
     cells: [
       project.title,
       project.name,
@@ -101,11 +102,14 @@ const ProjectList = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
+        const filters = filtersToAPIParams(activeFilters);
         const apiParams = {
           page: page,
           pageSize: pageSize,
-          filter: filtersToAPIParams(activeFilters),
         };
+        if (filters.length > 0) {
+          apiParams.filter = filters.join(',');
+        }
         const response = await HttpClient.get(
           [Settings.serverUrl, 'admin', 'project'],
           apiParams,
@@ -115,7 +119,7 @@ const ProjectList = () => {
         if (data?.projects) {
           if (activeFilters?.length === 0) {
             // set total projects boolean only if we fetched with no filters
-            setAnyProjects(true);
+            setAnyProjects(data.projects.length > 0);
           }
           setFilteredProjects(
             data.projects.map((project) => projectToRow(project)),

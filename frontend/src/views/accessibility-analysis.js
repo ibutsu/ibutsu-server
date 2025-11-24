@@ -47,14 +47,17 @@ const AccessibilityAnalysisView = ({ view }) => {
   const { darkTheme } = context;
   const location = useLocation();
   const navigate = useNavigate();
-  const params = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const { page, setPage, onSetPage, pageSize, setPageSize, onSetPageSize } =
     usePagination({});
   const [filters] = useState({});
 
   const [run, setRun] = useState();
-  const [id] = useState(filters.run_list?.val);
+  const id = useMemo(
+    () => filters.run_list?.val || searchParams.get('run_list'),
+    [filters.run_list?.val, searchParams],
+  );
   const [, setResults] = useState([]);
   // const [selectedResults, setSelectedResults] = useState([]);
 
@@ -195,7 +198,10 @@ const AccessibilityAnalysisView = ({ view }) => {
   // }, [run]),
 
   const onTabSelect = (_, tabIndex) => {
-    navigate(`${location.pathname}${params}#${tabIndex}`);
+    const queryString = searchParams.toString()
+      ? `?${searchParams.toString()}`
+      : '';
+    navigate(`${location.pathname}${queryString}#${tabIndex}`);
     setActiveTab(tabIndex);
   };
 
@@ -257,6 +263,9 @@ const AccessibilityAnalysisView = ({ view }) => {
   }, [page, pageSize, id, setPage, setPageSize]);
 
   useEffect(() => {
+    if (!run || !run.metadata || !run.metadata.accessibility_data) {
+      return;
+    }
     let { passes, violations } = run.metadata.accessibility_data;
     let total = passes + violations;
     setPieData([

@@ -11,6 +11,11 @@ import JenkinsJobAnalysisView from '../views/jenkins-job-analysis';
 import AccessibilityAnalysisView from '../views/accessibility-analysis';
 import CompareRunsView from '../views/compare-runs';
 import FilterProvider from '../components/contexts/filter-context';
+import {
+  ACCESSIBILITY_FIELDS,
+  RUN_FIELDS,
+  RESULT_FIELDS,
+} from '../constants';
 
 const VIEW_MAP = {
   'accessibility-dashboard-view': AccessibilityDashboardView,
@@ -18,6 +23,14 @@ const VIEW_MAP = {
   'compare-runs-view': CompareRunsView,
   'jenkins-job-view': JenkinsJobView,
   'jenkins-analysis-view': JenkinsJobAnalysisView,
+};
+
+const FIELD_OPTIONS_MAP = {
+  'accessibility-dashboard-view': RUN_FIELDS,
+  'accessibility-analysis-view': RESULT_FIELDS,
+  'compare-runs-view': RUN_FIELDS,
+  'jenkins-job-view': RUN_FIELDS,
+  'jenkins-analysis-view': RESULT_FIELDS,
 };
 
 const View = () => {
@@ -57,6 +70,7 @@ const View = () => {
   }, [viewSpec]);
 
   const ViewComponent = viewSpec ? VIEW_MAP[viewSpec.widget] : null;
+  const fieldOptions = viewSpec ? FIELD_OPTIONS_MAP[viewSpec.widget] : null;
 
   return (
     <>
@@ -69,7 +83,7 @@ const View = () => {
       </PageSection>
       <PageSection hasBodyWrapper={false} className="pf-v6-u-pb-0">
         {!!ViewComponent && (
-          <FilterProvider key={viewSpec.id}>
+          <FilterProvider key={viewSpec.id} fieldOptions={fieldOptions}>
             <ViewComponent view={viewSpec} />
           </FilterProvider>
         )}

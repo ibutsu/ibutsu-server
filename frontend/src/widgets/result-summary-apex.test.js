@@ -34,7 +34,6 @@ jest.mock('react-apexcharts', () => {
     return (
       <div data-testid="apex-chart">
         <div data-testid="chart-series">{JSON.stringify(series)}</div>
-        {}
         <div data-testid="chart-labels">{JSON.stringify(options.labels)}</div>
       </div>
     );
