@@ -1,10 +1,17 @@
 import logging
+import warnings
 from datetime import datetime, timezone
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import MetaData, inspect, text
 from sqlalchemy.sql import quoted_name
+
+try:
+    from sqlalchemy.exc import SAWarning
+except ImportError:
+    # Fallback for older SQLAlchemy versions
+    SAWarning = None
 from sqlalchemy.sql.expression import null
 
 from ibutsu_server.constants import WIDGET_TYPES
@@ -12,7 +19,7 @@ from ibutsu_server.db.base import Boolean, Column, DateTime, ForeignKey, Text
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.db.types import PortableUUID
 
-__version__ = 10
+__version__ = 11
 
 
 def get_upgrade_op(session):
@@ -375,6 +382,56 @@ def _migrate_widget_config(widget_config, migration_stats, logger):
     return params_updated
 
 
+def _create_index_safely(op, metadata, table_name, index_name, index_args, logger, indexes_created):
+    """Helper function to safely create an index with error handling."""
+    table = metadata.tables.get(table_name)
+    if table is None or index_name in [idx.name for idx in table.indexes]:
+        return False
+
+    try:
+        op.create_index(index_name, table_name, **index_args)
+        indexes_created.append(index_name)
+        logger.info(f"Created index: {index_name}")
+        return True
+    except Exception as e:
+        logger.warning(f"Could not create index {index_name}: {e}")
+        # Let the migration framework handle transaction management
+        return False
+
+
+def _check_pg_trgm_extension(session, logger):
+    """Check if pg_trgm extension exists, and try to create it if it doesn't.
+
+    Returns True if the extension is available (either already exists or was created),
+    False if it cannot be created (e.g., insufficient privileges).
+    """
+    # First check if the extension already exists
+    try:
+        result = session.execute(
+            text("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname = 'pg_trgm')")
+        )
+        extension_exists = result.scalar()
+        if extension_exists:
+            logger.info("pg_trgm extension already exists")
+            return True
+    except Exception as e:
+        logger.warning(f"Could not check for pg_trgm extension: {e}")
+        # Continue to try creating it
+
+    # Try to create the extension if it doesn't exist
+    try:
+        session.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+        logger.info("Enabled pg_trgm extension for pattern matching indexes")
+        return True
+    except Exception as e:
+        logger.warning(
+            f"Could not enable pg_trgm extension: {e}. "
+            "Trigram indexes will be skipped. "
+            "To enable them, a database superuser must run: CREATE EXTENSION pg_trgm;"
+        )
+        return False
+
+
 def upgrade_9(session):
     """Version 9 upgrade
 
@@ -443,6 +500,116 @@ def upgrade_9(session):
     )
 
 
+def _create_index_concurrently(session, index_name, index_sql, logger):
+    """Create an index concurrently (non-blocking) with proper transaction handling.
+
+    CREATE INDEX CONCURRENTLY cannot be run inside a transaction, so we:
+    1. Commit any pending transaction
+    2. Use autocommit mode to create the index outside a transaction
+    3. Handle errors gracefully
+
+    :param session: SQLAlchemy session
+    :param index_name: Name of the index to create
+    :param index_sql: SQL statement to create the index (should include CONCURRENTLY)
+    :param logger: Logger instance
+    :return: True if index was created or already exists, False on error
+    """
+    try:
+        # Commit any pending transaction before creating CONCURRENT index
+        # CONCURRENT indexes cannot be created inside a transaction
+        session.commit()
+
+        # Get the engine and use raw_connection() to access the DBAPI connection directly
+        # This is required because CREATE INDEX CONCURRENTLY must run outside a transaction
+        engine = session.connection().engine
+
+        # Use raw_connection() to get direct DBAPI access for autocommit mode
+        raw_conn = engine.raw_connection()
+        try:
+            # Save original autocommit state
+            original_autocommit = getattr(raw_conn, "autocommit", False)
+
+            # Enable autocommit mode for CONCURRENT index creation
+            raw_conn.autocommit = True
+            cursor = raw_conn.cursor()
+            try:
+                cursor.execute(index_sql)
+                # In autocommit mode, commit() is a no-op but we call it for clarity
+                raw_conn.commit()
+                logger.info(f"Created index: {index_name}")
+                return True
+            finally:
+                cursor.close()
+        finally:
+            # Restore original autocommit state and close connection
+            if hasattr(raw_conn, "autocommit"):
+                raw_conn.autocommit = original_autocommit
+            raw_conn.close()
+
+    except Exception as e:
+        error_msg = str(e).lower()
+        # Index already exists or is being created concurrently
+        if "already exists" in error_msg or "duplicate" in error_msg:
+            logger.info(f"Index {index_name} already exists, skipping")
+            return True
+        # Invalid index name might mean it's in an invalid state from a previous failed attempt
+        if "invalid" in error_msg and "name" in error_msg:
+            logger.warning(
+                f"Index {index_name} may be in invalid state. Attempting to drop and recreate: {e}"
+            )
+            try:
+                # Try to drop the invalid index and recreate
+                engine = session.connection().engine
+                raw_conn = engine.raw_connection()
+                try:
+                    original_autocommit = getattr(raw_conn, "autocommit", False)
+                    raw_conn.autocommit = True
+                    cursor = raw_conn.cursor()
+                    try:
+                        cursor.execute(f"DROP INDEX CONCURRENTLY IF EXISTS {index_name}")
+                        cursor.execute(index_sql)
+                        raw_conn.commit()
+                        logger.info(f"Successfully recreated index: {index_name}")
+                        return True
+                    finally:
+                        cursor.close()
+                finally:
+                    if hasattr(raw_conn, "autocommit"):
+                        raw_conn.autocommit = original_autocommit
+                    raw_conn.close()
+            except Exception as drop_error:
+                logger.error(
+                    f"Failed to recreate index {index_name} after drop attempt: {drop_error}"
+                )
+                return False
+        else:
+            logger.error(f"Failed to create index {index_name}: {e}")
+            return False
+
+
+def _create_index_if_missing(session, index_name, index_sql, existing_indexes, logger, stats):
+    """Helper to create an index if it doesn't exist, updating stats.
+
+    :param session: SQLAlchemy session
+    :param index_name: Name of the index
+    :param index_sql: SQL to create the index
+    :param existing_indexes: Set of existing index names
+    :param logger: Logger instance
+    :param stats: Dict with 'created', 'skipped', 'failed' counters
+    :return: None
+    """
+    if index_name not in existing_indexes:
+        logger.info(f"Creating index {index_name} (this may take a while on large databases)...")
+        success = _create_index_concurrently(session, index_name, index_sql, logger)
+        if success:
+            stats["created"] += 1
+        else:
+            stats["failed"] += 1
+    else:
+        logger.info(f"Index {index_name} already exists, skipping")
+        stats["skipped"] += 1
+
+
 def upgrade_10(session):
     """Version 10 upgrade
 
@@ -458,97 +625,237 @@ def upgrade_10(session):
     - Filter by project_id and time range
     - Aggregate results over time periods
 
+    Note: Uses CREATE INDEX CONCURRENTLY to avoid blocking writes on large production databases.
+    This allows the upgrade to complete without causing extended downtime, though index creation
+    may take longer. The upgrade is idempotent and can be safely retried if interrupted.
+
     SQL equivalents:
-        CREATE INDEX IF NOT EXISTS ix_results_data_gin ON results USING gin (data);
-        CREATE INDEX IF NOT EXISTS ix_results_project_start_time
+        CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_data_gin
+            ON results USING gin (data);
+        CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_project_start_time
             ON results (project_id, start_time DESC);
-        CREATE INDEX IF NOT EXISTS ix_results_project_start_component
+        CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_project_start_component
             ON results (project_id, start_time DESC, component);
     """
     logger = logging.getLogger(__name__)
-    print("Starting upgrade_10: Adding indexes for result-aggregator optimization")
+    logger.info("Starting upgrade_10: Adding indexes for result-aggregator optimization")
 
     engine = session.connection().engine
-    op = get_upgrade_op(session)
+    get_upgrade_op(session)
     metadata = MetaData()
-    metadata.reflect(bind=engine)
+    # Suppress warnings about expression-based indexes that SQLAlchemy can't reflect
+    with warnings.catch_warnings():
+        if SAWarning:
+            warnings.filterwarnings(
+                "ignore",
+                category=SAWarning,
+                message=".*Skipped unsupported reflection of expression-based index.*",
+            )
+        else:
+            # Fallback: filter by message pattern if SAWarning is not available
+            warnings.filterwarnings(
+                "ignore", message=".*Skipped unsupported reflection of expression-based index.*"
+            )
+        metadata.reflect(bind=engine)
 
     if engine.url.get_dialect().name == "postgresql":
         results_table = metadata.tables.get("results")
         if results_table is None:
             logger.warning("Results table not found, skipping index creation")
-            print("upgrade_10 warning: Results table not found")
+            logger.info("upgrade_10 skipped: Results table not found")
             return
 
         existing_indexes = {idx.name for idx in results_table.indexes}
         logger.info(f"Found {len(existing_indexes)} existing indexes on results table")
 
-        indexes_created = 0
-        indexes_skipped = 0
+        stats = {"created": 0, "skipped": 0, "failed": 0}
 
-        # 1. Add GIN index on data column for fast metadata queries
-        data_gin_index = "ix_results_data_gin"
-        if data_gin_index not in existing_indexes:
-            try:
-                op.create_index(
-                    data_gin_index,
-                    "results",
-                    [quoted_name("data", False)],
-                    postgresql_using="gin",
-                )
-                logger.info(f"Created index: {data_gin_index}")
-                indexes_created += 1
-            except Exception as e:
-                logger.error(f"Failed to create index {data_gin_index}: {e}")
-        else:
-            logger.info(f"Index {data_gin_index} already exists, skipping")
-            indexes_skipped += 1
+        # Define indexes to create
+        indexes_to_create = [
+            (
+                "ix_results_data_gin",
+                "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_data_gin "
+                "ON results USING gin (data)",
+            ),
+            (
+                "ix_results_project_start_time",
+                "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_project_start_time "
+                "ON results (project_id, start_time DESC)",
+            ),
+            (
+                "ix_results_project_start_component",
+                "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_project_start_component "
+                "ON results (project_id, start_time DESC, component)",
+            ),
+        ]
 
-        # 2. Add composite index on (project_id, start_time) for time-range queries
-        project_time_index = "ix_results_project_start_time"
-        if project_time_index not in existing_indexes:
-            try:
-                # Use raw SQL for DESC ordering compatibility across PostgreSQL versions
-                connection = session.connection()
-                connection.execute(
-                    text(
-                        "CREATE INDEX IF NOT EXISTS ix_results_project_start_time "
-                        "ON results (project_id, start_time DESC)"
-                    )
-                )
-                logger.info(f"Created index: {project_time_index}")
-                indexes_created += 1
-            except Exception as e:
-                logger.error(f"Failed to create index {project_time_index}: {e}")
-        else:
-            logger.info(f"Index {project_time_index} already exists, skipping")
-            indexes_skipped += 1
+        # Create each index if it doesn't exist
+        for index_name, index_sql in indexes_to_create:
+            _create_index_if_missing(
+                session, index_name, index_sql, existing_indexes, logger, stats
+            )
 
-        # 3. Add composite index on (project_id, start_time, component) for component queries
-        project_time_component_index = "ix_results_project_start_component"
-        if project_time_component_index not in existing_indexes:
-            try:
-                # Use raw SQL for DESC ordering compatibility across PostgreSQL versions
-                connection = session.connection()
-                connection.execute(
-                    text(
-                        "CREATE INDEX IF NOT EXISTS ix_results_project_start_component "
-                        "ON results (project_id, start_time DESC, component)"
-                    )
-                )
-                logger.info(f"Created index: {project_time_component_index}")
-                indexes_created += 1
-            except Exception as e:
-                logger.error(f"Failed to create index {project_time_component_index}: {e}")
-        else:
-            logger.info(f"Index {project_time_component_index} already exists, skipping")
-            indexes_skipped += 1
-
-        logger.info("Upgrade 10 completed: Added indexes for result-aggregator optimization")
-        print(
-            f"upgrade_10 completed: {indexes_created} indexes created, "
-            f"{indexes_skipped} already existed"
+        logger.info(
+            f"upgrade_10 completed: {stats['created']} indexes created, "
+            f"{stats['skipped']} already existed, {stats['failed']} failed"
         )
+        if stats["failed"] > 0:
+            logger.warning(
+                "Some indexes failed to create. The upgrade can be safely retried. "
+                "Failed indexes will be skipped if they already exist."
+            )
     else:
-        logger.info("Upgrade 10 skipped: Not PostgreSQL database")
-        print("upgrade_10 skipped: Not a PostgreSQL database")
+        logger.info("upgrade_10 skipped: Not PostgreSQL database")
+
+
+def upgrade_11(session):
+    """Version 11 upgrade
+
+    This upgrade adds optimized indexes for common widget query patterns to improve performance:
+
+    1. Composite indexes for frequently co-filtered columns:
+       - (project_id, start_time) on both runs and results
+       - (project_id, component, start_time) on both runs and results
+       - (run_id, start_time) on results
+
+    2. GIN indexes on commonly queried JSONB paths:
+       - data->'jenkins' on both runs and results (for job_name, build_number)
+       - data->'test_suite' on results
+
+    3. GIN indexes for regex/pattern matching (using pg_trgm):
+       - component column on both runs and results
+       - source column on both runs and results
+
+    4. GIN index on summary JSONB column for aggregation queries
+
+    These indexes target the most common widget query patterns:
+    - run-aggregator: filters by project_id, start_time, component with summary aggregations
+    - jenkins-heatmap: filters by jenkins.job_name, build_number with component grouping
+    - result-aggregator: filters by project_id, run_id, start_time with component grouping
+    - filter-heatmap: heavy metadata filtering with component patterns
+    """
+    logger = logging.getLogger(__name__)
+    logger.info("Starting upgrade_11: Adding optimized indexes for common widget query patterns")
+    engine = session.connection().engine
+    op = get_upgrade_op(session)
+    metadata = MetaData()
+    # Suppress warnings about expression-based indexes that SQLAlchemy can't reflect
+    with warnings.catch_warnings():
+        if SAWarning:
+            warnings.filterwarnings(
+                "ignore",
+                category=SAWarning,
+                message=".*Skipped unsupported reflection of expression-based index.*",
+            )
+        else:
+            # Fallback: filter by message pattern if SAWarning is not available
+            warnings.filterwarnings(
+                "ignore", message=".*Skipped unsupported reflection of expression-based index.*"
+            )
+        metadata.reflect(bind=engine)
+
+    # Only apply to PostgreSQL (SQLite doesn't support GIN indexes or pg_trgm)
+    if engine.url.get_dialect().name != "postgresql":
+        logger.info("Skipping upgrade_11: not using PostgreSQL")
+        return
+
+    indexes_created = []
+    pg_trgm_available = _check_pg_trgm_extension(session, logger)
+
+    # Define and create composite indexes for common query patterns
+    composite_indexes = [
+        ("runs", "ix_runs_project_id_start_time", ["project_id", "start_time"]),
+        ("results", "ix_results_project_id_start_time", ["project_id", "start_time"]),
+        ("runs", "ix_runs_project_component_start_time", ["project_id", "component", "start_time"]),
+        (
+            "results",
+            "ix_results_project_component_start_time",
+            ["project_id", "component", "start_time"],
+        ),
+        ("results", "ix_results_run_id_start_time", ["run_id", "start_time"]),
+    ]
+
+    for table_name, index_name, columns in composite_indexes:
+        _create_index_safely(
+            op,
+            metadata,
+            table_name,
+            index_name,
+            {"columns": columns},
+            logger,
+            indexes_created,
+        )
+
+    # Define and create GIN indexes for JSONB path queries
+    # Use raw SQL for JSONB path expressions to ensure they're treated as
+    # expressions, not column names
+    jsonb_path_indexes = [
+        ("runs", "ix_runs_jenkins", "data->'jenkins'"),
+        ("results", "ix_results_jenkins", "data->'jenkins'"),
+        ("results", "ix_results_test_suite", "data->'test_suite'"),
+    ]
+
+    for table_name, index_name, path_expression in jsonb_path_indexes:
+        table = metadata.tables.get(table_name)
+        if table is None or index_name in [idx.name for idx in table.indexes]:
+            continue
+
+        try:
+            # Use raw SQL to create expression indexes on JSONB paths
+            connection = session.connection()
+            connection.execute(
+                text(
+                    f"CREATE INDEX IF NOT EXISTS {index_name} "
+                    f"ON {table_name} USING gin (({path_expression}))"
+                )
+            )
+            indexes_created.append(index_name)
+            logger.info(f"Created GIN JSONB index: {index_name}")
+        except Exception as e:
+            logger.warning(f"Could not create index {index_name}: {e}")
+
+    # Define and create GIN indexes for pattern matching on text columns
+    # These require pg_trgm extension, so only create if extension is available
+    if pg_trgm_available:
+        pattern_indexes = [
+            ("runs", "ix_runs_component_trgm", "component"),
+            ("results", "ix_results_component_trgm", "component"),
+            ("runs", "ix_runs_source_trgm", "source"),
+            ("results", "ix_results_source_trgm", "source"),
+        ]
+
+        for table_name, index_name, column_name in pattern_indexes:
+            _create_index_safely(
+                op,
+                metadata,
+                table_name,
+                index_name,
+                {
+                    "columns": [column_name],
+                    "postgresql_using": "gin",
+                    "postgresql_ops": {column_name: "gin_trgm_ops"},
+                },
+                logger,
+                indexes_created,
+            )
+    else:
+        logger.info(
+            "Skipping trigram indexes (ix_*_component_trgm, ix_*_source_trgm) "
+            "because pg_trgm extension is not available"
+        )
+
+    # Create GIN index on summary JSONB for aggregation queries
+    _create_index_safely(
+        op,
+        metadata,
+        "runs",
+        "ix_runs_summary",
+        {"columns": ["summary"], "postgresql_using": "gin"},
+        logger,
+        indexes_created,
+    )
+
+    # Log summary
+    logger.info(f"upgrade_11 completed: created {len(indexes_created)} indexes")
+    if indexes_created:
+        logger.info(f"  Indexes created: {', '.join(indexes_created)}")
