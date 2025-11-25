@@ -59,6 +59,10 @@ def get_recent_result_data(
     run_id=None,
     additional_filters=None,
 ):
+    # Default to 90 days if not specified to prevent full table scans
+    # Only skip the default if a run_id is specified (which limits results to a specific run)
+    if days is None and run_id is None:
+        days = 90
     return _get_recent_result_data(
         group_field,
         days=days,

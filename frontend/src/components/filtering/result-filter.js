@@ -96,15 +96,13 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
       const params = {
         group_field: fieldSelection,
         project: projectId,
+        days: 90, // Limit to last 90 days to prevent memory exhaustion
       };
 
       // Only add additional_filters if there are filters to add
       if (apiFilter) {
         params.additional_filters = apiFilter;
       }
-
-      // Note: We don't include 'days' parameter to get all historical data
-      // If we want to limit to recent results, we could add: days: 30
 
       HttpClient.get(
         [Settings.serverUrl, 'widget', 'result-aggregator'],
