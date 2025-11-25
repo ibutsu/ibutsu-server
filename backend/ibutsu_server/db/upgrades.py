@@ -1,5 +1,7 @@
+import contextlib
 import logging
 import warnings
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 from alembic.migration import MigrationContext
@@ -12,6 +14,7 @@ try:
 except ImportError:
     # Fallback for older SQLAlchemy versions
     SAWarning = None
+
 from sqlalchemy.sql.expression import null
 
 from ibutsu_server.constants import WIDGET_TYPES
@@ -500,12 +503,92 @@ def upgrade_9(session):
     )
 
 
+def _get_engine(session, logger):
+    """Get the database engine from the session.
+
+    Tries session.bind first (safer, doesn't require active connection),
+    then falls back to session.connection().engine.
+
+    :param session: SQLAlchemy session
+    :param logger: Logger instance
+    :return: Engine instance or None if unable to get engine
+    """
+    try:
+        engine = session.bind
+    except AttributeError:
+        engine = None
+
+    if engine is not None:
+        return engine
+
+    try:
+        return session.connection().engine
+    except Exception as conn_error:
+        logger.error(f"Failed to get engine: {conn_error}")
+        return None
+
+
+@contextmanager
+def _raw_autocommit_cursor(engine):
+    """Context manager for raw DBAPI connection with autocommit enabled.
+
+    Provides a cursor and raw connection with autocommit mode enabled,
+    ensuring proper cleanup of resources.
+
+    :param engine: SQLAlchemy engine
+    :yield: Tuple of (cursor, raw_conn)
+    """
+    raw_conn = None
+    try:
+        raw_conn = engine.raw_connection()
+        original_autocommit = getattr(raw_conn, "autocommit", False)
+        try:
+            raw_conn.autocommit = True
+            cursor = raw_conn.cursor()
+            try:
+                yield cursor, raw_conn
+            finally:
+                cursor.close()
+        finally:
+            if hasattr(raw_conn, "autocommit"):
+                raw_conn.autocommit = original_autocommit
+    finally:
+        if raw_conn:
+            with contextlib.suppress(Exception):
+                raw_conn.close()
+
+
+def _recreate_invalid_index(session, index_name, index_sql, logger):
+    """Drop and recreate an index that is in an invalid state.
+
+    :param session: SQLAlchemy session
+    :param index_name: Name of the index to recreate
+    :param index_sql: SQL statement to create the index
+    :param logger: Logger instance
+    :return: True if successfully recreated, False on error
+    """
+    engine = _get_engine(session, logger)
+    if engine is None:
+        return False
+
+    try:
+        with _raw_autocommit_cursor(engine) as (cursor, raw_conn):
+            cursor.execute(f"DROP INDEX CONCURRENTLY IF EXISTS {index_name}")
+            cursor.execute(index_sql)
+            raw_conn.commit()
+            logger.info(f"Successfully recreated index: {index_name}")
+            return True
+    except Exception as drop_error:
+        logger.error(f"Failed to recreate index {index_name} after drop attempt: {drop_error}")
+        return False
+
+
 def _create_index_concurrently(session, index_name, index_sql, logger):
     """Create an index concurrently (non-blocking) with proper transaction handling.
 
     CREATE INDEX CONCURRENTLY cannot be run inside a transaction, so we:
     1. Commit any pending transaction
-    2. Use autocommit mode to create the index outside a transaction
+    2. Use a separate connection with autocommit to create the index outside a transaction
     3. Handle errors gracefully
 
     :param session: SQLAlchemy session
@@ -514,38 +597,20 @@ def _create_index_concurrently(session, index_name, index_sql, logger):
     :param logger: Logger instance
     :return: True if index was created or already exists, False on error
     """
+    # Commit any pending transaction before creating CONCURRENT index
+    # CONCURRENT indexes cannot be created inside a transaction
+    session.commit()
+
+    engine = _get_engine(session, logger)
+    if engine is None:
+        return False
+
     try:
-        # Commit any pending transaction before creating CONCURRENT index
-        # CONCURRENT indexes cannot be created inside a transaction
-        session.commit()
-
-        # Get the engine and use raw_connection() to access the DBAPI connection directly
-        # This is required because CREATE INDEX CONCURRENTLY must run outside a transaction
-        engine = session.connection().engine
-
-        # Use raw_connection() to get direct DBAPI access for autocommit mode
-        raw_conn = engine.raw_connection()
-        try:
-            # Save original autocommit state
-            original_autocommit = getattr(raw_conn, "autocommit", False)
-
-            # Enable autocommit mode for CONCURRENT index creation
-            raw_conn.autocommit = True
-            cursor = raw_conn.cursor()
-            try:
-                cursor.execute(index_sql)
-                # In autocommit mode, commit() is a no-op but we call it for clarity
-                raw_conn.commit()
-                logger.info(f"Created index: {index_name}")
-                return True
-            finally:
-                cursor.close()
-        finally:
-            # Restore original autocommit state and close connection
-            if hasattr(raw_conn, "autocommit"):
-                raw_conn.autocommit = original_autocommit
-            raw_conn.close()
-
+        with _raw_autocommit_cursor(engine) as (cursor, raw_conn):
+            cursor.execute(index_sql)
+            raw_conn.commit()  # Explicit commit for clarity
+            logger.info(f"Created index: {index_name}")
+            return True
     except Exception as e:
         error_msg = str(e).lower()
         # Index already exists or is being created concurrently
@@ -557,34 +622,10 @@ def _create_index_concurrently(session, index_name, index_sql, logger):
             logger.warning(
                 f"Index {index_name} may be in invalid state. Attempting to drop and recreate: {e}"
             )
-            try:
-                # Try to drop the invalid index and recreate
-                engine = session.connection().engine
-                raw_conn = engine.raw_connection()
-                try:
-                    original_autocommit = getattr(raw_conn, "autocommit", False)
-                    raw_conn.autocommit = True
-                    cursor = raw_conn.cursor()
-                    try:
-                        cursor.execute(f"DROP INDEX CONCURRENTLY IF EXISTS {index_name}")
-                        cursor.execute(index_sql)
-                        raw_conn.commit()
-                        logger.info(f"Successfully recreated index: {index_name}")
-                        return True
-                    finally:
-                        cursor.close()
-                finally:
-                    if hasattr(raw_conn, "autocommit"):
-                        raw_conn.autocommit = original_autocommit
-                    raw_conn.close()
-            except Exception as drop_error:
-                logger.error(
-                    f"Failed to recreate index {index_name} after drop attempt: {drop_error}"
-                )
-                return False
-        else:
-            logger.error(f"Failed to create index {index_name}: {e}")
-            return False
+            return _recreate_invalid_index(session, index_name, index_sql, logger)
+
+        logger.error(f"Failed to create index {index_name}: {e}")
+        return False
 
 
 def _create_index_if_missing(session, index_name, index_sql, existing_indexes, logger, stats):
