@@ -1,5 +1,4 @@
 /* eslint-env jest */
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import RunList from './run-list';
@@ -388,8 +387,6 @@ describe('RunList', () => {
         expect(HttpClient.get).toHaveBeenCalled();
       });
 
-      const callCount = HttpClient.get.mock.calls.length;
-
       // Change filters
       const newFilterContext = {
         activeFilters: [{ field: 'env', operator: 'eq', value: 'staging' }],
@@ -579,7 +576,7 @@ describe('RunList', () => {
         expect(HttpClient.get).toHaveBeenCalled();
       });
 
-      const callCount = HttpClient.get.mock.calls.length;
+      const initialCallCount = HttpClient.get.mock.calls.length;
 
       // Change primaryObject
       rerender(
@@ -598,7 +595,9 @@ describe('RunList', () => {
       );
 
       await waitFor(() => {
-        expect(HttpClient.get.mock.calls.length).toBeGreaterThan(callCount);
+        expect(HttpClient.get.mock.calls.length).toBeGreaterThan(
+          initialCallCount,
+        );
       });
     });
   });

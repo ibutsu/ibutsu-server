@@ -271,19 +271,26 @@ def test_get_recent_result_data_overlapping_run_ids(
     assert result_project2[0]["count"] == 10
 
 
-def test_get_recent_result_data_defaults_to_90_days(
+def test_get_recent_result_data_defaults_to_365_days(
     db_session, make_project, make_run, bulk_result_creator, fixed_time
 ):
-    """Test that get_recent_result_data defaults to 90 days when days=None and no run_id."""
+    """Test that get_recent_result_data defaults to 365 days when days=None and no run_id.
+
+    Tests three time boundaries:
+    - Recent results (within 365 days): should be included
+    - Boundary results (exactly 365 days old): should be included (inclusive)
+    - Old results (older than 365 days): should be excluded
+    """
     from datetime import timedelta
 
     project = make_project(name="test-project")
     run = make_run(project_id=project.id)
 
     recent_time = fixed_time
-    old_time = fixed_time - timedelta(days=95)  # Older than 90 days
+    boundary_time = fixed_time - timedelta(days=365)  # Exactly 365 days old (boundary case)
+    old_time = fixed_time - timedelta(days=370)  # Older than 365 days
 
-    # Create recent results (within default 90 days)
+    # Create recent results (within default 365 days)
     bulk_result_creator(
         count=8,
         run_id=run.id,
@@ -293,7 +300,21 @@ def test_get_recent_result_data_defaults_to_90_days(
         result_pattern=lambda _: "passed",
     )
 
-    # Create old results (outside 90 day window)
+    # Create boundary results (exactly 365 days old - should be included)
+    # Start slightly before the boundary and add sequential offsets
+    # This accounts for timing drift between fixture creation and widget execution
+    # All 3 should still be within 365 days despite the drift
+    boundary_safe_time = boundary_time + timedelta(seconds=5)
+    bulk_result_creator(
+        count=3,
+        run_id=run.id,
+        project_id=project.id,
+        base_time=boundary_safe_time,
+        component="component1",
+        result_pattern=lambda _: "passed",
+    )
+
+    # Create old results (outside 365 day window)
     bulk_result_creator(
         count=5,
         run_id=run.id,
@@ -303,13 +324,13 @@ def test_get_recent_result_data_defaults_to_90_days(
         result_pattern=lambda _: "passed",
     )
 
-    # Query without days parameter - should default to 90 days
+    # Query without days parameter - should default to 365 days
     result = get_recent_result_data(MOCK_GROUP_FIELD, days=None, project=str(project.id))
 
-    # Should only include recent results (within 90 days)
+    # Should include recent (8) and boundary (3) results, but not old (5)
     assert len(result) == 1
     assert result[0]["_id"] == "component1"
-    assert result[0]["count"] == 8
+    assert result[0]["count"] == 11  # 8 recent + 3 boundary
 
 
 def test_get_recent_result_data_no_default_with_run_id(
@@ -322,7 +343,7 @@ def test_get_recent_result_data_no_default_with_run_id(
     run = make_run(project_id=project.id)
 
     recent_time = fixed_time
-    old_time = fixed_time - timedelta(days=95)  # Older than 90 days
+    old_time = fixed_time - timedelta(days=370)  # Older than 365 days
 
     # Create recent results
     bulk_result_creator(
