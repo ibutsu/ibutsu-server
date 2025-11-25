@@ -953,14 +953,28 @@ paths:
     get:
       operationId: get_widget
       parameters:
-        - description: The widget identifier
+        - description: The widget type identifier
           explode: false
           in: path
           name: id
           required: true
           schema:
             type: string
-            format: uuid
+            enum:
+              - compare-runs-view
+              - accessibility-dashboard-view
+              - accessibility-analysis-view
+              - accessibility-bar-chart
+              - jenkins-analysis-view
+              - jenkins-bar-chart
+              - jenkins-heatmap
+              - filter-heatmap
+              - importance-component
+              - jenkins-job-view
+              - jenkins-line-chart
+              - run-aggregator
+              - result-summary
+              - result-aggregator
           style: simple
         - description: The parameters for the widget
           in: query

@@ -423,6 +423,7 @@ const useTableFilters = ({
     setFieldInputValue,
     fieldFilterValue,
     setFieldFilterValue,
+    setFieldOptions: setFieldOptionsState,
 
     // Functions
     applyFilter,
