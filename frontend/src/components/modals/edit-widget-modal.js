@@ -26,7 +26,13 @@ import {
 } from '../hooks/use-widget-filters';
 import WidgetParameterFields from '../widget-parameter-fields';
 
-const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
+const EditWidgetModal = ({
+  onSave,
+  onClose,
+  isOpen,
+  data,
+  ouiaId = 'edit-widget-modal',
+}) => {
   // const { primaryObject } = useContext(IbutsuContext);
   const [widgetType, setWidgetType] = useState({});
   const [title, setTitle] = useState('');
@@ -174,7 +180,7 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
       variant={ModalVariant.medium}
       isOpen={isOpen}
       onClose={onCloseModal}
-      ouiaId="edit-widget-modal"
+      ouiaId={ouiaId}
     >
       <ModalHeader title="Edit widget" />
       <ModalBody>
@@ -266,6 +272,7 @@ EditWidgetModal.propTypes = {
   onClose: PropTypes.func,
   isOpen: PropTypes.bool,
   data: PropTypes.object,
+  ouiaId: PropTypes.string,
 };
 
 export default EditWidgetModal;

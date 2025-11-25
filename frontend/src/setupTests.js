@@ -1,7 +1,11 @@
 // src/setupTests.js
 import '../jest.polyfills.cjs';
 import '@testing-library/jest-dom';
+import { configure } from '@testing-library/react';
 import { resetTestCounters } from './test-utils/mock-data';
+
+// Configure testing-library to use ouiaId as testId attribute for PatternFly components
+configure({ testIdAttribute: 'data-ouia-component-id' });
 
 // Suppress console errors from PatternFly Popper component
 // These warnings are about internal PatternFly animations that use timers
