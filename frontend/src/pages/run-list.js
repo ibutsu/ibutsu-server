@@ -12,6 +12,7 @@ import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import RunFilter from '../components/filtering/run-filter';
 import usePagination from '../components/hooks/use-pagination';
 import { FilterContext } from '../components/contexts/filter-context';
+import { RUN_FIELDS } from '../constants';
 
 const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
 const HIDE = ['project_id'];
@@ -27,7 +28,7 @@ const sortFunctions = {
 
 const RunList = () => {
   const { primaryObject } = useContext(IbutsuContext);
-  const { activeFilters, updateFilters, clearFilters } =
+  const { activeFilters, updateFilters, clearFilters, setFieldOptions } =
     useContext(FilterContext);
 
   const [rows, setRows] = useState([]);
@@ -107,6 +108,18 @@ const RunList = () => {
     setPageSize,
     setTotalItems,
   ]);
+
+  useEffect(() => {
+    // NOTE: Dynamic fields are disabled for RunList because:
+    // 1. The project/filter-params endpoint returns fields from results, not runs
+    // 2. Run metadata is stored in 'data' field, not 'metadata'
+    // 3. Adding result fields to run filters would cause confusion and errors
+    // If this feature is needed, a new backend endpoint should be created to return run fields
+
+    if (setFieldOptions) {
+      setFieldOptions([...RUN_FIELDS]);
+    }
+  }, [primaryObject, setFieldOptions]);
 
   // apparently this is better to do in an effect
   useEffect(() => {

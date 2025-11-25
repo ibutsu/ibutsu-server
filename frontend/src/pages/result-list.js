@@ -10,7 +10,7 @@ import {
   tableSortFunctions,
 } from '../utilities';
 import FilterTable from '../components/filtering/filtered-table-card';
-import { RUN_RESULTS_COLUMNS } from '../constants';
+import { RUN_RESULTS_COLUMNS, RESULT_FIELDS } from '../constants';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import usePagination from '../components/hooks/use-pagination';
 import { FilterContext } from '../components/contexts/filter-context';
@@ -56,7 +56,7 @@ const sortFunctions = {
 
 const ResultList = () => {
   const { primaryObject } = useContext(IbutsuContext);
-  const { activeFilters, updateFilters, clearFilters } =
+  const { activeFilters, updateFilters, clearFilters, setFieldOptions } =
     useContext(FilterContext);
 
   const [rows, setRows] = useState([]);
@@ -173,6 +173,33 @@ const ResultList = () => {
     }, 100);
     return () => clearTimeout(debouncer);
   }, [primaryObject]);
+
+  useEffect(() => {
+    if (primaryObject?.id) {
+      HttpClient.get([
+        Settings.serverUrl,
+        'project',
+        'filter-params',
+        primaryObject.id,
+      ])
+        .then((response) => HttpClient.handleResponse(response))
+        .then((data) => {
+          if (data && setFieldOptions) {
+            const dynamicFields = data.map((f) => ({ value: f, children: f }));
+            const resultFieldValues = new Set(
+              RESULT_FIELDS.map((f) => f.value),
+            );
+            const uniqueDynamicFields = dynamicFields.filter(
+              (f) => !resultFieldValues.has(f.value),
+            );
+            setFieldOptions([...RESULT_FIELDS, ...uniqueDynamicFields]);
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching project filter params:', error);
+        });
+    }
+  }, [primaryObject, setFieldOptions]);
 
   useEffect(() => {
     document.title = 'Test Results | Ibutsu';

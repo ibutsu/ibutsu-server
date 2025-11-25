@@ -23,7 +23,11 @@ import MultiValueInput from '../multi-value-input';
 import ActiveFilters from './active-filters';
 
 import { FilterContext } from '../contexts/filter-context';
+import { IbutsuContext } from '../contexts/ibutsu-context';
 import { RESULT_STATES } from '../../constants';
+import { HttpClient } from '../../utilities/http';
+import { Settings } from '../../pages/settings';
+import { filtersToAPIParams } from '../../utilities';
 
 const RESULT_SELECT_OPTIONS = Object.keys(RESULT_STATES);
 
@@ -63,6 +67,8 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
     boolToggle,
   } = useContext(FilterContext);
 
+  const { primaryObject } = useContext(IbutsuContext);
+
   const [runSelection, setRunSelection] = useState([]);
   const [isRunOpen, setIsRunOpen] = useState(false);
   const [runInputValue, setRunInputValue] = useState('');
@@ -72,6 +78,50 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
 
   const [resultSelection, setResultSelection] = useState([]);
   const [isResultOpen, setIsResultOpen] = useState(false);
+
+  // Dynamic metadata values
+  const [valueOptions, setValueOptions] = useState([]);
+  const [isValueOpen, setIsValueOpen] = useState(false);
+
+  useEffect(() => {
+    if (fieldSelection && fieldSelection.startsWith('metadata.')) {
+      // Filter out project_id since we pass it as 'project' parameter
+      const filtersWithoutProject = activeFilters.filter(
+        (f) => f.field !== 'project_id',
+      );
+      const apiFilter = filtersToAPIParams(filtersWithoutProject).join(',');
+      const projectId = primaryObject ? primaryObject.id : '';
+
+      // Build params object
+      const params = {
+        group_field: fieldSelection,
+        project: projectId,
+      };
+
+      // Only add additional_filters if there are filters to add
+      if (apiFilter) {
+        params.additional_filters = apiFilter;
+      }
+
+      // Note: We don't include 'days' parameter to get all historical data
+      // If we want to limit to recent results, we could add: days: 30
+
+      HttpClient.get(
+        [Settings.serverUrl, 'widget', 'result-aggregator'],
+        params,
+      )
+        .then((response) => HttpClient.handleResponse(response))
+        .then((data) => {
+          setValueOptions(data || []);
+        })
+        .catch((error) => {
+          console.error('Error fetching dynamic values:', error);
+          setValueOptions([]);
+        });
+    } else {
+      setValueOptions([]);
+    }
+  }, [fieldSelection, activeFilters, primaryObject]);
 
   const onRunSelect = useCallback(
     (_, selection) => {
@@ -440,23 +490,75 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   </SelectList>
                 </Select>
               )}
-              {filterMode === 'text' && operationMode === 'single' && (
-                <TextInput
-                  type="text"
-                  id="textSelection"
-                  placeholder="Type in value"
-                  value={textFilter}
-                  onChange={(_, newValue) => setTextFilter(newValue)}
-                  style={{ height: 'inherit' }}
-                  ouiaId="result-filter-text-input"
-                />
+              {filterMode === 'text' && valueOptions.length > 0 && (
+                <Select
+                  id="value-select"
+                  isOpen={isValueOpen}
+                  selected={operationMode === 'multi' ? inValues : textFilter}
+                  onSelect={(e, selection) => {
+                    if (operationMode === 'multi') {
+                      const newValues = inValues.includes(selection)
+                        ? inValues.filter((v) => v !== selection)
+                        : [...inValues, selection];
+                      setInValues(newValues);
+                    } else {
+                      setTextFilter(selection);
+                      setIsValueOpen(false);
+                    }
+                  }}
+                  onOpenChange={() => setIsValueOpen(false)}
+                  toggle={(toggleRef) => (
+                    <MenuToggle
+                      ref={toggleRef}
+                      onClick={() => setIsValueOpen(!isValueOpen)}
+                      isExpanded={isValueOpen}
+                    >
+                      {operationMode === 'multi'
+                        ? `${inValues.length} selected`
+                        : textFilter || 'Select value'}
+                    </MenuToggle>
+                  )}
+                >
+                  <SelectList style={{ maxHeight, overflowY: 'auto' }}>
+                    {valueOptions.map((option, index) => (
+                      <SelectOption
+                        key={index}
+                        value={option._id}
+                        hasCheckbox={operationMode === 'multi'}
+                        isSelected={
+                          operationMode === 'multi'
+                            ? inValues.includes(option._id)
+                            : textFilter === option._id
+                        }
+                        description={`${option.count} results`}
+                      >
+                        {option._id}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
+                </Select>
               )}
-              {filterMode === 'text' && operationMode === 'multi' && (
-                <MultiValueInput
-                  onValuesChange={(values) => setInValues(values)}
-                  style={{ height: 'inherit' }}
-                />
-              )}
+              {filterMode === 'text' &&
+                operationMode === 'single' &&
+                valueOptions.length === 0 && (
+                  <TextInput
+                    type="text"
+                    id="textSelection"
+                    placeholder="Type in value"
+                    value={textFilter}
+                    onChange={(_, newValue) => setTextFilter(newValue)}
+                    style={{ height: 'inherit' }}
+                    ouiaId="result-filter-text-input"
+                  />
+                )}
+              {filterMode === 'text' &&
+                operationMode === 'multi' &&
+                valueOptions.length === 0 && (
+                  <MultiValueInput
+                    onValuesChange={(values) => setInValues(values)}
+                    style={{ height: 'inherit' }}
+                  />
+                )}
               {filterMode === 'run' && operationMode !== 'bool' && (
                 <Select
                   id="typeahead-select"

@@ -3,13 +3,14 @@ import {
   CardBody,
   Flex,
   FlexItem,
+  MenuToggle,
   Select,
   SelectList,
   SelectOption,
   TextInput,
 } from '@patternfly/react-core';
 import PropTypes from 'prop-types';
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 
 import ActiveFilters from './active-filters';
 import MultiValueInput from '../multi-value-input';
@@ -22,6 +23,7 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
     boolSelection,
     fieldSelection,
     filteredFieldOptions,
+    inValues,
     setInValues,
     isFieldOpen,
     setIsFieldOpen,
@@ -48,6 +50,20 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
     operationToggle,
     boolToggle,
   } = useContext(FilterContext);
+
+  const [valueOptions, setValueOptions] = useState([]);
+  const [isValueOpen, setIsValueOpen] = useState(false);
+
+  useEffect(() => {
+    // NOTE: Dynamic values are disabled for RunFilter because:
+    // 1. Runs use 'data' field for metadata, not 'metadata'
+    // 2. The result-aggregator endpoint is for results, not runs
+    // 3. There is no equivalent run-aggregator endpoint that returns distinct values
+    // If this feature is needed, a new backend endpoint should be created
+
+    setValueOptions([]);
+  }, [fieldSelection]);
+
   return (
     <CardBody key="filters">
       <Flex
@@ -127,18 +143,68 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
                   </SelectList>
                 </Select>
               )}
-              {filterMode === 'text' && operationMode === 'single' && (
-                <TextInput
-                  type="text"
-                  id="textSelection"
-                  placeholder="Type in value"
-                  value={textFilter}
-                  onChange={(_, newValue) => setTextFilter(newValue)}
-                  style={{ height: 'inherit' }}
-                  ouiaId="run-filter-text-input"
-                />
+              {filterMode === 'text' && valueOptions.length > 0 && (
+                <Select
+                  id="value-select"
+                  isOpen={isValueOpen}
+                  selected={operationMode === 'multi' ? inValues : textFilter}
+                  onSelect={(e, selection) => {
+                    if (operationMode === 'multi') {
+                      const newValues = inValues.includes(selection)
+                        ? inValues.filter((v) => v !== selection)
+                        : [...inValues, selection];
+                      setInValues(newValues);
+                    } else {
+                      setTextFilter(selection);
+                      setIsValueOpen(false);
+                    }
+                  }}
+                  onOpenChange={(isOpen) => setIsValueOpen(isOpen)}
+                  toggle={(toggleRef) => (
+                    <MenuToggle
+                      ref={toggleRef}
+                      onClick={() => setIsValueOpen(!isValueOpen)}
+                      isExpanded={isValueOpen}
+                    >
+                      {operationMode === 'multi'
+                        ? `${inValues.length} selected`
+                        : textFilter || 'Select value'}
+                    </MenuToggle>
+                  )}
+                >
+                  <SelectList style={{ maxHeight, overflowY: 'auto' }}>
+                    {valueOptions.map((option, index) => (
+                      <SelectOption
+                        key={index}
+                        value={option._id}
+                        hasCheckbox={operationMode === 'multi'}
+                        isSelected={
+                          operationMode === 'multi'
+                            ? inValues.includes(option._id)
+                            : textFilter === option._id
+                        }
+                        description={`${option.count} results`}
+                      >
+                        {option._id}
+                      </SelectOption>
+                    ))}
+                  </SelectList>
+                </Select>
               )}
-              {operationMode === 'multi' && (
+              {filterMode === 'text' &&
+                operationMode === 'single' &&
+                valueOptions.length === 0 && (
+                  <TextInput
+                    type="text"
+                    id="textSelection"
+                    placeholder="Type in value"
+                    value={textFilter}
+                    onChange={(_, newValue) => setTextFilter(newValue)}
+                    style={{ height: 'inherit' }}
+                    ouiaId="run-filter-text-input"
+                  />
+                )}
+              {operationMode === 'multi' && valueOptions.length === 0 && (
                 <MultiValueInput
                   onValuesChange={(values) => setInValues(values)}
                   style={{ height: 'inherit' }}
