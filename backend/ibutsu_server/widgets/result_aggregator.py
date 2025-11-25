@@ -1,8 +1,9 @@
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import desc, func
 
+from ibutsu_server.constants import RECENT_RESULTS_DEFAULT_DAYS
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Result
 from ibutsu_server.filters import apply_filters, string_to_column
@@ -24,7 +25,7 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
         current_time = time.time()
         time_period_in_sec = current_time - delta
         # create filters for the start time and that the group_field exists
-        filters.append(f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}")
+        filters.append(f"start_time){datetime.fromtimestamp(time_period_in_sec, timezone.utc)}")
     if additional_filters:
         filters.extend(additional_filters.split(","))
     if project and is_uuid(project):
@@ -59,10 +60,10 @@ def get_recent_result_data(
     run_id=None,
     additional_filters=None,
 ):
-    # Default to 90 days if not specified to prevent full table scans
+    # Default to RECENT_RESULTS_DEFAULT_DAYS if not specified to prevent full table scans
     # Only skip the default if a run_id is specified (which limits results to a specific run)
     if days is None and run_id is None:
-        days = 90
+        days = RECENT_RESULTS_DEFAULT_DAYS
     return _get_recent_result_data(
         group_field,
         days=days,

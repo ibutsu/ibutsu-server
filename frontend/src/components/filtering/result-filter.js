@@ -96,7 +96,8 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
       const params = {
         group_field: fieldSelection,
         project: projectId,
-        days: 90, // Limit to last 90 days to prevent memory exhaustion
+        // Note: Not specifying 'days' to let backend apply its default
+        // The backend will use RECENT_RESULTS_DEFAULT_DAYS (365) to prevent full table scans
       };
 
       // Only add additional_filters if there are filters to add

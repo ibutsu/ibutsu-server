@@ -2,6 +2,10 @@ from http import HTTPStatus
 
 LOCALHOST = "127.0.0.1"
 
+# Default number of days to query for result aggregation when not specified
+# This prevents full table scans while providing sufficient historical data
+RECENT_RESULTS_DEFAULT_DAYS = 365
+
 OAUTH_CONFIG = {
     "google": {
         "scope": ["https://www.googleapis.com/auth/userinfo.profile"],
@@ -230,11 +234,15 @@ WIDGET_TYPES = {
             },
             {
                 "name": "days",
-                "description": "Aggregate test results from <days> days ago, e.g. 90. "
-                "Defaults to 90 when not specified (unless run_id is provided)",
+                "description": (
+                    f"Aggregate test results from <days> days ago, e.g. "
+                    f"{RECENT_RESULTS_DEFAULT_DAYS}. Defaults to "
+                    f"{RECENT_RESULTS_DEFAULT_DAYS} when not specified "
+                    "(unless run_id is provided)"
+                ),
                 "type": "float",
                 "required": False,
-                "default": 90,
+                "default": RECENT_RESULTS_DEFAULT_DAYS,
             },
             {
                 "name": "run_id",
