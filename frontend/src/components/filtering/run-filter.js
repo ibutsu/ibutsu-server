@@ -69,6 +69,7 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
                 key="field"
                 onOpenChange={() => setIsFieldOpen(false)}
                 toggle={fieldToggle}
+                ouiaId="run-filter-field-select"
               >
                 <SelectList
                   id="select-typeahead-listbox"
@@ -95,6 +96,7 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
                 onOpenChange={() => setIsOperationOpen(false)}
                 key="operation"
                 toggle={operationToggle}
+                ouiaId="run-filter-operation-select"
               >
                 <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                   {Object.keys(operations)?.map((option, index) => (
@@ -114,6 +116,7 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
                   onSelect={onBoolSelect}
                   onOpenChange={() => setIsBoolOpen(false)}
                   toggle={boolToggle}
+                  ouiaId="run-filter-bool-select"
                 >
                   <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                     {['True', 'False'].map((option, index) => (
@@ -132,6 +135,7 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
                   value={textFilter}
                   onChange={(_, newValue) => setTextFilter(newValue)}
                   style={{ height: 'inherit' }}
+                  ouiaId="run-filter-text-input"
                 />
               )}
               {operationMode === 'multi' && (

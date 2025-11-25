@@ -21,7 +21,20 @@ console.error = (...args) => {
     errorString.includes(
       'Not implemented: HTMLFormElement.prototype.requestSubmit',
     ) ||
-    errorString.includes('When testing, code that causes React state updates should be wrapped into act')
+    errorString.includes(
+      'When testing, code that causes React state updates should be wrapped into act',
+    ) ||
+    // Suppress React DOM property warnings (common in PatternFly components)
+    errorString.includes('Warning: Invalid DOM property') ||
+    errorString.includes('Did you mean `className`?') ||
+    // Suppress other common React/testing warnings
+    errorString.includes('Warning: ReactDOM.render') ||
+    errorString.includes('Warning: useLayoutEffect') ||
+    errorString.includes("Warning: Can't perform a React state update") ||
+    // Suppress expected errors from test cases
+    errorString.includes('Error fetching analysis view ID') ||
+    errorString.includes('Widget config error') ||
+    errorString.includes('No analysis view ID found')
   ) {
     return;
   }
@@ -32,12 +45,23 @@ console.warn = (...args) => {
   const warnString = args[0]?.toString() || '';
   if (
     warnString.includes('React Router Future Flag Warning') ||
-    warnString.includes('⚠️')
+    warnString.includes('⚠️') ||
+    // Suppress common React/component warnings
+    warnString.includes('componentWillReceiveProps') ||
+    warnString.includes('componentWillMount') ||
+    warnString.includes('findDOMNode')
   ) {
     return;
   }
   originalWarn.call(console, ...args);
 };
+
+// Optionally suppress console.info and console.log during tests
+// Uncomment these if you want to suppress all info/log messages
+// const originalInfo = console.info;
+// const originalLog = console.log;
+// console.info = () => {};
+// console.log = () => {};
 
 // Reset test counters before each test to avoid cross-test leakage
 beforeEach(() => {

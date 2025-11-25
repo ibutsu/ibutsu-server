@@ -354,6 +354,7 @@ const Dashboard = () => {
                 variant="typeahead"
                 onClick={onDashboardToggle}
                 isExpanded={isSelectOpen}
+                ouiaId="dashboard-select-toggle"
               >
                 <TextInputGroup isPlain>
                   <TextInputGroupMain
@@ -371,12 +372,14 @@ const Dashboard = () => {
                         variant="plain"
                         onClick={onDashboardClear}
                         aria-label="Clear input value"
+                        ouiaId="dashboard-clear-button"
                       />
                     </TextInputGroupUtilities>
                   )}
                 </TextInputGroup>
               </MenuToggle>
             )}
+            ouiaId="dashboard-select-dropdown"
           >
             <SelectList>
               {filteredDashboards.map((dashboard, index) => (
@@ -429,6 +432,7 @@ const Dashboard = () => {
                 onClick={() => {
                   setIsNewDBOpen(true);
                 }}
+                ouiaId="new-dashboard-button"
               />
             </FlexItem>
             <FlexItem>
@@ -441,6 +445,7 @@ const Dashboard = () => {
                 onClick={() => {
                   setIsDeleteDBOpen(true);
                 }}
+                ouiaId="delete-dashboard-button"
               />
             </FlexItem>
           </Flex>
@@ -456,6 +461,7 @@ const Dashboard = () => {
                 onClick={() => {
                   setIsNewWidgetOpen(true);
                 }}
+                ouiaId="add-widget-button"
               >
                 Add Widget
               </Button>
@@ -465,7 +471,15 @@ const Dashboard = () => {
       </PageSection>
       <PageSection hasBodyWrapper={false}>
         {!!primaryObject && !!selectedDashboard && !!widgets && (
-          <Grid sm={12} md={6} lg={6} xl={4} xl2={4} hasGutter>
+          <Grid
+            sm={12}
+            md={6}
+            lg={6}
+            xl={4}
+            xl2={4}
+            hasGutter
+            ouiaId="dashboard-widgets-grid"
+          >
             {widgetComponents}
           </Grid>
         )}
@@ -474,6 +488,7 @@ const Dashboard = () => {
             headingLevel="h4"
             icon={TachometerAltIcon}
             titleText="No Dashboard Selected"
+            ouiaId="dashboard-empty-no-selection"
           >
             <EmptyStateBody>
               There is currently no dashboard selected. Please select a
@@ -486,6 +501,7 @@ const Dashboard = () => {
                 onClick={() => {
                   setIsNewDBOpen(true);
                 }}
+                ouiaId="dashboard-empty-new-button"
               >
                 New Dashboard
               </Button>
@@ -493,7 +509,12 @@ const Dashboard = () => {
           </EmptyState>
         )}
         {!!primaryObject && !!selectedDashboard && widgets.length === 0 && (
-          <EmptyState headingLevel="h4" icon={CubesIcon} titleText="No Widgets">
+          <EmptyState
+            headingLevel="h4"
+            icon={CubesIcon}
+            titleText="No Widgets"
+            ouiaId="dashboard-empty-no-widgets"
+          >
             <EmptyStateBody>
               This dashboard currently has no widgets defined.
               <br />
@@ -506,6 +527,7 @@ const Dashboard = () => {
                 onClick={() => {
                   setIsNewWidgetOpen(true);
                 }}
+                ouiaId="dashboard-empty-add-widget-button"
               >
                 Add Widget
               </Button>

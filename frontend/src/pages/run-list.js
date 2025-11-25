@@ -119,14 +119,18 @@ const RunList = () => {
 
   return (
     <>
-      <PageSection hasBodyWrapper={false} id="page">
+      <PageSection
+        hasBodyWrapper={false}
+        id="page"
+        ouiaId="run-list-header-section"
+      >
         <Content>
           <Content className="title" component="h1">
             Test runs
           </Content>
         </Content>
       </PageSection>
-      <PageSection hasBodyWrapper={false}>
+      <PageSection hasBodyWrapper={false} ouiaId="run-list-content-section">
         <FilterTable
           fetching={fetching}
           columns={COLUMNS}

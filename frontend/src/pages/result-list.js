@@ -184,14 +184,22 @@ const ResultList = () => {
 
   return (
     <>
-      <PageSection hasBodyWrapper={false} id="page">
+      <PageSection
+        hasBodyWrapper={false}
+        id="page"
+        ouiaId="result-list-header-section"
+      >
         <Content>
           <Content className="title" component="h1">
             Test results
           </Content>
         </Content>
       </PageSection>
-      <PageSection hasBodyWrapper={false} className="pf-v6-u-pb-0">
+      <PageSection
+        hasBodyWrapper={false}
+        className="pf-v6-u-pb-0"
+        ouiaId="result-list-content-section"
+      >
         <FilterTable
           fetching={fetching}
           columns={RUN_RESULTS_COLUMNS}

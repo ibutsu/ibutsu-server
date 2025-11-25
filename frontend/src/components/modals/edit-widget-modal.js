@@ -170,11 +170,16 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
   ]);
 
   return (
-    <Modal variant={ModalVariant.medium} isOpen={isOpen} onClose={onCloseModal}>
+    <Modal
+      variant={ModalVariant.medium}
+      isOpen={isOpen}
+      onClose={onCloseModal}
+      ouiaId="edit-widget-modal"
+    >
       <ModalHeader title="Edit widget" />
       <ModalBody>
         {componentLoaded ? (
-          <Form>
+          <Form ouiaId="edit-widget-form">
             <FormGroup label="Title" fieldId="widget-title" isRequired>
               <TextInput
                 type="text"
@@ -184,6 +189,7 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
                 onChange={(_, value) => setTitle(value)}
                 validated={isTitleValid.toString()}
                 isRequired
+                ouiaId="widget-title-input"
               />
               {isTitleValid !== true && (
                 <FormHelperText>
@@ -205,6 +211,7 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
                 name="widget-weight"
                 value={weight}
                 onChange={(_, value) => setWeight(value)}
+                ouiaId="widget-weight-input"
               />
               <FormHelperText>
                 <HelperText>
@@ -238,10 +245,15 @@ const EditWidgetModal = ({ onSave, onClose, isOpen, data }) => {
           variant="primary"
           onClick={onSaveModal}
           isDisabled={saveButtonDisabled}
+          ouiaId="edit-widget-save-button"
         >
           Save
         </Button>
-        <Button variant="link" onClick={onCloseModal}>
+        <Button
+          variant="link"
+          onClick={onCloseModal}
+          ouiaId="edit-widget-cancel-button"
+        >
           Cancel
         </Button>
       </ModalFooter>

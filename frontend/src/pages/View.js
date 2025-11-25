@@ -11,11 +11,7 @@ import JenkinsJobAnalysisView from '../views/jenkins-job-analysis';
 import AccessibilityAnalysisView from '../views/accessibility-analysis';
 import CompareRunsView from '../views/compare-runs';
 import FilterProvider from '../components/contexts/filter-context';
-import {
-  ACCESSIBILITY_FIELDS,
-  RUN_FIELDS,
-  RESULT_FIELDS,
-} from '../constants';
+import { RUN_FIELDS, RESULT_FIELDS } from '../constants';
 
 const VIEW_MAP = {
   'accessibility-dashboard-view': AccessibilityDashboardView,

@@ -1,5 +1,4 @@
 /* eslint-env jest */
-import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import UserList from './user-list';
@@ -276,7 +275,13 @@ describe('UserList Component', () => {
         expect(screen.getByText('Confirm Delete')).toBeInTheDocument();
       });
 
-      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      const cancelButton = screen
+        .getAllByRole('button')
+        .find((btn) =>
+          btn
+            .getAttribute('data-ouia-component-id')
+            ?.includes('admin-user-delete-cancel-button'),
+        );
       fireEvent.click(cancelButton);
 
       await waitFor(() => {
@@ -304,7 +309,13 @@ describe('UserList Component', () => {
         expect(screen.getByText('Confirm Delete')).toBeInTheDocument();
       });
 
-      const deleteButton = screen.getByRole('button', { name: /^Delete$/i });
+      const deleteButton = screen
+        .getAllByRole('button')
+        .find((btn) =>
+          btn
+            .getAttribute('data-ouia-component-id')
+            ?.includes('admin-user-delete-confirm-button'),
+        );
       fireEvent.click(deleteButton);
 
       await waitFor(() => {
@@ -361,7 +372,13 @@ describe('UserList Component', () => {
         expect(screen.getByText('Confirm Delete')).toBeInTheDocument();
       });
 
-      const deleteButton = screen.getByRole('button', { name: /^Delete$/i });
+      const deleteButton = screen
+        .getAllByRole('button')
+        .find((btn) =>
+          btn
+            .getAttribute('data-ouia-component-id')
+            ?.includes('admin-user-delete-confirm-button'),
+        );
       fireEvent.click(deleteButton);
 
       await waitFor(() => {

@@ -185,9 +185,7 @@ describe('ProjectList Component', () => {
         const allLinks = screen.getAllByRole('link');
         const editButtons = allLinks.filter((link) => {
           const href = link.getAttribute('href');
-          return (
-            href?.includes('/admin/projects/') && !href.includes('/new')
-          );
+          return href?.includes('/admin/projects/') && !href.includes('/new');
         });
         expect(editButtons.length).toBe(2);
       });

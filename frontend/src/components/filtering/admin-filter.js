@@ -54,6 +54,7 @@ const AdminFilter = () => {
                 onOpenChange={(isOpen) => setIsFieldOpen(isOpen)}
                 toggle={fieldToggle}
                 onSelect={onFieldSelect}
+                ouiaId="admin-filter-field-select"
               >
                 <SelectList>
                   {filteredFieldOptions?.map((option) => (
@@ -78,6 +79,7 @@ const AdminFilter = () => {
                 onSelect={onOperationSelect}
                 onOpenChange={() => setIsOperationOpen(false)}
                 toggle={operationToggle}
+                ouiaId="admin-filter-operation-select"
               >
                 <SelectList>
                   {Object.keys(STRING_OPERATIONS).map((option) => (
@@ -95,12 +97,15 @@ const AdminFilter = () => {
                 placeholder="Type in value"
                 value={textFilter}
                 onChange={(_, newValue) => setTextFilter(newValue)}
+                ouiaId="admin-filter-text-input"
               />
             </FlexItem>
           </Flex>
           <Flex>
             <FlexItem>
-              <Button onClick={applyFilter}>Apply Filter</Button>
+              <Button onClick={applyFilter} ouiaId="admin-filter-apply-button">
+                Apply Filter
+              </Button>
             </FlexItem>
           </Flex>
         </Flex>

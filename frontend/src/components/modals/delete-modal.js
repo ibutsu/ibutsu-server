@@ -37,16 +37,25 @@ const DeleteModal = ({
   };
 
   return (
-    <Modal variant={ModalVariant.medium} isOpen={isOpen} onClose={onClose}>
+    <Modal
+      variant={ModalVariant.medium}
+      isOpen={isOpen}
+      onClose={onClose}
+      ouiaId="delete-confirmation-modal"
+    >
       <ModalHeader title={title} />
       <ModalBody>
         <Content component="p">{body}</Content>
       </ModalBody>
       <ModalFooter>
-        <Button variant="danger" onClick={localOnDelete}>
+        <Button
+          variant="danger"
+          onClick={localOnDelete}
+          ouiaId="delete-confirm-button"
+        >
           Delete
         </Button>
-        <Button variant="link" onClick={onClose}>
+        <Button variant="link" onClick={onClose} ouiaId="delete-cancel-button">
           Cancel
         </Button>
       </ModalFooter>

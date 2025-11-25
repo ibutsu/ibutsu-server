@@ -178,6 +178,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
         isFullWidth
         placeholder="Select a result"
         ref={toggleRef}
+        ouiaId="result-filter-result-toggle"
       >
         {resultSelection.length !== 0 ? resultSelection : 'Select a result'}
       </MenuToggle>
@@ -194,6 +195,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
         isFullWidth
         placeholder="Select a result"
         ref={toggleRef}
+        ouiaId="result-filter-result-multi-toggle"
       >
         <TextInputGroup isPlain>
           <TextInputGroupMain
@@ -210,6 +212,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                     ev.stopPropagation();
                     onResultSelect(ev, selection);
                   }}
+                  ouiaId={`result-filter-result-label-${index}`}
                 >
                   {selection}
                 </Label>
@@ -223,6 +226,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                 variant="plain"
                 onClick={onResultClear}
                 aria-label="Clear input value"
+                ouiaId="result-filter-result-clear-button"
               />
             )}
           </TextInputGroupUtilities>
@@ -246,6 +250,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
         isExpanded={isRunOpen}
         isFullWidth
         innerRef={toggleRef}
+        ouiaId="result-filter-run-toggle"
       >
         <TextInputGroup isPlain>
           <TextInputGroupMain
@@ -266,6 +271,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   onRunClear();
                 }}
                 aria-label="Clear input value"
+                ouiaId="result-filter-run-clear-button"
               />
             )}
           </TextInputGroupUtilities>
@@ -283,6 +289,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
         isExpanded={isRunOpen}
         isFullWidth
         innerRef={toggleRef}
+        ouiaId="result-filter-run-multi-toggle"
       >
         <TextInputGroup isPlain>
           <TextInputGroupMain
@@ -303,6 +310,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                     ev.stopPropagation();
                     onRunSelect(ev, selection);
                   }}
+                  ouiaId={`result-filter-run-label-${index}`}
                 >
                   {selection}
                 </Label>
@@ -318,6 +326,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   onRunClear();
                 }}
                 aria-label="Clear input value"
+                ouiaId="result-filter-run-clear-multi-button"
               />
             )}
           </TextInputGroupUtilities>
@@ -369,6 +378,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                 key="field"
                 onOpenChange={() => setIsFieldOpen(false)}
                 toggle={fieldToggle}
+                ouiaId="result-filter-field-select"
               >
                 <SelectList
                   id="select-typeahead-listbox"
@@ -399,6 +409,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                 onOpenChange={() => setIsOperationOpen(false)}
                 key="operation"
                 toggle={operationToggle}
+                ouiaId="result-filter-operation-select"
               >
                 <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                   {Object.keys(operations).map((option, index) => (
@@ -418,6 +429,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   onSelect={onBoolSelect}
                   onOpenChange={() => setIsBoolOpen(false)}
                   toggle={boolToggle}
+                  ouiaId="result-filter-bool-select"
                 >
                   <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                     {['True', 'False'].map((option, index) => (
@@ -436,6 +448,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   value={textFilter}
                   onChange={(_, newValue) => setTextFilter(newValue)}
                   style={{ height: 'inherit' }}
+                  ouiaId="result-filter-text-input"
                 />
               )}
               {filterMode === 'text' && operationMode === 'multi' && (
@@ -454,6 +467,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   toggle={
                     operationMode === 'multi' ? runMultiToggle : runToggle
                   }
+                  ouiaId="result-filter-run-select"
                 >
                   <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                     {filteredRuns?.length === 0 && (
@@ -479,6 +493,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   toggle={
                     operationMode === 'multi' ? resultMultiToggle : resultToggle
                   }
+                  ouiaId="result-filter-result-select"
                 >
                   <SelectList style={{ maxHeight, overflowY: 'auto' }}>
                     {RESULT_SELECT_OPTIONS.map((option, index) => (

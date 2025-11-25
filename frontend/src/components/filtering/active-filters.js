@@ -84,6 +84,7 @@ const ActiveFilters = ({
                 variant="tertiary"
                 size="sm"
                 type="button"
+                ouiaId="active-filter-transfer-button"
               >
                 {transferText}
               </Button>
@@ -99,7 +100,12 @@ const ActiveFilters = ({
       >
         {shownFilters?.map((activeFilter) => (
           <FlexItem key={activeFilter?.field}>
-            <Card isCompact variant="outline" style={BADGE_STYLE}>
+            <Card
+              isCompact
+              variant="outline"
+              style={BADGE_STYLE}
+              ouiaId={`active-filter-card-${activeFilter?.field}`}
+            >
               <CardHeader style={BADGE_STYLE}>
                 <Badge isRead style={BADGE_STYLE}>
                   {activeFilter?.field}
@@ -113,6 +119,7 @@ const ActiveFilters = ({
                     ...BADGE_STYLE,
                     float: 'right',
                   }}
+                  ouiaId={`active-filter-remove-${activeFilter?.field}`}
                 />
               </CardHeader>
               <Divider />
