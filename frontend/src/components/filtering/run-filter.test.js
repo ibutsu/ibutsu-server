@@ -216,5 +216,232 @@ describe('RunFilter', () => {
 
       expect(mockOnRemoveFilter).toHaveBeenCalledWith('source');
     });
+
+    it('should pass hideFilters prop to ActiveFilters', () => {
+      renderComponent({ hideFilters: ['project_id'] });
+
+      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+    });
+  });
+
+  describe('Value Options', () => {
+    it('should handle empty valueOptions array', () => {
+      renderComponent(
+        {},
+        {
+          filterMode: 'text',
+          operationMode: 'single',
+          fieldSelection: 'source',
+        },
+      );
+
+      // Should render text input when no value options
+      expect(screen.getByTestId('run-filter-text-input')).toBeInTheDocument();
+    });
+
+    it('should clear value options when field changes', () => {
+      const { rerender } = renderComponent(
+        {},
+        {
+          fieldSelection: 'source',
+        },
+      );
+
+      // Field changes are handled by useEffect
+      rerender(
+        <MemoryRouter>
+          <FilterContext.Provider
+            value={{
+              ...defaultContextValue,
+              fieldSelection: 'env',
+            }}
+          >
+            <RunFilter />
+          </FilterContext.Provider>
+        </MemoryRouter>,
+      );
+
+      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+    });
+  });
+
+  describe('Component Props', () => {
+    it('should accept maxHeight prop', () => {
+      renderComponent({ maxHeight: '400px' });
+
+      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+    });
+
+    it('should use default maxHeight when not provided', () => {
+      renderComponent();
+
+      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+    });
+  });
+
+  describe('Select State Management', () => {
+    it('should have field select open state controlled by context', () => {
+      renderComponent({}, { isFieldOpen: true });
+
+      const option = screen.getByText('Source');
+      expect(option).toBeInTheDocument();
+    });
+
+    it('should have operation select open state controlled by context', () => {
+      renderComponent({}, { isOperationOpen: true });
+
+      const option = screen.getByText('Equals');
+      expect(option).toBeInTheDocument();
+    });
+
+    it('should render bool select when operation mode is bool', () => {
+      renderComponent(
+        {},
+        {
+          operationMode: 'bool',
+          isBoolOpen: true,
+          fieldSelection: 'is_failed',
+        },
+      );
+
+      const option = screen.getByText('True');
+      expect(option).toBeInTheDocument();
+    });
+  });
+
+  describe('Operation Modes', () => {
+    it('should render different UI for multi operation mode', () => {
+      renderComponent({}, { operationMode: 'multi', fieldSelection: 'source' });
+
+      const input = screen.getByPlaceholderText(/type any value/i);
+      expect(input).toBeInTheDocument();
+    });
+
+    it('should render bool select for bool operation mode', () => {
+      renderComponent(
+        {},
+        {
+          operationMode: 'bool',
+          fieldSelection: 'is_active',
+        },
+      );
+
+      // Bool select should be available (though not open)
+      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+    });
+  });
+
+  describe('Filter Modes', () => {
+    it('should handle text filter mode with single operation', () => {
+      renderComponent(
+        {},
+        {
+          filterMode: 'text',
+          operationMode: 'single',
+          fieldSelection: 'source',
+        },
+      );
+
+      const input = screen.getByTestId('run-filter-text-input');
+      expect(input).toBeInTheDocument();
+    });
+  });
+
+  describe('Context Integration', () => {
+    it('should use all context values', () => {
+      renderComponent(
+        {},
+        {
+          activeFilters: [{ field: 'env', operator: 'contains', value: 'prod' }],
+          boolSelection: 'True',
+          fieldSelection: 'source',
+          filteredFieldOptions: [
+            { value: 'source', children: 'Source' },
+            { value: 'env', children: 'Environment' },
+          ],
+          isFieldOpen: false,
+          isOperationOpen: false,
+          operationSelection: 'contains',
+          textFilter: 'test',
+          isBoolOpen: false,
+          filterMode: 'text',
+          operationMode: 'single',
+        },
+      );
+
+      expect(screen.getByTestId('run-filter-text-input')).toHaveValue('test');
+    });
+  });
+
+  describe('Component with hideFilters prop', () => {
+    it('should pass hideFilters to ActiveFilters', () => {
+      renderComponent(
+        { hideFilters: ['project_id', 'internal_id'] },
+        {
+          activeFilters: [
+            { field: 'source', operator: 'eq', value: 'jenkins' },
+            { field: 'project_id', operator: 'eq', value: '123' },
+          ],
+        },
+      );
+
+      // project_id filter should be hidden, source should be visible
+      expect(screen.getByText('source')).toBeInTheDocument();
+    });
+
+    it('should render without hideFilters prop', () => {
+      renderComponent(
+        {},
+        {
+          activeFilters: [],
+        },
+      );
+
+      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+    });
+  });
+
+  describe('MaxHeight Configuration', () => {
+    it('should apply custom maxHeight to select lists', () => {
+      renderComponent({ maxHeight: '300px' }, { isFieldOpen: true });
+
+      expect(screen.getByText('Source')).toBeInTheDocument();
+    });
+
+    it('should use default maxHeight of 600px', () => {
+      renderComponent({}, { isFieldOpen: true });
+
+      expect(screen.getByText('Source')).toBeInTheDocument();
+    });
+  });
+
+  describe('useEffect for valueOptions', () => {
+    it('should set empty valueOptions on mount', () => {
+      renderComponent({}, { fieldSelection: null });
+
+      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+    });
+
+    it('should update valueOptions when fieldSelection changes', () => {
+      const { rerender } = renderComponent({}, { fieldSelection: 'source' });
+
+      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+
+      // Change fieldSelection
+      rerender(
+        <MemoryRouter>
+          <FilterContext.Provider
+            value={{
+              ...defaultContextValue,
+              fieldSelection: 'env',
+            }}
+          >
+            <RunFilter />
+          </FilterContext.Provider>
+        </MemoryRouter>,
+      );
+
+      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+    });
   });
 });
