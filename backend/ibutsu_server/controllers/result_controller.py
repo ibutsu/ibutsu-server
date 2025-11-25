@@ -19,7 +19,7 @@ def _validate_and_set_project(result, user):
 
     Returns error response tuple if validation fails, None otherwise.
     """
-    if result.data and not (result.data.get("project") or result.project_id):
+    if result.data and not result.data.get("project") and not result.project_id:
         return "Bad request, project or project_id is required", HTTPStatus.BAD_REQUEST
 
     if not result.project:

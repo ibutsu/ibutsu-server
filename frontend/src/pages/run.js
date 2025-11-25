@@ -112,13 +112,23 @@ const Run = ({ defaultTab = 'summary' }) => {
       try {
         setIsError(false);
         setFetching(true);
-        const filterParams = filtersToAPIParams([
+        const filters = [
           {
             field: 'run_id',
             operator: 'eq',
             value: run_id,
           },
-        ]);
+        ];
+        // Add project_id filter if available (required by backend for some queries)
+        const effectiveProjectId = primaryObject?.id || project_id;
+        if (effectiveProjectId) {
+          filters.push({
+            field: 'project_id',
+            operator: 'eq',
+            value: effectiveProjectId,
+          });
+        }
+        const filterParams = filtersToAPIParams(filters);
         const response = await HttpClient.get([Settings.serverUrl, 'result'], {
           filter: filterParams,
           pageSize: pageSize,
@@ -144,7 +154,16 @@ const Run = ({ defaultTab = 'summary' }) => {
       }, 50);
       return () => clearTimeout(debouncer);
     }
-  }, [page, pageSize, run_id, setPage, setPageSize, setTotalItems]);
+  }, [
+    page,
+    pageSize,
+    run_id,
+    primaryObject,
+    project_id,
+    setPage,
+    setPageSize,
+    setTotalItems,
+  ]);
 
   useEffect(() => {
     const fetchRun = async () => {
@@ -285,10 +304,27 @@ const Run = ({ defaultTab = 'summary' }) => {
     const getResultsForTree = (treePage = 1) => {
       const fetchResults = async () => {
         try {
+          const filters = [
+            {
+              field: 'run_id',
+              operator: 'eq',
+              value: run_id,
+            },
+          ];
+          // Add project_id filter if available (required by backend for some queries)
+          const effectiveProjectId = primaryObject?.id || project_id;
+          if (effectiveProjectId) {
+            filters.push({
+              field: 'project_id',
+              operator: 'eq',
+              value: effectiveProjectId,
+            });
+          }
+          const filterParams = filtersToAPIParams(filters);
           const response = await HttpClient.get(
             [Settings.serverUrl, 'result'],
             {
-              filter: `run_id=${run_id}`,
+              filter: filterParams,
               pageSize: MAX_PAGE,
               page: treePage,
             },
@@ -315,7 +351,7 @@ const Run = ({ defaultTab = 'summary' }) => {
     if (activeTab === 'results-tree') {
       getResultsForTree();
     }
-  }, [activeTab, run_id]);
+  }, [activeTab, run_id, primaryObject, project_id]);
 
   let passed = 0,
     failed = 0,
