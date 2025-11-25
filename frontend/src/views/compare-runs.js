@@ -1,8 +1,7 @@
 // TODO this component is incomplete
 // It has been converted to functional, but aspects of the view aren't working in production and aren't fixed here
-// MetaFilter removal isn't working right now
 // The Apply Filters button needs connection to table rendering
-// It would be great to better control the selectable fields in MetaFilter for this view as not all fields are relevant
+// It would be great to better control the selectable fields in the filter for this view as not all fields are relevant
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {

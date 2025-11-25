@@ -22,25 +22,27 @@ jest.mock('./settings', () => ({
 // Mock components that we don't need to test in detail
 jest.mock('../components/filtering/filtered-table-card', () => {
   return function FilterTable() {
-    return <div data-testid="filter-table">Filter Table</div>;
+    return <div data-ouia-component-id="filter-table">Filter Table</div>;
   };
 });
 
 jest.mock('../components/result-view', () => {
   return function ResultView() {
-    return <div data-testid="result-view">Result View</div>;
+    return <div data-ouia-component-id="result-view">Result View</div>;
   };
 });
 
 jest.mock('../components/classify-failures', () => {
   return function ClassifyFailuresTable() {
-    return <div data-testid="classify-failures">Classify Failures</div>;
+    return (
+      <div data-ouia-component-id="classify-failures">Classify Failures</div>
+    );
   };
 });
 
 jest.mock('../components/artifact-tab', () => {
   return function ArtifactTab() {
-    return <div data-testid="artifact-tab">Artifact Tab</div>;
+    return <div data-ouia-component-id="artifact-tab">Artifact Tab</div>;
   };
 });
 

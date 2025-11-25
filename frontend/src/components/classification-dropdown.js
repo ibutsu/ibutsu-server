@@ -50,6 +50,7 @@ const ClassificationDropdown = ({ testResult: initialTestResult }) => {
       isOpen={classificationOpen}
       onSelect={onClassificationSelect}
       onOpenChange={() => setClassificationOpen(false)}
+      ouiaId="classification-dropdown"
       toggle={(toggleRef) => (
         <MenuToggle
           ref={toggleRef}
@@ -108,6 +109,7 @@ const MultiClassificationDropdown = ({ selectedResults }) => {
       isOpen={classificationOpen}
       onSelect={onClassificationSelect}
       onOpenChange={() => setClassificationOpen(false)}
+      ouiaId="multi-classification-dropdown"
       toggle={(toggleRef) => (
         <MenuToggle
           ref={toggleRef}

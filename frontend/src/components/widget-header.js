@@ -13,6 +13,7 @@ const WidgetHeader = ({
   title,
   actions,
   onEditClick,
+  ouiaId,
 }) => {
   const headerActions = (
     <>
@@ -64,6 +65,7 @@ const WidgetHeader = ({
       id={id}
       data-id="widget-header"
       actions={{ actions: headerActions }}
+      ouiaId={ouiaId ?? (id ? `${id}-header` : 'widget-header')}
     >
       <Title headingLevel="h2">{title}</Title>
     </CardHeader>
@@ -77,6 +79,7 @@ WidgetHeader.propTypes = {
   title: PropTypes.string,
   actions: PropTypes.array,
   onEditClick: PropTypes.func,
+  ouiaId: PropTypes.string,
 };
 
 export default WidgetHeader;

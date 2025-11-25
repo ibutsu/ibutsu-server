@@ -22,14 +22,16 @@ jest.mock('../pages/settings', () => ({
 
 // Mock widgets
 jest.mock('../widgets/filter-heatmap', () => ({
-  FilterHeatmapWidget: () => <div data-testid="heatmap-widget">Heatmap</div>,
+  FilterHeatmapWidget: () => (
+    <div data-ouia-component-id="heatmap-widget">Heatmap</div>
+  ),
   HEATMAP_TYPES: { jenkins: 'jenkins' },
 }));
 
 jest.mock('../widgets/generic-bar', () => {
   const PropTypes = require('prop-types');
   const MockGenericBarWidget = ({ title }) => (
-    <div data-testid="bar-widget">{title}</div>
+    <div data-ouia-component-id="bar-widget">{title}</div>
   );
   MockGenericBarWidget.propTypes = { title: PropTypes.string };
   return MockGenericBarWidget;
@@ -38,7 +40,7 @@ jest.mock('../widgets/generic-bar', () => {
 jest.mock('../widgets/generic-area', () => {
   const PropTypes = require('prop-types');
   const MockGenericAreaWidget = ({ title }) => (
-    <div data-testid="area-widget">{title}</div>
+    <div data-ouia-component-id="area-widget">{title}</div>
   );
   MockGenericAreaWidget.propTypes = { title: PropTypes.string };
   return MockGenericAreaWidget;
@@ -48,7 +50,7 @@ jest.mock('../widgets/generic-area', () => {
 jest.mock('../components/param-dropdown', () => {
   const PropTypes = require('prop-types');
   const MockParamDropdown = ({ tooltip, defaultValue, handleSelect }) => (
-    <div data-testid="param-dropdown">
+    <div data-ouia-component-id="param-dropdown">
       <span>{tooltip}</span>
       <button onClick={() => handleSelect(defaultValue)}>{defaultValue}</button>
     </div>

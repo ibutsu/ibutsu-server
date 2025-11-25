@@ -181,19 +181,39 @@ describe('EditWidgetModal', () => {
       expect(screen.queryByText('Edit widget')).not.toBeInTheDocument();
     });
 
-    it('should show loading skeleton before widget types are loaded', () => {
+    it('should show loading skeleton before widget types are loaded', async () => {
+      // Delay the HTTP response to allow skeleton to be visible
+      let resolveGet;
+      const getPromise = new Promise((resolve) => {
+        resolveGet = resolve;
+      });
+      HttpClient.get.mockReturnValue(getPromise);
+
       renderModal();
 
       // Should show skeleton initially
-      const skeletons = document.querySelectorAll('[class*="Skeleton"]');
-      expect(skeletons.length).toBeGreaterThan(0);
+      await waitFor(() => {
+        const skeletons = document.querySelectorAll(
+          '[class*="pf-v6-c-skeleton"]',
+        );
+        expect(skeletons.length).toBeGreaterThan(0);
+      });
+
+      // Resolve the promise to continue
+      act(() => {
+        resolveGet({
+          ok: true,
+          json: async () => mockWidgetTypes,
+        });
+      });
     });
 
     it('should render form after widget types are loaded', async () => {
       renderModal();
 
       await waitFor(() => {
-        expect(screen.getByTestId('edit-widget-form')).toBeInTheDocument();
+        // Form in PatternFly v6 doesn't render ouiaId as testId
+        expect(screen.getByTestId('widget-title-input')).toBeInTheDocument();
       });
     });
   });
@@ -208,7 +228,9 @@ describe('EditWidgetModal', () => {
         );
       });
 
-      expect(screen.getByTestId('widget-weight-input')).toHaveValue(10);
+      // Weight input returns number
+      const weightInput = screen.getByTestId('widget-weight-input');
+      expect(weightInput.value).toBe('10');
     });
 
     it('should load widget type from API', async () => {
@@ -229,7 +251,8 @@ describe('EditWidgetModal', () => {
         expect(screen.getByLabelText('job_name')).toHaveValue('test-job');
       });
 
-      expect(screen.getByLabelText('builds')).toHaveValue(5);
+      // Builds input returns string representation of number
+      expect(screen.getByLabelText('builds').value).toBe('5');
       expect(screen.getByLabelText('group_field')).toHaveValue('component');
     });
 
@@ -258,7 +281,8 @@ describe('EditWidgetModal', () => {
       });
 
       await waitFor(() => {
-        expect(screen.getByTestId('widget-weight-input')).toHaveValue(0);
+        const weightInput = screen.getByTestId('widget-weight-input');
+        expect(weightInput.value).toBe('0');
       });
     });
   });
@@ -348,7 +372,7 @@ describe('EditWidgetModal', () => {
         fireEvent.change(weightInput, { target: { value: '20' } });
       });
 
-      expect(weightInput).toHaveValue(20);
+      expect(weightInput.value).toBe('20');
     });
 
     it('should update parameters when changed', async () => {
@@ -380,7 +404,7 @@ describe('EditWidgetModal', () => {
         fireEvent.change(buildsInput, { target: { value: '10' } });
       });
 
-      expect(buildsInput).toHaveValue(10);
+      expect(buildsInput.value).toBe('10');
     });
   });
 
@@ -608,7 +632,8 @@ describe('EditWidgetModal', () => {
       renderModal();
 
       await waitFor(() => {
-        expect(screen.getByTestId('filter-component')).toBeInTheDocument();
+        // Filter component is mocked and renders "Filters" text
+        expect(screen.getByText('Filters')).toBeInTheDocument();
       });
     });
 
@@ -652,9 +677,8 @@ describe('EditWidgetModal', () => {
       renderModal();
 
       await waitFor(() => {
-        expect(
-          screen.getByTestId('widget-parameter-fields'),
-        ).toBeInTheDocument();
+        // Widget parameter fields render the parameter inputs
+        expect(screen.getByLabelText('job_name')).toBeInTheDocument();
       });
     });
 
@@ -690,7 +714,7 @@ describe('EditWidgetModal', () => {
       const { rerender } = renderModal();
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/title/i)).toHaveValue(
+        expect(screen.getByTestId('widget-title-input')).toHaveValue(
           'Jenkins Heatmap Widget',
         );
       });
@@ -723,7 +747,8 @@ describe('EditWidgetModal', () => {
         );
       });
 
-      expect(screen.getByTestId('widget-weight-input')).toHaveValue(15);
+      const weightInput = screen.getByTestId('widget-weight-input');
+      expect(weightInput.value).toBe('15');
     });
   });
 
@@ -740,7 +765,8 @@ describe('EditWidgetModal', () => {
       renderModal();
 
       await waitFor(() => {
-        expect(screen.getByTestId('edit-widget-form')).toBeInTheDocument();
+        // Form in PatternFly v6 doesn't render ouiaId as testId
+        expect(screen.getByTestId('edit-widget-modal')).toBeInTheDocument();
       });
     });
 
@@ -771,7 +797,8 @@ describe('EditWidgetModal', () => {
 
       await waitFor(() => {
         expect(screen.getByTestId('edit-widget-modal')).toBeInTheDocument();
-        expect(screen.getByTestId('edit-widget-form')).toBeInTheDocument();
+        // Form in PatternFly v6 doesn't support ouiaId as testId
+        expect(screen.getByText('Edit widget')).toBeInTheDocument();
         expect(screen.getByTestId('widget-title-input')).toBeInTheDocument();
         expect(screen.getByTestId('widget-weight-input')).toBeInTheDocument();
         expect(

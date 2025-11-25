@@ -16,7 +16,9 @@ jest.mock('../pages/settings', () => ({
 // Mock ClassificationDropdown
 jest.mock('./classification-dropdown', () => ({
   ClassificationDropdown: () => (
-    <div data-testid="classification-dropdown">Classification Dropdown</div>
+    <div data-ouia-component-id="classification-dropdown">
+      Classification Dropdown
+    </div>
   ),
 }));
 

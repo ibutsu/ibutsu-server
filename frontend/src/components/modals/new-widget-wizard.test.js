@@ -300,9 +300,8 @@ describe('NewWidgetWizard', () => {
 
       // On step 3, builds and group_field should be pre-filled with defaults
       await waitFor(() => {
-        expect(
-          screen.getByTestId('widget-parameter-fields'),
-        ).toBeInTheDocument();
+        // Widget parameter fields render the input fields
+        expect(screen.getByLabelText('builds')).toBeInTheDocument();
       });
 
       // The builds and group_field have defaults, so Next should be enabled
@@ -345,9 +344,8 @@ describe('NewWidgetWizard', () => {
 
       // On step 3, need to fill job_name
       await waitFor(() => {
-        expect(
-          screen.getByTestId('widget-parameter-fields'),
-        ).toBeInTheDocument();
+        // Widget parameter fields render the job_name input
+        expect(screen.getByLabelText('job_name')).toBeInTheDocument();
       });
 
       // Clear the job_name field
@@ -442,9 +440,8 @@ describe('NewWidgetWizard', () => {
 
       // On step 3, Next should be enabled since all params are optional
       await waitFor(() => {
-        expect(
-          screen.getByTestId('widget-parameter-fields'),
-        ).toBeInTheDocument();
+        // Widget parameter fields render the limit input
+        expect(screen.getByLabelText('limit')).toBeInTheDocument();
       });
 
       await waitFor(() => {
@@ -611,9 +608,9 @@ describe('NewWidgetWizard', () => {
         fireEvent.click(screen.getByRole('button', { name: /next/i }));
       });
 
-      // Skip to end
+      // Skip to end - filter component renders "Filters" text
       await waitFor(() => {
-        expect(screen.getByTestId('filter-component')).toBeInTheDocument();
+        expect(screen.getByText('Filters')).toBeInTheDocument();
       });
 
       await act(async () => {
