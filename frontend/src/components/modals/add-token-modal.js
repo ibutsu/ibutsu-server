@@ -20,7 +20,7 @@ import {
 import { HttpClient } from '../../utilities/http';
 import { Settings } from '../../pages/settings';
 
-const AddTokenModal = ({ isOpen, onClose }) => {
+const AddTokenModal = ({ isOpen, onClose, ouiaId = 'add-token-modal' }) => {
   const [name, setName] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [isNameValid, setIsNameValid] = useState(true);
@@ -70,11 +70,11 @@ const AddTokenModal = ({ isOpen, onClose }) => {
 
   return (
     <Modal
-      id="add-token-modal"
+      id={ouiaId}
       variant={ModalVariant.medium}
       isOpen={isOpen}
       onClose={localOnClose}
-      ouiaId="add-token-modal"
+      ouiaId={ouiaId}
     >
       <ModalHeader title="Add Token" />
       <ModalBody>
@@ -104,7 +104,7 @@ const AddTokenModal = ({ isOpen, onClose }) => {
           </FormGroup>
           <FormGroup label="Expiry" fieldId="token-expiry-date" isRequired>
             <DatePicker
-              appendTo={() => document.getElementById('add-token-modal')}
+              appendTo={() => document.getElementById(ouiaId)}
               onChange={(_, change) => {
                 setExpiryDate(change);
               }}
@@ -119,7 +119,7 @@ const AddTokenModal = ({ isOpen, onClose }) => {
                 enableFlip: true,
                 position: 'auto',
                 hasAutoWidth: true,
-                appendTo: () => document.getElementById('add-token-modal'),
+                appendTo: () => document.getElementById(ouiaId),
               }}
               ouiaId="token-expiry-datepicker"
             />
@@ -158,6 +158,7 @@ const AddTokenModal = ({ isOpen, onClose }) => {
 AddTokenModal.propTypes = {
   isOpen: PropTypes.bool,
   onClose: PropTypes.func,
+  ouiaId: PropTypes.string,
 };
 
 export default AddTokenModal;

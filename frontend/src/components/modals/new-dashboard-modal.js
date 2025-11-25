@@ -19,6 +19,7 @@ const NewDashboardModal = ({
   saveCallback,
   closeCallback,
   isOpen,
+  ouiaId = 'new-dashboard-modal',
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -52,7 +53,7 @@ const NewDashboardModal = ({
       variant={ModalVariant.medium}
       isOpen={isOpen}
       onClose={closeCallback}
-      ouiaId="new-dashboard-modal"
+      ouiaId={ouiaId}
     >
       <ModalHeader title="New Dashboard" />
       <ModalBody>
@@ -112,6 +113,7 @@ NewDashboardModal.propTypes = {
   saveCallback: PropTypes.func,
   closeCallback: PropTypes.func,
   isOpen: PropTypes.bool,
+  ouiaId: PropTypes.string,
 };
 
 export default NewDashboardModal;

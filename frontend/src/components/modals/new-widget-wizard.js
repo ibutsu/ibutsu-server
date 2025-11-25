@@ -38,6 +38,7 @@ const NewWidgetWizard = ({
   saveCallback,
   closeCallback,
   isOpen,
+  ouiaId = 'new-widget-wizard-modal',
 }) => {
   // const { primaryObject } = useContext(IbutsuContext);
   const [widgetTypes, setWidgetTypes] = useState([]);
@@ -446,7 +447,7 @@ const NewWidgetWizard = ({
       isOpen={isOpen}
       aria-label="Add widget modal"
       variant={ModalVariant.large}
-      ouiaId="new-widget-wizard-modal"
+      ouiaId={ouiaId}
     >
       <Wizard
         header={
@@ -484,6 +485,7 @@ NewWidgetWizard.propTypes = {
   saveCallback: PropTypes.func,
   closeCallback: PropTypes.func,
   isOpen: PropTypes.bool,
+  ouiaId: PropTypes.string,
 };
 
 export default NewWidgetWizard;

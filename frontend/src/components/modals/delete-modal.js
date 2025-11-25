@@ -20,6 +20,7 @@ const DeleteModal = ({
   title,
   isOpen,
   body,
+  ouiaId = 'delete-confirmation-modal',
 }) => {
   const localOnDelete = async () => {
     try {
@@ -41,7 +42,7 @@ const DeleteModal = ({
       variant={ModalVariant.medium}
       isOpen={isOpen}
       onClose={onClose}
-      ouiaId="delete-confirmation-modal"
+      ouiaId={ouiaId}
     >
       <ModalHeader title={title} />
       <ModalBody>
@@ -71,6 +72,7 @@ DeleteModal.propTypes = {
   onClose: PropTypes.func,
   isOpen: PropTypes.bool,
   toDeletePath: PropTypes.array,
+  ouiaId: PropTypes.string,
 };
 
 export default DeleteModal;
