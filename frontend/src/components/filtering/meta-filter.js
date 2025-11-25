@@ -130,11 +130,13 @@ const MetaFilter = ({
                 ref={toggleRef}
                 onClick={() => setIsFieldOpen(!isFieldOpen)}
                 isExpanded={isFieldOpen}
+                ouiaId="meta-filter-field-toggle"
               >
                 Filter by...
               </MenuToggle>
             )}
             onSelect={onFieldSelect}
+            ouiaId="meta-filter-field-select"
           >
             <SelectList>
               {fieldOptions.map((option, index) => (
@@ -164,10 +166,12 @@ const MetaFilter = ({
                   fieldSelection.length === 0 ||
                   (fieldSelection.length > 0 && !values_available)
                 }
+                ouiaId="meta-filter-value-toggle"
               >
                 {valuePlaceholder}
               </MenuToggle>
             )}
+            ouiaId="meta-filter-value-select"
           >
             <SelectList>
               {valueOptions.map((option, index) => (
@@ -202,6 +206,7 @@ const MetaFilter = ({
                     <Label
                       variant="outline"
                       onClose={() => onRemoveFilter(id, key)}
+                      ouiaId={`meta-filter-active-label-${key}`}
                     >
                       {typeof activeFilters[key] === 'object' && (
                         <>{activeFilters[key]['val']}</>
@@ -218,7 +223,11 @@ const MetaFilter = ({
           {onApplyReport && (
             <Flex>
               <FlexItem style={{ marginLeft: '0.75em' }}>
-                <Button onClick={onApplyReport} variant="secondary">
+                <Button
+                  onClick={onApplyReport}
+                  variant="secondary"
+                  ouiaId="meta-filter-apply-report-button"
+                >
                   Use Active Filters in Report
                 </Button>
               </FlexItem>

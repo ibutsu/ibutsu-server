@@ -52,10 +52,11 @@ const NewDashboardModal = ({
       variant={ModalVariant.medium}
       isOpen={isOpen}
       onClose={closeCallback}
+      ouiaId="new-dashboard-modal"
     >
       <ModalHeader title="New Dashboard" />
       <ModalBody>
-        <Form>
+        <Form ouiaId="new-dashboard-form">
           <FormGroup
             label="Title"
             fieldId="dashboard-title"
@@ -71,6 +72,7 @@ const NewDashboardModal = ({
               onChange={(_, value) => setTitle(value)}
               validated={isTitleValid.toString()}
               isRequired
+              ouiaId="dashboard-title-input"
             />
           </FormGroup>
           <FormGroup label="Description" fieldId="dashboard-description">
@@ -80,15 +82,24 @@ const NewDashboardModal = ({
               name="dashboard-description"
               value={description}
               onChange={(_, value) => setDescription(value)}
+              ouiaId="dashboard-description-input"
             />
           </FormGroup>
         </Form>
       </ModalBody>
       <ModalFooter>
-        <Button variant="primary" onClick={modalOnSave}>
+        <Button
+          variant="primary"
+          onClick={modalOnSave}
+          ouiaId="new-dashboard-save-button"
+        >
           Save
         </Button>
-        <Button variant="link" onClick={modalOnClose}>
+        <Button
+          variant="link"
+          onClick={modalOnClose}
+          ouiaId="new-dashboard-cancel-button"
+        >
           Cancel
         </Button>
       </ModalFooter>

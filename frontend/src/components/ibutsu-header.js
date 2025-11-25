@@ -177,6 +177,7 @@ const IbutsuHeader = () => {
       isExpanded={isProjectSelectOpen}
       isFullWidth
       innerRef={toggleRef}
+      ouiaId="project-select-toggle"
     >
       <TextInputGroup isPlain>
         <TextInputGroupMain
@@ -199,6 +200,7 @@ const IbutsuHeader = () => {
               icon={<TimesIcon aria-hidden />}
               onClick={onProjectClear}
               aria-label="Clear input value"
+              ouiaId="project-clear-button"
             ></Button>
           )}
         </TextInputGroupUtilities>
@@ -218,6 +220,7 @@ const IbutsuHeader = () => {
             setIsProjectSelectOpen(isOpen);
           }}
           toggle={toggle}
+          ouiaId="project-select-dropdown"
         >
           <SelectList id="select-typeahead-listbox">
             {projects.length === 0 && !filterValue && (
@@ -256,7 +259,13 @@ const IbutsuHeader = () => {
   );
 
   const headerTools = (
-    <Toolbar id="toolbar" isFullHeight isStatic style={{ paddingLeft: '30px' }}>
+    <Toolbar
+      id="toolbar"
+      isFullHeight
+      isStatic
+      style={{ paddingLeft: '30px' }}
+      ouiaId="header-toolbar"
+    >
       <ToolbarContent>
         <ToolbarGroup variant="filter-group">
           <ToolbarItem>{projectSelect}</ToolbarItem>
@@ -279,6 +288,7 @@ const IbutsuHeader = () => {
                   <QuestionCircleIcon />
                 </Icon>
               }
+              ouiaId="about-button"
             />
           </ToolbarItem>
           <ToolbarItem gap={{ default: 'gapSm' }}>
@@ -296,13 +306,14 @@ const IbutsuHeader = () => {
                   <ServerIcon />
                 </Icon>
               }
+              ouiaId="api-button"
             >
               {' '}
               API
             </Button>
           </ToolbarItem>
           <ToolbarItem gap={{ default: 'gapSm' }}>
-            <ToggleGroup>
+            <ToggleGroup ouiaId="theme-toggle-group">
               <ToggleGroupItem
                 aria-label="Light theme"
                 icon={
@@ -351,6 +362,7 @@ const IbutsuHeader = () => {
         productName="Ibutsu"
         backgroundImageSrc="/images/about-bg.jpg"
         trademark="Copyright (c) 2021 Red Hat, Inc."
+        ouiaId="about-modal"
       >
         <Content>
           <Content component="dl">
@@ -392,13 +404,14 @@ const IbutsuHeader = () => {
           * Note: artifact files (screenshots, logs) are retained for 3 months
         </p>
       </AboutModal>
-      <Masthead>
+      <Masthead ouiaId="main-masthead">
         <MastheadMain>
           <MastheadToggle>
             <PageToggleButton
               variant="control"
               aria-label="Global navigation"
               id="vertical-nav-toggle"
+              ouiaId="nav-toggle-button"
             >
               <Icon>
                 <BarsIcon />
@@ -407,7 +420,11 @@ const IbutsuHeader = () => {
           </MastheadToggle>
           <MastheadBrand data-codemods>
             <MastheadLogo data-codemods component="a" href="/">
-              <Brand src="/images/ibutsu-wordart-164.png" alt="Ibutsu" />
+              <Brand
+                src="/images/ibutsu-wordart-164.png"
+                alt="Ibutsu"
+                ouiaId="brand-logo"
+              />
             </MastheadLogo>
           </MastheadBrand>
         </MastheadMain>

@@ -89,7 +89,7 @@ export const ForgotPassword = () => {
         </LoginMainFooterBandItem>
       }
     >
-      <Form>
+      <Form ouiaId="forgot-password-form">
         {showAlert && (
           <FormAlert>
             <Alert
@@ -97,6 +97,7 @@ export const ForgotPassword = () => {
               title={alertText}
               aria-live="polite"
               isInline
+              ouiaId="forgot-password-alert"
             />
           </FormAlert>
         )}
@@ -110,6 +111,7 @@ export const ForgotPassword = () => {
             aria-describedby="email-helper"
             value={emailValue}
             onChange={(_, emailValue) => onEmailChange(emailValue)}
+            ouiaId="forgot-password-email-input"
           />
           <FormHelperText>
             <HelperText>
@@ -122,7 +124,12 @@ export const ForgotPassword = () => {
           </FormHelperText>
         </FormGroup>
         <ActionGroup>
-          <Button variant="primary" isBlock onClick={onRecoverAccountClick}>
+          <Button
+            variant="primary"
+            isBlock
+            onClick={onRecoverAccountClick}
+            ouiaId="forgot-password-submit-button"
+          >
             Recover account
           </Button>
         </ActionGroup>

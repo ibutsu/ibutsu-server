@@ -74,10 +74,11 @@ const AddTokenModal = ({ isOpen, onClose }) => {
       variant={ModalVariant.medium}
       isOpen={isOpen}
       onClose={localOnClose}
+      ouiaId="add-token-modal"
     >
       <ModalHeader title="Add Token" />
       <ModalBody>
-        <Form>
+        <Form ouiaId="add-token-form">
           <FormGroup label="Name" fieldId="token-name" isRequired>
             <TextInput
               type="text"
@@ -89,6 +90,7 @@ const AddTokenModal = ({ isOpen, onClose }) => {
                 isNameValid ? ValidatedOptions.default : ValidatedOptions.error
               }
               isRequired
+              ouiaId="token-name-input"
             />
             {isNameValid !== true && (
               <FormHelperText>
@@ -119,6 +121,7 @@ const AddTokenModal = ({ isOpen, onClose }) => {
                 hasAutoWidth: true,
                 appendTo: () => document.getElementById('add-token-modal'),
               }}
+              ouiaId="token-expiry-datepicker"
             />
             <FormHelperText>
               <HelperText>
@@ -133,10 +136,18 @@ const AddTokenModal = ({ isOpen, onClose }) => {
         </Form>
       </ModalBody>
       <ModalFooter>
-        <Button variant="primary" onClick={onSave}>
+        <Button
+          variant="primary"
+          onClick={onSave}
+          ouiaId="add-token-save-button"
+        >
           Save
         </Button>
-        <Button variant="link" onClick={localOnClose}>
+        <Button
+          variant="link"
+          onClick={localOnClose}
+          ouiaId="add-token-cancel-button"
+        >
           Cancel
         </Button>
       </ModalFooter>

@@ -1,6 +1,11 @@
 /* eslint-env jest */
-import React from 'react';
-import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import JenkinsJobAnalysisView from './jenkins-job-analysis';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';

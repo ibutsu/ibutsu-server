@@ -44,21 +44,31 @@ const UserDropdown = () => {
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           isExpanded={isDropdownOpen}
           icon={<UserIcon />}
+          ouiaId="user-dropdown-toggle"
         >
           {displayName}
         </MenuToggle>
       )}
+      ouiaId="user-dropdown-menu"
     >
       <DropdownList>
-        <DropdownItem key="profile" onClick={() => navigate('/profile/user')}>
+        <DropdownItem
+          key="profile"
+          onClick={() => navigate('/profile/user')}
+          ouiaId="user-profile-item"
+        >
           Profile
         </DropdownItem>
         {!!isSuperAdmin && (
-          <DropdownItem key="admin" onClick={() => navigate('/admin/home')}>
+          <DropdownItem
+            key="admin"
+            onClick={() => navigate('/admin/home')}
+            ouiaId="user-admin-item"
+          >
             Administration
           </DropdownItem>
         )}
-        <DropdownItem key="logout" onClick={logout}>
+        <DropdownItem key="logout" onClick={logout} ouiaId="user-logout-item">
           Logout
         </DropdownItem>
       </DropdownList>

@@ -132,15 +132,18 @@ const CompareRunsView = () => {
 
   const compareHeader = useMemo(() => {
     return (
-      <Flex style={{ width: '100%' }}>
-        <FlexItem grow={{ default: 'grow' }}>
+      <Flex style={{ width: '100%' }} ouiaId="compare-runs-header-flex">
+        <FlexItem
+          grow={{ default: 'grow' }}
+          ouiaId="compare-runs-title-flex-item"
+        >
           <Content>
             <Content component="h2">
               Select Test Run metadata to compare
             </Content>
           </Content>
         </FlexItem>
-        <FlexItem>
+        <FlexItem ouiaId="compare-runs-include-skips-flex-item">
           <Content>
             <Checkbox
               id="include-skips"
@@ -148,16 +151,22 @@ const CompareRunsView = () => {
               isChecked={includeSkipped}
               aria-label="include-skips-checkbox"
               onChange={(_, checked) => onSkipCheck(checked)}
+              ouiaId="compare-runs-include-skips-checkbox"
             />
           </Content>
         </FlexItem>
-        <FlexItem>
-          <Button variant="primary">
+        <FlexItem ouiaId="compare-runs-apply-filters-flex-item">
+          <Button variant="primary" ouiaId="compare-runs-apply-filters-button">
             {isLoading ? 'Loading Results' : 'Apply Filters'}
           </Button>
         </FlexItem>
-        <FlexItem>
-          <Button variant="secondary" onClick={clearFilters} isDanger>
+        <FlexItem ouiaId="compare-runs-clear-filters-flex-item">
+          <Button
+            variant="secondary"
+            onClick={clearFilters}
+            isDanger
+            ouiaId="compare-runs-clear-filters-button"
+          >
             Clear Filters
           </Button>
         </FlexItem>

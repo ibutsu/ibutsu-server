@@ -133,6 +133,7 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
         isAriaDisabled={!primaryObject}
         ref={toolTipRef}
         aria-describedby="file-upload-tip"
+        ouiaId="file-upload-button"
       >
         Import
       </Button>

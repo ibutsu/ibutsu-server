@@ -179,6 +179,7 @@ const Run = ({ defaultTab = 'summary' }) => {
           label={artifact.filename}
           eventKey={artifact.id}
           title={<TabTitle icon={<FileAltIcon />} text={artifact.filename} />}
+          ouiaId={`run-artifact-tab-${artifact.id}`}
         >
           <ArtifactTab artifact={artifact} />
         </Tab>
@@ -368,12 +369,12 @@ const Run = ({ defaultTab = 'summary' }) => {
 
   return (
     <>
-      <PageSection hasBodyWrapper={false}>
+      <PageSection hasBodyWrapper={false} ouiaId="run-header-section">
         <Content>
           <Content component="h1">Run {run.id}</Content>
         </Content>
       </PageSection>
-      <PageSection hasBodyWrapper={false}>
+      <PageSection hasBodyWrapper={false} ouiaId="run-content-section">
         {!isRunValid && (
           <EmptyObject
             headingText="Run not found"
@@ -382,13 +383,19 @@ const Run = ({ defaultTab = 'summary' }) => {
           />
         )}
         {isRunValid && (
-          <Tabs activeKey={activeTab} onSelect={onTabSelect} isBox>
+          <Tabs
+            activeKey={activeTab}
+            onSelect={onTabSelect}
+            isBox
+            ouiaId="run-tabs"
+          >
             <Tab
               key="summary"
               eventKey="summary"
               title={<TabTitle icon={<InfoCircleIcon />} text="Summary" />}
+              ouiaId="run-summary-tab"
             >
-              <Card>
+              <Card ouiaId="run-summary-card">
                 <CardBody style={{ padding: 0 }} id="run-detail">
                   <Grid>
                     <GridItem span={6}>
@@ -863,11 +870,15 @@ const Run = ({ defaultTab = 'summary' }) => {
               key="results-list"
               eventKey="results-list"
               title={<TabTitle icon={<CatalogIcon />} text="Results List" />}
+              ouiaId="run-results-list-tab"
             >
               <FilterTable
                 headerChildren={
-                  <Flex style={{ width: '100%' }}>
-                    <FlexItem>
+                  <Flex
+                    style={{ width: '100%' }}
+                    ouiaId="run-results-list-flex"
+                  >
+                    <FlexItem ouiaId="run-results-list-link-flex-item">
                       <Link
                         to={{
                           pathname: `/project/${primaryObject?.id || project_id}/results`,
@@ -897,9 +908,10 @@ const Run = ({ defaultTab = 'summary' }) => {
             <Tab
               eventKey="results-tree"
               title={<TabTitle icon={<RepositoryIcon />} text="Results Tree" />}
+              ouiaId="run-results-tree-tab"
             >
-              <Card className="pf-v6-u-mt-lg">
-                <CardBody>
+              <Card className="pf-v6-u-mt-lg" ouiaId="run-results-tree-card">
+                <CardBody ouiaId="run-results-tree-card-body">
                   <Grid gutter="sm">
                     {resultsTree.length === 0 && (
                       <GridItem span={12}>
@@ -919,12 +931,16 @@ const Run = ({ defaultTab = 'summary' }) => {
                             onSelect={onTreeItemSelect}
                             icon={<FolderIcon />}
                             expandedIcon={<FolderOpenIcon />}
+                            ouiaId="run-results-tree-view"
                           />
                         </GridItem>
                         <GridItem span={7}>
                           {testResult && (
-                            <Card className={testResult.result}>
-                              <CardHeader>
+                            <Card
+                              className={testResult.result}
+                              ouiaId="run-result-detail-card"
+                            >
+                              <CardHeader ouiaId="run-result-detail-card-header">
                                 {testResult.test_id}
                                 {testResult.metadata.markers && (
                                   <div style={{ float: 'right' }}>
@@ -944,6 +960,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     'var(--pf-t--global--background--color--primary--default)',
                                   paddingTop: '1.2em',
                                 }}
+                                ouiaId="run-result-detail-card-body"
                               >
                                 <ResultView
                                   testResult={testResult}
@@ -964,6 +981,7 @@ const Run = ({ defaultTab = 'summary' }) => {
               title={
                 <TabTitle icon={<MessagesIcon />} text="Classify Failures" />
               }
+              ouiaId="run-classify-failures-tab"
             >
               <FilterProvider
                 key="run"
@@ -977,9 +995,10 @@ const Run = ({ defaultTab = 'summary' }) => {
             <Tab
               eventKey="run-object"
               title={<TabTitle icon={<CodeIcon />} text="Run Object" />}
+              ouiaId="run-object-tab"
             >
-              <Card>
-                <CardBody id="object-card-body">
+              <Card ouiaId="run-object-card">
+                <CardBody id="object-card-body" ouiaId="run-object-card-body">
                   <CodeEditor
                     isReadOnly={true}
                     isDarkTheme={darkTheme}

@@ -53,9 +53,9 @@ const IbutsuSidebar = () => {
 
   if (primaryType == 'project' && primaryObject) {
     return (
-      <PageSidebar>
+      <PageSidebar ouiaId="project-sidebar">
         <PageSidebarBody isFilled>
-          <Nav aria-label="Nav">
+          <Nav aria-label="Nav" ouiaId="project-nav">
             <NavList>
               <li className="pf-v6-c-nav__item">
                 <Link to="dashboard" className="pf-v6-c-nav__link">

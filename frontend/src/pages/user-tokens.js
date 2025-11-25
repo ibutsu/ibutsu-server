@@ -50,6 +50,7 @@ const UserTokens = () => {
         isReadOnly
         hoverTip="Copy to clipboard"
         clickTip="Copied!"
+        ouiaId={`token-clipboard-${token.id}`}
       >
         {token.token}
       </ClipboardCopy>,
@@ -61,6 +62,7 @@ const UserTokens = () => {
           setTokenToDelete(token);
           setIsDeleteTokenOpen(true);
         }}
+        ouiaId={`token-delete-button-${token.id}`}
       >
         Delete
       </Button>,
@@ -130,6 +132,7 @@ const UserTokens = () => {
               variant="secondary"
               title="Add token"
               onClick={() => setIsAddTokenOpen(true)}
+              ouiaId="add-token-button"
             >
               Add Token
             </Button>

@@ -241,7 +241,7 @@ const NewWidgetWizard = ({
         name: 'Select type',
         enableNext: selectedTypeId,
         component: (
-          <Form>
+          <Form ouiaId="widget-type-selection-form">
             <Title headingLevel="h1" size="xl">
               Select a widget type
             </Title>
@@ -254,6 +254,7 @@ const NewWidgetWizard = ({
                   description={widgetType.description}
                   isChecked={selectedTypeId === widgetType.id}
                   onChange={(event, _) => onSelectType(_, event)}
+                  ouiaId={`widget-type-radio-${widgetType.id}`}
                 />
               </div>
             ))}
@@ -266,7 +267,7 @@ const NewWidgetWizard = ({
         canJumpTo: stepIdReached >= 2,
         enableNext: titleValid,
         component: (
-          <Form isHorizontal>
+          <Form isHorizontal ouiaId="widget-info-form">
             <Title headingLevel="h1" size="xl">
               Set widget information
             </Title>
@@ -279,6 +280,7 @@ const NewWidgetWizard = ({
                 onChange={(_, value) => onTitleChange(value)}
                 validated={titleValid.toString()}
                 isRequired
+                ouiaId="widget-title-input"
               />
               {titleValid !== true && (
                 <FormHelperText>
@@ -297,6 +299,7 @@ const NewWidgetWizard = ({
                 name="widget-weight"
                 value={weight}
                 onChange={(_, value) => setWeight(value)}
+                ouiaId="widget-weight-input"
               />
               <FormHelperText>
                 <HelperText>
@@ -315,7 +318,7 @@ const NewWidgetWizard = ({
         canJumpTo: stepIdReached >= 3,
         enableNext: paramsFilled,
         component: (
-          <Form isHorizontal>
+          <Form isHorizontal ouiaId="widget-parameters-form">
             <Title headingLevel="h1" size="xl">
               Set widget parameters
             </Title>
@@ -337,7 +340,7 @@ const NewWidgetWizard = ({
               canJumpTo: stepIdReached >= 4,
               enableNext: true,
               component: (
-                <Form isHorizontal>
+                <Form isHorizontal ouiaId="widget-filters-form">
                   <Title headingLevel="h1" size="xl">
                     Configure filters
                   </Title>
@@ -392,6 +395,7 @@ const NewWidgetWizard = ({
                     variant="compact"
                     borders={true}
                     aria-label="Parameters"
+                    ouiaId="widget-params-review-table"
                   >
                     <Thead>
                       <Tr>
@@ -442,6 +446,7 @@ const NewWidgetWizard = ({
       isOpen={isOpen}
       aria-label="Add widget modal"
       variant={ModalVariant.large}
+      ouiaId="new-widget-wizard-modal"
     >
       <Wizard
         header={
@@ -454,6 +459,7 @@ const NewWidgetWizard = ({
         onStepChange={onNext}
         onSave={onSave}
         onClose={onClose}
+        ouiaId="new-widget-wizard"
       >
         {steps.map((step) => (
           <WizardStep

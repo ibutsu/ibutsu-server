@@ -418,7 +418,7 @@ const Login = () => {
       forgotCredentials={loginSupport.user ? forgotCredentials : ''}
     >
       {loginSupport.user && (
-        <Form>
+        <Form ouiaId="login-form">
           <FormAlert>
             {alertMessage && alertMessage.message && (
               <Alert
@@ -426,6 +426,7 @@ const Login = () => {
                 title={alertMessage.message}
                 aria-live="polite"
                 isInline
+                ouiaId="login-alert"
               />
             )}
           </FormAlert>
@@ -440,6 +441,7 @@ const Login = () => {
               value={emailValue}
               onChange={(_, value) => setEmailValue(value)}
               onKeyDown={onEnterKeyPress}
+              ouiaId="login-email-input"
             />
             {!isValidEmail && (
               <FormHelperText>
@@ -464,6 +466,7 @@ const Login = () => {
                   value={passwordValue}
                   onChange={(_, value) => setPasswordValue(value)}
                   onKeyDown={onEnterKeyPress}
+                  ouiaId="login-password-input"
                 />
               )}
               {isPasswordVisible && (
@@ -477,6 +480,7 @@ const Login = () => {
                   value={passwordValue}
                   onChange={(_, value) => setPasswordValue(value)}
                   onKeyDown={onEnterKeyPress}
+                  ouiaId="login-password-input"
                 />
               )}
               <InputGroupItem>
@@ -484,6 +488,7 @@ const Login = () => {
                   variant="control"
                   aria-label="Show password"
                   onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                  ouiaId="login-password-toggle-button"
                 >
                   {!isPasswordVisible && <EyeIcon />}
                   {isPasswordVisible && <EyeSlashIcon />}
@@ -507,6 +512,7 @@ const Login = () => {
               isLoading={isLoggingIn}
               isDisabled={isLoggingIn}
               onClick={onLoginButtonClick}
+              ouiaId="login-submit-button"
             >
               {isLoggingIn ? 'Logging in...' : 'Log In'}
             </Button>

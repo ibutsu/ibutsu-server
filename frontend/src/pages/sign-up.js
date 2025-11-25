@@ -180,7 +180,7 @@ export class SignUp extends Component {
         signUpForAccountMessage={loginMessage}
         forgotCredentials={forgotCredentials}
       >
-        <Form>
+        <Form ouiaId="signup-form">
           {this.state.showAlert && (
             <FormAlert>
               <Alert
@@ -188,6 +188,7 @@ export class SignUp extends Component {
                 title={this.state.alertText}
                 aria-live="polite"
                 isInline
+                ouiaId="signup-alert"
               />
             </FormAlert>
           )}
@@ -201,6 +202,7 @@ export class SignUp extends Component {
               aria-describedby="email-helper"
               value={this.state.emailValue}
               onChange={(_, emailValue) => this.onEmailChange(emailValue)}
+              ouiaId="signup-email-input"
             />
             <FormHelperText>
               <HelperText>
@@ -224,6 +226,7 @@ export class SignUp extends Component {
                   onChange={(_, passwordValue) =>
                     this.onPasswordChange(passwordValue)
                   }
+                  ouiaId="signup-password-input"
                 />
               )}
               {this.state.isPasswordVisible && (
@@ -238,6 +241,7 @@ export class SignUp extends Component {
                   onChange={(_, passwordValue) =>
                     this.onPasswordChange(passwordValue)
                   }
+                  ouiaId="signup-password-input"
                 />
               )}
               <InputGroupItem>
@@ -245,6 +249,7 @@ export class SignUp extends Component {
                   variant="control"
                   aria-label="Show password"
                   onClick={this.onPasswordVisibleClick}
+                  ouiaId="signup-password-toggle-button"
                 >
                   {!this.state.isPasswordVisible && <EyeIcon />}
                   {this.state.isPasswordVisible && <EyeSlashIcon />}
@@ -275,6 +280,7 @@ export class SignUp extends Component {
                     this.onConfirmPasswordChange(confirmPasswordValue)
                   }
                   validated={this.state.confirmPasswordValidation}
+                  ouiaId="signup-confirm-password-input"
                 />
               )}
               {this.state.isConfirmPasswordVisible && (
@@ -289,6 +295,7 @@ export class SignUp extends Component {
                     this.onConfirmPasswordChange(confirmPasswordValue)
                   }
                   validated={this.state.confirmPasswordValidation}
+                  ouiaId="signup-confirm-password-input"
                 />
               )}
               <InputGroupItem>
@@ -296,6 +303,7 @@ export class SignUp extends Component {
                   variant="control"
                   aria-label="Show password"
                   onClick={this.onConfirmPasswordVisibleClick}
+                  ouiaId="signup-confirm-password-toggle-button"
                 >
                   {!this.state.isConfirmPasswordVisible && <EyeIcon />}
                   {this.state.isConfirmPasswordVisible && <EyeSlashIcon />}
@@ -315,6 +323,7 @@ export class SignUp extends Component {
               variant="primary"
               isBlock
               onClick={this.onRegisterButtonClick}
+              ouiaId="signup-register-button"
             >
               Register
             </Button>

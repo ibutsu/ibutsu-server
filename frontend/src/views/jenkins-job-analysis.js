@@ -138,6 +138,7 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
         label="Change to Area Chart"
         isChecked={isAreaChart}
         onChange={(_, checked) => setIsAreaChart(checked)}
+        ouiaId="jenkins-analysis-bar-area-switch"
       />
     ),
     [isAreaChart],
@@ -145,8 +146,16 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
 
   return (
     <>
-      <Tabs activeKey={activeTab} onSelect={onTabSelect}>
-        <Tab eventKey="heatmap" title="Heatmap">
+      <Tabs
+        activeKey={activeTab}
+        onSelect={onTabSelect}
+        ouiaId="jenkins-analysis-tabs"
+      >
+        <Tab
+          eventKey="heatmap"
+          title="Heatmap"
+          ouiaId="jenkins-analysis-heatmap-tab"
+        >
           <Flex
             direction={{ default: 'row' }}
             align={{ default: 'alignItemsCenter' }}
@@ -162,7 +171,11 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
             />
           )}
         </Tab>
-        <Tab eventKey="overall-health" title="Overall Health">
+        <Tab
+          eventKey="overall-health"
+          title="Overall Health"
+          ouiaId="jenkins-analysis-overall-health-tab"
+        >
           <Flex
             direction={{ default: 'row' }}
             align={{ default: 'alignItemsCenter' }}
@@ -209,7 +222,11 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
             />
           )}
         </Tab>
-        <Tab eventKey="build-durations" title="Build Duration">
+        <Tab
+          eventKey="build-durations"
+          title="Build Duration"
+          ouiaId="jenkins-analysis-build-duration-tab"
+        >
           <Flex>
             <FlexItem>{buildNumberSelect}</FlexItem>
           </Flex>

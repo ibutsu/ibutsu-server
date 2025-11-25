@@ -35,7 +35,6 @@ import {
   PencilAltIcon,
   TrashIcon,
 } from '@patternfly/react-icons';
-import { TableText } from '@patternfly/react-table';
 import { Link } from 'react-router-dom';
 
 const COLUMNS = Object.values(USER_COLUMNS);
@@ -84,6 +83,7 @@ const UserList = () => {
               variant="filled"
               color="green"
               icon={<CheckIcon />}
+              ouiaId={`user-active-label-${user.id}`}
             >
               Active
             </Label>
@@ -94,6 +94,7 @@ const UserList = () => {
               variant="filled"
               color="red"
               icon={<BanIcon />}
+              ouiaId={`user-inactive-label-${user.id}`}
             >
               Inactive
             </Label>
@@ -105,6 +106,7 @@ const UserList = () => {
               variant="outline"
               color="orange"
               icon={<LinuxIcon />}
+              ouiaId={`user-admin-label-${user.id}`}
             >
               Administrator
             </Label>
@@ -220,6 +222,7 @@ const UserList = () => {
         variant={ModalVariant.medium}
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
+        ouiaId="admin-user-delete-modal"
       >
         <ModalHeader title="Confirm Delete" />
         <ModalBody>
@@ -233,6 +236,7 @@ const UserList = () => {
             isLoading={isDeleting}
             isDisabled={isDeleting}
             onClick={onModalDeleteClick}
+            ouiaId="admin-user-delete-confirm-button"
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
@@ -240,6 +244,7 @@ const UserList = () => {
             variant="secondary"
             isDisabled={isDeleting}
             onClick={() => setIsDeleteModalOpen(false)}
+            ouiaId="admin-user-delete-cancel-button"
           >
             Cancel
           </Button>
