@@ -16,14 +16,14 @@ jest.mock('../pages/settings', () => ({
 jest.mock('../components/widget-header', () => {
   // eslint-disable-next-line react/prop-types
   return function WidgetHeader({ title }) {
-    return <div data-testid="widget-header">{title}</div>;
+    return <div data-ouia-component-id="widget-header">{title}</div>;
   };
 });
 
 // Mock ResultWidgetLegend component
 jest.mock('./result-widget-legend', () => {
   return function ResultWidgetLegend() {
-    return <div data-testid="result-widget-legend">Legend</div>;
+    return <div data-ouia-component-id="result-widget-legend">Legend</div>;
   };
 });
 
@@ -32,9 +32,13 @@ jest.mock('react-apexcharts', () => {
   // eslint-disable-next-line react/prop-types
   return function Chart({ series, options = {} }) {
     return (
-      <div data-testid="apex-chart">
-        <div data-testid="chart-series">{JSON.stringify(series)}</div>
-        <div data-testid="chart-labels">{JSON.stringify(options.labels)}</div>
+      <div data-ouia-component-id="apex-chart">
+        <div data-ouia-component-id="chart-series">
+          {JSON.stringify(series)}
+        </div>
+        <div data-ouia-component-id="chart-labels">
+          {JSON.stringify(options.labels)}
+        </div>
       </div>
     );
   };

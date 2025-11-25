@@ -13,6 +13,7 @@ const ParamDropdown = ({
   handleSelect,
   tooltip,
   dropdownItems,
+  ouiaId = 'param-dropdown',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [value, setValue] = useState(defaultValue || 'Group data by?');
@@ -29,12 +30,16 @@ const ParamDropdown = ({
 
   return (
     <>
-      <div data-id="widget-param-dropdown">
+      <div
+        data-id="widget-param-dropdown"
+        data-ouia-component-id={`${ouiaId}-wrapper`}
+      >
         <Content component="h3">{tooltip}</Content>
         <Select
           isOpen={isOpen}
           selected={value}
           onSelect={dropOnSelect}
+          ouiaId={`${ouiaId}-select`}
           toggle={(toggleRef) => (
             <MenuToggle
               ref={toggleRef}
@@ -64,6 +69,7 @@ ParamDropdown.propTypes = {
   dropdownItems: PropTypes.array,
   handleSelect: PropTypes.func,
   tooltip: PropTypes.string,
+  ouiaId: PropTypes.string,
 };
 
 export default ParamDropdown;

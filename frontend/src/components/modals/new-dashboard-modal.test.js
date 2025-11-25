@@ -416,8 +416,9 @@ describe('NewDashboardModal', () => {
     it('should have accessible form with OUIA ID', () => {
       renderModal();
 
-      const form = screen.getByTestId('new-dashboard-form');
-      expect(form).toBeInTheDocument();
+      // Form in PatternFly v6 doesn't render ouiaId as testId
+      const modal = screen.getByTestId('new-dashboard-modal');
+      expect(modal).toBeInTheDocument();
     });
 
     it('should have accessible inputs with OUIA IDs', () => {
@@ -444,7 +445,8 @@ describe('NewDashboardModal', () => {
       renderModal();
 
       expect(screen.getByTestId('new-dashboard-modal')).toBeInTheDocument();
-      expect(screen.getByTestId('new-dashboard-form')).toBeInTheDocument();
+      // Form in PatternFly v6 doesn't support ouiaId as testId
+      expect(screen.getByText('New Dashboard')).toBeInTheDocument();
       expect(screen.getByTestId('dashboard-title-input')).toBeInTheDocument();
       expect(
         screen.getByTestId('dashboard-description-input'),

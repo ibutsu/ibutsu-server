@@ -18,7 +18,7 @@ jest.mock('../pages/settings', () => ({
 jest.mock('../components/filtering/filtered-table-card', () => {
   const PropTypes = require('prop-types');
   const MockFilterTable = ({ columns, rows, fetching, isError }) => (
-    <div data-testid="filter-table">
+    <div data-ouia-component-id="filter-table">
       {fetching && <div>Loading...</div>}
       {isError && <div>Error loading data</div>}
       <table>
@@ -63,7 +63,7 @@ jest.mock('../components/filtering/filtered-table-card', () => {
 jest.mock('../components/run-summary', () => {
   const PropTypes = require('prop-types');
   const MockRunSummary = ({ summary }) => (
-    <div data-testid="run-summary">
+    <div data-ouia-component-id="run-summary">
       {summary.passes} passes, {summary.failures} failures
     </div>
   );
@@ -76,7 +76,9 @@ jest.mock('../components/run-summary', () => {
 // Mock ActiveFilters
 jest.mock('../components/filtering/active-filters', () => {
   const PropTypes = require('prop-types');
-  const MockActiveFilters = () => <div data-testid="active-filters" />;
+  const MockActiveFilters = () => (
+    <div data-ouia-component-id="active-filters" />
+  );
   MockActiveFilters.propTypes = {
     activeFilters: PropTypes.array,
     hideFilters: PropTypes.array,

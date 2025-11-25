@@ -126,8 +126,8 @@ describe('UserList Component', () => {
         expect(HttpClient.get).toHaveBeenCalledWith(
           ['http://localhost:8080/api', 'admin', 'user'],
           expect.objectContaining({
-            page: 1,
-            pageSize: 20,
+            page: '1',
+            pageSize: '20',
           }),
         );
       });

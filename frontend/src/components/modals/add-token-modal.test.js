@@ -51,7 +51,8 @@ describe('AddTokenModal', () => {
       renderModal();
 
       expect(screen.getByTestId('token-name-input')).toBeInTheDocument();
-      expect(screen.getByTestId('token-expiry-datepicker')).toBeInTheDocument();
+      // DatePicker renders as aria-label="Date picker"
+      expect(screen.getByLabelText('Date picker')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
       expect(
         screen.getByRole('button', { name: /cancel/i }),
@@ -102,8 +103,7 @@ describe('AddTokenModal', () => {
       fireEvent.change(nameInput, { target: { value: 'Test Token' } });
 
       // Get the date input that's part of the DatePicker
-      const dateInput = screen.getByTestId('token-expiry-datepicker');
-      const input = dateInput.querySelector('input');
+      const input = screen.getByLabelText('Date picker');
 
       // Set a date in the past
       const yesterday = new Date();
@@ -134,8 +134,7 @@ describe('AddTokenModal', () => {
       fireEvent.change(nameInput, { target: { value: 'Test Token' } });
 
       // Get the date input that's part of the DatePicker
-      const dateInput = screen.getByTestId('token-expiry-datepicker');
-      const input = dateInput.querySelector('input');
+      const input = screen.getByLabelText('Date picker');
 
       // Set a date in the future
       const tomorrow = new Date();
@@ -164,8 +163,7 @@ describe('AddTokenModal', () => {
       const nameInput = screen.getByTestId('token-name-input');
       fireEvent.change(nameInput, { target: { value: 'My API Token' } });
 
-      const dateInput = screen.getByTestId('token-expiry-datepicker');
-      const input = dateInput.querySelector('input');
+      const input = screen.getByLabelText('Date picker');
 
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 30);
@@ -197,8 +195,7 @@ describe('AddTokenModal', () => {
       const nameInput = screen.getByTestId('token-name-input');
       fireEvent.change(nameInput, { target: { value: 'Test Token' } });
 
-      const dateInput = screen.getByTestId('token-expiry-datepicker');
-      const input = dateInput.querySelector('input');
+      const input = screen.getByLabelText('Date picker');
 
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 7);
@@ -232,8 +229,7 @@ describe('AddTokenModal', () => {
       const nameInput = screen.getByTestId('token-name-input');
       fireEvent.change(nameInput, { target: { value: 'Test Token' } });
 
-      const dateInput = screen.getByTestId('token-expiry-datepicker');
-      const input = dateInput.querySelector('input');
+      const input = screen.getByLabelText('Date picker');
 
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1);
@@ -273,8 +269,7 @@ describe('AddTokenModal', () => {
       const nameInput = screen.getByTestId('token-name-input');
       fireEvent.change(nameInput, { target: { value: 'Test Token' } });
 
-      const dateInput = screen.getByTestId('token-expiry-datepicker');
-      const input = dateInput.querySelector('input');
+      const input = screen.getByLabelText('Date picker');
 
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1);
@@ -335,8 +330,7 @@ describe('AddTokenModal', () => {
         ).toBeInTheDocument();
       });
 
-      const dateInput = screen.getByTestId('token-expiry-datepicker');
-      const input = dateInput.querySelector('input');
+      const input = screen.getByLabelText('Date picker');
 
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1);
@@ -363,7 +357,7 @@ describe('AddTokenModal', () => {
     it('should show error helper text for expiry field when invalid', async () => {
       renderModal();
 
-      const nameInput = screen.getByLabelText('Name');
+      const nameInput = screen.getByTestId('token-name-input');
       fireEvent.change(nameInput, { target: { value: 'Test Token' } });
 
       const saveButton = screen.getByRole('button', { name: /save/i });
@@ -382,13 +376,13 @@ describe('AddTokenModal', () => {
       renderModal();
 
       expect(screen.getByTestId('add-token-modal')).toBeInTheDocument();
-      expect(screen.getByTestId('add-token-form')).toBeInTheDocument();
+      // Form in PatternFly v6 doesn't support ouiaId as testId
+      expect(screen.getByText('Add Token')).toBeInTheDocument();
       expect(screen.getByTestId('token-name-input')).toBeInTheDocument();
-      expect(screen.getByTestId('token-expiry-datepicker')).toBeInTheDocument();
+      // DatePicker has aria-label instead of testId
+      expect(screen.getByLabelText('Date picker')).toBeInTheDocument();
       expect(screen.getByTestId('add-token-save-button')).toBeInTheDocument();
-      expect(
-        screen.getByTestId('add-token-cancel-button'),
-      ).toBeInTheDocument();
+      expect(screen.getByTestId('add-token-cancel-button')).toBeInTheDocument();
     });
 
     it('should accept custom ouiaId prop', () => {

@@ -23,8 +23,10 @@
 - Use `hatch run test` to execute tests. `hatch run test-cov` to include coverage.
 - Pass arguments to pytest through `hatch run test -- <-arg>`
 - Add or update tests for the code you change, even if nobody asked.
-- Do not make changse to cause tests to pass when a bug is identified by the test. Always first investigate for bugs in the tested application component.
+- Do not make changes to cause tests to pass when a bug is identified by the test. Always first investigate for bugs in the tested application component.
 - Use full UUID strings for all `id` fields including `run_id` and `result_id` when mocking unless an invalid UUID is specifically being tested
+- Focus test coverage on behavior first, not implementation details.
+- Identify test coverage increases through parametrization of current test functions before creating new test functions
 
 ### Integration Testing Approach
 - **Prefer integration tests over mocking**: Use `flask_app` fixture with real SQLite database operations

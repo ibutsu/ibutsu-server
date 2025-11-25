@@ -17,8 +17,8 @@ jest.mock('../pages/settings', () => ({
 jest.mock('../components/filtering/filtered-table-card', () => {
   const PropTypes = require('prop-types');
   const MockFilterTable = ({ columns, rows, headerChildren, isError }) => (
-    <div data-testid="filter-table">
-      <div data-testid="filter-table-header">{headerChildren}</div>
+    <div data-ouia-component-id="filter-table">
+      <div data-ouia-component-id="filter-table-header">{headerChildren}</div>
       {isError && <div>Error loading data</div>}
       <table>
         <thead>

@@ -75,8 +75,8 @@
     "start": "serve -s build -l tcp://0.0.0.0:3000",
     "build": "./bin/write-version-file.cjs && DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
-    "test:coverage": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --coverage --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
-    "test:coverage:ci": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --coverage --ci --maxWorkers=2 --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
+    "test:coverage": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --coverage --silent --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
+    "test:coverage:ci": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --coverage --silent --ci --maxWorkers=2 --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
     "eject": "react-scripts eject",
     "devserver": "./bin/write-version-file.cjs && CI=true DISABLE_ESLINT_PLUGIN=true react-scripts start",
     "lint": "eslint --fix",
@@ -118,7 +118,6 @@
       "!src/views/accessibility-*.js"
     ],
     "coverageReporters": [
-      "text",
       "text-summary",
       "html",
       "lcov",
