@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from sqlalchemy import MetaData, inspect, text
+from sqlalchemy import MetaData, inspect
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
@@ -12,7 +12,7 @@ from ibutsu_server.db.base import Boolean, Column, DateTime, ForeignKey, Text
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.db.types import PortableUUID
 
-__version__ = 10
+__version__ = 9
 
 
 def get_upgrade_op(session):
@@ -441,114 +441,3 @@ def upgrade_9(session):
         f"upgrade_9 completed: {migration_stats['widgets_updated']}/"
         f"{migration_stats['total_widgets_processed']} widgets updated"
     )
-
-
-def upgrade_10(session):
-    """Version 10 upgrade
-
-    This upgrade adds database indexes to optimize result-aggregator queries
-    that group by metadata fields. It adds:
-
-    1. A GIN index on the entire results.data (metadata) column for fast JSONB operations
-    2. A composite index on (project_id, start_time) for efficient filtering
-    3. A composite index on (project_id, start_time, component) for component-based queries
-
-    These indexes significantly improve performance of queries that:
-    - Group by metadata fields (e.g., metadata.assignee, metadata.component)
-    - Filter by project_id and time range
-    - Aggregate results over time periods
-
-    SQL equivalents:
-        CREATE INDEX IF NOT EXISTS ix_results_data_gin ON results USING gin (data);
-        CREATE INDEX IF NOT EXISTS ix_results_project_start_time
-            ON results (project_id, start_time DESC);
-        CREATE INDEX IF NOT EXISTS ix_results_project_start_component
-            ON results (project_id, start_time DESC, component);
-    """
-    logger = logging.getLogger(__name__)
-    print("Starting upgrade_10: Adding indexes for result-aggregator optimization")
-
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
-    metadata = MetaData()
-    metadata.reflect(bind=engine)
-
-    if engine.url.get_dialect().name == "postgresql":
-        results_table = metadata.tables.get("results")
-        if results_table is None:
-            logger.warning("Results table not found, skipping index creation")
-            print("upgrade_10 warning: Results table not found")
-            return
-
-        existing_indexes = {idx.name for idx in results_table.indexes}
-        logger.info(f"Found {len(existing_indexes)} existing indexes on results table")
-
-        indexes_created = 0
-        indexes_skipped = 0
-
-        # 1. Add GIN index on data column for fast metadata queries
-        data_gin_index = "ix_results_data_gin"
-        if data_gin_index not in existing_indexes:
-            try:
-                op.create_index(
-                    data_gin_index,
-                    "results",
-                    [quoted_name("data", False)],
-                    postgresql_using="gin",
-                )
-                logger.info(f"Created index: {data_gin_index}")
-                indexes_created += 1
-            except Exception as e:
-                logger.error(f"Failed to create index {data_gin_index}: {e}")
-        else:
-            logger.info(f"Index {data_gin_index} already exists, skipping")
-            indexes_skipped += 1
-
-        # 2. Add composite index on (project_id, start_time) for time-range queries
-        project_time_index = "ix_results_project_start_time"
-        if project_time_index not in existing_indexes:
-            try:
-                # Use raw SQL for DESC ordering compatibility across PostgreSQL versions
-                connection = session.connection()
-                connection.execute(
-                    text(
-                        "CREATE INDEX IF NOT EXISTS ix_results_project_start_time "
-                        "ON results (project_id, start_time DESC)"
-                    )
-                )
-                logger.info(f"Created index: {project_time_index}")
-                indexes_created += 1
-            except Exception as e:
-                logger.error(f"Failed to create index {project_time_index}: {e}")
-        else:
-            logger.info(f"Index {project_time_index} already exists, skipping")
-            indexes_skipped += 1
-
-        # 3. Add composite index on (project_id, start_time, component) for component queries
-        project_time_component_index = "ix_results_project_start_component"
-        if project_time_component_index not in existing_indexes:
-            try:
-                # Use raw SQL for DESC ordering compatibility across PostgreSQL versions
-                connection = session.connection()
-                connection.execute(
-                    text(
-                        "CREATE INDEX IF NOT EXISTS ix_results_project_start_component "
-                        "ON results (project_id, start_time DESC, component)"
-                    )
-                )
-                logger.info(f"Created index: {project_time_component_index}")
-                indexes_created += 1
-            except Exception as e:
-                logger.error(f"Failed to create index {project_time_component_index}: {e}")
-        else:
-            logger.info(f"Index {project_time_component_index} already exists, skipping")
-            indexes_skipped += 1
-
-        logger.info("Upgrade 10 completed: Added indexes for result-aggregator optimization")
-        print(
-            f"upgrade_10 completed: {indexes_created} indexes created, "
-            f"{indexes_skipped} already existed"
-        )
-    else:
-        logger.info("Upgrade 10 skipped: Not PostgreSQL database")
-        print("upgrade_10 skipped: Not a PostgreSQL database")
