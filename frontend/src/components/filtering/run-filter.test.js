@@ -43,7 +43,7 @@ describe('RunFilter', () => {
     operationMode: 'single',
     operations: {
       eq: { opString: 'Equals' },
-      contains: { opString: 'Contains' },
+      regex: { opString: 'Regex' },
     },
     fieldToggle: (toggleRef) => <button ref={toggleRef}>Field Toggle</button>,
     operationToggle: (toggleRef) => (
@@ -106,7 +106,7 @@ describe('RunFilter', () => {
       renderComponent({}, { isOperationOpen: true });
 
       expect(screen.getByText('Equals')).toBeInTheDocument();
-      expect(screen.getByText('Contains')).toBeInTheDocument();
+      expect(screen.getByText('Regex')).toBeInTheDocument();
     });
 
     it('should call onOperationSelect when an operation is selected', () => {
@@ -362,9 +362,7 @@ describe('RunFilter', () => {
       renderComponent(
         {},
         {
-          activeFilters: [
-            { field: 'env', operator: 'contains', value: 'prod' },
-          ],
+          activeFilters: [{ field: 'env', operator: 'regex', value: 'prod' }],
           boolSelection: 'True',
           fieldSelection: 'source',
           filteredFieldOptions: [
@@ -373,7 +371,7 @@ describe('RunFilter', () => {
           ],
           isFieldOpen: false,
           isOperationOpen: false,
-          operationSelection: 'contains',
+          operationSelection: 'regex',
           textFilter: 'test',
           isBoolOpen: false,
           filterMode: 'text',
