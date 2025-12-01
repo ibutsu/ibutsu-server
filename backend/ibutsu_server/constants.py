@@ -230,11 +230,10 @@ WIDGET_TYPES = {
             },
             {
                 "name": "days",
-                "description": "Aggregate test results from <days> days ago, e.g. 90. "
-                "Defaults to 90 when not specified (unless run_id is provided)",
+                "description": "Aggregate test results from <days> days ago, e.g. 3",
                 "type": "float",
                 "required": False,
-                "default": 90,
+                "default": 3,
             },
             {
                 "name": "run_id",
