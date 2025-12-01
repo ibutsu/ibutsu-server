@@ -1,6 +1,8 @@
 from datetime import datetime
 from unittest.mock import MagicMock, Mock, patch
 
+from sqlalchemy.exc import OperationalError
+
 from ibutsu_server.db.models import Run
 from ibutsu_server.widgets.run_aggregator import get_recent_run_data
 from tests.fixtures.constants import MOCK_RESULT_ID, MOCK_RUN_ID
@@ -162,3 +164,29 @@ def test_run_aggregator_endpoint_error_handling(flask_app, auth_headers):
         assert response.status_code == 500
         assert "Error processing widget" in response.data.decode("utf-8")
         assert "run-aggregator" in response.data.decode("utf-8")
+
+
+def test_widget_controller_timeout_handling(flask_app, auth_headers):
+    """Test case for widget controller timeout handling"""
+    client, jwt_token = flask_app
+    headers = auth_headers(jwt_token)
+
+    query_string = {
+        "weeks": 4,
+        "group_field": "component",
+    }
+
+    with patch.dict(
+        "ibutsu_server.controllers.widget_controller.WIDGET_METHODS",
+        {"run-aggregator": MagicMock(side_effect=OperationalError("statement timeout", {}, None))},
+    ):
+        response = client.open(
+            "/api/widget/run-aggregator",
+            method="GET",
+            headers=headers,
+            query_string=query_string,
+        )
+
+        # Should return 504 Gateway Timeout
+        assert response.status_code == 504
+        assert "Database error or timeout" in response.data.decode("utf-8")

@@ -63,6 +63,7 @@ def flask_app():
         "TESTING": True,
         "LIVESERVER_PORT": 0,
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SQLALCHEMY_ENGINE_OPTIONS": {},
         "GOOGLE_CLIENT_ID": "123456@client.google.com",
         "GITHUB_CLIENT_ID": None,
         "FACEBOOK_APP_ID": None,

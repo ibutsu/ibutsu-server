@@ -66,7 +66,6 @@ def get_app(**extra_config):
     config: flask.Config = app.app.config
     config.setdefault("BCRYPT_LOG_ROUNDS", 12)
     config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", True)
-
     config.from_file(str(Path("./settings.yaml").resolve()), yaml_load, silent=True)
     # Now load config from environment variables
     config.from_mapping(os.environ)
@@ -107,6 +106,19 @@ def get_app(**extra_config):
 
     # Load any extra config
     config.update(extra_config)
+
+    if "SQLALCHEMY_ENGINE_OPTIONS" not in config:
+        db_uri = config.get("SQLALCHEMY_DATABASE_URI", "")
+        is_sqlite = False
+        if (isinstance(db_uri, str) and db_uri.startswith("sqlite")) or (
+            isinstance(db_uri, SQLA_URL) and db_uri.drivername.startswith("sqlite")
+        ):
+            is_sqlite = True
+
+        if not is_sqlite:
+            config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+                "connect_args": {"options": "-c statement_timeout=25000"}
+            }
 
     create_celery_app(app.app)
     app.add_api(

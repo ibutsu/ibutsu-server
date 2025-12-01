@@ -423,7 +423,7 @@ const IbutsuHeader = () => {
               <Brand
                 src="/images/ibutsu-wordart-164.png"
                 alt="Ibutsu"
-                ouiaId="brand-logo"
+                data-ouia-component-id="brand-logo"
               />
             </MastheadLogo>
           </MastheadBrand>
