@@ -1,6 +1,5 @@
 /* eslint-env jest */
-import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ResultList from './result-list';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
@@ -199,9 +198,7 @@ describe('ResultList', () => {
       HttpClient.handleResponse.mockResolvedValue(mockResponse);
 
       const filterContext = {
-        activeFilters: [
-          { field: 'result', operator: 'eq', value: 'passed' },
-        ],
+        activeFilters: [{ field: 'result', operator: 'eq', value: 'passed' }],
       };
 
       renderComponent({}, filterContext);

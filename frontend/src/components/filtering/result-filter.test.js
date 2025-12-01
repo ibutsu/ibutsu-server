@@ -71,6 +71,10 @@ describe('ResultFilter', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    if (HttpClient.get.mock) {
+      HttpClient.get.mockResolvedValue({ ok: true, json: () => [] });
+      HttpClient.handleResponse.mockResolvedValue([]);
+    }
   });
 
   describe('Rendering', () => {
@@ -251,7 +255,9 @@ describe('ResultFilter', () => {
     it('should pass hideFilters prop to ActiveFilters', () => {
       renderComponent({ hideFilters: ['project_id'] });
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -326,7 +332,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should filter runs based on input', () => {
@@ -350,12 +358,16 @@ describe('ResultFilter', () => {
               fieldSelection: 'run_id',
             }}
           >
-            <ResultFilter runs={['run-abc-123', 'run-def-456', 'run-abc-789']} />
+            <ResultFilter
+              runs={['run-abc-123', 'run-def-456', 'run-abc-789']}
+            />
           </FilterContext.Provider>
         </MemoryRouter>,
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should render run multi-select for multi operation mode', () => {
@@ -368,7 +380,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -398,7 +412,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -457,25 +473,33 @@ describe('ResultFilter', () => {
     it('should accept maxHeight prop', () => {
       renderComponent({ maxHeight: '400px' });
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should use default maxHeight when not provided', () => {
       renderComponent();
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should accept runs prop', () => {
       renderComponent({ runs: ['run-1', 'run-2', 'run-3'] });
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should handle empty runs array', () => {
       renderComponent({ runs: [] });
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -533,7 +557,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -565,7 +591,9 @@ describe('ResultFilter', () => {
       );
 
       // Component should render with context
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -592,7 +620,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should handle run selection in multi mode', () => {
@@ -605,7 +635,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should handle empty run input', () => {
@@ -618,7 +650,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -633,7 +667,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should handle result selection in multi mode', () => {
@@ -646,7 +682,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -747,7 +785,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should handle value options in multi mode', () => {
@@ -760,7 +800,9 @@ describe('ResultFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -776,7 +818,9 @@ describe('ResultFilter', () => {
       );
 
       // All toggles should be available through context
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -845,7 +889,7 @@ describe('ResultFilter', () => {
           fieldSelection: 'metadata.browser',
           filterMode: 'text',
           operationMode: 'single',
-        }
+        },
       );
 
       await waitFor(() => {
@@ -854,7 +898,9 @@ describe('ResultFilter', () => {
     });
 
     it('should fetch with days=90 parameter', async () => {
-      HttpClient.get.mockReturnValue(Promise.resolve({ ok: true, json: () => [] }));
+      HttpClient.get.mockReturnValue(
+        Promise.resolve({ ok: true, json: () => [] }),
+      );
       HttpClient.handleResponse.mockReturnValue([]);
 
       renderComponent(
@@ -863,13 +909,13 @@ describe('ResultFilter', () => {
           fieldSelection: 'metadata.browser',
           filterMode: 'text',
           operationMode: 'single',
-        }
+        },
       );
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalledWith(
           expect.anything(),
-          expect.objectContaining({ days: 90 })
+          expect.objectContaining({ days: 90 }),
         );
       });
     });
