@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import warnings
 from contextlib import contextmanager
@@ -6,7 +7,6 @@ from datetime import datetime, timezone
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from sqlalchemy import MetaData, inspect, text
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.sql import quoted_name
 
 try:
@@ -530,40 +530,32 @@ def _get_engine(session, logger):
 
 @contextmanager
 def _raw_autocommit_cursor(engine):
-    """Context manager for raw DBAPI cursor with autocommit enabled.
+    """Context manager for raw DBAPI connection with autocommit enabled.
 
-    Provides a cursor in autocommit mode on a fresh connection from the pool,
-    ensuring CREATE INDEX CONCURRENTLY can run outside any transaction.
-    Manages the cursor lifecycle to eliminate boilerplate in callers.
+    Provides a cursor and raw connection with autocommit mode enabled,
+    ensuring proper cleanup of resources.
 
     :param engine: SQLAlchemy engine
-    :yield: DBAPI cursor ready for executing SQL
+    :yield: Tuple of (cursor, raw_conn)
     """
-    # Get a fresh raw connection from the pool
-    # This ensures we're not reusing a connection that's in a transaction
-    raw_conn = engine.pool.connect()
+    raw_conn = None
     try:
-        # Get the underlying DBAPI connection
-        dbapi_conn = raw_conn.connection
-        original_autocommit = getattr(dbapi_conn, "autocommit", False)
+        raw_conn = engine.raw_connection()
+        original_autocommit = getattr(raw_conn, "autocommit", False)
         try:
-            # Explicitly end any existing transaction
-            if not original_autocommit:
-                dbapi_conn.rollback()
-            # Enable autocommit mode
-            dbapi_conn.autocommit = True
-            cursor = dbapi_conn.cursor()
+            raw_conn.autocommit = True
+            cursor = raw_conn.cursor()
             try:
-                yield cursor
+                yield cursor, raw_conn
             finally:
                 cursor.close()
         finally:
-            # Restore original autocommit state
-            if hasattr(dbapi_conn, "autocommit"):
-                dbapi_conn.autocommit = original_autocommit
+            if hasattr(raw_conn, "autocommit"):
+                raw_conn.autocommit = original_autocommit
     finally:
-        # Return connection to pool
-        raw_conn.close()
+        if raw_conn:
+            with contextlib.suppress(Exception):
+                raw_conn.close()
 
 
 def _recreate_invalid_index(session, index_name, index_sql, logger):
@@ -580,9 +572,10 @@ def _recreate_invalid_index(session, index_name, index_sql, logger):
         return False
 
     try:
-        with _raw_autocommit_cursor(engine) as cursor:
+        with _raw_autocommit_cursor(engine) as (cursor, raw_conn):
             cursor.execute(f"DROP INDEX CONCURRENTLY IF EXISTS {index_name}")
             cursor.execute(index_sql)
+            raw_conn.commit()
             logger.info(f"Successfully recreated index: {index_name}")
             return True
     except Exception as drop_error:
@@ -598,33 +591,25 @@ def _create_index_concurrently(session, index_name, index_sql, logger):
     2. Use a separate connection with autocommit to create the index outside a transaction
     3. Handle errors gracefully
 
-    Note: CREATE INDEX CONCURRENTLY can take a very long time on large databases
-    (potentially hours). The operation is non-blocking for writes but will block
-    this connection until complete.
-
     :param session: SQLAlchemy session
     :param index_name: Name of the index to create
     :param index_sql: SQL statement to create the index (should include CONCURRENTLY)
     :param logger: Logger instance
     :return: True if index was created or already exists, False on error
     """
-    logger.info(f"Starting creation of index {index_name} (this may take a while)...")
-
     # Commit any pending transaction before creating CONCURRENT index
     # CONCURRENT indexes cannot be created inside a transaction
     session.commit()
 
     engine = _get_engine(session, logger)
     if engine is None:
-        logger.error(f"Failed to get engine for index {index_name}")
         return False
 
     try:
-        logger.debug(f"Acquiring autocommit connection for index {index_name}")
-        with _raw_autocommit_cursor(engine) as cursor:
-            logger.debug(f"Executing CREATE INDEX CONCURRENTLY for {index_name}")
+        with _raw_autocommit_cursor(engine) as (cursor, raw_conn):
             cursor.execute(index_sql)
-            logger.info(f"Successfully created index: {index_name}")
+            raw_conn.commit()  # Explicit commit for clarity
+            logger.info(f"Created index: {index_name}")
             return True
     except Exception as e:
         error_msg = str(e).lower()
@@ -696,109 +681,72 @@ def upgrade_10(session):
     logger = logging.getLogger(__name__)
     logger.info("Starting upgrade_10: Adding indexes for result-aggregator optimization")
 
-    try:
-        engine = session.connection().engine
-        logger.debug("Got database engine, creating upgrade operations")
-        get_upgrade_op(session)
-        metadata = MetaData()
-        logger.debug("Created metadata object, starting reflection...")
-        # Suppress warnings about expression-based indexes that SQLAlchemy can't reflect
-        with warnings.catch_warnings():
-            if SAWarning:
-                warnings.filterwarnings(
-                    "ignore",
-                    category=SAWarning,
-                    message=".*Skipped unsupported reflection of expression-based index.*",
-                )
-            else:
-                # Fallback: filter by message pattern if SAWarning is not available
-                warnings.filterwarnings(
-                    "ignore", message=".*Skipped unsupported reflection of expression-based index.*"
-                )
-            metadata.reflect(bind=engine)
-
-        if engine.url.get_dialect().name == "postgresql":
-            results_table = metadata.tables.get("results")
-            if results_table is None:
-                logger.warning("Results table not found, skipping index creation")
-                logger.info("upgrade_10 skipped: Results table not found")
-                return
-
-            existing_indexes = {idx.name for idx in results_table.indexes}
-            logger.info(f"Found {len(existing_indexes)} existing indexes on results table")
-
-            stats = {"created": 0, "skipped": 0, "failed": 0}
-
-            # Define indexes to create
-            indexes_to_create = [
-                (
-                    "ix_results_data_gin",
-                    "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_data_gin "
-                    "ON results USING gin (data)",
-                ),
-                (
-                    "ix_results_project_start_time",
-                    "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_project_start_time "
-                    "ON results (project_id, start_time DESC)",
-                ),
-                (
-                    "ix_results_project_start_component",
-                    "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_project_start_component "
-                    "ON results (project_id, start_time DESC, component)",
-                ),
-            ]
-
-            # Create each index if it doesn't exist
-            for index_name, index_sql in indexes_to_create:
-                _create_index_if_missing(
-                    session, index_name, index_sql, existing_indexes, logger, stats
-                )
-
-            # Verify indexes were actually created by refreshing metadata
-            # This is important because CREATE INDEX CONCURRENTLY can fail silently
-            # or the upgrade might have been interrupted
-            # Use a fresh MetaData instance to avoid stale index definitions
-            verification_metadata = MetaData()
-            verification_metadata.reflect(bind=engine, only=["results"])
-            results_table = verification_metadata.tables.get("results")
-            if results_table is None:
-                error_msg = (
-                    "upgrade_10 failed: Could not verify index creation - results table "
-                    "not found during verification. This indicates a serious database issue. "
-                    f"Stats: {stats['created']} created, {stats['skipped']} skipped, "
-                    f"{stats['failed']} failed."
-                )
-                logger.error(error_msg)
-                raise OperationalError(error_msg, None, None)
-
-            final_indexes = {idx.name for idx in results_table.indexes}
-            missing_indexes = [
-                index_name for index_name, _ in indexes_to_create if index_name not in final_indexes
-            ]
-
-            if missing_indexes:
-                error_msg = (
-                    f"upgrade_10 failed: The following indexes were not created: "
-                    f"{missing_indexes}. Stats: {stats['created']} created, "
-                    f"{stats['skipped']} skipped, {stats['failed']} failed. "
-                    "The upgrade can be safely retried."
-                )
-                logger.error(error_msg)
-                # Raise OperationalError so the upgrade framework catches it
-                # and doesn't mark as complete. This prevents silent failures where
-                # version is updated but indexes aren't created
-                raise OperationalError(error_msg, None, None)
-
-            logger.info(
-                f"upgrade_10 completed: {stats['created']} indexes created, "
-                f"{stats['skipped']} already existed, {stats['failed']} failed"
+    engine = session.connection().engine
+    get_upgrade_op(session)
+    metadata = MetaData()
+    # Suppress warnings about expression-based indexes that SQLAlchemy can't reflect
+    with warnings.catch_warnings():
+        if SAWarning:
+            warnings.filterwarnings(
+                "ignore",
+                category=SAWarning,
+                message=".*Skipped unsupported reflection of expression-based index.*",
             )
         else:
-            logger.info("upgrade_10 skipped: Not PostgreSQL database")
-    except Exception as e:
-        logger.error(f"upgrade_10 encountered an error: {e}", exc_info=True)
-        # Re-raise as OperationalError so upgrade framework handles it properly
-        raise OperationalError(str(e), None, None) from e
+            # Fallback: filter by message pattern if SAWarning is not available
+            warnings.filterwarnings(
+                "ignore", message=".*Skipped unsupported reflection of expression-based index.*"
+            )
+        metadata.reflect(bind=engine)
+
+    if engine.url.get_dialect().name == "postgresql":
+        results_table = metadata.tables.get("results")
+        if results_table is None:
+            logger.warning("Results table not found, skipping index creation")
+            logger.info("upgrade_10 skipped: Results table not found")
+            return
+
+        existing_indexes = {idx.name for idx in results_table.indexes}
+        logger.info(f"Found {len(existing_indexes)} existing indexes on results table")
+
+        stats = {"created": 0, "skipped": 0, "failed": 0}
+
+        # Define indexes to create
+        indexes_to_create = [
+            (
+                "ix_results_data_gin",
+                "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_data_gin "
+                "ON results USING gin (data)",
+            ),
+            (
+                "ix_results_project_start_time",
+                "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_project_start_time "
+                "ON results (project_id, start_time DESC)",
+            ),
+            (
+                "ix_results_project_start_component",
+                "CREATE INDEX CONCURRENTLY IF NOT EXISTS ix_results_project_start_component "
+                "ON results (project_id, start_time DESC, component)",
+            ),
+        ]
+
+        # Create each index if it doesn't exist
+        for index_name, index_sql in indexes_to_create:
+            _create_index_if_missing(
+                session, index_name, index_sql, existing_indexes, logger, stats
+            )
+
+        logger.info(
+            f"upgrade_10 completed: {stats['created']} indexes created, "
+            f"{stats['skipped']} already existed, {stats['failed']} failed"
+        )
+        if stats["failed"] > 0:
+            logger.warning(
+                "Some indexes failed to create. The upgrade can be safely retried. "
+                "Failed indexes will be skipped if they already exist."
+            )
+    else:
+        logger.info("upgrade_10 skipped: Not PostgreSQL database")
 
 
 def upgrade_11(session):
@@ -829,138 +777,126 @@ def upgrade_11(session):
     """
     logger = logging.getLogger(__name__)
     logger.info("Starting upgrade_11: Adding optimized indexes for common widget query patterns")
+    engine = session.connection().engine
+    op = get_upgrade_op(session)
+    metadata = MetaData()
+    # Suppress warnings about expression-based indexes that SQLAlchemy can't reflect
+    with warnings.catch_warnings():
+        if SAWarning:
+            warnings.filterwarnings(
+                "ignore",
+                category=SAWarning,
+                message=".*Skipped unsupported reflection of expression-based index.*",
+            )
+        else:
+            # Fallback: filter by message pattern if SAWarning is not available
+            warnings.filterwarnings(
+                "ignore", message=".*Skipped unsupported reflection of expression-based index.*"
+            )
+        metadata.reflect(bind=engine)
 
-    try:
-        engine = session.connection().engine
-        logger.debug("Got database engine for upgrade_11")
-        op = get_upgrade_op(session)
-        metadata = MetaData()
-        logger.debug("Starting metadata reflection for upgrade_11...")
-        # Suppress warnings about expression-based indexes that SQLAlchemy can't reflect
-        with warnings.catch_warnings():
-            if SAWarning:
-                warnings.filterwarnings(
-                    "ignore",
-                    category=SAWarning,
-                    message=".*Skipped unsupported reflection of expression-based index.*",
+    # Only apply to PostgreSQL (SQLite doesn't support GIN indexes or pg_trgm)
+    if engine.url.get_dialect().name != "postgresql":
+        logger.info("Skipping upgrade_11: not using PostgreSQL")
+        return
+
+    indexes_created = []
+    pg_trgm_available = _check_pg_trgm_extension(session, logger)
+
+    # Define and create composite indexes for common query patterns
+    composite_indexes = [
+        ("runs", "ix_runs_project_id_start_time", ["project_id", "start_time"]),
+        ("results", "ix_results_project_id_start_time", ["project_id", "start_time"]),
+        ("runs", "ix_runs_project_component_start_time", ["project_id", "component", "start_time"]),
+        (
+            "results",
+            "ix_results_project_component_start_time",
+            ["project_id", "component", "start_time"],
+        ),
+        ("results", "ix_results_run_id_start_time", ["run_id", "start_time"]),
+    ]
+
+    for table_name, index_name, columns in composite_indexes:
+        _create_index_safely(
+            op,
+            metadata,
+            table_name,
+            index_name,
+            {"columns": columns},
+            logger,
+            indexes_created,
+        )
+
+    # Define and create GIN indexes for JSONB path queries
+    # Use raw SQL for JSONB path expressions to ensure they're treated as
+    # expressions, not column names
+    jsonb_path_indexes = [
+        ("runs", "ix_runs_jenkins", "data->'jenkins'"),
+        ("results", "ix_results_jenkins", "data->'jenkins'"),
+        ("results", "ix_results_test_suite", "data->'test_suite'"),
+    ]
+
+    for table_name, index_name, path_expression in jsonb_path_indexes:
+        table = metadata.tables.get(table_name)
+        if table is None or index_name in [idx.name for idx in table.indexes]:
+            continue
+
+        try:
+            # Use raw SQL to create expression indexes on JSONB paths
+            connection = session.connection()
+            connection.execute(
+                text(
+                    f"CREATE INDEX IF NOT EXISTS {index_name} "
+                    f"ON {table_name} USING gin (({path_expression}))"
                 )
-            else:
-                # Fallback: filter by message pattern if SAWarning is not available
-                warnings.filterwarnings(
-                    "ignore", message=".*Skipped unsupported reflection of expression-based index.*"
-                )
-            metadata.reflect(bind=engine)
+            )
+            indexes_created.append(index_name)
+            logger.info(f"Created GIN JSONB index: {index_name}")
+        except Exception as e:
+            logger.warning(f"Could not create index {index_name}: {e}")
 
-        # Only apply to PostgreSQL (SQLite doesn't support GIN indexes or pg_trgm)
-        if engine.url.get_dialect().name != "postgresql":
-            logger.info("Skipping upgrade_11: not using PostgreSQL")
-            return
-
-        indexes_created = []
-        pg_trgm_available = _check_pg_trgm_extension(session, logger)
-
-        # Define and create composite indexes for common query patterns
-        composite_indexes = [
-            ("runs", "ix_runs_project_id_start_time", ["project_id", "start_time"]),
-            ("results", "ix_results_project_id_start_time", ["project_id", "start_time"]),
-            (
-                "runs",
-                "ix_runs_project_component_start_time",
-                ["project_id", "component", "start_time"],
-            ),
-            (
-                "results",
-                "ix_results_project_component_start_time",
-                ["project_id", "component", "start_time"],
-            ),
-            ("results", "ix_results_run_id_start_time", ["run_id", "start_time"]),
+    # Define and create GIN indexes for pattern matching on text columns
+    # These require pg_trgm extension, so only create if extension is available
+    if pg_trgm_available:
+        pattern_indexes = [
+            ("runs", "ix_runs_component_trgm", "component"),
+            ("results", "ix_results_component_trgm", "component"),
+            ("runs", "ix_runs_source_trgm", "source"),
+            ("results", "ix_results_source_trgm", "source"),
         ]
 
-        for table_name, index_name, columns in composite_indexes:
+        for table_name, index_name, column_name in pattern_indexes:
             _create_index_safely(
                 op,
                 metadata,
                 table_name,
                 index_name,
-                {"columns": columns},
+                {
+                    "columns": [column_name],
+                    "postgresql_using": "gin",
+                    "postgresql_ops": {column_name: "gin_trgm_ops"},
+                },
                 logger,
                 indexes_created,
             )
-
-        # Define and create GIN indexes for JSONB path queries
-        # Use raw SQL for JSONB path expressions to ensure they're treated as
-        # expressions, not column names
-        jsonb_path_indexes = [
-            ("runs", "ix_runs_jenkins", "data->'jenkins'"),
-            ("results", "ix_results_jenkins", "data->'jenkins'"),
-            ("results", "ix_results_test_suite", "data->'test_suite'"),
-        ]
-
-        for table_name, index_name, path_expression in jsonb_path_indexes:
-            table = metadata.tables.get(table_name)
-            if table is None or index_name in [idx.name for idx in table.indexes]:
-                continue
-
-            try:
-                # Use raw SQL to create expression indexes on JSONB paths
-                connection = session.connection()
-                connection.execute(
-                    text(
-                        f"CREATE INDEX IF NOT EXISTS {index_name} "
-                        f"ON {table_name} USING gin (({path_expression}))"
-                    )
-                )
-                indexes_created.append(index_name)
-                logger.info(f"Created GIN JSONB index: {index_name}")
-            except Exception as e:
-                logger.warning(f"Could not create index {index_name}: {e}")
-
-        # Define and create GIN indexes for pattern matching on text columns
-        # These require pg_trgm extension, so only create if extension is available
-        if pg_trgm_available:
-            pattern_indexes = [
-                ("runs", "ix_runs_component_trgm", "component"),
-                ("results", "ix_results_component_trgm", "component"),
-                ("runs", "ix_runs_source_trgm", "source"),
-                ("results", "ix_results_source_trgm", "source"),
-            ]
-
-            for table_name, index_name, column_name in pattern_indexes:
-                _create_index_safely(
-                    op,
-                    metadata,
-                    table_name,
-                    index_name,
-                    {
-                        "columns": [column_name],
-                        "postgresql_using": "gin",
-                        "postgresql_ops": {column_name: "gin_trgm_ops"},
-                    },
-                    logger,
-                    indexes_created,
-                )
-        else:
-            logger.info(
-                "Skipping trigram indexes (ix_*_component_trgm, ix_*_source_trgm) "
-                "because pg_trgm extension is not available"
-            )
-
-        # Create GIN index on summary JSONB for aggregation queries
-        _create_index_safely(
-            op,
-            metadata,
-            "runs",
-            "ix_runs_summary",
-            {"columns": ["summary"], "postgresql_using": "gin"},
-            logger,
-            indexes_created,
+    else:
+        logger.info(
+            "Skipping trigram indexes (ix_*_component_trgm, ix_*_source_trgm) "
+            "because pg_trgm extension is not available"
         )
 
-        # Log summary
-        logger.info(f"upgrade_11 completed: created {len(indexes_created)} indexes")
-        if indexes_created:
-            logger.info(f"  Indexes created: {', '.join(indexes_created)}")
-    except Exception as e:
-        logger.error(f"upgrade_11 encountered an error: {e}", exc_info=True)
-        # Re-raise as OperationalError so upgrade framework handles it properly
-        raise OperationalError(str(e), None, None) from e
+    # Create GIN index on summary JSONB for aggregation queries
+    _create_index_safely(
+        op,
+        metadata,
+        "runs",
+        "ix_runs_summary",
+        {"columns": ["summary"], "postgresql_using": "gin"},
+        logger,
+        indexes_created,
+    )
+
+    # Log summary
+    logger.info(f"upgrade_11 completed: created {len(indexes_created)} indexes")
+    if indexes_created:
+        logger.info(f"  Indexes created: {', '.join(indexes_created)}")
