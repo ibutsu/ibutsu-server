@@ -82,9 +82,11 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
   // Dynamic metadata values
   const [valueOptions, setValueOptions] = useState([]);
   const [isValueOpen, setIsValueOpen] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
     if (fieldSelection && fieldSelection.startsWith('metadata.')) {
+      setLoadError(null);
       // Filter out project_id since we pass it as 'project' parameter
       const filtersWithoutProject = activeFilters.filter(
         (f) => f.field !== 'project_id',
@@ -96,15 +98,13 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
       const params = {
         group_field: fieldSelection,
         project: projectId,
+        days: 90,
       };
 
       // Only add additional_filters if there are filters to add
       if (apiFilter) {
         params.additional_filters = apiFilter;
       }
-
-      // Note: We don't include 'days' parameter to get all historical data
-      // If we want to limit to recent results, we could add: days: 30
 
       HttpClient.get(
         [Settings.serverUrl, 'widget', 'result-aggregator'],
@@ -117,9 +117,11 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
         .catch((error) => {
           console.error('Error fetching dynamic values:', error);
           setValueOptions([]);
+          setLoadError('Error loading values');
         });
     } else {
       setValueOptions([]);
+      setLoadError(null);
     }
   }, [fieldSelection, activeFilters, primaryObject]);
 
@@ -605,6 +607,17 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                     ))}
                   </SelectList>
                 </Select>
+              )}
+              {loadError && (
+                <div
+                  style={{
+                    color: 'var(--pf-v6-global--danger-color--100)',
+                    fontSize: 'var(--pf-v6-global--FontSize--sm)',
+                    marginTop: '0.25rem',
+                  }}
+                >
+                  {loadError}
+                </div>
               )}
             </FlexItem>
           </Flex>

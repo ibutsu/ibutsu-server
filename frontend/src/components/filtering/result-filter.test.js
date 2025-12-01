@@ -1,8 +1,11 @@
 /* eslint-env jest */
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ResultFilter from './result-filter';
 import { FilterContext } from '../contexts/filter-context';
+import { HttpClient } from '../../utilities/http';
+
+jest.mock('../../utilities/http');
 
 describe('ResultFilter', () => {
   const mockUpdateFilters = jest.fn();
@@ -829,6 +832,46 @@ describe('ResultFilter', () => {
       fireEvent.click(button);
 
       // Values should be trimmed
+    });
+  });
+
+  describe('Dynamic Metadata Values Error Handling', () => {
+    it('should display error message when dynamic values fetch fails', async () => {
+      HttpClient.get.mockReturnValue(Promise.reject(new Error('Fetch failed')));
+
+      renderComponent(
+        {},
+        {
+          fieldSelection: 'metadata.browser',
+          filterMode: 'text',
+          operationMode: 'single',
+        }
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('Error loading values')).toBeInTheDocument();
+      });
+    });
+
+    it('should fetch with days=90 parameter', async () => {
+      HttpClient.get.mockReturnValue(Promise.resolve({ ok: true, json: () => [] }));
+      HttpClient.handleResponse.mockReturnValue([]);
+
+      renderComponent(
+        {},
+        {
+          fieldSelection: 'metadata.browser',
+          filterMode: 'text',
+          operationMode: 'single',
+        }
+      );
+
+      await waitFor(() => {
+        expect(HttpClient.get).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({ days: 90 })
+        );
+      });
     });
   });
 });
