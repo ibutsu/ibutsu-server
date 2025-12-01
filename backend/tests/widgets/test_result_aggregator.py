@@ -269,3 +269,87 @@ def test_get_recent_result_data_overlapping_run_ids(
     result_project2 = get_recent_result_data(MOCK_GROUP_FIELD, MOCK_DAYS, str(project2.id))
     assert len(result_project2) == 1
     assert result_project2[0]["count"] == 10
+
+
+def test_get_recent_result_data_with_run_id_no_days(
+    db_session, make_project, make_run, bulk_result_creator, fixed_time
+):
+    """Test get_recent_result_data with run_id but no days."""
+    from datetime import timedelta
+
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+
+    recent_time = fixed_time
+    old_time = fixed_time - timedelta(days=100)
+
+    # Create recent results using bulk creator
+    bulk_result_creator(
+        count=8,
+        run_id=run.id,
+        project_id=project.id,
+        base_time=recent_time,
+        component="component1",
+        result_pattern=lambda _: "passed",
+    )
+
+    # Create old results in the same run
+    bulk_result_creator(
+        count=5,
+        run_id=run.id,
+        project_id=project.id,
+        base_time=old_time,
+        component="component1",
+        result_pattern=lambda _: "passed",
+    )
+
+    # Query with run_id but without days - should include all results from the run
+    result = get_recent_result_data(
+        MOCK_GROUP_FIELD, days=None, project=str(project.id), run_id=str(run.id)
+    )
+
+    # Should include all results from the run (no time filter applied)
+    assert len(result) == 1
+    assert result[0]["_id"] == "component1"
+    assert result[0]["count"] == 13  # 8 + 5
+
+
+def test_get_recent_result_data_default_90_days_without_run_id(
+    db_session, make_project, make_run, bulk_result_creator, fixed_time
+):
+    """Test that get_recent_result_data defaults to 90 days when no run_id is provided."""
+    from datetime import timedelta
+
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+
+    recent_time = fixed_time
+    old_time = fixed_time - timedelta(days=100)
+
+    # Create recent results
+    bulk_result_creator(
+        count=5,
+        run_id=run.id,
+        project_id=project.id,
+        base_time=recent_time,
+        component="component1",
+        result_pattern=lambda _: "passed",
+    )
+
+    # Create old results (100 days ago)
+    bulk_result_creator(
+        count=5,
+        run_id=run.id,
+        project_id=project.id,
+        base_time=old_time,
+        component="component1",
+        result_pattern=lambda _: "passed",
+    )
+
+    # Query without days and without run_id
+    result = get_recent_result_data(MOCK_GROUP_FIELD, days=None, project=str(project.id))
+
+    # Should only include recent results (default 90 days)
+    assert len(result) == 1
+    assert result[0]["_id"] == "component1"
+    assert result[0]["count"] == 5
