@@ -54,7 +54,7 @@ describe('RunList', () => {
     operationMode: 'single',
     operations: {
       eq: { opString: 'Equals' },
-      contains: { opString: 'Contains' },
+      regex: { opString: 'Regex' },
     },
     fieldToggle: (toggleRef) => <button ref={toggleRef}>Field</button>,
     operationToggle: (toggleRef) => <button ref={toggleRef}>Operation</button>,

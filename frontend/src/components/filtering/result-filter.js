@@ -85,45 +85,53 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
   const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
-    if (fieldSelection && fieldSelection.startsWith('metadata.')) {
-      setLoadError(null);
-      // Filter out project_id since we pass it as 'project' parameter
-      const filtersWithoutProject = activeFilters.filter(
-        (f) => f.field !== 'project_id',
-      );
-      const apiFilter = filtersToAPIParams(filtersWithoutProject).join(',');
-      const projectId = primaryObject ? primaryObject.id : '';
-
-      // Build params object
-      const params = {
-        group_field: fieldSelection,
-        project: projectId,
-        days: 90,
-      };
-
-      // Only add additional_filters if there are filters to add
-      if (apiFilter) {
-        params.additional_filters = apiFilter;
-      }
-
-      HttpClient.get(
-        [Settings.serverUrl, 'widget', 'result-aggregator'],
-        params,
-      )
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          setValueOptions(data || []);
-        })
-        .catch((error) => {
-          console.error('Error fetching dynamic values:', error);
-          setValueOptions([]);
-          setLoadError('Error loading values');
-        });
-    } else {
+    if (!(fieldSelection && fieldSelection.startsWith('metadata.'))) {
       setValueOptions([]);
       setLoadError(null);
+      return;
     }
-  }, [fieldSelection, activeFilters, primaryObject]);
+
+    setLoadError(null);
+    const projectId = primaryObject ? primaryObject.id : '';
+
+    // Build params object with for_filter=true for optimized distinct query
+    // Include additional_filters to respect other active filters
+    const additionalFilters = filtersToAPIParams(activeFilters);
+    const params = {
+      group_field: fieldSelection,
+      project: projectId,
+      days: 365,
+      for_filter: true,
+      ...(additionalFilters.length > 0 && {
+        additional_filters: additionalFilters.join(','),
+      }),
+    };
+
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    HttpClient.get(
+      [Settings.serverUrl, 'widget', 'result-aggregator'],
+      params,
+      { signal },
+    )
+      .then((response) => HttpClient.handleResponse(response))
+      .then((data) => {
+        setValueOptions(data || []);
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') {
+          return;
+        }
+        console.error('Error fetching dynamic values:', error);
+        setValueOptions([]);
+        setLoadError('Error loading values');
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [fieldSelection, primaryObject, activeFilters]);
 
   const onRunSelect = useCallback(
     (_, selection) => {
@@ -409,6 +417,27 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
     }
   }, [fieldSelection, runFilterValue, runInputValue, runs]);
 
+  // Helper functions for conditional rendering
+  const shouldRenderValueSelect = () =>
+    filterMode === 'text' &&
+    valueOptions.length > 0 &&
+    operationSelection !== 'regex' &&
+    operationSelection !== 'exists' &&
+    operationMode !== 'bool';
+
+  const shouldRenderPlainTextInput = () =>
+    filterMode === 'text' &&
+    operationMode === 'single' &&
+    (valueOptions.length === 0 || operationSelection === 'regex');
+
+  const shouldRenderMultiValueInput = () =>
+    filterMode === 'text' &&
+    operationMode === 'multi' &&
+    valueOptions.length === 0;
+
+  const formatOptionDescription = (option) =>
+    option.count !== undefined ? `${option.count} results` : undefined;
+
   return (
     <CardBody key="filters">
       <Flex
@@ -492,7 +521,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   </SelectList>
                 </Select>
               )}
-              {filterMode === 'text' && valueOptions.length > 0 && (
+              {shouldRenderValueSelect() && (
                 <Select
                   id="value-select"
                   isOpen={isValueOpen}
@@ -511,13 +540,40 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   onOpenChange={() => setIsValueOpen(false)}
                   toggle={(toggleRef) => (
                     <MenuToggle
+                      variant={
+                        operationMode === 'single' ? 'typeahead' : undefined
+                      }
                       ref={toggleRef}
                       onClick={() => setIsValueOpen(!isValueOpen)}
                       isExpanded={isValueOpen}
+                      isFullWidth
                     >
-                      {operationMode === 'multi'
-                        ? `${inValues.length} selected`
-                        : textFilter || 'Select value'}
+                      {operationMode === 'multi' ? (
+                        `${inValues.length} selected`
+                      ) : (
+                        <TextInputGroup isPlain>
+                          <TextInputGroupMain
+                            value={textFilter}
+                            onClick={() => setIsValueOpen(!isValueOpen)}
+                            onChange={(_, newValue) => setTextFilter(newValue)}
+                            autoComplete="off"
+                            placeholder="Select or type a value"
+                            role="combobox"
+                            isExpanded={isValueOpen}
+                          />
+                          <TextInputGroupUtilities>
+                            {!!textFilter && (
+                              <Button
+                                icon={<TimesIcon aria-hidden />}
+                                variant="plain"
+                                onClick={() => setTextFilter('')}
+                                aria-label="Clear input value"
+                                ouiaId="result-filter-value-clear-button"
+                              />
+                            )}
+                          </TextInputGroupUtilities>
+                        </TextInputGroup>
+                      )}
                     </MenuToggle>
                   )}
                 >
@@ -532,7 +588,7 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                             ? inValues.includes(option._id)
                             : textFilter === option._id
                         }
-                        description={`${option.count} results`}
+                        description={formatOptionDescription(option)}
                       >
                         {option._id}
                       </SelectOption>
@@ -540,27 +596,23 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   </SelectList>
                 </Select>
               )}
-              {filterMode === 'text' &&
-                operationMode === 'single' &&
-                valueOptions.length === 0 && (
-                  <TextInput
-                    type="text"
-                    id="textSelection"
-                    placeholder="Type in value"
-                    value={textFilter}
-                    onChange={(_, newValue) => setTextFilter(newValue)}
-                    style={{ height: 'inherit' }}
-                    ouiaId="result-filter-text-input"
-                  />
-                )}
-              {filterMode === 'text' &&
-                operationMode === 'multi' &&
-                valueOptions.length === 0 && (
-                  <MultiValueInput
-                    onValuesChange={(values) => setInValues(values)}
-                    style={{ height: 'inherit' }}
-                  />
-                )}
+              {shouldRenderPlainTextInput() && (
+                <TextInput
+                  type="text"
+                  id="textSelection"
+                  placeholder="Type in value"
+                  value={textFilter}
+                  onChange={(_, newValue) => setTextFilter(newValue)}
+                  style={{ height: 'inherit' }}
+                  ouiaId="result-filter-text-input"
+                />
+              )}
+              {shouldRenderMultiValueInput() && (
+                <MultiValueInput
+                  onValuesChange={(values) => setInValues(values)}
+                  style={{ height: 'inherit' }}
+                />
+              )}
               {filterMode === 'run' && operationMode !== 'bool' && (
                 <Select
                   id="typeahead-select"

@@ -353,3 +353,111 @@ def test_get_recent_result_data_default_90_days_without_run_id(
     assert len(result) == 1
     assert result[0]["_id"] == "component1"
     assert result[0]["count"] == 5
+
+
+def test_get_recent_result_data_for_filter_mode(
+    db_session, make_project, make_run, bulk_result_creator, fixed_time
+):
+    """Test for_filter=True returns distinct values without counts."""
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+
+    # Create results with different components
+    bulk_result_creator(
+        count=10,
+        run_id=run.id,
+        project_id=project.id,
+        base_time=fixed_time,
+        component="component1",
+        result_pattern=lambda _: "passed",
+    )
+
+    bulk_result_creator(
+        count=20,
+        run_id=run.id,
+        project_id=project.id,
+        base_time=fixed_time,
+        component="component2",
+        result_pattern=lambda _: "passed",
+    )
+
+    # Call with for_filter=True
+    result = get_recent_result_data(MOCK_GROUP_FIELD, MOCK_DAYS, str(project.id), for_filter=True)
+
+    # Should return distinct values without counts
+    assert len(result) == 2
+    # Verify structure - no count field
+    assert all("_id" in item for item in result)
+    assert all("count" not in item for item in result)
+
+    # Verify values are present (order may vary with DISTINCT)
+    ids = {item["_id"] for item in result}
+    assert "component1" in ids
+    assert "component2" in ids
+
+
+def test_get_recent_result_data_for_filter_mode_with_filters(
+    db_session, make_project, make_run, bulk_result_creator, fixed_time
+):
+    """Test for_filter=True with additional filters."""
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+
+    # Create passed results
+    bulk_result_creator(
+        count=5,
+        run_id=run.id,
+        project_id=project.id,
+        base_time=fixed_time,
+        component="component1",
+        result_pattern=lambda _: "passed",
+    )
+
+    # Create failed results
+    bulk_result_creator(
+        count=3,
+        run_id=run.id,
+        project_id=project.id,
+        base_time=fixed_time,
+        component="component2",
+        result_pattern=lambda _: "failed",
+    )
+
+    # Query with for_filter=True and additional filter for failed results
+    result = get_recent_result_data(
+        MOCK_GROUP_FIELD,
+        MOCK_DAYS,
+        str(project.id),
+        additional_filters="result=failed",
+        for_filter=True,
+    )
+
+    # Should only include component2 (failed results)
+    assert len(result) == 1
+    assert result[0]["_id"] == "component2"
+    assert "count" not in result[0]
+
+
+def test_get_recent_result_data_for_filter_false_returns_counts(
+    db_session, make_project, make_run, bulk_result_creator, fixed_time
+):
+    """Test that for_filter=False (default) returns counts."""
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id)
+
+    bulk_result_creator(
+        count=10,
+        run_id=run.id,
+        project_id=project.id,
+        base_time=fixed_time,
+        component="component1",
+        result_pattern=lambda _: "passed",
+    )
+
+    # Explicit for_filter=False
+    result = get_recent_result_data(MOCK_GROUP_FIELD, MOCK_DAYS, str(project.id), for_filter=False)
+
+    # Should return with counts
+    assert len(result) == 1
+    assert result[0]["_id"] == "component1"
+    assert result[0]["count"] == 10

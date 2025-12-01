@@ -248,6 +248,14 @@ WIDGET_TYPES = {
                 "type": "string",
                 "required": False,
             },
+            {
+                "name": "for_filter",
+                "description": "If true, use optimized DISTINCT query without counts "
+                "(faster for filter dropdowns)",
+                "type": "boolean",
+                "required": False,
+                "default": False,
+            },
             _ADDITIONAL_FILTERS_PARAM,
         ],
         "type": "widget",
