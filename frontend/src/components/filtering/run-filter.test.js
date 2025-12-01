@@ -220,7 +220,9 @@ describe('RunFilter', () => {
     it('should pass hideFilters prop to ActiveFilters', () => {
       renderComponent({ hideFilters: ['project_id'] });
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -261,7 +263,9 @@ describe('RunFilter', () => {
         </MemoryRouter>,
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -269,13 +273,17 @@ describe('RunFilter', () => {
     it('should accept maxHeight prop', () => {
       renderComponent({ maxHeight: '400px' });
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should use default maxHeight when not provided', () => {
       renderComponent();
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -327,7 +335,9 @@ describe('RunFilter', () => {
       );
 
       // Bool select should be available (though not open)
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -352,7 +362,9 @@ describe('RunFilter', () => {
       renderComponent(
         {},
         {
-          activeFilters: [{ field: 'env', operator: 'contains', value: 'prod' }],
+          activeFilters: [
+            { field: 'env', operator: 'contains', value: 'prod' },
+          ],
           boolSelection: 'True',
           fieldSelection: 'source',
           filteredFieldOptions: [
@@ -397,7 +409,9 @@ describe('RunFilter', () => {
         },
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 
@@ -419,13 +433,17 @@ describe('RunFilter', () => {
     it('should set empty valueOptions on mount', () => {
       renderComponent({}, { fieldSelection: null });
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
 
     it('should update valueOptions when fieldSelection changes', () => {
       const { rerender } = renderComponent({}, { fieldSelection: 'source' });
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
 
       // Change fieldSelection
       rerender(
@@ -441,7 +459,9 @@ describe('RunFilter', () => {
         </MemoryRouter>,
       );
 
-      expect(screen.getByTestId('filter-table-apply-button')).toBeInTheDocument();
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
     });
   });
 });
