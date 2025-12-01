@@ -2,6 +2,7 @@ import logging
 from http import HTTPStatus
 
 import connexion
+from sqlalchemy.exc import OperationalError
 
 from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, WIDGET_TYPES
 from ibutsu_server.controllers.widget_config_controller import _validate_widget_params
@@ -145,6 +146,9 @@ def get_widget(id_):
     except TypeError as e:
         # Handle any remaining parameter issues
         return f"Parameter error for widget '{id_}': {e!s}", HTTPStatus.BAD_REQUEST
+    except OperationalError as e:
+        logger.exception(f"Database error processing widget '{id_}': {e!s}")
+        return "Database error or timeout", HTTPStatus.GATEWAY_TIMEOUT
     except Exception as e:
         # Handle any runtime errors in widget processing
         logger.exception(f"Error processing widget '{id_}': {e!s}")
