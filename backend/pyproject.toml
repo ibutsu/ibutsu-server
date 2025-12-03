@@ -11,7 +11,7 @@ maintainers = [
     {name = "Egor Shamardin", email = "eshamard@redhat.com"},
 ]
 keywords = ["OpenAPI", "Ibutsu"]
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -20,9 +20,7 @@ classifiers = [
   "Topic :: Software Development :: Testing",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3 :: Only",
   "Operating System :: OS Independent",
 ]
@@ -30,12 +28,12 @@ classifiers = [
 dependencies = [
     "alembic",
     "celery",
-    "connexion[swagger-ui]==3.2.0",  # Needs python update for 3.3
-    "connexion[flask]==3.2.0",
+    "connexion[swagger-ui]",
+    "connexion[flask]",
     "flask_bcrypt",
     "flask_mail",
-    "Flask>=3.1.0",
-    "Flask-SQLAlchemy>=3.1.0",
+    "Flask",
+    "Flask-SQLAlchemy",
     "starlette",
     "uvicorn[standard]",
     "flatdict",
@@ -55,10 +53,10 @@ dependencies = [
     "redis",
     "setuptools",
     "sqlalchemy-json",
-    "sqlalchemy>=2.0.0",
+    "sqlalchemy",
     "swagger-ui-bundle",
     "vine",
-    "werkzeug>=3.0.0",
+    "werkzeug",
 ]
 
 [project.urls]
