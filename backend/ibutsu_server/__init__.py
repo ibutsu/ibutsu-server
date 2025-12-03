@@ -71,6 +71,7 @@ def get_app(**extra_config):
     config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False)
     config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
 
+    config.from_file(str(Path("./default.settings.yaml").resolve()), yaml_load, silent=True)
     config.from_file(str(Path("./settings.yaml").resolve()), yaml_load, silent=True)
     # Now load config from environment variables
     config.from_mapping(os.environ)
@@ -143,7 +144,6 @@ def get_app(**extra_config):
                 "ibutsu_server.tasks.db",
                 "ibutsu_server.tasks.importers",
                 "ibutsu_server.tasks.query",
-                "ibutsu_server.tasks.reports",
                 "ibutsu_server.tasks.results",
                 "ibutsu_server.tasks.runs",
             ],
@@ -168,8 +168,15 @@ def get_app(**extra_config):
     )
 
     # Add API routes after middleware
+    # Import Resolver for explicit operationId resolution
+    from connexion.resolver import Resolver  # noqa: PLC0415
+
     connexion_app.add_api(
-        "openapi.yaml", arguments={"title": "Ibutsu"}, base_path="/api", pythonic_params=True
+        "openapi.yaml",
+        arguments={"title": "Ibutsu"},
+        base_path="/api",
+        pythonic_params=True,
+        resolver=Resolver(),
     )
 
     # Initialize Flask extensions on the underlying Flask app
@@ -208,13 +215,15 @@ def get_app(**extra_config):
         if not user_id:
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
-        # Validate user permissions (Flask-SQLAlchemy 3.0+ pattern)
+        # Validate user permissions
         user = db.session.get(User, user_id)
         if not user or not user.is_superadmin:
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
 
         # Get task info
         task_path = params.get("task")
+        if not task_path:
+            return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
         task_params = params.get("params", {})
         task_module, task_name = task_path.split(".", 2)
 
@@ -231,14 +240,74 @@ def get_app(**extra_config):
     return connexion_app  # Return Connexion app, not Flask app
 
 
-# ASGI app instance for uvicorn
-connexion_app = get_app()
+class _AppRegistry:
+    """
+    Registry for application instances to avoid using global statements.
 
-# Get the Flask app instance for direct use in Celery tasks
-flask_app = connexion_app.app
+    This pattern is preferred over module-level global variables as it:
+    - Avoids PLW0603 linter warnings
+    - Provides a clear namespace for app-related state
+    - Makes testing easier by allowing state reset
+    - Enables deferred app instantiation
+    """
 
-# Now we can directly access the celery extension
-celery_app = flask_app.extensions["celery"]
+    connexion_app = None
+    flask_app = None
+    celery_app = None
 
-# Export the app instances directly for use in celery tasks
-__all__ = ["celery_app", "connexion_app", "flask_app"]
+    @classmethod
+    def initialize_apps(cls, **extra_config):
+        """Initialize the app instances if not already done."""
+        if cls.connexion_app is None:
+            cls.connexion_app = get_app(**extra_config)
+            cls.flask_app = cls.connexion_app.app
+            cls.celery_app = cls.flask_app.extensions.get("celery")
+        return cls.connexion_app
+
+    @classmethod
+    def reset(cls):
+        """Reset the registry (useful for testing)."""
+        cls.connexion_app = None
+        cls.flask_app = None
+        cls.celery_app = None
+
+    @classmethod
+    def get_connexion_app(cls, **extra_config):
+        """Get or create the Connexion app instance."""
+        if cls.connexion_app is None:
+            cls.initialize_apps(**extra_config)
+        return cls.connexion_app
+
+    @classmethod
+    def get_flask_app(cls, **extra_config):
+        """Get or create the Flask app instance."""
+        if cls.flask_app is None:
+            cls.initialize_apps(**extra_config)
+        return cls.flask_app
+
+    @classmethod
+    def get_celery_app(cls, **extra_config):
+        """Get or create the Celery app instance."""
+        if cls.celery_app is None:
+            cls.initialize_apps(**extra_config)
+        return cls.celery_app
+
+
+def __getattr__(name):
+    """
+    Lazy initialization of module-level app instances.
+
+    This allows code to import connexion_app, flask_app, or celery_app
+    and have them initialized on first access.
+    """
+    if name == "connexion_app":
+        return _AppRegistry.get_connexion_app()
+    if name == "flask_app":
+        return _AppRegistry.get_flask_app()
+    if name == "celery_app":
+        return _AppRegistry.get_celery_app()
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+# Export the app instances and initialization function
+__all__ = ["_AppRegistry", "celery_app", "connexion_app", "flask_app", "get_app"]

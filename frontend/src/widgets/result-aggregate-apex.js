@@ -4,9 +4,8 @@ import Chart from 'react-apexcharts';
 
 import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 
-import { HttpClient } from '../services/http';
-import { Settings } from '../settings';
-import { getDarkTheme, toTitleCase } from '../utilities';
+import { Settings } from '../pages/settings';
+import { getDarkTheme, toTitleCase, HttpClient } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 import ParamDropdown from '../components/param-dropdown';
 import {
@@ -15,8 +14,8 @@ import {
   ICON_RESULT_MAP,
   WIDGET_HEIGHT,
 } from '../constants';
-import ResultWidgetLegend from './ResultWidgetLegend';
-import { useSVGContainerDimensions } from '../components/hooks/useSVGContainerDimensions';
+import ResultWidgetLegend from './result-widget-legend';
+import { useSVGContainerDimensions } from '../components/hooks/use-svg-container-dimensions';
 
 // Helper function to get color for a label
 const getColorForLabel = (label, index) => {
@@ -77,7 +76,6 @@ const ResultAggregateApex = ({
           {
             days: filterDays,
             group_field: filterGroupField,
-            chart_type: 'donut',
             project: project.current,
             ...(additionalFilters.current
               ? { additional_filters: additionalFilters.current }

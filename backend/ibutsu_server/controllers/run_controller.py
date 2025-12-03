@@ -95,7 +95,6 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
 
     :rtype: List[Run]
     """
-    # Flask-SQLAlchemy 3.0+ pattern
     requesting_user = db.session.get(User, user)
 
     # Validate query scope to prevent full table scans
@@ -108,7 +107,6 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
             HTTPStatus.BAD_REQUEST,
         )
 
-    # Flask-SQLAlchemy 3.0+ pattern
     query = db.select(Run)
     if requesting_user:
         query = add_user_filter(query, requesting_user, model=Run)
@@ -129,15 +127,18 @@ def get_run_list(filter_=None, page=1, page_size=25, estimate=False, token_info=
             if filter_clause is not None:
                 query = query.where(filter_clause)
 
-    # Flask-SQLAlchemy 3.0+ pattern for count
     if estimate:
         total_items = get_count_estimate(query)
     else:
-        total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
+        total_items = db.session.execute(
+            db.select(db.func.count()).select_from(query.subquery())
+        ).scalar()
 
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    runs = query.order_by(Run.start_time.desc()).offset(offset).limit(page_size).all()
+    runs = db.session.scalars(
+        query.order_by(Run.start_time.desc()).offset(offset).limit(page_size)
+    ).all()
     return {
         "runs": [run.to_dict() for run in runs],
         "pagination": {
@@ -176,7 +177,7 @@ def add_run(body=None, token_info=None, user=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     run = Run.from_dict(**body_data)
 
@@ -211,7 +212,7 @@ def update_run(id_, body=None, token_info=None, user=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     if body_data.get("metadata", {}).get("project"):
         body_data["project_id"] = get_project_id(body_data["metadata"]["project"])
@@ -242,7 +243,7 @@ def bulk_update(filter_=None, page_size=1, body=None, token_info=None, user=None
     if not request.is_json:
         return RESPONSE_JSON_REQ
 
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     run_dict = body if body is not None else request.get_json()
 
     if not run_dict.get("metadata"):

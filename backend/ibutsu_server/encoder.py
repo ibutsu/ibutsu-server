@@ -19,4 +19,5 @@ class IbutsuJSONProvider(Jsonifier):
         # For basic JSON-serializable types, return as-is
         if isinstance(o, (dict, list, str, int, float, bool, type(None))):
             return o
-        return super().default(o)
+        # For non-serializable objects, raise TypeError
+        raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")

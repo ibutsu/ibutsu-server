@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-# Connexion 3: use flask.request instead of connexion.request
 from flask import abort, request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
@@ -49,9 +48,13 @@ def admin_get_user_list(filter_=None, page=1, page_size=25, token_info=None, use
                 query = query.where(filter_clause)
 
     offset = get_offset(page, page_size)
-    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.subquery())
+    ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    users = query.order_by(User.email.asc()).offset(offset).limit(page_size).all()
+    users = db.session.scalars(
+        query.order_by(User.email.asc()).offset(offset).limit(page_size)
+    ).all()
     return {
         "users": [_hide_sensitive_fields(user.to_dict(with_projects=True)) for user in users],
         "pagination": {
@@ -68,10 +71,9 @@ def admin_add_user(body=None, token_info=None, user=None):
     """Create a new user in the system"""
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     new_user = User.from_dict(**body_data)
-    # Flask-SQLAlchemy 3.0+ pattern
     user_exists = db.session.execute(
         db.select(User).filter_by(email=new_user.email)
     ).scalar_one_or_none()
@@ -88,7 +90,7 @@ def admin_update_user(id_, body=None, token_info=None, user=None):
     """Update a single user in the system"""
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     user_dict = body if body is not None else request.get_json()
     projects = user_dict.pop("projects", [])
     requested_user = db.session.get(User, id_)

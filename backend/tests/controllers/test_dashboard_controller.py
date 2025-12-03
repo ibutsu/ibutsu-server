@@ -1,5 +1,4 @@
 import pytest
-from flask import json
 
 
 def test_add_dashboard_success(flask_app, make_project, make_user, auth_headers):
@@ -19,12 +18,11 @@ def test_add_dashboard_success(flask_app, make_project, make_user, auth_headers)
     response = client.post(
         "/api/dashboard",
         headers=headers,
-        data=json.dumps(dashboard_data),
-        content_type="application/json",
+        json=dashboard_data,
     )
-    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 201, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["title"] == "Test Dashboard"
 
     # Verify in database
@@ -52,8 +50,7 @@ def test_add_dashboard_forbidden_project(flask_app, make_project, make_user, aut
     response = client.post(
         "/api/dashboard",
         headers=headers,
-        data=json.dumps(dashboard_data),
-        content_type="application/json",
+        json=dashboard_data,
     )
     # Superadmin should have access to all projects
     # If not superadmin, should get 403
@@ -74,9 +71,9 @@ def test_get_dashboard_success(flask_app, make_project, make_dashboard, auth_hea
         f"/api/dashboard/{dashboard.id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["id"] == str(dashboard.id)
     assert response_data["title"] == "Test Dashboard"
 
@@ -115,11 +112,11 @@ def test_get_dashboard_list(flask_app, make_project, make_dashboard, page, page_
     response = client.get(
         "/api/dashboard",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert "dashboards" in response_data
     assert "pagination" in response_data
     assert response_data["pagination"]["page"] == page
@@ -144,11 +141,11 @@ def test_get_dashboard_list_filter_by_project(
     response = client.get(
         "/api/dashboard",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     # Should only return dashboards from project1
     dashboard_ids = [d["id"] for d in response_data["dashboards"]]
     assert str(dashboard1.id) in dashboard_ids
@@ -168,19 +165,19 @@ def test_update_dashboard_success(flask_app, make_project, make_dashboard, auth_
     response = client.put(
         f"/api/dashboard/{dashboard.id}",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["title"] == "Updated Title"
 
     # Verify in database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Dashboard
 
-        updated_dashboard = Dashboard.query.get(str(dashboard.id))
+        updated_dashboard = db.session.get(Dashboard, str(dashboard.id))
         assert updated_dashboard.title == "Updated Title"
 
 
@@ -193,7 +190,6 @@ def test_update_dashboard_not_found(flask_app, auth_headers):
     response = client.put(
         "/api/dashboard/00000000-0000-0000-0000-000000000000",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
     assert response.status_code == 404

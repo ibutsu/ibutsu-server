@@ -118,7 +118,6 @@ def get_artifact_list(
 
     :rtype: List[Artifact]
     """
-    # Flask-SQLAlchemy 3.0+ pattern
     query = db.select(Artifact)
     user = db.session.get(User, user)
     if "result_id" in request.args:
@@ -129,7 +128,9 @@ def get_artifact_list(
         query = query.where(Artifact.run_id == run_id)
     if user:
         query = add_user_filter(query, user)
-    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.subquery())
+    ).scalar()
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     artifacts = db.session.execute(query.limit(page_size).offset(offset)).scalars().all()
@@ -275,7 +276,7 @@ def upload_artifact(body=None, token_info=None, user=None):
 
     :rtype: tuple
     """
-    # Use flask.request instead of connexion.request (Connexion 3 pattern)
+    # Use flask.request instead of connexion.request
     req = request
 
     try:
@@ -293,7 +294,6 @@ def upload_artifact(body=None, token_info=None, user=None):
         # Check permissions EARLY - before reading file content
         # Check result permissions if result_id is provided
         if result_id:
-            # Flask-SQLAlchemy 3.0+ pattern: use db.session.get instead of Model.query.get
             result = db.session.get(Result, result_id)
             if not result:
                 raise BadRequestError(f"Result ID {result_id} not found", HTTPStatus.NOT_FOUND)
@@ -302,7 +302,6 @@ def upload_artifact(body=None, token_info=None, user=None):
 
         # Check run permissions if run_id is provided
         if run_id:
-            # Flask-SQLAlchemy 3.0+ pattern: use db.session.get instead of Model.query.get
             run = db.session.get(Run, run_id)
             if not run:
                 raise BadRequestError(f"Run ID {run_id} not found", HTTPStatus.NOT_FOUND)

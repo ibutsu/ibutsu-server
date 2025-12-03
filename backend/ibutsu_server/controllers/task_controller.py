@@ -21,9 +21,9 @@ def get_task(id_, token_info=None, user=None):
     :param id_: id of the task
     """
     # Use the global celery app instance
-    from ibutsu_server import celery_app  # noqa: PLC0415
+    import ibutsu_server  # noqa: PLC0415
 
-    async_result = AsyncResult(id_, app=celery_app)
+    async_result = AsyncResult(id_, app=ibutsu_server.celery_app)
     response = {"state": async_result.state}
 
     if async_result.state == "SUCCESS":

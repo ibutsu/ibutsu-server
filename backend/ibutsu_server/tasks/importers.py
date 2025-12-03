@@ -1,7 +1,7 @@
 import json
 import re
 import tarfile
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 
 from celery.utils.log import get_task_logger
@@ -86,24 +86,24 @@ def _get_ts_element(tree):
 
 def _parse_timestamp(ts):
     """To reduce cognitive complexity"""
-    return parser.parse(ts.get("timestamp")) if ts.get("timestamp") else datetime.utcnow()
+    return parser.parse(ts.get("timestamp")) if ts.get("timestamp") else datetime.now(timezone.utc)
 
 
 def _process_result(result_dict, testcase):
     """To reduce cognitive complexity"""
     skip_reason = traceback = None
-    if testcase.find("failure"):
+    if testcase.find("failure") is not None:
         result_dict["result"] = "failed"
         traceback = bytes(str(testcase.failure), "utf8")
-    elif testcase.find("error"):
+    elif testcase.find("error") is not None:
         result_dict["result"] = "error"
         traceback = bytes(str(testcase.error), "utf8")
-    elif testcase.find("skipped"):
+    elif testcase.find("skipped") is not None:
         result_dict["result"] = "skipped"
         skip_reason = str(testcase.skipped)
-    elif testcase.find("xfailure"):
+    elif testcase.find("xfailure") is not None:
         result_dict["result"] = "xfailed"
-    elif testcase.find("xpassed"):
+    elif testcase.find("xpassed") is not None:
         result_dict["result"] = "xpassed"
     else:
         result_dict["result"] = "passed"
@@ -124,7 +124,7 @@ def _add_artifacts(result, testcase, traceback):
                 content=traceback,
             )
         )
-    if testcase.find("system-out"):
+    if testcase.find("system-out") is not None:
         system_out = bytes(str(testcase["system-out"]), "utf8")
         db.session.add(
             Artifact(
@@ -134,7 +134,7 @@ def _add_artifacts(result, testcase, traceback):
                 content=system_out,
             )
         )
-    if testcase.find("system-err"):
+    if testcase.find("system-err") is not None:
         system_err = bytes(str(testcase["system-err"]), "utf8")
         db.session.add(
             Artifact(
@@ -191,10 +191,10 @@ def _populate_result_metadata(run_dict, result_dict, metadata):
         result_dict["metadata"].update(metadata)
         result_dict["env"] = run_dict.get("env")
         result_dict["component"] = run_dict.get("component")
-    if metadata.get("project_id"):
-        result_dict["project_id"] = metadata["project_id"]
-    if metadata.get("source"):
-        result_dict["source"] = metadata["source"]
+        if metadata.get("project_id"):
+            result_dict["project_id"] = metadata["project_id"]
+        if metadata.get("source"):
+            result_dict["source"] = metadata["source"]
 
 
 def _get_test_name_path(testcase):
@@ -226,9 +226,11 @@ def run_junit_import(import_):  # noqa: PLR0912
     tree = objectify.fromstring(import_file.content)
     import_record.data["run_id"] = []
     # Use current time as start time if no start time is present
-    start_time = parser.parse(tree.get("timestamp")) if tree.get("timestamp") else datetime.utcnow()
+    start_time = (
+        parser.parse(tree.get("timestamp")) if tree.get("timestamp") else datetime.now(timezone.utc)
+    )
     run_dict = {
-        "created": datetime.utcnow(),
+        "created": datetime.now(timezone.utc),
         "start_time": start_time,
         "duration": float(tree.get("time", 0.0)),
         "summary": {
@@ -348,7 +350,7 @@ def run_junit_import(import_):  # noqa: PLR0912
                         content=traceback,
                     )
                 )
-            if testcase.find("system-out"):
+            if testcase.find("system-out") is not None:
                 system_out = bytes(str(testcase["system-out"]), "utf8")
                 db.session.add(
                     Artifact(
@@ -358,7 +360,7 @@ def run_junit_import(import_):  # noqa: PLR0912
                         content=system_out,
                     )
                 )
-            if testcase.find("system-err"):
+            if testcase.find("system-err") is not None:
                 system_err = bytes(str(testcase["system-err"]), "utf8")
                 db.session.add(
                     Artifact(
