@@ -7,6 +7,7 @@ jest.mock('./auth', () => ({
   AuthService: {
     isLoggedIn: jest.fn(),
     getToken: jest.fn(),
+    logout: jest.fn(),
   },
 }));
 
@@ -381,8 +382,9 @@ describe('HTTP Utilities', () => {
         status: 401,
       };
 
-      HttpClient.handleResponse(response);
-      expect(window.location).toBe('/login');
+      expect(() => HttpClient.handleResponse(response)).toThrow('Unauthorized - redirecting to login');
+      expect(window.location.href).toBe('/login');
+      expect(AuthService.logout).toHaveBeenCalled();
 
       window.location = originalLocation;
     });
@@ -395,10 +397,11 @@ describe('HTTP Utilities', () => {
       const response = {
         ok: false,
         status: 500,
+        statusText: 'Internal Server Error',
       };
 
-      HttpClient.handleResponse(response);
-      expect(window.location).not.toBe('/login');
+      expect(() => HttpClient.handleResponse(response)).toThrow('HTTP 500: Internal Server Error');
+      expect(window.location.href).toBe('');
 
       window.location = originalLocation;
     });
@@ -406,10 +409,10 @@ describe('HTTP Utilities', () => {
     it('should handle response with ok false and no status', () => {
       const response = {
         ok: false,
+        statusText: 'Unknown Error',
       };
 
-      const result = HttpClient.handleResponse(response);
-      expect(result).toBeUndefined();
+      expect(() => HttpClient.handleResponse(response)).toThrow('HTTP undefined: Unknown Error');
     });
   });
 });

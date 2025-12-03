@@ -8,11 +8,12 @@ This guide explains how to write tests for the ibutsu-server backend using our i
 
 1. [Philosophy](#philosophy)
 2. [Getting Started](#getting-started)
-3. [Available Fixtures](#available-fixtures)
-4. [Writing Tests](#writing-tests)
-5. [Common Patterns](#common-patterns)
-6. [Testing Best Practices](#testing-best-practices)
-7. [Troubleshooting](#troubleshooting)
+3. [SQLAlchemy 2.0 Patterns](#sqlalchemy-20-patterns)
+4. [Available Fixtures](#available-fixtures)
+5. [Writing Tests](#writing-tests)
+6. [Common Patterns](#common-patterns)
+7. [Testing Best Practices](#testing-best-practices)
+8. [Troubleshooting](#troubleshooting)
 
 ## Philosophy
 
@@ -83,6 +84,114 @@ backend/tests/
 └── TEST_GUIDE.md                    # This file
 ```
 
+## SQLAlchemy 2.0 Patterns
+
+This project uses SQLAlchemy 2.0 patterns. Here are the key differences from legacy patterns:
+
+### Querying Records
+
+**❌ Legacy Pattern (Deprecated):**
+```python
+# Don't use Model.query.get() - deprecated in SQLAlchemy 2.0
+user = User.query.get(user_id)
+project = Project.query.filter_by(name='test').first()
+results = Result.query.all()
+```
+
+**✅ SQLAlchemy 2.0 Pattern:**
+```python
+from ibutsu_server.db import db
+
+# Get by primary key
+user = db.session.get(User, user_id)
+
+# Query with filter
+project = db.session.execute(
+    db.select(Project).filter_by(name='test')
+).scalar_one_or_none()
+
+# Get all records
+results = db.session.execute(db.select(Result)).scalars().all()
+```
+
+### Counting Records
+
+**❌ Legacy Pattern (Deprecated):**
+```python
+# Don't pass query directly to select_from()
+query = db.select(Project)
+total = db.session.execute(
+    db.select(db.func.count()).select_from(query)  # Deprecated!
+).scalar()
+```
+
+**✅ SQLAlchemy 2.0 Pattern:**
+```python
+# Use .subquery() to convert query to subquery
+query = db.select(Project)
+total = db.session.execute(
+    db.select(db.func.count()).select_from(query.subquery())
+).scalar()
+```
+
+### Common Query Patterns
+
+```python
+from ibutsu_server.db import db
+from ibutsu_server.db.models import Project, Run, Result
+
+# Get one record or None
+project = db.session.execute(
+    db.select(Project).where(Project.name == 'test')
+).scalar_one_or_none()
+
+# Get one record (raises if not found or multiple found)
+project = db.session.execute(
+    db.select(Project).where(Project.id == project_id)
+).scalar_one()
+
+# Get all records with filter
+runs = db.session.execute(
+    db.select(Run).where(Run.project_id == project_id)
+).scalars().all()
+
+# Count with filter
+count = db.session.execute(
+    db.select(db.func.count()).select_from(
+        db.select(Result).where(Result.result == 'passed').subquery()
+    )
+).scalar()
+
+# Order and limit
+recent_runs = db.session.execute(
+    db.select(Run)
+    .order_by(Run.start_time.desc())
+    .limit(10)
+).scalars().all()
+```
+
+### In Tests
+
+When verifying database state in tests:
+
+```python
+def test_create_project(flask_app, make_project):
+    """Example test using SQLAlchemy 2.0 patterns"""
+    client, jwt_token = flask_app
+
+    # Create via API
+    response = client.post('/api/project', json={'name': 'test'})
+
+    # Verify in database using SQLAlchemy 2.0 pattern
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import Project
+
+        project = db.session.get(Project, response.json['id'])
+        assert project is not None
+        assert project.name == 'test'
+```
+
 ## Available Fixtures
 
 ### Core Application Fixtures
@@ -113,13 +222,17 @@ Direct access to the database session within an application context.
 
 ```python
 def test_database_query(db_session):
+    from ibutsu_server.db import db
     from ibutsu_server.db.models import Project
 
     project = Project(name='test', title='Test Project')
     db_session.add(project)
     db_session.commit()
 
-    found = Project.query.filter_by(name='test').first()
+    # SQLAlchemy 2.0 pattern
+    found = db.session.execute(
+        db.select(Project).filter_by(name='test')
+    ).scalar_one_or_none()
     assert found is not None
 ```
 
@@ -129,9 +242,10 @@ Application context for operations that need it.
 
 ```python
 def test_with_context(flask_app, app_context):
+    from ibutsu_server.db import db
     from ibutsu_server.db.models import Project
     # Can now query without explicit context manager
-    projects = Project.query.all()
+    projects = db.session.execute(db.select(Project)).scalars().all()
 ```
 
 ### Database Builder Fixtures
@@ -325,8 +439,11 @@ def test_create_project(flask_app):
 
     # Verify in database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Project
-        project = Project.query.filter_by(name='test-project').first()
+        project = db.session.execute(
+            db.select(Project).filter_by(name='test-project')
+        ).scalar_one_or_none()
         assert project is not None
         assert project.title == 'Test Project'
 ```
@@ -500,8 +617,13 @@ def test_project_with_full_hierarchy(db_session):
     db_session.commit()
 
     # Test queries across relationships
+    from ibutsu_server.db import db
     from ibutsu_server.db.models import Result
-    total_results = Result.query.filter_by(project_id=project.id).count()
+    total_results = db.session.execute(
+        db.select(db.func.count()).select_from(
+            db.select(Result).filter_by(project_id=project.id).subquery()
+        )
+    ).scalar()
     assert total_results == 15  # 3 runs * 5 results
 ```
 
@@ -552,7 +674,8 @@ def test_something(make_project, make_result):
 response = client.post('/api/project', json=data)
 # Verify it's actually in the database
 with client.application.app_context():
-    project = Project.query.get(response.json['id'])
+    from ibutsu_server.db import db
+    project = db.session.get(Project, response.json['id'])
     assert project is not None
 ```
 
@@ -622,8 +745,12 @@ def test_calls_correct_method(mock_session):
 
 # Good - testing behavior
 def test_creates_project(make_project):
+    from ibutsu_server.db import db
     project = make_project(name='test')
-    assert Project.query.filter_by(name='test').first() is not None
+    found = db.session.execute(
+        db.select(Project).filter_by(name='test')
+    ).scalar_one_or_none()
+    assert found is not None
 ```
 
 ### Test Organization
@@ -659,10 +786,11 @@ def test_example(make_project, make_result):
 **Solution:** Use `app_context` fixture or wrap in context manager:
 ```python
 def test_something(flask_app):
+    from ibutsu_server.db import db
     client, _ = flask_app
     with client.application.app_context():
         # Database operations here
-        projects = Project.query.all()
+        projects = db.session.execute(db.select(Project)).scalars().all()
 ```
 
 #### "Foreign key constraint failed"

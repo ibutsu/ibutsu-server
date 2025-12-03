@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-# Connexion 3: use flask.request instead of connexion.request
 from flask import abort, request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
@@ -25,7 +24,7 @@ def admin_add_project(body=None, token_info=None, user=None):
     requesting_user = db.session.get(User, user)
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     project = Project.from_dict(**body_data)
     # check if project already exists
@@ -100,11 +99,13 @@ def admin_get_project_list(
         query = query.where(Project.group_id == group_id)
 
     offset = get_offset(page, page_size)
-    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.subquery())
+    ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
     if offset > 9223372036854775807:  # max value of bigint
         return "The page number is too big.", HTTPStatus.BAD_REQUEST
-    projects = query.offset(offset).limit(page_size).all()
+    projects = db.session.scalars(query.offset(offset).limit(page_size)).all()
     return {
         "projects": [project.to_dict(with_owner=True) for project in projects],
         "pagination": {
@@ -137,7 +138,7 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
         abort(HTTPStatus.NOT_FOUND)
 
     # Grab the fields from the request
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     project_dict = body_data.copy()
 

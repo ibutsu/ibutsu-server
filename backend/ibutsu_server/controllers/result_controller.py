@@ -51,7 +51,7 @@ def add_result(result=None, token_info=None, user=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use result parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use result parameter if provided, otherwise get from request
     result_data = result if result is not None else request.get_json()
     result = Result.from_dict(**result_data)
 
@@ -163,12 +163,16 @@ def get_result_list(filter_=None, page=1, page_size=25, estimate=False, token_in
     if estimate:
         total_items = get_count_estimate(query)
     else:
-        total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
+        total_items = db.session.execute(
+            db.select(db.func.count()).select_from(query.subquery())
+        ).scalar()
 
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
 
-    results = query.order_by(Result.start_time.desc()).offset(offset).limit(page_size).all()
+    results = db.session.scalars(
+        query.order_by(Result.start_time.desc()).offset(offset).limit(page_size)
+    ).all()
     return {
         "results": [result.to_dict() for result in results],
         "pagination": {
@@ -210,7 +214,7 @@ def update_result(id_, result=None, token_info=None, user=None, **_kwargs):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use result parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use result parameter if provided, otherwise get from request
     result_data = result if result is not None else request.get_json()
     if result_data.get("metadata", {}).get("project"):
         project = get_project(result_data["metadata"]["project"])
@@ -224,7 +228,6 @@ def update_result(id_, result=None, token_info=None, user=None, **_kwargs):
         user_properties = result_data["metadata"].pop("user_properties")
         merge_dicts(user_properties, result_data["metadata"])
 
-    # Flask-SQLAlchemy 3.0+ pattern
     result_obj = db.session.get(Result, id_)
     if not result_obj:
         return "Result not found", HTTPStatus.NOT_FOUND

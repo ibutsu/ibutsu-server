@@ -47,18 +47,20 @@ def get_import_list(filter_=None, page=1, page_size=25, token_info=None, user=No
 
     :rtype: ImportList
     """
-    query = Import.query
+    query = db.select(Import)
     if filter_:
         for filter_string in filter_:
             filter_clause = convert_filter(filter_string, Import)
             if filter_clause is not None:
-                query = query.filter(filter_clause)
+                query = query.where(filter_clause)
 
     query = query.order_by(Import.created.desc())
     offset = get_offset(page, page_size)
-    total_items = query.count()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.subquery())
+    ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    imports = query.offset(offset).limit(page_size).all()
+    imports = db.session.scalars(query.offset(offset).limit(page_size)).all()
     return {
         "imports": [import_.to_dict() for import_ in imports],
         "pagination": {

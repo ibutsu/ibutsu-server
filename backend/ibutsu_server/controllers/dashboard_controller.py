@@ -22,7 +22,7 @@ def add_dashboard(body=None, token_info=None, user=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     dashboard = Dashboard.from_dict(**body_data)
     if dashboard.project_id and not project_has_user(dashboard.project_id, user):
@@ -85,9 +85,11 @@ def get_dashboard_list(
 
     query = query.order_by(Dashboard.title.asc())
     offset = get_offset(page, page_size)
-    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.subquery())
+    ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    dashboards = query.offset(offset).limit(page_size).all()
+    dashboards = db.session.scalars(query.offset(offset).limit(page_size)).all()
     return {
         "dashboards": [dashboard.to_dict() for dashboard in dashboards],
         "pagination": {
@@ -112,7 +114,7 @@ def update_dashboard(id_, body=None, token_info=None, user=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     if body_data.get("metadata", {}).get("project") and not project_has_user(
         body_data["metadata"]["project"], user
@@ -146,7 +148,6 @@ def delete_dashboard(id_, token_info=None, user=None):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
 
     # Clear any projects that reference this dashboard as their default dashboard
-    # Flask-SQLAlchemy 3.0+ pattern
     projects_with_default = (
         db.session.execute(db.select(Project).where(Project.default_dashboard_id == dashboard.id))
         .scalars()
@@ -157,7 +158,6 @@ def delete_dashboard(id_, token_info=None, user=None):
         session.add(project)
 
     # Delete all widget configs associated with this dashboard
-    # Flask-SQLAlchemy 3.0+ pattern
     widget_configs = (
         db.session.execute(db.select(WidgetConfig).where(WidgetConfig.dashboard_id == dashboard.id))
         .scalars()

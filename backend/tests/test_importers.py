@@ -21,61 +21,9 @@ from ibutsu_server.tasks.importers import (
     _populate_result_metadata,
     _process_result,
     _update_import_status,
-    prune_fields,
     run_archive_import,
     run_junit_import,
 )
-
-
-class TestPruneFields:
-    """Tests for prune_fields helper function"""
-
-    def test_prune_fields_default(self):
-        """Test prune_fields removes 'id' and '_id' by default"""
-        data = {"id": "123", "_id": "456", "name": "test", "value": 42}
-        result = prune_fields(data)
-
-        assert "id" not in result
-        assert "_id" not in result
-        assert result["name"] == "test"
-        assert result["value"] == 42
-
-    def test_prune_fields_custom_fields(self):
-        """Test prune_fields with custom fields to prune"""
-        data = {"id": "123", "secret": "password", "name": "test"}
-        result = prune_fields(data, fields_to_prune=["secret"])
-
-        assert "secret" not in result
-        assert result["id"] == "123"
-        assert result["name"] == "test"
-
-    def test_prune_fields_empty_dict(self):
-        """Test prune_fields with empty dictionary"""
-        data = {}
-        result = prune_fields(data)
-        assert result == {}
-
-    def test_prune_fields_no_matching_fields(self):
-        """Test prune_fields when no fields match"""
-        data = {"name": "test", "value": 42}
-        result = prune_fields(data)
-        assert result == {"name": "test", "value": 42}
-
-    def test_prune_fields_none_list(self):
-        """Test prune_fields with None fields_to_prune"""
-        data = {"id": "123", "name": "test"}
-        result = prune_fields(data, fields_to_prune=None)
-        # Should use default ["id", "_id"]
-        assert "id" not in result
-        assert result["name"] == "test"
-
-    def test_prune_fields_modifies_original(self):
-        """Test that prune_fields modifies the original dictionary"""
-        data = {"id": "123", "name": "test"}
-        result = prune_fields(data)
-        # The function modifies and returns the same dict
-        assert result is data
-        assert "id" not in data
 
 
 class TestGetProperties:
@@ -508,9 +456,10 @@ class TestUpdateImportStatus:
             _update_import_status(import_record, "running")
 
             # Refresh from database
+            from ibutsu_server.db import db
             from ibutsu_server.db.models import Import
 
-            updated = Import.query.get(import_record.id)
+            updated = db.session.get(Import, import_record.id)
             assert updated.status == "running"
 
     def test_update_import_status_to_done(self, make_import, flask_app):
@@ -522,9 +471,10 @@ class TestUpdateImportStatus:
 
             _update_import_status(import_record, "done")
 
+            from ibutsu_server.db import db
             from ibutsu_server.db.models import Import
 
-            updated = Import.query.get(import_record.id)
+            updated = db.session.get(Import, import_record.id)
             assert updated.status == "done"
 
     def test_update_import_status_to_error(self, make_import, flask_app):
@@ -536,9 +486,10 @@ class TestUpdateImportStatus:
 
             _update_import_status(import_record, "error")
 
+            from ibutsu_server.db import db
             from ibutsu_server.db.models import Import
 
-            updated = Import.query.get(import_record.id)
+            updated = db.session.get(Import, import_record.id)
             assert updated.status == "error"
 
 
@@ -550,14 +501,12 @@ class TestAddArtifacts:
         client, _ = flask_app
 
         with client.application.app_context():
-            from ibutsu_server.db.base import session
-
             result = make_result()
             xml_string = "<testcase name='test'/>"
             testcase = objectify.fromstring(xml_string)
             traceback = b"Traceback content"
 
-            _add_artifacts(result, testcase, traceback, session)
+            _add_artifacts(result, testcase, traceback)
 
             # Check that artifact was created
             artifacts = Artifact.query.filter_by(result_id=result.id).all()
@@ -570,8 +519,6 @@ class TestAddArtifacts:
         client, _ = flask_app
 
         with client.application.app_context():
-            from ibutsu_server.db.base import session
-
             result = make_result()
             xml_string = """
             <testcase name="test">
@@ -580,7 +527,7 @@ class TestAddArtifacts:
             """
             testcase = objectify.fromstring(xml_string)
 
-            _add_artifacts(result, testcase, None, session)
+            _add_artifacts(result, testcase, None)
 
             artifacts = Artifact.query.filter_by(result_id=result.id).all()
             assert len(artifacts) == 1
@@ -592,8 +539,6 @@ class TestAddArtifacts:
         client, _ = flask_app
 
         with client.application.app_context():
-            from ibutsu_server.db.base import session
-
             result = make_result()
             xml_string = """
             <testcase name="test">
@@ -602,7 +547,7 @@ class TestAddArtifacts:
             """
             testcase = objectify.fromstring(xml_string)
 
-            _add_artifacts(result, testcase, None, session)
+            _add_artifacts(result, testcase, None)
 
             artifacts = Artifact.query.filter_by(result_id=result.id).all()
             assert len(artifacts) == 1
@@ -613,8 +558,6 @@ class TestAddArtifacts:
         client, _ = flask_app
 
         with client.application.app_context():
-            from ibutsu_server.db.base import session
-
             result = make_result()
             xml_string = """
             <testcase name="test">
@@ -625,7 +568,7 @@ class TestAddArtifacts:
             testcase = objectify.fromstring(xml_string)
             traceback = b"Traceback"
 
-            _add_artifacts(result, testcase, traceback, session)
+            _add_artifacts(result, testcase, traceback)
 
             artifacts = Artifact.query.filter_by(result_id=result.id).all()
             assert len(artifacts) == 3
@@ -692,9 +635,10 @@ class TestRunJunitImport:
         assert "traceback.log" in failed_filenames
 
         # Verify import status updated
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Import
 
-        updated_import = Import.query.get(import_record.id)
+        updated_import = db.session.get(Import, import_record.id)
         assert updated_import.status == "done"
 
     def test_run_junit_import_with_properties(self, make_import, make_project, flask_app):
@@ -747,9 +691,10 @@ class TestRunJunitImport:
             run_junit_import({"id": str(import_record.id)})
 
             # Verify status updated to error
+            from ibutsu_server.db import db
             from ibutsu_server.db.models import Import
 
-            updated = Import.query.get(import_record.id)
+            updated = db.session.get(Import, import_record.id)
             assert updated.status == "error"
 
 
@@ -807,6 +752,7 @@ class TestRunArchiveImport:
                 import_id=import_record.id,
                 content=tar_content,
             )
+            from ibutsu_server.db import db
             from ibutsu_server.db.base import session
 
             session.add(import_file)
@@ -817,18 +763,20 @@ class TestRunArchiveImport:
                 run_archive_import({"id": str(import_record.id)})
 
             # Verify run was created or updated
-            run = Run.query.get(run_id)
+            run = db.session.get(Run, run_id)
             assert run is not None
 
             # Verify result was created (archive import creates new IDs for results)
-            result = Result.query.filter_by(test_id="test.example", run_id=run.id).first()
+            result = db.session.execute(
+                db.select(Result).filter_by(test_id="test.example", run_id=run.id)
+            ).scalar_one_or_none()
             assert result is not None
             assert result.test_id == "test.example"
 
             # Verify import status
             from ibutsu_server.db.models import Import
 
-            updated = Import.query.get(import_record.id)
+            updated = db.session.get(Import, import_record.id)
             assert updated.status == "done"
 
     def test_run_archive_import_missing_file(self, make_import, flask_app):
@@ -844,7 +792,8 @@ class TestRunArchiveImport:
             run_archive_import({"id": str(import_record.id)})
 
             # Verify status updated to error
+            from ibutsu_server.db import db
             from ibutsu_server.db.models import Import
 
-            updated = Import.query.get(import_record.id)
+            updated = db.session.get(Import, import_record.id)
             assert updated.status == "error"
