@@ -1,5 +1,4 @@
 import pytest
-from flask import json
 
 
 def test_add_project(flask_app, make_group, auth_headers):
@@ -19,12 +18,11 @@ def test_add_project(flask_app, make_group, auth_headers):
     response = client.post(
         "/api/project",
         headers=headers,
-        data=json.dumps(project_data),
-        content_type="application/json",
+        json=project_data,
     )
-    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 201, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["name"] == "my-project"
     assert response_data["title"] == "My Project"
 
@@ -49,9 +47,9 @@ def test_get_project_by_id(flask_app, make_project, auth_headers):
         f"/api/project/{project.id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["id"] == str(project.id)
     assert response_data["name"] == "test-project"
     assert response_data["title"] == "Test Project"
@@ -69,9 +67,9 @@ def test_get_project_by_name(flask_app, make_project, auth_headers):
         f"/api/project/{project.id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["name"] == "my-project"
 
 
@@ -99,11 +97,11 @@ def test_get_project_list(flask_app, make_project, page, page_size, auth_headers
     response = client.get(
         "/api/project",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert "projects" in response_data
     assert "pagination" in response_data
     assert response_data["pagination"]["page"] == page
@@ -126,11 +124,11 @@ def test_get_project_list_filter_by_owner(flask_app, make_project, make_user, au
     response = client.get(
         "/api/project",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     # Should only return projects from owner1
     project_ids = [p["id"] for p in response_data["projects"]]
     assert str(project1.id) in project_ids
@@ -151,19 +149,19 @@ def test_update_project(flask_app, make_project, auth_headers):
     response = client.put(
         f"/api/project/{project.id}",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["title"] == "Updated Title"
 
     # Verify in database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Project
 
-        updated_project = Project.query.get(str(project.id))
+        updated_project = db.session.get(Project, str(project.id))
         assert updated_project.title == "Updated Title"
 
 
@@ -176,7 +174,6 @@ def test_update_project_not_found(flask_app, auth_headers):
     response = client.put(
         "/api/project/00000000-0000-0000-0000-000000000000",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
     assert response.status_code == 404

@@ -1,13 +1,11 @@
 import logging
 from http import HTTPStatus
 
-# Connexion 3: use flask.request instead of connexion.request
 from flask import request
 from sqlalchemy.exc import OperationalError
 
 from ibutsu_server.constants import ALLOWED_TRUE_BOOLEANS, WIDGET_TYPES
 from ibutsu_server.controllers.widget_config_controller import _validate_widget_params
-from ibutsu_server.util.uuid import validate_uuid
 from ibutsu_server.widgets.accessibility_analysis import (
     get_accessibility_analysis_view,
     get_accessibility_bar_chart,
@@ -116,7 +114,6 @@ def get_widget_types(type_=None):
     }
 
 
-@validate_uuid
 def get_widget(id_):
     """Get dashboard widget data
 
@@ -128,7 +125,6 @@ def get_widget(id_):
     if id_ not in WIDGET_TYPES:
         return "Widget not found", HTTPStatus.NOT_FOUND
     params = {}
-    # Connexion 3: use flask.request instead of connexion.request
     for key in request.args:
         params[key] = request.args.getlist(key)
     params = _pre_process_params(params, id_)

@@ -5,6 +5,7 @@ from celery.schedules import crontab
 
 from ibutsu_server.constants import SOCKET_CONNECT_TIMEOUT, SOCKET_TIMEOUT
 from ibutsu_server.util.celery_task import IbutsuTask, set_flask_app, shared_task
+from ibutsu_server.util.redis_lock import lock
 
 
 def create_celery_app(app=None):
@@ -33,7 +34,6 @@ def create_celery_app(app=None):
     import ibutsu_server.tasks.db  # noqa: PLC0415
     import ibutsu_server.tasks.importers  # noqa: PLC0415
     import ibutsu_server.tasks.query  # noqa: PLC0415
-    import ibutsu_server.tasks.reports  # noqa: PLC0415
     import ibutsu_server.tasks.results  # noqa: PLC0415
     import ibutsu_server.tasks.runs  # noqa: F401, PLC0415
 
@@ -75,6 +75,28 @@ def create_celery_app(app=None):
     return celery_app
 
 
+def get_celery_app():
+    """
+    Get the Celery app instance.
+
+    This function retrieves the Celery app from the Flask app extensions.
+    If the app hasn't been initialized yet, it will be initialized.
+
+    Returns:
+        Celery: The Celery app instance
+    """
+    import ibutsu_server  # noqa: PLC0415
+
+    celery_app = ibutsu_server._AppRegistry.get_celery_app()
+    if celery_app is None:
+        raise RuntimeError("Celery app not initialized. Call create_celery_app() first.")
+
+    return celery_app
+
+
+# Alias for shared_task decorator - commonly used in tests
+task = shared_task
+
 # Export shared_task is already imported from ibutsu_server.util.celery_task at the top
 
-__all__ = ["create_celery_app", "shared_task"]
+__all__ = ["IbutsuTask", "create_celery_app", "get_celery_app", "lock", "shared_task", "task"]

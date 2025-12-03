@@ -39,7 +39,7 @@ def _get_distinct_values(group_field, filters, limit=FILTER_MODE_LIMIT):
         return []
 
     # Build query with DISTINCT - filters must be applied before limit
-    query = db.session.query(group_field_column).distinct()
+    query = db.select(group_field_column).distinct()
 
     # Add filters to the query first
     query = apply_filters(query, filters, Result)
@@ -47,9 +47,9 @@ def _get_distinct_values(group_field, filters, limit=FILTER_MODE_LIMIT):
     # Apply limit last
     query = query.limit(limit)
 
-    query_data = query.all()
+    query_data = db.session.execute(query).scalars().all()
     # Return simple structure without counts for filter dropdowns
-    return [{"_id": _id} for (_id,) in query_data]
+    return [{"_id": _id} for _id in query_data]
 
 
 def _get_recent_result_data(group_field, days, project=None, run_id=None, additional_filters=None):
@@ -62,7 +62,6 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
         return []
 
     # create the query
-    # Flask-SQLAlchemy 3.0+ pattern: use db.select() instead of session.query()
     query = (
         db.select(group_field_column, func.count(Result.id).label("count"))
         .select_from(Result)  # Explicitly select from Result to avoid implicit FROM clauses

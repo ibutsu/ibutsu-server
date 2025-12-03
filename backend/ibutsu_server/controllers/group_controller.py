@@ -20,11 +20,10 @@ def add_group(body=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     group = Group.from_dict(**body_data)
     if group.id:
-        # Flask-SQLAlchemy 3.0+ pattern: use db.session.get instead of Model.query.get
         if db.session.get(Group, group.id):
             return f"The group with ID {group.id} already exists", HTTPStatus.BAD_REQUEST
         if not is_uuid(group.id):
@@ -63,9 +62,11 @@ def get_group_list(page=1, page_size=25, token_info=None, user=None):
     """
     offset = get_offset(page, page_size)
     query = db.select(Group)
-    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.subquery())
+    ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    groups = query.limit(page_size).offset(offset).all()
+    groups = db.session.scalars(query.limit(page_size).offset(offset)).all()
     return {
         "groups": [group.to_dict() for group in groups],
         "pagination": {
@@ -92,9 +93,8 @@ def update_group(id_, body=None, **_kwargs):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
-    # Flask-SQLAlchemy 3.0+ pattern: use db.session.get instead of Model.query.get
     group = db.session.get(Group, id_)
     if not group:
         return "Group not found", HTTPStatus.NOT_FOUND

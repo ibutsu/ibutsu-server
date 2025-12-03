@@ -130,10 +130,8 @@ export class HttpClient {
       }
     } else if (response.status === 401) {
       // Token is invalid or expired, clear auth and redirect to login
-      import('./auth').then(({ AuthService }) => {
-        AuthService.logout();
-        window.location.href = '/login';
-      });
+      AuthService.logout();
+      window.location.href = '/login';
       throw new Error('Unauthorized - redirecting to login');
     } else {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);

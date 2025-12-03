@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 from unittest.mock import patch
 
 import pytest
-from flask import json
 
 
 @patch("ibutsu_server.controllers.run_controller.update_run_task")
@@ -31,12 +30,11 @@ def test_add_run(mock_update_run_task, flask_app, make_project, auth_headers):
     response = client.post(
         "/api/run",
         headers=headers,
-        data=json.dumps(run_data),
-        content_type="application/json",
+        json=run_data,
     )
-    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 201, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["summary"]["tests"] == 548
     assert response_data["summary"]["failures"] == 3
 
@@ -61,9 +59,9 @@ def test_get_run(flask_app, make_project, make_run, auth_headers):
         f"/api/run/{run.id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["id"] == str(run.id)
     assert response_data["summary"]["tests"] == 548
 
@@ -96,11 +94,11 @@ def test_get_run_list(flask_app, make_project, make_run, page, page_size, auth_h
     response = client.get(
         "/api/run",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert "runs" in response_data
     assert "pagination" in response_data
     assert response_data["pagination"]["page"] == page
@@ -123,11 +121,11 @@ def test_get_run_list_filter_by_project(flask_app, make_project, make_run, auth_
     response = client.get(
         "/api/run",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     # Should only return runs from project1
     run_ids = [r["id"] for r in response_data["runs"]]
     assert str(run1.id) in run_ids
@@ -157,19 +155,19 @@ def test_update_run(mock_update_run_task, flask_app, make_project, make_run, aut
     response = client.put(
         f"/api/run/{run.id}",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["summary"]["failures"] == 5
 
     # Verify in database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Run
 
-        updated_run = Run.query.get(str(run.id))
+        updated_run = db.session.get(Run, str(run.id))
         assert updated_run.summary["failures"] == 5
 
 
@@ -182,8 +180,7 @@ def test_update_run_not_found(flask_app, auth_headers):
     response = client.put(
         "/api/run/00000000-0000-0000-0000-000000000000",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
     assert response.status_code == 404
 
@@ -205,7 +202,7 @@ def test_get_run_list_requires_project_filter_for_superadmin(
         headers=headers,
     )
     assert response.status_code == 400
-    assert "project_id filter is required" in response.data.decode("utf-8")
+    assert "project_id filter is required" in response.text
 
 
 def test_get_run_list_with_project_filter_for_superadmin(
@@ -224,9 +221,9 @@ def test_get_run_list_with_project_filter_for_superadmin(
     response = client.get(
         "/api/run",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
     assert response.status_code == 200
-    response_data = response.get_json()
+    response_data = response.json()
     assert "runs" in response_data
     assert len(response_data["runs"]) >= 1

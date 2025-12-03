@@ -46,3 +46,51 @@ def mocked_celery():
     """Mock Celery app for testing."""
     with patch("ibutsu_server.tasks.celery") as mock:
         yield mock
+
+
+# ============================================================================
+# CONNEXION 3 HELPERS - Working with httpx responses
+# ============================================================================
+
+
+def get_json(response):
+    """
+    Extract JSON from Connexion 3 (httpx) response.
+
+    Connexion 3 uses httpx which has response.json() method (not get_json()).
+    This helper provides a consistent interface.
+
+    Args:
+        response: httpx.Response object from Connexion 3 test client
+
+    Returns:
+        dict: Parsed JSON response
+
+    Example:
+        response = client.get('/api/health')
+        data = get_json(response)
+    """
+    return response.json()
+
+
+def get_text(response):
+    """
+    Get response text from Connexion 3 (httpx) response.
+
+    Args:
+        response: httpx.Response object from Connexion 3 test client
+
+    Returns:
+        str: Response text
+
+    Example:
+        response = client.get('/api/health')
+        text = get_text(response)
+    """
+    return response.text
+
+
+@pytest.fixture
+def json_response():
+    """Fixture that provides helper to extract JSON from responses."""
+    return get_json

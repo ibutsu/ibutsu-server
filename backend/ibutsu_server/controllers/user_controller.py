@@ -41,11 +41,10 @@ def update_current_user(body=None, token_info=None, user=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Flask-SQLAlchemy 3.0+ pattern
     user = db.session.get(User, user)
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     user_dict = body if body is not None else request.get_json()
     user_dict.pop("is_superadmin", None)
     user.update(user_dict)
@@ -68,10 +67,12 @@ def get_token_list(page=1, page_size=25, token_info=None, user=None):
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
     query = db.select(Token).where(Token.user == user, Token.name != "login-token")
-    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.subquery())
+    ).scalar()
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    tokens = query.offset(offset).limit(page_size).all()
+    tokens = db.session.scalars(query.offset(offset).limit(page_size)).all()
     return {
         "tokens": [token.to_dict() for token in tokens],
         "pagination": {
@@ -92,7 +93,6 @@ def get_token(id_, token_info=None, user=None):
 
     :rtype: Token
     """
-    # Flask-SQLAlchemy 3.0+ pattern
     user = db.session.get(User, user)
     token = db.session.get(Token, id_)
     if not token:
@@ -111,7 +111,6 @@ def delete_token(id_, token_info=None, user=None):
 
     :rtype: Token
     """
-    # Flask-SQLAlchemy 3.0+ pattern
     user = db.session.get(User, user)
     token = db.session.get(Token, id_)
     if not token:
@@ -136,7 +135,7 @@ def add_token(body=None, token_info=None, user=None):
     user = db.session.get(User, user)
     if not user:
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     token = Token.from_dict(**body_data)
     token.user = user

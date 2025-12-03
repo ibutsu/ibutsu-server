@@ -11,7 +11,7 @@ import Login from '../pages/login';
 import { SignUp } from '../pages/sign-up';
 import ForgotPassword from '../pages/forgot-password';
 import ResetPassword from '../pages/reset-password';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 import { IbutsuContextProvider } from '../components/contexts/ibutsu-context';
 

@@ -106,6 +106,7 @@ export class AuthService {
         return userObj.token;
       }
     }
+    return null;
   }
 
   static setToken(token) {

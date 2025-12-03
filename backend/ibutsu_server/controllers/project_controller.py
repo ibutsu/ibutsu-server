@@ -23,13 +23,12 @@ def add_project(body=None, token_info=None, user=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     project = Project.from_dict(**body_data)
     # check if project already exists
     if project.id and db.session.get(Project, project.id):
         return f"Project id {project.id} already exist", HTTPStatus.BAD_REQUEST
-    # Flask-SQLAlchemy 3.0+ pattern: use db.session.get instead of Model.query.get
     requesting_user = db.session.get(User, user)
     if requesting_user:
         project.owner = requesting_user
@@ -96,9 +95,11 @@ def get_project_list(
                 query = query.where(filter_clause)
 
     offset = get_offset(page, page_size)
-    total_items = db.session.execute(db.select(db.func.count()).select_from(query)).scalar()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.subquery())
+    ).scalar()
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    projects = query.offset(offset).limit(page_size).all()
+    projects = db.session.scalars(query.offset(offset).limit(page_size)).all()
     return {
         "projects": [project.to_dict() for project in projects],
         "pagination": {
@@ -130,7 +131,6 @@ def update_project(id_, body=None, token_info=None, user=None, **_kwargs):
     if not project:
         return "Project not found", HTTPStatus.NOT_FOUND
 
-    # Flask-SQLAlchemy 3.0+ pattern: use db.session.get instead of Model.query.get
     requesting_user = db.session.get(User, user)
     if not requesting_user.is_superadmin and (
         not project.owner or project.owner.id != requesting_user.id
@@ -138,7 +138,7 @@ def update_project(id_, body=None, token_info=None, user=None, **_kwargs):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
 
     # handle updating users separately
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     body_data = body if body is not None else request.get_json()
     updates = body_data.copy()
     for username in updates.pop("users", []):
@@ -171,12 +171,12 @@ def get_filter_params(id_, user=None, token_info=None):
     if project and not project_has_user(project, user):
         return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
-    result = (
-        session.query(Result)
-        .filter(Result.project_id == id_)
+    result = db.session.scalars(
+        db.select(Result)
+        .where(Result.project_id == id_)
         .order_by(Result.start_time.desc())
-        .first()
-    )
+        .limit(1)
+    ).first()
 
     if not result:
         # Return empty list if no results exist for this project

@@ -22,7 +22,6 @@ def get_upgrade_op(current_session):
 
     :param current_session: The SQLAlchemy current_session object.
     """
-    # Flask-SQLAlchemy 3.0+ compatibility: use db.engine instead of current_session.get_bind()
     bind = getattr(current_session, "bind", None) or db.engine
     context = MigrationContext.configure(bind.connect())
     return Operations(context)
@@ -403,7 +402,7 @@ def upgrade_9(session):
     }
 
     # Query all widget configs for comprehensive migration
-    widget_configs = session.query(WidgetConfig).all()
+    widget_configs = session.execute(db.select(WidgetConfig)).scalars().all()
     migration_stats["total_widgets_processed"] = len(widget_configs)
 
     logger.info(f"Starting widget config parameter migration for {len(widget_configs)} widgets")
