@@ -1,5 +1,5 @@
 # hadolint global ignore=DL3013,DL3041,DL3059
-FROM registry.access.redhat.com/ubi9/python-39:9.6
+FROM registry.access.redhat.com/ubi9/python-312:9.7
 
 USER 0
 COPY . /app
