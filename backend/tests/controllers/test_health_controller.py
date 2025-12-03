@@ -4,8 +4,8 @@ def test_get_database_health(flask_app, auth_headers):
     """
     client, jwt_token = flask_app
     headers = auth_headers(jwt_token)
-    response = client.open("/api/health/database", method="GET", headers=headers)
-    assert response.status_code == 503, f"Response body is : {response.data.decode('utf-8')}"
+    response = client.get("/api/health/database", headers=headers)
+    assert response.status_code == 503, f"Response body is : {response.text}"
 
 
 def test_get_health(flask_app, auth_headers):
@@ -14,5 +14,5 @@ def test_get_health(flask_app, auth_headers):
     """
     client, jwt_token = flask_app
     headers = auth_headers(jwt_token)
-    response = client.open("/api/health", method="GET", headers=headers)
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    response = client.get("/api/health", headers=headers)
+    assert response.status_code == 200, f"Response body is : {response.text}"

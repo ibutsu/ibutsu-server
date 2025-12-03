@@ -1,5 +1,4 @@
 import pytest
-from flask import json
 
 
 def test_add_result(flask_app, make_project, make_run, auth_headers):
@@ -27,12 +26,11 @@ def test_add_result(flask_app, make_project, make_run, auth_headers):
     response = client.post(
         "/api/result",
         headers=headers,
-        data=json.dumps(result_data),
-        content_type="application/json",
+        json=result_data,
     )
-    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 201, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["result"] == "passed"
     assert response_data["test_id"] == "test.example"
 
@@ -61,9 +59,9 @@ def test_get_result(flask_app, make_project, make_run, make_result, auth_headers
         f"/api/result/{result.id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["id"] == str(result.id)
     assert response_data["test_id"] == "test.example"
 
@@ -97,11 +95,11 @@ def test_get_result_list(
     response = client.get(
         "/api/result",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert "results" in response_data
     assert "pagination" in response_data
     assert response_data["pagination"]["page"] == page
@@ -140,11 +138,11 @@ def test_get_result_list_filter_by_result_status(
     response = client.get(
         "/api/result",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     # Should only return passed results
     assert len(response_data["results"]) >= 5
     for result in response_data["results"]:
@@ -167,19 +165,19 @@ def test_update_result(flask_app, make_project, make_run, make_result, auth_head
     response = client.put(
         f"/api/result/{result.id}",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["result"] == "failed"
 
     # Verify in database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Result
 
-        updated_result = Result.query.get(str(result.id))
+        updated_result = db.session.get(Result, str(result.id))
         assert updated_result.result == "failed"
 
 
@@ -192,8 +190,7 @@ def test_update_result_not_found(flask_app, auth_headers):
     response = client.put(
         "/api/result/00000000-0000-0000-0000-000000000000",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
     assert response.status_code == 404
 
@@ -216,7 +213,7 @@ def test_get_result_list_requires_project_filter_for_superadmin(
         headers=headers,
     )
     assert response.status_code == 400
-    assert "project_id filter is required" in response.data.decode("utf-8")
+    assert "project_id filter is required" in response.text
 
 
 def test_get_result_list_with_project_filter_for_superadmin(
@@ -236,9 +233,9 @@ def test_get_result_list_with_project_filter_for_superadmin(
     response = client.get(
         "/api/result",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
     assert response.status_code == 200
-    response_data = response.get_json()
+    response_data = response.json()
     assert "results" in response_data
     assert len(response_data["results"]) >= 1

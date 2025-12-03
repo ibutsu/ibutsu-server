@@ -1,7 +1,5 @@
 from unittest.mock import patch
 
-from flask import json
-
 
 @patch("ibutsu_server.controllers.login_controller.generate_token")
 def test_login(mocked_generate_token, flask_app, make_user):
@@ -27,12 +25,11 @@ def test_login(mocked_generate_token, flask_app, make_user):
     response = client.post(
         "/api/login",
         headers=headers,
-        data=json.dumps(login_details),
-        content_type="application/json",
+        json=login_details,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["email"] == "testlogin@example.com"
     assert "token" in response_data
 
@@ -46,10 +43,9 @@ def test_login_empty_request(flask_app):
     response = client.post(
         "/api/login",
         headers=headers,
-        data=json.dumps(login_details),
-        content_type="application/json",
+        json=login_details,
     )
-    assert response.status_code == 400, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 400, f"Response body is : {response.text}"
 
 
 def test_login_no_user(flask_app):
@@ -61,12 +57,11 @@ def test_login_no_user(flask_app):
     response = client.post(
         "/api/login",
         headers=headers,
-        data=json.dumps(login_details),
-        content_type="application/json",
+        json=login_details,
     )
-    assert response.status_code == 401, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 401, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["code"] == "INVALID"
 
 
@@ -89,12 +84,11 @@ def test_login_bad_password(flask_app):
     response = client.post(
         "/api/login",
         headers=headers,
-        data=json.dumps(login_details),
-        content_type="application/json",
+        json=login_details,
     )
-    assert response.status_code == 401, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 401, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["code"] == "INVALID"
 
 
@@ -117,12 +111,11 @@ def test_login_inactive_user(flask_app):
     response = client.post(
         "/api/login",
         headers=headers,
-        data=json.dumps(login_details),
-        content_type="application/json",
+        json=login_details,
     )
-    assert response.status_code == 401, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 401, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["code"] == "INACTIVE"
 
 
@@ -132,9 +125,9 @@ def test_login_support(flask_app):
 
     headers = {"Accept": "application/json"}
     response = client.get("/api/login/support", headers=headers)
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     # Should always return a dict with these keys
     assert "user" in response_data
     assert "keycloak" in response_data

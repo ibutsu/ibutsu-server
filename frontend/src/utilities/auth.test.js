@@ -21,6 +21,8 @@ describe('Auth Utilities', () => {
     AuthService.loginError = null;
     AuthService.registerError = null;
     AuthService.recoverError = null;
+    AuthService._cachedUser = null;
+    AuthService._tokenValidated = false;
 
     // Mock localStorage
     mockLocalStorage = {};
@@ -40,22 +42,22 @@ describe('Auth Utilities', () => {
     });
   });
 
-  describe('getUser', () => {
+  describe('getLocalUser', () => {
     it('should return null when no user in localStorage', () => {
-      expect(AuthService.getUser()).toBeNull();
+      expect(AuthService.getLocalUser()).toBeNull();
     });
 
     it('should return parsed user from localStorage', () => {
       const user = { id: '123', email: 'test@example.com', token: 'abc' };
       mockLocalStorage.user = JSON.stringify(user);
 
-      expect(AuthService.getUser()).toEqual(user);
+      expect(AuthService.getLocalUser()).toEqual(user);
     });
 
     it('should handle invalid JSON gracefully', () => {
       mockLocalStorage.user = 'invalid-json';
 
-      expect(() => AuthService.getUser()).toThrow();
+      expect(() => AuthService.getLocalUser()).toThrow();
     });
   });
 
@@ -89,21 +91,21 @@ describe('Auth Utilities', () => {
   });
 
   describe('getToken', () => {
-    it('should return null when no user', () => {
-      expect(AuthService.getToken()).toBeNull();
+    it('should return null when no user', async () => {
+      expect(await AuthService.getToken()).toBeNull();
     });
 
-    it('should return null when user has no token', () => {
+    it('should return null when user has no token', async () => {
       mockLocalStorage.user = JSON.stringify({ email: 'test@example.com' });
 
-      expect(AuthService.getToken()).toBeNull();
+      expect(await AuthService.getToken()).toBeNull();
     });
 
-    it('should return token from user', () => {
+    it('should return token from user', async () => {
       const user = { email: 'test@example.com', token: 'test-token-123' };
       mockLocalStorage.user = JSON.stringify(user);
 
-      expect(AuthService.getToken()).toBe('test-token-123');
+      expect(await AuthService.getToken()).toBe('test-token-123');
     });
   });
 
@@ -143,14 +145,14 @@ describe('Auth Utilities', () => {
   });
 
   describe('isLoggedIn', () => {
-    it('should return false when no token', () => {
-      expect(AuthService.isLoggedIn()).toBe(false);
+    it('should return false when no token', async () => {
+      expect(await AuthService.isLoggedIn()).toBe(false);
     });
 
-    it('should return true when token exists', () => {
+    it('should return true when token exists', async () => {
       mockLocalStorage.user = JSON.stringify({ token: 'test-token' });
 
-      expect(AuthService.isLoggedIn()).toBe(true);
+      expect(await AuthService.isLoggedIn()).toBe(true);
     });
   });
 
@@ -412,14 +414,9 @@ describe('Auth Utilities', () => {
         message: 'Unauthorized',
       });
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-
       const result = await AuthService.isSuperAdmin();
 
       expect(result).toBe(false);
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
     });
 
     it('should handle network error', async () => {
@@ -427,7 +424,7 @@ describe('Auth Utilities', () => {
 
       global.fetch.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
       const result = await AuthService.isSuperAdmin();
 

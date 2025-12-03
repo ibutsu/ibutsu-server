@@ -30,11 +30,11 @@ classifiers = [
 dependencies = [
     "alembic",
     "celery",
-    "connexion[swagger-ui]>=3.0.0",
-    "connexion[flask]>=3.0.0",
+    "connexion[swagger-ui]==3.2.0",  # Needs python update for 3.3
+    "connexion[flask]==3.2.0",
     "flask_bcrypt",
     "flask_mail",
-    "Flask>=3.0.0",
+    "Flask>=3.1.0",
     "Flask-SQLAlchemy>=3.1.0",
     "starlette",
     "uvicorn[standard]",

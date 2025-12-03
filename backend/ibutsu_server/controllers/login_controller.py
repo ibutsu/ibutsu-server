@@ -90,7 +90,6 @@ def _get_user_from_provider(provider, provider_config, code):
 
 def _find_or_create_token(token_name, user):
     """To reduce cognitive complexity"""
-    # Flask-SQLAlchemy 3.0+ pattern
     token = db.session.execute(
         db.select(Token).where(Token.name == token_name, Token.user_id == user.id)
     ).scalar_one_or_none()
@@ -109,7 +108,7 @@ def login(body=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     login = body if body is not None else request.get_json()
 
     if not login.get("email") or not login.get("password"):
@@ -230,7 +229,7 @@ def register(body=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     details = body if body is not None else request.get_json()
     if not details.get("email") or not details.get("password"):
         return {
@@ -282,7 +281,7 @@ def recover(body=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     login = body if body is not None else request.get_json()
     if not login.get("email"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
@@ -306,7 +305,7 @@ def reset_password(body=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     login = body if body is not None else request.get_json()
     if result := validate_activation_code(login.get("activation_code")):
         return result

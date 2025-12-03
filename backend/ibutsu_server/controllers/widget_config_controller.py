@@ -70,7 +70,7 @@ def add_widget_config(body=None, token_info=None, user=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     data = body if body is not None else request.get_json()
     if data["widget"] not in WIDGET_TYPES:
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST
@@ -106,7 +106,7 @@ def get_widget_config(id_, token_info=None, user=None):
     :param id: The ID of the widget
     :type id: str
 
-    :rtype: Report
+    :rtype: WidgetConfig
     """
     widget_config = db.session.get(WidgetConfig, id_)
     if not widget_config:
@@ -133,7 +133,7 @@ def get_widget_config_list(filter_=None, page=1, page_size=25):
     :param page_size: Set the number of items per page, defaults to 25
     :type page_size: int
 
-    :rtype: ReportList
+    :rtype: WidgetConfigList
     """
     query = db.select(WidgetConfig)
     if filter_:
@@ -182,7 +182,7 @@ def update_widget_config(id_, body=None, token_info=None, user=None):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    # Use body parameter if provided, otherwise get from request (Connexion 3 pattern)
+    # Use body parameter if provided, otherwise get from request
     data = body if body is not None else request.get_json()
     if data.get("widget") and data["widget"] not in WIDGET_TYPES:
         return "Bad request, widget type does not exist", HTTPStatus.BAD_REQUEST

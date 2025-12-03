@@ -1,3 +1,4 @@
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Result
 from ibutsu_server.filters import convert_filter
 
@@ -14,7 +15,7 @@ def _get_comparison_data(additional_filters):
 
     queries = []
     for _ in additional_filters:
-        queries.append(Result.query)
+        queries.append(db.select(Result))
 
     # Create DB ready filter strings
     if additional_filters:
@@ -23,24 +24,28 @@ def _get_comparison_data(additional_filters):
             for filter_string in filters:
                 filter_clause = convert_filter(filter_string, Result)
                 if filter_clause is not None:
-                    queries[i] = queries[i].filter(filter_clause)
+                    queries[i] = queries[i].where(filter_clause)
 
     # Find run IDs for each filter
     # Extract the ID value from the result row tuple
-    run_id_1 = queries[0].with_entities(Result.run_id).order_by(Result.start_time.desc()).first()[0]
-    run_id_2 = queries[1].with_entities(Result.run_id).order_by(Result.start_time.desc()).first()[0]
+    run_id_1 = db.session.execute(
+        queries[0].with_only_columns(Result.run_id).order_by(Result.start_time.desc()).limit(1)
+    ).scalar()
+    run_id_2 = db.session.execute(
+        queries[1].with_only_columns(Result.run_id).order_by(Result.start_time.desc()).limit(1)
+    ).scalar()
 
     # Get list of tests matching our filters and run IDs
     results_1 = []
     results_2 = []
     if run_id_1:
-        results_1 = (
-            queries[0].filter(Result.run_id == run_id_1).order_by(Result.data["fspath"]).all()
-        )
+        results_1 = db.session.scalars(
+            queries[0].where(Result.run_id == run_id_1).order_by(Result.data["fspath"])
+        ).all()
     if run_id_2:
-        results_2 = (
-            queries[1].filter(Result.run_id == run_id_2).order_by(Result.data["fspath"]).all()
-        )
+        results_2 = db.session.scalars(
+            queries[1].where(Result.run_id == run_id_2).order_by(Result.data["fspath"])
+        ).all()
 
     # Build matrix by matching results
     # Could revisit this if loading is taking too long

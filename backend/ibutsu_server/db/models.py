@@ -289,12 +289,10 @@ class User(Model, ModelMixin):
         self.projects.clear()
 
         # 2. Delete tokens associated with the user
-        # 2. Delete tokens associated with the user
         stmt = sqlalchemy_delete(Token).where(Token.user_id == self.id)
         session.execute(stmt)
 
         # 3. Reassign owned projects to the current user (admin performing deletion)
-        # SQLAlchemy 2.0+ pattern: use update() instead of query.update()
         stmt = (
             sqlalchemy_update(Project)
             .where(sa_cast(Project.owner_id, sa_text) == sa_cast(self.id, sa_text))

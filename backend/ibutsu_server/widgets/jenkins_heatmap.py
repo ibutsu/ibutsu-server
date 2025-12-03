@@ -6,7 +6,6 @@ from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
 from ibutsu_server.util.uuid import is_uuid
 from ibutsu_server.util.widget import (
-    create_basic_summary_columns,
     create_jenkins_columns,
     create_summary_columns,
 )
@@ -117,7 +116,7 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
     if additional_filters:
         filters.extend(additional_filters.split(","))
     if min_start_time:
-        filters.append(f"start_time>{min_start_time}")
+        filters.append(f"start_time){min_start_time}")
     if project and is_uuid(project):
         filters.append(f"project_id={project}")
 
@@ -128,29 +127,24 @@ def _get_heatmap(job_name, builds, group_field, count_skips, project=None, addit
     if group_field_col is None:
         return {}, build_numbers
 
-    # Use shared utility for summary columns (basic version since we don't need time fields here)
-    summary_cols = create_basic_summary_columns(Run, cast_type=Float)
-
-    # Create a single comprehensive query using helper functions
+    # Extract summary values directly (no aggregation needed since we're selecting individual runs)
+    # Cast to Float for consistency with calculations
     query = db.select(
         Run.id.label("run_id"),
         jenkins_cols["annotations"].label("annotations"),
         group_field_col.label("group_field"),
         jenkins_cols["job_name"].label("job_name"),
         jenkins_cols["build_number"].cast(Integer).label("build_number"),
-        summary_cols["failures"],
-        summary_cols["errors"],
-        summary_cols["skips"],
-        summary_cols["xfailures"],
-        summary_cols["xpasses"],
-        summary_cols["tests"].label("total"),
+        Run.summary["failures"].cast(Float).label("failures"),
+        Run.summary["errors"].cast(Float).label("errors"),
+        Run.summary["skips"].cast(Float).label("skips"),
+        Run.summary["xfailures"].cast(Float).label("xfailures"),
+        Run.summary["xpasses"].cast(Float).label("xpasses"),
+        Run.summary["tests"].cast(Float).label("total"),
     ).select_from(Run)
 
-    # Apply filters and grouping
+    # Apply filters
     query = apply_filters(query, filters, Run)
-    query = query.group_by(
-        group_field_col, jenkins_cols["job_name"], jenkins_cols["build_number"], Run.id
-    )
 
     # Execute query and process results in Python (more readable than complex SQL)
     query_data = db.session.execute(query).all()

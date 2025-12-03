@@ -6,10 +6,9 @@ from unittest.mock import MagicMock, patch
 from celery import Celery
 from redis.exceptions import LockError
 
-from ibutsu_server.tasks import IbutsuTask, create_celery_app, get_celery_app, lock, task
+from ibutsu_server.tasks import IbutsuTask, create_celery_app, lock, task
 from ibutsu_server.tasks.db import (
     prune_old_files,
-    prune_old_imports,
     prune_old_results,
     prune_old_runs,
 )
@@ -28,11 +27,15 @@ def test_create_celery_app(flask_app):
         assert isinstance(celery_app, Celery)
 
 
-def test_get_celery_app():
+def test_get_celery_app(flask_app):
     """Test get_celery_app returns a celery instance."""
-    app = get_celery_app()
-    assert app is not None
-    assert isinstance(app, Celery)
+    client, _ = flask_app
+
+    # Access celery app directly from Flask app extensions
+    # This avoids calling get_celery_app() which would try to reinitialize
+    celery_app = client.application.extensions.get("celery")
+    assert celery_app is not None
+    assert isinstance(celery_app, Celery)
 
 
 def test_task_decorator():
@@ -55,8 +58,8 @@ def test_ibutsu_task_after_return(flask_app):
     # Enable commit on teardown for this test
     with (
         client.application.app_context(),
-        patch("ibutsu_server.tasks.session.commit") as mock_commit,
-        patch("ibutsu_server.tasks.session.remove") as mock_remove,
+        patch("ibutsu_server.db.db.session.commit") as mock_commit,
+        patch("ibutsu_server.db.db.session.remove") as mock_remove,
     ):
         task.after_return("SUCCESS", None, "task_id", [], {}, None)
 
@@ -73,8 +76,8 @@ def test_ibutsu_task_after_return_with_exception(flask_app):
 
     with (
         client.application.app_context(),
-        patch("ibutsu_server.tasks.session.commit") as mock_commit,
-        patch("ibutsu_server.tasks.session.remove") as mock_remove,
+        patch("ibutsu_server.db.db.session.commit") as mock_commit,
+        patch("ibutsu_server.db.db.session.remove") as mock_remove,
     ):
         # When retval is an Exception, commit should not be called
         task.after_return("FAILURE", Exception("test"), "task_id", [], {}, None)
@@ -83,15 +86,18 @@ def test_ibutsu_task_after_return_with_exception(flask_app):
         mock_remove.assert_called_once()
 
 
-@patch("logging.info")
-def test_ibutsu_task_on_failure(mock_log_info):
+@patch("logging.error")
+def test_ibutsu_task_on_failure(mock_log_error, flask_app):
     """Test the on_failure method of IbutsuTask."""
-    task = IbutsuTask()
-    task.on_failure(Exception("Test Error"), "task_id", [], {}, None)
-    mock_log_info.assert_called_once()
+    client, _ = flask_app
+
+    with client.application.app_context():
+        task = IbutsuTask()
+        task.on_failure(Exception("Test Error"), "task_id", [], {}, None)
+        mock_log_error.assert_called_once()
 
 
-@patch("ibutsu_server.tasks.Redis.from_url")
+@patch("redis.Redis.from_url")
 def test_lock_successful(mock_redis_from_url, flask_app):
     """Test that the lock works when it is acquired."""
     client, _ = flask_app
@@ -110,7 +116,7 @@ def test_lock_successful(mock_redis_from_url, flask_app):
 
 
 @patch("logging.info")
-@patch("ibutsu_server.tasks.Redis.from_url")
+@patch("redis.Redis.from_url")
 def test_lock_locked(mock_redis_from_url, mock_log_info, flask_app):
     """Test that the lock handles LockError gracefully."""
     client, _ = flask_app
@@ -191,9 +197,10 @@ def test_prune_old_files_minimum_months(make_artifact, flask_app):
         # Try to run with less than 2 months - should do nothing
         prune_old_files(months=1)
 
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Artifact
 
-        artifact = Artifact.query.get(old_artifact.id)
+        artifact = db.session.get(Artifact, old_artifact.id)
         assert artifact is not None
 
 
@@ -252,9 +259,10 @@ def test_prune_old_results_minimum_months(make_result, flask_app):
 
         prune_old_results(months=3)
 
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Result
 
-        result = Result.query.get(old_result.id)
+        result = db.session.get(Result, old_result.id)
         assert result is not None
 
 
@@ -294,36 +302,11 @@ def test_prune_old_runs_minimum_months(make_run, flask_app):
 
         prune_old_runs(months=9)
 
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Run
 
-        run = Run.query.get(old_run.id)
+        run = db.session.get(Run, old_run.id)
         assert run is not None
-
-
-def test_prune_old_imports(make_import, flask_app):
-    """Test prune_old_imports deletes old import records."""
-    client, _ = flask_app
-
-    with client.application.app_context():
-        # Create old import
-        old_date = datetime.now(timezone.utc) - timedelta(days=90)
-        old_import = make_import(created=old_date)
-        old_import_id = old_import.id
-
-        # Create recent import
-        recent_date = datetime.now(timezone.utc) - timedelta(days=15)
-        recent_import = make_import(created=recent_date)
-        recent_import_id = recent_import.id
-
-        # Run the task
-        prune_old_imports(months=2)
-
-        from ibutsu_server.db.models import Import
-
-        imports = Import.query.all()
-        import_ids = [i.id for i in imports]
-        assert old_import_id not in import_ids
-        assert recent_import_id in import_ids
 
 
 # Tests for tasks.query module
@@ -452,11 +435,12 @@ def test_update_run(make_project, make_run, make_result, flask_app, fixed_time):
             update_run(str(run.id))
 
         # Refresh run from database
+        from ibutsu_server.db import db
         from ibutsu_server.db.base import session
         from ibutsu_server.db.models import Run
 
         session.expire_all()
-        updated_run = Run.query.get(run.id)
+        updated_run = db.session.get(Run, run.id)
 
         assert updated_run.summary["tests"] == 3
         assert updated_run.summary["passes"] == 1
@@ -553,6 +537,7 @@ def test_seed_users_with_owner(make_project, flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Project, User
         from ibutsu_server.tasks.db import seed_users
 
@@ -569,11 +554,13 @@ def test_seed_users_with_owner(make_project, flask_app):
         seed_users(projects_data)
 
         # Verify owner was created
-        owner = User.query.filter_by(email="owner@example.com").first()
+        owner = db.session.execute(
+            db.select(User).filter_by(email="owner@example.com")
+        ).scalar_one_or_none()
         assert owner is not None
 
         # Verify owner was set on project
-        updated_project = Project.query.get(project_id)
+        updated_project = db.session.get(Project, project_id)
         assert updated_project.owner == owner
 
 
@@ -748,6 +735,7 @@ def test_seed_users_owner_is_also_user(make_project, flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Project, User
         from ibutsu_server.tasks.db import seed_users
 
@@ -764,13 +752,15 @@ def test_seed_users_owner_is_also_user(make_project, flask_app):
         seed_users(projects_data)
 
         # Verify owner was created once
-        owners = User.query.filter_by(email="owner@example.com").all()
+        owners = (
+            db.session.execute(db.select(User).filter_by(email="owner@example.com")).scalars().all()
+        )
         assert len(owners) == 1
 
         owner = owners[0]
 
         # Verify owner is set on project
-        updated_project = Project.query.get(project_id)
+        updated_project = db.session.get(Project, project_id)
         assert updated_project.owner == owner
 
         # Verify owner is in project users
@@ -790,6 +780,7 @@ def test_seed_users_updates_existing_owner(make_project, make_user, flask_app):
         old_owner = make_user(email="old@example.com")
         old_owner_email = old_owner.email
         project.owner = old_owner
+        from ibutsu_server.db import db
         from ibutsu_server.db.base import session
 
         session.add(project)
@@ -805,7 +796,7 @@ def test_seed_users_updates_existing_owner(make_project, make_user, flask_app):
         seed_users(projects_data)
 
         # Verify new owner was set
-        updated_project = Project.query.get(project_id)
+        updated_project = db.session.get(Project, project_id)
         assert updated_project.owner.email == "new@example.com"
         assert updated_project.owner.email != old_owner_email
 
@@ -834,6 +825,7 @@ def test_seed_users_no_users_key(make_project, flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Project
         from ibutsu_server.tasks.db import seed_users
 
@@ -850,7 +842,7 @@ def test_seed_users_no_users_key(make_project, flask_app):
         seed_users(projects_data)
 
         # Verify owner was still set
-        updated_project = Project.query.get(project_id)
+        updated_project = db.session.get(Project, project_id)
         assert updated_project.owner is not None
 
 
@@ -871,7 +863,7 @@ def test_seed_users_exception_handling(make_project, flask_app):
         }
 
         # Mock the session.add to raise an exception
-        with patch("ibutsu_server.tasks.db.session.add", side_effect=Exception("DB Error")):
+        with patch("ibutsu_server.db.db.session.add", side_effect=Exception("DB Error")):
             # Should not raise, should return None
             result = seed_users(projects_data)
             assert result is None

@@ -24,8 +24,9 @@ def create_app():
     NOTE: This is legacy. Prefer using flask_app fixture for integration tests.
     """
     logging.getLogger("connexion.operation").setLevel("ERROR")
-    app = connexion.App(__name__, specification_dir="../openapi/")
-    app.app.json_provider_class = IbutsuJSONProvider
+    app = connexion.FlaskApp(
+        __name__, specification_dir="../openapi/", jsonifier=IbutsuJSONProvider()
+    )
     app.add_api("openapi.yaml")
     return app.app
 
@@ -51,14 +52,18 @@ def flask_app():
                                 headers=auth_headers(jwt_token))
             assert response.status_code == 200
     """
+    import ibutsu_server
     import ibutsu_server.tasks
-    from ibutsu_server import get_app
+    from ibutsu_server import _AppRegistry, get_app
     from ibutsu_server.db.base import session
     from ibutsu_server.db.models import Token, User
-    from ibutsu_server.tasks import create_celery_app
     from ibutsu_server.util.jwt import generate_token
 
     logging.getLogger("connexion.operation").setLevel("ERROR")
+
+    # Reset the registry to ensure clean state for each test
+    _AppRegistry.reset()
+
     extra_config = {
         "TESTING": True,
         "LIVESERVER_PORT": 0,
@@ -76,11 +81,11 @@ def flask_app():
         "CELERY_BROKER_URL": "redis://localhost:6379/0",
         "CELERY_RESULT_BACKEND": "redis://localhost:6379/0",
     }
-    app = get_app(**extra_config)
-    create_celery_app(app)
+    connexion_app = get_app(**extra_config)
+    flask_app = connexion_app.app
 
     # Add a test user
-    with app.app_context():
+    with flask_app.app_context():
         test_user = User(
             name="Test User", email="test@example.com", is_active=True, is_superadmin=True
         )
@@ -92,11 +97,20 @@ def flask_app():
         session.commit()
         session.refresh(test_user)
 
-    if ibutsu_server.tasks.task is None:
+    # Mock celery tasks for testing if not already mocked
+    if not hasattr(ibutsu_server.tasks, "task") or ibutsu_server.tasks.task is None:
         ibutsu_server.tasks.task = mock_task
 
-    with app.test_client() as client:
+    # Use Connexion 3 test client (httpx-based)
+    # In Connexion 3, routes are handled by middleware, not Flask's url_map
+    # Note: Connexion 3 returns httpx.Response objects, not Flask Response objects
+    with connexion_app.test_client() as client:
+        # Add Flask app reference for compatibility with fixtures that need app_context
+        client.application = flask_app
         yield client, jwt_token
+
+    # Clean up after test
+    _AppRegistry.reset()
 
 
 def mock_task(*args, **kwargs):

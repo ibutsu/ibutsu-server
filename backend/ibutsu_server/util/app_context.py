@@ -30,9 +30,9 @@ def with_app_context(func):
             # If we're already in an app context, just call the function
             return func(*args, **kwargs)
         # Otherwise, create an app context first
-        from ibutsu_server import get_app  # noqa: PLC0415
+        from ibutsu_server import _AppRegistry  # noqa: PLC0415
 
-        app = get_app().app
+        app = _AppRegistry.get_flask_app()
         with app.app_context():
             return func(*args, **kwargs)
 

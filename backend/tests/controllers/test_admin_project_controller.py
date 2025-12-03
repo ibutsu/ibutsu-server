@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 import pytest
-from flask import json
 
 
 def test_admin_add_project_success(flask_app, make_group, auth_headers):
@@ -20,13 +19,12 @@ def test_admin_add_project_success(flask_app, make_group, auth_headers):
     response = client.post(
         "/api/admin/project",
         headers=headers,
-        data=json.dumps(project_data),
-        content_type="application/json",
+        json=project_data,
     )
-    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 201, f"Response body is : {response.text}"
 
     # Verify the project was created in the database
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["name"] == "new-project"
     assert response_data["title"] == "New Project"
     assert response_data["group_id"] == str(group.id)
@@ -57,11 +55,10 @@ def test_admin_add_project_already_exists(flask_app, make_project, auth_headers)
     response = client.post(
         "/api/admin/project",
         headers=headers,
-        data=json.dumps(project_data),
-        content_type="application/json",
+        json=project_data,
     )
-    assert response.status_code == 400, f"Response body is : {response.data.decode('utf-8')}"
-    assert "already exist" in response.data.decode("utf-8")
+    assert response.status_code == 400, f"Response body is : {response.text}"
+    assert "already exist" in response.text
 
 
 def test_admin_add_project_group_not_found(flask_app, auth_headers):
@@ -77,11 +74,10 @@ def test_admin_add_project_group_not_found(flask_app, auth_headers):
     response = client.post(
         "/api/admin/project",
         headers=headers,
-        data=json.dumps(project_data),
-        content_type="application/json",
+        json=project_data,
     )
-    assert response.status_code == 400, f"Response body is : {response.data.decode('utf-8')}"
-    assert "doesn't exist" in response.data.decode("utf-8")
+    assert response.status_code == 400, f"Response body is : {response.text}"
+    assert "doesn't exist" in response.text
 
 
 def test_admin_add_project_with_user_as_owner(flask_app, auth_headers):
@@ -96,11 +92,10 @@ def test_admin_add_project_with_user_as_owner(flask_app, auth_headers):
     response = client.post(
         "/api/admin/project",
         headers=headers,
-        data=json.dumps(project_data),
-        content_type="application/json",
+        json=project_data,
     )
 
-    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 201, f"Response body is : {response.text}"
 
     # Verify user was set as owner and added to users
     with client.application.app_context():
@@ -125,9 +120,9 @@ def test_admin_get_project_success(flask_app, make_project, auth_headers):
         f"/api/admin/project/{project.id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["id"] == str(project.id)
     assert response_data["name"] == "test-project"
 
@@ -144,7 +139,7 @@ def test_admin_get_project_by_name(flask_app, make_project, auth_headers):
         f"/api/admin/project/{project.id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
 
 def test_admin_get_project_not_found(flask_app, auth_headers):
@@ -183,11 +178,11 @@ def test_admin_get_project_list_pagination(
     response = client.get(
         "/api/admin/project",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert "projects" in response_data
     assert response_data["pagination"]["page"] == page
     assert response_data["pagination"]["pageSize"] == page_size
@@ -216,11 +211,11 @@ def test_admin_get_project_list_with_filters(
     response = client.get(
         "/api/admin/project",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     # Should only return the filtered project
     assert len(response_data["projects"]) == 1
     assert response_data["projects"][0]["name"] == "filtered-project"
@@ -236,10 +231,10 @@ def test_admin_get_project_list_page_too_big(flask_app, auth_headers):
     response = client.get(
         "/api/admin/project",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 400, f"Response body is : {response.data.decode('utf-8')}"
-    assert "too big" in response.data.decode("utf-8")
+    assert response.status_code == 400, f"Response body is : {response.text}"
+    assert "too big" in response.text
 
 
 def test_admin_update_project_success(flask_app, make_project, make_user, auth_headers):
@@ -262,19 +257,21 @@ def test_admin_update_project_success(flask_app, make_project, make_user, auth_h
     response = client.put(
         f"/api/admin/project/{project.id}",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
 
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
     # Verify in database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Project
 
-        updated_project = Project.query.get(str(project.id))
+        updated_project = db.session.get(Project, str(project.id))
         assert updated_project.title == "Updated Project Title"
-        assert new_user in updated_project.users
+        # Check user by ID since object identity may differ across sessions
+        user_ids = [u.id for u in updated_project.users]
+        assert str(new_user.id) in user_ids
 
 
 def test_admin_update_project_not_found(flask_app, auth_headers):
@@ -287,8 +284,7 @@ def test_admin_update_project_not_found(flask_app, auth_headers):
     response = client.put(
         "/api/admin/project/00000000-0000-0000-0000-000000000000",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
 
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -309,8 +305,7 @@ def test_admin_update_project_converts_objectid(flask_app, make_project, auth_he
     response = client.put(
         f"/api/admin/project/{object_id}",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
 
     # ObjectId conversion should happen and fail gracefully if no project found
@@ -331,13 +326,14 @@ def test_admin_delete_project_success(flask_app, make_project, auth_headers):
         headers=headers,
     )
 
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
     # Verify project is deleted from database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Project
 
-        project = Project.query.get(str(project_id))
+        project = db.session.get(Project, str(project_id))
         assert project is None
 
 
@@ -366,5 +362,5 @@ def test_admin_delete_project_invalid_uuid(flask_app, auth_headers):
         headers=headers,
     )
 
-    assert response.status_code == 400, f"Response body is : {response.data.decode('utf-8')}"
-    assert "is not a valid UUID" in response.data.decode("utf-8")
+    assert response.status_code == 400, f"Response body is : {response.text}"
+    assert "is not a valid UUID" in response.text

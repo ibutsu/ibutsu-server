@@ -61,21 +61,21 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
     query = apply_filters(query, filters, Run)
 
     # make the query
-    query_data = db.session.execute(query).first()
+    query_data = db.session.execute(query).all()
 
     # parse the data
-    if query_data:
-        group = query_data.group
-        failed = query_data.failed or 0
-        error = query_data.error or 0
-        skipped = query_data.skipped or 0
-        total = query_data.total or 0
-        xpassed = query_data.xpassed or 0
-        xfailed = query_data.xfailed or 0
+    for row in query_data:
+        group = row.group
+        failed = row.failed or 0
+        error = row.error or 0
+        skipped = row.skipped or 0
+        total = row.total or 0
+        xpassed = row.xpassed or 0
+        xfailed = row.xfailed or 0
 
         # Skip groups with zero total tests to avoid division by zero
         if not total or total == 0:
-            return data
+            continue
 
         # convert all data to percentages
         data["failed"][group] = round(((failed or 0.0) / total) * 100.0)
