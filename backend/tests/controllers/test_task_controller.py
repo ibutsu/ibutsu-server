@@ -134,3 +134,15 @@ def test_get_task_failure(flask_app):
 
         assert response["state"] == "FAILURE"
         assert response["message"] == "Task has failed!"
+
+
+def test_get_task_invalid_uuid(flask_app):
+    """Test get_task with an invalid UUID."""
+    client, jwt_token = flask_app
+
+    # Try to get task with invalid UUID
+    headers = {"Accept": "application/json", "Authorization": f"Bearer {jwt_token}"}
+    response = client.get("/api/task/not-a-uuid", headers=headers)
+
+    # Should return 400 Bad Request due to validate_uuid decorator
+    assert response.status_code == 400
