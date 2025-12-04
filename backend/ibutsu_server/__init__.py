@@ -45,24 +45,24 @@ def maybe_sql_url(conf: dict[str, Any]) -> SQLA_URL | None:
     return None
 
 
-def make_celery_redis_url(config: flask.Config, *, envvar: str) -> str:
+def check_envvar(config: flask.Config, *, envvar: str) -> str:
+    """
+    Get Redis URL from environment variable.
+
+    Args:
+        config: Flask config object
+        envvar: Environment variable name (e.g., "CELERY_BROKER_URL")
+
+    Returns:
+        Redis connection URL
+
+    Raises:
+        ValueError: If the environment variable is not set
+    """
     if var := config.get(envvar):
-        # If URL is provided but doesn't have auth and we have a password, add it
-        redis = config.get_namespace("REDIS_")
-        if "password" in redis and var.startswith("redis://") and "@" not in var:
-            # Insert password into URL: redis://host -> redis://:password@host
-            return var.replace("redis://", f"redis://:{redis['password']}@", 1)
         return var
-    redis = config.get_namespace("REDIS_")
-    if "hostname" not in redis:
-        msg = f"Missing hostname in redis config: {redis}"
-        raise ValueError(msg)
-    if "port" not in redis:
-        msg = f"Missing port in redis config: {redis}"
-        raise ValueError(msg)
-    if "password" in redis:
-        return "redis://:{password}@{hostname}:{port}".format_map(redis)
-    return "redis://{hostname}:{port}".format_map(redis)
+    msg = f"Missing required environment variable: {envvar}"
+    raise ValueError(msg)
 
 
 def get_app(**extra_config):
@@ -122,8 +122,8 @@ def get_app(**extra_config):
         # Set celery broker URL
         # hackishly indented to only be part of the setup where extra config won't pass the db
         config.update(
-            CELERY_BROKER_URL=make_celery_redis_url(config, envvar="CELERY_BROKER_URL"),
-            CELERY_RESULT_BACKEND=make_celery_redis_url(config, envvar="CELERY_RESULT_BACKEND"),
+            CELERY_BROKER_URL=check_envvar(config, envvar="CELERY_BROKER_URL"),
+            CELERY_RESULT_BACKEND=check_envvar(config, envvar="CELERY_RESULT_BACKEND"),
         )
 
     # Load any extra config
@@ -311,32 +311,6 @@ class _AppRegistry:
         return cls.celery_app
 
     @classmethod
-    def _build_redis_url(cls):
-        """
-        Build Redis broker URL from environment variables.
-
-        Supports multiple environment variable formats:
-        1. Complete URL: BROKER_URL or CELERY_BROKER_URL
-        2. Components: REDIS_HOSTNAME, REDIS_PORT, REDIS_PASSWORD
-
-        Returns:
-            str: Redis connection URL
-        """
-        # Try to get broker URL from environment (for backwards compatibility)
-        if broker_url := os.environ.get("BROKER_URL") or os.environ.get("CELERY_BROKER_URL"):
-            return broker_url
-
-        # Build from components
-        redis_password = os.environ.get("REDIS_PASSWORD", "")
-        redis_hostname = os.environ.get("REDIS_HOSTNAME", "localhost")
-        redis_port = os.environ.get("REDIS_PORT", "6379")
-
-        # Build Redis URL with password if provided
-        if redis_password:
-            return f"redis://:{redis_password}@{redis_hostname}:{redis_port}"
-        return f"redis://{redis_hostname}:{redis_port}"
-
-    @classmethod
     def get_flower_app(cls):
         """
         Get or create the Flower app (broker-only, no database).
@@ -346,11 +320,18 @@ class _AppRegistry:
 
         Returns:
             Celery: Broker-only Celery app instance with name 'ibutsu_server_flower'
+
+        Raises:
+            ValueError: If CELERY_BROKER_URL is not set in environment
         """
         if cls.flower_app is None:
             from celery import Celery  # noqa: PLC0415
 
-            broker_url = cls._build_redis_url()
+            broker_url = os.environ.get("CELERY_BROKER_URL")
+            if not broker_url:
+                msg = "CELERY_BROKER_URL environment variable must be set"
+                raise ValueError(msg)
+
             cls.flower_app = Celery("ibutsu_server_flower")
             cls.flower_app.conf.update(
                 broker_url=broker_url,
