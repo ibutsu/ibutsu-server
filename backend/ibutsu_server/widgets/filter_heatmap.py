@@ -25,7 +25,7 @@ def _calculate_slope(x_data):
     x_avg = sum(x_data) / len(x_data)
     y_avg = sum(y_data) / len(y_data)
     try:
-        slope = sum((x - x_avg) * (y - y_avg) for x, y in zip(x_data, y_data)) / sum(
+        slope = sum((x - x_avg) * (y - y_avg) for x, y in zip(x_data, y_data, strict=False)) / sum(
             (x - x_avg) ** 2 for x in x_data
         )
     except ZeroDivisionError:

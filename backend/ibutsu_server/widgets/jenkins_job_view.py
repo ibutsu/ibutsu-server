@@ -31,16 +31,16 @@ def _get_jenkins_aggregation(
     run_query = db.select(Run).select_from(Run)
 
     # Create a consistent ref to the Run model with or without limit and filter applied
-    runRef = Run
-    columnRef = Run
+    run_ref = Run
+    column_ref = Run
     if run_limit is not None:
         run_query = apply_filters(run_query, filters, Run)
-        runRef = run_query.order_by(desc(Run.start_time)).limit(run_limit).subquery()
-        columnRef = runRef.c
+        run_ref = run_query.order_by(desc(Run.start_time)).limit(run_limit).subquery()
+        column_ref = run_ref.c
 
     # Use shared utility functions for consistent column creation
-    jenkins_cols = create_jenkins_columns(runRef)
-    summary_cols = create_summary_columns(columnRef, cast_type=Integer)
+    jenkins_cols = create_jenkins_columns(run_ref)
+    summary_cols = create_summary_columns(column_ref, cast_type=Integer)
 
     # create the base query
     query = db.select(
@@ -59,11 +59,11 @@ def _get_jenkins_aggregation(
         summary_cols["max_start_time"],
         summary_cols["total_execution_time"],
         summary_cols["max_duration"],
-    ).select_from(runRef)
+    ).select_from(run_ref)
 
     # Apply the filters to the main query if no limit was set
     if run_limit is None:
-        query = apply_filters(query, filters, runRef)
+        query = apply_filters(query, filters, run_ref)
 
     query = query.group_by(jenkins_cols["job_name"], jenkins_cols["build_number"]).order_by(
         desc("max_start_time")

@@ -123,7 +123,7 @@ exclude = [
 
 
 [tool.hatch.envs.default]
-python = "3.9"
+python = "3.12"
 dependencies = [
   "psycopg2-binary",  # Use binary version to avoid compilation issues
   "pytest",
@@ -150,7 +150,7 @@ lint-check = "pre-commit run --all-files --show-diff-on-failure"
 template = "default"
 
 [[tool.hatch.envs.test-matrix.matrix]]
-python = ["3.9", "3.10", "3.11"]
+python = ["3.12", "3.13"]
 
 
 [tool.ruff]
@@ -182,30 +182,34 @@ select = [
 # Ignore specific rules that might be too strict for existing codebase
 # TODO: Remove these once violations are fixed
 ignore = [
-    "S101",   # Use of assert detected (common in tests)
-    "S603",   # subprocess call: check for execution of untrusted input
-    "S607",   # Starting a process with a partial executable path
-    "PLR0913", # Too many arguments to function call
-    "PLR0915", # Too many statements
-    "PLR2004", # Magic value used in comparison
-    "N806",   # Variable in function should be lowercase (for API compatibility)
-    "N803",   # Argument name should be lowercase (for API compatibility)
-    "T201",   # print found (allow prints in some contexts)
+    "PLR0915", # Too many statements (hard to refactor in __init__.py and tasks/importers.py)
+    "N806",   # Variable in function should be lowercase (API compatibility and __main__.py)
+    "T201",   # print found (used in __main__.py, controllers, tasks - should migrate to logging)
 ]
 
-# Per-file ignores for Connexion controller functions
+# Per-file ignores
 [tool.ruff.lint.per-file-ignores]
 "**/controllers/**/*.py" = [
     "ARG001",  # Unused function argument (Connexion passes token_info/user automatically)
     "ARG002",  # Unused method argument
+    "PLR2004", # Magic value used in comparison (HTTP status codes, page limits)
 ]
 "**/widgets/**/*.py" = [
     "ARG001",  # Unused function argument (Widget functions must accept all WIDGET_TYPES parameters)
     "ARG002",  # Unused method argument
+    "PLR2004", # Magic value used in comparison (percentage calculations, thresholds)
+]
+"**/tasks/**/*.py" = [
+    "PLR2004", # Magic value used in comparison (retention period thresholds)
+]
+"**/util/**/*.py" = [
+    "PLR2004", # Magic value used in comparison (HTTP status codes)
 ]
 "**/tests/**/*.py" = [
+    "S101",   # Use of assert detected (pytest uses assertions)
     "S105",   # Possible hardcoded password string
     "S106",   # Possible hardcoded password assigned to argument
+    "PLR2004", # Magic value used in comparison (test status codes, etc.)
     "ARG001", # Unused function argument (pytest fixtures in function signatures aren't directly called)
     "ARG002", # Unused method argument (common in test mocks)
     "RUF012", # Mutable class attributes should be annotated with ClassVar (not needed in test mocks)

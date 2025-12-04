@@ -1,6 +1,5 @@
 # hadolint global ignore=DL3013,DL3041
 FROM registry.access.redhat.com/ubi9/python-312:9.7
-ENV BROKER_URL=redis://localhost
 
 # add application sources with correct perms for OCP
 USER 0
@@ -21,4 +20,4 @@ RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
 # Expose Flower default port
 EXPOSE 5555
 
-CMD ["sh", "-c", "celery --broker=${BROKER_URL} flower --app=ibutsu_server.celery_app --port=5555"]
+CMD ["sh", "-c", "celery --broker=${BROKER_URL} --app=ibutsu_server.celery_app flower --port=5555"]

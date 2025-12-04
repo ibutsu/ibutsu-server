@@ -41,7 +41,7 @@ def _calculate_slope(pass_percentages):
 
     try:
         # Linear regression slope formula: slope = Σ((x-x̄)(y-ȳ)) / Σ((x-x̄)²)
-        numerator = sum((x - x_avg) * (y - y_avg) for x, y in zip(x_values, y_values))
+        numerator = sum((x - x_avg) * (y - y_avg) for x, y in zip(x_values, y_values, strict=False))
         denominator = sum((x - x_avg) ** 2 for x in x_values)
 
         if denominator == 0:
