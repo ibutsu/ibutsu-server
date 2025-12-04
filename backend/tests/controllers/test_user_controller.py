@@ -1,7 +1,5 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
-
-from flask import json
 
 
 def test_get_current_user_success(flask_app, auth_headers):
@@ -13,10 +11,10 @@ def test_get_current_user_success(flask_app, auth_headers):
         "/api/user",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
     # Verify sensitive fields are hidden
-    response_data = response.get_json()
+    response_data = response.json()
     assert "password" not in response_data
     assert "_password" not in response_data
     assert "activation_code" not in response_data
@@ -47,7 +45,7 @@ def test_create_token(mock_generate_token, flask_app, auth_headers):
     mock_generate_token.return_value = "generated_token_value"
 
     # Calculate expiry 30 days from now
-    expiry = datetime.now(timezone.utc) + timedelta(days=30)
+    expiry = datetime.now(UTC) + timedelta(days=30)
 
     token_data = {
         "name": "test-token",
@@ -58,12 +56,11 @@ def test_create_token(mock_generate_token, flask_app, auth_headers):
     response = client.post(
         "/api/user/token",
         headers=headers,
-        data=json.dumps(token_data),
-        content_type="application/json",
+        json=token_data,
     )
-    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 201, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["name"] == "test-token"
     assert "token" in response_data
 
@@ -91,7 +88,7 @@ def test_get_token_list(flask_app, auth_headers):
                 name=f"token-{i}",
                 user_id=test_user.id,
                 token=f"token_value_{i}",
-                expires=datetime.now(timezone.utc) + timedelta(days=30),
+                expires=datetime.now(UTC) + timedelta(days=30),
             )
             session.add(token)
         session.commit()
@@ -101,9 +98,9 @@ def test_get_token_list(flask_app, auth_headers):
         "/api/user/token",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert "tokens" in response_data
     assert len(response_data["tokens"]) >= 3
 
@@ -123,7 +120,7 @@ def test_delete_token(flask_app, auth_headers):
             name="token-to-delete",
             user_id=test_user.id,
             token="token_value_to_delete",
-            expires=datetime.now(timezone.utc) + timedelta(days=30),
+            expires=datetime.now(UTC) + timedelta(days=30),
         )
         session.add(token)
         session.commit()
@@ -135,13 +132,14 @@ def test_delete_token(flask_app, auth_headers):
         f"/api/user/token/{token_id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
     # Verify token was deleted
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Token
 
-        deleted_token = Token.query.get(str(token_id))
+        deleted_token = db.session.get(Token, str(token_id))
         assert deleted_token is None
 
 

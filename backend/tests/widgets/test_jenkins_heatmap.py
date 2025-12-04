@@ -22,8 +22,8 @@ MOCK_GROUP_FIELD = "component"
     ("x_data", "expected_slope"),
     [
         ([100, 100, 100], 100),
-        ([90, 80, 70], -0.1),  # Linear regression slope per unit
-        ([70, 80, 90], 0.1),  # Linear regression slope per unit
+        ([90, 80, 70], -10.0),  # Decreasing by 10 percentage points per build
+        ([70, 80, 90], 10.0),  # Increasing by 10 percentage points per build
         ([80, 80, 80], 0),
     ],
 )

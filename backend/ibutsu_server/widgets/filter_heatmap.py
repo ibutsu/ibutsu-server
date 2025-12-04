@@ -1,7 +1,8 @@
 from sqlalchemy import case, desc, func
 
 from ibutsu_server.constants import HEATMAP_MAX_BUILDS, HEATMAP_RUN_LIMIT
-from ibutsu_server.db.base import Float, session
+from ibutsu_server.db import db
+from ibutsu_server.db.base import Float
 from ibutsu_server.db.models import Run
 from ibutsu_server.filters import apply_filters, string_to_column
 from ibutsu_server.util.uuid import is_uuid
@@ -24,7 +25,7 @@ def _calculate_slope(x_data):
     x_avg = sum(x_data) / len(x_data)
     y_avg = sum(y_data) / len(y_data)
     try:
-        slope = sum((x - x_avg) * (y - y_avg) for x, y in zip(x_data, y_data)) / sum(
+        slope = sum((x - x_avg) * (y - y_avg) for x, y in zip(x_data, y_data, strict=False)) / sum(
             (x - x_avg) ** 2 for x in x_data
         )
     except ZeroDivisionError:
@@ -39,39 +40,45 @@ def _get_heatmap(additional_filters, builds, group_field, project=None):
         filters.append(f"project_id={project}")
 
     # generate the group_field
-    group_field = string_to_column(group_field, Run)
-    if group_field is None:
+    group_field_col = string_to_column(group_field, Run)
+    if group_field_col is None:
         return {}
 
     # get the runs on which to run the aggregation, we select from a subset of runs to improve
     # performance, otherwise we'd be aggregating over ALL runs
     heatmap_run_limit = int((HEATMAP_RUN_LIMIT / HEATMAP_MAX_BUILDS) * builds)
-    sub_query = (
-        apply_filters(Run.query, filters, Run)
-        .order_by(desc("start_time"))
-        .limit(heatmap_run_limit)
-        .subquery()
-    )
 
+    # Build query with explicit column selection to avoid cartesian product later
+    # We need to explicitly select the group_field with a label
+    # so we can reference it from the subquery later
+    base_query = db.select(
+        Run.id,
+        Run.start_time,
+        Run.summary,
+        group_field_col.label("group_field_value"),
+    ).select_from(Run)
+
+    # Apply filters
+    base_query = apply_filters(base_query, filters, Run)
+    sub_query = base_query.order_by(desc("start_time")).limit(heatmap_run_limit).subquery()
+
+    # Now reference columns from the subquery to avoid cartesian product
     query = (
-        session.query(
-            Run.id.label("run_id"),
-            group_field.label("group_field"),
-            Run.start_time.label("start_time"),
-            func.sum(Run.summary["failures"].cast(Float)).label("failures"),
-            func.sum(Run.summary["errors"].cast(Float)).label("errors"),
-            func.sum(Run.summary["skips"].cast(Float)).label("skips"),
-            func.sum(Run.summary["xfailures"].cast(Float)).label("xfailures"),
-            func.sum(Run.summary["xpasses"].cast(Float)).label("xpasses"),
-            func.sum(Run.summary["tests"].cast(Float)).label("total"),
+        db.select(
+            sub_query.c.id.label("run_id"),
+            sub_query.c.group_field_value.label("group_field"),
+            sub_query.c.start_time.label("start_time"),
+            func.sum(sub_query.c.summary["failures"].cast(Float)).label("failures"),
+            func.sum(sub_query.c.summary["errors"].cast(Float)).label("errors"),
+            func.sum(sub_query.c.summary["skips"].cast(Float)).label("skips"),
+            func.sum(sub_query.c.summary["xfailures"].cast(Float)).label("xfailures"),
+            func.sum(sub_query.c.summary["xpasses"].cast(Float)).label("xpasses"),
+            func.sum(sub_query.c.summary["tests"].cast(Float)).label("total"),
         )
-        .select_entity_from(sub_query)
+        .select_from(sub_query)
+        .group_by(sub_query.c.group_field_value, sub_query.c.id, sub_query.c.start_time)
         .order_by(desc("start_time"))
-        .group_by(group_field, Run.id, Run.start_time)
     )
-
-    # add filters to the query
-    query = apply_filters(query, filters, Run)
 
     # convert the base query to a sub query
     subquery = query.subquery()
@@ -81,21 +88,20 @@ def _get_heatmap(additional_filters, builds, group_field, project=None):
         subquery.c.errors + subquery.c.failures + subquery.c.xpasses + subquery.c.xfailures
     )
 
-    query = session.query(
+    # Create a fresh select that only uses the subquery, to avoid cartesian product
+    query = db.select(
         subquery.c.group_field,
         subquery.c.run_id,
         subquery.c.start_time,
         # handle potential division by 0 errors, if the total is 0, set the pass_percent to 0
         case(
-            [
-                (subquery.c.total == 0, 0),
-            ],
+            (subquery.c.total == 0, 0),
             else_=(100 * passes / subquery.c.total),
         ).label("pass_percent"),
-    )
+    ).select_from(subquery)
 
     # parse the data for the frontend
-    query_data = query.all()
+    query_data = db.session.execute(query).all()
     data = {datum.group_field: [] for datum in query_data}
     for key, value in data.items():
         runs = [run for run in query_data if run.group_field == key]

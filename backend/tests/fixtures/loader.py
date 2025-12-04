@@ -23,7 +23,7 @@ Usage Examples:
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from ibutsu_server.db.models import Artifact, Project, Result, Run
 
@@ -97,7 +97,7 @@ def load_sample_project(session) -> Project:
     return project
 
 
-def load_sample_runs(session, project_id: Optional[str] = None) -> list[Run]:
+def load_sample_runs(session, project_id: str | None = None) -> list[Run]:
     """
     Load sample runs into the database.
 
@@ -140,7 +140,7 @@ def load_sample_runs(session, project_id: Optional[str] = None) -> list[Run]:
 
 
 def load_sample_results(
-    session, run_id: Optional[str] = None, project_id: Optional[str] = None
+    session, run_id: str | None = None, project_id: str | None = None
 ) -> list[Result]:
     """
     Load sample results into the database.
@@ -188,7 +188,7 @@ def load_sample_results(
     return results
 
 
-def load_sample_artifacts(session, result_ids: Optional[list[str]] = None) -> list[Artifact]:
+def load_sample_artifacts(session, result_ids: list[str] | None = None) -> list[Artifact]:
     """
     Load sample artifacts into the database.
 

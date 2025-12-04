@@ -1,6 +1,6 @@
 """Tests for compare_runs_view widget"""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from ibutsu_server.widgets.compare_runs_view import get_comparison_data
 
@@ -21,7 +21,7 @@ def test_get_comparison_data_same_results(db_session, make_project, make_run, ma
     project = make_project()
 
     # Create two runs with different environments
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     run1 = make_run(
         project_id=project.id,
         metadata={"build": "100"},
@@ -70,7 +70,7 @@ def test_get_comparison_data_with_different_results(
     project = make_project()
 
     # Create two runs with different environments and set start times
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     run1 = make_run(
         project_id=project.id,
         metadata={"build": "100"},
@@ -152,7 +152,7 @@ def test_get_comparison_data_matching_results(db_session, make_project, make_run
     project = make_project()
 
     # Create two runs with different environments
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     run1 = make_run(
         project_id=project.id,
         metadata={"build": "200"},

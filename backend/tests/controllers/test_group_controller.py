@@ -1,5 +1,4 @@
 import pytest
-from flask import json
 
 
 def test_add_group(flask_app, auth_headers):
@@ -10,12 +9,11 @@ def test_add_group(flask_app, auth_headers):
     response = client.post(
         "/api/group",
         headers=headers,
-        data=json.dumps({"name": "Example group"}),
-        content_type="application/json",
+        json={"name": "Example group"},
     )
-    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 201, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["name"] == "Example group"
 
     # Verify in database
@@ -38,9 +36,9 @@ def test_get_group(flask_app, make_group, auth_headers):
         f"/api/group/{group.id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["id"] == str(group.id)
     assert response_data["name"] == "Test Group"
 
@@ -66,11 +64,11 @@ def test_get_group_list(flask_app, make_group, page, page_size, auth_headers):
     response = client.get(
         "/api/group",
         headers=headers,
-        query_string=query_string,
+        params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert "groups" in response_data
     assert "pagination" in response_data
     assert response_data["pagination"]["page"] == page
@@ -88,17 +86,17 @@ def test_update_group(flask_app, make_group, auth_headers):
     response = client.put(
         f"/api/group/{group.id}",
         headers=headers,
-        data=json.dumps({"name": "Updated Name"}),
-        content_type="application/json",
+        json={"name": "Updated Name"},
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["name"] == "Updated Name"
 
     # Verify in database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import Group
 
-        updated_group = Group.query.get(str(group.id))
+        updated_group = db.session.get(Group, str(group.id))
         assert updated_group.name == "Updated Name"

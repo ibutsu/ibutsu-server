@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 from uuid import UUID
 
 from bson import ObjectId
 
-UUID_1_EPOCH = datetime(1582, 10, 15, tzinfo=timezone.utc)
+UUID_1_EPOCH = datetime(1582, 10, 15, tzinfo=UTC)
 UUID_TICKS = 10000000
 UUID_VARIANT_1 = 0b1000000000000000
 
@@ -34,7 +34,7 @@ def convert_objectid_to_uuid(object_id):
         object_id = ObjectId(object_id)
     if not isinstance(object_id, ObjectId):
         return object_id
-    unix_time = object_id.generation_time.astimezone(timezone.utc)
+    unix_time = object_id.generation_time.astimezone(UTC)
     hex_string = str(object_id)
     counter = int(hex_string[18:], 16)
 

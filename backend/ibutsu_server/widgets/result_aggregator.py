@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import desc, func
 
-from ibutsu_server.db.base import session
+from ibutsu_server.db import db
 from ibutsu_server.db.models import Result
 from ibutsu_server.filters import apply_filters, string_to_column
 from ibutsu_server.util.uuid import is_uuid
@@ -25,7 +25,8 @@ def _build_filters(group_field, days, project, run_id, additional_filters):
         filters.extend(additional_filters.split(","))
     if project and is_uuid(project):
         filters.append(f"project_id={project}")
-    if run_id and is_uuid(run_id):
+    # Only add run_id filter if it's a valid UUID, not "undefined" or empty
+    if run_id and run_id != "undefined" and run_id.strip() and is_uuid(run_id):
         filters.append(f"run_id={run_id}")
 
     return filters
@@ -38,7 +39,7 @@ def _get_distinct_values(group_field, filters, limit=FILTER_MODE_LIMIT):
         return []
 
     # Build query with DISTINCT - filters must be applied before limit
-    query = session.query(group_field_column).distinct()
+    query = db.select(group_field_column).distinct()
 
     # Add filters to the query first
     query = apply_filters(query, filters, Result)
@@ -46,9 +47,9 @@ def _get_distinct_values(group_field, filters, limit=FILTER_MODE_LIMIT):
     # Apply limit last
     query = query.limit(limit)
 
-    query_data = query.all()
+    query_data = db.session.execute(query).scalars().all()
     # Return simple structure without counts for filter dropdowns
-    return [{"_id": _id} for (_id,) in query_data]
+    return [{"_id": _id} for _id in query_data]
 
 
 def _get_recent_result_data(group_field, days, project=None, run_id=None, additional_filters=None):
@@ -62,7 +63,8 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
 
     # create the query
     query = (
-        session.query(group_field_column, func.count(Result.id).label("count"))
+        db.select(group_field_column, func.count(Result.id).label("count"))
+        .select_from(Result)  # Explicitly select from Result to avoid implicit FROM clauses
         .group_by(group_field_column)
         .order_by(desc("count"))
     )
@@ -70,7 +72,7 @@ def _get_recent_result_data(group_field, days, project=None, run_id=None, additi
     # add filters to the query
     query = apply_filters(query, filters, Result)
 
-    query_data = query.all()
+    query_data = db.session.execute(query).all()
     # parse the data for the frontend
     return [{"_id": _id, "count": count} for _id, count in query_data]
 

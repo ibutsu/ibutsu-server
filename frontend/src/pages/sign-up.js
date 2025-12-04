@@ -116,7 +116,7 @@ export class SignUp extends Component {
     });
   };
 
-  onRegisterButtonClick = (event) => {
+  onRegisterButtonClick = async (event) => {
     event.preventDefault();
     const isValidEmail = !!this.state.emailValue;
     const isValidPassword =
@@ -124,30 +124,32 @@ export class SignUp extends Component {
       this.state.passwordValue === this.state.confirmPasswordValue;
     this.setState({ isValidEmail, isValidPassword });
     if (isValidEmail && isValidPassword) {
-      AuthService.register(this.state.emailValue, this.state.passwordValue)
-        .then((isSuccess) => {
-          if (isSuccess) {
-            this.setState({
-              alertText:
-                'Registration successful! Check your e-mail for a verification link.',
-              alertType: 'success',
-              showAlert: true,
-            });
-          } else {
-            this.setState({
-              alertText: AuthService.registerError.message,
-              alertType: 'danger',
-              showAlert: true,
-            });
-          }
-        })
-        .catch((error) => {
+      try {
+        const isSuccess = await AuthService.register(
+          this.state.emailValue,
+          this.state.passwordValue,
+        );
+        if (isSuccess) {
           this.setState({
-            alertText: error,
+            alertText:
+              'Registration successful! Check your e-mail for a verification link.',
+            alertType: 'success',
+            showAlert: true,
+          });
+        } else {
+          this.setState({
+            alertText: AuthService.registerError.message,
             alertType: 'danger',
             showAlert: true,
           });
+        }
+      } catch (error) {
+        this.setState({
+          alertText: error,
+          alertType: 'danger',
+          showAlert: true,
         });
+      }
     } else {
       this.setState({
         alertText: 'E-mail and/or password fields are empty',

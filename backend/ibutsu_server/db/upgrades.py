@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
@@ -7,32 +7,33 @@ from sqlalchemy import MetaData, inspect
 from sqlalchemy.sql import quoted_name
 from sqlalchemy.sql.expression import null
 
+# Merge both: keep imports from HEAD + add db from incoming
 from ibutsu_server.constants import WIDGET_TYPES
-from ibutsu_server.db.base import Boolean, Column, DateTime, ForeignKey, Text
+from ibutsu_server.db.base import Boolean, Column, DateTime, ForeignKey, Text, db
 from ibutsu_server.db.models import WidgetConfig
 from ibutsu_server.db.types import PortableUUID
 
 __version__ = 9
 
 
-def get_upgrade_op(session):
+def get_upgrade_op(current_session):
     """
     Create a migration context and an operations object for performing upgrades.
 
-    :param session: The SQLAlchemy session object.
+    :param current_session: The SQLAlchemy current_session object.
     """
-    connection = session.connection()
-    context = MigrationContext.configure(connection)
+    bind = getattr(current_session, "bind", None) or db.engine
+    context = MigrationContext.configure(bind.connect())
     return Operations(context)
 
 
-def upgrade_1(session):
+def upgrade_1(current_session):
     """Version 1 upgrade
 
     This upgrade adds a dashboard_id to the widget_configs table
     """
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     widget_configs = metadata.tables.get("widget_configs")
@@ -63,7 +64,7 @@ def upgrade_1(session):
         )
 
 
-def upgrade_2(session):
+def upgrade_2(current_session):
     """Version 2 upgrade
 
     This upgrade adds indices for the metadata.tags, metadata.requirements fields in the
@@ -76,8 +77,9 @@ def upgrade_2(session):
             USING gin ((data->'requirements'));
     """
     TABLES = ["runs", "results"]
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
 
@@ -108,15 +110,15 @@ def upgrade_2(session):
                     )
 
 
-def upgrade_3(session):
+def upgrade_3(current_session):
     """Version 3 upgrade
 
     This upgrade:
         - makes the 'result_id' column of artifacts nullable
         - adds a 'run_id' to the artifacts table
     """
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     artifacts = metadata.tables.get("artifacts")
@@ -138,14 +140,14 @@ def upgrade_3(session):
             )
 
 
-def upgrade_4(session):
+def upgrade_4(current_session):
     """Version 4 upgrade
 
     This upgrade removes the "nullable" constraint on the password field, and adds a "is_superadmin"
     field to the user table.
     """
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     users = metadata.tables.get("users")
@@ -161,13 +163,13 @@ def upgrade_4(session):
         op.add_column("users", Column("activation_code", Text, default=None))
 
 
-def upgrade_5(session):
+def upgrade_5(current_session):
     """Version 5 upgrade
 
     This upgrade adds a default dashboard to a project
     """
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
     projects = metadata.tables.get("projects")
@@ -183,7 +185,7 @@ def upgrade_5(session):
         )
 
 
-def upgrade_6(session):
+def upgrade_6(current_session):
     """Version 6 upgrade
 
     This upgrade repairs broken field types on tables not matching schema
@@ -192,9 +194,8 @@ def upgrade_6(session):
     it was found that the Project.owner_id field in the stage and prod database are TEXT instead of
     PortableUUID.
     """
-
-    engine = session.connection().engine
-    op = get_upgrade_op(session)
+    engine = getattr(current_session, "bind", None) or db.engine
+    op = get_upgrade_op(current_session)
 
     inspector = inspect(engine)
 
@@ -235,9 +236,8 @@ def upgrade_7(session):
     to provide a timestamp for cleanup operations.
 
     """
-
     # Get database connection and metadata
-    engine = session.connection().engine
+    engine = getattr(session, "bind", None) or db.engine
     op = get_upgrade_op(session)
     metadata = MetaData()
     metadata.reflect(bind=engine)
@@ -247,7 +247,7 @@ def upgrade_7(session):
     if imports is not None and "created" not in [col.name for col in imports.columns]:
         op.add_column(
             "imports",
-            Column("created", DateTime, default=lambda: datetime.now(timezone.utc), index=True),
+            Column("created", DateTime, default=lambda: datetime.now(UTC), index=True),
         )
 
 
@@ -402,7 +402,7 @@ def upgrade_9(session):
     }
 
     # Query all widget configs for comprehensive migration
-    widget_configs = session.query(WidgetConfig).all()
+    widget_configs = session.execute(db.select(WidgetConfig)).scalars().all()
     migration_stats["total_widgets_processed"] = len(widget_configs)
 
     logger.info(f"Starting widget config parameter migration for {len(widget_configs)} widgets")

@@ -1,7 +1,6 @@
 from http import HTTPStatus
 
 import pytest
-from flask import json
 
 
 def _mock_task(*args, **kwargs):
@@ -21,10 +20,10 @@ def test_admin_get_user_success(flask_app, make_user, auth_headers):
         f"/api/admin/user/{user.id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
     # Verify sensitive fields are hidden
-    response_data = response.get_json()
+    response_data = response.json()
     assert "password" not in response_data
     assert "_password" not in response_data
     assert "activation_code" not in response_data
@@ -62,15 +61,15 @@ def test_admin_get_user_list_pagination(
         make_user(name=f"User {i}", email=f"user{i}@example.com")
 
     headers = auth_headers(jwt_token)
-    query_string = [("page", page), ("pageSize", page_size)]
+    params = [("page", page), ("pageSize", page_size)]
     response = client.get(
         "/api/admin/user",
         headers=headers,
-        query_string=query_string,
+        params=params,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert "users" in response_data
     assert response_data["pagination"]["page"] == page
     assert response_data["pagination"]["pageSize"] == page_size
@@ -88,15 +87,15 @@ def test_admin_get_user_list_with_filters(flask_app, make_user, auth_headers):
     make_user(name="Other User 2", email="other2@example.com")
 
     headers = auth_headers(jwt_token)
-    query_string = [("filter", "email=target@example.com")]
+    params = [("filter", "email=target@example.com")]
     response = client.get(
         "/api/admin/user",
         headers=headers,
-        query_string=query_string,
+        params=params,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     # Should find the target user
     assert len(response_data["users"]) >= 1
     found_target = any(user["email"] == "target@example.com" for user in response_data["users"])
@@ -116,10 +115,9 @@ def test_admin_add_user_success(flask_app, auth_headers):
     response = client.post(
         "/api/admin/user",
         headers=headers,
-        data=json.dumps(user_data),
-        content_type="application/json",
+        json=user_data,
     )
-    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 201, f"Response body is : {response.text}"
 
     # Verify user was created in database
     with client.application.app_context():
@@ -146,11 +144,10 @@ def test_admin_add_user_already_exists(flask_app, make_user, auth_headers):
     response = client.post(
         "/api/admin/user",
         headers=headers,
-        data=json.dumps(user_data),
-        content_type="application/json",
+        json=user_data,
     )
-    assert response.status_code == 400, f"Response body is : {response.data.decode('utf-8')}"
-    assert "already exists" in response.data.decode("utf-8")
+    assert response.status_code == 400, f"Response body is : {response.text}"
+    assert "already exists" in response.text
 
 
 def test_admin_update_user_success(flask_app, make_user, make_project, auth_headers):
@@ -170,16 +167,16 @@ def test_admin_update_user_success(flask_app, make_user, make_project, auth_head
     response = client.put(
         f"/api/admin/user/{user.id}",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
     # Verify updates in database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import User
 
-        updated_user = User.query.get(str(user.id))
+        updated_user = db.session.get(User, str(user.id))
         assert updated_user.name == "Updated User Name"
         assert updated_user.email == "updated@example.com"
 
@@ -193,8 +190,7 @@ def test_admin_update_user_not_found(flask_app, auth_headers):
     response = client.put(
         "/api/admin/user/00000000-0000-0000-0000-000000000000",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
     assert response.status_code == HTTPStatus.NOT_FOUND
 
@@ -212,13 +208,14 @@ def test_admin_delete_user_success(flask_app, make_user, auth_headers):
         f"/api/admin/user/{user_id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
     # Verify user was deleted from database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import User
 
-        deleted_user = User.query.get(str(user_id))
+        deleted_user = db.session.get(User, str(user_id))
         assert deleted_user is None
 
 
@@ -251,7 +248,7 @@ def test_admin_delete_user_cannot_delete_self(flask_app, auth_headers):
     )
     # Should abort with BAD_REQUEST
     assert response.status_code == HTTPStatus.BAD_REQUEST
-    assert "Cannot delete yourself" in response.data.decode("utf-8")
+    assert "Cannot delete yourself" in response.text
 
 
 class TestAdminDeleteLastSuperadmin:
@@ -278,7 +275,6 @@ class TestAdminDeleteLastSuperadmin:
         from ibutsu_server import get_app
         from ibutsu_server.db.base import session
         from ibutsu_server.db.models import Token, User
-        from ibutsu_server.tasks import create_celery_app
         from ibutsu_server.util.jwt import generate_token
 
         logging.getLogger("connexion.operation").setLevel("ERROR")
@@ -298,11 +294,11 @@ class TestAdminDeleteLastSuperadmin:
             "CELERY_BROKER_URL": "redis://localhost:6379/0",
             "CELERY_RESULT_BACKEND": "redis://localhost:6379/0",
         }
-        app = get_app(**extra_config)
-        create_celery_app(app)
+        connexion_app = get_app(**extra_config)
+        flask_app = connexion_app.app
 
         # Add two test superadmin users
-        with app.app_context():
+        with flask_app.app_context():
             # First superadmin - the authenticated user
             auth_user = User(
                 name="Auth Superadmin",
@@ -330,10 +326,14 @@ class TestAdminDeleteLastSuperadmin:
             session.refresh(second_user)
             second_user_id = str(second_user.id)
 
-        if ibutsu_server.tasks.task is None:
+        # Mock celery tasks for testing if not already mocked
+        if not hasattr(ibutsu_server.tasks, "task") or ibutsu_server.tasks.task is None:
             ibutsu_server.tasks.task = _mock_task
 
-        with app.test_client() as client:
+        # Use Connexion 3 test client
+        with connexion_app.test_client() as client:
+            # Add Flask app reference for compatibility
+            client.application = flask_app
             yield client, jwt_token, second_user_id
 
     def test_admin_delete_user_cannot_delete_last_superadmin(
@@ -380,7 +380,7 @@ class TestAdminDeleteLastSuperadmin:
         assert response.status_code == HTTPStatus.BAD_REQUEST
         # The error could be either "Cannot delete yourself" or "Cannot delete the last superadmin"
         # Both are valid protection mechanisms
-        error_msg = response.data.decode("utf-8")
+        error_msg = response.text
         assert (
             "Cannot delete yourself" in error_msg
             or "Cannot delete the last superadmin" in error_msg

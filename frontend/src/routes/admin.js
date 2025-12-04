@@ -1,5 +1,3 @@
-import { useState, useEffect } from 'react';
-
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import AdminHome from '../pages/admin/home';
@@ -7,7 +5,6 @@ import UserList from '../pages/admin/user-list';
 import UserEdit from '../pages/admin/user-edit';
 import ProjectList from '../pages/admin/project-list';
 import ProjectEdit from '../pages/admin/project-edit';
-import { AuthService } from '../utilities/auth';
 
 import '../app.css';
 import AdminPage from './admin-page';
@@ -15,19 +12,6 @@ import { STRING_PROJECT_FIELDS, STRING_USER_FIELDS } from '../constants';
 import FilterProvider from '../components/contexts/filter-context';
 
 const Admin = () => {
-  const [isSuper, setIsSuper] = useState();
-  useEffect(() => {
-    AuthService.isSuperAdmin().then((admin) => {
-      setIsSuper(admin);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (isSuper === false) {
-      window.location = '/';
-    }
-  }, [isSuper]);
-
   return (
     <Routes>
       <Route path="" element={<AdminPage />}>

@@ -4,7 +4,7 @@ Data factories for creating complex test objects.
 These factories help generate realistic test data with appropriate defaults.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 
@@ -30,7 +30,7 @@ def result_factory(**kwargs):
         "duration": 1.0,
         "result": "passed",
         "test_id": f"test.example.{uuid4().hex[:8]}",
-        "start_time": datetime.now(timezone.utc).isoformat(),
+        "start_time": datetime.now(UTC).isoformat(),
         "source": "pytest",
         "metadata": {},
         "params": {},
@@ -56,7 +56,7 @@ def run_factory(**kwargs):
     """
     defaults = {
         "id": str(uuid4()),
-        "start_time": datetime.now(timezone.utc).isoformat(),
+        "start_time": datetime.now(UTC).isoformat(),
         "summary": {},
         "metadata": {},
     }

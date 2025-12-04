@@ -1,5 +1,4 @@
 import pytest
-from flask import json
 
 
 def test_get_widget_config_list(flask_app, make_project, make_widget_config, auth_headers):
@@ -19,7 +18,7 @@ def test_get_widget_config_list(flask_app, make_project, make_widget_config, aut
     response = client.get(f"/api/widget-config?project_id={project.id}", headers=headers)
 
     assert response.status_code == 200
-    json_response = response.json
+    json_response = response.json()
     # Response should have pagination structure
     assert "widgets" in json_response
     assert "pagination" in json_response
@@ -49,10 +48,10 @@ def test_get_widget_config_list_pagination(
     headers = auth_headers(jwt_token)
 
     query_string = [("project_id", str(project.id)), ("page", page), ("pageSize", page_size)]
-    response = client.get("/api/widget-config", headers=headers, query_string=query_string)
+    response = client.get("/api/widget-config", headers=headers, params=query_string)
 
     assert response.status_code == 200
-    json_response = response.json
+    json_response = response.json()
     assert "widgets" in json_response
     assert "pagination" in json_response
     assert json_response["pagination"]["page"] == page
@@ -77,12 +76,11 @@ def test_add_widget_config(flask_app, make_project, auth_headers):
     response = client.post(
         "/api/widget-config",
         headers=headers,
-        data=json.dumps(widget_config_data),
-        content_type="application/json",
+        json=widget_config_data,
     )
-    assert response.status_code == 201, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 201, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["widget"] == "run-aggregator"
     assert response_data["title"] == "My Widget"
 
@@ -108,9 +106,9 @@ def test_get_widget_config(flask_app, make_project, make_widget_config, auth_hea
         f"/api/widget-config/{widget.id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["id"] == str(widget.id)
     assert response_data["widget"] == "test-widget"
 
@@ -132,19 +130,19 @@ def test_update_widget_config(flask_app, make_project, make_widget_config, auth_
     response = client.put(
         f"/api/widget-config/{widget.id}",
         headers=headers,
-        data=json.dumps(update_data),
-        content_type="application/json",
+        json=update_data,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
-    response_data = response.get_json()
+    response_data = response.json()
     assert response_data["title"] == "Updated Title"
 
     # Verify in database
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import WidgetConfig
 
-        updated_widget = WidgetConfig.query.get(str(widget.id))
+        updated_widget = db.session.get(WidgetConfig, str(widget.id))
         assert updated_widget.title == "Updated Title"
 
 
@@ -162,13 +160,14 @@ def test_delete_widget_config(flask_app, make_project, make_widget_config, auth_
         f"/api/widget-config/{widget_id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.data.decode('utf-8')}"
+    assert response.status_code == 200, f"Response body is : {response.text}"
 
     # Verify widget config was deleted
     with client.application.app_context():
+        from ibutsu_server.db import db
         from ibutsu_server.db.models import WidgetConfig
 
-        deleted_widget = WidgetConfig.query.get(str(widget_id))
+        deleted_widget = db.session.get(WidgetConfig, str(widget_id))
         assert deleted_widget is None
 
 

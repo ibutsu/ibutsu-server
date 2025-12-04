@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
+session = db.session
 Model = db.Model
 Boolean = db.Boolean
 Column = db.Column
@@ -14,4 +15,3 @@ Table = db.Table
 Text = db.Text
 relationship = db.relationship
 inspect = db.inspect
-session = db.session

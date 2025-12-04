@@ -69,6 +69,24 @@ objects:
           resources: {}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
+        - env:
+          - name: BROKER_URL
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          image: flower
+          imagePullPolicy: Always
+          name: ibutsu-flower
+          ports:
+          - containerPort: 5555
+            protocol: TCP
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
         dnsPolicy: ClusterFirst
         restartPolicy: Always
     triggers:
@@ -79,6 +97,15 @@ objects:
         from:
           kind: ImageStreamTag
           name: scheduler:latest
+          namespace: ${NAMESPACE}
+      type: ImageChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ibutsu-flower
+        from:
+          kind: ImageStreamTag
+          name: flower:latest
           namespace: ${NAMESPACE}
       type: ImageChange
     - type: ConfigChange
@@ -100,6 +127,23 @@ objects:
         scheduled: true
       name: latest
 # -----------------------------------------------
+- kind: ImageStream
+  apiVersion: v1
+  metadata:
+    name: flower
+    annotations:
+      description: "Flower monitoring application for Celery task queues"
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - from:
+        kind: DockerImage
+        name: quay.io/ibutsu/flower:latest
+      importPolicy:
+        scheduled: true
+      name: latest
+# -----------------------------------------------
 - kind: Service
   apiVersion: v1
   metadata:
@@ -111,8 +155,32 @@ objects:
     ports:
     - port: 8080
       targetPort: 8080
+      name: scheduler
+    - port: 5555
+      targetPort: 5555
+      name: flower
     selector:
       app: ibutsu-scheduler
+# -----------------------------------------------
+- kind: Route
+  apiVersion: v1
+  metadata:
+    labels:
+      app: ${APP_NAME}
+    name: ibutsu-flower
+    namespace: ${NAMESPACE}
+    annotations:
+      description: "Route to Celery Flower monitoring interface (sidecar in scheduler pod)"
+  spec:
+    host: ${FLOWER_ROUTE}
+    port:
+      targetPort: flower
+    to:
+      kind: Service
+      name: ibutsu-scheduler
+    tls:
+      insecureEdgeTerminationPolicy: Redirect
+      termination: edge
 # ===============================================
 # Parameters
 # ===============================================
@@ -133,6 +201,10 @@ parameters:
   displayName: Frontend Route
   description: The URL of the frontend of the Ibutsu server
   value: ibutsu.example.com
+- name: FLOWER_ROUTE
+  displayName: Flower Route
+  description: The URL for the Flower monitoring interface
+  value: ibutsu-flower.example.com
 - name: REDIS_PASSWORD
   displayName: Redis Password
   description: The password for Redis

@@ -1,11 +1,11 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 
-import connexion
 import magic
-from flask import make_response
+from flask import make_response, request
 
+from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact, Result, Run, User
 from ibutsu_server.util.projects import add_user_filter, project_has_user
@@ -47,7 +47,7 @@ def _get_form_param(form, *keys):
 
 def _build_artifact_response(id_):
     """Build a response for the artifact"""
-    artifact = Artifact.query.get(id_)
+    artifact = db.session.get(Artifact, id_)
     if not artifact:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     # Create a response with the contents of this file
@@ -100,7 +100,7 @@ def get_artifact(id_, token_info=None, user=None):
 
     :rtype: Artifact
     """
-    artifact = Artifact.query.get(id_)
+    artifact = db.session.get(Artifact, id_)
     if not artifact:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     if not project_has_user(artifact.result.project, user):
@@ -118,20 +118,22 @@ def get_artifact_list(
 
     :rtype: List[Artifact]
     """
-    query = Artifact.query
-    User.query.get(user)
-    if "result_id" in connexion.request.args:
-        result_id = connexion.request.args["result_id"]
+    query = db.select(Artifact)
+    user = db.session.get(User, user)
+    if "result_id" in request.args:
+        result_id = request.args["result_id"]
     if result_id:
-        query = query.filter(Artifact.result_id == result_id)
+        query = query.where(Artifact.result_id == result_id)
     if run_id:
-        query = query.filter(Artifact.run_id == run_id)
+        query = query.where(Artifact.run_id == run_id)
     if user:
         query = add_user_filter(query, user)
-    total_items = query.count()
+    total_items = db.session.execute(
+        db.select(db.func.count()).select_from(query.subquery())
+    ).scalar()
     offset = get_offset(page, page_size)
     total_pages = (total_items // page_size) + (1 if total_items % page_size > 0 else 0)
-    artifacts = query.limit(page_size).offset(offset).all()
+    artifacts = db.session.execute(query.limit(page_size).offset(offset)).scalars().all()
     return {
         "artifacts": [artifact.to_dict() for artifact in artifacts],
         "pagination": {
@@ -274,7 +276,8 @@ def upload_artifact(body=None, token_info=None, user=None):
 
     :rtype: tuple
     """
-    req = connexion.request
+    # Use flask.request instead of connexion.request
+    req = request
 
     try:
         # Extract form parameters - support both camelCase (OpenAPI) and snake_case (legacy)
@@ -291,7 +294,7 @@ def upload_artifact(body=None, token_info=None, user=None):
         # Check permissions EARLY - before reading file content
         # Check result permissions if result_id is provided
         if result_id:
-            result = Result.query.get(result_id)
+            result = db.session.get(Result, result_id)
             if not result:
                 raise BadRequestError(f"Result ID {result_id} not found", HTTPStatus.NOT_FOUND)
             if not project_has_user(result.project, user):
@@ -299,7 +302,7 @@ def upload_artifact(body=None, token_info=None, user=None):
 
         # Check run permissions if run_id is provided
         if run_id:
-            run = Run.query.get(run_id)
+            run = db.session.get(Run, run_id)
             if not run:
                 raise BadRequestError(f"Run ID {run_id} not found", HTTPStatus.NOT_FOUND)
             if not project_has_user(run.project, user):
@@ -311,7 +314,7 @@ def upload_artifact(body=None, token_info=None, user=None):
             result_id=result_id,
             run_id=run_id,
             content=_read_file_with_size_limit(file_, MAX_UPLOAD_SIZE),
-            upload_date=datetime.now(timezone.utc),
+            upload_date=datetime.now(UTC),
             data=_parse_additional_metadata(additional_metadata),
         )
 
@@ -332,7 +335,7 @@ def delete_artifact(id_, token_info=None, user=None):
 
     :rtype: tuple
     """
-    artifact = Artifact.query.get(id_)
+    artifact = db.session.get(Artifact, id_)
     if not artifact:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
     if not project_has_user(artifact.result.project, user):

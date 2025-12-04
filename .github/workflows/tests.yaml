@@ -13,7 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Install dependencies
         run: pip install pre-commit
       - name: Run pre-commit
@@ -47,10 +49,10 @@ jobs:
     needs: lint
     strategy:
       matrix:
-        python-version: [ "3.9", "3.10", "3.11"] # five is broken on 3.11 - celery update needed "3.11.0-alpha - 3.11"]
+        python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install backend dependencies with Python ${{ matrix.python-version }}
@@ -63,7 +65,7 @@ jobs:
         run: hatch run test-cov
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
-        if: always() && matrix.python-version == '3.11'
+        if: always() && matrix.python-version == '3.13'
         with:
           name: backend-coverage
           path: backend/coverage.xml

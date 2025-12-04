@@ -24,6 +24,9 @@ The MPP templates are meant to be used on an v4 Openshift cluster
 Note: the ``jobs`` directory contains cronjobs and jobs to vacuum and backup the database. Both of these
 are included in the `prod/postgres.yaml` template.
 
+### Flower Monitoring
+The `mpp/scheduler.yaml` template includes a Flower container as a sidecar in the scheduler pod for monitoring Celery tasks. Alternatively, you can deploy Flower as a standalone service using `mpp/flower.yaml`.
+
 ## Using the templates
 
 Regardless of environment, the templates are used in the same way. The order in which they should be

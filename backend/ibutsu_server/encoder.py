@@ -1,9 +1,9 @@
-from flask.json.provider import DefaultJSONProvider
+from connexion.jsonifier import Jsonifier
 
 from ibutsu_server.models.base_model_ import Model
 
 
-class IbutsuJSONProvider(DefaultJSONProvider):
+class IbutsuJSONProvider(Jsonifier):
     include_nulls = False
 
     def default(self, o):
@@ -19,4 +19,5 @@ class IbutsuJSONProvider(DefaultJSONProvider):
         # For basic JSON-serializable types, return as-is
         if isinstance(o, (dict, list, str, int, float, bool, type(None))):
             return o
-        return super().default(o)
+        # For non-serializable objects, raise TypeError
+        raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
