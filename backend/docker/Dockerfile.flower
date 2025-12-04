@@ -20,4 +20,6 @@ RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
 # Expose Flower default port
 EXPOSE 5555
 
-CMD ["sh", "-c", "celery --broker=\"redis://:${REDIS_PASSWORD}@${REDIS_HOSTNAME}:${REDIS_PORT}\" --app=ibutsu_server.celery_app flower --port=5555]
+# Use flower_app - minimal broker-only app (no database required)
+# flower_app is exposed via __getattr__ in ibutsu_server/__init__.py
+CMD ["celery", "--app=ibutsu_server:flower_app", "flower", "--port=5555"]

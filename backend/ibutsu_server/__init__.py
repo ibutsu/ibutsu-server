@@ -265,6 +265,10 @@ class _AppRegistry:
     connexion_app = None
     flask_app = None
     celery_app = None
+    # Container-specific Celery apps with unique names
+    flower_app = None
+    worker_app = None
+    scheduler_app = None
 
     @classmethod
     def initialize_apps(cls, **extra_config):
@@ -281,6 +285,9 @@ class _AppRegistry:
         cls.connexion_app = None
         cls.flask_app = None
         cls.celery_app = None
+        cls.flower_app = None
+        cls.worker_app = None
+        cls.scheduler_app = None
 
     @classmethod
     def get_connexion_app(cls, **extra_config):
@@ -303,12 +310,89 @@ class _AppRegistry:
             cls.initialize_apps(**extra_config)
         return cls.celery_app
 
+    @classmethod
+    def _build_redis_url(cls):
+        """
+        Build Redis broker URL from environment variables.
+
+        Supports multiple environment variable formats:
+        1. Complete URL: BROKER_URL or CELERY_BROKER_URL
+        2. Components: REDIS_HOSTNAME, REDIS_PORT, REDIS_PASSWORD
+
+        Returns:
+            str: Redis connection URL
+        """
+        # Try to get broker URL from environment (for backwards compatibility)
+        if broker_url := os.environ.get("BROKER_URL") or os.environ.get("CELERY_BROKER_URL"):
+            return broker_url
+
+        # Build from components
+        redis_password = os.environ.get("REDIS_PASSWORD", "")
+        redis_hostname = os.environ.get("REDIS_HOSTNAME", "localhost")
+        redis_port = os.environ.get("REDIS_PORT", "6379")
+
+        # Build Redis URL with password if provided
+        if redis_password:
+            return f"redis://:{redis_password}@{redis_hostname}:{redis_port}"
+        return f"redis://{redis_hostname}:{redis_port}"
+
+    @classmethod
+    def get_flower_app(cls):
+        """
+        Get or create the Flower app (broker-only, no database).
+
+        Flower only needs broker access to monitor tasks - no database required.
+        Task discovery happens automatically from the workers.
+
+        Returns:
+            Celery: Broker-only Celery app instance with name 'ibutsu_server_flower'
+        """
+        if cls.flower_app is None:
+            from celery import Celery  # noqa: PLC0415
+
+            broker_url = cls._build_redis_url()
+            cls.flower_app = Celery("ibutsu_server_flower")
+            cls.flower_app.conf.update(
+                broker_url=broker_url,
+                result_backend=broker_url,
+                # Don't import task modules - would require database access
+                # Flower discovers tasks from workers via broker introspection
+            )
+        return cls.flower_app
+
+    @classmethod
+    def get_worker_app(cls):
+        """
+        Get or create the Worker app (full Flask integration).
+
+        Returns:
+            Celery: Flask-integrated Celery app with name 'ibutsu_server_worker'
+        """
+        if cls.worker_app is None:
+            flask_app = cls.get_flask_app()
+            cls.worker_app = create_celery_app(flask_app, name="ibutsu_server_worker")
+        return cls.worker_app
+
+    @classmethod
+    def get_scheduler_app(cls):
+        """
+        Get or create the Scheduler app (full Flask integration).
+
+        Returns:
+            Celery: Flask-integrated Celery app with name 'ibutsu_server_scheduler'
+        """
+        if cls.scheduler_app is None:
+            flask_app = cls.get_flask_app()
+            cls.scheduler_app = create_celery_app(flask_app, name="ibutsu_server_scheduler")
+        return cls.scheduler_app
+
 
 def __getattr__(name):
     """
     Lazy initialization of module-level app instances.
 
-    This allows code to import connexion_app, flask_app, or celery_app
+    This allows code to import connexion_app, flask_app, celery_app,
+    or container-specific apps (flower_app, worker_app, scheduler_app)
     and have them initialized on first access.
     """
     if name == "connexion_app":
@@ -317,8 +401,23 @@ def __getattr__(name):
         return _AppRegistry.get_flask_app()
     if name == "celery_app":
         return _AppRegistry.get_celery_app()
+    if name == "flower_app":
+        return _AppRegistry.get_flower_app()
+    if name == "worker_app":
+        return _AppRegistry.get_worker_app()
+    if name == "scheduler_app":
+        return _AppRegistry.get_scheduler_app()
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 # Export the app instances and initialization function
-__all__ = ["_AppRegistry", "celery_app", "connexion_app", "flask_app", "get_app"]
+__all__ = [
+    "_AppRegistry",
+    "celery_app",
+    "connexion_app",
+    "flask_app",
+    "flower_app",
+    "get_app",
+    "scheduler_app",
+    "worker_app",
+]
