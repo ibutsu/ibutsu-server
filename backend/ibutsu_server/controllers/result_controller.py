@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from flask import request
@@ -73,7 +73,7 @@ def add_result(result=None, token_info=None, user=None):
     result.env = result.data.get("env") if result.data else None
     result.component = result.data.get("component") if result.data else None
     result.run_id = result.data.get("run") if result.data else None
-    result.start_time = result.start_time if result.start_time else datetime.utcnow()
+    result.start_time = result.start_time if result.start_time else datetime.now(UTC)
 
     session.add(result)
     session.commit()

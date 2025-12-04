@@ -2,7 +2,7 @@
 
 import json
 import tarfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import BytesIO
 from unittest.mock import patch
 from uuid import uuid4
@@ -205,7 +205,7 @@ class TestParseTimestamp:
 
         # Should return a datetime close to "now" (broad tolerance to avoid flakiness)
         assert isinstance(result, datetime)
-        delta_seconds = abs((datetime.now(timezone.utc) - result).total_seconds())
+        delta_seconds = abs((datetime.now(UTC) - result).total_seconds())
         assert delta_seconds < 24 * 60 * 60
 
     def test_parse_timestamp_with_different_formats(self):
@@ -323,7 +323,7 @@ class TestPopulateCreatedTimes:
     def test_populate_created_times_both_missing(self):
         """Test populating when both created and start_time are missing"""
         run_dict = {}
-        start_time = datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+        start_time = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
 
         _populate_created_times(run_dict, start_time)
 
@@ -332,7 +332,7 @@ class TestPopulateCreatedTimes:
 
     def test_populate_created_times_start_time_only(self):
         """Test when only start_time is present"""
-        start_time = datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+        start_time = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
         run_dict = {"start_time": start_time}
 
         _populate_created_times(run_dict, None)
@@ -342,7 +342,7 @@ class TestPopulateCreatedTimes:
 
     def test_populate_created_times_created_only(self):
         """Test when only created is present"""
-        created_time = datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+        created_time = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
         run_dict = {"created": created_time}
 
         _populate_created_times(run_dict, None)
@@ -352,8 +352,8 @@ class TestPopulateCreatedTimes:
 
     def test_populate_created_times_both_present(self):
         """Test when both are already present"""
-        created = datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
-        start = datetime(2024, 1, 15, 10, 30, 0, tzinfo=timezone.utc)
+        created = datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
+        start = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
         run_dict = {"created": created, "start_time": start}
 
         _populate_created_times(run_dict, None)
@@ -721,7 +721,7 @@ class TestRunArchiveImport:
                 "test_id": "test.example",
                 "result": "passed",
                 "duration": 1.5,
-                "start_time": datetime.now(timezone.utc).isoformat(),
+                "start_time": datetime.now(UTC).isoformat(),
             }
 
             # Create tarball

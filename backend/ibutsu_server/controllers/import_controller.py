@@ -1,7 +1,6 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
-from typing import Optional
 
 from flask import request
 from werkzeug.datastructures import FileStorage
@@ -73,12 +72,12 @@ def get_import_list(filter_=None, page=1, page_size=25, token_info=None, user=No
 
 
 def add_import(
-    import_file: Optional[FileStorage] = None,
-    project: Optional[str] = None,
-    metadata: Optional[str] = None,
-    source: Optional[str] = None,
-    token_info: Optional[str] = None,
-    user: Optional[str] = None,
+    import_file: FileStorage | None = None,
+    project: str | None = None,
+    metadata: str | None = None,
+    source: str | None = None,
+    token_info: str | None = None,
+    user: str | None = None,
 ):
     """Imports a JUnit XML file and creates a test run and results from it.
 
@@ -117,7 +116,7 @@ def add_import(
             "filename": import_file.filename,
             "format": "",
             "data": data,
-            "created": datetime.now(timezone.utc),
+            "created": datetime.now(UTC),
         }
     )
     session.add(new_import)

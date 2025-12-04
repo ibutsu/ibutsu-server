@@ -27,7 +27,7 @@ def create_celery_app(app=None):
         "socket_timeout": SOCKET_TIMEOUT,
         "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
     }
-    celery_app.conf.result_backend = app.config.get("CELERY_RESULT_BACKEND")
+    # Result backend is already set from CELERY config namespace above
 
     # Make sure all task modules are imported so tasks are registered
     # This is crucial for Celery task discovery

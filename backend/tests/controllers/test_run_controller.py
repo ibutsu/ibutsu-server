@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import patch
 
 import pytest
@@ -23,7 +23,7 @@ def test_add_run(mock_update_run_task, flask_app, make_project, auth_headers):
             "env": "local",
         },
         "project_id": str(project.id),
-        "start_time": datetime.now(timezone.utc).isoformat(),
+        "start_time": datetime.now(UTC).isoformat(),
     }
 
     headers = auth_headers(jwt_token)
