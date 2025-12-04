@@ -244,7 +244,7 @@ podman run -d \
     $PYTHON_IMAGE \
     /bin/bash -c 'pip install -U pip wheel &&
                     pip install . &&
-                    celery --app ibutsu_server.celery_app:worker_app --no-color worker --events'
+                    celery --app ibutsu_server:worker_app --no-color worker --events'
 echo -n "Waiting for celery to respond: "
 sleep 5
 until podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null | grep -q pong; do
@@ -656,7 +656,7 @@ podman run -d \
     /bin/bash -c "pip install -U pip wheel &&
                     pip install . &&
                     pip install 'flower>=2.0.0' &&
-                    celery --app ibutsu_server.celery_app:flower_app flower --port=5555"
+                    celery --app ibutsu_server:flower_app flower --port=5555"
 echo "done."
 
 echo "================================="
