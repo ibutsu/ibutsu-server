@@ -59,8 +59,16 @@ objects:
       spec:
         containers:
         - env:
-          - name: BROKER_URL
-            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: REDIS_HOSTNAME
+            value: redis.${NAMESPACE}.svc
+          - name: REDIS_PORT
+            value: "6379"
+          - name: REDIS_PASSWORD
+            value: ${REDIS_PASSWORD}
+          - name: CELERY_BROKER_URL
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc:6379
+          - name: CELERY_RESULT_BACKEND_URL
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc:6379
           image: celery-flower
           imagePullPolicy: Always
           name: celery-flower
