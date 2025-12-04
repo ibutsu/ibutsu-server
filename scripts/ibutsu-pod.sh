@@ -2,6 +2,12 @@
 
 # Some variables
 POD_NAME="ibutsu"
+LOCAL_HOST="127.0.0.1"
+LOCAL_PORT_BACKEND="8080"
+LOCAL_PORT_FRONTEND="3000"
+LOCAL_PORT_FLOWER="5555"
+LOCAL_PORT_POSTGRES="5432"
+LOCAL_PORT_REDIS="6379"
 JWT_SECRET=$(LC_CTYPE=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 32)
 DATA_PERSISTENT=false
 DATA_VOLUMES=false
@@ -15,8 +21,9 @@ REDIS_EXTRA_ARGS=()
 BACKEND_EXTRA_ARGS=()
 PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-312:latest
 
-ADMIN_EMAIL="${ADMIN_EMAIL:- "admin@example.com"}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:- "admin12345"}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-"admin@example.com"}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-"admin12345"}"
+FLOWER_BASIC_AUTH="${ADMIN_EMAIL}:${ADMIN_PASSWORD}"
 
 function print_usage() {
     echo "Usage: ibutsu-pod.sh [-h|--help] [-d|--data-persistent] [-v|--data-volumes] [-a|--create-admin] [-p|--create-project] [-s|--skip-import] [-f|--import-folder FOLDER] [POD_NAME]"
@@ -161,7 +168,7 @@ echo ""
 
 # Get the pods up and running
 echo -n "Creating ibutsu pod:    "
-podman pod create -p 8080:8080 -p 3000:3000 -p 5555:5555 --name "$POD_NAME"
+podman pod create -p $LOCAL_PORT_BACKEND:$LOCAL_PORT_BACKEND -p $LOCAL_PORT_FRONTEND:$LOCAL_PORT_FRONTEND -p $LOCAL_PORT_FLOWER:$LOCAL_PORT_FLOWER --name "$POD_NAME"
 
 echo "================================="
 echo -n "Adding postgres to the pod:    "
@@ -192,13 +199,13 @@ podman run -d \
     --pod "$POD_NAME" \
     --name ibutsu-backend \
     -e JWT_SECRET="$JWT_SECRET" \
-    -e POSTGRESQL_HOST=127.0.0.1 \
-    -e POSTGRESQL_PORT=5432 \
+    -e POSTGRESQL_HOST=$LOCAL_HOST \
+    -e POSTGRESQL_PORT=$LOCAL_PORT_POSTGRES \
     -e POSTGRESQL_DATABASE=ibutsu \
     -e POSTGRESQL_USER=ibutsu \
     -e POSTGRESQL_PASSWORD=ibutsu \
-    -e CELERY_BROKER_URL=redis://127.0.0.1:6379 \
-    -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
+    -e CELERY_BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
+    -e CELERY_RESULT_BACKEND=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
     -e SQLALCHEMY_WARN_20=1 \
     "${BACKEND_EXTRA_ARGS[@]}" \
     -w /mnt \
@@ -210,7 +217,7 @@ podman run -d \
                   uvicorn ibutsu_server:connexion_app --host 0.0.0.0 --port 8080 --reload --workers 1'
 echo -n "Waiting for backend to respond: "
 sleep 5
-until curl --output /dev/null --silent --head --fail http://127.0.0.1:8080; do
+until curl --output /dev/null --silent --head --fail http://$LOCAL_HOST:$LOCAL_PORT_BACKEND; do
   echo -n ' .'
   sleep 2
 done
@@ -225,13 +232,13 @@ podman run -d \
     --pod "$POD_NAME" \
     --name ibutsu-worker \
     -e COLUMNS=80 \
-    -e POSTGRESQL_HOST=127.0.0.1 \
-    -e POSTGRESQL_PORT=5432 \
+    -e POSTGRESQL_HOST=$LOCAL_HOST \
+    -e POSTGRESQL_PORT=$LOCAL_PORT_POSTGRES \
     -e POSTGRESQL_DATABASE=ibutsu \
     -e POSTGRESQL_USER=ibutsu \
     -e POSTGRESQL_PASSWORD=ibutsu \
-    -e CELERY_BROKER_URL=redis://127.0.0.1:6379 \
-    -e CELERY_RESULT_BACKEND=redis://127.0.0.1:6379 \
+    -e CELERY_BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
+    -e CELERY_RESULT_BACKEND=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
     -w /mnt \
     -v ./backend:/mnt/:z \
     $PYTHON_IMAGE \
@@ -252,7 +259,7 @@ if [[ $CREATE_PROJECT = true ]]; then
     LOGIN_TOKEN=$(curl --no-progress-meter --header "Content-Type: application/json" \
         --request POST \
         --data "{\"email\": \"${ADMIN_EMAIL}\", \"password\": \"${ADMIN_PASSWORD}\"}" \
-        http://127.0.0.1:8080/api/login | jq -r '.token')
+        http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/login | jq -r '.token')
 
     # Create first project
     echo -n "  Creating my-project-1... "
@@ -260,7 +267,7 @@ if [[ $CREATE_PROJECT = true ]]; then
     --header "Authorization: Bearer ${LOGIN_TOKEN}" \
     --request POST \
     --data '{"name": "my-project-1", "title": "My Project 1"}' \
-    http://127.0.0.1:8080/api/project | jq -r '.id')
+    http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/project | jq -r '.id')
     echo "done (ID: ${PROJECT_ID_1})"
 
     # Create second project
@@ -269,7 +276,7 @@ if [[ $CREATE_PROJECT = true ]]; then
     --header "Authorization: Bearer ${LOGIN_TOKEN}" \
     --request POST \
     --data '{"name": "my-project-2", "title": "My Project 2"}' \
-    http://127.0.0.1:8080/api/project | jq -r '.id')
+    http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/project | jq -r '.id')
     echo "done (ID: ${PROJECT_ID_2})"
 
     echo "Projects created"
@@ -330,7 +337,7 @@ if [[ $CREATE_PROJECT = true ]]; then
                         --request POST \
                         --form "importFile=@${FILE}" \
                         --form "project=${CURRENT_PROJECT_ID}" \
-                        http://127.0.0.1:8080/api/import); then
+                        http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/import); then
                         echo "Failed to submit import for ${FILE}."
                         echo "import response: ${IMPORT_RESPONSE}"
 
@@ -359,7 +366,7 @@ if [[ $CREATE_PROJECT = true ]]; then
                         MAX_RETRIES=10
                         while [[ ("${IMPORT_STATUS}" == pending || "${IMPORT_STATUS}" == running) && ${RETRY_COUNT} -lt ${MAX_RETRIES} ]]; do
                             IMPORT_STATUS=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-                                http://127.0.0.1:8080/api/import/"${IMPORT_ID}" | jq -r '.status')
+                                http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/import/"${IMPORT_ID}" | jq -r '.status')
 
                             # Increment retry counter
                             ((RETRY_COUNT++))
@@ -401,9 +408,9 @@ if [[ $CREATE_PROJECT = true ]]; then
         fi
         # Get runs count from both projects
         RUNS_COUNT_1=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-            "http://127.0.0.1:8080/api/run?filter=project_id=${PROJECT_ID_1}&page_size=1" 2>/dev/null | jq -r '.pagination.totalItems // 0')
+            "http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/run?filter=project_id=${PROJECT_ID_1}&page_size=1" 2>/dev/null | jq -r '.pagination.totalItems // 0')
         RUNS_COUNT_2=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-            "http://127.0.0.1:8080/api/run?filter=project_id=${PROJECT_ID_2}&page_size=1" 2>/dev/null | jq -r '.pagination.totalItems // 0')
+            "http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/run?filter=project_id=${PROJECT_ID_2}&page_size=1" 2>/dev/null | jq -r '.pagination.totalItems // 0')
         TOTAL_RUNS=$((RUNS_COUNT_1 + RUNS_COUNT_2))
         echo "Total runs in the database: ${TOTAL_RUNS}"
         echo ""
@@ -423,7 +430,7 @@ if [[ $CREATE_PROJECT = true ]]; then
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             --request POST \
             --data "$data" \
-            "http://127.0.0.1:8080${endpoint}" 2>&1)
+            "http://$LOCAL_HOST:$LOCAL_PORT_BACKEND${endpoint}" 2>&1)
         local exit_code=$?
         if [[ $exit_code -ne 0 ]]; then
             echo "API POST error (${endpoint}): ${response}" >&2
@@ -442,7 +449,7 @@ if [[ $CREATE_PROJECT = true ]]; then
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             --request PUT \
             --data "$data" \
-            "http://127.0.0.1:8080${endpoint}" 2>&1)
+            "http://$LOCAL_HOST:$LOCAL_PORT_BACKEND${endpoint}" 2>&1)
         local exit_code=$?
         if [[ $exit_code -ne 0 ]]; then
             echo "API PUT error (${endpoint}): ${response}" >&2
@@ -457,7 +464,7 @@ if [[ $CREATE_PROJECT = true ]]; then
         local response
         response=$(curl --no-progress-meter --fail-with-body \
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
-            "http://127.0.0.1:8080${endpoint}" 2>&1)
+            "http://$LOCAL_HOST:$LOCAL_PORT_BACKEND${endpoint}" 2>&1)
         local exit_code=$?
         if [[ $exit_code -ne 0 ]]; then
             echo "API GET error (${endpoint}): ${response}" >&2
@@ -620,14 +627,14 @@ if [[ $CREATE_PROJECT = true ]]; then
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             --request POST \
             --data "{\"email\": \"extrauser${i}@example.com\", \"password\": \"${ADMIN_PASSWORD}\", \"is_active\": true, \"is_superadmin\": true, \"name\": \"Extra User ${i}\"}" \
-            http://127.0.0.1:8080/api/admin/user | jq -r '.id')
+            http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/admin/user | jq -r '.id')
 
         # Add user to both projects by updating the user
         curl --no-progress-meter --header "Content-Type: application/json" \
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             --request PUT \
             --data "{\"projects\": [{\"id\": \"${PROJECT_ID_1}\"}, {\"id\": \"${PROJECT_ID_2}\"}]}" \
-            http://127.0.0.1:8080/api/admin/user/"${USER_ID}" > /dev/null
+            http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/admin/user/"${USER_ID}" > /dev/null
 
         echo "  Created user extrauser${i}@example.com with password admin12345 and added to both projects"
     done
@@ -641,7 +648,8 @@ podman run -d \
     --rm \
     --pod "$POD_NAME" \
     --name ibutsu-flower \
-    -e BROKER_URL=redis://127.0.0.1:6379 \
+    -e BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
+    -e FLOWER_BASIC_AUTH="${FLOWER_BASIC_AUTH}" \
     -w /mnt \
     -v ./backend:/mnt/:z \
     $PYTHON_IMAGE \
@@ -666,16 +674,17 @@ podman run -d \
 echo "done."
 
 echo -n "Waiting for frontend to respond: "
-until curl --output /dev/null --silent --head --fail http://127.0.0.1:3000; do
+until curl --output /dev/null --silent --head --fail http://$LOCAL_HOST:$LOCAL_PORT_FRONTEND; do
   printf ' .'
   sleep 5
 done
 echo " frontend available."
 
 echo "Ibutsu has been deployed into the pod: ${POD_NAME}."
-echo "  Frontend URL: http://localhost:3000"
-echo "  Backend URL: http://localhost:8080"
-echo "  Flower URL: http://localhost:5555"
+echo "  Frontend URL: http://$LOCAL_HOST:$LOCAL_PORT_FRONTEND"
+echo "  Backend URL: http://$LOCAL_HOST:$LOCAL_PORT_BACKEND"
+echo "  Flower URL: http://$LOCAL_HOST:$LOCAL_PORT_FLOWER"
+echo "      Flower Basic Auth: ${FLOWER_BASIC_AUTH}"
 
 if [[ $CREATE_ADMIN = true ]]; then
     echo "  Admin user: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}"
