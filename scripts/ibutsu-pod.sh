@@ -13,11 +13,10 @@ IMPORT_FILES=true
 POSTGRES_EXTRA_ARGS=()
 REDIS_EXTRA_ARGS=()
 BACKEND_EXTRA_ARGS=()
-# Use Python 3.11 for Flask 3 and SQLAlchemy 2.0 compatibility
-PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-311:latest
+PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-312:latest
 
-ADMIN_EMAIL="admin@example.com"
-ADMIN_PASSWORD="admin12345"
+ADMIN_EMAIL="${ADMIN_EMAIL:- "admin@example.com"}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:- "admin12345"}"
 
 function print_usage() {
     echo "Usage: ibutsu-pod.sh [-h|--help] [-d|--data-persistent] [-v|--data-volumes] [-a|--create-admin] [-p|--create-project] [-s|--skip-import] [-f|--import-folder FOLDER] [POD_NAME]"
@@ -31,6 +30,10 @@ function print_usage() {
     echo "  -s, --skip-import          skip importing files from the import folder"
     echo "  -f, --import-folder        folder containing files to import (./.archives/ by default)"
     echo "  POD_NAME                   the name of the pod, 'ibutsu' if omitted"
+    echo ""
+    echo "environment variables:"
+    echo "  ADMIN_EMAIL              Administrator email (optional)"
+    echo "  ADMIN_PASSWORD           Administrator password (optional)"
     echo ""
 }
 
@@ -158,7 +161,7 @@ echo ""
 
 # Get the pods up and running
 echo -n "Creating ibutsu pod:    "
-podman pod create -p 8080:8080 -p 3000:3000 --name "$POD_NAME"
+podman pod create -p 8080:8080 -p 3000:3000 -p 5555:5555 --name "$POD_NAME"
 
 echo "================================="
 echo -n "Adding postgres to the pod:    "
@@ -616,7 +619,7 @@ if [[ $CREATE_PROJECT = true ]]; then
         USER_ID=$(curl --no-progress-meter --header "Content-Type: application/json" \
             --header "Authorization: Bearer ${LOGIN_TOKEN}" \
             --request POST \
-            --data "{\"email\": \"extrauser${i}@example.com\", \"password\": \"admin12345\", \"is_active\": true, \"is_superadmin\": true, \"name\": \"Extra User ${i}\"}" \
+            --data "{\"email\": \"extrauser${i}@example.com\", \"password\": \"${ADMIN_PASSWORD}\", \"is_active\": true, \"is_superadmin\": true, \"name\": \"Extra User ${i}\"}" \
             http://127.0.0.1:8080/api/admin/user | jq -r '.id')
 
         # Add user to both projects by updating the user
@@ -630,6 +633,23 @@ if [[ $CREATE_PROJECT = true ]]; then
     done
 
 fi
+
+echo "================================="
+echo -n "Adding flower to the pod:    "
+
+podman run -d \
+    --rm \
+    --pod "$POD_NAME" \
+    --name ibutsu-flower \
+    -e BROKER_URL=redis://127.0.0.1:6379 \
+    -w /mnt \
+    -v ./backend:/mnt/:z \
+    $PYTHON_IMAGE \
+    /bin/bash -c "pip install -U pip wheel &&
+                    pip install . &&
+                    pip install 'flower>=2.0.0' &&
+                    celery --app ibutsu_server.celery_app flower --port=5555"
+echo "done."
 
 echo "================================="
 echo -n "Adding frontend to the pod:    "
@@ -655,6 +675,7 @@ echo " frontend available."
 echo "Ibutsu has been deployed into the pod: ${POD_NAME}."
 echo "  Frontend URL: http://localhost:3000"
 echo "  Backend URL: http://localhost:8080"
+echo "  Flower URL: http://localhost:5555"
 
 if [[ $CREATE_ADMIN = true ]]; then
     echo "  Admin user: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD}"
