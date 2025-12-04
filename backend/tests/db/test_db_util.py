@@ -178,7 +178,7 @@ class TestAddSuperadmin:
             )
             assert len(projects) == 1
 
-    def test_add_superadmin_without_password(self, flask_app):
+    def test_add_superadmin_with_password(self, flask_app):
         """Test adding a superadmin with a password."""
         client, _ = flask_app
         with client.application.app_context():

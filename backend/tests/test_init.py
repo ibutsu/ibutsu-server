@@ -113,22 +113,22 @@ def test_make_celery_redis_url_without_password():
 
 
 def test_make_celery_redis_url_missing_hostname():
-    """Test that assertion error is raised when hostname is missing"""
+    """Test that ValueError is raised when hostname is missing"""
     config = MagicMock()
     config.get.return_value = None
     config.get_namespace.return_value = {"port": 6379}
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError, match="Missing hostname in redis config"):
         make_celery_redis_url(config, envvar="CELERY_BROKER_URL")
 
 
 def test_make_celery_redis_url_missing_port():
-    """Test that assertion error is raised when port is missing"""
+    """Test that ValueError is raised when port is missing"""
     config = MagicMock()
     config.get.return_value = None
     config.get_namespace.return_value = {"hostname": "redis.example.com"}
 
-    with pytest.raises(AssertionError):
+    with pytest.raises(ValueError, match="Missing port in redis config"):
         make_celery_redis_url(config, envvar="CELERY_BROKER_URL")
 
 

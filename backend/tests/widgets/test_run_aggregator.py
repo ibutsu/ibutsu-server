@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from ibutsu_server.widgets.run_aggregator import get_recent_run_data
 
@@ -11,7 +11,7 @@ def test_get_recent_run_data(make_project, make_run):
     project = make_project(name="test-project")
 
     # Create run within the time window
-    recent_time = datetime.now(timezone.utc) - timedelta(days=7)
+    recent_time = datetime.now(UTC) - timedelta(days=7)
 
     # Run for component1: simple case with only failures
     _run1 = make_run(

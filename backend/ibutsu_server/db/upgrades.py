@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
@@ -247,7 +247,7 @@ def upgrade_7(session):
     if imports is not None and "created" not in [col.name for col in imports.columns]:
         op.add_column(
             "imports",
-            Column("created", DateTime, default=lambda: datetime.now(timezone.utc), index=True),
+            Column("created", DateTime, default=lambda: datetime.now(UTC), index=True),
         )
 
 

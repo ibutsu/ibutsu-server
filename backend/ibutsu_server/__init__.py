@@ -2,7 +2,7 @@ import os
 from http import HTTPStatus
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import connexion
 import flask
@@ -24,7 +24,7 @@ from ibutsu_server.util.jwt import decode_token
 FRONTEND_PATH = Path("/app/frontend")
 
 
-def maybe_sql_url(conf: dict[str, Any]) -> Optional[SQLA_URL]:
+def maybe_sql_url(conf: dict[str, Any]) -> SQLA_URL | None:
     host = conf.get("host") or conf.get("hostname")
     database = conf.get("db") or conf.get("database")
     if host and database:
@@ -47,10 +47,19 @@ def maybe_sql_url(conf: dict[str, Any]) -> Optional[SQLA_URL]:
 
 def make_celery_redis_url(config: flask.Config, *, envvar: str) -> str:
     if var := config.get(envvar):
+        # If URL is provided but doesn't have auth and we have a password, add it
+        redis = config.get_namespace("REDIS_")
+        if "password" in redis and var.startswith("redis://") and "@" not in var:
+            # Insert password into URL: redis://host -> redis://:password@host
+            return var.replace("redis://", f"redis://:{redis['password']}@", 1)
         return var
     redis = config.get_namespace("REDIS_")
-    assert "hostname" in redis, f"Missing hostname in redis config: {redis}"
-    assert "port" in redis, f"Missing port in redis config: {redis}"
+    if "hostname" not in redis:
+        msg = f"Missing hostname in redis config: {redis}"
+        raise ValueError(msg)
+    if "port" not in redis:
+        msg = f"Missing port in redis config: {redis}"
+        raise ValueError(msg)
     if "password" in redis:
         return "redis://:{password}@{hostname}:{port}".format_map(redis)
     return "redis://{hostname}:{port}".format_map(redis)
@@ -134,9 +143,11 @@ def get_app(**extra_config):
             }
 
     # Configure Celery in the Flask app config
+    # Using Celery 6-compatible configuration keys
     config.from_mapping(
         CELERY={
-            "broker": config.get("CELERY_BROKER_URL"),
+            "broker_url": config.get("CELERY_BROKER_URL"),
+            "result_backend": config.get("CELERY_RESULT_BACKEND"),
             "broker_connection_retry": True,
             "broker_connection_retry_on_startup": True,
             "worker_cancel_long_running_tasks_on_connection_loss": True,

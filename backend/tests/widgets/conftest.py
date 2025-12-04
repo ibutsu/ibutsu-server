@@ -10,8 +10,9 @@ These fixtures leverage the existing database builder fixtures (make_project,
 make_run, make_result) while providing convenient patterns for widget tests.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, Optional, Union
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import uuid4
 
 import pytest
@@ -32,7 +33,7 @@ def fixed_time():
             run = make_run(start_time=fixed_time)
             assert run.start_time == fixed_time
     """
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @pytest.fixture
@@ -68,18 +69,18 @@ def jenkins_run_factory(make_run):
 
     def _create_jenkins_run(
         job_name: str,
-        build_number: Union[str, int],
+        build_number: str | int,
         project_id: str,
-        component: Optional[str] = None,
-        start_time: Optional[datetime] = None,
-        duration: Optional[float] = None,
-        summary: Optional[dict[str, Any]] = None,
+        component: str | None = None,
+        start_time: datetime | None = None,
+        duration: float | None = None,
+        summary: dict[str, Any] | None = None,
         **kwargs,
     ):
         """Create a Jenkins run with standardized metadata."""
         # Default values
         if start_time is None:
-            start_time = datetime.now(timezone.utc)
+            start_time = datetime.now(UTC)
         if duration is None:
             duration = 100.0
         if summary is None:
@@ -185,10 +186,10 @@ def bulk_run_creator(make_run, fixed_time):
     def _create_bulk_runs(
         count: int,
         project_id: str,
-        base_time: Optional[datetime] = None,
+        base_time: datetime | None = None,
         time_delta_hours: int = 1,
-        metadata_pattern: Optional[Callable] = None,
-        summary_pattern: Optional[Callable] = None,
+        metadata_pattern: Callable | None = None,
+        summary_pattern: Callable | None = None,
         **kwargs,
     ):
         """Create multiple runs with sequential patterns."""
@@ -266,9 +267,9 @@ def bulk_result_creator(make_result, fixed_time):
         count: int,
         run_id: str,
         project_id: str,
-        base_time: Optional[datetime] = None,
-        component: Optional[str] = None,
-        result_pattern: Optional[Callable] = None,
+        base_time: datetime | None = None,
+        component: str | None = None,
+        result_pattern: Callable | None = None,
         **kwargs,
     ):
         """Create multiple results with sequential patterns."""

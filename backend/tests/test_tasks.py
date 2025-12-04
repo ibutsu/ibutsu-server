@@ -1,6 +1,6 @@
 """Tests for ibutsu_server.tasks"""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 from celery import Celery
@@ -165,12 +165,12 @@ def test_prune_old_files(make_artifact, flask_app):
 
     with client.application.app_context():
         # Create old artifact (older than 5 months)
-        old_date = datetime.now(timezone.utc) - timedelta(days=180)
+        old_date = datetime.now(UTC) - timedelta(days=180)
         old_artifact = make_artifact(upload_date=old_date)
         old_artifact_id = old_artifact.id
 
         # Create recent artifact
-        recent_date = datetime.now(timezone.utc) - timedelta(days=30)
+        recent_date = datetime.now(UTC) - timedelta(days=30)
         recent_artifact = make_artifact(upload_date=recent_date)
         recent_artifact_id = recent_artifact.id
 
@@ -191,7 +191,7 @@ def test_prune_old_files_minimum_months(make_artifact, flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
-        old_date = datetime.now(timezone.utc) - timedelta(days=180)
+        old_date = datetime.now(UTC) - timedelta(days=180)
         old_artifact = make_artifact(upload_date=old_date)
 
         # Try to run with less than 2 months - should do nothing
@@ -209,7 +209,7 @@ def test_prune_old_files_with_string_months(make_artifact, flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
-        old_date = datetime.now(timezone.utc) - timedelta(days=180)
+        old_date = datetime.now(UTC) - timedelta(days=180)
         old_artifact = make_artifact(upload_date=old_date)
         old_artifact_id = old_artifact.id
 
@@ -229,12 +229,12 @@ def test_prune_old_results(make_result, flask_app):
 
     with client.application.app_context():
         # Create old result
-        old_date = datetime.now(timezone.utc) - timedelta(days=210)
+        old_date = datetime.now(UTC) - timedelta(days=210)
         old_result = make_result(start_time=old_date, result="passed")
         old_result_id = old_result.id
 
         # Create recent result
-        recent_date = datetime.now(timezone.utc) - timedelta(days=30)
+        recent_date = datetime.now(UTC) - timedelta(days=30)
         recent_result = make_result(start_time=recent_date, result="passed")
         recent_result_id = recent_result.id
 
@@ -254,7 +254,7 @@ def test_prune_old_results_minimum_months(make_result, flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
-        old_date = datetime.now(timezone.utc) - timedelta(days=210)
+        old_date = datetime.now(UTC) - timedelta(days=210)
         old_result = make_result(start_time=old_date, result="passed")
 
         prune_old_results(months=3)
@@ -272,12 +272,12 @@ def test_prune_old_runs(make_run, flask_app):
 
     with client.application.app_context():
         # Create old run
-        old_date = datetime.now(timezone.utc) - timedelta(days=400)
+        old_date = datetime.now(UTC) - timedelta(days=400)
         old_run = make_run(start_time=old_date)
         old_run_id = old_run.id
 
         # Create recent run
-        recent_date = datetime.now(timezone.utc) - timedelta(days=30)
+        recent_date = datetime.now(UTC) - timedelta(days=30)
         recent_run = make_run(start_time=recent_date)
         recent_run_id = recent_run.id
 
@@ -297,7 +297,7 @@ def test_prune_old_runs_minimum_months(make_run, flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
-        old_date = datetime.now(timezone.utc) - timedelta(days=400)
+        old_date = datetime.now(UTC) - timedelta(days=400)
         old_run = make_run(start_time=old_date)
 
         prune_old_runs(months=9)
@@ -467,7 +467,7 @@ def test_sync_aborted_runs(make_project, make_run, make_result, flask_app):
         project = make_project(name="test-project")
 
         # Create a recent run with summary.tests not matching actual results
-        recent_time = datetime.now(timezone.utc) - timedelta(minutes=30)
+        recent_time = datetime.now(UTC) - timedelta(minutes=30)
         run = make_run(
             project_id=project.id,
             start_time=recent_time,
@@ -481,13 +481,7 @@ def test_sync_aborted_runs(make_project, make_run, make_result, flask_app):
             )
 
         # Mock the task's apply_async to verify it's called
-        with (
-            patch.object(update_run, "apply_async") as mock_apply,
-            patch("ibutsu_server.tasks.runs.datetime") as mock_datetime,
-        ):
-            # Mock datetime to make the run appear recent
-            mock_datetime.utcnow.return_value = datetime.now(timezone.utc)
-
+        with patch.object(update_run, "apply_async") as mock_apply:
             sync_aborted_runs()
 
             # Verify update_run was scheduled for this run

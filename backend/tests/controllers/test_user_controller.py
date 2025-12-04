@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
 
@@ -45,7 +45,7 @@ def test_create_token(mock_generate_token, flask_app, auth_headers):
     mock_generate_token.return_value = "generated_token_value"
 
     # Calculate expiry 30 days from now
-    expiry = datetime.now(timezone.utc) + timedelta(days=30)
+    expiry = datetime.now(UTC) + timedelta(days=30)
 
     token_data = {
         "name": "test-token",
@@ -88,7 +88,7 @@ def test_get_token_list(flask_app, auth_headers):
                 name=f"token-{i}",
                 user_id=test_user.id,
                 token=f"token_value_{i}",
-                expires=datetime.now(timezone.utc) + timedelta(days=30),
+                expires=datetime.now(UTC) + timedelta(days=30),
             )
             session.add(token)
         session.commit()
@@ -120,7 +120,7 @@ def test_delete_token(flask_app, auth_headers):
             name="token-to-delete",
             user_id=test_user.id,
             token="token_value_to_delete",
-            expires=datetime.now(timezone.utc) + timedelta(days=30),
+            expires=datetime.now(UTC) + timedelta(days=30),
         )
         session.add(token)
         session.commit()

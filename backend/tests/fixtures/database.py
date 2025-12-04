@@ -6,6 +6,7 @@ and builder fixtures for creating test data.
 """
 
 import logging
+from datetime import UTC
 
 import connexion
 import pytest
@@ -484,6 +485,6 @@ def fixed_time():
             run = make_run(start_time=fixed_time)
             assert run.start_time == fixed_time
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
