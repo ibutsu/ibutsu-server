@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from flask import request
@@ -189,9 +189,9 @@ def add_run(body=None, token_info=None, user=None):
     run.env = run.data.get("env") if run.data else None
     run.component = run.data.get("component") if run.data else None
     # allow start_time to be set by update_run task if no start_time present
-    run.start_time = run.start_time if run.start_time else datetime.utcnow()
+    run.start_time = run.start_time if run.start_time else datetime.now(UTC)
     # if not present, created is the time at which the run is added to the DB
-    run.created = run.created if run.created else datetime.utcnow()
+    run.created = run.created if run.created else datetime.now(UTC)
 
     session.add(run)
     session.commit()

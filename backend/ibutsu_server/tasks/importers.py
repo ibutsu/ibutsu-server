@@ -1,7 +1,7 @@
 import json
 import re
 import tarfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import BytesIO
 
 from celery.utils.log import get_task_logger
@@ -86,7 +86,7 @@ def _get_ts_element(tree):
 
 def _parse_timestamp(ts):
     """To reduce cognitive complexity"""
-    return parser.parse(ts.get("timestamp")) if ts.get("timestamp") else datetime.now(timezone.utc)
+    return parser.parse(ts.get("timestamp")) if ts.get("timestamp") else datetime.now(UTC)
 
 
 def _process_result(result_dict, testcase):
@@ -226,11 +226,9 @@ def run_junit_import(import_):  # noqa: PLR0912
     tree = objectify.fromstring(import_file.content)
     import_record.data["run_id"] = []
     # Use current time as start time if no start time is present
-    start_time = (
-        parser.parse(tree.get("timestamp")) if tree.get("timestamp") else datetime.now(timezone.utc)
-    )
+    start_time = parser.parse(tree.get("timestamp")) if tree.get("timestamp") else datetime.now(UTC)
     run_dict = {
-        "created": datetime.now(timezone.utc),
+        "created": datetime.now(UTC),
         "start_time": start_time,
         "duration": float(tree.get("time", 0.0)),
         "summary": {
@@ -428,7 +426,9 @@ def run_archive_import(import_):  # noqa: PLR0912
                 continue
             # Grab the run id
             run_id, rest = member.name.split("/", 1)
-            assert is_uuid(run_id), f"Invalid run ID {run_id} in archive import"
+            if not is_uuid(run_id):
+                msg = f"Invalid run ID {run_id} in archive import"
+                raise ValueError(msg)
             if "/" not in rest:
                 if member.name.endswith("run.json"):
                     run = json.loads(tar.extractfile(member).read())
@@ -436,7 +436,9 @@ def run_archive_import(import_):  # noqa: PLR0912
                     run_artifacts.append(member)
                 continue
             result_id, _file_name = rest.split("/")
-            assert is_uuid(result_id), f"Invalid result ID {result_id} in archive import"
+            if not is_uuid(result_id):
+                msg = f"Invalid result ID {result_id} in archive import"
+                raise ValueError(msg)
             if member.name.endswith("result.json"):
                 result = json.loads(tar.extractfile(member).read())
                 result_start_time = result.get("start_time")

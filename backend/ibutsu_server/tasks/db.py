@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Project, Result, Run, User
@@ -18,7 +18,7 @@ def prune_old_files(months=5):
             # we don't want to remove files more recent than 2 months
             return
 
-        max_date = datetime.utcnow() - timedelta(days=months * DAYS_IN_MONTH)
+        max_date = datetime.now(UTC) - timedelta(days=months * DAYS_IN_MONTH)
         # delete artifact files older than max_date
         delete_statement = Artifact.__table__.delete().where(Artifact.upload_date < max_date)
         db.session.execute(delete_statement)
@@ -44,7 +44,7 @@ def prune_old_results(months=6):
             # we don't want to remove files more recent than 4 months
             return
 
-        max_date = datetime.utcnow() - timedelta(days=months * DAYS_IN_MONTH)
+        max_date = datetime.now(UTC) - timedelta(days=months * DAYS_IN_MONTH)
         # delete artifact files older than max_date
         delete_statement = Result.__table__.delete().where(Result.start_time < max_date)
         db.session.execute(delete_statement)
@@ -70,7 +70,7 @@ def prune_old_runs(months=12):
             # we don't want to remove files more recent than 10 months
             return
 
-        max_date = datetime.utcnow() - timedelta(days=months * DAYS_IN_MONTH)
+        max_date = datetime.now(UTC) - timedelta(days=months * DAYS_IN_MONTH)
         # delete artifact files older than max_date
         delete_statement = Run.__table__.delete().where(Run.start_time < max_date)
         db.session.execute(delete_statement)

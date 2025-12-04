@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from ibutsu_server.constants import SYNC_RUN_TIME
 from ibutsu_server.db import db
@@ -107,7 +107,7 @@ def sync_aborted_runs():
     # fetch recent runs
     runs = db.session.execute(
         db.select(Run).where(
-            Run.start_time > (datetime.utcnow() - timedelta(seconds=SYNC_RUN_TIME))
+            Run.start_time > (datetime.now(UTC) - timedelta(seconds=SYNC_RUN_TIME))
         )
     ).scalars()
 

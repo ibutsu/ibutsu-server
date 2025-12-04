@@ -3,11 +3,13 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 
 class TestMain:
     """Tests for main function in __main__.py."""
 
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch("sys.argv", ["ibutsu_server"])
     def test_main_default_configuration(self, mock_get_app, mock_uvicorn_run):
@@ -33,7 +35,7 @@ class TestMain:
         assert "ssl_keyfile" not in call_kwargs
         assert "ssl_certfile" not in call_kwargs
 
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch("sys.argv", ["ibutsu_server", "--host", "0.0.0.0"])  # noqa: S104
     def test_main_with_custom_host(self, mock_get_app, mock_uvicorn_run):
@@ -49,7 +51,7 @@ class TestMain:
         call_kwargs = mock_uvicorn_run.call_args[1]
         assert call_kwargs["host"] == "0.0.0.0"  # noqa: S104
 
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch("sys.argv", ["ibutsu_server", "--port", "9000"])
     def test_main_with_custom_port(self, mock_get_app, mock_uvicorn_run):
@@ -65,7 +67,7 @@ class TestMain:
         call_kwargs = mock_uvicorn_run.call_args[1]
         assert call_kwargs["port"] == 9000
 
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch("sys.argv", ["ibutsu_server", "--host", "localhost", "--port", "5000"])
     def test_main_with_host_and_port(self, mock_get_app, mock_uvicorn_run):
@@ -82,7 +84,7 @@ class TestMain:
         assert call_kwargs["host"] == "localhost"
         assert call_kwargs["port"] == 5000
 
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch("sys.argv", ["ibutsu_server", "--ssl"])
     def test_main_with_ssl_certs_exist(self, mock_get_app, mock_uvicorn_run):
@@ -101,20 +103,35 @@ class TestMain:
         assert "ssl_keyfile" in call_kwargs
         assert "ssl_certfile" in call_kwargs
 
+    @pytest.mark.parametrize(
+        "test_case",
+        [
+            "both_certs_missing",
+            "cert_only_missing",
+            "key_only_missing",
+        ],
+    )
     @patch("sys.exit")
     @patch("sys.argv", ["ibutsu_server", "--ssl"])
-    def test_main_with_ssl_certs_missing(self, mock_exit):
-        """Test main function with SSL when certificates are missing."""
+    def test_main_with_ssl_certs_missing(self, mock_exit, test_case):
+        """Test main function exits when SSL certificates are missing.
+
+        This test covers all scenarios where SSL certs are missing, since the
+        implementation checks both cert and key files and exits if either is missing.
+        """
         from ibutsu_server.__main__ import main
 
-        # Mock Path.exists() to return False
-        with patch.object(Path, "exists", return_value=False):
+        # Make sys.exit raise SystemExit to stop execution
+        mock_exit.side_effect = SystemExit
+
+        # Mock Path.exists() to return False (certs missing)
+        with patch.object(Path, "exists", return_value=False), pytest.raises(SystemExit):
             main()
 
         # Should exit with code 1
         mock_exit.assert_called_once_with(1)
 
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch("sys.argv", ["ibutsu_server"])
     def test_main_calls_get_app(self, mock_get_app, mock_uvicorn_run):
@@ -129,7 +146,7 @@ class TestMain:
         # get_app should be called to get the Connexion app
         mock_get_app.assert_called_once()
 
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch("sys.argv", ["ibutsu_server", "--host", "192.168.1.1", "--port", "8888"])
     def test_main_with_multiple_args(self, mock_get_app, mock_uvicorn_run):
@@ -147,7 +164,7 @@ class TestMain:
         assert call_kwargs["port"] == 8888
         assert call_kwargs["reload"] is True
 
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch("sys.argv", ["ibutsu_server", "--ssl", "--host", "example.com", "--port", "443"])
     def test_main_ssl_with_custom_host_port(self, mock_get_app, mock_uvicorn_run):
@@ -168,35 +185,7 @@ class TestMain:
         assert "ssl_keyfile" in call_kwargs
         assert "ssl_certfile" in call_kwargs
 
-    @patch("sys.exit")
-    @patch("sys.argv", ["ibutsu_server", "--ssl"])
-    def test_main_ssl_missing_cert_only(self, mock_exit):
-        """Test main function with SSL when only cert is missing."""
-        from ibutsu_server.__main__ import main
-
-        # Mock cert missing, key exists - but Path.exists is called for both
-        # and returns False (either missing is enough)
-        with patch.object(Path, "exists", return_value=False):
-            main()
-
-        # Should exit with code 1
-        mock_exit.assert_called_once_with(1)
-
-    @patch("sys.exit")
-    @patch("sys.argv", ["ibutsu_server", "--ssl"])
-    def test_main_ssl_missing_key_only(self, mock_exit):
-        """Test main function with SSL when only key is missing."""
-        from ibutsu_server.__main__ import main
-
-        # Mock key missing, cert exists - but Path.exists is called for both
-        # and returns False (either missing is enough)
-        with patch.object(Path, "exists", return_value=False):
-            main()
-
-        # Should exit with code 1
-        mock_exit.assert_called_once_with(1)
-
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch(
         "sys.argv",
@@ -222,7 +211,7 @@ class TestMain:
         assert call_kwargs["host"] == "0.0.0.0"  # noqa: S104
         assert call_kwargs["port"] == 3000
 
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch("sys.argv", ["ibutsu_server"])
     def test_main_uvicorn_receives_correct_log_level(self, mock_get_app, mock_uvicorn_run):
@@ -240,20 +229,7 @@ class TestMain:
         assert call_kwargs["log_level"] == "debug"
         assert call_kwargs["reload"] is True
 
-    @patch("sys.exit")
-    @patch("sys.argv", ["ibutsu_server", "--ssl"])
-    def test_main_ssl_missing_both_certs(self, mock_exit):
-        """Test main exits when both SSL certificates are missing."""
-        from ibutsu_server.__main__ import main
-
-        # Mock both certificates missing
-        with patch.object(Path, "exists", return_value=False):
-            main()
-
-        # Should exit with code 1 when certs are missing
-        mock_exit.assert_called_once_with(1)
-
-    @patch("ibutsu_server.__main__.uvicorn.run")
+    @patch("uvicorn.run")
     @patch("ibutsu_server.get_app")
     @patch("sys.argv", ["ibutsu_server", "--host", "127.0.0.1", "--port", "8080"])
     def test_main_explicit_defaults(self, mock_get_app, mock_uvicorn_run):

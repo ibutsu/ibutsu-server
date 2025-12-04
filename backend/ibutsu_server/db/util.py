@@ -2,8 +2,6 @@
 Various utility DB functions
 """
 
-from typing import Optional
-
 from sqlalchemy import text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import ClauseElement, Executable
@@ -52,8 +50,8 @@ def add_superadmin(
     *,
     name: str = "Ibutsu Admin",
     email: str,
-    password: Optional[str] = None,
-    own_project: Optional[str] = None,
+    password: str | None = None,
+    own_project: str | None = None,
 ):
     """
     Adds a superadmin user to Ibutsu.

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 
 def test_get_comparison_result_list(flask_app, make_project, make_run, make_result, auth_headers):
@@ -10,7 +10,7 @@ def test_get_comparison_result_list(flask_app, make_project, make_run, make_resu
 
     # Create test data
     project = make_project(name="compare-test")
-    recent_time = datetime.now(timezone.utc) - timedelta(days=1)
+    recent_time = datetime.now(UTC) - timedelta(days=1)
 
     # Create two runs with results that have different outcomes for the same test
     run1 = make_run(project_id=project.id, start_time=recent_time)
@@ -57,7 +57,7 @@ def test_run_aggregator_with_real_data(flask_app, make_project, make_run, auth_h
 
     # Create test data
     project = make_project(name="aggregator-test")
-    recent_time = datetime.now(timezone.utc) - timedelta(days=1)
+    recent_time = datetime.now(UTC) - timedelta(days=1)
 
     # Create a run with summary data
     make_run(
@@ -172,7 +172,7 @@ def test_widget_endpoints_with_query_params(flask_app, make_project, make_run, a
 
     # Create test data
     project = make_project(name="widget-test")
-    recent_time = datetime.now(timezone.utc) - timedelta(days=1)
+    recent_time = datetime.now(UTC) - timedelta(days=1)
     make_run(
         project_id=project.id,
         start_time=recent_time,
@@ -225,7 +225,7 @@ def test_jenkins_job_view_endpoint(flask_app, make_project, make_run, auth_heade
 
     # Create test data
     project = make_project(name="jenkins-test")
-    recent_time = datetime.now(timezone.utc) - timedelta(days=1)
+    recent_time = datetime.now(UTC) - timedelta(days=1)
     make_run(
         project_id=project.id,
         start_time=recent_time,

@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 import magic
@@ -314,7 +314,7 @@ def upload_artifact(body=None, token_info=None, user=None):
             result_id=result_id,
             run_id=run_id,
             content=_read_file_with_size_limit(file_, MAX_UPLOAD_SIZE),
-            upload_date=datetime.now(timezone.utc),
+            upload_date=datetime.now(UTC),
             data=_parse_additional_metadata(additional_metadata),
         )
 
