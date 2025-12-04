@@ -1,74 +1,35 @@
-# Template for ibutsu prod server
+# Template for ibutsu flower monitoring
 kind: Template
 apiVersion: template.openshift.io/v1
 metadata:
-  name: ibutsu-scheduler-template
+  name: ibutsu-flower-template
 # ===============================================
-# Scheduler
+# Flower
 # ===============================================
 objects:
 - kind: Deployment
   apiVersion: apps/v1
   metadata:
     labels:
-      app: ibutsu-scheduler
-    name: ibutsu-scheduler
+      app: ibutsu-flower
+    name: ibutsu-flower
     namespace: ${NAMESPACE}
     annotations:
       image.openshift.io/triggers: >-
-        [{"from":{"kind":"ImageStreamTag","name":"scheduler:latest","namespace":"${NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"container\")].image","pause":"true"}]
+        [{"from":{"kind":"ImageStreamTag","name":"flower:latest","namespace":"${NAMESPACE}"},"fieldPath":"spec.template.spec.containers[?(@.name==\"ibutsu-flower\")].image","pause":"true"}]
   spec:
     replicas: 1
     selector:
       matchLabels:
-        app: ibutsu-scheduler
+        app: ibutsu-flower
     strategy:
       type: RollingUpdate
     template:
       metadata:
         labels:
-          app: ibutsu-scheduler
+          app: ibutsu-flower
       spec:
         containers:
-        - env:
-          - name: POSTGRESQL_HOST
-            value: postgresql.${NAMESPACE}.svc
-          - name: POSTGRESQL_PORT
-            value: "5432"
-          - name: POSTGRESQL_USER
-            valueFrom:
-              secretKeyRef:
-                key: database-user
-                name: postgresql
-          - name: POSTGRESQL_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: database-password
-                name: postgresql
-          - name: POSTGRESQL_DATABASE
-            valueFrom:
-              secretKeyRef:
-                key: database-name
-                name: postgresql
-          - name: REDIS_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: database-password
-                name: redis
-          - name: CELERY_BROKER_URL
-            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
-          - name: CELERY_RESULT_BACKEND
-            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
-          - name: FRONTEND_URL
-            value: https://${FRONTEND_ROUTE}
-          - name: BACKEND_URL
-            value: https://${BACKEND_ROUTE}
-          image: scheduler
-          imagePullPolicy: Always
-          name: ibutsu-scheduler
-          resources: {}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
         - env:
           - name: BROKER_URL
             value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
@@ -93,15 +54,6 @@ objects:
     - imageChangeParams:
         automatic: true
         containerNames:
-        - ibutsu-scheduler
-        from:
-          kind: ImageStreamTag
-          name: scheduler:latest
-          namespace: ${NAMESPACE}
-      type: ImageChange
-    - imageChangeParams:
-        automatic: true
-        containerNames:
         - ibutsu-flower
         from:
           kind: ImageStreamTag
@@ -109,23 +61,6 @@ objects:
           namespace: ${NAMESPACE}
       type: ImageChange
     - type: ConfigChange
-# -----------------------------------------------
-- kind: ImageStream
-  apiVersion: v1
-  metadata:
-    name: scheduler
-    annotations:
-      description: "Celery beat scheduler for periodic tasks in Ibutsu Server"
-  spec:
-    lookupPolicy:
-      local: false
-    tags:
-    - from:
-        kind: DockerImage
-        name: quay.io/ibutsu/scheduler:latest
-      importPolicy:
-        scheduled: true
-      name: latest
 # -----------------------------------------------
 - kind: ImageStream
   apiVersion: v1
@@ -149,18 +84,15 @@ objects:
   metadata:
     labels:
       app: ${APP_NAME}
-    name: ibutsu-scheduler
+    name: ibutsu-flower
     namespace: ${NAMESPACE}
   spec:
     ports:
     - port: 8080
-      targetPort: 8080
-      name: scheduler
-    - port: 5555
       targetPort: 5555
-      name: flower
+      name: web
     selector:
-      app: ibutsu-scheduler
+      app: ibutsu-flower
 # -----------------------------------------------
 - kind: Route
   apiVersion: v1
@@ -170,14 +102,14 @@ objects:
     name: ibutsu-flower
     namespace: ${NAMESPACE}
     annotations:
-      description: "Route to Celery Flower monitoring interface (sidecar in scheduler pod)"
+      description: "Route to Celery Flower monitoring interface"
   spec:
     host: ${FLOWER_ROUTE}
     port:
-      targetPort: flower
+      targetPort: web
     to:
       kind: Service
-      name: ibutsu-scheduler
+      name: ibutsu-flower
     tls:
       insecureEdgeTerminationPolicy: Redirect
       termination: edge
@@ -193,14 +125,6 @@ parameters:
   displayName: Namespace
   description: The namespace for all of the images, applications, etc.
   value: iqe-ibutsu-server
-- name: BACKEND_ROUTE
-  displayName: Backend Route
-  description: The URL of the backend of the Ibutsu server
-  value: ibutsu-api.example.com
-- name: FRONTEND_ROUTE
-  displayName: Frontend Route
-  description: The URL of the frontend of the Ibutsu server
-  value: ibutsu.example.com
 - name: FLOWER_ROUTE
   displayName: Flower Route
   description: The URL for the Flower monitoring interface
