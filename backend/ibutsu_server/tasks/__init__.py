@@ -8,13 +8,13 @@ from ibutsu_server.util.celery_task import IbutsuTask, set_flask_app, shared_tas
 from ibutsu_server.util.redis_lock import lock
 
 
-def create_celery_app(app=None):
+def create_celery_app(app=None, name="ibutsu_server"):
     """Create the Celery app, using the Flask app in app"""
     # Store the Flask app globally so it's available to our custom IbutsuTask class
     if app is not None:
         set_flask_app(app)
     celery_app = Celery(
-        "ibutsu_server",
+        name,
         task_cls=IbutsuTask,
     )
     celery_app.config_from_object(app.config, namespace="CELERY")

@@ -45,24 +45,24 @@ def maybe_sql_url(conf: dict[str, Any]) -> SQLA_URL | None:
     return None
 
 
-def make_celery_redis_url(config: flask.Config, *, envvar: str) -> str:
+def check_envvar(config: flask.Config, *, envvar: str) -> str:
+    """
+    Get Redis URL from environment variable.
+
+    Args:
+        config: Flask config object
+        envvar: Environment variable name (e.g., "CELERY_BROKER_URL")
+
+    Returns:
+        Redis connection URL
+
+    Raises:
+        ValueError: If the environment variable is not set
+    """
     if var := config.get(envvar):
-        # If URL is provided but doesn't have auth and we have a password, add it
-        redis = config.get_namespace("REDIS_")
-        if "password" in redis and var.startswith("redis://") and "@" not in var:
-            # Insert password into URL: redis://host -> redis://:password@host
-            return var.replace("redis://", f"redis://:{redis['password']}@", 1)
         return var
-    redis = config.get_namespace("REDIS_")
-    if "hostname" not in redis:
-        msg = f"Missing hostname in redis config: {redis}"
-        raise ValueError(msg)
-    if "port" not in redis:
-        msg = f"Missing port in redis config: {redis}"
-        raise ValueError(msg)
-    if "password" in redis:
-        return "redis://:{password}@{hostname}:{port}".format_map(redis)
-    return "redis://{hostname}:{port}".format_map(redis)
+    msg = f"Missing required environment variable: {envvar}"
+    raise ValueError(msg)
 
 
 def get_app(**extra_config):
@@ -122,8 +122,8 @@ def get_app(**extra_config):
         # Set celery broker URL
         # hackishly indented to only be part of the setup where extra config won't pass the db
         config.update(
-            CELERY_BROKER_URL=make_celery_redis_url(config, envvar="CELERY_BROKER_URL"),
-            CELERY_RESULT_BACKEND=make_celery_redis_url(config, envvar="CELERY_RESULT_BACKEND"),
+            CELERY_BROKER_URL=check_envvar(config, envvar="CELERY_BROKER_URL"),
+            CELERY_RESULT_BACKEND=check_envvar(config, envvar="CELERY_RESULT_BACKEND"),
         )
 
     # Load any extra config
@@ -265,6 +265,10 @@ class _AppRegistry:
     connexion_app = None
     flask_app = None
     celery_app = None
+    # Container-specific Celery apps with unique names
+    flower_app = None
+    worker_app = None
+    scheduler_app = None
 
     @classmethod
     def initialize_apps(cls, **extra_config):
@@ -281,6 +285,9 @@ class _AppRegistry:
         cls.connexion_app = None
         cls.flask_app = None
         cls.celery_app = None
+        cls.flower_app = None
+        cls.worker_app = None
+        cls.scheduler_app = None
 
     @classmethod
     def get_connexion_app(cls, **extra_config):
@@ -303,12 +310,70 @@ class _AppRegistry:
             cls.initialize_apps(**extra_config)
         return cls.celery_app
 
+    @classmethod
+    def get_flower_app(cls):
+        """
+        Get or create the Flower app (broker-only, no database).
+
+        Flower only needs broker access to monitor tasks - no database required.
+        Task discovery happens automatically from the workers.
+
+        Returns:
+            Celery: Broker-only Celery app instance with name 'ibutsu_server_flower'
+
+        Raises:
+            ValueError: If CELERY_BROKER_URL is not set in environment
+        """
+        if cls.flower_app is None:
+            from celery import Celery  # noqa: PLC0415
+
+            broker_url = os.environ.get("CELERY_BROKER_URL")
+            if not broker_url:
+                msg = "CELERY_BROKER_URL environment variable must be set"
+                raise ValueError(msg)
+
+            cls.flower_app = Celery("ibutsu_server_flower")
+            cls.flower_app.conf.update(
+                broker_url=broker_url,
+                result_backend=broker_url,
+                # Don't import task modules - would require database access
+                # Flower discovers tasks from workers via broker introspection
+            )
+        return cls.flower_app
+
+    @classmethod
+    def get_worker_app(cls):
+        """
+        Get or create the Worker app (full Flask integration).
+
+        Returns:
+            Celery: Flask-integrated Celery app with name 'ibutsu_server_worker'
+        """
+        if cls.worker_app is None:
+            flask_app = cls.get_flask_app()
+            cls.worker_app = create_celery_app(flask_app, name="ibutsu_server_worker")
+        return cls.worker_app
+
+    @classmethod
+    def get_scheduler_app(cls):
+        """
+        Get or create the Scheduler app (full Flask integration).
+
+        Returns:
+            Celery: Flask-integrated Celery app with name 'ibutsu_server_scheduler'
+        """
+        if cls.scheduler_app is None:
+            flask_app = cls.get_flask_app()
+            cls.scheduler_app = create_celery_app(flask_app, name="ibutsu_server_scheduler")
+        return cls.scheduler_app
+
 
 def __getattr__(name):
     """
     Lazy initialization of module-level app instances.
 
-    This allows code to import connexion_app, flask_app, or celery_app
+    This allows code to import connexion_app, flask_app, celery_app,
+    or container-specific apps (flower_app, worker_app, scheduler_app)
     and have them initialized on first access.
     """
     if name == "connexion_app":
@@ -317,8 +382,23 @@ def __getattr__(name):
         return _AppRegistry.get_flask_app()
     if name == "celery_app":
         return _AppRegistry.get_celery_app()
+    if name == "flower_app":
+        return _AppRegistry.get_flower_app()
+    if name == "worker_app":
+        return _AppRegistry.get_worker_app()
+    if name == "scheduler_app":
+        return _AppRegistry.get_scheduler_app()
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 # Export the app instances and initialization function
-__all__ = ["_AppRegistry", "celery_app", "connexion_app", "flask_app", "get_app"]
+__all__ = [
+    "_AppRegistry",
+    "celery_app",
+    "connexion_app",
+    "flask_app",
+    "flower_app",
+    "get_app",
+    "scheduler_app",
+    "worker_app",
+]

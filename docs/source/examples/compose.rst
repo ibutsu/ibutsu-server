@@ -51,7 +51,7 @@ Docker/Podman Compose
          context: ./backend
          dockerfile: docker/Dockerfile.worker
        image: ibutsu/worker
-       command: /bin/bash -c 'celery --app ibutsu_server.celery_app --no-color worker --events'
+       command: /bin/bash -c 'celery --app ibutsu_server.celery_app:worker_app --no-color worker --events'
        depends_on:
          - backend
          - postgres

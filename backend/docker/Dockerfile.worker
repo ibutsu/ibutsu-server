@@ -18,5 +18,6 @@ RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 
 USER 1001
 
-# Run application
-CMD ["celery", "--app", "ibutsu_server.celery_app", "worker", "--events", "--loglevel=info", "--concurrency", "1", "--hostname", "ibutsu-worker@%n"]
+# Run application - Use worker_app (full Flask integration with database)
+# worker_app is exposed via __getattr__ in ibutsu_server/__init__.py
+CMD ["celery", "--app", "ibutsu_server:worker_app", "worker", "--events", "--loglevel=info", "--concurrency", "1", "--hostname", "ibutsu-worker@%n"]
