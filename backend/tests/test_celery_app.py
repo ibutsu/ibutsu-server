@@ -1,5 +1,14 @@
 """Tests for unique Celery app names in ibutsu_server."""
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def setup_celery_env(monkeypatch):
+    """Set up required Celery environment variables for all tests in this module."""
+    monkeypatch.setenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+    monkeypatch.setenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+
 
 def test_flower_app_minimal_config():
     """Test that flower_app has minimal configuration (broker-only)."""

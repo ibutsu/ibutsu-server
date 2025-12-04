@@ -8,7 +8,7 @@ import pytest
 from flask import json
 from sqlalchemy.engine.url import URL as SQLA_URL
 
-from ibutsu_server import get_app, make_celery_redis_url, maybe_sql_url
+from ibutsu_server import check_envvar, get_app, maybe_sql_url
 
 
 def test_maybe_sql_url_with_all_params():
@@ -75,61 +75,26 @@ def test_maybe_sql_url_without_sslmode():
     assert result.query == {}
 
 
-def test_make_celery_redis_url_with_envvar():
+def test_check_envvar_with_envvar():
     """Test when environment variable is already set"""
     config = MagicMock()
     config.get.return_value = "redis://custom:6379/0"
 
-    result = make_celery_redis_url(config, envvar="CELERY_BROKER_URL")
+    result = check_envvar(config, envvar="CELERY_BROKER_URL")
 
     assert result == "redis://custom:6379/0"
     config.get.assert_called_once_with("CELERY_BROKER_URL")
 
 
-def test_make_celery_redis_url_with_password():
-    """Test creating Redis URL with password"""
+def test_check_envvar_missing_envvar():
+    """Test that ValueError is raised when environment variable is not set"""
     config = MagicMock()
     config.get.return_value = None
-    config.get_namespace.return_value = {
-        "hostname": "redis.example.com",
-        "port": 6379,
-        "password": "secret",
-    }
 
-    result = make_celery_redis_url(config, envvar="CELERY_BROKER_URL")
-
-    assert result == "redis://:secret@redis.example.com:6379"
-
-
-def test_make_celery_redis_url_without_password():
-    """Test creating Redis URL without password"""
-    config = MagicMock()
-    config.get.return_value = None
-    config.get_namespace.return_value = {"hostname": "redis.example.com", "port": 6379}
-
-    result = make_celery_redis_url(config, envvar="CELERY_BROKER_URL")
-
-    assert result == "redis://redis.example.com:6379"
-
-
-def test_make_celery_redis_url_missing_hostname():
-    """Test that ValueError is raised when hostname is missing"""
-    config = MagicMock()
-    config.get.return_value = None
-    config.get_namespace.return_value = {"port": 6379}
-
-    with pytest.raises(ValueError, match="Missing hostname in redis config"):
-        make_celery_redis_url(config, envvar="CELERY_BROKER_URL")
-
-
-def test_make_celery_redis_url_missing_port():
-    """Test that ValueError is raised when port is missing"""
-    config = MagicMock()
-    config.get.return_value = None
-    config.get_namespace.return_value = {"hostname": "redis.example.com"}
-
-    with pytest.raises(ValueError, match="Missing port in redis config"):
-        make_celery_redis_url(config, envvar="CELERY_BROKER_URL")
+    with pytest.raises(
+        ValueError, match="Missing required environment variable: CELERY_BROKER_URL"
+    ):
+        check_envvar(config, envvar="CELERY_BROKER_URL")
 
 
 def test_get_app_basic():
