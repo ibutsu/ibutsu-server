@@ -70,8 +70,10 @@ objects:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
         - env:
-          - name: BROKER_URL
-            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc
+          - name: CELERY_BROKER_URL
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc:6379
+          - name: CELERY_RESULT_BACKEND
+            value: redis://:${REDIS_PASSWORD}@redis.${NAMESPACE}.svc:6379
           image: flower
           imagePullPolicy: Always
           name: ibutsu-flower
