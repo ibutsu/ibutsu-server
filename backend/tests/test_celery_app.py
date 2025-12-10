@@ -5,7 +5,12 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def setup_celery_env(monkeypatch):
-    """Set up required Celery environment variables for all tests in this module."""
+    """Set up required Celery environment variables for all tests in this module.
+
+    Note: This fixture includes _AppRegistry reset functionality. While a shared
+    reset_app_registry fixture exists in conftest.py, this module-specific fixture
+    is kept as autouse and includes additional environment setup specific to Celery tests.
+    """
     from ibutsu_server import _AppRegistry
 
     # Reset the registry to ensure clean state for each test
