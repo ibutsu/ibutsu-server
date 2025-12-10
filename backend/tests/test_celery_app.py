@@ -98,3 +98,95 @@ def test_create_celery_app_default_name(flask_app):
     # Create a test app without specifying name (should use default)
     test_app = create_celery_app(client.application)
     assert test_app.main == "ibutsu_server"
+
+
+def test_app_registry_delegates_to_celery_utils(flask_app):
+    """Test that _AppRegistry methods delegate to celery_utils factories."""
+    from unittest.mock import patch
+
+    from ibutsu_server import _AppRegistry
+
+    # Reset to ensure clean state
+    _AppRegistry.reset()
+
+    # Test that get_flower_app delegates to create_broker_celery_app
+    with patch("ibutsu_server._AppRegistry.get_flower_app") as mock_get_flower:
+        from celery import Celery
+
+        mock_celery_app = Celery("test_flower")
+        mock_get_flower.return_value = mock_celery_app
+
+        # Call the method
+        result = _AppRegistry.get_flower_app()
+
+        # Verify it was called
+        mock_get_flower.assert_called_once()
+        assert result is mock_celery_app
+
+    # Reset for next test
+    _AppRegistry.reset()
+
+    # Test that get_worker_app delegates to create_flask_celery_app
+    # We need to mock both get_flask_app and create_flask_celery_app
+    with (
+        patch("ibutsu_server._AppRegistry.get_flask_app") as mock_get_flask,
+        patch("ibutsu_server.celery_utils.create_flask_celery_app") as mock_create,
+    ):
+        from celery import Celery
+
+        client, _ = flask_app
+        mock_get_flask.return_value = client.application
+        mock_celery_app = Celery("test_worker")
+        mock_create.return_value = mock_celery_app
+
+        # Call the method
+        result = _AppRegistry.get_worker_app()
+
+        # Verify create_flask_celery_app was called with correct args
+        mock_create.assert_called_once()
+        call_args = mock_create.call_args
+        assert call_args[0][0] is client.application  # Flask app
+        assert call_args[1]["name"] == "ibutsu_server_worker"
+
+    # Reset for next test
+    _AppRegistry.reset()
+
+    # Test that get_scheduler_app delegates to create_flask_celery_app
+    with (
+        patch("ibutsu_server._AppRegistry.get_flask_app") as mock_get_flask,
+        patch("ibutsu_server.celery_utils.create_flask_celery_app") as mock_create,
+    ):
+        from celery import Celery
+
+        client, _ = flask_app
+        mock_get_flask.return_value = client.application
+        mock_celery_app = Celery("test_scheduler")
+        mock_create.return_value = mock_celery_app
+
+        # Call the method
+        result = _AppRegistry.get_scheduler_app()
+
+        # Verify create_flask_celery_app was called with correct args
+        mock_create.assert_called_once()
+        call_args = mock_create.call_args
+        assert call_args[0][0] is client.application  # Flask app
+        assert call_args[1]["name"] == "ibutsu_server_scheduler"
+
+
+def test_tasks_init_delegates_to_celery_utils(flask_app):
+    """Test that tasks.__init__.create_celery_app delegates to celery_utils."""
+    from unittest.mock import patch
+
+    client, _ = flask_app
+
+    with patch("ibutsu_server.celery_utils.create_flask_celery_app") as mock_flask:
+        from celery import Celery
+
+        from ibutsu_server.tasks import create_celery_app
+
+        mock_flask.return_value = Celery("test_delegated")
+        result = create_celery_app(client.application, name="test_name")
+
+        # Should delegate to celery_utils.create_flask_celery_app
+        mock_flask.assert_called_once_with(client.application, "test_name")
+        assert result.main == "test_delegated"

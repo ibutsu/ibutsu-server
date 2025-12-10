@@ -6,6 +6,7 @@
 - Suggest updates to pytest-ibutsu or the ibutsu-client-python when there are changes to the openAPI specification
 - validate any changes to the openapi specification
 - Suggest updates to backend controllers that align with modern implementation patterns
+- prefer pytest parametrization
 - Follow PLC0415 and put imports at the top of files unless absolutely necessary. Include noqa for PLC0415 when this is necessary
 
 # frontend
@@ -17,7 +18,30 @@
 
 
 # general
-- Do not create summary documents unless instructed to do so
+- Do not create summary documents in markdown, add to the RST in `docs`
+
+## Celery Architecture
+- **Factory Pattern**: Use `celery_utils.py` for all Celery app creation
+- **Two Modes**: Broker-only (Flower) and Flask-integrated (Worker/Scheduler)
+- **See CELERY_UTILS.md**: Comprehensive guide at `backend/CELERY_UTILS.md`
+
+### Celery Factory Functions
+- **Broker-Only**: Use `create_broker_celery_app()` for monitoring (Flower)
+  - No Flask app required
+  - No database access
+  - Only needs `CELERY_BROKER_URL` environment variable
+- **Flask-Integrated**: Use `create_flask_celery_app(flask_app, name)` for workers/scheduler
+  - Requires Flask app with database configuration
+  - Provides full app context via IbutsuTask
+  - Imports all task modules and configures beat schedule
+
+### Celery Testing Guidelines
+- Test both factory functions independently (`test_celery_utils.py`)
+- Mock only external services (Redis, broker connections)
+- Use real Flask app fixture for Flask-integrated tests
+- Verify socket timeout configuration in both modes
+- Test task registration and beat schedule in Flask-integrated mode
+- Verify delegation from `_AppRegistry` to `celery_utils`
 
 ## Testing instructions
 - Find the CI plan in the .github/workflows folder.
@@ -28,6 +52,7 @@
 - Use full UUID strings for all `id` fields including `run_id` and `result_id` when mocking unless an invalid UUID is specifically being tested
 - Focus test coverage on behavior first, not implementation details.
 - Identify test coverage increases through parametrization of current test functions before creating new test functions
+- Examine and reuse existing fixtures before writing new ones.
 
 ### Integration Testing Approach
 - **Prefer integration tests over mocking**: Use `flask_app` fixture with real SQLite database operations

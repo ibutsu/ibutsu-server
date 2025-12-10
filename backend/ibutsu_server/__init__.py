@@ -17,7 +17,6 @@ from ibutsu_server.db.base import db
 from ibutsu_server.db.models import User
 from ibutsu_server.db.util import add_superadmin
 from ibutsu_server.encoder import IbutsuJSONProvider
-from ibutsu_server.tasks import create_celery_app
 from ibutsu_server.util.jwt import decode_token
 
 FRONTEND_PATH = Path("/app/frontend")
@@ -164,9 +163,10 @@ def get_app(**extra_config):
     # Configure CORS middleware for Connexion 3 - MUST be before routes are added
     from connexion.middleware import MiddlewarePosition  # noqa: PLC0415
 
+    from ibutsu_server.celery_utils import create_flask_celery_app  # noqa: PLC0415
     from ibutsu_server.db import db  # noqa: PLC0415
 
-    create_celery_app(flask_app)
+    create_flask_celery_app(flask_app)
 
     # Apply the middleware first, before routes
     connexion_app.add_middleware(
@@ -325,44 +325,9 @@ class _AppRegistry:
             ValueError: If CELERY_BROKER_URL is not set in environment
         """
         if cls.flower_app is None:
-            from celery import Celery  # noqa: PLC0415
+            from ibutsu_server.celery_utils import create_broker_celery_app  # noqa: PLC0415
 
-            from ibutsu_server.constants import (  # noqa: PLC0415
-                SOCKET_CONNECT_TIMEOUT,
-                SOCKET_TIMEOUT,
-            )
-
-            broker_url = os.environ.get("CELERY_BROKER_URL")
-            if not broker_url:
-                msg = "CELERY_BROKER_URL environment variable must be set"
-                raise ValueError(msg)
-
-            # Read result backend from environment - check multiple possible variable names
-            result_backend = (
-                os.environ.get("CELERY_RESULT_BACKEND")
-                or os.environ.get("CELERY_RESULT_BACKEND_URL")
-                or broker_url
-            )
-
-            cls.flower_app = Celery("ibutsu_server_flower")
-            cls.flower_app.conf.update(
-                broker_url=broker_url,
-                result_backend=result_backend,
-                # Configure Redis transport options for proper RPC communication
-                redis_socket_timeout=SOCKET_TIMEOUT,
-                redis_socket_connect_timeout=SOCKET_CONNECT_TIMEOUT,
-                redis_retry_on_timeout=True,
-                broker_transport_options={
-                    "socket_timeout": SOCKET_TIMEOUT,
-                    "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
-                },
-                result_backend_transport_options={
-                    "socket_timeout": SOCKET_TIMEOUT,
-                    "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
-                },
-                # Don't import task modules - would require database access
-                # Flower discovers tasks from workers via broker introspection
-            )
+            cls.flower_app = create_broker_celery_app(name="ibutsu_server_flower")
         return cls.flower_app
 
     @classmethod
@@ -374,8 +339,10 @@ class _AppRegistry:
             Celery: Flask-integrated Celery app with name 'ibutsu_server_worker'
         """
         if cls.worker_app is None:
+            from ibutsu_server.celery_utils import create_flask_celery_app  # noqa: PLC0415
+
             flask_app = cls.get_flask_app()
-            cls.worker_app = create_celery_app(flask_app, name="ibutsu_server_worker")
+            cls.worker_app = create_flask_celery_app(flask_app, name="ibutsu_server_worker")
         return cls.worker_app
 
     @classmethod
@@ -387,8 +354,10 @@ class _AppRegistry:
             Celery: Flask-integrated Celery app with name 'ibutsu_server_scheduler'
         """
         if cls.scheduler_app is None:
+            from ibutsu_server.celery_utils import create_flask_celery_app  # noqa: PLC0415
+
             flask_app = cls.get_flask_app()
-            cls.scheduler_app = create_celery_app(flask_app, name="ibutsu_server_scheduler")
+            cls.scheduler_app = create_flask_celery_app(flask_app, name="ibutsu_server_scheduler")
         return cls.scheduler_app
 
     @classmethod
