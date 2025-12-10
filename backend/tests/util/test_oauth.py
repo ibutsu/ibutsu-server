@@ -11,15 +11,11 @@ def test_get_provider_config_basic(flask_app):
     """Test get_provider_config with basic configuration"""
     client, _ = flask_app
 
-    with (
-        client.application.app_context(),
-        patch("ibutsu_server.util.oauth.current_app") as mock_app,
-    ):
-        mock_app.config.get.side_effect = lambda key, default=None: {
-            "BACKEND_URL": "http://localhost:8080/api",
-            "GITHUB_BASE_URL": "https://github.com",
-            "GITHUB_CLIENT_ID": "test-client-id",
-        }.get(key, default)
+    with client.application.app_context():
+        # Configure the app with test values
+        client.application.config["BACKEND_URL"] = "http://localhost:8080/api"
+        client.application.config["GITHUB_BASE_URL"] = "https://github.com"
+        client.application.config["GITHUB_CLIENT_ID"] = "test-client-id"
 
         config = get_provider_config("github", is_private=False)
 
@@ -32,15 +28,11 @@ def test_get_provider_config_facebook(flask_app):
     """Test get_provider_config for Facebook provider"""
     client, _ = flask_app
 
-    with (
-        client.application.app_context(),
-        patch("ibutsu_server.util.oauth.current_app") as mock_app,
-    ):
-        mock_app.config.get.side_effect = lambda key, default=None: {
-            "BACKEND_URL": "http://localhost:8080/api",
-            "FACEBOOK_BASE_URL": "https://facebook.com",
-            "FACEBOOK_APP_ID": "test-app-id",
-        }.get(key, default)
+    with client.application.app_context():
+        # Configure the app with test values
+        client.application.config["BACKEND_URL"] = "http://localhost:8080/api"
+        client.application.config["FACEBOOK_BASE_URL"] = "https://facebook.com"
+        client.application.config["FACEBOOK_APP_ID"] = "test-app-id"
 
         config = get_provider_config("facebook", is_private=False)
 
@@ -52,16 +44,12 @@ def test_get_provider_config_with_custom_auth_url(flask_app):
     """Test get_provider_config with custom authorization URL"""
     client, _ = flask_app
 
-    with (
-        client.application.app_context(),
-        patch("ibutsu_server.util.oauth.current_app") as mock_app,
-    ):
-        mock_app.config.get.side_effect = lambda key, default=None: {
-            "BACKEND_URL": "http://localhost:8080/api",
-            "GITHUB_BASE_URL": "https://github.com",
-            "GITHUB_CLIENT_ID": "test-client-id",
-            "GITHUB_AUTH_URL": "/custom/auth",
-        }.get(key, default)
+    with client.application.app_context():
+        # Configure the app with test values
+        client.application.config["BACKEND_URL"] = "http://localhost:8080/api"
+        client.application.config["GITHUB_BASE_URL"] = "https://github.com"
+        client.application.config["GITHUB_CLIENT_ID"] = "test-client-id"
+        client.application.config["GITHUB_AUTH_URL"] = "/custom/auth"
 
         config = get_provider_config("github", is_private=False)
 
@@ -72,17 +60,13 @@ def test_get_provider_config_private(flask_app):
     """Test get_provider_config with is_private=True"""
     client, _ = flask_app
 
-    with (
-        client.application.app_context(),
-        patch("ibutsu_server.util.oauth.current_app") as mock_app,
-    ):
-        mock_app.config.get.side_effect = lambda key, default=None: {
-            "BACKEND_URL": "http://localhost:8080/api",
-            "GITHUB_BASE_URL": "https://github.com",
-            "GITHUB_CLIENT_ID": "test-client-id",
-            "GITHUB_CLIENT_SECRET": "test-secret",
-            "GITHUB_TOKEN_URL": "/oauth/token",
-        }.get(key, default)
+    with client.application.app_context():
+        # Configure the app with test values
+        client.application.config["BACKEND_URL"] = "http://localhost:8080/api"
+        client.application.config["GITHUB_BASE_URL"] = "https://github.com"
+        client.application.config["GITHUB_CLIENT_ID"] = "test-client-id"
+        client.application.config["GITHUB_CLIENT_SECRET"] = "test-secret"
+        client.application.config["GITHUB_TOKEN_URL"] = "/oauth/token"
 
         config = get_provider_config("github", is_private=True)
 
@@ -95,17 +79,13 @@ def test_get_provider_config_with_custom_token_url(flask_app):
     """Test get_provider_config with custom token URL"""
     client, _ = flask_app
 
-    with (
-        client.application.app_context(),
-        patch("ibutsu_server.util.oauth.current_app") as mock_app,
-    ):
-        mock_app.config.get.side_effect = lambda key, default=None: {
-            "BACKEND_URL": "http://localhost:8080/api",
-            "GITHUB_BASE_URL": "https://github.com",
-            "GITHUB_CLIENT_ID": "test-client-id",
-            "GITHUB_CLIENT_SECRET": "test-secret",
-            "GITHUB_TOKEN_URL": "/custom/token",
-        }.get(key, default)
+    with client.application.app_context():
+        # Configure the app with test values
+        client.application.config["BACKEND_URL"] = "http://localhost:8080/api"
+        client.application.config["GITHUB_BASE_URL"] = "https://github.com"
+        client.application.config["GITHUB_CLIENT_ID"] = "test-client-id"
+        client.application.config["GITHUB_CLIENT_SECRET"] = "test-secret"
+        client.application.config["GITHUB_TOKEN_URL"] = "/custom/token"
 
         config = get_provider_config("github", is_private=True)
 
@@ -121,18 +101,16 @@ def test_get_provider_config_various_providers(flask_app, provider):
     client, _ = flask_app
 
     with client.application.app_context():
+        # Configure the app with test values
         provider_upper = provider.upper()
-        with patch("ibutsu_server.util.oauth.current_app") as mock_app:
-            mock_app.config.get.side_effect = lambda key, default=None: {
-                "BACKEND_URL": "http://localhost:8080/api",
-                f"{provider_upper}_BASE_URL": f"https://{provider}.com",
-                f"{provider_upper}_CLIENT_ID": f"test-{provider}-id",
-            }.get(key, default)
+        client.application.config["BACKEND_URL"] = "http://localhost:8080/api"
+        client.application.config[f"{provider_upper}_BASE_URL"] = f"https://{provider}.com"
+        client.application.config[f"{provider_upper}_CLIENT_ID"] = f"test-{provider}-id"
 
-            config = get_provider_config(provider, is_private=False)
+        config = get_provider_config(provider, is_private=False)
 
-            assert config["client_id"] == f"test-{provider}-id"
-            assert config["redirect_uri"] == f"http://localhost:8080/api/login/auth/{provider}"
+        assert config["client_id"] == f"test-{provider}-id"
+        assert config["redirect_uri"] == f"http://localhost:8080/api/login/auth/{provider}"
 
 
 def test_get_user_from_provider_google(flask_app, make_user):
