@@ -47,7 +47,7 @@ def update_run(run_id):
             "tests": 0,
             "xpasses": 0,
             "xfailures": 0,
-            "collected": run.summary.get("collected", 0),
+            "collected": run.summary.get("collected", 0) if run.summary else 0,
         }
         run.duration = 0.0
         metadata = run.data or {}
@@ -123,5 +123,7 @@ def sync_aborted_runs():
             or 0
         )
 
-        if run.summary["tests"] != result_count:
+        # Handle runs with None or incomplete summary
+        summary_tests = run.summary.get("tests", 0) if run.summary else 0
+        if summary_tests != result_count:
             update_run.apply_async((run.id,), countdown=5)
