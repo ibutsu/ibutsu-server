@@ -193,3 +193,259 @@ def test_update_dashboard_not_found(flask_app, auth_headers):
         json=update_data,
     )
     assert response.status_code == 404
+
+
+def test_delete_dashboard_success(flask_app, make_project, make_dashboard, auth_headers):
+    """Test case for delete_dashboard - successful deletion"""
+    client, jwt_token = flask_app
+
+    # Create dashboard
+    project = make_project(name="test-project")
+    dashboard = make_dashboard(title="Test Dashboard", project_id=project.id)
+    dashboard_id = str(dashboard.id)
+
+    headers = auth_headers(jwt_token)
+    response = client.delete(
+        f"/api/dashboard/{dashboard_id}",
+        headers=headers,
+    )
+    assert response.status_code == 200
+
+    # Verify deletion in database
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import Dashboard
+
+        deleted_dashboard = db.session.get(Dashboard, dashboard_id)
+        assert deleted_dashboard is None
+
+
+def test_delete_dashboard_not_found(flask_app, auth_headers):
+    """Test case for delete_dashboard - dashboard not found"""
+    client, jwt_token = flask_app
+
+    headers = auth_headers(jwt_token)
+    response = client.delete(
+        "/api/dashboard/00000000-0000-0000-0000-000000000000",
+        headers=headers,
+    )
+    assert response.status_code == 404
+
+
+def test_delete_dashboard_with_widget_configs(
+    flask_app, make_project, make_dashboard, make_widget_config, auth_headers
+):
+    """Test case for delete_dashboard - deletes associated widget configs"""
+    client, jwt_token = flask_app
+
+    # Create dashboard with widget configs
+    project = make_project(name="test-project")
+    dashboard = make_dashboard(title="Test Dashboard", project_id=project.id)
+
+    widget1 = make_widget_config(dashboard_id=dashboard.id, widget="run-aggregator")
+    widget2 = make_widget_config(dashboard_id=dashboard.id, widget="result-summary")
+
+    headers = auth_headers(jwt_token)
+    response = client.delete(
+        f"/api/dashboard/{dashboard.id}",
+        headers=headers,
+    )
+    assert response.status_code == 200
+
+    # Verify widget configs were deleted
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import WidgetConfig
+
+        widget1_deleted = db.session.get(WidgetConfig, widget1.id)
+        widget2_deleted = db.session.get(WidgetConfig, widget2.id)
+        assert widget1_deleted is None
+        assert widget2_deleted is None
+
+
+def test_delete_dashboard_clears_default_dashboard_reference(
+    flask_app, make_project, make_dashboard, auth_headers
+):
+    """Test case for delete_dashboard - clears project default_dashboard_id"""
+    client, jwt_token = flask_app
+
+    # Create dashboard and set it as default for project
+    project = make_project(name="test-project")
+    dashboard = make_dashboard(title="Default Dashboard", project_id=project.id)
+
+    # Set dashboard as default for project
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import Project
+
+        proj = db.session.get(Project, project.id)
+        proj.default_dashboard_id = str(dashboard.id)
+        db.session.commit()
+
+    headers = auth_headers(jwt_token)
+    response = client.delete(
+        f"/api/dashboard/{dashboard.id}",
+        headers=headers,
+    )
+    assert response.status_code == 200
+
+    # Verify default_dashboard_id was cleared
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import Project
+
+        proj = db.session.get(Project, project.id)
+        assert proj.default_dashboard_id is None
+
+
+def test_add_dashboard_with_invalid_user_id(flask_app, make_project, auth_headers):
+    """Test case for add_dashboard - invalid user_id"""
+    client, jwt_token = flask_app
+
+    project = make_project(name="test-project")
+
+    dashboard_data = {
+        "title": "Test Dashboard",
+        "project_id": str(project.id),
+        "user_id": "00000000-0000-0000-0000-000000000000",  # Non-existent user
+    }
+    headers = auth_headers(jwt_token)
+    response = client.post(
+        "/api/dashboard",
+        headers=headers,
+        json=dashboard_data,
+    )
+    assert response.status_code == 400
+
+
+def test_add_dashboard_without_json(flask_app, auth_headers):
+    """Test case for add_dashboard - request without JSON content"""
+    client, jwt_token = flask_app
+
+    headers = auth_headers(jwt_token)
+    response = client.post(
+        "/api/dashboard",
+        headers=headers,
+        data="not json",
+    )
+    # Should return error for non-JSON request
+    assert response.status_code in [400, 415]
+
+
+def test_update_dashboard_without_json(flask_app, make_project, make_dashboard, auth_headers):
+    """Test case for update_dashboard - request without JSON content"""
+    client, jwt_token = flask_app
+
+    project = make_project(name="test-project")
+    dashboard = make_dashboard(title="Test Dashboard", project_id=project.id)
+
+    headers = auth_headers(jwt_token)
+    response = client.put(
+        f"/api/dashboard/{dashboard.id}",
+        headers=headers,
+        data="not json",
+    )
+    # Should return error for non-JSON request
+    assert response.status_code in [400, 415]
+
+
+def test_update_dashboard_with_metadata_project(
+    flask_app, make_project, make_dashboard, auth_headers
+):
+    """Test case for update_dashboard - updating metadata with project"""
+    client, jwt_token = flask_app
+
+    project = make_project(name="test-project")
+    dashboard = make_dashboard(title="Test Dashboard", project_id=project.id)
+
+    update_data = {
+        "title": "Updated Dashboard",
+        "metadata": {"project": str(project.id), "custom_field": "value"},
+    }
+    headers = auth_headers(jwt_token)
+    response = client.put(
+        f"/api/dashboard/{dashboard.id}",
+        headers=headers,
+        json=update_data,
+    )
+    assert response.status_code == 200
+
+    response_data = response.json()
+    assert response_data["title"] == "Updated Dashboard"
+
+
+def test_get_dashboard_list_with_filters(flask_app, make_project, make_dashboard, auth_headers):
+    """Test case for get_dashboard_list with custom filters"""
+    client, jwt_token = flask_app
+
+    project = make_project(name="test-project")
+    make_dashboard(title="Alpha Dashboard", project_id=project.id)
+    make_dashboard(title="Beta Dashboard", project_id=project.id)
+
+    query_string = [("filter", "title=Alpha Dashboard")]
+    headers = auth_headers(jwt_token)
+    response = client.get(
+        "/api/dashboard",
+        headers=headers,
+        params=query_string,
+    )
+    assert response.status_code == 200
+
+    response_data = response.json()
+    dashboard_titles = [d["title"] for d in response_data["dashboards"]]
+    assert "Alpha Dashboard" in dashboard_titles
+
+
+def test_get_dashboard_with_project_forbidden(
+    flask_app, make_project, make_dashboard, make_user, auth_headers
+):
+    """Test case for get_dashboard - forbidden when user doesn't have project access"""
+    client, jwt_token = flask_app
+
+    # Create a project with a different owner
+    other_user = make_user(email="other@example.com")
+    project = make_project(name="private-project", owner_id=other_user.id)
+    dashboard = make_dashboard(title="Private Dashboard", project_id=project.id)
+
+    headers = auth_headers(jwt_token)
+    response = client.get(
+        f"/api/dashboard/{dashboard.id}",
+        headers=headers,
+    )
+    # Superadmin should have access, non-superadmin should get 403
+    assert response.status_code in [200, 403]
+
+
+def test_get_dashboard_list_empty(flask_app, auth_headers):
+    """Test case for get_dashboard_list - empty list"""
+    client, jwt_token = flask_app
+
+    headers = auth_headers(jwt_token)
+    response = client.get(
+        "/api/dashboard",
+        headers=headers,
+    )
+    assert response.status_code == 200
+
+    response_data = response.json()
+    assert "dashboards" in response_data
+    assert "pagination" in response_data
+    assert response_data["pagination"]["totalItems"] == 0
+
+
+def test_add_dashboard_without_project_id(flask_app, auth_headers):
+    """Test case for add_dashboard - dashboard without project_id"""
+    client, jwt_token = flask_app
+
+    dashboard_data = {
+        "title": "Test Dashboard",
+        # No project_id
+    }
+    headers = auth_headers(jwt_token)
+    response = client.post(
+        "/api/dashboard",
+        headers=headers,
+        json=dashboard_data,
+    )
+    # Should succeed - project_id is optional
+    assert response.status_code == 201

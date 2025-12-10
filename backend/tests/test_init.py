@@ -369,3 +369,329 @@ def test_run_task_route_token_decode_no_sub(mock_decode_token, flask_app):
     )
 
     assert response.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_app_registry_initialize_apps():
+    """Test _AppRegistry.initialize_apps creates app instances"""
+    from ibutsu_server import _AppRegistry
+
+    # Reset registry first
+    _AppRegistry.reset()
+
+    # Initialize apps
+    app = _AppRegistry.initialize_apps(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+
+    assert app is not None
+    assert _AppRegistry.connexion_app is not None
+    assert _AppRegistry.flask_app is not None
+    assert _AppRegistry.celery_app is not None
+
+
+def test_app_registry_get_connexion_app():
+    """Test _AppRegistry.get_connexion_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    app = _AppRegistry.get_connexion_app(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+
+    assert app is not None
+    assert _AppRegistry.connexion_app is not None
+
+
+def test_app_registry_get_flask_app():
+    """Test _AppRegistry.get_flask_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    app = _AppRegistry.get_flask_app(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+
+    assert app is not None
+    assert _AppRegistry.flask_app is not None
+
+
+def test_app_registry_get_celery_app():
+    """Test _AppRegistry.get_celery_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    app = _AppRegistry.get_celery_app(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+
+    assert app is not None
+    assert _AppRegistry.celery_app is not None
+
+
+def test_app_registry_reset():
+    """Test _AppRegistry.reset clears all app instances"""
+    from ibutsu_server import _AppRegistry
+
+    # Initialize apps
+    _AppRegistry.initialize_apps(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+
+    # Verify they exist
+    assert _AppRegistry.connexion_app is not None
+
+    # Reset
+    _AppRegistry.reset()
+
+    # Verify they're cleared
+    assert _AppRegistry.connexion_app is None
+    assert _AppRegistry.flask_app is None
+    assert _AppRegistry.celery_app is None
+    assert _AppRegistry.flower_app is None
+    assert _AppRegistry.worker_app is None
+    assert _AppRegistry.scheduler_app is None
+
+
+@patch.dict("os.environ", {"CELERY_BROKER_URL": "redis://localhost:6379/0"})
+def test_app_registry_get_flower_app():
+    """Test _AppRegistry.get_flower_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    app = _AppRegistry.get_flower_app()
+
+    assert app is not None
+    assert _AppRegistry.flower_app is not None
+    assert app.main == "ibutsu_server_flower"
+
+
+def test_app_registry_get_flower_app_missing_broker_url():
+    """Test _AppRegistry.get_flower_app raises error when CELERY_BROKER_URL not set"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    with (
+        patch.dict("os.environ", {}, clear=True),
+        pytest.raises(ValueError, match="CELERY_BROKER_URL environment variable must be set"),
+    ):
+        _AppRegistry.get_flower_app()
+
+
+def test_app_registry_get_worker_app():
+    """Test _AppRegistry.get_worker_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    app = _AppRegistry.get_worker_app(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+
+    assert app is not None
+    assert _AppRegistry.worker_app is not None
+    assert app.main == "ibutsu_server_worker"
+
+
+def test_app_registry_get_scheduler_app():
+    """Test _AppRegistry.get_scheduler_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    app = _AppRegistry.get_scheduler_app(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+
+    assert app is not None
+    assert _AppRegistry.scheduler_app is not None
+    assert app.main == "ibutsu_server_scheduler"
+
+
+def test_module_getattr_connexion_app():
+    """Test __getattr__ for connexion_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    # Import should trigger lazy initialization
+    from ibutsu_server import connexion_app
+
+    assert connexion_app is not None
+
+
+def test_module_getattr_flask_app():
+    """Test __getattr__ for flask_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    from ibutsu_server import flask_app
+
+    assert flask_app is not None
+
+
+def test_module_getattr_celery_app():
+    """Test __getattr__ for celery_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    from ibutsu_server import celery_app
+
+    assert celery_app is not None
+
+
+@patch.dict("os.environ", {"CELERY_BROKER_URL": "redis://localhost:6379/0"})
+def test_module_getattr_flower_app():
+    """Test __getattr__ for flower_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    from ibutsu_server import flower_app
+
+    assert flower_app is not None
+
+
+def test_module_getattr_worker_app():
+    """Test __getattr__ for worker_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    from ibutsu_server import worker_app
+
+    assert worker_app is not None
+
+
+def test_module_getattr_scheduler_app():
+    """Test __getattr__ for scheduler_app"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    from ibutsu_server import scheduler_app
+
+    assert scheduler_app is not None
+
+
+def test_module_getattr_invalid_attribute():
+    """Test __getattr__ raises AttributeError for invalid attribute"""
+    with pytest.raises(
+        AttributeError, match="module 'ibutsu_server' has no attribute 'invalid_attr'"
+    ):
+        from ibutsu_server import invalid_attr  # noqa: F401
+
+
+def test_get_app_with_postgresql_config():
+    """Test get_app with PostgreSQL configuration"""
+    extra_config = {
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "POSTGRESQL_HOST": "localhost",
+        "POSTGRESQL_DATABASE": "testdb",
+        "POSTGRESQL_USER": "testuser",
+        "POSTGRESQL_PASSWORD": "testpass",
+    }
+
+    # This should not fail even with PostgreSQL config present
+    app = get_app(**extra_config)
+    assert app is not None
+
+
+def test_get_app_with_postgres_config():
+    """Test get_app with POSTGRES_ prefix configuration"""
+    extra_config = {
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "POSTGRES_HOST": "localhost",
+        "POSTGRES_DATABASE": "testdb",
+    }
+
+    app = get_app(**extra_config)
+    assert app is not None
+
+
+def test_get_app_sqlite_engine_options():
+    """Test get_app sets correct engine options for SQLite"""
+    app = get_app(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+
+    # SQLite should not have statement_timeout
+    assert (
+        "SQLALCHEMY_ENGINE_OPTIONS" not in app.app.config
+        or app.app.config.get("SQLALCHEMY_ENGINE_OPTIONS") == {}
+    )
+
+
+def test_get_app_postgresql_engine_options():
+    """Test get_app sets statement_timeout for PostgreSQL"""
+    from sqlalchemy.engine.url import URL as SQLA_URL
+
+    db_url = SQLA_URL.create(
+        drivername="postgresql",
+        host="localhost",
+        database="testdb",
+        username="testuser",
+        password="testpass",
+    )
+
+    app = get_app(TESTING=True, SQLALCHEMY_DATABASE_URI=db_url)
+
+    # PostgreSQL should have statement_timeout
+    assert "SQLALCHEMY_ENGINE_OPTIONS" in app.app.config
+    assert "connect_args" in app.app.config["SQLALCHEMY_ENGINE_OPTIONS"]
+
+
+def test_get_app_celery_config():
+    """Test get_app configures Celery properly"""
+    app = get_app(
+        TESTING=True,
+        SQLALCHEMY_DATABASE_URI="sqlite:///:memory:",
+        CELERY_BROKER_URL="redis://localhost:6379/0",
+        CELERY_RESULT_BACKEND="redis://localhost:6379/0",
+    )
+
+    assert "CELERY" in app.app.config
+    assert app.app.config["CELERY"]["broker_url"] == "redis://localhost:6379/0"
+    assert app.app.config["CELERY"]["result_backend"] == "redis://localhost:6379/0"
+    assert app.app.config["CELERY"]["broker_connection_retry"] is True
+
+
+def test_get_app_default_db_uri():
+    """Test get_app uses default database URI when none provided"""
+    with patch("builtins.print") as mock_print:
+        get_app(TESTING=True)
+
+        # Should print warning about default database
+        mock_print.assert_called()
+        assert "No database configuration found" in str(mock_print.call_args)
+
+
+@patch("ibutsu_server.create_engine")
+def test_get_app_with_postgresql_connection_retry(mock_create_engine):
+    """Test get_app retries PostgreSQL connection"""
+    extra_config = {
+        "TESTING": True,
+        "POSTGRESQL_HOST": "localhost",
+        "POSTGRESQL_DATABASE": "testdb",
+    }
+
+    # Mock the engine and connection
+    mock_engine = MagicMock()
+    mock_connection = MagicMock()
+    mock_engine.connect.return_value = mock_connection
+    mock_create_engine.return_value = mock_engine
+
+    app = get_app(**extra_config)
+
+    assert app is not None
+    # Verify engine was created and connection was attempted
+    mock_create_engine.assert_called()
+    mock_engine.connect.assert_called()
+    mock_connection.close.assert_called()
+    mock_engine.dispose.assert_called()
+
+
+def test_get_app_with_sslmode():
+    """Test get_app handles PostgreSQL sslmode parameter"""
+    extra_config = {
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "POSTGRESQL_HOST": "localhost",
+        "POSTGRESQL_DATABASE": "testdb",
+        "POSTGRESQL_SSLMODE": "require",
+    }
+
+    app = get_app(**extra_config)
+    assert app is not None
