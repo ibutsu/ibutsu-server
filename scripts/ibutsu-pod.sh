@@ -214,6 +214,9 @@ podman run -d \
     /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
                   pip install . &&
                   ls -lh /mnt &&
+                  echo "Initializing database schema..." &&
+                  python scripts/init_db.py &&
+                  echo "Starting backend server..." &&
                   uvicorn ibutsu_server:connexion_app --host 0.0.0.0 --port 8080 --reload --workers 1'
 echo -n "Waiting for backend to respond: "
 sleep 5

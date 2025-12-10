@@ -8,9 +8,9 @@ import logging
 from logging.config import fileConfig
 
 from alembic import context
+from ibutsu_server import _AppRegistry
 
 # Import the Flask app and database
-from ibutsu_server import get_app
 from ibutsu_server.db.base import db
 
 # this is the Alembic Config object, which provides
@@ -24,8 +24,9 @@ if config.config_file_name is not None:
 
 logger = logging.getLogger("alembic.env")
 
-# Get Flask app instance for database configuration
-flask_app = get_app()
+# Get lightweight Flask app for Alembic migrations
+# This skips runtime initialization (Mail, superadmin creation) to avoid side effects
+flask_app = _AppRegistry.get_alembic_flask_app()
 
 # Set the SQLAlchemy URL from Flask app config
 with flask_app.app_context():

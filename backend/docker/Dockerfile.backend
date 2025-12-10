@@ -16,11 +16,11 @@ RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 
 USER 1001
 
+# - alembic and DB migrations are not part of this image, they are run in the init_db.py script before this container starts
+
 # ASGI entrypoint with Gunicorn process manager + Uvicorn ASGI workers
 # - Gunicorn manages worker processes (scaling, graceful restarts, health monitoring)
 # - UvicornWorker provides ASGI support with uvloop and httptools for performance
-# - Configuration loaded from config.py (GUNICORN_PROCESSES, GUNICORN_THREADS)
-# - Logs to stdout/stderr for container-friendly logging
 # dev? CMD ["uvicorn", "ibutsu_server:connexion_app", "--host", "0.0.0.0", "--port", "8080"]
 CMD ["gunicorn", \
      "-k", "uvicorn.workers.UvicornWorker", \

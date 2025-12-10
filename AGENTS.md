@@ -6,6 +6,7 @@
 - Suggest updates to pytest-ibutsu or the ibutsu-client-python when there are changes to the openAPI specification
 - validate any changes to the openapi specification
 - Suggest updates to backend controllers that align with modern implementation patterns
+- Follow PLC0415 and put imports at the top of files unless absolutely necessary. Include noqa for PLC0415 when this is necessary
 
 # frontend
 - use `yarn` and `yarn lint` from the frontend directory as the working directory

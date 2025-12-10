@@ -56,7 +56,7 @@ class TestAddSuperadmin:
 
             # Add new superadmin
             result = add_superadmin(
-                session, name="New Admin", email="newadmin@test.com", password="secret123"
+                name="New Admin", email="newadmin@test.com", password="secret123"
             )
 
             # Verify user was created
@@ -74,8 +74,6 @@ class TestAddSuperadmin:
         """Test adding an existing superadmin returns the user."""
         client, _ = flask_app
         with client.application.app_context():
-            from ibutsu_server.db.base import session
-
             # Create existing superadmin
             existing_user = make_user(
                 email="existing@test.com", name="Existing Admin", is_superadmin=True
@@ -83,7 +81,7 @@ class TestAddSuperadmin:
 
             # Try to add again
             result = add_superadmin(
-                session, name="Should Not Change", email="existing@test.com", password="newpass"
+                name="Should Not Change", email="existing@test.com", password="newpass"
             )
 
             # Should return the existing user
@@ -106,7 +104,7 @@ class TestAddSuperadmin:
 
             # Upgrade to superadmin
             result = add_superadmin(
-                session, name="Regular User", email="regular@test.com", password="newpass"
+                name="Regular User", email="regular@test.com", password="newpass"
             )
 
             # User should now be superadmin
@@ -123,7 +121,6 @@ class TestAddSuperadmin:
 
             # Add superadmin with project
             add_superadmin(
-                session,
                 name="Admin With Project",
                 email="adminproject@test.com",
                 password="secret",
@@ -159,7 +156,6 @@ class TestAddSuperadmin:
 
             # Try to add superadmin again with same project
             add_superadmin(
-                session,
                 name="Project Owner",
                 email="projowner@test.com",
                 password="pass",
@@ -185,7 +181,7 @@ class TestAddSuperadmin:
             from ibutsu_server.db.base import session
 
             # Add superadmin with password (password is required by User model)
-            add_superadmin(session, name="Pass Admin", email="pass@test.com", password="secret123")
+            add_superadmin(name="Pass Admin", email="pass@test.com", password="secret123")
 
             # Verify user was created
             user = session.execute(
@@ -195,3 +191,55 @@ class TestAddSuperadmin:
             assert user.is_superadmin is True
             # Verify password was set (will be hashed)
             assert user._password is not None
+
+    def test_add_superadmin_tables_dont_exist(self, flask_app):
+        """Test add_superadmin returns None when tables don't exist (e.g., before migrations)."""
+        from unittest.mock import MagicMock, PropertyMock, patch
+
+        client, _ = flask_app
+        with client.application.app_context():
+            # Mock the inspector to simulate tables not existing
+            mock_inspector = MagicMock()
+            mock_inspector.get_table_names.return_value = []  # No tables exist
+
+            # Mock db.engine using PropertyMock
+            mock_engine = MagicMock()
+
+            with (
+                patch("ibutsu_server.db.util.inspect", return_value=mock_inspector),
+                patch.object(
+                    type(db), "engine", new_callable=PropertyMock, return_value=mock_engine
+                ),
+            ):
+                # This should return None without raising an error
+                result = add_superadmin(name="Admin", email="admin@test.com", password="secret")
+
+                assert result is None
+                # Verify inspector was called with the engine
+                mock_inspector.get_table_names.assert_called_once()
+
+    def test_add_superadmin_tables_exist(self, flask_app):
+        """Test add_superadmin works normally when tables exist."""
+        client, _ = flask_app
+        with client.application.app_context():
+            from unittest.mock import MagicMock, patch
+
+            from ibutsu_server.db.base import session
+
+            # Mock the inspector to simulate tables existing
+            mock_inspector = MagicMock()
+            mock_inspector.get_table_names.return_value = ["users", "projects", "results"]
+
+            with patch("ibutsu_server.db.util.inspect", return_value=mock_inspector):
+                # This should work normally
+                result = add_superadmin(name="Admin", email="newtables@test.com", password="secret")
+
+                # Should complete successfully (returns None for new user)
+                assert result is None
+
+                # Verify user was created
+                user = session.execute(
+                    db.select(User).where(User.email == "newtables@test.com")
+                ).scalar_one_or_none()
+                assert user is not None
+                assert user.is_superadmin is True

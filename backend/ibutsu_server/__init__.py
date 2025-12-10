@@ -6,7 +6,6 @@ from typing import Any
 
 import connexion
 import flask
-from flask import redirect, request
 from flask_mail import Mail
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL as SQLA_URL
@@ -14,6 +13,7 @@ from starlette.middleware.cors import CORSMiddleware
 from yaml import full_load as yaml_load
 
 from ibutsu_server.auth import bcrypt
+from ibutsu_server.db.base import db
 from ibutsu_server.db.models import User
 from ibutsu_server.db.util import add_superadmin
 from ibutsu_server.encoder import IbutsuJSONProvider
@@ -198,18 +198,18 @@ def get_app(**extra_config):
         # Database schema is managed by Alembic migrations
         # add a superadmin user
         if superadmin_data := config.get_namespace("IBUTSU_SUPERADMIN_"):
-            add_superadmin(db.session, **superadmin_data)
+            add_superadmin(**superadmin_data)
 
     @flask_app.route("/")
     def index():
-        return redirect("/api/ui/", code=HTTPStatus.FOUND)
+        return flask.redirect("/api/ui/", code=HTTPStatus.FOUND)
 
     @flask_app.route("/admin/run-task", methods=["POST"])
     def run_task():  # noqa: PLR0911
         from ibutsu_server.db import db  # noqa: PLC0415
 
         # Get params
-        params = request.get_json(force=True, silent=True)
+        params = flask.request.get_json(force=True, silent=True)
         if not params:
             return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
 
@@ -266,6 +266,8 @@ class _AppRegistry:
     flower_app = None
     worker_app = None
     scheduler_app = None
+    # Alembic-specific Flask app (lightweight, no runtime initialization)
+    alembic_flask_app = None
 
     @classmethod
     def initialize_apps(cls, **extra_config):
@@ -285,6 +287,7 @@ class _AppRegistry:
         cls.flower_app = None
         cls.worker_app = None
         cls.scheduler_app = None
+        cls.alembic_flask_app = None
 
     @classmethod
     def get_connexion_app(cls, **extra_config):
@@ -388,33 +391,77 @@ class _AppRegistry:
             cls.scheduler_app = create_celery_app(flask_app, name="ibutsu_server_scheduler")
         return cls.scheduler_app
 
+    @classmethod
+    def get_alembic_flask_app(cls):
+        """
+        Get or create a lightweight Flask app for Alembic migrations.
+
+        This creates a minimal Flask app that:
+        - Configures database connection
+        - Initializes SQLAlchemy
+        - Skips runtime initialization (Mail, superadmin creation)
+        - Avoids side effects during migration operations
+
+        Returns:
+            Flask: Lightweight Flask app for Alembic
+        """
+        if cls.alembic_flask_app is None:
+            # Create minimal Flask app for Alembic
+            flask_app = flask.Flask(__name__)
+            config = flask_app.config
+
+            # Load configuration from files
+            config.from_file(str(Path("./default.settings.yaml").resolve()), yaml_load, silent=True)
+            config.from_file(str(Path("./settings.yaml").resolve()), yaml_load, silent=True)
+            config.from_mapping(os.environ)
+
+            # Configure database connection
+            if "SQLALCHEMY_DATABASE_URI" not in config:
+                maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
+                    config.get_namespace("POSTGRES_")
+                )
+                if maybe_db_uri:
+                    config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
+                else:
+                    # Use default for development
+                    default_db_uri = config.get("SQLALCHEMY_DATABASE_URI", "sqlite:///ibutsu.db")
+                    config.update(SQLALCHEMY_DATABASE_URI=default_db_uri)
+
+            # Initialize only SQLAlchemy (no Mail, no Celery, no superadmin)
+            db.init_app(flask_app)
+            cls.alembic_flask_app = flask_app
+
+        return cls.alembic_flask_app
+
 
 def __getattr__(name):
     """
     Lazy initialization of module-level app instances.
 
     This allows code to import connexion_app, flask_app, celery_app,
-    or container-specific apps (flower_app, worker_app, scheduler_app)
+    or container-specific apps (flower_app, worker_app, scheduler_app, alembic_flask_app)
     and have them initialized on first access.
     """
-    if name == "connexion_app":
-        return _AppRegistry.get_connexion_app()
-    if name == "flask_app":
-        return _AppRegistry.get_flask_app()
-    if name == "celery_app":
-        return _AppRegistry.get_celery_app()
-    if name == "flower_app":
-        return _AppRegistry.get_flower_app()
-    if name == "worker_app":
-        return _AppRegistry.get_worker_app()
-    if name == "scheduler_app":
-        return _AppRegistry.get_scheduler_app()
+    # Map attribute names to their corresponding _AppRegistry methods
+    _app_getters = {
+        "connexion_app": _AppRegistry.get_connexion_app,
+        "flask_app": _AppRegistry.get_flask_app,
+        "celery_app": _AppRegistry.get_celery_app,
+        "flower_app": _AppRegistry.get_flower_app,
+        "worker_app": _AppRegistry.get_worker_app,
+        "scheduler_app": _AppRegistry.get_scheduler_app,
+        "alembic_flask_app": _AppRegistry.get_alembic_flask_app,
+    }
+
+    if name in _app_getters:
+        return _app_getters[name]()
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 # Export the app instances and initialization function
 __all__ = [
     "_AppRegistry",
+    "alembic_flask_app",
     "celery_app",
     "connexion_app",
     "flask_app",

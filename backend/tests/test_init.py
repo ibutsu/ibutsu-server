@@ -746,3 +746,42 @@ def test_get_app_with_sslmode():
 
     app = get_app(**extra_config)
     assert app is not None
+
+
+def test_app_registry_get_alembic_flask_app(reset_app_registry):
+    """Test _AppRegistry.get_alembic_flask_app creates lightweight Flask app"""
+    app = _AppRegistry.get_alembic_flask_app()
+
+    assert app is not None
+    assert _AppRegistry.alembic_flask_app is not None
+    # Verify it's a Flask app (not Connexion)
+    from flask import Flask
+
+    assert isinstance(app, Flask)
+    # Verify database is configured
+    assert "SQLALCHEMY_DATABASE_URI" in app.config
+
+
+def test_app_registry_get_alembic_flask_app_skips_mail(reset_app_registry):
+    """Test alembic Flask app doesn't initialize Mail"""
+    with patch("ibutsu_server.Mail") as mock_mail:
+        app = _AppRegistry.get_alembic_flask_app()
+
+        assert app is not None
+        # Mail should NOT be initialized for Alembic app
+        mock_mail.assert_not_called()
+
+
+def test_app_registry_get_alembic_flask_app_skips_superadmin(reset_app_registry, monkeypatch):
+    """Test alembic Flask app doesn't create superadmin"""
+    # Set superadmin environment variables
+    monkeypatch.setenv("IBUTSU_SUPERADMIN_EMAIL", "admin@example.com")
+    monkeypatch.setenv("IBUTSU_SUPERADMIN_NAME", "Admin")
+    monkeypatch.setenv("IBUTSU_SUPERADMIN_PASSWORD", "password")
+
+    with patch("ibutsu_server.add_superadmin") as mock_add_superadmin:
+        app = _AppRegistry.get_alembic_flask_app()
+
+        assert app is not None
+        # Superadmin creation should NOT be called for Alembic app
+        mock_add_superadmin.assert_not_called()
