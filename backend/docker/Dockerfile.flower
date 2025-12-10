@@ -22,4 +22,4 @@ EXPOSE 5555
 
 # Use flower_app - minimal broker-only app (no database required)
 # flower_app is exposed via __getattr__ in ibutsu_server/__init__.py
-CMD ["celery", "--app=ibutsu_server:flower_app", "flower", "--port=5555"]
+CMD ["celery", "--app=ibutsu_server:flower_app", "flower", "--port=5555", "--enable_events=True"]
