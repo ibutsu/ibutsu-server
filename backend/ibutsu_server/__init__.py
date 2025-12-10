@@ -14,8 +14,7 @@ from starlette.middleware.cors import CORSMiddleware
 from yaml import full_load as yaml_load
 
 from ibutsu_server.auth import bcrypt
-from ibutsu_server.db import upgrades
-from ibutsu_server.db.models import User, upgrade_db
+from ibutsu_server.db.models import User
 from ibutsu_server.db.util import add_superadmin
 from ibutsu_server.encoder import IbutsuJSONProvider
 from ibutsu_server.tasks import create_celery_app
@@ -196,10 +195,8 @@ def get_app(**extra_config):
     Mail(flask_app)
 
     with flask_app.app_context():
-        db.create_all()
-        upgrade_db(db.session, upgrades)
+        # Database schema is managed by Alembic migrations
         # add a superadmin user
-        db.session.commit()
         if superadmin_data := config.get_namespace("IBUTSU_SUPERADMIN_"):
             add_superadmin(db.session, **superadmin_data)
 
