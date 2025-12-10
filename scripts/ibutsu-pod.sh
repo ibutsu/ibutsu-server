@@ -254,6 +254,24 @@ done
 echo " celery worker up."
 
 
+echo "================================="
+echo -n "Adding flower to the pod:    "
+
+podman run -d \
+    --rm \
+    --pod "$POD_NAME" \
+    --name ibutsu-flower \
+    -e BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
+    -e FLOWER_BASIC_AUTH="${FLOWER_BASIC_AUTH}" \
+    -w /mnt \
+    -v ./backend:/mnt/:z \
+    $PYTHON_IMAGE \
+    /bin/bash -c "pip install -U pip wheel &&
+                    pip install . &&
+                    pip install 'flower>=2.0.0' &&
+                    celery --app ibutsu_server:flower_app flower --port=5555"
+
+
 if [[ $CREATE_PROJECT = true ]]; then
     echo "Creating default projects... "
     LOGIN_TOKEN=$(curl --no-progress-meter --header "Content-Type: application/json" \
@@ -642,25 +660,9 @@ if [[ $CREATE_PROJECT = true ]]; then
 fi
 
 echo "================================="
-echo -n "Adding flower to the pod:    "
-
-podman run -d \
-    --rm \
-    --pod "$POD_NAME" \
-    --name ibutsu-flower \
-    -e BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
-    -e FLOWER_BASIC_AUTH="${FLOWER_BASIC_AUTH}" \
-    -w /mnt \
-    -v ./backend:/mnt/:z \
-    $PYTHON_IMAGE \
-    /bin/bash -c "pip install -U pip wheel &&
-                    pip install . &&
-                    pip install 'flower>=2.0.0' &&
-                    celery --app ibutsu_server:flower_app flower --port=5555"
-echo "done."
-
-echo "================================="
 echo -n "Adding frontend to the pod:    "
+
+set -x
 podman run -d \
     --rm \
     --pod "$POD_NAME" \
