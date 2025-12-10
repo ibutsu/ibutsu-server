@@ -63,6 +63,9 @@ def flask_app():
     logging.getLogger("connexion.operation").setLevel("ERROR")
 
     # Reset the registry to ensure clean state for each test
+    # Note: A shared reset_app_registry fixture exists in conftest.py for simpler
+    # test cases. This fixture provides a fully configured Flask app with database
+    # and includes the reset as part of its broader setup/teardown.
     _AppRegistry.reset()
 
     extra_config = {
