@@ -6,8 +6,19 @@ import pytest
 @pytest.fixture(autouse=True)
 def setup_celery_env(monkeypatch):
     """Set up required Celery environment variables for all tests in this module."""
+    from ibutsu_server import _AppRegistry
+
+    # Reset the registry to ensure clean state for each test
+    _AppRegistry.reset()
+
+    # Set up environment variables
     monkeypatch.setenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
     monkeypatch.setenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+
+    yield
+
+    # Clean up after test
+    _AppRegistry.reset()
 
 
 def test_flower_app_minimal_config():
