@@ -244,6 +244,7 @@ omit = [
     "*/tests/*",
     "*/__pycache__/*",
     "*/migrations/*",
+    "*/alembic/*",
 ]
 
 [tool.coverage.report]

@@ -2,7 +2,7 @@
 Various utility DB functions
 """
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.expression import ClauseElement, Executable
 
@@ -46,7 +46,6 @@ def pg_explain(element, compiler, **_kw):
 
 
 def add_superadmin(
-    current_session,
     *,
     name: str = "Ibutsu Admin",
     email: str,
@@ -55,11 +54,30 @@ def add_superadmin(
 ):
     """
     Adds a superadmin user to Ibutsu.
-    """
 
-    user = current_session.execute(
-        db.select(models.User).filter_by(email=email)
-    ).scalar_one_or_none()
+    Uses Flask-SQLAlchemy's db.session proxy directly, which is the proper
+    approach for Flask-SQLAlchemy 3.x.
+
+    Returns:
+        None on success, or if tables don't exist yet (e.g., before migrations run).
+
+    Note:
+        This function checks if the required tables exist before attempting to
+        create the superadmin. This is important on fresh databases where the
+        schema hasn't been created yet.
+    """
+    # Check if the User table exists before attempting to query it
+    # This prevents failures on fresh databases before Alembic migrations run
+    # In Flask-SQLAlchemy 3.0+, use db.engine to get the engine
+    engine = db.engine
+
+    inspector = inspect(engine)
+    if "users" not in inspector.get_table_names():
+        # Tables don't exist yet - likely a fresh database before migrations
+        # This is expected and not an error condition
+        return None
+
+    user = db.session.execute(db.select(models.User).filter_by(email=email)).scalar_one_or_none()
     if user and user.is_superadmin:
         return user
     if user and not user.is_superadmin:
@@ -73,16 +91,16 @@ def add_superadmin(
         )
         user.password = password
 
-        current_session.add(user)
+        db.session.add(user)
 
-    current_session.commit()
+    db.session.commit()
 
     if own_project is not None:
-        project = current_session.execute(
+        project = db.session.execute(
             db.select(models.Project).filter_by(name=own_project, owner=user)
         ).scalar_one_or_none()
         if project is None:
             project = models.Project(name=own_project, owner=user)
-        current_session.add(project)
-        current_session.commit()
+        db.session.add(project)
+        db.session.commit()
     return None

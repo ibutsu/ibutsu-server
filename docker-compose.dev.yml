@@ -32,6 +32,9 @@ services:
       /bin/bash -c
         "pip install -U pip setuptools wheel &&
         pip install . &&
+        echo 'Initializing database schema...' &&
+        python scripts/init_db.py &&
+        echo 'Starting backend server...' &&
         python -m ibutsu_server --host 0.0.0.0"
     working_dir: /mnt
     volumes:

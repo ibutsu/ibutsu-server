@@ -88,6 +88,14 @@ def flask_app():
     connexion_app = get_app(**extra_config)
     flask_app = connexion_app.app
 
+    # Create database tables for testing
+    # In tests, we use metadata.create_all() for speed and simplicity
+    # Production uses Alembic migrations
+    with flask_app.app_context():
+        from ibutsu_server.db.base import db
+
+        db.metadata.create_all(db.engine)
+
     # Add a test user
     with flask_app.app_context():
         test_user = User(
