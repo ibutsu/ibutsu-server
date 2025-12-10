@@ -43,6 +43,14 @@ user interface.
 Ibutsu has a RESTful API built using the [OpenAPI specification](https://github.com/swagger-api/swagger-core/wiki)
 which is browsable from `/api/ui/`
 
+## Architecture
+
+The Ibutsu backend uses Gunicorn with Uvicorn workers for production deployments, providing robust process management with high-performance ASGI support. For detailed information, see our comprehensive documentation:
+
+- **[Full Documentation](https://docs.ibutsu-project.org/)** - Complete documentation with deployment architecture, testing guides, and more
+- **[Backend README](backend/README.md)** - Development setup and testing
+- **[OCP Templates README](ocp-templates/README.md)** - OpenShift deployment configurations
+
 ## Running locally
 
 To run the server locally for development, you can use `podman` or docker/podman-Compose.
