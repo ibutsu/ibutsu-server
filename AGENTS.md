@@ -8,7 +8,7 @@
 - Suggest updates to backend controllers that align with modern implementation patterns
 
 # frontend
-- use yarn and yarn lint from the frontend directory as the working directory
+- use `yarn` and `yarn lint` from the frontend directory as the working directory
 - prefer the use of patternfly components
 - use functional components and prefer patterns that leverage all available react hook patterns
 - use strict react-hooks rules for exhaustive deps
@@ -20,7 +20,7 @@
 
 ## Testing instructions
 - Find the CI plan in the .github/workflows folder.
-- Use `hatch run test` to execute tests. `hatch run test-cov` to include coverage.
+- Use `hatch run test` to execute tests and `hatch run test-cov` to include coverage from the backend directory as the working directory
 - Pass arguments to pytest through `hatch run test -- <-arg>`
 - Add or update tests for the code you change, even if nobody asked.
 - Do not make changes to cause tests to pass when a bug is identified by the test. Always first investigate for bugs in the tested application component.
