@@ -21,7 +21,7 @@ def add_result_start_time(run_id):
             db.select(Result).where(Result.data["metadata"]["run"] == run_id)
         ).scalars()
         for result in results:
-            if not result.get("start_time"):
-                result.data["start_time"] = result.get("starttime")
+            if not result.data.get("start_time"):
+                result.data["start_time"] = result.data.get("starttime")
                 db.session.add(result)
         db.session.commit()
