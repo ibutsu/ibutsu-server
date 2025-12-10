@@ -98,3 +98,185 @@ def test_sync_aborted_runs(make_project, make_run, make_result, flask_app):
             mock_apply.assert_called_once()
             call_args = mock_apply.call_args
             assert call_args[0][0][0] == run.id
+
+
+def test_sync_aborted_runs_with_none_summary(make_project, make_run, flask_app):
+    """Test sync_aborted_runs handles runs with None summary gracefully."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import Run
+
+        project = make_project(name="test-project")
+        recent_time = datetime.now(UTC) - timedelta(minutes=30)
+
+        # Create a run with None summary (bypassing make_run to force None)
+        run = Run(
+            project_id=project.id,
+            start_time=recent_time,
+            summary=None,
+        )
+        db.session.add(run)
+        db.session.commit()
+
+        # Should not crash
+        try:
+            with patch.object(update_run, "apply_async"):
+                sync_aborted_runs()
+                # May or may not be called depending on how None is handled
+        except (KeyError, TypeError) as e:
+            # This would indicate a bug in the implementation
+            msg = f"sync_aborted_runs should handle None summary gracefully: {e}"
+            raise AssertionError(msg) from e
+
+
+def test_sync_aborted_runs_with_empty_summary(make_project, make_run, flask_app):
+    """Test sync_aborted_runs handles runs with empty summary dict gracefully."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import Run
+
+        project = make_project(name="test-project")
+        recent_time = datetime.now(UTC) - timedelta(minutes=30)
+
+        # Create a run with empty summary dict
+        run = Run(
+            project_id=project.id,
+            start_time=recent_time,
+            summary={},
+        )
+        db.session.add(run)
+        db.session.commit()
+
+        # Should not crash
+        try:
+            with patch.object(update_run, "apply_async"):
+                sync_aborted_runs()
+                # May or may not be called depending on default value handling
+        except (KeyError, TypeError) as e:
+            # This would indicate a bug in the implementation
+            msg = f"sync_aborted_runs should handle empty summary dict gracefully: {e}"
+            raise AssertionError(msg) from e
+
+
+def test_sync_aborted_runs_with_missing_tests_key(make_project, make_run, flask_app):
+    """Test sync_aborted_runs handles runs with summary missing 'tests' key."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import Run
+
+        project = make_project(name="test-project")
+        recent_time = datetime.now(UTC) - timedelta(minutes=30)
+
+        # Create a run with summary that has some keys but not 'tests'
+        run = Run(
+            project_id=project.id,
+            start_time=recent_time,
+            summary={"collected": 5, "errors": 0},  # Has other keys but not 'tests'
+        )
+        db.session.add(run)
+        db.session.commit()
+
+        # Should not crash
+        try:
+            with patch.object(update_run, "apply_async"):
+                sync_aborted_runs()
+                # Should handle missing 'tests' key gracefully
+        except KeyError as e:
+            # This would indicate a bug - should use .get() instead of direct access
+            msg = f"sync_aborted_runs should handle missing 'tests' key gracefully: {e}"
+            raise AssertionError(msg) from e
+
+
+def test_update_run_with_none_summary(make_project, make_run, make_result, flask_app):
+    """Test update_run handles and fixes runs with None summary."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import Run
+
+        project = make_project(name="test-project")
+
+        # Create a run with None summary
+        run = Run(
+            project_id=project.id,
+            summary=None,
+        )
+        db.session.add(run)
+        db.session.commit()
+        run_id = run.id
+
+        # Add some results
+        make_result(
+            run_id=run_id,
+            project_id=project.id,
+            result="passed",
+        )
+        make_result(
+            run_id=run_id,
+            project_id=project.id,
+            result="failed",
+        )
+
+        # Mock the lock to prevent Redis dependency
+        with patch("ibutsu_server.tasks.runs.lock"):
+            update_run(str(run_id))
+
+        # Refresh run from database
+        session.expire_all()
+        updated_run = db.session.get(Run, run_id)
+
+        # Should have created a proper summary
+        assert updated_run.summary is not None
+        assert updated_run.summary["tests"] == 2
+        assert updated_run.summary["passes"] == 1
+        assert updated_run.summary["failures"] == 1
+
+
+def test_update_run_with_empty_summary(make_project, make_run, make_result, flask_app):
+    """Test update_run handles and fixes runs with empty summary dict."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import Run
+
+        project = make_project(name="test-project")
+
+        # Create a run with empty summary
+        run = Run(
+            project_id=project.id,
+            summary={},
+        )
+        db.session.add(run)
+        db.session.commit()
+        run_id = run.id
+
+        # Add some results
+        make_result(
+            run_id=run_id,
+            project_id=project.id,
+            result="passed",
+        )
+
+        # Mock the lock to prevent Redis dependency
+        with patch("ibutsu_server.tasks.runs.lock"):
+            update_run(str(run_id))
+
+        # Refresh run from database
+        session.expire_all()
+        updated_run = db.session.get(Run, run_id)
+
+        # Should have created a proper summary
+        assert updated_run.summary is not None
+        assert "tests" in updated_run.summary
+        assert updated_run.summary["tests"] == 1
+        assert updated_run.summary["passes"] == 1
