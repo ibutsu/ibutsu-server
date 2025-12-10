@@ -30,6 +30,10 @@ def test_flower_app_minimal_config():
     assert flower_app.conf.result_backend is not None
     # Flower app should have the unique name
     assert flower_app.main == "ibutsu_server_flower"
+    # Flower app should have transport options configured for RPC
+    assert flower_app.conf.redis_socket_timeout is not None
+    assert flower_app.conf.broker_transport_options is not None
+    assert flower_app.conf.result_backend_transport_options is not None
 
 
 def test_celery_app_unique_names(flask_app):

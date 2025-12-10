@@ -327,15 +327,39 @@ class _AppRegistry:
         if cls.flower_app is None:
             from celery import Celery  # noqa: PLC0415
 
+            from ibutsu_server.constants import (  # noqa: PLC0415
+                SOCKET_CONNECT_TIMEOUT,
+                SOCKET_TIMEOUT,
+            )
+
             broker_url = os.environ.get("CELERY_BROKER_URL")
             if not broker_url:
                 msg = "CELERY_BROKER_URL environment variable must be set"
                 raise ValueError(msg)
 
+            # Read result backend from environment - check multiple possible variable names
+            result_backend = (
+                os.environ.get("CELERY_RESULT_BACKEND")
+                or os.environ.get("CELERY_RESULT_BACKEND_URL")
+                or broker_url
+            )
+
             cls.flower_app = Celery("ibutsu_server_flower")
             cls.flower_app.conf.update(
                 broker_url=broker_url,
-                result_backend=broker_url,
+                result_backend=result_backend,
+                # Configure Redis transport options for proper RPC communication
+                redis_socket_timeout=SOCKET_TIMEOUT,
+                redis_socket_connect_timeout=SOCKET_CONNECT_TIMEOUT,
+                redis_retry_on_timeout=True,
+                broker_transport_options={
+                    "socket_timeout": SOCKET_TIMEOUT,
+                    "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
+                },
+                result_backend_transport_options={
+                    "socket_timeout": SOCKET_TIMEOUT,
+                    "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
+                },
                 # Don't import task modules - would require database access
                 # Flower discovers tasks from workers via broker introspection
             )

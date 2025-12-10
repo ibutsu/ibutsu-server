@@ -472,13 +472,68 @@ def test_app_registry_get_flower_app_missing_broker_url():
         _AppRegistry.get_flower_app()
 
 
+def test_app_registry_get_flower_app_with_result_backend():
+    """Test _AppRegistry.get_flower_app properly reads CELERY_RESULT_BACKEND"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    broker = "redis://localhost:6379/0"
+    result_backend = "redis://localhost:6379/1"
+
+    with patch.dict(
+        "os.environ", {"CELERY_BROKER_URL": broker, "CELERY_RESULT_BACKEND": result_backend}
+    ):
+        app = _AppRegistry.get_flower_app()
+
+        assert app.conf.broker_url == broker
+        assert app.conf.result_backend == result_backend
+        assert app.conf.redis_socket_timeout is not None
+        assert app.conf.broker_transport_options is not None
+
+
+def test_app_registry_get_flower_app_with_result_backend_url():
+    """Test _AppRegistry.get_flower_app properly reads CELERY_RESULT_BACKEND_URL as fallback"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    broker = "redis://localhost:6379/0"
+    result_backend = "redis://localhost:6379/2"
+
+    with patch.dict(
+        "os.environ", {"CELERY_BROKER_URL": broker, "CELERY_RESULT_BACKEND_URL": result_backend}
+    ):
+        app = _AppRegistry.get_flower_app()
+
+        assert app.conf.broker_url == broker
+        assert app.conf.result_backend == result_backend
+
+
+def test_app_registry_get_flower_app_defaults_result_backend():
+    """Test _AppRegistry.get_flower_app uses broker as result_backend when not specified"""
+    from ibutsu_server import _AppRegistry
+
+    _AppRegistry.reset()
+
+    broker = "redis://localhost:6379/0"
+
+    with patch.dict("os.environ", {"CELERY_BROKER_URL": broker}, clear=True):
+        app = _AppRegistry.get_flower_app()
+
+        assert app.conf.broker_url == broker
+        assert app.conf.result_backend == broker  # Should default to broker
+
+
 def test_app_registry_get_worker_app():
     """Test _AppRegistry.get_worker_app"""
     from ibutsu_server import _AppRegistry
 
     _AppRegistry.reset()
 
-    app = _AppRegistry.get_worker_app(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+    # Initialize apps first with config, then get worker app
+    _AppRegistry.initialize_apps(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+    app = _AppRegistry.get_worker_app()
 
     assert app is not None
     assert _AppRegistry.worker_app is not None
@@ -491,7 +546,9 @@ def test_app_registry_get_scheduler_app():
 
     _AppRegistry.reset()
 
-    app = _AppRegistry.get_scheduler_app(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+    # Initialize apps first with config, then get scheduler app
+    _AppRegistry.initialize_apps(TESTING=True, SQLALCHEMY_DATABASE_URI="sqlite:///:memory:")
+    app = _AppRegistry.get_scheduler_app()
 
     assert app is not None
     assert _AppRegistry.scheduler_app is not None
