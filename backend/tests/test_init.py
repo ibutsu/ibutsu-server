@@ -544,26 +544,26 @@ def test_app_registry_get_scheduler_app(reset_app_registry):
     assert app.main == "ibutsu_server_scheduler"
 
 
-def test_module_level_app_access(flask_app):
-    """Integration test: Validate apps are accessible after initialization.
+def test_flask_app_integration(flask_app):
+    """Integration test: Validate flask_app fixture provides fully configured app.
 
-    The flask_app fixture initializes all apps. This test validates that the apps
-    are accessible and properly configured. This represents the typical usage pattern
-    where the application has been initialized and code accesses the app instances.
-
-    Note: We access via _AppRegistry directly rather than importing to avoid
-    triggering lazy initialization in the parallel test environment.
+    The flask_app fixture initializes a complete application with database, Celery,
+    and all necessary components. This test validates that the fixture works correctly
+    and provides a working Flask application for integration tests.
     """
-    from ibutsu_server import _AppRegistry
+    client, jwt_token = flask_app
 
-    # Verify all apps are initialized and accessible
-    assert _AppRegistry.connexion_app is not None
-    assert _AppRegistry.flask_app is not None
-    assert _AppRegistry.celery_app is not None
-    assert _AppRegistry.worker_app is not None
-    assert _AppRegistry.worker_app.main == "ibutsu_server_worker"
-    assert _AppRegistry.scheduler_app is not None
-    assert _AppRegistry.scheduler_app.main == "ibutsu_server_scheduler"
+    # Verify we have a working Flask app
+    assert client is not None
+    assert client.application is not None
+    assert jwt_token is not None
+
+    # Verify the app has Celery configured
+    assert "CELERY" in client.application.config
+    assert client.application.config["CELERY"]["broker_url"] is not None
+
+    # Verify database is configured
+    assert "SQLALCHEMY_DATABASE_URI" in client.application.config
 
 
 def test_module_getattr_invalid_attribute():
