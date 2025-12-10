@@ -396,10 +396,10 @@ def test_get_dashboard_list_with_filters(flask_app, make_project, make_dashboard
     assert "Alpha Dashboard" in dashboard_titles
 
 
-def test_get_dashboard_with_project_forbidden(
+def test_get_dashboard_with_project_superadmin_access(
     flask_app, make_project, make_dashboard, make_user, auth_headers
 ):
-    """Test case for get_dashboard - forbidden when user doesn't have project access"""
+    """Test case for get_dashboard - superadmin can access any project's dashboard"""
     client, jwt_token = flask_app
 
     # Create a project with a different owner
@@ -407,13 +407,51 @@ def test_get_dashboard_with_project_forbidden(
     project = make_project(name="private-project", owner_id=other_user.id)
     dashboard = make_dashboard(title="Private Dashboard", project_id=project.id)
 
+    # Use superadmin token (from flask_app fixture)
     headers = auth_headers(jwt_token)
     response = client.get(
         f"/api/dashboard/{dashboard.id}",
         headers=headers,
     )
-    # Superadmin should have access, non-superadmin should get 403
-    assert response.status_code in [200, 403]
+    # Superadmin should have access to all dashboards
+    assert response.status_code == 200
+    response_data = response.json()
+    assert response_data["id"] == str(dashboard.id)
+    assert response_data["title"] == "Private Dashboard"
+
+
+def test_get_dashboard_with_project_non_superadmin_forbidden(
+    flask_app, make_project, make_dashboard, make_user, auth_headers
+):
+    """Test case for get_dashboard - non-superadmin cannot access other user's project dashboard"""
+    client, _ = flask_app
+    from ibutsu_server.db.base import session
+    from ibutsu_server.db.models import Token
+    from ibutsu_server.util.jwt import generate_token
+
+    # Create a project owned by one user
+    owner_user = make_user(email="owner@example.com")
+    project = make_project(name="private-project", owner_id=owner_user.id)
+    dashboard = make_dashboard(title="Private Dashboard", project_id=project.id)
+
+    # Create a different non-superadmin user
+    other_user = make_user(email="other@example.com", is_superadmin=False)
+    session.refresh(other_user)
+
+    # Generate token for the non-superadmin user
+    other_jwt_token = generate_token(other_user.id)
+    token = Token(name="other-login-token", user=other_user, token=other_jwt_token)
+    session.add(token)
+    session.commit()
+
+    # Try to access the dashboard as the non-superadmin user
+    headers = auth_headers(other_jwt_token)
+    response = client.get(
+        f"/api/dashboard/{dashboard.id}",
+        headers=headers,
+    )
+    # Non-superadmin should be forbidden from accessing another user's project dashboard
+    assert response.status_code == 403
 
 
 def test_get_dashboard_list_empty(flask_app, auth_headers):
