@@ -44,5 +44,7 @@ def time_limited_db_operation(timeout=None):
     timeout = int(timeout * 1000) if timeout else int(COUNT_TIMEOUT * 1000)
 
     session.execute(text("SET statement_timeout TO :timeout; commit;"), {"timeout": timeout})
-    yield
-    session.execute(text("SET statement_timeout TO 0; commit;"))
+    try:
+        yield
+    finally:
+        session.execute(text("SET statement_timeout TO 0; commit;"))
