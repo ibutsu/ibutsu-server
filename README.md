@@ -4,34 +4,11 @@
 
 [![Tests](https://github.com/ibutsu/ibutsu-server/actions/workflows/tests.yaml/badge.svg?branch=main)](https://github.com/ibutsu/ibutsu-server/actions/workflows/tests.yaml)
 [![Documentation Status](https://readthedocs.org/projects/ibutsu/badge/?version=latest)](https://docs.ibutsu-project.org/en/latest/?badge=latest)
-
-### Test Coverage
-
 [![codecov](https://codecov.io/gh/ibutsu/ibutsu-server/branch/main/graph/badge.svg?token=49WSIBKXZ9)](https://codecov.io/gh/ibutsu/ibutsu-server)
-[![Backend Coverage](https://codecov.io/gh/ibutsu/ibutsu-server/branch/main/graph/badge.svg?token=49WSIBKXZ9&flag=backend)](https://app.codecov.io/gh/ibutsu/ibutsu-server/flags)
-[![Frontend Coverage](https://codecov.io/gh/ibutsu/ibutsu-server/branch/main/graph/badge.svg?token=49WSIBKXZ9&flag=frontend)](https://app.codecov.io/gh/ibutsu/ibutsu-server/flags)
 
 **Overall Coverage Grid:**
 
 [![Overall Grid](https://codecov.io/gh/ibutsu/ibutsu-server/graphs/tree.svg?token=49WSIBKXZ9)](https://codecov.io/gh/ibutsu/ibutsu-server)
-
-**Backend Coverage Grid:**
-
-[![Backend Grid](https://codecov.io/gh/ibutsu/ibutsu-server/graphs/tree.svg?token=49WSIBKXZ9&flag=backend)](https://app.codecov.io/gh/ibutsu/ibutsu-server/tree/main/backend)
-
-**Frontend Coverage Grid:**
-
-[![Frontend Grid](https://codecov.io/gh/ibutsu/ibutsu-server/graphs/tree.svg?token=49WSIBKXZ9&flag=frontend)](https://app.codecov.io/gh/ibutsu/ibutsu-server/tree/main/frontend)
-
-| Component | Lines | Statements | Functions | Branches | Target |
-|-----------|-------|------------|-----------|----------|--------|
-| Frontend  | ≥7%   | ≥7%        | ≥4%       | ≥5%      | 10%    |
-| Backend   | ≥60%  | ≥60%       | ≥60%      | ≥60%     | 60%    |
-
-**Coverage Thresholds:**
-- **Backend:** Minimum 60% coverage enforced in CI to maintain code quality
-- **Frontend:** Minimum thresholds (Lines: 7%, Statements: 7%, Functions: 4%, Branches: 5%) enforced to prevent regression
-
 *Coverage reports are automatically generated and uploaded to [Codecov](https://codecov.io/gh/ibutsu/ibutsu-server) on every CI run. See [frontend/TESTING.md](frontend/TESTING.md) for improvement goals and testing guidelines.*
 
 Ibutsu is a test result reporting and artifact storage system. Ibutsu gives your team the ability to
