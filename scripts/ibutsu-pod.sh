@@ -665,7 +665,6 @@ fi
 echo "================================="
 echo -n "Adding frontend to the pod:    "
 
-set -x
 podman run -d \
     --rm \
     --pod "$POD_NAME" \

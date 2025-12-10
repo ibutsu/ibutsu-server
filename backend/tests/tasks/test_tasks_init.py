@@ -19,6 +19,39 @@ def test_create_celery_app(flask_app):
         assert isinstance(celery_app, Celery)
 
 
+def test_create_celery_app_is_wrapper(flask_app):
+    """Test that create_celery_app is a wrapper around celery_utils.create_flask_celery_app."""
+    from unittest.mock import patch
+
+    client, _ = flask_app
+
+    with patch("ibutsu_server.celery_utils.create_flask_celery_app") as mock_create:
+        mock_create.return_value = Celery("test_wrapper")
+
+        result = create_celery_app(client.application, name="test_name")
+
+        # Should delegate to celery_utils
+        mock_create.assert_called_once_with(client.application, "test_name")
+        assert result.main == "test_wrapper"
+
+
+def test_create_celery_app_backward_compatibility(flask_app):
+    """Test that create_celery_app maintains backward compatibility."""
+    client, _ = flask_app
+
+    # Test with default parameters (as old code would call it)
+    celery_app = create_celery_app(client.application)
+
+    # Should work exactly as before
+    assert celery_app is not None
+    assert isinstance(celery_app, Celery)
+    assert celery_app.main == "ibutsu_server"
+
+    # Test with custom name (as old code would call it)
+    celery_app2 = create_celery_app(client.application, name="custom_name")
+    assert celery_app2.main == "custom_name"
+
+
 def test_get_celery_app(flask_app):
     """Test get_celery_app returns a celery instance."""
     client, _ = flask_app

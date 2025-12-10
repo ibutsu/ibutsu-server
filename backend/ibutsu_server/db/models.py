@@ -107,7 +107,7 @@ class Artifact(Model, FileMixin):
     run_id = Column(PortableUUID(), ForeignKey("runs.id"), index=True)
     filename = Column(Text, index=True)
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
-    upload_date = Column(DateTime, default=func.now(), index=True)
+    upload_date = Column(DateTime, default=func.now(), nullable=False, index=True)
 
 
 class Dashboard(Model, ModelMixin):
@@ -149,7 +149,11 @@ class Project(Model, ModelMixin):
     title = Column(Text, index=True)
     owner_id = Column(PortableUUID(), ForeignKey("users.id"), index=True)
     group_id = Column(PortableUUID(), ForeignKey("groups.id"), index=True)
-    default_dashboard_id = Column(PortableUUID(), ForeignKey("dashboards.id"))
+    # Use use_alter to break circular dependency with dashboards table
+    default_dashboard_id = Column(
+        PortableUUID(),
+        ForeignKey("dashboards.id", use_alter=True, name="fk_project_default_dashboard"),
+    )
     results = relationship("Result", backref="project")
     runs = relationship("Run", backref="project")
     default_dashboard = relationship("Dashboard", foreign_keys=[default_dashboard_id])
@@ -199,7 +203,7 @@ class Result(Model, ModelMixin):
     result = Column(Text, index=True)
     run_id = Column(PortableUUID(), ForeignKey("runs.id"), index=True)
     source = Column(Text, index=True)
-    start_time = Column(DateTime, default=func.now(), index=True)
+    start_time = Column(DateTime, default=func.now(), nullable=False, index=True)
     test_id = Column(Text, index=True)
     artifacts = relationship("Artifact", backref="result")
 
@@ -208,7 +212,7 @@ class Run(Model, ModelMixin):
     __tablename__ = "runs"
     artifacts = relationship("Artifact")
     component = Column(Text, index=True)
-    created = Column(DateTime, default=func.now(), index=True)
+    created = Column(DateTime, default=func.now(), nullable=False, index=True)
     # this is metadata but it is a reserved attr
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
     duration = Column(Float, index=True)
@@ -216,7 +220,7 @@ class Run(Model, ModelMixin):
     project_id = Column(PortableUUID(), ForeignKey("projects.id"), index=True)
     results = relationship("Result")
     source = Column(Text, index=True)
-    start_time = Column(DateTime, default=func.now(), index=True)
+    start_time = Column(DateTime, default=func.now(), nullable=False, index=True)
     summary = Column(mutable_json_type(dbtype=PortableJSON()))
     artifacts = relationship("Artifact", backref="run")
 
@@ -241,8 +245,8 @@ class User(Model, ModelMixin):
     _password = Column(Text, nullable=True)
     name = Column(Text)
     activation_code = Column(Text, nullable=True)
-    is_superadmin = Column(Boolean, default=False)
-    is_active = Column(Boolean, default=False)
+    is_superadmin = Column(Boolean, default=False, nullable=False)
+    is_active = Column(Boolean, default=False, nullable=False)
     group_id = Column(PortableUUID(), ForeignKey("groups.id"), index=True)
     dashboards = relationship("Dashboard")
     owned_projects = relationship("Project", backref="owner")

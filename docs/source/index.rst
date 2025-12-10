@@ -17,6 +17,8 @@ Welcome to Ibutsu's documentation!
    developer-guide/project-structure
    developer-guide/getting-started
    developer-guide/deployment-architecture
+   developer-guide/celery-architecture
+   developer-guide/celery-utils
    developer-guide/hatch-usage
    developer-guide/testing-guide
    developer-guide/alembic-migration
