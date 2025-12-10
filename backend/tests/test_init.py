@@ -649,8 +649,6 @@ def test_get_app_postgresql_engine_options():
     # it just needs to verify the config is set correctly
     with (
         patch("ibutsu_server.db.db.init_app"),
-        patch("ibutsu_server.db.db.create_all"),
-        patch("ibutsu_server.upgrade_db"),
         patch("ibutsu_server.add_superadmin"),
     ):
         app = get_app(
@@ -719,8 +717,6 @@ def test_get_app_with_postgresql_connection_retry():
     with (
         patch("ibutsu_server.create_engine") as mock_create_engine,
         patch("ibutsu_server.db.db.init_app"),
-        patch("ibutsu_server.db.db.create_all"),
-        patch("ibutsu_server.upgrade_db"),
         patch("ibutsu_server.add_superadmin"),
     ):
         mock_engine = MagicMock()
