@@ -1,6 +1,7 @@
 from http import HTTPStatus
 
 from flask import request
+from sqlalchemy import update
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
 from ibutsu_server.db import db
@@ -148,14 +149,14 @@ def delete_dashboard(id_, token_info=None, user=None):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
 
     # Clear any projects that reference this dashboard as their default dashboard
-    projects_with_default = (
-        db.session.execute(db.select(Project).where(Project.default_dashboard_id == dashboard.id))
-        .scalars()
-        .all()
+    # Use raw SQL update to ensure the change is persisted
+    dashboard_id_str = str(dashboard.id)
+    db.session.execute(
+        update(Project)
+        .where(Project.default_dashboard_id == dashboard_id_str)
+        .values(default_dashboard_id=None)
     )
-    for project in projects_with_default:
-        project.default_dashboard_id = None
-        session.add(project)
+    db.session.commit()
 
     # Delete all widget configs associated with this dashboard
     widget_configs = (
@@ -169,4 +170,5 @@ def delete_dashboard(id_, token_info=None, user=None):
     # Finally delete the dashboard
     session.delete(dashboard)
     session.commit()
+
     return HTTPStatus.OK.phrase, HTTPStatus.OK
