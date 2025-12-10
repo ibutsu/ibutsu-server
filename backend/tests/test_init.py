@@ -695,12 +695,14 @@ def test_get_app_default_db_uri(mock_maybe_sql_url):
     # Mock maybe_sql_url to return None, simulating no PostgreSQL config
     mock_maybe_sql_url.return_value = None
 
-    with patch("builtins.print") as mock_print:
-        get_app(TESTING=True)
+    # Test that get_app creates an app successfully with default DB URI
+    app = get_app(TESTING=True)
 
-        # Should print warning about default database
-        mock_print.assert_called()
-        assert "No database configuration found" in str(mock_print.call_args)
+    # Verify the app was created and has a database URI configured
+    assert app is not None
+    assert app.app.config.get("SQLALCHEMY_DATABASE_URI") is not None
+    # Should use SQLite as the default
+    assert "sqlite" in str(app.app.config["SQLALCHEMY_DATABASE_URI"]).lower()
 
 
 def test_get_app_with_postgresql_connection_retry():
