@@ -106,7 +106,7 @@ sonar-project.properties
 .jwtsecret
 .archives/
 .archives-back/
-
+backend/instance/ibutsu.db
 
 scripts/populate-users-data.py
 users_data.json
