@@ -129,7 +129,7 @@ def get_app(**extra_config):
     # Load any extra config
     config.update(extra_config)
 
-    if "SQLALCHEMY_ENGINE_OPTIONS" not in config:
+    if "SQLALCHEMY_ENGINE_OPTIONS" not in config or not config["SQLALCHEMY_ENGINE_OPTIONS"]:
         db_uri = config.get("SQLALCHEMY_DATABASE_URI", "")
         is_sqlite = False
         if (isinstance(db_uri, str) and db_uri.startswith("sqlite")) or (
