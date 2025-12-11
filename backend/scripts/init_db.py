@@ -35,7 +35,7 @@ def initialize_flask_app(logger):
     try:
         return _AppRegistry.get_alembic_flask_app()
     except Exception as e:
-        logger.error(f"✗ Failed to initialize Flask app: {e}")
+        logger.error(f"[FAIL] Failed to initialize Flask app: {e}")
         logger.exception("Full traceback:")
         sys.exit(1)
 
@@ -45,9 +45,9 @@ def check_database_connection(logger):
     try:
         with db.engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        logger.info("✓ Database connection successful")
+        logger.info("[OK] Database connection successful")
     except Exception as e:
-        logger.error(f"✗ Database connection failed: {e}")
+        logger.error(f"[FAIL] Database connection failed: {e}")
         logger.exception("Full traceback:")
         sys.exit(1)
 
@@ -56,7 +56,7 @@ def load_alembic_config(logger):
     """Load and return Alembic configuration and script directory."""
     alembic_ini = Path(__file__).parent.parent / "alembic.ini"
     if not alembic_ini.exists():
-        logger.error(f"✗ Alembic configuration not found: {alembic_ini}")
+        logger.error(f"[FAIL] Alembic configuration not found: {alembic_ini}")
         sys.exit(1)
 
     try:
@@ -64,7 +64,7 @@ def load_alembic_config(logger):
         script_dir = ScriptDirectory.from_config(alembic_cfg)
         return alembic_cfg, script_dir
     except Exception as e:
-        logger.error(f"✗ Failed to load Alembic configuration: {e}")
+        logger.error(f"[FAIL] Failed to load Alembic configuration: {e}")
         logger.exception("Full traceback:")
         sys.exit(1)
 
@@ -74,12 +74,12 @@ def get_migration_revisions(script_dir, logger):
     try:
         revisions = list(script_dir.walk_revisions())
     except Exception as e:
-        logger.error(f"✗ Failed to read migrations: {e}")
+        logger.error(f"[FAIL] Failed to read migrations: {e}")
         logger.exception("Full traceback:")
         sys.exit(1)
 
     if not revisions:
-        logger.error("✗ No migrations found in alembic/versions/")
+        logger.error("[FAIL] No migrations found in alembic/versions/")
         logger.error("Please create an initial migration manually:")
         logger.error("  1. Ensure your models are up to date")
         logger.error("  2. Run: alembic revision --autogenerate -m 'Initial baseline schema'")
@@ -98,7 +98,7 @@ def check_database_state(logger):
         inspector = inspect(db.engine)
         has_alembic_table = "alembic_version" in inspector.get_table_names()
     except Exception as e:
-        logger.error(f"✗ Failed to inspect database: {e}")
+        logger.error(f"[FAIL] Failed to inspect database: {e}")
         logger.exception("Full traceback:")
         sys.exit(1)
 
@@ -123,27 +123,46 @@ def apply_migrations(alembic_cfg, logger):
     """Apply database migrations."""
     try:
         logger.info("Applying migrations...")
-        command.upgrade(alembic_cfg, "head")
-        logger.info("✓ Database migrations completed successfully")
+        logger.info("This may take several minutes for large databases...")
+
+        # Enable verbose logging for alembic (scoped to this migration run)
+        alembic_logger = logging.getLogger("alembic")
+        original_level = alembic_logger.level
+        try:
+            alembic_logger.setLevel(logging.DEBUG)
+            command.upgrade(alembic_cfg, "head")
+        finally:
+            # Restore original log level
+            alembic_logger.setLevel(original_level)
+
+        logger.info("[OK] Database migrations completed successfully")
 
         # Show current revision
         with db.engine.connect() as conn:
             result = conn.execute(text("SELECT version_num FROM alembic_version"))
             current = result.scalar()
             if current:
-                logger.info(f"✓ Database is now at revision: {current}")
+                logger.info(f"[OK] Database is now at revision: {current}")
             else:
-                logger.warning("⚠ No revision recorded (this is unexpected)")
+                logger.warning("[WARN] No revision recorded (this is unexpected)")
 
     except Exception as e:
-        logger.error(f"✗ Migration failed: {e}")
+        logger.error("")
+        logger.error("=" * 80)
+        logger.error("[FAIL] MIGRATION FAILED")
+        logger.error("=" * 80)
+        logger.error(f"Error: {e}")
+        logger.error("")
         logger.exception("Full traceback:")
         logger.error("")
         logger.error("Troubleshooting tips:")
         logger.error("  1. Check if the migration files are valid Python")
         logger.error("  2. Ensure the database schema matches the expected state")
-        logger.error("  3. Try running migrations manually: alembic upgrade head")
-        logger.error("  4. Check for circular dependencies in the models")
+        logger.error("  3. Review the PostgreSQL logs for database-level errors")
+        logger.error("  4. Check for existing indexes that may conflict with new ones")
+        logger.error("  5. Try running migrations manually: alembic upgrade head")
+        logger.error("  6. Check for circular dependencies in the models")
+        logger.error("=" * 80)
         sys.exit(1)
 
 
