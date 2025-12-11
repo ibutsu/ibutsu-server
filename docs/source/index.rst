@@ -21,6 +21,7 @@ Welcome to Ibutsu's documentation!
    developer-guide/celery-utils
    developer-guide/hatch-usage
    developer-guide/testing-guide
+   developer-guide/test-patterns
    developer-guide/alembic-migration
    developer-guide/alembic-commands
 

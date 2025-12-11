@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.integration
 def test_add_project(flask_app, make_group, auth_headers):
     """Test case for add_project"""
     client, jwt_token = flask_app
@@ -35,6 +36,7 @@ def test_add_project(flask_app, make_group, auth_headers):
         assert project.title == "My Project"
 
 
+@pytest.mark.integration
 def test_get_project_by_id(flask_app, make_project, auth_headers):
     """Test case for get_project by ID"""
     client, jwt_token = flask_app
@@ -55,6 +57,7 @@ def test_get_project_by_id(flask_app, make_project, auth_headers):
     assert response_data["title"] == "Test Project"
 
 
+@pytest.mark.integration
 def test_get_project_by_name(flask_app, make_project, auth_headers):
     """Test case for get_project by name"""
     client, jwt_token = flask_app
@@ -73,6 +76,7 @@ def test_get_project_by_name(flask_app, make_project, auth_headers):
     assert response_data["name"] == "my-project"
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     ("page", "page_size"),
     [
@@ -108,6 +112,7 @@ def test_get_project_list(flask_app, make_project, page, page_size, auth_headers
     assert response_data["pagination"]["pageSize"] == page_size
 
 
+@pytest.mark.integration
 def test_get_project_list_filter_by_owner(flask_app, make_project, make_user, auth_headers):
     """Test case for get_project_list with owner filter"""
     client, jwt_token = flask_app
@@ -135,6 +140,7 @@ def test_get_project_list_filter_by_owner(flask_app, make_project, make_user, au
     # Depending on user access, owner2's project may or may not be in results
 
 
+@pytest.mark.integration
 def test_update_project(flask_app, make_project, auth_headers):
     """Test case for update_project"""
     client, jwt_token = flask_app
@@ -165,15 +171,47 @@ def test_update_project(flask_app, make_project, auth_headers):
         assert updated_project.title == "Updated Title"
 
 
-def test_update_project_not_found(flask_app, auth_headers):
-    """Test case for update_project - project not found"""
+@pytest.mark.validation
+@pytest.mark.parametrize(
+    ("project_id", "expected_status", "description"),
+    [
+        ("not-a-uuid", 400, "Invalid UUID format triggers validation error"),
+        ("00000000-0000-0000-0000-000000000000", 404, "Valid UUID format but project not found"),
+    ],
+)
+def test_update_project_validation_errors(
+    flask_app, project_id, expected_status, description, auth_headers
+):
+    """Test case for update_project validation errors - parametrized"""
     client, jwt_token = flask_app
 
     update_data = {"title": "Updated Title"}
     headers = auth_headers(jwt_token)
     response = client.put(
-        "/api/project/00000000-0000-0000-0000-000000000000",
+        f"/api/project/{project_id}",
         headers=headers,
         json=update_data,
     )
-    assert response.status_code == 404
+    assert response.status_code == expected_status, description
+
+
+@pytest.mark.validation
+@pytest.mark.parametrize(
+    ("project_id", "expected_status", "description"),
+    [
+        ("not-a-uuid", 400, "Invalid UUID format triggers validation error"),
+        ("00000000-0000-0000-0000-000000000000", 404, "Valid UUID format but project not found"),
+    ],
+)
+def test_get_project_validation_errors(
+    flask_app, project_id, expected_status, description, auth_headers
+):
+    """Test case for get_project validation errors - parametrized"""
+    client, jwt_token = flask_app
+
+    headers = auth_headers(jwt_token)
+    response = client.get(
+        f"/api/project/{project_id}",
+        headers=headers,
+    )
+    assert response.status_code == expected_status, description

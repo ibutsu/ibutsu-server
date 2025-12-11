@@ -54,6 +54,22 @@
 - Identify test coverage increases through parametrization of current test functions before creating new test functions
 - Examine and reuse existing fixtures before writing new ones.
 
+### parametrization example for pattern:
+```python
+# Good: Single test function with multiple cases
+@pytest.mark.parametrize("case", [case1, case2, case3])
+def test_feature(case):
+    pass
+
+# Avoid: Multiple similar test functions
+def test_feature_case1():
+    pass
+def test_feature_case2():
+    pass
+def test_feature_case3():
+    pass
+```
+
 ### Integration Testing Approach
 - **Prefer integration tests over mocking**: Use `flask_app` fixture with real SQLite database operations
 - **Use builder fixtures**: `make_project`, `make_run`, `make_result`, etc. instead of mocks

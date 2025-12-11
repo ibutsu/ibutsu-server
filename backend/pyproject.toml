@@ -273,3 +273,9 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "--tb=short -n 16"
+markers = [
+    "integration: marks tests as integration tests (use real database)",
+    "validation: marks tests that validate input/request parameters",
+    "unit: marks tests as unit tests (mock external dependencies)",
+    "slow: marks tests as slow running (deselect with '-m \"not slow\"')",
+]

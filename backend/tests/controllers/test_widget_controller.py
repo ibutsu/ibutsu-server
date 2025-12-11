@@ -1,6 +1,9 @@
 from datetime import UTC, datetime, timedelta
 
+import pytest
 
+
+@pytest.mark.integration
 def test_get_comparison_result_list(flask_app, make_project, make_run, make_result, auth_headers):
     """Test case for compare_runs_view.py::get_comparison_data using real database data.
 
@@ -48,6 +51,7 @@ def test_get_comparison_result_list(flask_app, make_project, make_run, make_resu
         assert "results" in result
 
 
+@pytest.mark.integration
 def test_run_aggregator_with_real_data(flask_app, make_project, make_run, auth_headers):
     """Test case for run_aggregator with real database data.
 
@@ -84,6 +88,7 @@ def test_run_aggregator_with_real_data(flask_app, make_project, make_run, auth_h
         assert "skipped" in result
 
 
+@pytest.mark.unit
 def test_run_aggregator_endpoint_error_handling(flask_app):
     """Test case for widget controller error handling with run-aggregator.
 
@@ -108,6 +113,7 @@ def test_run_aggregator_endpoint_error_handling(flask_app):
         assert HTTPStatus.INTERNAL_SERVER_ERROR == 500
 
 
+@pytest.mark.unit
 def test_widget_controller_timeout_handling(flask_app):
     """Test case for widget controller timeout handling.
 
@@ -126,6 +132,7 @@ def test_widget_controller_timeout_handling(flask_app):
         assert "Database error or timeout" in error_message
 
 
+@pytest.mark.integration
 def test_get_widget_types(flask_app, auth_headers):
     """Test case for getting widget types.
 
@@ -144,6 +151,7 @@ def test_get_widget_types(flask_app, auth_headers):
         assert len(result["types"]) > 0
 
 
+@pytest.mark.validation
 def test_get_widget_invalid_id(flask_app, auth_headers):
     """Test case for getting an invalid widget ID.
 
@@ -161,6 +169,7 @@ def test_get_widget_invalid_id(flask_app, auth_headers):
     assert response.status_code == 400
 
 
+@pytest.mark.integration
 def test_widget_endpoints_with_query_params(flask_app, make_project, make_run, auth_headers):
     """Test that widget endpoints accept query parameters without UUID validation errors.
 
@@ -214,6 +223,7 @@ def test_widget_endpoints_with_query_params(flask_app, make_project, make_run, a
     assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
 
+@pytest.mark.integration
 def test_jenkins_job_view_endpoint(flask_app, make_project, make_run, auth_headers):
     """Test jenkins-job-view endpoint with filter parameter.
 

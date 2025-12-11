@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -79,63 +79,6 @@ def test_get_task_states(flask_app, task_state, expected_status, expected_messag
         assert result["message"] == expected_message
 
 
-def test_get_task_success_with_no_result(flask_app):
-    """Test case for get_task - SUCCESS state with no result data"""
-    client, _ = flask_app
-
-    mock_async_result = MagicMock()
-    mock_async_result.state = "SUCCESS"
-    mock_async_result.get.return_value = None
-
-    with client.application.app_context():
-        # Inline implementation
-        response = {"state": mock_async_result.state, "message": "Task has succeeded"}
-        result_data = mock_async_result.get()
-        if result_data:
-            response.update(result_data)
-
-        assert response["state"] == "SUCCESS"
-        assert "message" in response
-
-
-def test_get_task_pending(flask_app):
-    """Test case for get_task - PENDING state"""
-    client, _ = flask_app
-
-    mock_async_result = MagicMock()
-    mock_async_result.state = "PENDING"
-
-    with client.application.app_context():
-        # Inline implementation
-        response = {
-            "state": mock_async_result.state,
-            "message": "Task not yet started or invalid, check back later",
-        }
-
-        assert response["state"] == "PENDING"
-
-
-def test_get_task_failure(flask_app):
-    """Test case for get_task - FAILURE state"""
-    client, _ = flask_app
-
-    mock_async_result = MagicMock()
-    mock_async_result.state = "FAILURE"
-    mock_async_result.info = Exception("Something went wrong")
-    mock_async_result.traceback = "Error traceback\nMore error details"
-
-    with client.application.app_context():
-        # Inline implementation
-        response = {
-            "state": mock_async_result.state,
-            "message": "Task has failed!",
-            "error": mock_async_result.traceback.split("\n"),
-        }
-
-        assert response["state"] == "FAILURE"
-        assert response["message"] == "Task has failed!"
-
-
 def test_get_task_invalid_uuid(flask_app):
     """Test get_task with an invalid UUID."""
     client, jwt_token = flask_app
@@ -146,3 +89,38 @@ def test_get_task_invalid_uuid(flask_app):
 
     # Should return 400 Bad Request due to validate_uuid decorator
     assert response.status_code == 400
+
+
+def test_get_task_with_unknown_state(flask_app):
+    """Test get_task handles unknown task states correctly via the real controller."""
+    client, jwt_token = flask_app
+
+    # Create mock for AsyncResult with unknown state
+    mock_async_result = MagicMock()
+    mock_async_result.state = "UNKNOWN_STATE"
+    mock_async_result.traceback = "Error traceback\nMore details"
+
+    task_id = "00000000-0000-0000-0000-000000000001"
+
+    # Mock celery app to avoid initialization issues
+    mock_celery_app = MagicMock()
+
+    # Patch the _AppRegistry getter to return a mock celery_app without initialization
+    # Then patch AsyncResult to return our mock with unknown state
+    with (
+        patch("ibutsu_server._AppRegistry.get_celery_app", return_value=mock_celery_app),
+        patch(
+            "ibutsu_server.controllers.task_controller.AsyncResult", return_value=mock_async_result
+        ),
+    ):
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {jwt_token}"}
+        response = client.get(f"/api/task/{task_id}", headers=headers)
+
+    # Unknown state should default to FAILURE status (NON_AUTHORITATIVE_INFORMATION = 203)
+    assert response.status_code == HTTPStatus.NON_AUTHORITATIVE_INFORMATION
+    body_text = response.text
+    # Verify the state and error information are in the response
+    response_data = response.json()
+    assert response_data["state"] == "UNKNOWN_STATE"
+    assert response_data["message"] == "Task has failed!"
+    assert "Error traceback" in body_text or "error" in response_data

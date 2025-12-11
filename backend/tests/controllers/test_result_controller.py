@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.integration
 def test_add_result(flask_app, make_project, make_run, auth_headers):
     """Test case for add_result"""
     client, jwt_token = flask_app
@@ -43,16 +44,12 @@ def test_add_result(flask_app, make_project, make_run, auth_headers):
         assert result.result == "passed"
 
 
-def test_get_result(flask_app, make_project, make_run, make_result, auth_headers):
+@pytest.mark.integration
+def test_get_result(flask_app, result_test_hierarchy, auth_headers):
     """Test case for get_result"""
     client, jwt_token = flask_app
-
-    # Create test data
-    project = make_project(name="test-project")
-    run = make_run(project_id=project.id)
-    result = make_result(
-        run_id=run.id, project_id=project.id, test_id="test.example", result="passed"
-    )
+    hierarchy = result_test_hierarchy
+    result = hierarchy["result"]
 
     headers = auth_headers(jwt_token)
     response = client.get(
@@ -66,6 +63,7 @@ def test_get_result(flask_app, make_project, make_run, make_result, auth_headers
     assert response_data["test_id"] == "test.example"
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize(
     ("page", "page_size"),
     [
@@ -106,6 +104,7 @@ def test_get_result_list(
     assert response_data["pagination"]["pageSize"] == page_size
 
 
+@pytest.mark.integration
 def test_get_result_list_filter_by_result_status(
     flask_app, make_project, make_run, make_result, auth_headers
 ):
@@ -149,16 +148,12 @@ def test_get_result_list_filter_by_result_status(
         assert result["result"] == "passed"
 
 
-def test_update_result(flask_app, make_project, make_run, make_result, auth_headers):
+@pytest.mark.integration
+def test_update_result(flask_app, result_test_hierarchy, auth_headers):
     """Test case for update_result"""
     client, jwt_token = flask_app
-
-    # Create test data
-    project = make_project(name="test-project")
-    run = make_run(project_id=project.id)
-    result = make_result(
-        run_id=run.id, project_id=project.id, test_id="test.example", result="passed"
-    )
+    hierarchy = result_test_hierarchy
+    result = hierarchy["result"]
 
     update_data = {"result": "failed", "metadata": {"component": "updated-component"}}
     headers = auth_headers(jwt_token)
@@ -181,20 +176,53 @@ def test_update_result(flask_app, make_project, make_run, make_result, auth_head
         assert updated_result.result == "failed"
 
 
-def test_update_result_not_found(flask_app, auth_headers):
-    """Test case for update_result - result not found"""
+@pytest.mark.validation
+@pytest.mark.parametrize(
+    ("result_id", "expected_status", "description"),
+    [
+        ("not-a-uuid", 400, "Invalid UUID format triggers validation error"),
+        ("00000000-0000-0000-0000-000000000000", 404, "Valid UUID format but result not found"),
+    ],
+)
+def test_update_result_validation_errors(
+    flask_app, result_id, expected_status, description, auth_headers
+):
+    """Test case for update_result validation errors - parametrized"""
     client, jwt_token = flask_app
 
     update_data = {"result": "failed"}
     headers = auth_headers(jwt_token)
     response = client.put(
-        "/api/result/00000000-0000-0000-0000-000000000000",
+        f"/api/result/{result_id}",
         headers=headers,
         json=update_data,
     )
-    assert response.status_code == 404
+    assert response.status_code == expected_status, description
 
 
+@pytest.mark.validation
+@pytest.mark.parametrize(
+    ("result_id", "expected_status", "description"),
+    [
+        ("not-a-uuid", 400, "Invalid UUID format triggers validation error"),
+        ("00000000-0000-0000-0000-000000000000", 404, "Valid UUID format but result not found"),
+    ],
+)
+def test_get_result_validation_errors(
+    flask_app, result_id, expected_status, description, auth_headers
+):
+    """Test case for get_result validation errors - parametrized"""
+    client, jwt_token = flask_app
+
+    headers = auth_headers(jwt_token)
+    response = client.get(
+        f"/api/result/{result_id}",
+        headers=headers,
+    )
+    assert response.status_code == expected_status, description
+
+
+@pytest.mark.validation
 def test_get_result_list_requires_project_filter_for_superadmin(
     flask_app, make_project, make_run, make_result, auth_headers
 ):
@@ -216,6 +244,7 @@ def test_get_result_list_requires_project_filter_for_superadmin(
     assert "project_id filter is required" in response.text
 
 
+@pytest.mark.integration
 def test_get_result_list_with_project_filter_for_superadmin(
     flask_app, make_project, make_run, make_result, auth_headers
 ):
