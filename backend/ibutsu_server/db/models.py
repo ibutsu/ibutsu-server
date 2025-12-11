@@ -191,6 +191,31 @@ class Project(Model, ModelMixin):
 
 
 class Result(Model, ModelMixin):
+    """
+    Result model representing individual test results.
+
+    IMPORTANT: PostgreSQL-specific performance indexes (JSON operators, GIN indexes)
+    are defined in Alembic migrations rather than in this model to ensure
+    compatibility with SQLite in dev/test environments. See migration
+    fc3df1d9ee4e_remove_unused_meta_table_and_add_production_indexes.py
+
+    Any new performance indexes using PostgreSQL-specific features should be:
+    1. Added to the Alembic migration with dialect checks
+    2. Documented in this comment block
+
+    Current PostgreSQL-only indexes (managed via migration):
+    - ix_results_assignee: Index on data->>'assignee'
+    - ix_results_classification: Index on data->>'classification'
+    - ix_results_exception_name: Index on data->>'exception_name'
+    - ix_results_jenkins_build_number: Index on (data->'jenkins')->>'build_number'
+    - ix_results_jenkins_job_name: Index on (data->'jenkins')->>'job_name'
+    - ix_results_component_env_project: Composite (component, env, project_id, start_time DESC)
+    - ix_results_component_start_time_result_project_id: Composite index
+    - ix_results_result_satver_project_id_run_id_snapver: Composite with JSON fields
+    - ix_results_requirements: GIN index on data->'requirements'
+    - ix_results_tags: GIN index on data->'tags'
+    """
+
     __tablename__ = "results"
     artifacts = relationship("Artifact")
     component = Column(Text, index=True)
@@ -209,6 +234,26 @@ class Result(Model, ModelMixin):
 
 
 class Run(Model, ModelMixin):
+    """
+    Run model representing a collection of test results.
+
+    IMPORTANT: PostgreSQL-specific performance indexes (JSON operators, GIN indexes)
+    are defined in Alembic migrations rather than in this model to ensure
+    compatibility with SQLite in dev/test environments. See migration
+    fc3df1d9ee4e_remove_unused_meta_table_and_add_production_indexes.py
+
+    Any new performance indexes using PostgreSQL-specific features should be:
+    1. Added to the Alembic migration with dialect checks
+    2. Documented in this comment block
+
+    Current PostgreSQL-only indexes (managed via migration):
+    - ix_runs_jenkins_build_number: Index on (data->'jenkins')->>'build_number'
+    - ix_runs_jenkins_job_name: Index on (data->'jenkins')->>'job_name'
+    - ix_runs_jjn_jbn: Composite on both Jenkins fields
+    - ix_runs_summary: GIN index on summary JSONB field
+    - ix_runs_tags: GIN index on data->'tags'
+    """
+
     __tablename__ = "runs"
     artifacts = relationship("Artifact")
     component = Column(Text, index=True)
@@ -320,15 +365,3 @@ class Token(Model, ModelMixin):
     token = Column(Text, nullable=False)
     expires = Column(DateTime)
     user_id = Column(PortableUUID(), ForeignKey("users.id"), index=True)
-
-
-class Meta(Model):
-    """Metadata about the table
-
-    This is a simple table used for storing metadata about the database itself. This is mostly
-    used for the database versioning, but expandable if we want to use it for other things.
-    """
-
-    __tablename__ = "meta"
-    key = Column(Text, primary_key=True, nullable=False, index=True)
-    value = Column(Text)
