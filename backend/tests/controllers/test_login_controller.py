@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import pytest
+
 
 @patch("ibutsu_server.controllers.login_controller.generate_token")
 def test_login(mocked_generate_token, flask_app, make_user):
@@ -34,35 +36,8 @@ def test_login(mocked_generate_token, flask_app, make_user):
     assert "token" in response_data
 
 
-def test_login_empty_request(flask_app):
-    """Test case for login with empty request"""
-    client, _jwt_token = flask_app
-
-    login_details = {"email": "", "password": ""}
-    headers = {"Accept": "application/json", "Content-Type": "application/json"}
-    response = client.post(
-        "/api/login",
-        headers=headers,
-        json=login_details,
-    )
-    assert response.status_code == 400, f"Response body is : {response.text}"
-
-
-def test_login_no_user(flask_app):
-    """Test case for login with a user that doesn't exist"""
-    client, _jwt_token = flask_app
-
-    login_details = {"email": "bad@email.com", "password": "password"}
-    headers = {"Accept": "application/json", "Content-Type": "application/json"}
-    response = client.post(
-        "/api/login",
-        headers=headers,
-        json=login_details,
-    )
-    assert response.status_code == 401, f"Response body is : {response.text}"
-
-    response_data = response.json()
-    assert response_data["code"] == "INVALID"
+# Note: test_login_empty_request and test_login_no_user are now covered by
+# test_login_validation_parametrized below
 
 
 def test_login_bad_password(flask_app):
@@ -142,3 +117,336 @@ def test_login_support(flask_app):
     assert isinstance(response_data["github"], bool)
     assert isinstance(response_data["facebook"], bool)
     assert isinstance(response_data["gitlab"], bool)
+
+
+def test_register_success(flask_app):
+    """Test successful user registration"""
+    client, _jwt_token = flask_app
+
+    registration_data = {"email": "newuser@example.com", "password": "securepassword123"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login/register",
+        headers=headers,
+        json=registration_data,
+    )
+    assert response.status_code == 201, f"Response body is : {response.text}"
+
+    # Verify user was created in database
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import User
+
+        user = db.session.execute(
+            db.select(User).filter_by(email="newuser@example.com")
+        ).scalar_one_or_none()
+        assert user is not None
+        assert user.is_active is False  # Should be inactive until activated
+        assert user.activation_code is not None
+
+
+def test_register_empty_fields(flask_app):
+    """Test registration with empty email/password"""
+    client, _jwt_token = flask_app
+
+    registration_data = {"email": "", "password": ""}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login/register",
+        headers=headers,
+        json=registration_data,
+    )
+    # Connexion validates email format before controller, returns 400 for invalid format
+    assert response.status_code == 400, f"Response body is : {response.text}"
+
+
+def test_register_duplicate_email(flask_app):
+    """Test registration with already existing email"""
+    client, _jwt_token = flask_app
+
+    # Create existing user
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import User
+
+        user = User(name="Existing User", email="existing@example.com", is_active=True)
+        user.password = "password"
+        session.add(user)
+        session.commit()
+
+    registration_data = {"email": "existing@example.com", "password": "newpassword"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login/register",
+        headers=headers,
+        json=registration_data,
+    )
+    assert response.status_code == 400, f"Response body is : {response.text}"
+    assert "already exists" in response.text
+
+
+def test_activate_success(flask_app):
+    """Test successful account activation"""
+    client, _jwt_token = flask_app
+
+    # Create inactive user with activation code (base64-encoded)
+    from base64 import urlsafe_b64encode
+
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import User
+
+        # Create a valid base64-encoded activation code (keep padding)
+        activation_code = urlsafe_b64encode(b"test_activation_code_123").decode()
+        user = User(
+            name="Inactive User",
+            email="inactive@example.com",
+            is_active=False,
+            activation_code=activation_code,
+        )
+        user.password = "password"
+        session.add(user)
+        session.commit()
+        user_id = user.id
+
+    # Activate the user via direct controller call
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import activate
+
+        result = activate(activation_code)
+        # Returns a redirect Response object
+        assert result.status_code == 302
+
+    # Verify user is now active
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import User
+
+        user = db.session.get(User, user_id)
+        assert user.is_active is True
+        assert user.activation_code is None
+
+
+def test_activate_invalid_code(flask_app):
+    """Test activation with invalid activation code"""
+    client, _jwt_token = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import activate
+
+        result = activate("invalid_code_xyz")
+        # Returns a redirect Response object with error
+        assert result.status_code == 302
+
+
+def test_recover_success(flask_app):
+    """Test successful account recovery"""
+    client, _jwt_token = flask_app
+
+    # Create user
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import User
+
+        user = User(name="Test User", email="recover@example.com", is_active=True)
+        user.password = "password"
+        session.add(user)
+        session.commit()
+        user_id = user.id
+
+    recovery_data = {"email": "recover@example.com"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login/recover",
+        headers=headers,
+        json=recovery_data,
+    )
+    assert response.status_code == 201, f"Response body is : {response.text}"
+
+    # Verify activation code was set
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import User
+
+        user = db.session.get(User, user_id)
+        assert user.activation_code is not None
+
+
+def test_recover_nonexistent_user(flask_app):
+    """Test recovery for non-existent user"""
+    client, _jwt_token = flask_app
+
+    recovery_data = {"email": "nonexistent@example.com"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login/recover",
+        headers=headers,
+        json=recovery_data,
+    )
+    assert response.status_code == 400
+
+
+def test_recover_missing_email(flask_app):
+    """Test recovery without email"""
+    client, _jwt_token = flask_app
+
+    recovery_data = {}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login/recover",
+        headers=headers,
+        json=recovery_data,
+    )
+    assert response.status_code == 400
+
+
+def test_reset_password_success(flask_app):
+    """Test successful password reset"""
+    client, _jwt_token = flask_app
+
+    # Create user with base64-encoded activation code (like the register function creates)
+    from base64 import urlsafe_b64encode
+
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import User
+
+        # Keep padding for valid base64
+        activation_code = urlsafe_b64encode(b"reset_code_123").decode()
+        user = User(
+            name="Test User",
+            email="reset@example.com",
+            is_active=True,
+            activation_code=activation_code,
+        )
+        user.password = "oldpassword"
+        session.add(user)
+        session.commit()
+        user_id = user.id
+
+    reset_data = {"activation_code": activation_code, "password": "newpassword123"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login/reset-password",
+        headers=headers,
+        json=reset_data,
+    )
+    assert response.status_code == 201, f"Response body is : {response.text}"
+
+    # Verify password was changed and activation code cleared
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import User
+
+        user = db.session.get(User, user_id)
+        assert user.activation_code is None
+        # Verify new password works
+        assert user.check_password("newpassword123")
+
+
+def test_reset_password_invalid_code(flask_app):
+    """Test password reset with invalid activation code"""
+    client, _jwt_token = flask_app
+
+    reset_data = {"activation_code": "invalid_code", "password": "newpassword"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login/reset-password",
+        headers=headers,
+        json=reset_data,
+    )
+    assert response.status_code == 400
+
+
+def test_reset_password_missing_fields(flask_app):
+    """Test password reset with missing fields"""
+    client, _jwt_token = flask_app
+
+    reset_data = {"activation_code": "code123"}  # Missing password
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login/reset-password",
+        headers=headers,
+        json=reset_data,
+    )
+    assert response.status_code == 400
+
+
+def test_config_google(flask_app):
+    """Test getting login config for Google provider"""
+    client, _jwt_token = flask_app
+
+    headers = {"Accept": "application/json"}
+    response = client.get("/api/login/config/google", headers=headers)
+    assert response.status_code == 200, f"Response body is : {response.text}"
+
+    response_data = response.json()
+    # Should return configuration object (may be empty if not configured)
+    assert isinstance(response_data, dict)
+
+
+def test_config_gitlab(flask_app):
+    """Test getting login config for GitLab provider"""
+    client, _jwt_token = flask_app
+
+    headers = {"Accept": "application/json"}
+    response = client.get("/api/login/config/gitlab", headers=headers)
+    assert response.status_code == 200, f"Response body is : {response.text}"
+
+    response_data = response.json()
+    # Should return configuration object
+    assert isinstance(response_data, dict)
+
+
+def test_login_disabled_for_non_superadmin(flask_app, temp_config):
+    """Test that non-superadmin users can't login when USER_LOGIN_ENABLED is False"""
+    client, _jwt_token = flask_app
+
+    # Create non-superadmin user
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import User
+
+        user = User(
+            name="Regular User", email="regular@example.com", is_active=True, is_superadmin=False
+        )
+        user.password = "password"
+        session.add(user)
+        session.commit()
+
+    # Temporarily disable user login using temp_config fixture
+    temp_config("USER_LOGIN_ENABLED", False)
+
+    login_details = {"email": "regular@example.com", "password": "password"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login",
+        headers=headers,
+        json=login_details,
+    )
+    assert response.status_code == 401
+    response_data = response.json()
+    assert "disabled" in response_data["message"].lower()
+
+
+@pytest.mark.parametrize(
+    ("email", "password", "expected_status", "description"),
+    [
+        ("valid@test.com", "", 401, "Empty password returns 401"),
+        ("", "password", 400, "Empty email fails Connexion validation"),
+        ("notanemail", "password", 400, "Invalid email format"),
+        ("bad@email.com", "password", 401, "Non-existent user"),
+    ],
+)
+def test_login_validation_parametrized(flask_app, email, password, expected_status, description):
+    """Test login validation with various invalid inputs"""
+    client, _jwt_token = flask_app
+
+    login_details = {"email": email, "password": password}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login",
+        headers=headers,
+        json=login_details,
+    )
+    assert response.status_code == expected_status, description

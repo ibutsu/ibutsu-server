@@ -6,6 +6,10 @@ Overview
 
 This guide explains how to write tests for the ibutsu-server backend using our integration testing approach. Tests use real database operations with SQLite in-memory databases to ensure they validate actual application behavior while remaining fast and isolated.
 
+.. note::
+
+   Looking for test patterns and best practices? See :doc:`test-patterns` for comprehensive examples of parametrization, composite fixtures, and test markers.
+
 Philosophy
 ----------
 
@@ -429,6 +433,7 @@ Parameterized Tests
 
    import pytest
 
+   @pytest.mark.integration
    @pytest.mark.parametrize('result_status,expected_count', [
        ('passed', 5),
        ('failed', 3),
@@ -455,6 +460,10 @@ Parameterized Tests
        ).count()
 
        assert count == expected_count
+
+.. note::
+
+   For more advanced parametrization patterns including lambda builders and composite fixtures, see :doc:`test-patterns`.
 
 Testing Best Practices
 ----------------------
@@ -673,14 +682,17 @@ Getting Help
 ~~~~~~~~~~~~
 
 1. Check this guide first
-2. Look at existing tests for patterns
-3. Check ``conftest.py`` for available fixtures
-4. Ask the team!
+2. Review :doc:`test-patterns` for common patterns
+3. Look at existing tests for examples
+4. Check ``conftest.py`` for available fixtures
+5. Ask the team!
 
 References
 ----------
 
+* :doc:`test-patterns` - Test patterns and best practices
 * `Flask Testing Documentation <https://flask.palletsprojects.com/en/2.3.x/testing/>`_
 * `pytest Documentation <https://docs.pytest.org/>`_
 * `SQLAlchemy Testing <https://docs.sqlalchemy.org/en/20/orm/session_transaction.html>`_
 * Backend AGENTS.md - Testing guidelines for AI agents
+* Backend ``tests/ITERATION_2_IMPROVEMENTS.md`` - Recent test improvements

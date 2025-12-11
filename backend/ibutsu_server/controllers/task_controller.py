@@ -41,4 +41,6 @@ def get_task(id_, token_info=None, user=None):
         response["message"] = "Task has failed!"
         response["error"] = async_result.traceback.split("\n")
 
-    return response, _STATE_TO_CODE.get(async_result.state)
+    # Get status code from mapping, default to FAILURE status for unknown states
+    status_code = _STATE_TO_CODE.get(async_result.state, HTTPStatus.NON_AUTHORITATIVE_INFORMATION)
+    return response, status_code
