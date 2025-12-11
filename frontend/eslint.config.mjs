@@ -18,7 +18,6 @@ export default defineConfig([
   js.configs.recommended,
   reactPlugin.configs.flat.recommended,
   reactPlugin.configs.flat['jsx-runtime'],
-  reactHooksPlugin.configs['recommended-latest'],
   eslintPluginJsxA11y.flatConfigs.recommended,
   pluginCypress.configs.recommended,
   // Global settings for React
@@ -33,10 +32,7 @@ export default defineConfig([
     files: ['src/**/*', 'cypress/**/*', 'bin/**/*'],
     plugins: {
       'unused-imports': unusedImports, // not flat config compatible
-      reactPlugin,
-      reactHooksPlugin,
-      eslintPluginJsxA11y,
-      pluginCypress,
+      'react-hooks': reactHooksPlugin,
     },
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
@@ -82,6 +78,8 @@ export default defineConfig([
         },
       ],
       'react/react-in-jsx-scope': 'off',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
       camelcase: 'off',
       quotes: ['warn', 'single'],
       'no-duplicate-imports': 'error',

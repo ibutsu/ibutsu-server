@@ -382,7 +382,9 @@ describe('HTTP Utilities', () => {
         status: 401,
       };
 
-      expect(() => HttpClient.handleResponse(response)).toThrow('Unauthorized - redirecting to login');
+      expect(() => HttpClient.handleResponse(response)).toThrow(
+        'Unauthorized - redirecting to login',
+      );
       expect(window.location.href).toBe('/login');
       expect(AuthService.logout).toHaveBeenCalled();
 
@@ -400,7 +402,9 @@ describe('HTTP Utilities', () => {
         statusText: 'Internal Server Error',
       };
 
-      expect(() => HttpClient.handleResponse(response)).toThrow('HTTP 500: Internal Server Error');
+      expect(() => HttpClient.handleResponse(response)).toThrow(
+        'HTTP 500: Internal Server Error',
+      );
       expect(window.location.href).toBe('');
 
       window.location = originalLocation;
@@ -412,7 +416,9 @@ describe('HTTP Utilities', () => {
         statusText: 'Unknown Error',
       };
 
-      expect(() => HttpClient.handleResponse(response)).toThrow('HTTP undefined: Unknown Error');
+      expect(() => HttpClient.handleResponse(response)).toThrow(
+        'HTTP undefined: Unknown Error',
+      );
     });
   });
 });
