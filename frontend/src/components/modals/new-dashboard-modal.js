@@ -57,7 +57,7 @@ const NewDashboardModal = ({
     >
       <ModalHeader title="New Dashboard" />
       <ModalBody>
-        <Form ouiaId="new-dashboard-form">
+        <Form>
           <FormGroup
             label="Title"
             fieldId="dashboard-title"

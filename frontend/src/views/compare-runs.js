@@ -69,7 +69,7 @@ const CompareRunsView = () => {
       setFilters({
         ...filters,
         result: {
-          ...filters.result,
+          operator: 'in',
           val: checked ? FEPSX : FEP,
         },
       });
@@ -100,7 +100,7 @@ const CompareRunsView = () => {
       const projectId = primaryObject ? primaryObject.id : '';
       let filtersWithProject = {
         ...filters,
-        project_id: { op: 'in', val: projectId },
+        project_id: { operator: 'eq', val: projectId },
       };
 
       // Retrieve results from database
@@ -131,18 +131,15 @@ const CompareRunsView = () => {
 
   const compareHeader = useMemo(() => {
     return (
-      <Flex style={{ width: '100%' }} ouiaId="compare-runs-header-flex">
-        <FlexItem
-          grow={{ default: 'grow' }}
-          ouiaId="compare-runs-title-flex-item"
-        >
+      <Flex style={{ width: '100%' }}>
+        <FlexItem grow={{ default: 'grow' }}>
           <Content>
-            <Content component="h2">
+            <Content component="h2" ouiaId="compare-runs-header-title">
               Select Test Run metadata to compare
             </Content>
           </Content>
         </FlexItem>
-        <FlexItem ouiaId="compare-runs-include-skips-flex-item">
+        <FlexItem>
           <Content>
             <Checkbox
               id="include-skips"
@@ -154,12 +151,12 @@ const CompareRunsView = () => {
             />
           </Content>
         </FlexItem>
-        <FlexItem ouiaId="compare-runs-apply-filters-flex-item">
+        <FlexItem>
           <Button variant="primary" ouiaId="compare-runs-apply-filters-button">
             {isLoading ? 'Loading Results' : 'Apply Filters'}
           </Button>
         </FlexItem>
-        <FlexItem ouiaId="compare-runs-clear-filters-flex-item">
+        <FlexItem>
           <Button
             variant="secondary"
             onClick={clearFilters}

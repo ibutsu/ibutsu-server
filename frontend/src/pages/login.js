@@ -146,8 +146,8 @@ const Login = () => {
   );
 
   const onEnterKeyPress = useCallback(
-    (target) => {
-      if (target.charCode === 13) {
+    (event) => {
+      if (event.key === 'Enter' || event.charCode === 13) {
         onLoginButtonClick();
       }
     },
@@ -417,7 +417,7 @@ const Login = () => {
       forgotCredentials={loginSupport.user ? forgotCredentials : ''}
     >
       {loginSupport.user && (
-        <Form ouiaId="login-form">
+        <Form>
           <FormAlert>
             {alertMessage && alertMessage.message && (
               <Alert

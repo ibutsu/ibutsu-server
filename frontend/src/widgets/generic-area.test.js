@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, waitFor } from '@testing-library/react';
 import GenericAreaWidget from './generic-area';
 import { HttpClient } from '../utilities/http';

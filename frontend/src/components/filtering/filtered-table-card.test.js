@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, fireEvent } from '@testing-library/react';
 import FilterTable from './filtered-table-card';
 
@@ -7,7 +6,7 @@ jest.mock(
   '@patternfly/react-component-groups/dist/dynamic/SkeletonTable',
   () => {
     return function SkeletonTable() {
-      return <div data-testid="skeleton-table">Loading...</div>;
+      return <div data-ouia-component-id="skeleton-table">Loading...</div>;
     };
   },
 );
@@ -405,7 +404,9 @@ describe('FilterTable', () => {
 
   describe('Filters prop', () => {
     it('should render table with filters', () => {
-      const filters = <div data-testid="custom-filters">Custom Filters</div>;
+      const filters = (
+        <div data-ouia-component-id="custom-filters">Custom Filters</div>
+      );
       renderComponent({ filters, fetching: false });
 
       // Should render the table

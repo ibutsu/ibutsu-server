@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import {
   render,
   screen,
@@ -30,7 +29,7 @@ jest.mock('../hooks/use-widget-filters', () => ({
     runs: [],
   }),
   WidgetFilterComponent: () => (
-    <div data-testid="filter-component">Filters</div>
+    <div data-ouia-component-id="filter-component">Filters</div>
   ),
 }));
 
@@ -40,7 +39,7 @@ jest.mock('../widget-parameter-fields', () => {
 
   const MockWidgetParameterFields = ({ widgetType, params, onChange }) => {
     return (
-      <div data-testid="widget-parameter-fields">
+      <div data-ouia-component-id="widget-parameter-fields">
         {widgetType?.params
           ?.filter(
             (p) => p.name !== 'additional_filters' && p.name !== 'project',

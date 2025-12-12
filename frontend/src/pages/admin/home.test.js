@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import AdminHome from './home';

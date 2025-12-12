@@ -259,13 +259,7 @@ const IbutsuHeader = () => {
   );
 
   const headerTools = (
-    <Toolbar
-      id="toolbar"
-      isFullHeight
-      isStatic
-      style={{ paddingLeft: '30px' }}
-      ouiaId="header-toolbar"
-    >
+    <Toolbar id="toolbar" isFullHeight isStatic style={{ paddingLeft: '30px' }}>
       <ToolbarContent>
         <ToolbarGroup variant="filter-group">
           <ToolbarItem>{projectSelect}</ToolbarItem>
@@ -313,7 +307,7 @@ const IbutsuHeader = () => {
             </Button>
           </ToolbarItem>
           <ToolbarItem gap={{ default: 'gapSm' }}>
-            <ToggleGroup ouiaId="theme-toggle-group">
+            <ToggleGroup>
               <ToggleGroupItem
                 aria-label="Light theme"
                 icon={
@@ -362,7 +356,6 @@ const IbutsuHeader = () => {
         productName="Ibutsu"
         backgroundImageSrc="/images/about-bg.jpg"
         trademark="Copyright (c) 2021 Red Hat, Inc."
-        ouiaId="about-modal"
       >
         <Content>
           <Content component="dl">
@@ -404,7 +397,7 @@ const IbutsuHeader = () => {
           * Note: artifact files (screenshots, logs) are retained for 3 months
         </p>
       </AboutModal>
-      <Masthead ouiaId="main-masthead">
+      <Masthead>
         <MastheadMain>
           <MastheadToggle>
             <PageToggleButton

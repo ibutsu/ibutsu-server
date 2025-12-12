@@ -471,15 +471,7 @@ const Dashboard = () => {
       </PageSection>
       <PageSection hasBodyWrapper={false}>
         {!!primaryObject && !!selectedDashboard && !!widgets && (
-          <Grid
-            sm={12}
-            md={6}
-            lg={6}
-            xl={4}
-            xl2={4}
-            hasGutter
-            ouiaId="dashboard-widgets-grid"
-          >
+          <Grid sm={12} md={6} lg={6} xl={4} xl2={4} hasGutter>
             {widgetComponents}
           </Grid>
         )}
@@ -488,7 +480,6 @@ const Dashboard = () => {
             headingLevel="h4"
             icon={TachometerAltIcon}
             titleText="No Dashboard Selected"
-            ouiaId="dashboard-empty-no-selection"
           >
             <EmptyStateBody>
               There is currently no dashboard selected. Please select a
@@ -509,12 +500,7 @@ const Dashboard = () => {
           </EmptyState>
         )}
         {!!primaryObject && !!selectedDashboard && widgets.length === 0 && (
-          <EmptyState
-            headingLevel="h4"
-            icon={CubesIcon}
-            titleText="No Widgets"
-            ouiaId="dashboard-empty-no-widgets"
-          >
+          <EmptyState headingLevel="h4" icon={CubesIcon} titleText="No Widgets">
             <EmptyStateBody>
               This dashboard currently has no widgets defined.
               <br />

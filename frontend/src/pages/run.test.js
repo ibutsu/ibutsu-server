@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Run from './run';

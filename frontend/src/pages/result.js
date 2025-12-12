@@ -48,7 +48,7 @@ const Result = () => {
 
   return (
     <>
-      <PageSection hasBodyWrapper={false} ouiaId="result-header-section">
+      <PageSection hasBodyWrapper={false}>
         <Content>
           <Content component="h1">
             {testResult ? (
@@ -59,7 +59,7 @@ const Result = () => {
           </Content>
         </Content>
       </PageSection>
-      <PageSection hasBodyWrapper={false} ouiaId="result-content-section">
+      <PageSection hasBodyWrapper={false}>
         {!fetching && isResultValid && <ResultView testResult={testResult} />}
         {!fetching && !isResultValid && (
           <EmptyObject

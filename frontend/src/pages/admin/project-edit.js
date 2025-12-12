@@ -322,7 +322,7 @@ const ProjectEdit = () => {
       </PageSection>
       <PageSection hasBodyWrapper={false}>
         {!title && <Alert variant="info" title="Loading..." />}
-        <Card>
+        <Card ouiaId="project-edit-card">
           <CardBody>
             <Form>
               <FormGroup label="Title" isRequired fieldId="projectTitle">
@@ -339,6 +339,7 @@ const ProjectEdit = () => {
                       ? ValidatedOptions.default
                       : ValidatedOptions.error
                   }
+                  ouiaId="project-edit-title-input"
                 />
                 <FormHelperText>
                   <HelperText>
@@ -360,6 +361,7 @@ const ProjectEdit = () => {
                       ? ValidatedOptions.default
                       : ValidatedOptions.error
                   }
+                  ouiaId="project-edit-name-input"
                 />
                 <FormHelperText>
                   <HelperText>
@@ -408,6 +410,7 @@ const ProjectEdit = () => {
               <FormGroup fieldId="default-dashboard" label="Default dashboard">
                 <Select
                   id="typeahead-select-dashboard"
+                  ouiaId="project-edit-dashboard-select"
                   isOpen={isDashboardOpen}
                   selected={selectedDashboard}
                   onSelect={onDashboardSelect}
@@ -444,7 +447,7 @@ const ProjectEdit = () => {
                   variant="primary"
                   ouiaId="admin-project-edit-save"
                   onClick={onSubmitClick}
-                  disabled={titleValid && nameValid}
+                  disabled={!titleValid || !nameValid}
                 >
                   Submit
                 </Button>

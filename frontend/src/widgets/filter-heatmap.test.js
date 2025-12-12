@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { FilterHeatmapWidget, HEATMAP_TYPES } from './filter-heatmap';
@@ -590,6 +589,565 @@ describe('FilterHeatmapWidget', () => {
     it('should export HEATMAP_TYPES constants', () => {
       expect(HEATMAP_TYPES.filter).toBe('filter-heatmap');
       expect(HEATMAP_TYPES.jenkins).toBe('jenkins-heatmap');
+    });
+  });
+
+  describe('Cell Rendering Logic', () => {
+    it('should render heatmap with multiple job rows', async () => {
+      const multiJobData = {
+        heatmap: {
+          'job-1': [
+            [95, 'run-1', null, '101'],
+            [88, 'run-2', null, '102'],
+          ],
+          'job-2': [
+            [72, 'run-3', null, '103'],
+            [60, 'run-4', null, '104'],
+          ],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => multiJobData,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        // Verify heatmap has 2 rows of data
+        expect(screen.getByTestId('heatmap-ylabels')).toHaveTextContent('2');
+        expect(screen.getByTestId('heatmap-data')).toHaveTextContent('2');
+      });
+    });
+
+    it('should handle data with annotations', async () => {
+      const annotatedData = {
+        heatmap: {
+          'job-with-annotation': [
+            [
+              85,
+              'run-annotated',
+              [{ name: 'Note', value: 'Test annotation' }],
+              '200',
+            ],
+          ],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => annotatedData,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('heatmap')).toBeInTheDocument();
+      });
+    });
+
+    it('should handle data with low pass rate (failed state)', async () => {
+      const failedData = {
+        heatmap: {
+          'failing-job': [
+            [35, 'run-fail', null, '301'],
+            [48, 'run-fail-2', null, '302'],
+          ],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => failedData,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('heatmap-data')).toHaveTextContent('1');
+      });
+    });
+
+    it('should handle data with medium pass rate (skipped state)', async () => {
+      const skippedData = {
+        heatmap: {
+          'medium-job': [
+            [65, 'run-med', null, '401'],
+            [75, 'run-med-2', null, '402'],
+          ],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => skippedData,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('heatmap-data')).toHaveTextContent('1');
+      });
+    });
+
+    it('should handle data with high pass rate (passed state)', async () => {
+      const passedData = {
+        heatmap: {
+          'passing-job': [
+            [92, 'run-pass', null, '501'],
+            [98, 'run-pass-2', null, '502'],
+          ],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => passedData,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('heatmap-data')).toHaveTextContent('1');
+      });
+    });
+
+    it('should handle NaN values in data', async () => {
+      const nanData = {
+        heatmap: {
+          'nan-job': [[NaN, 'run-nan', null, '601']],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => nanData,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('heatmap-data')).toHaveTextContent('1');
+      });
+    });
+
+    it('should handle trend indicator data (first column)', async () => {
+      // First column shows trend arrows: up (>1), right (0-1), down (<0)
+      const trendData = {
+        heatmap: {
+          'trend-up': [
+            [5, 0, null, null],
+            [92, 'run-1', null, '701'],
+          ],
+          'trend-down': [
+            [-2, 0, null, null],
+            [85, 'run-2', null, '702'],
+          ],
+          'trend-stable': [
+            [0.5, 0, null, null],
+            [90, 'run-3', null, '703'],
+          ],
+          'trend-100': [
+            [100, 0, null, null],
+            [100, 'run-4', null, '704'],
+          ],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => trendData,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('heatmap-ylabels')).toHaveTextContent('4');
+      });
+    });
+  });
+
+  describe('Jenkins Analysis Link Rendering', () => {
+    it('should render analysis link button when analysisViewId is fetched', async () => {
+      const mockWidgetConfig = {
+        widgets: [{ id: 'analysis-view-123' }],
+      };
+
+      HttpClient.get
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockWidgetConfig,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockHeatmapData,
+        });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget
+              {...defaultProps}
+              type={HEATMAP_TYPES.jenkins}
+              params={{
+                ...defaultProps.params,
+                job_name: 'my-jenkins-job',
+              }}
+            />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(HttpClient.get).toHaveBeenCalledWith(
+          ['http://localhost:8080/api', 'widget-config'],
+          { filter: 'widget=jenkins-analysis-view' },
+        );
+      });
+    });
+
+    it('should handle error when fetching analysisViewId', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+
+      HttpClient.get
+        .mockRejectedValueOnce(new Error('Failed to fetch widget config'))
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockHeatmapData,
+        });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget
+              {...defaultProps}
+              type={HEATMAP_TYPES.jenkins}
+              params={{
+                ...defaultProps.params,
+                job_name: 'my-jenkins-job',
+              }}
+            />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Error fetching heatmap data:',
+          expect.any(Error),
+        );
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle empty widgets array in response', async () => {
+      const mockWidgetConfig = {
+        widgets: [],
+      };
+
+      HttpClient.get
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockWidgetConfig,
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => mockHeatmapData,
+        });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget
+              {...defaultProps}
+              type={HEATMAP_TYPES.jenkins}
+              params={{
+                ...defaultProps.params,
+                job_name: 'my-jenkins-job',
+              }}
+            />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('heatmap')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('countSkips Parameter', () => {
+    it('should use default countSkips=true when not specified', async () => {
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget
+              {...defaultProps}
+              type={HEATMAP_TYPES.jenkins}
+              params={{
+                ...defaultProps.params,
+                job_name: 'test-job',
+                // count_skips not specified
+              }}
+            />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(HttpClient.get).toHaveBeenCalledWith(
+          ['http://localhost:8080/api', 'widget', 'jenkins-heatmap'],
+          expect.objectContaining({
+            count_skips: true,
+          }),
+        );
+      });
+    });
+
+    it('should use specified countSkips value from params', async () => {
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget
+              {...defaultProps}
+              type={HEATMAP_TYPES.jenkins}
+              params={{
+                ...defaultProps.params,
+                job_name: 'test-job',
+                count_skips: false,
+              }}
+            />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(HttpClient.get).toHaveBeenCalledWith(
+          ['http://localhost:8080/api', 'widget', 'jenkins-heatmap'],
+          expect.objectContaining({
+            count_skips: false,
+          }),
+        );
+      });
+    });
+  });
+
+  describe('XLabels with Build Numbers', () => {
+    it('should generate xLabels from heatmap data with build numbers', async () => {
+      const dataWithBuildNumbers = {
+        heatmap: {
+          'job-1': [
+            [95, 'run-1', null, 'build-100'],
+            [88, 'run-2', null, 'build-101'],
+            [92, 'run-3', null, 'build-102'],
+          ],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => dataWithBuildNumbers,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        // 4 xLabels: 1 icon + 3 build numbers
+        expect(screen.getByTestId('heatmap-xlabels')).toHaveTextContent('4');
+      });
+    });
+
+    it('should use longer labels array when multiple jobs have different label counts', async () => {
+      const dataWithVaryingLabels = {
+        heatmap: {
+          'job-short': [[95, 'run-1', null, 'b1']],
+          'job-long': [
+            [88, 'run-2', null, 'b2'],
+            [92, 'run-3', null, 'b3'],
+            [90, 'run-4', null, 'b4'],
+          ],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => dataWithVaryingLabels,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        // Should use the longer labels array (3 from job-long) + 1 icon
+        expect(screen.getByTestId('heatmap-xlabels')).toHaveTextContent('4');
+      });
+    });
+  });
+
+  describe('PrimaryObject Context Usage', () => {
+    it('should use params.project when primaryObject is null', async () => {
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider
+            value={{ primaryObject: null, primaryType: 'project' }}
+          >
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('heatmap')).toBeInTheDocument();
+      });
+    });
+
+    it('should use primaryObject.id when available', async () => {
+      const dataWithLinks = {
+        heatmap: {
+          'job-1': [[95, 'run-1', null, '100']],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => dataWithLinks,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider
+            value={{
+              primaryObject: { id: 'context-project' },
+              primaryType: 'project',
+            }}
+          >
+            <FilterHeatmapWidget {...defaultProps} />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('heatmap')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Builds State Updates', () => {
+    it('should initialize builds from params', async () => {
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget
+              {...defaultProps}
+              params={{ ...defaultProps.params, builds: 7 }}
+            />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(HttpClient.get).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({ builds: 7 }),
+        );
+      });
+    });
+  });
+
+  describe('Missing Required Params', () => {
+    it('should not fetch when group_field is missing', () => {
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget
+              {...defaultProps}
+              params={{ project: 'test', builds: 5 }}
+            />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      expect(HttpClient.get).not.toHaveBeenCalled();
+    });
+
+    it('should not fetch jenkins heatmap when job_name is missing', () => {
+      render(
+        <MemoryRouter>
+          <IbutsuContext.Provider value={mockContextValue}>
+            <FilterHeatmapWidget
+              {...defaultProps}
+              type={HEATMAP_TYPES.jenkins}
+              params={{
+                project: 'test',
+                builds: 5,
+                group_field: 'component',
+                // job_name missing
+              }}
+            />
+          </IbutsuContext.Provider>
+        </MemoryRouter>,
+      );
+
+      // Should fall back to filter-heatmap type
+      expect(HttpClient.get).toHaveBeenCalledWith(
+        ['http://localhost:8080/api', 'widget', 'filter-heatmap'],
+        expect.any(Object),
+      );
     });
   });
 });

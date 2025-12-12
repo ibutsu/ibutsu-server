@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import AddTokenModal from './add-token-modal';

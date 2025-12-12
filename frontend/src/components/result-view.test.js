@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import ResultView from './result-view';
@@ -25,14 +24,16 @@ jest.mock('./classification-dropdown', () => ({
 // Mock TestHistoryTable
 jest.mock('./test-history', () => {
   return function TestHistoryTable() {
-    return <div data-testid="test-history-table">Test History Table</div>;
+    return (
+      <div data-ouia-component-id="test-history-table">Test History Table</div>
+    );
   };
 });
 
 // Mock ArtifactTab
 jest.mock('./artifact-tab', () => {
   return function ArtifactTab() {
-    return <div data-testid="artifact-tab">Artifact Tab</div>;
+    return <div data-ouia-component-id="artifact-tab">Artifact Tab</div>;
   };
 });
 

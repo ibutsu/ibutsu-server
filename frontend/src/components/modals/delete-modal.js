@@ -46,7 +46,7 @@ const DeleteModal = ({
     >
       <ModalHeader title={title} />
       <ModalBody>
-        <Content component="p">{body}</Content>
+        <Content component="div">{body}</Content>
       </ModalBody>
       <ModalFooter>
         <Button

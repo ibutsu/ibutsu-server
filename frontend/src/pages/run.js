@@ -403,12 +403,12 @@ const Run = ({ defaultTab = 'summary' }) => {
 
   return (
     <>
-      <PageSection hasBodyWrapper={false} ouiaId="run-header-section">
+      <PageSection hasBodyWrapper={false}>
         <Content>
           <Content component="h1">Run {run.id}</Content>
         </Content>
       </PageSection>
-      <PageSection hasBodyWrapper={false} ouiaId="run-content-section">
+      <PageSection hasBodyWrapper={false}>
         {!isRunValid && (
           <EmptyObject
             headingText="Run not found"
@@ -912,7 +912,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                     style={{ width: '100%' }}
                     ouiaId="run-results-list-flex"
                   >
-                    <FlexItem ouiaId="run-results-list-link-flex-item">
+                    <FlexItem>
                       <Link
                         to={{
                           pathname: `/project/${primaryObject?.id || project_id}/results`,
@@ -945,7 +945,7 @@ const Run = ({ defaultTab = 'summary' }) => {
               ouiaId="run-results-tree-tab"
             >
               <Card className="pf-v6-u-mt-lg" ouiaId="run-results-tree-card">
-                <CardBody ouiaId="run-results-tree-card-body">
+                <CardBody>
                   <Grid gutter="sm">
                     {resultsTree.length === 0 && (
                       <GridItem span={12}>
@@ -974,7 +974,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                               className={testResult.result}
                               ouiaId="run-result-detail-card"
                             >
-                              <CardHeader ouiaId="run-result-detail-card-header">
+                              <CardHeader>
                                 {testResult.test_id}
                                 {testResult.metadata.markers && (
                                   <div style={{ float: 'right' }}>
@@ -994,7 +994,6 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     'var(--pf-t--global--background--color--primary--default)',
                                   paddingTop: '1.2em',
                                 }}
-                                ouiaId="run-result-detail-card-body"
                               >
                                 <ResultView
                                   testResult={testResult}
@@ -1032,7 +1031,7 @@ const Run = ({ defaultTab = 'summary' }) => {
               ouiaId="run-object-tab"
             >
               <Card ouiaId="run-object-card">
-                <CardBody id="object-card-body" ouiaId="run-object-card-body">
+                <CardBody id="object-card-body">
                   <CodeEditor
                     isReadOnly={true}
                     isDarkTheme={darkTheme}

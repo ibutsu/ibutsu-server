@@ -180,7 +180,7 @@ const GenericBarWidget = ({
         onEditClick={onEditClick}
         onDeleteClick={onDeleteClick}
       />
-      <CardBody className="ibutsu-widget-card-body" data-id="recent-runs">
+      <CardBody className="ibutsu-widget-card-body">
         {genericBarError && <p>Error fetching data</p>}
         {!genericBarError && isLoading && (
           <Content component="h2">Loading ...</Content>

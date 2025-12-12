@@ -78,7 +78,7 @@ const AddTokenModal = ({ isOpen, onClose, ouiaId = 'add-token-modal' }) => {
     >
       <ModalHeader title="Add Token" />
       <ModalBody>
-        <Form ouiaId="add-token-form">
+        <Form>
           <FormGroup label="Name" fieldId="token-name" isRequired>
             <TextInput
               type="text"
@@ -121,7 +121,6 @@ const AddTokenModal = ({ isOpen, onClose, ouiaId = 'add-token-modal' }) => {
                 hasAutoWidth: true,
                 appendTo: () => document.getElementById(ouiaId),
               }}
-              ouiaId="token-expiry-datepicker"
             />
             <FormHelperText>
               <HelperText>

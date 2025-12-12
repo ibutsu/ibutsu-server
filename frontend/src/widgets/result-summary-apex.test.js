@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, waitFor } from '@testing-library/react';
 import ResultSummaryApex from './result-summary-apex';
 import { HttpClient } from '../utilities/http';

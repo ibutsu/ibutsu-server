@@ -185,7 +185,7 @@ const EditWidgetModal = ({
       <ModalHeader title="Edit widget" />
       <ModalBody>
         {componentLoaded ? (
-          <Form ouiaId="edit-widget-form">
+          <Form>
             <FormGroup label="Title" fieldId="widget-title" isRequired>
               <TextInput
                 type="text"

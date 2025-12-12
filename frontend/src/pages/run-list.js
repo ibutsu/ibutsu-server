@@ -70,8 +70,8 @@ const RunList = () => {
       setIsError(false);
       const apiParams = {
         estimate: true,
-        page: page,
-        pageSize: pageSize,
+        page: Number(page),
+        pageSize: Number(pageSize),
         filter: filtersToAPIParams(activeFilters),
       };
       try {
@@ -132,18 +132,14 @@ const RunList = () => {
 
   return (
     <>
-      <PageSection
-        hasBodyWrapper={false}
-        id="page"
-        ouiaId="run-list-header-section"
-      >
+      <PageSection hasBodyWrapper={false} id="page">
         <Content>
           <Content className="title" component="h1">
             Test runs
           </Content>
         </Content>
       </PageSection>
-      <PageSection hasBodyWrapper={false} ouiaId="run-list-content-section">
+      <PageSection hasBodyWrapper={false}>
         <FilterTable
           fetching={fetching}
           columns={COLUMNS}

@@ -63,7 +63,10 @@ export const filtersToSearchParams = (filters = []) =>
 
 export const toAPIFilter = (filterObj) => {
   return Object.entries(filterObj)
-    .filter(([key, cfg]) => key !== 'id' && cfg)
+    .filter(([key, cfg]) => {
+      // Skip 'id' key, null/undefined configs, and filters with undefined values
+      return key !== 'id' && cfg && cfg.val !== undefined;
+    })
     .map(([key, { operator, val }]) =>
       formatFilterForAPI(
         { field: key, operator, value: val },

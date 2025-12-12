@@ -242,7 +242,7 @@ const NewWidgetWizard = ({
         name: 'Select type',
         enableNext: selectedTypeId,
         component: (
-          <Form ouiaId="widget-type-selection-form">
+          <Form>
             <Title headingLevel="h1" size="xl">
               Select a widget type
             </Title>
@@ -268,7 +268,7 @@ const NewWidgetWizard = ({
         canJumpTo: stepIdReached >= 2,
         enableNext: titleValid,
         component: (
-          <Form isHorizontal ouiaId="widget-info-form">
+          <Form isHorizontal>
             <Title headingLevel="h1" size="xl">
               Set widget information
             </Title>
@@ -319,7 +319,7 @@ const NewWidgetWizard = ({
         canJumpTo: stepIdReached >= 3,
         enableNext: paramsFilled,
         component: (
-          <Form isHorizontal ouiaId="widget-parameters-form">
+          <Form isHorizontal>
             <Title headingLevel="h1" size="xl">
               Set widget parameters
             </Title>
@@ -341,7 +341,7 @@ const NewWidgetWizard = ({
               canJumpTo: stepIdReached >= 4,
               enableNext: true,
               component: (
-                <Form isHorizontal ouiaId="widget-filters-form">
+                <Form isHorizontal>
                   <Title headingLevel="h1" size="xl">
                     Configure filters
                   </Title>
@@ -460,7 +460,6 @@ const NewWidgetWizard = ({
         onStepChange={onNext}
         onSave={onSave}
         onClose={onClose}
-        ouiaId="new-widget-wizard"
       >
         {steps.map((step) => (
           <WizardStep
