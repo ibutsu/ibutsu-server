@@ -1,9 +1,12 @@
 // Test helpers for frontend tests
 // Provides rendering utilities and common test setup
 
+import React from 'react';
 import { render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
+import { FilterContext } from '../components/contexts/filter-context';
+import { HttpClient } from '../utilities/http';
 
 /**
  * Render a component with Router context
@@ -109,6 +112,114 @@ export function renderWithRouterAndContext(
     );
 
   return render(wrappedUi);
+}
+
+/**
+ * Render a component with all common providers (Router, IbutsuContext, FilterContext)
+ * @param {React.Component} ui - Component to render
+ * @param {Object} options - Options
+ * @param {string|Array} options.initialRoute - Initial route or array of routes
+ * @param {Array} options.routes - Route configurations for Routes component
+ * @param {Object} options.ibutsuContext - IbutsuContext value overrides
+ * @param {Object} options.filterContext - FilterContext value overrides
+ * @returns {Object} Render result
+ */
+export function renderWithAllProviders(
+  ui,
+  {
+    initialRoute = '/',
+    routes = [],
+    ibutsuContext = {},
+    filterContext = {},
+  } = {},
+) {
+  const defaultIbutsuContext = {
+    primaryObject: null,
+    defaultDashboard: null,
+    primaryType: 'project',
+    setPrimaryType: jest.fn(),
+    setPrimaryObject: jest.fn(),
+    setDefaultDashboard: jest.fn(),
+    darkTheme: false,
+    setDarkTheme: jest.fn(),
+    ...ibutsuContext,
+  };
+
+  const defaultFilterContext = {
+    activeFilters: [],
+    setActiveFilters: jest.fn(),
+    clearFilters: jest.fn(),
+    updateFilters: jest.fn(),
+    onRemoveFilter: jest.fn(),
+    ...filterContext,
+  };
+
+  const initialEntries = Array.isArray(initialRoute)
+    ? initialRoute
+    : [initialRoute];
+
+  const wrappedUi =
+    routes.length > 0 ? (
+      <MemoryRouter initialEntries={initialEntries}>
+        <IbutsuContext.Provider value={defaultIbutsuContext}>
+          <FilterContext.Provider value={defaultFilterContext}>
+            <Routes>
+              {routes.map((route, index) => (
+                <Route key={index} path={route.path} element={route.element} />
+              ))}
+            </Routes>
+          </FilterContext.Provider>
+        </IbutsuContext.Provider>
+      </MemoryRouter>
+    ) : (
+      <MemoryRouter initialEntries={initialEntries}>
+        <IbutsuContext.Provider value={defaultIbutsuContext}>
+          <FilterContext.Provider value={defaultFilterContext}>
+            {ui}
+          </FilterContext.Provider>
+        </IbutsuContext.Provider>
+      </MemoryRouter>
+    );
+
+  return render(wrappedUi);
+}
+
+/**
+ * Setup HttpClient mocks declaratively based on URL patterns
+ * @param {Object} responseMap - Map of URL patterns to response data
+ * @example
+ * mockHttpClientResponses({
+ *   '/run/': mockRun,
+ *   '/result': mockResultsResponse,
+ *   '/project': mockProject,
+ * });
+ */
+export function mockHttpClientResponses(responseMap) {
+  HttpClient.get.mockImplementation((url) => {
+    const urlPath = Array.isArray(url) ? url.join('/') : url;
+
+    for (const [pattern, response] of Object.entries(responseMap)) {
+      if (urlPath.includes(pattern)) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => response,
+        });
+      }
+    }
+
+    // Default empty response
+    return Promise.resolve({
+      ok: true,
+      json: async () => ({}),
+    });
+  });
+
+  HttpClient.handleResponse.mockImplementation(async (response) => {
+    if (response.ok) {
+      return response.json();
+    }
+    throw new Error('Response not ok');
+  });
 }
 
 /**
