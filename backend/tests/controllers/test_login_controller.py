@@ -621,3 +621,282 @@ def test_login_support_with_exception(flask_app):
         response_data = response.json()
         assert "user" in response_data
         assert isinstance(response_data["user"], bool)
+
+
+def test_login_non_json(flask_app):
+    """Test login with non-JSON content type returns error"""
+    client, _jwt_token = flask_app
+
+    # Set content-type to form data, not JSON
+    headers = {"Accept": "application/json", "Content-Type": "text/plain"}
+    response = client.post(
+        "/api/login",
+        headers=headers,
+        data="not json",
+    )
+    # Should return 400 or 415 due to non-JSON content
+    assert response.status_code in [400, 415]
+
+
+def test_login_disabled_bad_password(flask_app, temp_config):
+    """Test login with bad password when login disabled shows disabled message"""
+    client, _jwt_token = flask_app
+
+    # Disable user login
+    temp_config("USER_LOGIN_ENABLED", False)
+
+    # Try to login with wrong credentials - should show disabled message
+    login_details = {"email": "nonexistent@example.com", "password": "badpassword"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login",
+        headers=headers,
+        json=login_details,
+    )
+    assert response.status_code == 401
+    response_data = response.json()
+    assert "disabled" in response_data["message"].lower()
+
+
+def test_get_provider_config_keycloak(flask_app):
+    """Test _get_provider_config returns keycloak config"""
+    client, _jwt_token = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import _get_provider_config
+
+        with patch(
+            "ibutsu_server.controllers.login_controller.get_keycloak_config"
+        ) as mock_kc_config:
+            mock_kc_config.return_value = {"client_id": "test-keycloak-client"}
+            config = _get_provider_config("keycloak")
+            mock_kc_config.assert_called_once_with(is_private=True)
+            assert config["client_id"] == "test-keycloak-client"
+
+
+def test_get_provider_config_other_provider(flask_app):
+    """Test _get_provider_config returns provider config for non-keycloak"""
+    client, _jwt_token = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import _get_provider_config
+
+        with patch(
+            "ibutsu_server.controllers.login_controller.get_provider_config"
+        ) as mock_provider_config:
+            mock_provider_config.return_value = {"client_id": "test-google-client"}
+            config = _get_provider_config("google")
+            mock_provider_config.assert_called_once_with("google", is_private=True)
+            assert config["client_id"] == "test-google-client"
+
+
+def test_get_user_from_provider_google_invalid_token(flask_app):
+    """Test _get_user_from_provider handles invalid Google token"""
+    client, _jwt_token = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import _get_user_from_provider
+
+        with patch(
+            "ibutsu_server.controllers.login_controller.id_token.verify_oauth2_token"
+        ) as mock_verify:
+            mock_verify.side_effect = ValueError("Invalid token")
+            provider_config = {"client_id": "test-client-id"}
+
+            result = _get_user_from_provider("google", provider_config, "invalid-code")
+            assert result == ("Unauthorized", 401)
+
+
+def test_get_user_from_provider_google_success(flask_app, make_user):
+    """Test _get_user_from_provider handles valid Google token"""
+    client, _jwt_token = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import _get_user_from_provider
+
+        # Create a user that would be returned
+        user = make_user(email="googleuser@example.com", name="Google User")
+
+        with (
+            patch(
+                "ibutsu_server.controllers.login_controller.id_token.verify_oauth2_token"
+            ) as mock_verify,
+            patch(
+                "ibutsu_server.controllers.login_controller.get_user_from_provider"
+            ) as mock_get_user,
+        ):
+            mock_verify.return_value = {"sub": "google-123", "email": user.email}
+            mock_get_user.return_value = user
+            provider_config = {"client_id": "test-client-id"}
+
+            result = _get_user_from_provider("google", provider_config, "valid-code")
+            assert result == user
+
+
+def test_get_user_from_provider_keycloak_success(flask_app, make_user):
+    """Test _get_user_from_provider handles Keycloak token exchange"""
+    client, _jwt_token = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import _get_user_from_provider
+
+        user = make_user(email="keycloakuser@example.com", name="Keycloak User")
+        provider_config = {
+            "client_id": "test-client",
+            "client_secret": "secret",
+            "redirect_uri": "http://localhost/callback",
+            "token_url": "http://keycloak/token",
+        }
+
+        with (
+            patch("ibutsu_server.controllers.login_controller.requests.post") as mock_post,
+            patch(
+                "ibutsu_server.controllers.login_controller.get_user_from_keycloak"
+            ) as mock_get_user,
+        ):
+            mock_response = mock_post.return_value
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"access_token": "token123"}
+            mock_get_user.return_value = user
+
+            result = _get_user_from_provider("keycloak", provider_config, "auth-code")
+            assert result == user
+            mock_get_user.assert_called_once()
+
+
+def test_get_user_from_provider_github_success(flask_app, make_user):
+    """Test _get_user_from_provider handles GitHub token exchange"""
+    client, _jwt_token = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import _get_user_from_provider
+
+        user = make_user(email="githubuser@example.com", name="GitHub User")
+        provider_config = {
+            "client_id": "test-client",
+            "redirect_uri": "http://localhost/callback",
+            "token_url": "http://github/token",
+        }
+
+        with (
+            patch("ibutsu_server.controllers.login_controller.requests.post") as mock_post,
+            patch(
+                "ibutsu_server.controllers.login_controller.get_user_from_provider"
+            ) as mock_get_user,
+        ):
+            mock_response = mock_post.return_value
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"access_token": "token123"}
+            mock_get_user.return_value = user
+
+            result = _get_user_from_provider("github", provider_config, "auth-code")
+            assert result == user
+
+
+def test_get_user_from_provider_token_error(flask_app):
+    """Test _get_user_from_provider handles token exchange failure"""
+    client, _jwt_token = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import _get_user_from_provider
+
+        provider_config = {
+            "client_id": "test-client",
+            "redirect_uri": "http://localhost/callback",
+            "token_url": "http://github/token",
+        }
+
+        with patch("ibutsu_server.controllers.login_controller.requests.post") as mock_post:
+            mock_response = mock_post.return_value
+            mock_response.status_code = 401
+            mock_response.text = "Invalid client credentials"
+
+            result = _get_user_from_provider("github", provider_config, "auth-code")
+            # Returns None when token exchange fails
+            assert result is None
+
+
+def test_find_or_create_token_existing(flask_app, make_user):
+    """Test _find_or_create_token finds existing token"""
+    client, _jwt_token = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import _find_or_create_token
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import Token
+
+        user = make_user(email="findtoken@example.com")
+
+        # Create existing token
+        existing_token = Token(name="login-token", user_id=user.id, token="old-token")
+        session.add(existing_token)
+        session.commit()
+        token_id = existing_token.id
+
+        # Should find and return existing token
+        found_token = _find_or_create_token("login-token", user)
+        assert found_token.id == token_id
+
+
+def test_find_or_create_token_new(flask_app, make_user):
+    """Test _find_or_create_token creates new token when not found"""
+    client, _jwt_token = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.controllers.login_controller import _find_or_create_token
+
+        user = make_user(email="newtoken@example.com")
+
+        # Should create new token
+        token = _find_or_create_token("new-token", user)
+        assert token.name == "new-token"
+        assert token.user_id == user.id
+
+
+def test_auth_returns_unauthorized_when_no_user(flask_app):
+    """Test auth endpoint returns 401 when user lookup fails"""
+    client, _jwt_token = flask_app
+
+    with (
+        patch("ibutsu_server.controllers.login_controller._get_provider_config") as mock_config,
+        patch(
+            "ibutsu_server.controllers.login_controller._get_user_from_provider"
+        ) as mock_get_user,
+    ):
+        mock_config.return_value = {"client_id": "test"}
+        mock_get_user.return_value = None
+
+        response = client.get("/api/login/auth/google?code=test-auth-code")
+        assert response.status_code == 401
+
+
+def test_reset_password_with_base64_code(flask_app):
+    """Test reset_password with properly encoded base64 activation code"""
+    from base64 import urlsafe_b64encode
+
+    client, _jwt_token = flask_app
+
+    # Create user with properly encoded activation code
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import User
+
+        activation_code = urlsafe_b64encode(b"valid_test_code").decode()
+        user = User(
+            name="Reset User",
+            email="resettest@example.com",
+            is_active=True,
+            activation_code=activation_code,
+        )
+        user.password = "oldpassword"
+        session.add(user)
+        session.commit()
+
+    reset_data = {"activation_code": activation_code, "password": "newpassword123"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login/reset-password",
+        headers=headers,
+        json=reset_data,
+    )
+    assert response.status_code == 201

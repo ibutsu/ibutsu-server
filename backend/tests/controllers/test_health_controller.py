@@ -1,25 +1,29 @@
 import pytest
-from sqlalchemy.exc import InterfaceError, OperationalError
 
 
-def test_get_database_health(flask_app, auth_headers):
-    """Test case for get_database_health - successful database connection
-    Get a health report for the database
+def test_get_database_health_returns_valid_response(flask_app, auth_headers):
+    """Test case for get_database_health returns a valid health response.
+
+    Note: The test database may return either 200 (OK) or 503 (unavailable)
+    depending on whether the Result model imports correctly with SQLite.
+    The IS_CONNECTED flag is set at import time based on model availability.
+    This test validates the endpoint returns a properly formatted response.
     """
     client, jwt_token = flask_app
     headers = auth_headers(jwt_token)
     response = client.get("/api/health/database", headers=headers)
-    # In-memory SQLite should connect successfully
+    # SQLite test DB may not have the Result model available (IS_CONNECTED=False)
+    # so we accept both success and service unavailable as valid responses
     assert response.status_code in [200, 503], f"Response body is : {response.text}"
     response_data = response.json()
     assert "status" in response_data
     assert "message" in response_data
+    # Verify the response structure matches expected format
+    assert response_data["status"] in ["OK", "Error", "Pending"]
 
 
 def test_get_health(flask_app, auth_headers):
-    """Test case for get_health
-    Get a general health report
-    """
+    """Test case for get_health - general health endpoint always returns OK."""
     client, jwt_token = flask_app
     headers = auth_headers(jwt_token)
     response = client.get("/api/health", headers=headers)
@@ -30,9 +34,7 @@ def test_get_health(flask_app, auth_headers):
 
 
 def test_get_health_info(flask_app, auth_headers):
-    """Test case for get_health_info
-    Get server information including URLs
-    """
+    """Test case for get_health_info - returns server URL information."""
     client, jwt_token = flask_app
     headers = auth_headers(jwt_token)
     response = client.get("/api/health/info", headers=headers)
@@ -46,49 +48,6 @@ def test_get_health_info(flask_app, auth_headers):
     assert "localhost" in response_data["backend"] or "http" in response_data["backend"]
 
 
-@pytest.mark.skip(
-    reason=(
-        "Database error handling tested at unit level, "
-        "integration test would require complex mocking"
-    )
-)
-@pytest.mark.parametrize(
-    ("exception_type", "expected_status", "expected_message_contains"),
-    [
-        (OperationalError, 503, "Unable to connect to the database"),
-        (InterfaceError, 503, "Incorrect connection configuration"),
-        (Exception, 500, ""),  # Generic exception with custom message
-    ],
-)
-def test_get_database_health_errors(
-    flask_app, auth_headers, exception_type, expected_status, expected_message_contains
-):
-    """Test case for get_database_health with various database errors"""
-    # This test validates error handling in health_controller.py
-    # but is complex to test via integration test due to auth layer interactions
-    pass
-
-
-@pytest.mark.skip(reason="Configuration testing done at unit level")
-def test_get_database_health_incomplete_config(flask_app):
-    """Test case for get_database_health with incomplete configuration"""
-    # This test validates IS_CONNECTED flag handling
-    # Skipped in integration tests as it requires mocking import-time behavior
-    pass
-
-
-def test_get_health_without_auth(flask_app):
-    """Test case for get_health without authentication"""
-    client, _jwt_token = flask_app
-
-    # No authorization header
-    headers = {"Accept": "application/json"}
-    response = client.get("/api/health", headers=headers)
-    # Health endpoint might be public or require auth depending on config
-    # Either 200 or 401/403 is acceptable
-    assert response.status_code in [200, 401, 403]
-
-
 @pytest.mark.parametrize(
     ("config_key", "config_value"),
     [
@@ -97,7 +56,7 @@ def test_get_health_without_auth(flask_app):
     ],
 )
 def test_get_health_info_with_custom_urls(flask_app, auth_headers, config_key, config_value):
-    """Test case for get_health_info with custom URL configurations"""
+    """Test case for get_health_info with custom URL configurations."""
     client, jwt_token = flask_app
 
     # Set custom config

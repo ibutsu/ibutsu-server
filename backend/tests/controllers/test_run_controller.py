@@ -470,13 +470,6 @@ def test_add_run_with_metadata_project(mock_update_run_task, flask_app, make_pro
     assert response_data["project_id"] == str(project.id)
 
 
-@pytest.mark.skip(reason="Duplicate ID validation tested in other scenarios")
-def test_add_run_duplicate_id(flask_app, make_project, make_run, auth_headers):
-    """Test add_run with duplicate run ID"""
-    # Skipped due to fixture setup complexity
-    pass
-
-
 def test_add_run_non_json(flask_app, headers_without_json):
     """Test add_run with non-JSON content type"""
     client, jwt_token = flask_app
@@ -504,13 +497,6 @@ def test_update_run_non_json(flask_app, make_project, make_run, headers_without_
         data="not json",
     )
     assert response.status_code in [400, 415]
-
-
-@pytest.mark.skip(reason="Metadata merging tested via other update tests")
-def test_update_run_merge_metadata(flask_app, make_project, make_run, auth_headers):
-    """Test update_run merges metadata instead of replacing"""
-    # Skipped - metadata updates are tested in other scenarios
-    pass
 
 
 @pytest.mark.parametrize(
@@ -645,3 +631,134 @@ def test_add_run_invalid_project(mock_update_run_task, flask_app, auth_headers):
     )
     assert response.status_code == 400
     assert "project" in response.text.lower()
+
+
+def test_bulk_update_non_json(flask_app, headers_without_json):
+    """Test bulk_update with non-JSON content type"""
+    client, jwt_token = flask_app
+
+    headers = headers_without_json(jwt_token)
+    response = client.post(
+        "/api/runs/bulk-update",
+        headers=headers,
+        data="not json",
+    )
+    assert response.status_code in [400, 415]
+
+
+def test_bulk_update_missing_metadata(flask_app, make_project, auth_headers):
+    """Test bulk_update without metadata returns error"""
+    client, jwt_token = flask_app
+
+    project = make_project(name="test-project")
+
+    # Try to bulk update without metadata
+    update_data = {"summary": {"tests": 100}}  # Missing metadata key
+
+    query_string = [("filter", f"project_id={project.id}")]
+    headers = auth_headers(jwt_token)
+    response = client.post(
+        "/api/runs/bulk-update",
+        headers=headers,
+        json=update_data,
+        params=query_string,
+    )
+    assert response.status_code == 401
+    assert "metadata" in response.text.lower()
+
+
+def test_bulk_update_page_size_limit(flask_app, make_project, auth_headers):
+    """Test bulk_update rejects page_size > 25"""
+    client, jwt_token = flask_app
+
+    project = make_project(name="test-project")
+
+    update_data = {"metadata": {"component": "new-component"}}
+
+    query_string = [("filter", f"project_id={project.id}"), ("pageSize", 50)]
+    headers = auth_headers(jwt_token)
+    response = client.post(
+        "/api/runs/bulk-update",
+        headers=headers,
+        json=update_data,
+        params=query_string,
+    )
+    assert response.status_code == 405
+    assert "25" in response.text
+
+
+@patch("ibutsu_server.controllers.run_controller.get_run_list")
+def test_bulk_update_no_runs_found(mock_get_run_list, flask_app, make_project, auth_headers):
+    """Test bulk_update returns 404 when no runs match filter"""
+    client, jwt_token = flask_app
+
+    project = make_project(name="test-project")
+
+    # Mock get_run_list to return empty runs
+    mock_get_run_list.return_value = {"runs": []}
+
+    update_data = {"metadata": {"component": "new-component"}}
+
+    query_string = [("filter", f"project_id={project.id}")]
+    headers = auth_headers(jwt_token)
+    response = client.post(
+        "/api/runs/bulk-update",
+        headers=headers,
+        json=update_data,
+        params=query_string,
+    )
+    assert response.status_code == 404
+
+
+@patch("ibutsu_server.controllers.run_controller.get_run_list")
+def test_bulk_update_success(mock_get_run_list, flask_app, make_project, make_run, auth_headers):
+    """Test bulk_update successfully updates runs"""
+    client, jwt_token = flask_app
+
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id, metadata={"component": "old-component"})
+
+    # Mock get_run_list to return our run
+    mock_get_run_list.return_value = {"runs": [run.to_dict()]}
+
+    update_data = {"metadata": {"component": "new-component"}}
+
+    query_string = [("filter", f"project_id={project.id}")]
+    headers = auth_headers(jwt_token)
+    response = client.post(
+        "/api/runs/bulk-update",
+        headers=headers,
+        json=update_data,
+        params=query_string,
+    )
+    assert response.status_code == 200
+
+    response_data = response.json()
+    assert len(response_data) == 1
+
+
+@patch("ibutsu_server.controllers.run_controller.get_run_list")
+def test_bulk_update_with_project_in_metadata(
+    mock_get_run_list, flask_app, make_project, make_run, auth_headers
+):
+    """Test bulk_update with project in metadata"""
+    client, jwt_token = flask_app
+
+    project = make_project(name="test-project")
+    run = make_run(project_id=project.id, metadata={"component": "old"})
+
+    # Mock get_run_list to return our run
+    mock_get_run_list.return_value = {"runs": [run.to_dict()]}
+
+    # Include project in metadata
+    update_data = {"metadata": {"component": "new", "project": project.name}}
+
+    query_string = [("filter", f"project_id={project.id}")]
+    headers = auth_headers(jwt_token)
+    response = client.post(
+        "/api/runs/bulk-update",
+        headers=headers,
+        json=update_data,
+        params=query_string,
+    )
+    assert response.status_code == 200
