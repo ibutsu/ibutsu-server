@@ -1,6 +1,11 @@
+from io import BytesIO
 from unittest.mock import patch
 
 import pytest
+
+from ibutsu_server.controllers.import_controller import add_import
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Import, User
 
 
 def test_get_import_success(flask_app, make_project, auth_headers):
@@ -11,9 +16,6 @@ def test_get_import_success(flask_app, make_project, auth_headers):
     project = make_project(name="test-project")
 
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Import
-
         import_obj = Import(
             filename="test_results.xml",
             format="junit",
@@ -58,9 +60,6 @@ def test_get_import_forbidden_project_access(flask_app, make_project, make_user,
     project = make_project(name="private-project", owner_id=other_user.id)
 
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Import
-
         import_obj = Import(
             filename="test_results.xml",
             format="junit",
@@ -98,9 +97,6 @@ def test_get_import_list(flask_app, make_project, page, page_size, auth_headers)
     project = make_project(name="test-project")
 
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Import
-
         for i in range(30):
             import_obj = Import(
                 filename=f"results{i}.xml",
@@ -135,9 +131,6 @@ def test_get_import_list_filter_by_status(flask_app, make_project, auth_headers)
     project = make_project(name="test-project")
 
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Import
-
         for i in range(5):
             import_obj = Import(
                 filename=f"completed{i}.xml",
@@ -191,11 +184,6 @@ def test_upload_import_junit(mock_run_junit_import, flask_app, make_project, aut
     # Create XML content
     xml_content = b'<?xml version="1.0"?><testsuites><testsuite name="test"/></testsuites>'
 
-    from io import BytesIO
-
-    from ibutsu_server.controllers.import_controller import add_import
-    from ibutsu_server.db.models import User
-
     # Use Flask test request context for proper request handling
     with client.application.test_request_context(
         "/api/import",
@@ -238,11 +226,6 @@ def test_upload_import_archive(mock_run_archive_import, flask_app, make_project,
     # Create archive content (tar.gz file)
     archive_content = b"mock tar.gz content"
 
-    from io import BytesIO
-
-    from ibutsu_server.controllers.import_controller import add_import
-    from ibutsu_server.db.models import User
-
     # Use Flask test request context for proper request handling
     with client.application.test_request_context(
         "/api/import",
@@ -278,9 +261,6 @@ def test_upload_import_missing_file(flask_app, make_project, auth_headers):
     # Create project
     project = make_project(name="test-project")
 
-    from ibutsu_server.controllers.import_controller import add_import
-    from ibutsu_server.db.models import User
-
     # Use Flask test request context without a file
     with client.application.test_request_context(
         "/api/import",
@@ -312,11 +292,6 @@ def test_upload_import_invalid_project(flask_app, auth_headers):
     client, _jwt_token = flask_app
 
     xml_content = b'<?xml version="1.0"?><testsuites><testsuite name="test"/></testsuites>'
-
-    from io import BytesIO
-
-    from ibutsu_server.controllers.import_controller import add_import
-    from ibutsu_server.db.models import User
 
     # Use Flask test request context with an invalid project ID
     with client.application.test_request_context(

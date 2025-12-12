@@ -3,6 +3,11 @@ from io import BytesIO
 
 import pytest
 
+from ibutsu_server.controllers.artifact_controller import upload_artifact
+from ibutsu_server.db import db
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Artifact, User
+
 
 def test_delete_artifact(flask_app, artifact_test_hierarchy, auth_headers):
     """Test case for delete_artifact"""
@@ -12,9 +17,6 @@ def test_delete_artifact(flask_app, artifact_test_hierarchy, auth_headers):
 
     # Create artifact
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Artifact
-
         artifact = Artifact(
             filename="test.log",
             content=b"test content",
@@ -34,9 +36,6 @@ def test_delete_artifact(flask_app, artifact_test_hierarchy, auth_headers):
 
     # Verify artifact was deleted from database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Artifact
-
         deleted_artifact = db.session.get(Artifact, str(artifact_id))
         assert deleted_artifact is None
 
@@ -49,9 +48,6 @@ def test_download_artifact(flask_app, artifact_test_hierarchy, auth_headers):
 
     # Create artifact with content
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Artifact
-
         artifact = Artifact(
             filename="test.log",
             content=b"test file content",
@@ -81,9 +77,6 @@ def test_get_artifact(flask_app, artifact_test_hierarchy, auth_headers):
 
     # Create artifact
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Artifact
-
         artifact = Artifact(
             filename="test.log",
             content=b"test content",
@@ -115,9 +108,6 @@ def test_get_artifact_list(flask_app, artifact_test_hierarchy, auth_headers):
 
     # Create multiple artifacts
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Artifact
-
         for i in range(5):
             artifact = Artifact(
                 filename=f"test{i}.log",
@@ -151,9 +141,6 @@ def test_upload_artifact(flask_app, artifact_test_hierarchy, auth_headers):
     hierarchy = artifact_test_hierarchy
     result = hierarchy["result"]
 
-    from ibutsu_server.controllers.artifact_controller import upload_artifact
-    from ibutsu_server.db.models import User
-
     # Use Flask test request context for proper request handling
     with client.application.test_request_context(
         "/api/artifact",
@@ -186,9 +173,6 @@ def test_view_artifact(flask_app, artifact_test_hierarchy, auth_headers):
 
     # Create artifact with content
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Artifact
-
         artifact = Artifact(
             filename="test.txt",
             content=b"test file content for viewing",
@@ -221,9 +205,6 @@ def test_view_artifact_with_run_id(flask_app, make_project, make_run, auth_heade
 
     # Create artifact attached to run (not result)
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Artifact
-
         artifact = Artifact(
             filename="run-artifact.log",
             content=b"run level artifact content",
@@ -287,9 +268,6 @@ def test_upload_artifact_with_run_id(flask_app, make_project, make_run, auth_hea
     # Create test data
     project = make_project(name="test-project")
     run = make_run(project_id=project.id)
-
-    from ibutsu_server.controllers.artifact_controller import upload_artifact
-    from ibutsu_server.db.models import User
 
     # Upload artifact with run_id (not result_id)
     with client.application.test_request_context(
@@ -397,10 +375,6 @@ def test_upload_artifact_validation_errors(
     expected_error_fragment,
 ):
     """Test artifact upload validation with various invalid inputs"""
-
-    from ibutsu_server.controllers.artifact_controller import upload_artifact
-    from ibutsu_server.db.models import User
-
     client, _jwt_token = flask_app
 
     # Use hierarchy if needed, otherwise pass empty dict
@@ -430,9 +404,6 @@ def test_get_artifact_list_by_run_id(flask_app, make_project, make_run, auth_hea
 
     # Create artifacts for the run
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Artifact
-
         for i in range(3):
             artifact = Artifact(
                 filename=f"run-artifact-{i}.log",
@@ -464,9 +435,6 @@ def test_get_artifact_list_pagination(flask_app, artifact_test_hierarchy, auth_h
 
     # Create many artifacts
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Artifact
-
         for i in range(30):
             artifact = Artifact(
                 filename=f"artifact-{i}.log",

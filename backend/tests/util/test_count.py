@@ -5,6 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from sqlalchemy import text
 
+from ibutsu_server.constants import COUNT_TIMEOUT
+from ibutsu_server.db import db
+from ibutsu_server.db.models import Result
 from ibutsu_server.util.count import (
     _get_count_from_explain,
     get_count_estimate,
@@ -78,9 +81,6 @@ def test_get_count_estimate_with_filter_below_limit(flask_app, make_project, mak
         for i in range(5):
             make_result(project_id=project.id, test_id=f"test_{i}")
 
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Result
-
         query = db.select(Result).where(Result.project_id == project.id)
 
         # Mock _get_count_from_explain to return a small estimate
@@ -97,9 +97,6 @@ def test_get_count_estimate_with_filter_above_limit(flask_app, make_project):
 
     with client.application.app_context():
         project = make_project(name="test-project")
-
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Result
 
         query = db.select(Result).where(Result.project_id == project.id)
 
@@ -143,7 +140,6 @@ def test_time_limited_db_operation_with_timeout(timeout, expected_timeout_ms):
 
 def test_time_limited_db_operation_without_timeout():
     """Test time_limited_db_operation uses default timeout when none provided"""
-    from ibutsu_server.constants import COUNT_TIMEOUT
 
     expected_timeout_ms = int(COUNT_TIMEOUT * 1000)
 
@@ -183,9 +179,6 @@ def test_get_count_estimate_with_empty_table(flask_app, make_project):
 
     with client.application.app_context():
         project = make_project(name="test-project")
-
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Result
 
         # Query for results that don't exist
         query = db.select(Result).where(Result.project_id == project.id)

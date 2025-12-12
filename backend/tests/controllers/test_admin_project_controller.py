@@ -2,6 +2,9 @@ from http import HTTPStatus
 
 import pytest
 
+from ibutsu_server.db import db
+from ibutsu_server.db.models import Project, User
+
 
 def test_admin_add_project_success(flask_app, make_group, auth_headers):
     """Test case for admin_add_project - successful creation"""
@@ -31,8 +34,6 @@ def test_admin_add_project_success(flask_app, make_group, auth_headers):
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db.models import Project
-
         project = Project.query.filter_by(name="new-project").first()
         assert project is not None
         assert project.title == "New Project"
@@ -99,8 +100,6 @@ def test_admin_add_project_with_user_as_owner(flask_app, auth_headers):
 
     # Verify user was set as owner and added to users
     with client.application.app_context():
-        from ibutsu_server.db.models import Project, User
-
         project = Project.query.filter_by(name="new-project").first()
         assert project is not None
         assert project.owner is not None
@@ -264,9 +263,6 @@ def test_admin_update_project_success(flask_app, make_project, make_user, auth_h
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Project
-
         updated_project = db.session.get(Project, str(project.id))
         assert updated_project.title == "Updated Project Title"
         # Check user by ID since object identity may differ across sessions
@@ -330,9 +326,6 @@ def test_admin_delete_project_success(flask_app, make_project, auth_headers):
 
     # Verify project is deleted from database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Project
-
         project = db.session.get(Project, str(project_id))
         assert project is None
 

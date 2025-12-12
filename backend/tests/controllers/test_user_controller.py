@@ -3,6 +3,10 @@ from unittest.mock import patch
 
 import pytest
 
+from ibutsu_server.db import db
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Token, User
+
 
 def test_get_current_user_success(flask_app, auth_headers):
     """Test case for get_current_user - successful retrieval"""
@@ -68,8 +72,6 @@ def test_create_token(mock_generate_token, flask_app, auth_headers):
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db.models import Token
-
         token = Token.query.filter_by(name="test-token").first()
         assert token is not None
 
@@ -80,9 +82,6 @@ def test_get_token_list(flask_app, auth_headers):
 
     # Create some tokens
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Token, User
-
         test_user = User.query.filter_by(email="test@example.com").first()
 
         for i in range(3):
@@ -113,9 +112,6 @@ def test_delete_token(flask_app, auth_headers):
 
     # Create a token to delete
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Token, User
-
         test_user = User.query.filter_by(email="test@example.com").first()
 
         token = Token(
@@ -138,9 +134,6 @@ def test_delete_token(flask_app, auth_headers):
 
     # Verify token was deleted
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Token
-
         deleted_token = db.session.get(Token, str(token_id))
         assert deleted_token is None
 
@@ -193,8 +186,6 @@ def test_update_current_user_cannot_change_superadmin_status(flask_app, auth_hea
 
     # Verify superadmin status wasn't changed (is_superadmin field was stripped)
     with client.application.app_context():
-        from ibutsu_server.db.models import User
-
         test_user = User.query.filter_by(email="test@example.com").first()
         # Should still be superadmin (as set in fixture) - API ignores is_superadmin field
         assert test_user.is_superadmin is True
@@ -220,9 +211,6 @@ def test_get_token(flask_app, auth_headers):
 
     # Create a token
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Token, User
-
         test_user = User.query.filter_by(email="test@example.com").first()
 
         token = Token(
@@ -266,9 +254,6 @@ def test_get_token_forbidden_other_user(flask_app, auth_headers, make_user):
 
     # Create another user with a token
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Token
-
         other_user = make_user(email="other@example.com")
         other_token = Token(
             name="other-user-token",
@@ -296,9 +281,6 @@ def test_delete_token_forbidden_other_user(flask_app, auth_headers, make_user):
 
     # Create another user with a token
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Token
-
         other_user = make_user(email="other@example.com")
         other_token = Token(
             name="other-user-token-delete",
@@ -334,9 +316,6 @@ def test_get_token_list_pagination(flask_app, auth_headers, page, page_size):
 
     # Create tokens for pagination testing
     with client.application.app_context():
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Token, User
-
         test_user = User.query.filter_by(email="test@example.com").first()
 
         for i in range(30):

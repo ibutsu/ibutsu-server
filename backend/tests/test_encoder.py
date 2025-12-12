@@ -1,5 +1,7 @@
 """Tests for ibutsu_server.encoder module"""
 
+import pytest
+
 from ibutsu_server.encoder import IbutsuJSONProvider
 from ibutsu_server.models.base_model_ import Model
 
@@ -293,8 +295,6 @@ class TestIbutsuJSONProvider:
 
     def test_default_method_with_non_model_delegates_to_parent(self, flask_app):
         """Test default method delegates to Flask's DefaultJSONProvider for non-Model objects"""
-        import pytest
-
         client, _ = flask_app
 
         with client.application.app_context():

@@ -1,4 +1,9 @@
+from uuid import uuid4
+
 import pytest
+
+from ibutsu_server.db import db
+from ibutsu_server.db.models import WidgetConfig
 
 
 def test_get_widget_config_list(flask_app, make_project, make_widget_config, auth_headers):
@@ -86,8 +91,6 @@ def test_add_widget_config(flask_app, make_project, auth_headers):
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db.models import WidgetConfig
-
         widget = WidgetConfig.query.filter_by(widget="run-aggregator").first()
         assert widget is not None
         assert widget.title == "My Widget"
@@ -139,9 +142,6 @@ def test_update_widget_config(flask_app, make_project, make_widget_config, auth_
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import WidgetConfig
-
         updated_widget = db.session.get(WidgetConfig, str(widget.id))
         assert updated_widget.title == "Updated Title"
 
@@ -164,9 +164,6 @@ def test_delete_widget_config(flask_app, make_project, make_widget_config, auth_
 
     # Verify widget config was deleted
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import WidgetConfig
-
         deleted_widget = db.session.get(WidgetConfig, str(widget_id))
         assert deleted_widget is None
 
@@ -481,11 +478,6 @@ def test_get_widget_config_cleans_invalid_params_on_retrieval(
 
     # Directly create a widget with invalid params (bypassing validation)
     with client.application.app_context():
-        from uuid import uuid4
-
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import WidgetConfig
-
         widget = WidgetConfig(
             id=str(uuid4()),
             widget="run-aggregator",
