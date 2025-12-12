@@ -3,6 +3,9 @@ from unittest.mock import patch
 
 import pytest
 
+from ibutsu_server.db import db
+from ibutsu_server.db.models import Run
+
 
 @patch("ibutsu_server.controllers.run_controller.update_run_task")
 def test_add_run(mock_update_run_task, flask_app, make_project, auth_headers):
@@ -164,9 +167,6 @@ def test_update_run(mock_update_run_task, flask_app, make_project, make_run, aut
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Run
-
         updated_run = db.session.get(Run, str(run.id))
         assert updated_run.summary["failures"] == 5
 
@@ -433,9 +433,6 @@ def test_add_run_with_env_and_component(
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Run
-
         run = db.session.get(Run, response_data["id"])
         assert run.env == "production"
         assert run.component == "web-frontend"

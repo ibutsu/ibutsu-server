@@ -2,10 +2,11 @@
 
 from unittest.mock import MagicMock, patch
 
+import pytest
 from celery import Celery
 from redis.exceptions import LockError
 
-from ibutsu_server.tasks import IbutsuTask, create_celery_app, lock, task
+from ibutsu_server.tasks import IbutsuTask, create_celery_app, get_celery_app, lock, task
 
 
 def test_create_celery_app(flask_app):
@@ -21,8 +22,6 @@ def test_create_celery_app(flask_app):
 
 def test_create_celery_app_is_wrapper(flask_app):
     """Test that create_celery_app is a wrapper around celery_utils.create_flask_celery_app."""
-    from unittest.mock import patch
-
     client, _ = flask_app
 
     with patch("ibutsu_server.celery_utils.create_flask_celery_app") as mock_create:
@@ -65,8 +64,6 @@ def test_get_celery_app(flask_app):
 
 def test_get_celery_app_via_function(flask_app):
     """Test get_celery_app function returns the celery app."""
-    from ibutsu_server.tasks import get_celery_app
-
     client, _ = flask_app
 
     # Mock the registry to return the celery app from flask extensions
@@ -79,10 +76,6 @@ def test_get_celery_app_via_function(flask_app):
 
 def test_get_celery_app_raises_when_not_initialized():
     """Test get_celery_app raises RuntimeError when Celery not initialized."""
-    import pytest
-
-    from ibutsu_server.tasks import get_celery_app
-
     # Mock _AppRegistry.get_celery_app to return None
     with (
         patch("ibutsu_server._AppRegistry.get_celery_app", return_value=None),

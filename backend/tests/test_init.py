@@ -5,10 +5,13 @@ from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 import pytest
-from flask import json
+from flask import Flask, json
 from sqlalchemy.engine.url import URL as SQLA_URL
 
-from ibutsu_server import _AppRegistry, check_envvar, get_app, maybe_sql_url
+from ibutsu_server import _AppRegistry, check_envvar, flower_app, get_app, maybe_sql_url
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Token, User
+from ibutsu_server.util.jwt import generate_token
 
 
 def test_maybe_sql_url_with_all_params():
@@ -212,9 +215,6 @@ def test_run_task_route_non_superadmin(flask_app):
     """Test run-task route with non-superadmin user"""
     client, _ = flask_app
     # Create a non-superadmin user for this test
-    from ibutsu_server.db.base import session
-    from ibutsu_server.db.models import Token, User
-    from ibutsu_server.util.jwt import generate_token
 
     with client.application.app_context():
         non_superadmin_user = User(
@@ -573,7 +573,7 @@ def test_module_getattr_invalid_attribute():
     """
     # Python's import system wraps AttributeError in ImportError
     with pytest.raises(ImportError, match="cannot import name 'invalid_attr' from 'ibutsu_server'"):
-        from ibutsu_server import invalid_attr  # noqa: F401
+        from ibutsu_server import invalid_attr  # noqa: F401, PLC0415 - testing import error
 
 
 def test_module_getattr_flower_app_initialization(reset_app_registry, monkeypatch):
@@ -586,8 +586,6 @@ def test_module_getattr_flower_app_initialization(reset_app_registry, monkeypatc
     # Set up minimal environment for flower_app
     monkeypatch.setenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
     monkeypatch.setenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
-
-    from ibutsu_server import flower_app
 
     assert flower_app is not None
     assert flower_app.main == "ibutsu_server_flower"
@@ -635,8 +633,6 @@ def test_get_app_sqlite_engine_options():
 
 def test_get_app_postgresql_engine_options():
     """Test get_app sets statement_timeout for PostgreSQL"""
-    from sqlalchemy.engine.url import URL as SQLA_URL
-
     db_url = SQLA_URL.create(
         drivername="postgresql",
         host="localhost",
@@ -755,8 +751,6 @@ def test_app_registry_get_alembic_flask_app(reset_app_registry):
     assert app is not None
     assert _AppRegistry.alembic_flask_app is not None
     # Verify it's a Flask app (not Connexion)
-    from flask import Flask
-
     assert isinstance(app, Flask)
     # Verify database is configured
     assert "SQLALCHEMY_DATABASE_URI" in app.config

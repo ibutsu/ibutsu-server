@@ -2,6 +2,10 @@ from http import HTTPStatus
 
 import pytest
 
+from ibutsu_server.db import db
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Token, User
+
 
 def _mock_task(*args, **kwargs):
     """Mock task function for Celery tasks in tests."""
@@ -121,8 +125,6 @@ def test_admin_add_user_success(flask_app, auth_headers):
 
     # Verify user was created in database
     with client.application.app_context():
-        from ibutsu_server.db.models import User
-
         user = User.query.filter_by(email="newuser@example.com").first()
         assert user is not None
         assert user.name == "New User"
@@ -173,9 +175,6 @@ def test_admin_update_user_success(flask_app, make_user, make_project, auth_head
 
     # Verify updates in database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import User
-
         updated_user = db.session.get(User, str(user.id))
         assert updated_user.name == "Updated User Name"
         assert updated_user.email == "updated@example.com"
@@ -212,9 +211,6 @@ def test_admin_delete_user_success(flask_app, make_user, auth_headers):
 
     # Verify user was deleted from database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import User
-
         deleted_user = db.session.get(User, str(user_id))
         assert deleted_user is None
 
@@ -237,8 +233,6 @@ def test_admin_delete_user_cannot_delete_self(flask_app, auth_headers):
 
     # Get the test user ID from the flask_app fixture
     with client.application.app_context():
-        from ibutsu_server.db.models import User
-
         test_user = User.query.filter_by(email="test@example.com").first()
 
     headers = auth_headers(jwt_token)
@@ -269,13 +263,11 @@ class TestAdminDeleteLastSuperadmin:
         Returns:
             tuple: (test_client, jwt_token, second_superadmin_id)
         """
-        import logging
+        import logging  # noqa: PLC0415 - Fixture setup, configure before app creation
 
-        import ibutsu_server.tasks
-        from ibutsu_server import get_app
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Token, User
-        from ibutsu_server.util.jwt import generate_token
+        import ibutsu_server.tasks  # noqa: PLC0415 - Fixture setup
+        from ibutsu_server import get_app  # noqa: PLC0415 - Fixture setup
+        from ibutsu_server.util.jwt import generate_token  # noqa: PLC0415 - Fixture setup
 
         logging.getLogger("connexion.operation").setLevel("ERROR")
         extra_config = {
@@ -301,7 +293,7 @@ class TestAdminDeleteLastSuperadmin:
         # In tests, we use metadata.create_all() for speed and simplicity
         # Production uses Alembic migrations
         with flask_app.app_context():
-            from ibutsu_server.db.base import db
+            from ibutsu_server.db.base import db  # noqa: PLC0415 - Fixture setup
 
             db.metadata.create_all(db.engine)
 
@@ -352,8 +344,6 @@ class TestAdminDeleteLastSuperadmin:
 
         # Verify we start with exactly two superadmins
         with client.application.app_context():
-            from ibutsu_server.db.models import User
-
             superadmin_count = User.query.filter_by(is_superadmin=True).count()
             assert superadmin_count == 2, "Test requires exactly two superadmins initially"
 
@@ -368,8 +358,6 @@ class TestAdminDeleteLastSuperadmin:
 
         # Verify only one superadmin remains
         with client.application.app_context():
-            from ibutsu_server.db.models import User
-
             superadmin_count = User.query.filter_by(is_superadmin=True).count()
             assert superadmin_count == 1, "Should have exactly one superadmin remaining"
 

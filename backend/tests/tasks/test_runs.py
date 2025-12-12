@@ -3,6 +3,9 @@
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
+from ibutsu_server.db import db
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Run
 from ibutsu_server.tasks.runs import sync_aborted_runs, update_run
 
 
@@ -45,10 +48,6 @@ def test_update_run(make_project, make_run, make_result, flask_app, fixed_time):
             update_run(str(run.id))
 
         # Refresh run from database
-        from ibutsu_server.db import db
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Run
-
         session.expire_all()
         updated_run = db.session.get(Run, run.id)
 
@@ -105,9 +104,6 @@ def test_sync_aborted_runs_with_none_summary(make_project, make_run, flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Run
-
         project = make_project(name="test-project")
         recent_time = datetime.now(UTC) - timedelta(minutes=30)
 
@@ -136,9 +132,6 @@ def test_sync_aborted_runs_with_empty_summary(make_project, make_run, flask_app)
     client, _ = flask_app
 
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Run
-
         project = make_project(name="test-project")
         recent_time = datetime.now(UTC) - timedelta(minutes=30)
 
@@ -167,9 +160,6 @@ def test_sync_aborted_runs_with_missing_tests_key(make_project, make_run, flask_
     client, _ = flask_app
 
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Run
-
         project = make_project(name="test-project")
         recent_time = datetime.now(UTC) - timedelta(minutes=30)
 
@@ -198,10 +188,6 @@ def test_update_run_with_none_summary(make_project, make_run, make_result, flask
     client, _ = flask_app
 
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Run
-
         project = make_project(name="test-project")
 
         # Create a run with None summary
@@ -245,10 +231,6 @@ def test_update_run_with_empty_summary(make_project, make_run, make_result, flas
     client, _ = flask_app
 
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.base import session
-        from ibutsu_server.db.models import Run
-
         project = make_project(name="test-project")
 
         # Create a run with empty summary

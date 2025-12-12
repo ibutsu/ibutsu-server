@@ -9,7 +9,9 @@ from uuid import uuid4
 
 from lxml import objectify
 
-from ibutsu_server.db.models import Artifact, ImportFile, Result, Run
+from ibutsu_server.db import db
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
 from ibutsu_server.tasks.importers import (
     _add_artifacts,
     _get_properties,
@@ -456,9 +458,6 @@ class TestUpdateImportStatus:
             _update_import_status(import_record, "running")
 
             # Refresh from database
-            from ibutsu_server.db import db
-            from ibutsu_server.db.models import Import
-
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "running"
 
@@ -471,9 +470,6 @@ class TestUpdateImportStatus:
 
             _update_import_status(import_record, "done")
 
-            from ibutsu_server.db import db
-            from ibutsu_server.db.models import Import
-
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "done"
 
@@ -485,9 +481,6 @@ class TestUpdateImportStatus:
             import_record = make_import(status="running")
 
             _update_import_status(import_record, "error")
-
-            from ibutsu_server.db import db
-            from ibutsu_server.db.models import Import
 
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "error"
@@ -597,7 +590,6 @@ class TestRunJunitImport:
 
         # Create import file
         import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
-        from ibutsu_server.db.base import session
 
         session.add(import_file)
         session.commit()
@@ -639,9 +631,6 @@ class TestRunJunitImport:
         assert "traceback.log" in failed_filenames
 
         # Verify import status updated
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Import
-
         updated_import = db.session.get(Import, import_record.id)
         assert updated_import.status == "done"
 
@@ -670,7 +659,6 @@ class TestRunJunitImport:
             )
 
             import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
-            from ibutsu_server.db.base import session
 
             session.add(import_file)
             session.commit()
@@ -700,9 +688,6 @@ class TestRunJunitImport:
             run_junit_import({"id": str(import_record.id)})
 
             # Verify status updated to error
-            from ibutsu_server.db import db
-            from ibutsu_server.db.models import Import
-
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "error"
 
@@ -761,8 +746,6 @@ class TestRunArchiveImport:
                 import_id=import_record.id,
                 content=tar_content,
             )
-            from ibutsu_server.db import db
-            from ibutsu_server.db.base import session
 
             session.add(import_file)
             session.commit()
@@ -789,8 +772,6 @@ class TestRunArchiveImport:
             assert result.test_id == "test.example"
 
             # Verify import status
-            from ibutsu_server.db.models import Import
-
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "done"
 
@@ -807,8 +788,5 @@ class TestRunArchiveImport:
             run_archive_import({"id": str(import_record.id)})
 
             # Verify status updated to error
-            from ibutsu_server.db import db
-            from ibutsu_server.db.models import Import
-
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "error"
