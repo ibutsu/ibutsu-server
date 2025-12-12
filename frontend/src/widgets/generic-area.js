@@ -145,7 +145,7 @@ const GenericAreaWidget = ({
         onEditClick={onEditClick}
         onDeleteClick={onDeleteClick}
       />
-      <CardBody className="ibutsu-widget-card-body" data-id="generic-area">
+      <CardBody className="ibutsu-widget-card-body">
         {isError && <p>Error fetching data</p>}
         {!isError && isLoading && <Content component="h2">Loading ...</Content>}
         {!isError && !isLoading && (

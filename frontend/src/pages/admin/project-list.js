@@ -157,20 +157,10 @@ const ProjectList = () => {
 
   return (
     <>
-      <PageSection
-        hasBodyWrapper={false}
-        id="page"
-        ouiaId="admin-projects-header-section"
-      >
-        <Flex
-          justifyContent={{ default: 'justifyContentSpaceBetween' }}
-          ouiaId="admin-projects-header-flex"
-        >
-          <Flex ouiaId="admin-projects-title-flex">
-            <FlexItem
-              spacer={{ default: 'spacerLg' }}
-              ouiaId="admin-projects-title-flex-item"
-            >
+      <PageSection hasBodyWrapper={false} id="page">
+        <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+          <Flex>
+            <FlexItem spacer={{ default: 'spacerLg' }}>
               <Content>
                 <Content
                   className="title"
@@ -182,8 +172,8 @@ const ProjectList = () => {
               </Content>
             </FlexItem>
           </Flex>
-          <Flex ouiaId="admin-projects-actions-flex">
-            <FlexItem ouiaId="admin-projects-add-button-flex-item">
+          <Flex>
+            <FlexItem>
               <Button
                 icon={<PlusCircleIcon />}
                 aria-label="Add project"
@@ -200,11 +190,7 @@ const ProjectList = () => {
           </Flex>
         </Flex>
       </PageSection>
-      <PageSection
-        hasBodyWrapper={false}
-        className="pf-v6-u-pb-0"
-        ouiaId="admin-projects-content-section"
-      >
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-pb-0">
         {anyProjects && (
           <FilterTable
             columns={COLUMNS}
@@ -234,16 +220,13 @@ const ProjectList = () => {
         onClose={onDeleteClose}
         ouiaId="admin-projects-delete-modal"
       >
-        <ModalHeader
-          title="Confirm Delete"
-          ouiaId="admin-projects-delete-modal-header"
-        />
-        <ModalBody ouiaId="admin-projects-delete-modal-body">
+        <ModalHeader title="Confirm Delete" />
+        <ModalBody>
           Are you sure you want to delete &ldquo;
           {selectedProject && selectedProject.title}&rdquo;? This cannot be
           undone!
         </ModalBody>
-        <ModalFooter ouiaId="admin-projects-delete-modal-footer">
+        <ModalFooter>
           <Button
             variant="danger"
             ouiaId="admin-projects-modal-delete"

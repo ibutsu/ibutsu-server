@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { convertDate } from './dates';
 
 describe('Date Utilities', () => {

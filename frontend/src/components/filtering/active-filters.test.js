@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ActiveFilters from './active-filters';

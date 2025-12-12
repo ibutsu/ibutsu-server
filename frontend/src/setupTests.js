@@ -53,7 +53,10 @@ console.warn = (...args) => {
     // Suppress common React/component warnings
     warnString.includes('componentWillReceiveProps') ||
     warnString.includes('componentWillMount') ||
-    warnString.includes('findDOMNode')
+    warnString.includes('findDOMNode') ||
+    // Suppress PatternFly table header accessibility warnings from SkeletonTable
+    // These are internal to PatternFly components and not actionable in our code
+    warnString.includes('Th: Table headers must have an accessible name')
   ) {
     return;
   }

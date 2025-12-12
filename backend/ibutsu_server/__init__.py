@@ -92,30 +92,33 @@ def get_app(**extra_config):
 
     # If you have environment variables, like when running on OpenShift, create the db url
     if "SQLALCHEMY_DATABASE_URI" not in extra_config:
-        maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
-            config.get_namespace("POSTGRES_")
-        )
+        # First check if SQLALCHEMY_DATABASE_URI is already set in config (e.g., from environment)
+        # This allows tests to override via os.environ before checking for PostgreSQL-specific vars
+        if "SQLALCHEMY_DATABASE_URI" not in config:
+            maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
+                config.get_namespace("POSTGRES_")
+            )
 
-        if maybe_db_uri is None:
-            # Flask-SQLAlchemy 3.0+ requires explicit database URI
-            # Provide a default for development/testing
-            default_db_uri = config.get("SQLALCHEMY_DATABASE_URI", "sqlite:///ibutsu.db")
-            config.update(SQLALCHEMY_DATABASE_URI=default_db_uri)
-            print(f"⚠️  No database configuration found. Using default: {default_db_uri}")
-        else:
-            # wait for db to appear in case of pod usage
-            config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
+            if maybe_db_uri is None:
+                # Flask-SQLAlchemy 3.0+ requires explicit database URI
+                # Provide a default for development/testing
+                default_db_uri = config.get("SQLALCHEMY_DATABASE_URI", "sqlite:///ibutsu.db")
+                config.update(SQLALCHEMY_DATABASE_URI=default_db_uri)
+                print(f"⚠️  No database configuration found. Using default: {default_db_uri}")
+            else:
+                # wait for db to appear in case of pod usage
+                config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
 
-            engine = create_engine(maybe_db_uri)
-            for _ in range(10):
-                try:
-                    c = engine.connect()
-                except ConnectionError:
-                    pass
-                else:
-                    c.close()
-                    break
-            engine.dispose()
+                engine = create_engine(maybe_db_uri)
+                for _ in range(10):
+                    try:
+                        c = engine.connect()
+                    except ConnectionError:
+                        pass
+                    else:
+                        c.close()
+                        break
+                engine.dispose()
 
         # Set celery broker URL
         # hackishly indented to only be part of the setup where extra config won't pass the db

@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import {
   RESULT_BASED_WIDGETS,
   RUN_BASED_WIDGETS,

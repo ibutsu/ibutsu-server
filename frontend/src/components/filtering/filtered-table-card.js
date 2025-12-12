@@ -154,13 +154,14 @@ const FilterTable = ({
         {rows.map((row, rowIndex) => {
           const isExpanded = isRowExpanded(row);
           const isSelected = row.selected || selectedRows.includes(row.id);
+          const rowKey = row.id ?? rowIndex;
 
           return (
-            <React.Fragment key={row.id}>
-              <Tr key={`${row.id}-tr`}>
+            <React.Fragment key={rowKey}>
+              <Tr>
                 {selectable && (
                   <Td
-                    key={`${row.id}-select`}
+                    key={`${rowKey}-select`}
                     select={{
                       onSelect: (e, s) => onSelectRow(e, s, rowIndex),
                       isSelected: isSelected,
@@ -170,12 +171,12 @@ const FilterTable = ({
                 )}
                 {expandable && (
                   <Td
-                    key={`${row.id}-expand`}
+                    key={`${rowKey}-expand`}
                     expand={{
                       rowIndex,
                       isExpanded: isExpanded,
                       onToggle: handleToggle,
-                      expandId: `expandable-row-${row.id}`,
+                      expandId: `expandable-row-${rowKey}`,
                     }}
                   />
                 )}
@@ -214,16 +215,18 @@ const FilterTable = ({
                       cellContent = JSON.stringify(sanitizedCell);
                     }
 
-                    return <Td key={`${row.id}${cellIndex}`}>{cellContent}</Td>;
+                    return (
+                      <Td key={`${rowKey}-${cellIndex}`}>{cellContent}</Td>
+                    );
                   })}
               </Tr>
               {expandable && row.expandedContent && isExpanded && (
-                <Tr key={`${row.id}-tr-expanded`} isExpanded={isExpanded}>
-                  {selectable && <Td key={`${row.id}-td-select-expanded`} />}
+                <Tr key={`${rowKey}-tr-expanded`} isExpanded={isExpanded}>
+                  {selectable && <Td key={`${rowKey}-td-select-expanded`} />}
                   <Td
                     colSpan={columns.length + (expandable ? 1 : 0)}
                     noPadding
-                    key={`${row.id}-td-expanded`}
+                    key={`${rowKey}-td-expanded`}
                   >
                     <ExpandableRowContent>
                       {row.expandedContent}
@@ -281,6 +284,7 @@ const FilterTable = ({
               <Tr>
                 {selectable && (
                   <Th
+                    screenReaderText="Row selection"
                     select={{
                       onSelect: selectAllRows,
                       isSelected: areAllRowsSelected,
@@ -289,11 +293,29 @@ const FilterTable = ({
                   />
                 )}
                 {expandable && <Th screenReaderText="Row expansion" />}
-                {columns.map((column, columnIndex) => (
-                  <Th key={columnIndex} {...getSortParams(columnIndex)}>
-                    {typeof column === 'string' ? column : column?.title}
-                  </Th>
-                ))}
+                {columns.map((column, columnIndex) => {
+                  const columnText =
+                    typeof column === 'string' ? column : column?.title;
+                  const isEmpty = !columnText || columnText.trim() === '';
+                  const sortParams = getSortParams(columnIndex);
+
+                  // For empty columns, don't render any children
+                  if (isEmpty) {
+                    return (
+                      <Th
+                        key={columnIndex}
+                        {...sortParams}
+                        screenReaderText="Actions"
+                      />
+                    );
+                  }
+
+                  return (
+                    <Th key={columnIndex} {...sortParams}>
+                      {columnText}
+                    </Th>
+                  );
+                })}
               </Tr>
             </Thead>
             {!rows && (

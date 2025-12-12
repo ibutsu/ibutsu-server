@@ -61,9 +61,9 @@ const WidgetHeader = ({
   return (
     <CardHeader
       id={id}
-      data-id="widget-header"
+      className="ibutsu-widget-header"
+      data-ouia-component-id={ouiaId ?? (id ? `${id}-header` : 'widget-header')}
       actions={{ actions: headerActions }}
-      ouiaId={ouiaId ?? (id ? `${id}-header` : 'widget-header')}
     >
       <Title headingLevel="h2">{title}</Title>
     </CardHeader>

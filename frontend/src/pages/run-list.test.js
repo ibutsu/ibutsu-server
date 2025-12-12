@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import RunList from './run-list';
@@ -453,6 +452,11 @@ describe('RunList', () => {
     it('should display error state when fetch fails', async () => {
       HttpClient.get.mockRejectedValue(new Error('Server error'));
 
+      // Suppress expected console.error for this intentional failure
+      const consoleErrorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       renderComponent();
 
       await waitFor(() => {
@@ -461,6 +465,14 @@ describe('RunList', () => {
 
       // Error should be handled internally
       expect(screen.getByText('Test runs')).toBeInTheDocument();
+
+      // Verify error was logged (but suppressed from output)
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error fetching run data:',
+        expect.any(Error),
+      );
+
+      consoleErrorSpy.mockRestore();
     });
 
     it('should set isError state on fetch failure', async () => {

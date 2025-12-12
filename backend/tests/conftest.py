@@ -26,12 +26,21 @@ def pytest_configure(config):
     This runs before test collection, allowing modules to import components that
     require environment variables (e.g., flower_app requires CELERY_BROKER_URL).
 
-    Note: Only CELERY_BROKER_URL is set here. Individual tests can set
-    CELERY_RESULT_BACKEND or CELERY_RESULT_BACKEND_URL as needed without conflicts.
+    Note: Both database and Celery URLs are set here to prevent connection attempts
+    to external services during test collection in CI environments.
     """
     # Set default Celery broker URL for tests if not already set
     if "CELERY_BROKER_URL" not in os.environ:
         os.environ["CELERY_BROKER_URL"] = "redis://localhost:6379/0"
+
+    # Set SQLite in-memory database to prevent PostgreSQL connection attempts
+    # during test collection in CI environments
+    if "SQLALCHEMY_DATABASE_URI" not in os.environ:
+        os.environ["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+
+    # Set Celery result backend if not already set
+    if "CELERY_RESULT_BACKEND" not in os.environ:
+        os.environ["CELERY_RESULT_BACKEND"] = "redis://localhost:6379/0"
 
 
 @pytest.fixture

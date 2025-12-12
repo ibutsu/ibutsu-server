@@ -31,7 +31,7 @@ const ParamDropdown = ({
   return (
     <>
       <div
-        data-id="widget-param-dropdown"
+        className="ibutsu-param-dropdown"
         data-ouia-component-id={`${ouiaId}-wrapper`}
       >
         <Content component="h3">{tooltip}</Content>

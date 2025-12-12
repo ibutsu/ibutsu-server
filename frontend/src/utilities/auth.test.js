@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { AuthService } from './auth';
 
 // Mock Settings

@@ -291,16 +291,14 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         clearTimeout(debouncer);
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeFilters,
     comparisonResults,
     page,
     pageSize,
-    setPage,
-    setPageSize,
-    setTotalItems,
-    updateFilters,
-    resultToTestHistoryRow,
+    // Note: setPage, setPageSize, setTotalItems are stable and don't need to be in deps
+    // Note: updateFilters and resultToTestHistoryRow are accessed via refs to prevent infinite loops
   ]);
 
   // Compose result summary from all results

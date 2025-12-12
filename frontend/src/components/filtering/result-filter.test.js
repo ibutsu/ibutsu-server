@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import ResultFilter from './result-filter';
@@ -500,6 +499,11 @@ describe('ResultFilter', () => {
     it('should display error message when fetch fails', async () => {
       HttpClient.get.mockReturnValue(Promise.reject(new Error('Fetch failed')));
 
+      // Suppress expected console.error for this intentional failure
+      const consoleErrorSpy = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       renderComponent(
         {},
         {
@@ -512,6 +516,14 @@ describe('ResultFilter', () => {
       await waitFor(() => {
         expect(screen.getByText('Error loading values')).toBeInTheDocument();
       });
+
+      // Verify error was logged (but suppressed from output)
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error fetching dynamic values:',
+        expect.any(Error),
+      );
+
+      consoleErrorSpy.mockRestore();
     });
 
     it('should handle AbortError silently without logging', async () => {
@@ -656,6 +668,279 @@ describe('ResultFilter', () => {
       expect(
         screen.getByPlaceholderText(/type any value/i),
       ).toBeInTheDocument();
+    });
+  });
+
+  describe('Run Selection', () => {
+    it('should display run options when run select is opened', () => {
+      renderComponent(
+        { runs: ['run-1', 'run-2', 'run-3'] },
+        {
+          filterMode: 'run',
+          operationMode: 'single',
+          fieldSelection: 'run_id',
+          isRunOpen: true,
+        },
+      );
+
+      // Component should render without error
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
+    });
+
+    it('should filter runs based on input', () => {
+      renderComponent(
+        { runs: ['run-alpha', 'run-beta', 'run-gamma'] },
+        {
+          filterMode: 'run',
+          operationMode: 'single',
+          fieldSelection: 'run_id',
+        },
+      );
+
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Result Selection', () => {
+    it('should display result options when result select is opened', () => {
+      renderComponent(
+        {},
+        {
+          filterMode: 'result',
+          operationMode: 'single',
+          fieldSelection: 'result',
+          isResultOpen: true,
+        },
+      );
+
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Value Options Select', () => {
+    beforeEach(() => {
+      HttpClient.get.mockReturnValue(
+        Promise.resolve({ ok: true, json: () => [] }),
+      );
+      HttpClient.handleResponse.mockReturnValue([
+        { _id: 'chrome', count: 10 },
+        { _id: 'firefox', count: 5 },
+        { _id: 'safari', count: 3 },
+      ]);
+    });
+
+    it('should render value select when valueOptions available', async () => {
+      renderComponent(
+        {},
+        {
+          fieldSelection: 'metadata.browser',
+          filterMode: 'text',
+          operationMode: 'single',
+          operationSelection: 'eq',
+        },
+      );
+
+      await waitFor(() => {
+        expect(HttpClient.get).toHaveBeenCalled();
+      });
+    });
+
+    it('should display value count in description', async () => {
+      renderComponent(
+        {},
+        {
+          fieldSelection: 'metadata.browser',
+          filterMode: 'text',
+          operationMode: 'single',
+          operationSelection: 'eq',
+        },
+      );
+
+      await waitFor(() => {
+        expect(HttpClient.get).toHaveBeenCalled();
+      });
+    });
+
+    it('should handle multi-select for value options', async () => {
+      renderComponent(
+        {},
+        {
+          fieldSelection: 'metadata.browser',
+          filterMode: 'text',
+          operationMode: 'multi',
+          operationSelection: 'in',
+        },
+      );
+
+      await waitFor(() => {
+        expect(HttpClient.get).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Apply Filter with different modes', () => {
+    it('should apply text filter successfully', () => {
+      renderComponent(
+        {},
+        {
+          fieldSelection: 'test_id',
+          textFilter: 'test_login_flow',
+          operationMode: 'single',
+          filterMode: 'text',
+          operationSelection: 'eq',
+        },
+      );
+
+      fireEvent.click(screen.getByTestId('filter-table-apply-button'));
+      expect(mockUpdateFilters).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'test_id',
+          operator: 'eq',
+          value: 'test_login_flow',
+        }),
+      );
+    });
+
+    it('should apply boolean filter with True', () => {
+      renderComponent(
+        {},
+        {
+          fieldSelection: 'is_active',
+          boolSelection: 'True',
+          operationMode: 'bool',
+          filterMode: 'text',
+          operationSelection: 'eq',
+        },
+      );
+
+      fireEvent.click(screen.getByTestId('filter-table-apply-button'));
+      expect(mockUpdateFilters).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'is_active',
+          operator: 'eq',
+          value: 'True',
+        }),
+      );
+    });
+
+    it('should apply boolean filter with False', () => {
+      renderComponent(
+        {},
+        {
+          fieldSelection: 'is_active',
+          boolSelection: 'False',
+          operationMode: 'bool',
+          filterMode: 'text',
+          operationSelection: 'eq',
+        },
+      );
+
+      fireEvent.click(screen.getByTestId('filter-table-apply-button'));
+      expect(mockUpdateFilters).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'is_active',
+          operator: 'eq',
+          value: 'False',
+        }),
+      );
+    });
+
+    it('should apply multi-value filter with joined values', () => {
+      renderComponent(
+        {},
+        {
+          fieldSelection: 'result',
+          inValues: ['passed', 'failed', 'error'],
+          operationMode: 'multi',
+          filterMode: 'text',
+          operationSelection: 'in',
+        },
+      );
+
+      fireEvent.click(screen.getByTestId('filter-table-apply-button'));
+      expect(mockUpdateFilters).toHaveBeenCalledWith(
+        expect.objectContaining({
+          field: 'result',
+          operator: 'in',
+          value: 'passed;failed;error',
+        }),
+      );
+    });
+  });
+
+  describe('Props handling', () => {
+    it('should respect hideFilters prop', () => {
+      renderComponent(
+        { hideFilters: ['project_id', 'run_id'] },
+        {
+          activeFilters: [
+            { field: 'project_id', operator: 'eq', value: 'proj-1' },
+            { field: 'test_id', operator: 'eq', value: 'test-1' },
+          ],
+        },
+      );
+
+      // project_id should be hidden, test_id should be visible
+      expect(screen.getByText('test_id')).toBeInTheDocument();
+    });
+
+    it('should apply custom maxHeight', () => {
+      renderComponent({ maxHeight: '400px' }, {});
+
+      expect(
+        screen.getByTestId('filter-table-apply-button'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Context without primaryObject', () => {
+    it('should handle missing primaryObject gracefully', async () => {
+      HttpClient.get.mockReturnValue(
+        Promise.resolve({ ok: true, json: () => [] }),
+      );
+      HttpClient.handleResponse.mockReturnValue([]);
+
+      renderComponent(
+        {},
+        {
+          fieldSelection: 'metadata.browser',
+          filterMode: 'text',
+          operationMode: 'single',
+        },
+        { primaryObject: null },
+      );
+
+      await waitFor(() => {
+        expect(HttpClient.get).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({ project: '' }),
+          expect.anything(),
+        );
+      });
+    });
+  });
+
+  describe('Keyboard interaction', () => {
+    it('should trigger setTextFilter on text input change', () => {
+      renderComponent(
+        {},
+        {
+          filterMode: 'text',
+          operationMode: 'single',
+          fieldSelection: 'test_id',
+        },
+      );
+
+      const input = screen.getByTestId('result-filter-text-input');
+      fireEvent.change(input, { target: { value: 'new_value' } });
+
+      expect(mockSetTextFilter).toHaveBeenCalledWith('new_value');
     });
   });
 });

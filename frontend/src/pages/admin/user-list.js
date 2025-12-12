@@ -81,7 +81,7 @@ const UserList = () => {
               variant="filled"
               color="green"
               icon={<CheckIcon />}
-              ouiaId={`user-active-label-${user.id}`}
+              data-ouia-component-id={`user-active-label-${user.id}`}
             >
               Active
             </Label>
@@ -92,7 +92,7 @@ const UserList = () => {
               variant="filled"
               color="red"
               icon={<BanIcon />}
-              ouiaId={`user-inactive-label-${user.id}`}
+              data-ouia-component-id={`user-inactive-label-${user.id}`}
             >
               Inactive
             </Label>
@@ -104,7 +104,7 @@ const UserList = () => {
               variant="outline"
               color="orange"
               icon={<LinuxIcon />}
-              ouiaId={`user-admin-label-${user.id}`}
+              data-ouia-component-id={`user-admin-label-${user.id}`}
             >
               Administrator
             </Label>

@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render } from '@testing-library/react';
 
 // Import all utility functions from their respective modules

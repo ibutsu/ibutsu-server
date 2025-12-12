@@ -71,25 +71,25 @@ div[data-id=heatmap] > div > div:first-child > div:nth-child(2) {
   transform: none;
 }
 
-div[data-id=widget-header] > h2 {
+div.ibutsu-widget-header > h2 {
   width: 55%;
   margin-right: 35%;
   display: inline-block;
 }
 
-div[data-id=widget-header] > button {
+div.ibutsu-widget-header > button {
   width: 10%;
   display: inline-block;
 }
 
 
-div[data-id=widget-param-dropdown] > h3 {
+div.ibutsu-param-dropdown > h3 {
   width: 35%;
   margin-right: 15%;
   display: inline-block;
 }
 
-div[data-id=widget-param-dropdown] > div {
+div.ibutsu-param-dropdown > div {
   width: 50%;
   display: inline-block;
 }

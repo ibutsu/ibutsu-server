@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { HttpClient, buildUrl } from './http';
 import { AuthService } from './auth';
 

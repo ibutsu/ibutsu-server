@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import CompareRunsView from './compare-runs';
@@ -160,6 +159,11 @@ describe('CompareRunsView Component', () => {
 
   describe('Filter controls', () => {
     it('should update includeSkipped state when checkbox is clicked', () => {
+      // Suppress warnings from incomplete filter structure (see TODO in compare-runs.js)
+      const consoleWarnSpy = jest
+        .spyOn(console, 'warn')
+        .mockImplementation(() => {});
+
       renderCompareRunsView();
 
       const checkbox = screen.getByLabelText('include-skips-checkbox');
@@ -168,6 +172,8 @@ describe('CompareRunsView Component', () => {
       fireEvent.click(checkbox);
 
       expect(checkbox).toBeChecked();
+
+      consoleWarnSpy.mockRestore();
     });
 
     it('should clear filters when Clear Filters button is clicked', async () => {

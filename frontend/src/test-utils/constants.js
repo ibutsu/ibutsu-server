@@ -121,3 +121,81 @@ export const TEST_PAGINATION = {
   TOTAL_ITEMS: 100,
   TOTAL_PAGES: 2,
 };
+
+// Jenkins-specific metadata patterns
+export const TEST_JENKINS_METADATA = {
+  BASIC: {
+    jenkins: {
+      job_name: 'test-pipeline/main',
+      build_number: '123',
+      build_url: 'https://jenkins.example.com/job/test-pipeline/main/123/',
+    },
+  },
+
+  WITH_PARAMS: {
+    jenkins: {
+      job_name: 'parameterized-job',
+      build_number: '456',
+      build_url: 'https://jenkins.example.com/job/parameterized-job/456/',
+      parameters: {
+        BRANCH: 'feature',
+        ENV: 'staging',
+      },
+    },
+  },
+
+  FULL: {
+    jenkins: {
+      job_name: 'full-pipeline/integration-tests',
+      build_number: '789',
+      build_url:
+        'https://jenkins.example.com/job/full-pipeline/integration-tests/789/',
+      node: 'linux-agent-1',
+      executor: '2',
+      parameters: {
+        BRANCH: 'main',
+        ENV: 'production',
+        DEBUG: 'false',
+      },
+    },
+  },
+};
+
+// Multi-level nested metadata patterns
+export const TEST_NESTED_METADATA = {
+  DEEP: {
+    level1: {
+      level2: {
+        level3: {
+          value: 'deeply nested',
+        },
+      },
+    },
+  },
+
+  WITH_ARRAYS: {
+    markers: ['smoke', 'ui', 'critical'],
+    phase_durations: {
+      setup: 0.1,
+      call: 1.5,
+      teardown: 0.05,
+    },
+  },
+
+  CLASSIFICATION: {
+    classification: {
+      category: 'flaky',
+      confidence: 0.85,
+      reason: 'timing-sensitive',
+    },
+  },
+
+  ERROR_DETAILS: {
+    error: {
+      type: 'AssertionError',
+      message: 'Expected 200 but got 404',
+      traceback:
+        'Traceback (most recent call last):\n  File "tests/test_api.py", line 42\n    assert response.status_code == 200\nAssertionError: 404 != 200',
+    },
+  },
+};

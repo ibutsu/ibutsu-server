@@ -117,7 +117,8 @@
       "!src/**/*.test.js",
       "!src/**/*.spec.js",
       "!src/jest.polyfills.cjs",
-      "!src/views/accessibility-*.js"
+      "!src/views/accessibility-*.js",
+      "!src/test-utils/**"
     ],
     "coverageReporters": [
       "text-summary",

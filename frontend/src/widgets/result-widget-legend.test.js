@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import { render } from '@testing-library/react';
 import ResultWidgetLegend from './result-widget-legend';
 import { ICON_RESULT_MAP } from '../constants';

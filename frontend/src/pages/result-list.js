@@ -161,7 +161,9 @@ const ResultList = () => {
           apiParams,
         );
         const data = await HttpClient.handleResponse(response);
-        const runIds = data.runs.map((run) => run.id);
+        const runIds = Array.isArray(data?.runs)
+          ? data.runs.map((run) => run.id)
+          : [];
         setRuns(runIds);
       } catch (error) {
         console.error('Error fetching runs:', error);
@@ -184,7 +186,7 @@ const ResultList = () => {
       ])
         .then((response) => HttpClient.handleResponse(response))
         .then((data) => {
-          if (data && setFieldOptions) {
+          if (Array.isArray(data) && setFieldOptions) {
             const dynamicFields = data.map((f) => ({ value: f, children: f }));
             const resultFieldValues = new Set(
               RESULT_FIELDS.map((f) => f.value),
@@ -211,22 +213,14 @@ const ResultList = () => {
 
   return (
     <>
-      <PageSection
-        hasBodyWrapper={false}
-        id="page"
-        ouiaId="result-list-header-section"
-      >
+      <PageSection hasBodyWrapper={false} id="page">
         <Content>
           <Content className="title" component="h1">
             Test results
           </Content>
         </Content>
       </PageSection>
-      <PageSection
-        hasBodyWrapper={false}
-        className="pf-v6-u-pb-0"
-        ouiaId="result-list-content-section"
-      >
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-pb-0">
         <FilterTable
           fetching={fetching}
           columns={RUN_RESULTS_COLUMNS}
