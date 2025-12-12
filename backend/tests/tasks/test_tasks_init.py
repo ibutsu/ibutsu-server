@@ -63,6 +63,34 @@ def test_get_celery_app(flask_app):
     assert isinstance(celery_app, Celery)
 
 
+def test_get_celery_app_via_function(flask_app):
+    """Test get_celery_app function returns the celery app."""
+    from ibutsu_server.tasks import get_celery_app
+
+    client, _ = flask_app
+
+    # Mock the registry to return the celery app from flask extensions
+    celery_from_ext = client.application.extensions.get("celery")
+    with patch("ibutsu_server._AppRegistry.get_celery_app", return_value=celery_from_ext):
+        celery_app = get_celery_app()
+        assert celery_app is not None
+        assert isinstance(celery_app, Celery)
+
+
+def test_get_celery_app_raises_when_not_initialized():
+    """Test get_celery_app raises RuntimeError when Celery not initialized."""
+    import pytest
+
+    from ibutsu_server.tasks import get_celery_app
+
+    # Mock _AppRegistry.get_celery_app to return None
+    with (
+        patch("ibutsu_server._AppRegistry.get_celery_app", return_value=None),
+        pytest.raises(RuntimeError, match="Celery app not initialized"),
+    ):
+        get_celery_app()
+
+
 def test_task_decorator():
     """Test task decorator returns a celery task."""
 

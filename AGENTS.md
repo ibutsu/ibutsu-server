@@ -55,7 +55,7 @@
 - Test task registration and beat schedule in Flask-integrated mode
 - Verify delegation from `_AppRegistry` to `celery_utils`
 
-## Testing instructions
+## Testing Instructions
 - Find the CI plan in the .github/workflows folder.
 - Use `hatch run test` to execute tests and `hatch run test-cov` to include coverage from the backend directory as the working directory
 - Pass arguments to pytest through `hatch run test -- <-arg>`
@@ -66,7 +66,25 @@
 - Identify test coverage increases through parametrization of current test functions before creating new test functions
 - Examine and reuse existing fixtures before writing new ones.
 
-### parametrization example for pattern:
+### Documentation Reference
+- **Backend testing guide**: `docs/source/developer-guide/backend-testing.rst`
+- Comprehensive guide with fixtures, patterns, SQLAlchemy 2.0 examples, and best practices
+
+### Coverage Requirements
+- **Target**: 80% line coverage for all modules
+- **Run**: `hatch run test-cov` to verify coverage
+- Coverage reports generated in `htmlcov/` and `coverage.xml`
+
+### Available Test Fixtures
+**Database builders:** `make_project`, `make_run`, `make_result`, `make_artifact`, `make_import`, `make_user`, `make_group`, `make_dashboard`, `make_widget_config`
+
+**Composite hierarchies:** `artifact_test_hierarchy`, `result_test_hierarchy`, `widget_test_hierarchy`
+
+**Widget test helpers:** `bulk_run_creator`, `bulk_result_creator`, `jenkins_run_factory`, `fixed_time`
+
+**Core fixtures:** `flask_app`, `db_session`, `app_context`, `auth_headers`
+
+### Parametrization Example
 ```python
 # Good: Single test function with multiple cases
 @pytest.mark.parametrize("case", [case1, case2, case3])
@@ -86,6 +104,7 @@ def test_feature_case3():
 - **Prefer integration tests over mocking**: Use `flask_app` fixture with real SQLite database operations
 - **Use builder fixtures**: `make_project`, `make_run`, `make_result`, etc. instead of mocks
 - **Mock only external services**: Celery tasks, Redis, external HTTP calls, email - not database operations
-- **See TEST_GUIDE.md**: Comprehensive guide at `backend/tests/TEST_GUIDE.md` with examples and patterns
+- **See backend-testing.rst**: Comprehensive guide at `docs/source/developer-guide/backend-testing.rst`
 - **Avoid database mocking**: Don't patch `session`, `Model.query`, or SQLAlchemy operations
 - **Don't skip tests**: If mocking is too complex, use integration approach with real data instead
+- **Use test markers**: `@pytest.mark.integration`, `@pytest.mark.validation` for categorization
