@@ -124,3 +124,134 @@ def test_get_task_with_unknown_state(flask_app):
     assert response_data["state"] == "UNKNOWN_STATE"
     assert response_data["message"] == "Task has failed!"
     assert "Error traceback" in body_text or "error" in response_data
+
+
+def test_get_task_success_with_result_data(flask_app):
+    """Test get_task with SUCCESS state and result data."""
+    client, jwt_token = flask_app
+
+    # Create mock for AsyncResult with success state and result data
+    mock_async_result = MagicMock()
+    mock_async_result.state = "SUCCESS"
+    mock_async_result.get.return_value = {
+        "total": 100,
+        "processed": 100,
+        "errors": 0,
+        "output": "Processing complete",
+    }
+
+    task_id = "00000000-0000-0000-0000-000000000002"
+    mock_celery_app = MagicMock()
+
+    with (
+        patch("ibutsu_server._AppRegistry.get_celery_app", return_value=mock_celery_app),
+        patch(
+            "ibutsu_server.controllers.task_controller.AsyncResult", return_value=mock_async_result
+        ),
+    ):
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {jwt_token}"}
+        response = client.get(f"/api/task/{task_id}", headers=headers)
+
+    assert response.status_code == HTTPStatus.OK
+    response_data = response.json()
+    assert response_data["state"] == "SUCCESS"
+    assert response_data["message"] == "Task has succeeded"
+    assert response_data["total"] == 100
+    assert response_data["processed"] == 100
+    assert response_data["errors"] == 0
+
+
+def test_get_task_success_with_null_result(flask_app):
+    """Test get_task with SUCCESS state but null result."""
+    client, jwt_token = flask_app
+
+    # Create mock for AsyncResult with success state but null result
+    mock_async_result = MagicMock()
+    mock_async_result.state = "SUCCESS"
+    mock_async_result.get.return_value = None
+
+    task_id = "00000000-0000-0000-0000-000000000003"
+    mock_celery_app = MagicMock()
+
+    with (
+        patch("ibutsu_server._AppRegistry.get_celery_app", return_value=mock_celery_app),
+        patch(
+            "ibutsu_server.controllers.task_controller.AsyncResult", return_value=mock_async_result
+        ),
+    ):
+        headers = {"Accept": "application/json", "Authorization": f"Bearer {jwt_token}"}
+        response = client.get(f"/api/task/{task_id}", headers=headers)
+
+    assert response.status_code == HTTPStatus.OK
+    response_data = response.json()
+    assert response_data["state"] == "SUCCESS"
+    assert response_data["message"] == "Task has succeeded"
+    # Should only contain state and message when result is None
+    assert "total" not in response_data
+
+
+@pytest.mark.parametrize(
+    ("task_id", "expected_status"),
+    [
+        ("invalid-uuid", 400),
+        ("not-valid", 400),
+        ("12345", 400),
+    ],
+)
+def test_get_task_uuid_validation(flask_app, task_id, expected_status, auth_headers):
+    """Test get_task with various invalid UUID formats."""
+    client, jwt_token = flask_app
+
+    headers = auth_headers(jwt_token)
+    response = client.get(f"/api/task/{task_id}", headers=headers)
+    assert response.status_code == expected_status
+
+
+def test_get_task_without_auth(flask_app):
+    """Test get_task without authentication."""
+    client, _jwt_token = flask_app
+
+    task_id = "00000000-0000-0000-0000-000000000001"
+    headers = {"Accept": "application/json"}
+    response = client.get(f"/api/task/{task_id}", headers=headers)
+
+    # Should require authentication
+    assert response.status_code in [401, 403]
+
+
+@pytest.mark.parametrize(
+    ("state", "traceback_content"),
+    [
+        ("FAILURE", "Traceback (most recent call last):\n  File error.py, line 1"),
+        ("FAILURE", "Exception: Database connection failed"),
+        ("FAILURE", "ValueError: Invalid input\nLine 1\nLine 2\nLine 3"),
+    ],
+)
+def test_get_task_failure_with_traceback(flask_app, state, traceback_content, auth_headers):
+    """Test get_task with FAILURE state and different traceback formats."""
+    client, jwt_token = flask_app
+
+    mock_async_result = MagicMock()
+    mock_async_result.state = state
+    mock_async_result.traceback = traceback_content
+
+    task_id = "00000000-0000-0000-0000-000000000004"
+    mock_celery_app = MagicMock()
+
+    with (
+        patch("ibutsu_server._AppRegistry.get_celery_app", return_value=mock_celery_app),
+        patch(
+            "ibutsu_server.controllers.task_controller.AsyncResult", return_value=mock_async_result
+        ),
+    ):
+        headers = auth_headers(jwt_token)
+        response = client.get(f"/api/task/{task_id}", headers=headers)
+
+    assert response.status_code == HTTPStatus.NON_AUTHORITATIVE_INFORMATION
+    response_data = response.json()
+    assert response_data["state"] == state
+    assert response_data["message"] == "Task has failed!"
+    assert "error" in response_data
+    # Verify traceback is split into lines
+    assert isinstance(response_data["error"], list)
+    assert len(response_data["error"]) > 0

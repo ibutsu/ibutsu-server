@@ -450,3 +450,174 @@ def test_login_validation_parametrized(flask_app, email, password, expected_stat
         json=login_details,
     )
     assert response.status_code == expected_status, description
+
+
+@patch("ibutsu_server.controllers.login_controller.generate_token")
+def test_login_superadmin_when_disabled(mocked_generate_token, flask_app, temp_config):
+    """Test that superadmin can still login when USER_LOGIN_ENABLED is False"""
+    client, _jwt_token = flask_app
+
+    # Test user in fixture is superadmin
+    with client.application.app_context():
+        from ibutsu_server.db.models import User
+
+        superadmin = User.query.filter_by(email="test@example.com").first()
+        superadmin.password = "adminpassword"
+        from ibutsu_server.db.base import session
+
+        session.commit()
+
+    # Disable user login
+    temp_config("USER_LOGIN_ENABLED", False)
+
+    mocked_generate_token.return_value = "superadmin-token"
+
+    login_details = {"email": "test@example.com", "password": "adminpassword"}
+    headers = {"Accept": "application/json", "Content-Type": "application/json"}
+    response = client.post(
+        "/api/login",
+        headers=headers,
+        json=login_details,
+    )
+    # Superadmin should still be able to login
+    assert response.status_code == 200, f"Response body is : {response.text}"
+
+
+def test_login_creates_or_updates_token(flask_app):
+    """Test that login creates or updates the login-token"""
+    client, _jwt_token = flask_app
+
+    # Create user
+    with client.application.app_context():
+        from ibutsu_server.db.base import session
+        from ibutsu_server.db.models import User
+
+        user = User(name="Token Test User", email="tokentest@example.com", is_active=True)
+        user.password = "testpassword"
+        session.add(user)
+        session.commit()
+        user_id = user.id
+
+    with patch("ibutsu_server.controllers.login_controller.generate_token") as mock_gen:
+        mock_gen.return_value = "first-token"
+
+        login_details = {"email": "tokentest@example.com", "password": "testpassword"}
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+        # First login
+        response = client.post("/api/login", headers=headers, json=login_details)
+        assert response.status_code == 200
+        response_data = response.json()
+        assert response_data["token"] == "first-token"
+
+        # Login again with different token
+        mock_gen.return_value = "second-token"
+        response = client.post("/api/login", headers=headers, json=login_details)
+        assert response.status_code == 200
+        response_data = response.json()
+        assert response_data["token"] == "second-token"
+
+    # Verify only one login-token exists
+    with client.application.app_context():
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import Token
+
+        tokens = (
+            db.session.execute(
+                db.select(Token).where(Token.user_id == user_id, Token.name == "login-token")
+            )
+            .scalars()
+            .all()
+        )
+        assert len(tokens) == 1
+        assert tokens[0].token == "second-token"
+
+
+@pytest.mark.parametrize(
+    "provider",
+    [
+        "google",
+        "github",
+        "facebook",
+        "gitlab",
+        "keycloak",
+    ],
+)
+def test_config_all_providers(flask_app, provider):
+    """Test getting login config for all supported providers"""
+    client, _jwt_token = flask_app
+
+    headers = {"Accept": "application/json"}
+    response = client.get(f"/api/login/config/{provider}", headers=headers)
+    assert response.status_code == 200, f"Response body is : {response.text}"
+
+    response_data = response.json()
+    assert isinstance(response_data, dict)
+
+
+def test_auth_missing_code(flask_app):
+    """Test auth endpoint without code parameter"""
+    client, _jwt_token = flask_app
+
+    # Try to call auth without code
+    response = client.get("/api/login/auth/google")
+    assert response.status_code == 400
+
+
+def test_register_non_json(flask_app, http_headers):
+    """Test registration with non-JSON content type"""
+    client, _jwt_token = flask_app
+
+    # Remove Content-Type to test non-JSON handling
+    headers = {k: v for k, v in http_headers.items() if k != "Content-Type"}
+    response = client.post(
+        "/api/login/register",
+        headers=headers,
+        data="not json",
+    )
+    assert response.status_code in [400, 415]
+
+
+def test_recover_non_json(flask_app, http_headers):
+    """Test recover with non-JSON content type"""
+    client, _jwt_token = flask_app
+
+    # Remove Content-Type to test non-JSON handling
+    headers = {k: v for k, v in http_headers.items() if k != "Content-Type"}
+    response = client.post(
+        "/api/login/recover",
+        headers=headers,
+        data="not json",
+    )
+    assert response.status_code in [400, 415]
+
+
+def test_reset_password_non_json(flask_app, http_headers):
+    """Test reset password with non-JSON content type"""
+    client, _jwt_token = flask_app
+
+    # Remove Content-Type to test non-JSON handling
+    headers = {k: v for k, v in http_headers.items() if k != "Content-Type"}
+    response = client.post(
+        "/api/login/reset-password",
+        headers=headers,
+        data="not json",
+    )
+    assert response.status_code in [400, 415]
+
+
+def test_login_support_with_exception(flask_app):
+    """Test login support endpoint handles exceptions gracefully"""
+    client, _jwt_token = flask_app
+
+    # Mock to raise exception in support()
+    with patch("ibutsu_server.controllers.login_controller.get_keycloak_config") as mock_kc:
+        mock_kc.side_effect = Exception("Configuration error")
+
+        headers = {"Accept": "application/json"}
+        response = client.get("/api/login/support", headers=headers)
+        # Should still return 200 with default config
+        assert response.status_code == 200
+        response_data = response.json()
+        assert "user" in response_data
+        assert isinstance(response_data["user"], bool)
