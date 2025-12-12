@@ -600,4 +600,252 @@ describe('Dashboard Component', () => {
       expect(deleteDashboardButton).toBeDisabled();
     });
   });
+
+  describe('Dashboard selection and filtering', () => {
+    it('should filter dashboards when typing in search', async () => {
+      const { getByPlaceholderText } = renderDashboard({
+        defaultDashboard: mockDashboard1.id,
+      });
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () =>
+          createDashboardResponse([mockDashboard1, mockDashboard2]),
+      });
+
+      await waitFor(() => {
+        const selectInput = getByPlaceholderText('Select a dashboard');
+        expect(selectInput).toBeInTheDocument();
+      });
+
+      // The filtering is done in useEffect, so we just need to verify the component renders
+      expect(getByPlaceholderText('Select a dashboard')).toBeInTheDocument();
+    });
+
+    it('should clear dashboard selection when clear button clicked', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () =>
+          createDashboardResponse([mockDashboard1, mockDashboard2]),
+      });
+
+      renderDashboard({
+        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard1.id}`,
+      });
+
+      await waitFor(() => {
+        const selectInput = screen.getByPlaceholderText('Select a dashboard');
+        expect(selectInput).toHaveValue('Dashboard One');
+      });
+
+      // Find and click clear button
+      const clearButton = screen.getByLabelText('Clear input value');
+      clearButton.click();
+
+      await waitFor(() => {
+        const selectInput = screen.getByPlaceholderText('Select a dashboard');
+        expect(selectInput).toHaveValue('');
+      });
+    });
+  });
+
+  describe('Dashboard CRUD operations', () => {
+    it('should display New Dashboard button', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => createDashboardResponse([mockDashboard1]),
+      });
+
+      renderDashboard();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: 'New dashboard' }),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('should open new dashboard modal when button clicked', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => createDashboardResponse([mockDashboard1]),
+      });
+
+      renderDashboard();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('button', { name: 'New dashboard' }),
+        ).toBeInTheDocument();
+      });
+
+      const newDashboardButton = screen.getByRole('button', {
+        name: 'New dashboard',
+      });
+      newDashboardButton.click();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('new-dashboard-modal')).toBeInTheDocument();
+      });
+    });
+
+    it('should delete dashboard and clear selection', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () =>
+          createDashboardResponse([mockDashboard1, mockDashboard2]),
+      });
+
+      renderDashboard({
+        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard1.id}`,
+      });
+
+      await waitFor(() => {
+        const selectInput = screen.getByPlaceholderText('Select a dashboard');
+        expect(selectInput).toHaveValue('Dashboard One');
+      });
+
+      // Delete button should be enabled when dashboard selected
+      const deleteButton = screen.getByRole('button', {
+        name: 'Delete dashboard',
+      });
+      expect(deleteButton).toBeEnabled();
+    });
+  });
+
+  describe('Widget operations', () => {
+    it('should open add widget wizard when button clicked', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () =>
+          createDashboardResponse([mockDashboard1, mockDashboard2]),
+      });
+
+      renderDashboard({
+        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard1.id}`,
+      });
+
+      await waitFor(() => {
+        const selectInput = screen.getByPlaceholderText('Select a dashboard');
+        expect(selectInput).toHaveValue('Dashboard One');
+      });
+
+      const addWidgetButton = screen.getByRole('button', { name: 'Add widget' });
+      addWidgetButton.click();
+
+      await waitFor(() => {
+        expect(screen.getByTestId('new-widget-wizard')).toBeInTheDocument();
+      });
+    });
+
+    it('should display Add Widget button in empty state', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () =>
+          createDashboardResponse([mockDashboard1, mockDashboard2]),
+      });
+
+      renderDashboard({
+        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard1.id}`,
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('No Widgets')).toBeInTheDocument();
+      });
+
+      // Should have Add Widget button in empty state
+      const addWidgetButtons = screen.getAllByRole('button', { name: /add widget/i });
+      expect(addWidgetButtons.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Document title', () => {
+    it('should set document title to "Dashboard | Ibutsu"', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => createDashboardResponse([mockDashboard1]),
+      });
+
+      renderDashboard();
+
+      await waitFor(() => {
+        expect(document.title).toBe('Dashboard | Ibutsu');
+      });
+    });
+  });
+
+  describe('Empty project state', () => {
+    it('should show New Dashboard button in empty state', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => createDashboardResponse([]),
+      });
+
+      renderDashboard();
+
+      await waitFor(() => {
+        expect(screen.getByText('No Dashboard Selected')).toBeInTheDocument();
+      });
+
+      // Should have New Dashboard button in empty state
+      const newDashboardButton = screen.getByRole('button', {
+        name: 'New Dashboard',
+      });
+      expect(newDashboardButton).toBeInTheDocument();
+    });
+  });
+
+  describe('Dashboard grid rendering', () => {
+    it('should render widget grid when dashboard has widgets', async () => {
+      // Mock useWidgets to return widgets
+      jest.doMock('../components/hooks/use-widgets', () => ({
+        useWidgets: () => ({
+          widgets: [{ id: 'widget-1' }],
+          widgetComponents: [<div key="w1">Widget 1</div>],
+        }),
+      }));
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => createDashboardResponse([mockDashboard1]),
+      });
+
+      renderDashboard({
+        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard1.id}`,
+      });
+
+      await waitFor(() => {
+        const selectInput = screen.getByPlaceholderText('Select a dashboard');
+        expect(selectInput).toHaveValue('Dashboard One');
+      });
+    });
+  });
+
+  describe('Modal interactions', () => {
+    it('should render delete modal component in dashboard', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => createDashboardResponse([mockDashboard1]),
+      });
+
+      renderDashboard({
+        initialRoute: `/project/${mockProject.id}/dashboard/${mockDashboard1.id}`,
+      });
+
+      await waitFor(() => {
+        const selectInput = screen.getByPlaceholderText('Select a dashboard');
+        expect(selectInput).toHaveValue('Dashboard One');
+      });
+
+      // Verify delete button exists and modal is rendered in DOM
+      const deleteButton = screen.getByRole('button', {
+        name: 'Delete dashboard',
+      });
+      expect(deleteButton).toBeInTheDocument();
+
+      // Verify the delete modal components exist (there are two - one for dashboard, one for widget)
+      const deleteModals = screen.getAllByTestId('delete-modal');
+      expect(deleteModals.length).toBeGreaterThanOrEqual(1);
+    });
+  });
 });

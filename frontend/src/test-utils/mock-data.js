@@ -411,6 +411,157 @@ export function createMockRunAggregatorData() {
 }
 
 /**
+ * Create a mock run with Jenkins metadata
+ * @param {Object} overrides - Properties to override
+ * @returns {Object} Mock run object with Jenkins metadata
+ */
+export function createMockJenkinsRun(overrides = {}) {
+  const { metadata: metadataOverrides, ...restOverrides } = overrides;
+  return createMockRun({
+    metadata: {
+      jenkins: {
+        job_name: 'pipeline/test-suite',
+        build_number: '1001',
+        build_url: 'https://jenkins.example.com/job/pipeline/test-suite/1001/',
+      },
+      environment: {
+        os: 'linux',
+        python_version: '3.11.5',
+      },
+      git: {
+        branch: 'main',
+        commit: 'abc123def456',
+        repository: 'example/test-repo',
+      },
+      ...metadataOverrides,
+    },
+    ...restOverrides,
+  });
+}
+
+/**
+ * Create a mock run without Jenkins metadata
+ * @param {Object} overrides - Properties to override
+ * @returns {Object} Mock run object without Jenkins metadata
+ */
+export function createMockRunWithoutJenkins(overrides = {}) {
+  const { metadata: metadataOverrides, ...restOverrides } = overrides;
+  return createMockRun({
+    source: 'manual-upload',
+    metadata: {
+      project: 'sample-project',
+      environment: {
+        os: 'linux',
+      },
+      ...metadataOverrides,
+    },
+    ...restOverrides,
+  });
+}
+
+/**
+ * Create a mock result with Jenkins metadata
+ * @param {Object} overrides - Properties to override
+ * @returns {Object} Mock result object with Jenkins metadata
+ */
+export function createMockJenkinsResult(overrides = {}) {
+  const { metadata: metadataOverrides, ...restOverrides } = overrides;
+  return createMockResult({
+    metadata: {
+      jenkins: {
+        job_name: 'pipeline/test-suite',
+        build_number: '1001',
+      },
+      file: 'tests/test_module.py',
+      markers: ['smoke'],
+      importance: 'medium',
+      ...metadataOverrides,
+    },
+    ...restOverrides,
+  });
+}
+
+/**
+ * Create a mock result with deeply nested metadata
+ * @param {Object} overrides - Properties to override
+ * @returns {Object} Mock result object with nested metadata
+ */
+export function createMockResultWithNestedMetadata(overrides = {}) {
+  const { metadata: metadataOverrides, ...restOverrides } = overrides;
+  return createMockResult({
+    metadata: {
+      phase_durations: {
+        setup: 0.1,
+        call: 1.5,
+        teardown: 0.05,
+      },
+      markers: ['smoke', 'ui', 'critical'],
+      classification: {
+        category: 'flaky',
+        confidence: 0.85,
+      },
+      error: {
+        type: 'AssertionError',
+        message: 'Expected 200 but got 404',
+        traceback:
+          'Traceback (most recent call last):\n  File "tests/test_module.py", line 42\n    assert response.status_code == 200\nAssertionError: Expected 200 but got 404',
+      },
+      custom: {
+        level1: {
+          level2: {
+            level3: 'deeply nested value',
+          },
+        },
+      },
+      ...metadataOverrides,
+    },
+    ...restOverrides,
+  });
+}
+
+/**
+ * Create multiple mock runs with Jenkins metadata
+ * @param {number} count - Number of runs to create
+ * @returns {Array} Array of mock runs with Jenkins metadata
+ */
+export function createMultipleMockJenkinsRuns(count = 3) {
+  const runs = [];
+  const environments = [
+    TEST_ENVIRONMENTS.STAGING,
+    TEST_ENVIRONMENTS.PRODUCTION,
+    TEST_ENVIRONMENTS.QA,
+  ];
+
+  for (let i = 0; i < count; i++) {
+    runs.push(
+      createMockJenkinsRun({
+        id: `${TEST_UUIDS.RUN_1.slice(0, -1)}${i}`,
+        env: environments[i % environments.length],
+        metadata: {
+          jenkins: {
+            job_name: `pipeline/test-suite-${i}`,
+            build_number: `${1001 + i}`,
+            build_url: `https://jenkins.example.com/job/pipeline/test-suite-${i}/${1001 + i}/`,
+          },
+        },
+        summary: {
+          failures: i,
+          errors: i > 0 ? 1 : 0,
+          xfailures: 0,
+          xpasses: 0,
+          skips: i,
+          tests: 10 + i * 5,
+          collected: 10 + i * 5,
+          not_run: 0,
+        },
+      }),
+    );
+  }
+
+  return runs;
+}
+
+/**
  * Reset test counters
  */
 export function resetTestCounters() {
