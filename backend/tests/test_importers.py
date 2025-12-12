@@ -602,8 +602,12 @@ class TestRunJunitImport:
         session.add(import_file)
         session.commit()
 
-        # Run the import
-        run_junit_import({"id": str(import_record.id)})
+        # Run the import - mock clear_import_file_content to avoid Redis dependency
+        with patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock:
+            run_junit_import({"id": str(import_record.id)})
+
+        # Ensure cleanup task is invoked
+        clear_mock.delay.assert_called_once_with(import_record.id)
 
         # Verify run was created
         runs = Run.query.all()
@@ -671,7 +675,12 @@ class TestRunJunitImport:
             session.add(import_file)
             session.commit()
 
-            run_junit_import({"id": str(import_record.id)})
+            # Mock clear_import_file_content to avoid Redis dependency
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock:
+                run_junit_import({"id": str(import_record.id)})
+
+            # Ensure cleanup task is invoked
+            clear_mock.delay.assert_called_once_with(import_record.id)
 
             # Verify run has metadata from properties
             runs = Run.query.filter_by(project_id=project.id).all()
@@ -758,9 +767,15 @@ class TestRunArchiveImport:
             session.add(import_file)
             session.commit()
 
-            # Mock the update_run task to avoid Redis dependency
-            with patch("ibutsu_server.tasks.importers.update_run"):
+            # Mock celery tasks to avoid Redis dependency
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock,
+            ):
                 run_archive_import({"id": str(import_record.id)})
+
+            # Ensure cleanup task is invoked
+            clear_mock.delay.assert_called_once_with(import_record.id)
 
             # Verify run was created or updated
             run = db.session.get(Run, run_id)

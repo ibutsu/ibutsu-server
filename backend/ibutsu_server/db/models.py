@@ -135,12 +135,14 @@ class Import(Model, ModelMixin):
     format = Column(Text, index=True)
     data = Column(mutable_json_type(dbtype=PortableJSON(), nested=True))
     status = Column(Text, index=True)
-    created = Column(DateTime, default=func.now(), index=True)
+    created = Column(DateTime, default=func.now(), nullable=False, index=True)
 
 
 class ImportFile(Model, FileMixin):
     __tablename__ = "import_files"
-    import_id = Column(PortableUUID(), ForeignKey("imports.id"), nullable=False, index=True)
+    import_id = Column(
+        PortableUUID(), ForeignKey("imports.id", ondelete="CASCADE"), nullable=False, index=True
+    )
 
 
 class Project(Model, ModelMixin):

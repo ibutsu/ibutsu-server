@@ -8,6 +8,8 @@
 - Suggest updates to backend controllers that align with modern implementation patterns
 - prefer pytest parametrization
 - Follow PLC0415 and put imports at the top of files unless absolutely necessary. Include noqa for PLC0415 when this is necessary
+- Connexion3 is used with flask3 and sqlalchemy2 for the backend controller implementation
+- ASGI through uvicorn workers provide abstraction over our legacy WSGI controller implementation
 
 # frontend
 - use `yarn` and `yarn lint` from the frontend directory as the working directory
@@ -19,6 +21,16 @@
 
 # general
 - Do not create summary documents in markdown, add to the RST in `docs`
+
+## Database Migrations
+- **Always use Alembic** for database schema changes
+- Run `hatch run alembic revision -m "description"` to create new migrations
+- Test migrations with `hatch run alembic upgrade head` and `hatch run alembic downgrade -1`
+- Never modify the database schema directly in production
+- All schema changes must have both upgrade() and downgrade() functions
+- Document any PostgreSQL-specific features in migration comments
+- Ensure DB migrations use the sqlalchemy wrappers for different types of database engines
+- Dynamically look up the existing FK constraint name to support different naming conventions
 
 ## Celery Architecture
 - **Factory Pattern**: Use `celery_utils.py` for all Celery app creation
