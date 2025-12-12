@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 from celery import Celery
 
-from ibutsu_server import _AppRegistry
+from ibutsu_server import _AppRegistry, flower_app, scheduler_app, worker_app
 from ibutsu_server.constants import SOCKET_CONNECT_TIMEOUT, SOCKET_TIMEOUT
 from ibutsu_server.tasks import create_celery_app
 
@@ -33,8 +33,6 @@ def setup_celery_env(monkeypatch):
 
 def test_flower_app_minimal_config():
     """Test that flower_app has minimal configuration (broker-only)."""
-    from ibutsu_server import flower_app  # noqa: PLC0415 - Lazy import to avoid collection issues
-
     # Flower app should have broker_url configured
     assert flower_app.conf.broker_url is not None
     assert flower_app.conf.result_backend is not None
@@ -58,12 +56,6 @@ def test_flower_app_minimal_config():
 
 def test_celery_app_unique_names(flask_app):
     """Test that each Celery app has a unique name for log clarity."""
-    from ibutsu_server import (  # noqa: PLC0415 - Lazy import to avoid collection issues
-        flower_app,
-        scheduler_app,
-        worker_app,
-    )
-
     # Each app should have a distinct name for clarity in logs and monitoring
     assert flower_app.main == "ibutsu_server_flower"
     assert worker_app.main == "ibutsu_server_worker"
@@ -72,12 +64,6 @@ def test_celery_app_unique_names(flask_app):
 
 def test_celery_app_names_are_distinct(flask_app):
     """Test that all Celery app names are different from each other."""
-    from ibutsu_server import (  # noqa: PLC0415 - Lazy import to avoid collection issues
-        flower_app,
-        scheduler_app,
-        worker_app,
-    )
-
     names = {flower_app.main, worker_app.main, scheduler_app.main}
     # All three names should be unique (set should have 3 elements)
     assert len(names) == 3, f"Expected 3 unique names, got: {names}"
@@ -85,11 +71,6 @@ def test_celery_app_names_are_distinct(flask_app):
 
 def test_worker_and_scheduler_apps_have_flask_integration(flask_app):
     """Test that worker and scheduler apps have Flask integration."""
-    from ibutsu_server import (  # noqa: PLC0415 - Lazy import to avoid collection issues
-        scheduler_app,
-        worker_app,
-    )
-
     # Both should be configured with the IbutsuTask class for Flask context
     assert worker_app.Task is not None
     assert scheduler_app.Task is not None
