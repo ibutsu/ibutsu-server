@@ -42,6 +42,23 @@ def auth_headers(http_headers):
 
 
 @pytest.fixture
+def headers_without_json(auth_headers):
+    """
+    HTTP headers with authorization but without Content-Type: application/json.
+
+    Useful for testing endpoints that require JSON content type.
+
+    Example:
+        def test_endpoint_requires_json(flask_app, headers_without_json):
+            client, jwt_token = flask_app
+            headers = headers_without_json(jwt_token)
+            response = client.post('/api/endpoint', headers=headers, data='not json')
+            assert response.status_code in [400, 415]
+    """
+    return lambda token: {k: v for k, v in auth_headers(token).items() if k != "Content-Type"}
+
+
+@pytest.fixture
 def mocked_celery():
     """Mock Celery app for testing."""
     with patch("ibutsu_server.tasks.celery") as mock:
