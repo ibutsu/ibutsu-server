@@ -250,3 +250,29 @@ class TestFactoryComparison:
 
         assert broker_app.conf.redis_socket_connect_timeout == SOCKET_CONNECT_TIMEOUT
         assert flask_app_instance.conf.redis_socket_connect_timeout == SOCKET_CONNECT_TIMEOUT
+
+
+class TestBeatScheduleConfiguration:
+    """Tests for the Celery beat schedule configuration."""
+
+    def test_beat_schedule_prune_old_import_files(self, flask_app):
+        """Test that prune-old-import-files is in beat schedule."""
+        client, _ = flask_app
+
+        app = create_flask_celery_app(client.application)
+
+        assert "prune-old-import-files" in app.conf.beat_schedule
+        schedule_config = app.conf.beat_schedule["prune-old-import-files"]
+        assert schedule_config["task"] == "ibutsu_server.tasks.db.prune_old_import_files"
+        assert schedule_config["args"] == (7,)
+
+    def test_beat_schedule_sync_aborted_runs(self, flask_app):
+        """Test that sync-aborted-runs is in beat schedule."""
+        client, _ = flask_app
+
+        app = create_flask_celery_app(client.application)
+
+        assert "sync-aborted-runs" in app.conf.beat_schedule
+        schedule_config = app.conf.beat_schedule["sync-aborted-runs"]
+        assert schedule_config["task"] == "ibutsu_server.tasks.runs.sync_aborted_runs"
+        assert schedule_config["schedule"] == 0.5 * 60 * 60  # 30 minutes in seconds

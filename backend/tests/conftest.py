@@ -37,7 +37,7 @@ def reset_app_registry():
     Use this fixture for unit tests that need to test module-level app access
     in isolation without the full Flask app setup.
     """
-    from ibutsu_server import _AppRegistry
+    from ibutsu_server import _AppRegistry  # noqa: PLC0415 - Fixture pattern, avoid circular import
 
     _AppRegistry.reset()
     yield
