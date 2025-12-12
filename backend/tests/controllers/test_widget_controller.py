@@ -1,6 +1,11 @@
 from datetime import UTC, datetime, timedelta
+from http import HTTPStatus
 
 import pytest
+
+from ibutsu_server.controllers.widget_controller import get_widget_types
+from ibutsu_server.widgets.compare_runs_view import get_comparison_data
+from ibutsu_server.widgets.run_aggregator import get_recent_run_data
 
 
 @pytest.mark.integration
@@ -37,8 +42,6 @@ def test_get_comparison_result_list(flask_app, make_project, make_run, make_resu
         metadata={"component": "frontend", "fspath": "tests/test_compare.py"},
     )
 
-    from ibutsu_server.widgets.compare_runs_view import get_comparison_data
-
     # Call widget function directly within app context
     with client.application.app_context():
         # Use filters that match both runs
@@ -71,8 +74,6 @@ def test_run_aggregator_with_real_data(flask_app, make_project, make_run, auth_h
         metadata={"component": "frontend", "build_number": 100},
     )
 
-    from ibutsu_server.widgets.run_aggregator import get_recent_run_data
-
     # Call widget function directly within app context
     with client.application.app_context():
         result = get_recent_run_data(
@@ -100,7 +101,6 @@ def test_run_aggregator_endpoint_error_handling(flask_app):
     with client.application.app_context():
         # Test that ZeroDivisionError would result in 500 Internal Server Error
         # by verifying the error handling pattern in the controller
-        from http import HTTPStatus
 
         # Simulate what the controller does when an exception is raised
         widget_id = "run-aggregator"
@@ -122,8 +122,6 @@ def test_widget_controller_timeout_handling(flask_app):
     client, _ = flask_app
 
     with client.application.app_context():
-        from http import HTTPStatus
-
         # Verify the status code for timeout errors
         assert HTTPStatus.GATEWAY_TIMEOUT == 504
 
@@ -140,8 +138,6 @@ def test_get_widget_types(flask_app, auth_headers):
     can conflict with /widget/{id} in Connexion's route matching.
     """
     client, _jwt_token = flask_app
-
-    from ibutsu_server.controllers.widget_controller import get_widget_types
 
     with client.application.app_context():
         result = get_widget_types()

@@ -1,5 +1,10 @@
 import pytest
 
+from ibutsu_server.db import db
+from ibutsu_server.db.base import session
+from ibutsu_server.db.models import Dashboard, Project, Token, WidgetConfig
+from ibutsu_server.util.jwt import generate_token
+
 
 def test_add_dashboard_success(flask_app, make_project, make_user, auth_headers):
     """Test case for add_dashboard - successful creation"""
@@ -27,8 +32,6 @@ def test_add_dashboard_success(flask_app, make_project, make_user, auth_headers)
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db.models import Dashboard
-
         dashboard = Dashboard.query.filter_by(title="Test Dashboard").first()
         assert dashboard is not None
         assert dashboard.project_id == str(project.id)
@@ -174,9 +177,6 @@ def test_update_dashboard_success(flask_app, make_project, make_dashboard, auth_
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Dashboard
-
         updated_dashboard = db.session.get(Dashboard, str(dashboard.id))
         assert updated_dashboard.title == "Updated Title"
 
@@ -213,9 +213,6 @@ def test_delete_dashboard_success(flask_app, make_project, make_dashboard, auth_
 
     # Verify deletion in database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Dashboard
-
         deleted_dashboard = db.session.get(Dashboard, dashboard_id)
         assert deleted_dashboard is None
 
@@ -254,9 +251,6 @@ def test_delete_dashboard_with_widget_configs(
 
     # Verify widget configs were deleted
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import WidgetConfig
-
         widget1_deleted = db.session.get(WidgetConfig, widget1.id)
         widget2_deleted = db.session.get(WidgetConfig, widget2.id)
         assert widget1_deleted is None
@@ -275,9 +269,6 @@ def test_delete_dashboard_clears_default_dashboard_reference(
 
     # Set dashboard as default for project
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Project
-
         proj = db.session.get(Project, project.id)
         proj.default_dashboard_id = str(dashboard.id)
         db.session.commit()
@@ -291,9 +282,6 @@ def test_delete_dashboard_clears_default_dashboard_reference(
 
     # Verify default_dashboard_id was cleared
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Project
-
         proj = db.session.get(Project, project.id)
         assert proj.default_dashboard_id is None
 
@@ -425,9 +413,6 @@ def test_get_dashboard_with_project_non_superadmin_forbidden(
 ):
     """Test case for get_dashboard - non-superadmin cannot access other user's project dashboard"""
     client, _ = flask_app
-    from ibutsu_server.db.base import session
-    from ibutsu_server.db.models import Token
-    from ibutsu_server.util.jwt import generate_token
 
     # Create a project owned by one user
     owner_user = make_user(email="owner@example.com")

@@ -2,12 +2,15 @@
 
 import contextlib
 import datetime
-from unittest.mock import MagicMock
+import uuid
+from http import HTTPStatus
+from unittest.mock import MagicMock, patch
 
 import pytest
 from bson import ObjectId
 from werkzeug.exceptions import BadRequest, Forbidden, InternalServerError, NotFound, Unauthorized
 
+from ibutsu_server.db import db
 from ibutsu_server.db.models import (
     Artifact,
     Dashboard,
@@ -21,9 +24,16 @@ from ibutsu_server.db.models import (
     User,
     WidgetConfig,
 )
+from ibutsu_server.errors import IbutsuError
 from ibutsu_server.util import (
+    _deserialize,
+    _deserialize_dict,
+    _deserialize_list,
+    _deserialize_object,
+    _deserialize_primitive,
     deserialize_date,
     deserialize_datetime,
+    deserialize_model,
     get_test_idents,
     json_response,
     merge_dicts,
@@ -31,13 +41,25 @@ from ibutsu_server.util import (
     serialize,
     serialize_error,
 )
+from ibutsu_server.util.admin import validate_admin
+from ibutsu_server.util.celery_task import IbutsuTask
+from ibutsu_server.util.jwt import decode_token, generate_token
 from ibutsu_server.util.projects import (
     add_user_filter,
     get_project,
     get_project_id,
     project_has_user,
 )
+from ibutsu_server.util.query import query_as_task
+from ibutsu_server.util.redis_lock import get_redis_client, is_locked
 from ibutsu_server.util.urls import build_url
+from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
+from ibutsu_server.util.widget import (
+    create_basic_summary_columns,
+    create_jenkins_columns,
+    create_summary_columns,
+    create_time_columns,
+)
 
 # Export the DB models as Mock* classes for backwards compatibility
 MockUser = User
@@ -87,6 +109,164 @@ def test_deserialize_datetime_with_timezone():
     result = deserialize_datetime("2023-01-15T12:30:45Z")
     assert isinstance(result, datetime.datetime)
     assert result.year == 2023
+
+
+class TestDeserializePrimitive:
+    """Tests for _deserialize_primitive function."""
+
+    @pytest.mark.parametrize(
+        ("data", "klass", "expected"),
+        [
+            ("123", int, 123),
+            ("3.14", float, 3.14),
+            ("hello", str, "hello"),
+            (1, bool, True),
+            (0, bool, False),
+        ],
+    )
+    def test_deserialize_primitive_basic(self, data, klass, expected):
+        """Test _deserialize_primitive with various types."""
+        result = _deserialize_primitive(data, klass)
+        assert result == expected
+
+    def test_deserialize_primitive_unicode_error(self):
+        """Test _deserialize_primitive handles UnicodeEncodeError."""
+        # Create a mock class that raises UnicodeEncodeError
+        mock_klass = MagicMock()
+        mock_klass.side_effect = UnicodeEncodeError("utf-8", "test", 0, 1, "test")
+
+        result = _deserialize_primitive("test", mock_klass)
+        assert result == "test"
+
+    def test_deserialize_primitive_type_error(self):
+        """Test _deserialize_primitive handles TypeError."""
+        mock_klass = MagicMock()
+        mock_klass.side_effect = TypeError("test error")
+
+        result = _deserialize_primitive("test", mock_klass)
+        assert result == "test"
+
+
+class TestDeserializeObject:
+    """Tests for _deserialize_object function."""
+
+    def test_deserialize_object_returns_value(self):
+        """Test _deserialize_object returns the original value."""
+        value = {"key": "value"}
+        result = _deserialize_object(value)
+        assert result is value
+
+    def test_deserialize_object_with_list(self):
+        """Test _deserialize_object with list."""
+        value = [1, 2, 3]
+        result = _deserialize_object(value)
+        assert result is value
+
+
+class TestDeserializeModel:
+    """Tests for deserialize_model function."""
+
+    def test_deserialize_model_with_empty_openapi_types(self):
+        """Test deserialize_model when instance has no openapi_types."""
+        mock_klass = MagicMock()
+        mock_instance = MagicMock()
+        mock_instance.openapi_types = None
+        mock_klass.return_value = mock_instance
+
+        result = deserialize_model({"key": "value"}, mock_klass)
+
+        assert result == {"key": "value"}
+
+    def test_deserialize_model_with_data(self):
+        """Test deserialize_model with valid data."""
+        mock_klass = MagicMock()
+        mock_instance = MagicMock()
+        mock_instance.openapi_types = {"name": str}
+        mock_instance.attribute_map = {"name": "name"}
+        mock_klass.return_value = mock_instance
+
+        result = deserialize_model({"name": "test"}, mock_klass)
+
+        assert result is mock_instance
+
+
+class TestDeserializeList:
+    """Tests for _deserialize_list function."""
+
+    def test_deserialize_list_with_primitives(self):
+        """Test _deserialize_list with primitive types."""
+        result = _deserialize_list([1, 2, 3], int)
+        assert result == [1, 2, 3]
+
+    def test_deserialize_list_with_strings(self):
+        """Test _deserialize_list with string types."""
+        result = _deserialize_list(["a", "b", "c"], str)
+        assert result == ["a", "b", "c"]
+
+
+class TestDeserializeDict:
+    """Tests for _deserialize_dict function."""
+
+    def test_deserialize_dict_with_primitives(self):
+        """Test _deserialize_dict with primitive types."""
+        result = _deserialize_dict({"a": 1, "b": 2}, int)
+        assert result == {"a": 1, "b": 2}
+
+    def test_deserialize_dict_with_strings(self):
+        """Test _deserialize_dict with string types."""
+        result = _deserialize_dict({"key1": "val1", "key2": "val2"}, str)
+        assert result == {"key1": "val1", "key2": "val2"}
+
+
+class TestDeserialize:
+    """Tests for the _deserialize function."""
+
+    def test_deserialize_none(self):
+        """Test _deserialize with None returns None."""
+        result = _deserialize(None, str)
+        assert result is None
+
+    @pytest.mark.parametrize(
+        ("data", "klass", "expected"),
+        [
+            ("123", int, 123),
+            ("3.14", float, 3.14),
+            ("hello", str, "hello"),
+            (True, bool, True),
+        ],
+    )
+    def test_deserialize_primitives(self, data, klass, expected):
+        """Test _deserialize with primitive types."""
+        result = _deserialize(data, klass)
+        assert result == expected
+
+    def test_deserialize_object_type(self):
+        """Test _deserialize with object type."""
+        data = {"key": "value"}
+        result = _deserialize(data, object)
+        assert result == data
+
+    def test_deserialize_date(self):
+        """Test _deserialize with date type."""
+        result = _deserialize("2023-01-15", datetime.date)
+        assert isinstance(result, datetime.date)
+
+    def test_deserialize_datetime(self):
+        """Test _deserialize with datetime type."""
+        result = _deserialize("2023-01-15T12:30:45", datetime.datetime)
+        assert isinstance(result, datetime.datetime)
+
+    def test_deserialize_list_collection(self):
+        """Test _deserialize with list collection type."""
+
+        result = _deserialize([1, 2, 3], list[int])
+        assert result == [1, 2, 3]
+
+    def test_deserialize_dict_collection(self):
+        """Test _deserialize with dict collection type."""
+
+        result = _deserialize({"a": 1, "b": 2}, dict[str, int])
+        assert result == {"a": 1, "b": 2}
 
 
 @pytest.mark.parametrize(
@@ -389,6 +569,508 @@ def test_add_user_filter_with_string_user_id(make_project, make_user):
 
     results = filtered.all()
     assert len(results) >= 1
+
+
+# Tests for util/admin.py
+
+
+class TestValidateAdmin:
+    """Tests for the validate_admin decorator."""
+
+    def test_validate_admin_with_superadmin(self, flask_app, make_user):
+        """Test validate_admin decorator allows superadmin."""
+
+        client, _ = flask_app
+
+        with client.application.app_context():
+            admin = make_user(email="admin@test.com", is_superadmin=True)
+
+            @validate_admin
+            def test_func(**kwargs):
+                return "success"
+
+            result = test_func(user=str(admin.id))
+            assert result == "success"
+
+    def test_validate_admin_with_regular_user(self, flask_app, make_user):
+        """Test validate_admin decorator rejects non-superadmin."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            regular_user = make_user(email="regular@test.com", is_superadmin=False)
+
+            @validate_admin
+            def test_func(**kwargs):
+                return "success"
+
+            with pytest.raises(Forbidden):
+                test_func(user=str(regular_user.id))
+
+    def test_validate_admin_with_nonexistent_user(self, flask_app):
+        """Test validate_admin decorator rejects non-existent user."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+
+            @validate_admin
+            def test_func(**kwargs):
+                return "success"
+
+            with pytest.raises(Unauthorized):
+                test_func(user="00000000-0000-0000-0000-000000000000")
+
+
+# Tests for util/query.py
+
+
+class TestQueryAsTask:
+    """Tests for query_as_task decorator."""
+
+    def test_query_as_task_small_page_size(self, flask_app):
+        """Test query_as_task runs function directly for small page sizes."""
+
+        client, _ = flask_app
+
+        with (
+            client.application.app_context(),
+            patch("ibutsu_server.util.query.query_task") as mock_query_task,
+        ):
+            mock_result = {"results": [], "pagination": {}}
+
+            @query_as_task
+            def get_result_list(**kwargs):
+                return mock_result
+
+            # page_size is intentionally small to stay below async threshold (MAX_PAGE_SIZE=500)
+            result = get_result_list(page_size=25, page=1, filter_=None, estimate=False)
+
+            # The function should execute synchronously and return the result
+            assert result == mock_result
+            # The Celery task must not be invoked for small page sizes
+            mock_query_task.apply_async.assert_not_called()
+
+    def test_query_as_task_large_page_size(self, flask_app):
+        """Test query_as_task dispatches task for large page sizes with expected parameters."""
+
+        client, _ = flask_app
+
+        with (
+            client.application.app_context(),
+            patch("ibutsu_server.util.query.query_task") as mock_query_task,
+        ):
+            mock_async_result = MagicMock()
+            mock_async_result.id = "test-task-id"
+            mock_query_task.apply_async.return_value = mock_async_result
+
+            @query_as_task
+            def get_result_list(**kwargs):
+                return {"results": []}
+
+            # Use page_size above MAX_PAGE_SIZE (500) to trigger async behavior
+            page = 3
+            page_size = 600
+            filter_list = ["result=passed", "project_id=test-123"]
+            estimate = True
+
+            result, status = get_result_list(
+                page_size=page_size, page=page, filter_=filter_list, estimate=estimate
+            )
+
+            # Verify task was dispatched
+            assert status == HTTPStatus.CREATED
+            assert "task_id" in result
+            assert result["task_id"] == "test-task-id"
+            mock_query_task.apply_async.assert_called_once()
+
+            # Verify the positional args passed to apply_async contain our parameters
+            # The decorator passes (filter_, page, page_size, estimate, tablename)
+            call_args = mock_query_task.apply_async.call_args
+            positional_args = call_args[0][0]  # First arg to apply_async is a tuple
+
+            assert positional_args[0] == filter_list, "filter_ should be passed to task"
+            assert positional_args[1] == page, "page should be passed to task"
+            assert positional_args[2] == page_size, "page_size should be passed to task"
+            assert positional_args[3] == estimate, "estimate should be passed to task"
+            # tablename is derived from function name "get_result_list" -> "results"
+            assert positional_args[4] == "results", "tablename should be 'results'"
+
+    def test_query_as_task_tablename_extraction(self, flask_app):
+        """Test query_as_task extracts tablename from function name."""
+
+        client, _ = flask_app
+
+        with (
+            client.application.app_context(),
+            patch("ibutsu_server.util.query.query_task") as mock_query_task,
+        ):
+            mock_async_result = MagicMock()
+            mock_async_result.id = "test-task-id"
+            mock_query_task.apply_async.return_value = mock_async_result
+
+            @query_as_task
+            def get_run_list(**kwargs):
+                return {"results": []}
+
+            get_run_list(page_size=600, page=1)
+
+            # Verify the tablename was correctly extracted as "runs" from "get_run_list"
+            # Access args tuple and extract the tablename (last element) without relying on index
+            call_args = mock_query_task.apply_async.call_args
+            positional_args = call_args[0][0]
+            # tablename is the last positional argument passed to the task
+            tablename = positional_args[-1]
+            assert tablename == "runs", (
+                f"Expected tablename 'runs' derived from 'get_run_list', got '{tablename}'"
+            )
+
+
+# Tests for util/redis_lock.py
+
+
+class TestRedisLock:
+    """Tests for redis_lock module."""
+
+    def test_is_locked_returns_true(self, flask_app):
+        """Test is_locked returns True when lock exists."""
+
+        client, _ = flask_app
+
+        with (
+            client.application.app_context(),
+            patch("ibutsu_server.util.redis_lock.get_redis_client") as mock_redis,
+        ):
+            mock_client = MagicMock()
+            mock_client.exists.return_value = True
+            mock_redis.return_value = mock_client
+
+            result = is_locked("test-lock")
+
+            assert result is True
+            mock_client.exists.assert_called_once_with("test-lock")
+
+    def test_is_locked_returns_false(self, flask_app):
+        """Test is_locked returns False when lock doesn't exist."""
+
+        client, _ = flask_app
+
+        with (
+            client.application.app_context(),
+            patch("ibutsu_server.util.redis_lock.get_redis_client") as mock_redis,
+        ):
+            mock_client = MagicMock()
+            mock_client.exists.return_value = False
+            mock_redis.return_value = mock_client
+
+            result = is_locked("test-lock")
+
+            assert result is False
+
+    def test_get_redis_client_from_flask_app(self, flask_app):
+        """Test get_redis_client uses provided Flask app."""
+
+        client, _ = flask_app
+
+        with (
+            client.application.app_context(),
+            patch("ibutsu_server.util.redis_lock.Redis") as mock_redis,
+        ):
+            mock_redis.from_url.return_value = MagicMock()
+
+            get_redis_client(app=client.application)
+
+            mock_redis.from_url.assert_called_once()
+
+
+# Tests for util/uuid.py
+
+
+class TestConvertObjectIdToUuid:
+    """Tests for convert_objectid_to_uuid function."""
+
+    def test_convert_objectid_to_uuid_string(self):
+        """Test convert_objectid_to_uuid with ObjectId string."""
+        # Valid ObjectId string
+        object_id_str = "507f1f77bcf86cd799439011"
+        result = convert_objectid_to_uuid(object_id_str)
+
+        # Should return a valid UUID string - verify by parsing with uuid.UUID
+        assert result is not None
+        parsed_uuid = uuid.UUID(result)  # Raises ValueError if not a valid UUID
+        assert str(parsed_uuid) == result, "Result should be a properly formatted UUID string"
+
+    def test_convert_objectid_to_uuid_object(self):
+        """Test convert_objectid_to_uuid with ObjectId object."""
+        object_id = ObjectId("507f1f77bcf86cd799439011")
+        result = convert_objectid_to_uuid(object_id)
+
+        # Should return a valid UUID string - verify by parsing with uuid.UUID
+        assert result is not None
+        parsed_uuid = uuid.UUID(result)  # Raises ValueError if not a valid UUID
+        assert str(parsed_uuid) == result, "Result should be a properly formatted UUID string"
+
+    def test_convert_objectid_to_uuid_with_uuid_string(self):
+        """Test convert_objectid_to_uuid with UUID string (no conversion)."""
+        uuid_str = "507f1f77-bcf8-6cd7-9943-901100000000"
+        result = convert_objectid_to_uuid(uuid_str)
+
+        # Should return original UUID string unchanged
+        assert result == uuid_str
+        # Verify it's still a valid UUID
+        parsed_uuid = uuid.UUID(result)
+        assert str(parsed_uuid) == result
+
+    def test_convert_objectid_to_uuid_with_invalid_input(self):
+        """Test convert_objectid_to_uuid with non-ObjectId input."""
+
+        # Should return input unchanged if not ObjectId
+        result = convert_objectid_to_uuid(12345)
+        assert result == 12345
+
+
+class TestIsUuid:
+    """Tests for is_uuid function."""
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            ("507f1f77-bcf8-6cd7-9943-901100000000", True),
+            ("00000000-0000-0000-0000-000000000000", True),
+            ("not-a-uuid", False),
+            ("507f1f77bcf86cd799439011", False),  # ObjectId format
+            ("", False),
+        ],
+    )
+    def test_is_uuid(self, value, expected):
+        """Test is_uuid with various inputs."""
+
+        result = is_uuid(value)
+        assert result == expected
+
+
+class TestValidateUuid:
+    """Tests for validate_uuid decorator."""
+
+    def test_validate_uuid_valid(self):
+        """Test validate_uuid allows valid UUIDs."""
+
+        @validate_uuid
+        def test_func(**kwargs):
+            return "success"
+
+        result = test_func(id_="507f1f77-bcf8-6cd7-9943-901100000000")
+        assert result == "success"
+
+    def test_validate_uuid_invalid(self):
+        """Test validate_uuid rejects invalid UUIDs."""
+
+        @validate_uuid
+        def test_func(**kwargs):
+            return "success"
+
+        result = test_func(id_="not-a-valid-uuid")
+        assert isinstance(result, tuple)
+        assert result[1] == HTTPStatus.BAD_REQUEST
+        assert "not a valid UUID" in result[0]
+
+
+# Tests for util/widget.py
+
+
+class TestWidgetUtils:
+    """Tests for widget utility functions."""
+
+    def test_create_summary_columns_with_table(self, flask_app):
+        """Test create_summary_columns with Run table."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            columns = create_summary_columns(Run)
+
+            assert "source" in columns
+            assert "failures" in columns
+            assert "tests" in columns
+            assert "min_start_time" in columns
+
+    def test_create_summary_columns_with_subquery(self, flask_app):
+        """Test create_summary_columns with subquery."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            subquery = db.select(Run).subquery()
+            columns = create_summary_columns(subquery)
+
+            assert "source" in columns
+            assert "failures" in columns
+
+    def test_create_summary_columns_with_label_prefix(self, flask_app):
+        """Test create_summary_columns with label prefix."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            columns = create_summary_columns(Run, label_prefix="test_")
+
+            # Verify labels have prefix
+            assert columns["failures"] is not None
+
+    def test_create_basic_summary_columns(self, flask_app):
+        """Test create_basic_summary_columns function."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            columns = create_basic_summary_columns(Run)
+
+            assert "failures" in columns
+            assert "tests" in columns
+            assert "skips" in columns
+
+    def test_create_basic_summary_columns_alternate_names(self, flask_app):
+        """Test create_basic_summary_columns with alternate names."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            columns = create_basic_summary_columns(Run, use_alternate_names=True)
+
+            assert "xpassed" in columns
+            assert "xfailed" in columns
+
+    def test_create_time_columns(self, flask_app):
+        """Test create_time_columns function."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            columns = create_time_columns(Run)
+
+            assert "min_start_time" in columns
+            assert "max_start_time" in columns
+            assert "total_execution_time" in columns
+            assert "max_duration" in columns
+
+    def test_create_time_columns_with_subquery(self, flask_app):
+        """Test create_time_columns with subquery."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            subquery = db.select(Run).subquery()
+            columns = create_time_columns(subquery)
+
+            assert "min_start_time" in columns
+
+    def test_create_jenkins_columns(self, flask_app):
+        """Test create_jenkins_columns function."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            columns = create_jenkins_columns(Run)
+
+            assert "job_name" in columns
+            assert "build_number" in columns
+            assert "build_url" in columns
+            assert "annotations" in columns
+            assert "env" in columns
+
+
+# Tests for util/login.py additional coverage
+
+
+# Tests for util/jwt.py
+
+
+class TestJwtUtils:
+    """Tests for JWT utility functions."""
+
+    def test_generate_token_without_secret(self, flask_app):
+        """Test generate_token raises error without JWT_SECRET."""
+
+        client, _ = flask_app
+
+        with client.application.app_context():
+            # Remove JWT_SECRET from config
+            original = client.application.config.get("JWT_SECRET")
+            client.application.config["JWT_SECRET"] = None
+
+            with pytest.raises(IbutsuError, match="JWT_SECRET"):
+                generate_token("test-user-id")
+
+            # Restore
+            client.application.config["JWT_SECRET"] = original
+
+    def test_decode_token_invalid(self, flask_app):
+        """Test decode_token raises Unauthorized for invalid token."""
+        client, _ = flask_app
+
+        with client.application.app_context(), pytest.raises(Unauthorized):
+            decode_token("invalid-token")
+
+
+# Tests for util/celery_task.py
+
+
+class TestIbutsuTask:
+    """Tests for IbutsuTask class."""
+
+    def test_after_return_commits_on_success(self, flask_app):
+        """Test after_return commits session on successful task."""
+
+        client, _ = flask_app
+
+        with (
+            client.application.app_context(),
+            patch("ibutsu_server.util.celery_task.db") as mock_db,
+        ):
+            task = IbutsuTask()
+            task.after_return("SUCCESS", "result", "task-id", (), {}, None)
+
+            mock_db.session.commit.assert_called_once()
+            mock_db.session.remove.assert_called_once()
+
+    def test_after_return_does_not_commit_on_exception(self, flask_app):
+        """Test after_return does not commit when retval is Exception."""
+
+        client, _ = flask_app
+
+        with (
+            client.application.app_context(),
+            patch("ibutsu_server.util.celery_task.db") as mock_db,
+        ):
+            task = IbutsuTask()
+            task.after_return("FAILURE", Exception("error"), "task-id", (), {}, None)
+
+            mock_db.session.commit.assert_not_called()
+            mock_db.session.remove.assert_called_once()
+
+    def test_after_return_handles_commit_error(self, flask_app):
+        """Test after_return handles commit errors."""
+
+        client, _ = flask_app
+
+        with (
+            client.application.app_context(),
+            patch("ibutsu_server.util.celery_task.db") as mock_db,
+        ):
+            mock_db.session.commit.side_effect = Exception("Commit error")
+
+            task = IbutsuTask()
+
+            with pytest.raises(Exception, match="Commit error"):
+                task.after_return("SUCCESS", "result", "task-id", (), {}, None)
+
+            mock_db.session.rollback.assert_called_once()
+
+    def test_on_failure_logs_error(self, flask_app):
+        """Test on_failure logs error message."""
+
+        client, _ = flask_app
+
+        with (
+            client.application.app_context(),
+            patch("ibutsu_server.util.celery_task.logging") as mock_logging,
+        ):
+            task = IbutsuTask()
+            task.on_failure(Exception("test"), "task-123", ["arg1"], {}, None)
+
+            mock_logging.error.assert_called_once()
+            call_args = mock_logging.error.call_args[0][0]
+            assert "task-123" in call_args
 
 
 __all__ = [

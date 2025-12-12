@@ -1,5 +1,8 @@
 import pytest
 
+from ibutsu_server.db import db
+from ibutsu_server.db.models import Group
+
 
 def test_add_group(flask_app, auth_headers):
     """Test case for add_group - Create a new group"""
@@ -18,8 +21,6 @@ def test_add_group(flask_app, auth_headers):
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db.models import Group
-
         group = Group.query.filter_by(name="Example group").first()
         assert group is not None
 
@@ -95,8 +96,5 @@ def test_update_group(flask_app, make_group, auth_headers):
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Group
-
         updated_group = db.session.get(Group, str(group.id))
         assert updated_group.name == "Updated Name"

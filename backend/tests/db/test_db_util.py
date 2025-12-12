@@ -1,8 +1,11 @@
 """Tests for ibutsu_server.db.util module."""
 
+from unittest.mock import MagicMock, PropertyMock, patch
+
 from sqlalchemy import text
 
 from ibutsu_server.db import db
+from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project, User
 from ibutsu_server.db.util import Explain, add_superadmin
 
@@ -52,8 +55,6 @@ class TestAddSuperadmin:
         """Test adding a new superadmin user."""
         client, _ = flask_app
         with client.application.app_context():
-            from ibutsu_server.db.base import session
-
             # Add new superadmin
             result = add_superadmin(
                 name="New Admin", email="newadmin@test.com", password="secret123"
@@ -94,8 +95,6 @@ class TestAddSuperadmin:
         """Test upgrading a regular user to superadmin."""
         client, _ = flask_app
         with client.application.app_context():
-            from ibutsu_server.db.base import session
-
             # Create regular user
             regular_user = make_user(
                 email="regular@test.com", name="Regular User", is_superadmin=False
@@ -117,8 +116,6 @@ class TestAddSuperadmin:
         """Test adding a superadmin with their own project."""
         client, _ = flask_app
         with client.application.app_context():
-            from ibutsu_server.db.base import session
-
             # Add superadmin with project
             add_superadmin(
                 name="Admin With Project",
@@ -148,8 +145,6 @@ class TestAddSuperadmin:
         """Test adding superadmin when their project already exists."""
         client, _ = flask_app
         with client.application.app_context():
-            from ibutsu_server.db.base import session
-
             # Create user and project first
             user = make_user(email="projowner@test.com", name="Project Owner")
             make_project(name="existing-project", owner_id=user.id)
@@ -178,8 +173,6 @@ class TestAddSuperadmin:
         """Test adding a superadmin with a password."""
         client, _ = flask_app
         with client.application.app_context():
-            from ibutsu_server.db.base import session
-
             # Add superadmin with password (password is required by User model)
             add_superadmin(name="Pass Admin", email="pass@test.com", password="secret123")
 
@@ -194,8 +187,6 @@ class TestAddSuperadmin:
 
     def test_add_superadmin_tables_dont_exist(self, flask_app):
         """Test add_superadmin returns None when tables don't exist (e.g., before migrations)."""
-        from unittest.mock import MagicMock, PropertyMock, patch
-
         client, _ = flask_app
         with client.application.app_context():
             # Mock the inspector to simulate tables not existing
@@ -222,10 +213,6 @@ class TestAddSuperadmin:
         """Test add_superadmin works normally when tables exist."""
         client, _ = flask_app
         with client.application.app_context():
-            from unittest.mock import MagicMock, patch
-
-            from ibutsu_server.db.base import session
-
             # Mock the inspector to simulate tables existing
             mock_inspector = MagicMock()
             mock_inspector.get_table_names.return_value = ["users", "projects", "results"]
