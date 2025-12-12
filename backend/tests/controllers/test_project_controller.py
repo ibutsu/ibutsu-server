@@ -1,5 +1,8 @@
 import pytest
 
+from ibutsu_server.db import db
+from ibutsu_server.db.models import Project, User
+
 
 @pytest.mark.integration
 def test_add_project(flask_app, make_group, auth_headers):
@@ -29,8 +32,6 @@ def test_add_project(flask_app, make_group, auth_headers):
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db.models import Project
-
         project = Project.query.filter_by(name="my-project").first()
         assert project is not None
         assert project.title == "My Project"
@@ -164,9 +165,6 @@ def test_update_project(flask_app, make_project, auth_headers):
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Project
-
         updated_project = db.session.get(Project, str(project.id))
         assert updated_project.title == "Updated Title"
 
@@ -262,8 +260,6 @@ def test_add_project_with_owner(flask_app, auth_headers):
 
     # Verify owner was set
     with client.application.app_context():
-        from ibutsu_server.db.models import Project, User
-
         project = Project.query.filter_by(name="owned-project").first()
         test_user = User.query.filter_by(email="test@example.com").first()
         assert project.owner_id == test_user.id
@@ -296,9 +292,6 @@ def test_update_project_add_users(flask_app, make_project, make_user, auth_heade
 
     # Verify users were added
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Project
-
         updated_project = db.session.get(Project, str(project.id))
         user_emails = {u.email for u in updated_project.users}
         assert "user1@example.com" in user_emails

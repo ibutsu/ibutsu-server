@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
+from ibutsu_server.db import db
+from ibutsu_server.db.models import Result
 from ibutsu_server.tasks.results import add_result_start_time
 
 
@@ -52,8 +54,6 @@ def test_add_result_start_time_updates_results_with_start_time(
 
         # Create results with starttime but no start_time
         # Note: We need to set data directly to have starttime without start_time
-        from ibutsu_server.db.models import Result
-
         result1 = Result(
             project_id=project.id,
             data={
@@ -68,8 +68,6 @@ def test_add_result_start_time_updates_results_with_start_time(
                 "starttime": "2024-01-01T11:00:00",
             },
         )
-
-        from ibutsu_server.db import db
 
         db.session.add(result1)
         db.session.add(result2)
@@ -111,9 +109,6 @@ def test_add_result_start_time_skips_results_with_existing_start_time(
         run = make_run(project_id=project.id)
 
         # Create a result that already has start_time
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Result
-
         result = Result(
             project_id=project.id,
             data={
@@ -155,9 +150,6 @@ def test_add_result_start_time_handles_results_without_starttime(flask_app, make
         run = make_run(project_id=project.id)
 
         # Create a result without starttime
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Result
-
         result = Result(
             project_id=project.id,
             data={

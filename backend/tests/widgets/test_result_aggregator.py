@@ -1,5 +1,7 @@
 """Tests for result_aggregator widget"""
 
+from datetime import timedelta
+
 from ibutsu_server.widgets.result_aggregator import get_recent_result_data
 
 MOCK_DAYS = 7
@@ -84,7 +86,6 @@ def test_get_recent_result_data_with_time_filter(
     db_session, make_project, make_run, bulk_result_creator, fixed_time
 ):
     """Test get_recent_result_data filters by days."""
-    from datetime import timedelta
 
     project = make_project(name="test-project")
     run = make_run(project_id=project.id)
@@ -275,7 +276,6 @@ def test_get_recent_result_data_with_run_id_no_days(
     db_session, make_project, make_run, bulk_result_creator, fixed_time
 ):
     """Test get_recent_result_data with run_id but no days."""
-    from datetime import timedelta
 
     project = make_project(name="test-project")
     run = make_run(project_id=project.id)
@@ -318,7 +318,6 @@ def test_get_recent_result_data_default_90_days_without_run_id(
     db_session, make_project, make_run, bulk_result_creator, fixed_time
 ):
     """Test that get_recent_result_data defaults to 90 days when no run_id is provided."""
-    from datetime import timedelta
 
     project = make_project(name="test-project")
     run = make_run(project_id=project.id)

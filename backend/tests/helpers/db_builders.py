@@ -6,6 +6,8 @@ These functions help create related sets of database objects for testing.
 
 from uuid import uuid4
 
+from ibutsu_server.db.models import Project, Result, Run
+
 
 def create_project_with_runs(session, num_runs=5, **project_kwargs):
     """
@@ -26,8 +28,6 @@ def create_project_with_runs(session, num_runs=5, **project_kwargs):
             name='test-project'
         )
     """
-    from ibutsu_server.db.models import Project, Run
-
     project_defaults = {
         "id": str(uuid4()),
         "name": f"test-project-{uuid4().hex[:8]}",
@@ -78,8 +78,6 @@ def create_results_for_run(session, run, num_results=10, **result_kwargs):
             component='frontend'
         )
     """
-    from ibutsu_server.db.models import Result
-
     results = []
     for i in range(num_results):
         result_defaults = {
@@ -128,8 +126,6 @@ def create_run_with_results(
             result='passed'
         )
     """
-    from ibutsu_server.db.models import Run
-
     run = Run(
         id=str(uuid4()),
         project_id=project_id,

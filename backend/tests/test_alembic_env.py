@@ -15,6 +15,9 @@ from unittest.mock import patch
 import pytest
 from alembic.config import Config
 
+from ibutsu_server import _AppRegistry
+from ibutsu_server.db.base import db
+
 
 @pytest.fixture
 def alembic_config():
@@ -49,9 +52,6 @@ def test_flask_app_integration(reset_app_registry):
     - The database metadata is correctly loaded
     - The Flask app context works properly
     """
-    from ibutsu_server import _AppRegistry
-    from ibutsu_server.db.base import db
-
     # Get the Alembic Flask app
     flask_app = _AppRegistry.get_alembic_flask_app()
 
@@ -78,9 +78,6 @@ def test_database_url_configuration(reset_app_registry):
     This verifies that the Alembic environment properly extracts
     the database URL from the Flask app configuration.
     """
-    from ibutsu_server import _AppRegistry
-    from ibutsu_server.db.base import db
-
     # Create a Flask app with a specific database URL
     with patch.dict(os.environ, {"SQLALCHEMY_DATABASE_URI": "sqlite:///test_alembic.db"}):
         _AppRegistry.reset()  # Force re-creation with new env var
@@ -100,9 +97,6 @@ def test_metadata_loaded_from_models(reset_app_registry):
     with SQLAlchemy's metadata, which is required for Alembic
     to detect schema changes.
     """
-    from ibutsu_server import _AppRegistry
-    from ibutsu_server.db.base import db
-
     flask_app = _AppRegistry.get_alembic_flask_app()
 
     with flask_app.app_context():
@@ -172,8 +166,6 @@ def test_alembic_flask_app_cached(reset_app_registry):
     This verifies that get_alembic_flask_app() returns the same
     instance on subsequent calls, avoiding redundant initialization.
     """
-    from ibutsu_server import _AppRegistry
-
     # Get the app twice
     app1 = _AppRegistry.get_alembic_flask_app()
     app2 = _AppRegistry.get_alembic_flask_app()
@@ -190,8 +182,6 @@ def test_alembic_flask_app_skips_runtime_initialization(reset_app_registry):
     expensive initialization like creating superadmin users,
     sending emails, or initializing Celery.
     """
-    from ibutsu_server import _AppRegistry
-
     # This should not raise any errors and should complete quickly
     flask_app = _AppRegistry.get_alembic_flask_app()
 
@@ -214,9 +204,6 @@ def test_database_url_escaping(reset_app_registry):
     Alembic's configuration uses ConfigParser which treats '%' as special.
     The env.py should escape '%' as '%%' when setting the URL.
     """
-    from ibutsu_server import _AppRegistry
-    from ibutsu_server.db.base import db
-
     # Create a Flask app and get the URL
     flask_app = _AppRegistry.get_alembic_flask_app()
 
@@ -238,9 +225,6 @@ def test_alembic_flask_app_with_postgresql_config(reset_app_registry):
     This verifies that when PostgreSQL environment variables are set,
     the app correctly constructs the database URI.
     """
-    from ibutsu_server import _AppRegistry
-    from ibutsu_server.db.base import db
-
     flask_app = _AppRegistry.get_alembic_flask_app()
 
     with flask_app.app_context():

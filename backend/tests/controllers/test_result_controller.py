@@ -1,5 +1,8 @@
 import pytest
 
+from ibutsu_server.db import db
+from ibutsu_server.db.models import Result
+
 
 @pytest.mark.integration
 def test_add_result(flask_app, make_project, make_run, auth_headers):
@@ -37,8 +40,6 @@ def test_add_result(flask_app, make_project, make_run, auth_headers):
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db.models import Result
-
         result = Result.query.filter_by(test_id="test.example").first()
         assert result is not None
         assert result.result == "passed"
@@ -169,9 +170,6 @@ def test_update_result(flask_app, result_test_hierarchy, auth_headers):
 
     # Verify in database
     with client.application.app_context():
-        from ibutsu_server.db import db
-        from ibutsu_server.db.models import Result
-
         updated_result = db.session.get(Result, str(result.id))
         assert updated_result.result == "failed"
 
