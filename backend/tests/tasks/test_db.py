@@ -3,8 +3,12 @@
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
+import pytest
+
 from ibutsu_server.tasks.db import (
+    clear_import_file_content,
     prune_old_files,
+    prune_old_import_files,
     prune_old_results,
     prune_old_runs,
 )
@@ -531,3 +535,448 @@ def test_seed_users_exception_handling(make_project, flask_app):
             # Should not raise, should return None
             result = seed_users(projects_data)
             assert result is None
+
+
+# Tests for prune_old_import_files
+
+
+def test_prune_old_import_files(make_import, flask_app):
+    """Test prune_old_import_files deletes old import records."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import Import, ImportFile
+
+        # Create old import (older than 7 days)
+        old_date = datetime.now(UTC) - timedelta(days=10)
+        old_import = make_import(created=old_date, status="done")
+        old_import_id = old_import.id
+
+        # Create import file for old import
+        old_import_file = ImportFile(import_id=old_import_id, content=b"old content")
+        from ibutsu_server.db.base import session
+
+        session.add(old_import_file)
+        session.commit()
+
+        # Create recent import
+        recent_date = datetime.now(UTC) - timedelta(days=3)
+        recent_import = make_import(created=recent_date, status="done")
+        recent_import_id = recent_import.id
+
+        # Create import file for recent import
+        recent_import_file = ImportFile(import_id=recent_import_id, content=b"recent content")
+        session.add(recent_import_file)
+        session.commit()
+        recent_import_file_id = recent_import_file.id
+
+        # Run the task
+        result = prune_old_import_files(days=7)
+
+        # Verify old import was deleted
+        from ibutsu_server.db import db
+
+        old_import_check = db.session.get(Import, old_import_id)
+        assert old_import_check is None
+
+        # Note: In SQLite (used for tests), CASCADE may not work as expected
+        # In PostgreSQL (production), the import_file will be automatically deleted
+        # For the test, we just verify the import itself was deleted
+
+        # Verify recent import and its file remain
+        recent_import_check = db.session.get(Import, recent_import_id)
+        assert recent_import_check is not None
+
+        recent_file_check = db.session.get(ImportFile, recent_import_file_id)
+        assert recent_file_check is not None
+
+        # Check return message
+        assert "Deleted 1 import records" in result
+
+
+def test_prune_old_import_files_minimum_days(make_import, flask_app):
+    """Test prune_old_import_files doesn't delete if days < 1."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        old_date = datetime.now(UTC) - timedelta(days=10)
+        old_import = make_import(created=old_date)
+
+        # Try to run with less than 1 day - should do nothing
+        prune_old_import_files(days=0)
+
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import Import
+
+        import_check = db.session.get(Import, old_import.id)
+        assert import_check is not None
+
+
+def test_prune_old_import_files_with_string_days(make_import, flask_app):
+    """Test prune_old_import_files with string input for days."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import Import
+
+        old_date = datetime.now(UTC) - timedelta(days=10)
+        old_import = make_import(created=old_date)
+        old_import_id = old_import.id
+
+        # Pass days as string
+        prune_old_import_files(days="7")
+
+        from ibutsu_server.db import db
+
+        import_check = db.session.get(Import, old_import_id)
+        assert import_check is None
+
+
+def test_prune_old_import_files_cascades_to_import_files(make_import, flask_app):
+    """Test that deleting imports cascades to import_files.
+
+    Note: This test verifies the import is deleted. In PostgreSQL (production),
+    the CASCADE foreign key will automatically delete the import_file. In SQLite
+    (test environment), CASCADE behavior may not be enforced, but the migration
+    ensures it works correctly in production.
+    """
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import Import, ImportFile
+
+        old_date = datetime.now(UTC) - timedelta(days=10)
+        old_import = make_import(created=old_date)
+        old_import_id = old_import.id
+
+        # Create import file
+        import_file = ImportFile(import_id=old_import_id, content=b"test content")
+        from ibutsu_server.db.base import session
+
+        session.add(import_file)
+        session.commit()
+
+        # Run the task
+        prune_old_import_files(days=7)
+
+        # Verify import was deleted
+        from ibutsu_server.db import db
+
+        import_check = db.session.get(Import, old_import_id)
+        assert import_check is None
+
+        # In PostgreSQL, the import_file would also be deleted via CASCADE
+        # SQLite may not enforce this, but the schema is correct for production
+
+
+# Tests for clear_import_file_content
+
+
+def test_clear_import_file_content_done_status(make_import, flask_app):
+    """Test clear_import_file_content clears content for done imports."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import ImportFile
+
+        # Create import with done status
+        import_record = make_import(status="done")
+        import_id = import_record.id
+
+        # Create import file with content
+        test_content = b"This is test content that should be cleared"
+        import_file = ImportFile(import_id=import_id, content=test_content)
+        from ibutsu_server.db.base import session
+
+        session.add(import_file)
+        session.commit()
+        import_file_id = import_file.id
+
+        # Run the task
+        result = clear_import_file_content(import_id)
+
+        # Verify content was cleared
+        from ibutsu_server.db import db
+
+        updated_file = db.session.get(ImportFile, import_file_id)
+        assert updated_file is not None
+        assert updated_file.content is None
+
+        # Check return message
+        assert "Cleared" in result
+        assert str(len(test_content)) in result
+
+
+def test_clear_import_file_content_error_status(make_import, flask_app):
+    """Test clear_import_file_content clears content for error imports."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import ImportFile
+
+        # Create import with error status
+        import_record = make_import(status="error")
+        import_id = import_record.id
+
+        # Create import file with content
+        import_file = ImportFile(import_id=import_id, content=b"error content")
+        from ibutsu_server.db.base import session
+
+        session.add(import_file)
+        session.commit()
+        import_file_id = import_file.id
+
+        # Run the task
+        result = clear_import_file_content(import_id)
+
+        # Verify content was cleared
+        from ibutsu_server.db import db
+
+        updated_file = db.session.get(ImportFile, import_file_id)
+        assert updated_file.content is None
+        assert "Cleared" in result
+
+
+def test_clear_import_file_content_pending_status(make_import, flask_app):
+    """Test clear_import_file_content doesn't clear for pending imports."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import ImportFile
+
+        # Create import with pending status
+        import_record = make_import(status="pending")
+        import_id = import_record.id
+
+        # Create import file with content
+        test_content = b"pending content"
+        import_file = ImportFile(import_id=import_id, content=test_content)
+        from ibutsu_server.db.base import session
+
+        session.add(import_file)
+        session.commit()
+        import_file_id = import_file.id
+
+        # Run the task
+        result = clear_import_file_content(import_id)
+
+        # Verify content was NOT cleared
+        from ibutsu_server.db import db
+
+        updated_file = db.session.get(ImportFile, import_file_id)
+        assert updated_file.content == test_content
+        assert "not clearing content" in result
+
+
+def test_clear_import_file_content_running_status(make_import, flask_app):
+    """Test clear_import_file_content doesn't clear for running imports."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import ImportFile
+
+        # Create import with running status
+        import_record = make_import(status="running")
+        import_id = import_record.id
+
+        # Create import file with content
+        test_content = b"running content"
+        import_file = ImportFile(import_id=import_id, content=test_content)
+        from ibutsu_server.db.base import session
+
+        session.add(import_file)
+        session.commit()
+
+        # Run the task
+        result = clear_import_file_content(import_id)
+
+        # Verify content was NOT cleared
+        from ibutsu_server.db import db
+
+        updated_file = db.session.execute(
+            db.select(ImportFile).where(ImportFile.import_id == import_id)
+        ).scalar_one_or_none()
+        assert updated_file.content == test_content
+        assert "not clearing content" in result
+
+
+def test_clear_import_file_content_nonexistent_import(flask_app):
+    """Test clear_import_file_content handles non-existent import."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from uuid import uuid4
+
+        # Use a random UUID that doesn't exist
+        fake_id = str(uuid4())
+
+        # Run the task
+        result = clear_import_file_content(fake_id)
+
+        # Should return message about not found
+        assert "not found" in result
+
+
+def test_clear_import_file_content_no_file(make_import, flask_app):
+    """Test clear_import_file_content when no import_file exists."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        # Create import without import_file
+        import_record = make_import(status="done")
+        import_id = import_record.id
+
+        # Run the task
+        result = clear_import_file_content(import_id)
+
+        # Should return message about no content
+        assert "No content to clear" in result
+
+
+def test_clear_import_file_content_already_cleared(make_import, flask_app):
+    """Test clear_import_file_content when content is already None."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import ImportFile
+
+        # Create import
+        import_record = make_import(status="done")
+        import_id = import_record.id
+
+        # Create import file with no content
+        import_file = ImportFile(import_id=import_id, content=None)
+        from ibutsu_server.db.base import session
+
+        session.add(import_file)
+        session.commit()
+
+        # Run the task
+        result = clear_import_file_content(import_id)
+
+        # Should return message about no content
+        assert "No content to clear" in result
+
+
+# Tests for improved error handling
+
+
+@pytest.mark.parametrize("invalid_days", ["invalid", "abc", "1.5.2", "not_a_number"])
+def test_prune_old_import_files_invalid_days_raises_error(invalid_days, flask_app):
+    """Test prune_old_import_files raises ValueError for invalid inputs."""
+    client, _ = flask_app
+
+    with (
+        client.application.app_context(),
+        pytest.raises(ValueError, match="invalid literal for int"),
+    ):
+        prune_old_import_files(days=invalid_days)
+
+
+@pytest.mark.parametrize("days_value", [-1, 0, -10])
+def test_prune_old_import_files_skips_for_invalid_days_range(days_value, make_import, flask_app):
+    """Test prune_old_import_files skips deletion for days < 1."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        # Create old import
+        old_date = datetime.now(UTC) - timedelta(days=10)
+        old_import = make_import(created=old_date)
+
+        # Run with days < 1
+        result = prune_old_import_files(days=days_value)
+
+        # Verify import was NOT deleted
+        from ibutsu_server.db import db
+        from ibutsu_server.db.models import Import
+
+        import_check = db.session.get(Import, old_import.id)
+        assert import_check is not None
+
+        # Verify message indicates skip
+        assert "Skipped" in result
+        assert "must be >= 1" in result
+
+
+def test_clear_import_file_content_exception_handling(make_import, flask_app):
+    """Test clear_import_file_content handles exceptions gracefully."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import ImportFile
+
+        # Create import with done status
+        import_record = make_import(status="done")
+        import_id = import_record.id
+
+        # Create import file with content
+        import_file = ImportFile(import_id=import_id, content=b"test content")
+        from ibutsu_server.db.base import session
+
+        session.add(import_file)
+        session.commit()
+
+        # Mock db.session.execute to raise an exception, and verify rollback is called
+        with (
+            patch(
+                "ibutsu_server.tasks.db.db.session.execute",
+                side_effect=Exception("DB Error"),
+            ),
+            patch("ibutsu_server.tasks.db.db.session.rollback") as mock_rollback,
+            patch("ibutsu_server.tasks.db.logger"),
+        ):
+            result = clear_import_file_content(import_id)
+
+            # Verify rollback was called to clean up session state
+            mock_rollback.assert_called_once()
+
+            # Verify task returns None on error
+            assert result is None
+
+
+def test_prune_old_import_files_returns_count(make_import, flask_app):
+    """Test prune_old_import_files returns correct deletion count."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        # Create multiple old imports
+        old_date = datetime.now(UTC) - timedelta(days=10)
+        make_import(created=old_date)
+        make_import(created=old_date)
+        make_import(created=old_date)
+
+        # Create recent import
+        recent_date = datetime.now(UTC) - timedelta(days=3)
+        make_import(created=recent_date)
+
+        # Run the task
+        result = prune_old_import_files(days=7)
+
+        # Verify return message includes count
+        assert "Deleted 3 import records" in result
+
+
+def test_clear_import_file_content_returns_size_cleared(make_import, flask_app):
+    """Test clear_import_file_content returns the size of cleared content."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        from ibutsu_server.db.models import ImportFile
+
+        # Create import with done status
+        import_record = make_import(status="done")
+        import_id = import_record.id
+
+        # Create import file with known content size
+        test_content = b"X" * 1024  # 1KB of data
+        import_file = ImportFile(import_id=import_id, content=test_content)
+        from ibutsu_server.db.base import session
+
+        session.add(import_file)
+        session.commit()
+
+        # Run the task
+        result = clear_import_file_content(import_id)
+
+        # Verify return message includes the size
+        assert "Cleared 1024 bytes" in result

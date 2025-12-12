@@ -203,6 +203,11 @@ def create_flask_celery_app(app=None, name="ibutsu_server"):
 
     # Add in any periodic tasks
     celery_app.conf.beat_schedule = {
+        "prune-old-import-files": {
+            "task": "ibutsu_server.tasks.db.prune_old_import_files",
+            "schedule": crontab(minute=0, hour=2),  # 2 am daily
+            "args": (7,),  # delete any import files older than 7 days
+        },
         "prune-old-artifact-files": {
             "task": "ibutsu_server.tasks.db.prune_old_files",
             "schedule": crontab(minute=0, hour=4, day_of_week=6),  # 4 am on Saturday, after DB dump

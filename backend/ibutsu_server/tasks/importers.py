@@ -11,6 +11,7 @@ from lxml import objectify
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
 from ibutsu_server.tasks import shared_task
+from ibutsu_server.tasks.db import clear_import_file_content
 from ibutsu_server.tasks.runs import update_run
 from ibutsu_server.util.projects import get_project_id
 from ibutsu_server.util.uuid import is_uuid
@@ -391,6 +392,10 @@ def run_junit_import(import_):  # noqa: PLR0912
     # Update the status of the import, now that we're all done
     _update_import_status(import_record, "done")
 
+    # Clear the import file content to save database space
+    # The import record is kept for audit/history, but the large binary content is removed
+    clear_import_file_content.delay(import_record.id)
+
 
 @shared_task
 def run_archive_import(import_):  # noqa: PLR0912
@@ -504,3 +509,7 @@ def run_archive_import(import_):  # noqa: PLR0912
     _update_import_status(import_record, "done")
     if run:
         update_run.delay(run.id)
+
+    # Clear the import file content to save database space
+    # The import record is kept for audit/history, but the large binary content is removed
+    clear_import_file_content.delay(import_record.id)
