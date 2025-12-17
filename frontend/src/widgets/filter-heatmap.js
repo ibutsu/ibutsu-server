@@ -10,12 +10,10 @@ import {
   EmptyStateBody,
   Content,
 } from '@patternfly/react-core';
-import {
-  ArrowDownIcon,
-  ArrowRightIcon,
-  ArrowUpIcon,
-  ChartLineIcon,
-} from '@patternfly/react-icons';
+import ArrowDownIcon from '@patternfly/react-icons/dist/esm/icons/arrow-down-icon';
+import ArrowRightIcon from '@patternfly/react-icons/dist/esm/icons/arrow-right-icon';
+import ArrowUpIcon from '@patternfly/react-icons/dist/esm/icons/arrow-up-icon';
+import ChartLineIcon from '@patternfly/react-icons/dist/esm/icons/chart-line-icon';
 import { Link } from 'react-router-dom';
 import HeatMapWrapper from '../components/heat-map-wrapper';
 

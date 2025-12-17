@@ -26,7 +26,7 @@ import {
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid/non-secure';
 
-import { TimesIcon } from '@patternfly/react-icons';
+import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 
 import { HttpClient } from '../../utilities/http';
 import { Settings } from '../settings';

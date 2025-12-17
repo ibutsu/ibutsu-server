@@ -12,7 +12,7 @@ import {
   ModalVariant,
   TextInput,
 } from '@patternfly/react-core';
-import { ExclamationCircleIcon } from '@patternfly/react-icons';
+import ExclamationCircleIcon from '@patternfly/react-icons/dist/esm/icons/exclamation-circle-icon';
 
 const NewDashboardModal = ({
   project,

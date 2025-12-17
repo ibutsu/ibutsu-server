@@ -1,20 +1,50 @@
 // Assisted by watsonx Code Assistant
-import { useState, useEffect, useMemo, useContext } from 'react';
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useContext,
+  lazy,
+  Suspense,
+} from 'react';
+import PropTypes from 'prop-types';
 import { HttpClient } from '../../utilities/http';
 import { KNOWN_WIDGETS } from '../../constants';
 import { Settings } from '../../pages/settings';
-import { GridItem } from '@patternfly/react-core';
-import {
-  FilterHeatmapWidget,
-  HEATMAP_TYPES,
-} from '../../widgets/filter-heatmap';
-import GenericAreaWidget from '../../widgets/generic-area';
-import GenericBarWidget from '../../widgets/generic-bar';
-import ImportanceComponentWidget from '../../widgets/importance-component';
+import { GridItem, Bullseye, Spinner } from '@patternfly/react-core';
 import { IbutsuContext } from '../contexts/ibutsu-context';
-import ResultSummaryApex from '../../widgets/result-summary-apex';
-import ResultAggregateApex from '../../widgets/result-aggregate-apex';
-import RunAggregateApex from '../../widgets/run-aggregate-apex';
+
+// Lazy load widget components for code splitting
+const FilterHeatmapWidget = lazy(() =>
+  import('../../widgets/filter-heatmap').then((module) => ({
+    default: module.FilterHeatmapWidget,
+  })),
+);
+const HEATMAP_TYPES_PROMISE = import('../../widgets/filter-heatmap').then(
+  (module) => module.HEATMAP_TYPES,
+);
+
+const GenericAreaWidget = lazy(() => import('../../widgets/generic-area'));
+const GenericBarWidget = lazy(() => import('../../widgets/generic-bar'));
+const ImportanceComponentWidget = lazy(
+  () => import('../../widgets/importance-component'),
+);
+const ResultSummaryApex = lazy(
+  () => import('../../widgets/result-summary-apex'),
+);
+const ResultAggregateApex = lazy(
+  () => import('../../widgets/result-aggregate-apex'),
+);
+const RunAggregateApex = lazy(() => import('../../widgets/run-aggregate-apex'));
+
+// Cache for HEATMAP_TYPES
+let heatmapTypesCache = null;
+const getHeatmapTypes = async () => {
+  if (!heatmapTypesCache) {
+    heatmapTypesCache = await HEATMAP_TYPES_PROMISE;
+  }
+  return heatmapTypesCache;
+};
 
 // Move constants outside component to prevent unnecessary re-renders
 const DEFAULT_COLSPAN = Object.freeze({
@@ -54,6 +84,47 @@ const ROW_SPAN = Object.freeze({
   'jenkins-line-chart': DEFAULT_ROWSPAN,
   'importance-component': DEFAULT_ROWSPAN,
 });
+
+const WidgetSpinner = () => (
+  <Bullseye style={{ minHeight: '200px' }}>
+    <Spinner size="lg" aria-label="Loading widget..." />
+  </Bullseye>
+);
+
+// Wrapper component for jenkins-heatmap that handles async HEATMAP_TYPES
+const JenkinsHeatmapWrapper = ({
+  title,
+  params,
+  onDeleteClick,
+  onEditClick,
+}) => {
+  const [heatmapType, setHeatmapType] = useState(null);
+
+  useEffect(() => {
+    getHeatmapTypes().then((types) => setHeatmapType(types.jenkins));
+  }, []);
+
+  if (!heatmapType) {
+    return <WidgetSpinner />;
+  }
+
+  return (
+    <FilterHeatmapWidget
+      title={title}
+      params={params}
+      type={heatmapType}
+      onDeleteClick={onDeleteClick}
+      onEditClick={onEditClick}
+    />
+  );
+};
+
+JenkinsHeatmapWrapper.propTypes = {
+  title: PropTypes.string,
+  params: PropTypes.object,
+  onDeleteClick: PropTypes.func,
+  onEditClick: PropTypes.func,
+};
 
 export const useWidgets = ({
   dashboardId = null,
@@ -105,121 +176,125 @@ export const useWidgets = ({
             {...ROW_SPAN[widget.widget]}
             key={`${widget.id}-${loadKey}`}
           >
-            {widget.type === 'widget' &&
-              widget.widget === 'jenkins-heatmap' && (
-                <FilterHeatmapWidget
-                  title={widget.title}
-                  params={widgetParams}
-                  type={HEATMAP_TYPES.jenkins}
-                  onDeleteClick={() => {
-                    deleteCallback(widget.id);
-                  }}
-                  onEditClick={() => {
-                    editCallback(widget.id);
-                  }}
-                />
-              )}
-            {widget.type === 'widget' && widget.widget === 'filter-heatmap' && (
-              <FilterHeatmapWidget
-                title={widget.title}
-                params={widgetParams}
-                onDeleteClick={() => {
-                  deleteCallback(widget.id);
-                }}
-                onEditClick={() => {
-                  editCallback(widget.id);
-                }}
-              />
-            )}
-            {widget.type === 'widget' && widget.widget === 'run-aggregator' && (
-              <RunAggregateApex
-                title={widget.title}
-                params={widgetParams}
-                horizontal={true}
-                onDeleteClick={() => {
-                  deleteCallback(widget.id);
-                }}
-                onEditClick={() => {
-                  editCallback(widget.id);
-                }}
-              />
-            )}
-            {widget.type === 'widget' && widget.widget === 'result-summary' && (
-              <ResultSummaryApex
-                title="Test Results Summary"
-                params={widgetParams}
-                onEditClick={() => {
-                  editCallback(widget.id);
-                }}
-                onDeleteClick={() => {
-                  deleteCallback(widget.id);
-                }}
-              />
-            )}
-            {widget.type === 'widget' &&
-              widget.widget === 'result-aggregator' && (
-                <ResultAggregateApex
-                  title={widget.title}
-                  params={widgetParams}
-                  days={widgetParams.days}
-                  groupField={widgetParams.group_field}
-                  onDeleteClick={() => {
-                    deleteCallback(widget.id);
-                  }}
-                  onEditClick={() => {
-                    editCallback(widget.id);
-                  }}
-                />
-              )}
-            {widget.type === 'widget' &&
-              widget.widget === 'jenkins-line-chart' && (
-                <GenericAreaWidget
-                  title={widget.title}
-                  params={widgetParams}
-                  yLabel="Execution time"
-                  widgetEndpoint="jenkins-line-chart"
-                  onDeleteClick={() => {
-                    deleteCallback(widget.id);
-                  }}
-                  onEditClick={() => {
-                    editCallback(widget.id);
-                  }}
-                />
-              )}
-            {widget.type === 'widget' &&
-              widget.widget === 'jenkins-bar-chart' && (
-                <GenericBarWidget
-                  title={widget.title}
-                  params={widgetParams}
-                  barWidth={20}
-                  horizontal={true}
-                  hideDropdown={true}
-                  widgetEndpoint="jenkins-bar-chart"
-                  onDeleteClick={() => {
-                    deleteCallback(widget.id);
-                  }}
-                  onEditClick={() => {
-                    editCallback(widget.id);
-                  }}
-                />
-              )}
-            {widget.type === 'widget' &&
-              widget.widget === 'importance-component' && (
-                <ImportanceComponentWidget
-                  title={widget.title}
-                  params={widgetParams}
-                  barWidth={20}
-                  horizontal={true}
-                  hideDropdown={true}
-                  widgetEndpoint="importance-component"
-                  onDeleteClick={() => {
-                    deleteCallback(widget.id);
-                  }}
-                  onEditClick={() => {
-                    editCallback(widget.id);
-                  }}
-                />
-              )}
+            <Suspense fallback={<WidgetSpinner />}>
+              {widget.type === 'widget' &&
+                widget.widget === 'jenkins-heatmap' && (
+                  <JenkinsHeatmapWrapper
+                    title={widget.title}
+                    params={widgetParams}
+                    onDeleteClick={() => {
+                      deleteCallback(widget.id);
+                    }}
+                    onEditClick={() => {
+                      editCallback(widget.id);
+                    }}
+                  />
+                )}
+              {widget.type === 'widget' &&
+                widget.widget === 'filter-heatmap' && (
+                  <FilterHeatmapWidget
+                    title={widget.title}
+                    params={widgetParams}
+                    onDeleteClick={() => {
+                      deleteCallback(widget.id);
+                    }}
+                    onEditClick={() => {
+                      editCallback(widget.id);
+                    }}
+                  />
+                )}
+              {widget.type === 'widget' &&
+                widget.widget === 'run-aggregator' && (
+                  <RunAggregateApex
+                    title={widget.title}
+                    params={widgetParams}
+                    horizontal={true}
+                    onDeleteClick={() => {
+                      deleteCallback(widget.id);
+                    }}
+                    onEditClick={() => {
+                      editCallback(widget.id);
+                    }}
+                  />
+                )}
+              {widget.type === 'widget' &&
+                widget.widget === 'result-summary' && (
+                  <ResultSummaryApex
+                    title="Test Results Summary"
+                    params={widgetParams}
+                    onEditClick={() => {
+                      editCallback(widget.id);
+                    }}
+                    onDeleteClick={() => {
+                      deleteCallback(widget.id);
+                    }}
+                  />
+                )}
+              {widget.type === 'widget' &&
+                widget.widget === 'result-aggregator' && (
+                  <ResultAggregateApex
+                    title={widget.title}
+                    params={widgetParams}
+                    days={widgetParams.days}
+                    groupField={widgetParams.group_field}
+                    onDeleteClick={() => {
+                      deleteCallback(widget.id);
+                    }}
+                    onEditClick={() => {
+                      editCallback(widget.id);
+                    }}
+                  />
+                )}
+              {widget.type === 'widget' &&
+                widget.widget === 'jenkins-line-chart' && (
+                  <GenericAreaWidget
+                    title={widget.title}
+                    params={widgetParams}
+                    yLabel="Execution time"
+                    widgetEndpoint="jenkins-line-chart"
+                    onDeleteClick={() => {
+                      deleteCallback(widget.id);
+                    }}
+                    onEditClick={() => {
+                      editCallback(widget.id);
+                    }}
+                  />
+                )}
+              {widget.type === 'widget' &&
+                widget.widget === 'jenkins-bar-chart' && (
+                  <GenericBarWidget
+                    title={widget.title}
+                    params={widgetParams}
+                    barWidth={20}
+                    horizontal={true}
+                    hideDropdown={true}
+                    widgetEndpoint="jenkins-bar-chart"
+                    onDeleteClick={() => {
+                      deleteCallback(widget.id);
+                    }}
+                    onEditClick={() => {
+                      editCallback(widget.id);
+                    }}
+                  />
+                )}
+              {widget.type === 'widget' &&
+                widget.widget === 'importance-component' && (
+                  <ImportanceComponentWidget
+                    title={widget.title}
+                    params={widgetParams}
+                    barWidth={20}
+                    horizontal={true}
+                    hideDropdown={true}
+                    widgetEndpoint="importance-component"
+                    onDeleteClick={() => {
+                      deleteCallback(widget.id);
+                    }}
+                    onEditClick={() => {
+                      editCallback(widget.id);
+                    }}
+                  />
+                )}
+            </Suspense>
           </GridItem>
         );
       }

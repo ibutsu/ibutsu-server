@@ -7,7 +7,8 @@ import {
   EmptyStateBody,
   EmptyStateFooter,
 } from '@patternfly/react-core';
-import { ErrorCircleOIcon, SearchIcon } from '@patternfly/react-icons';
+import ErrorCircleOIcon from '@patternfly/react-icons/dist/esm/icons/error-circle-o-icon';
+import SearchIcon from '@patternfly/react-icons/dist/esm/icons/search-icon';
 
 // TODO this could be one component with variable icons and textual content.
 

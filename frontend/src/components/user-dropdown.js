@@ -7,7 +7,7 @@ import {
   MenuToggle,
 } from '@patternfly/react-core';
 
-import { UserIcon } from '@patternfly/react-icons';
+import UserIcon from '@patternfly/react-icons/dist/esm/icons/user-icon';
 import { useNavigate } from 'react-router-dom';
 
 import { AuthService } from '../utilities/auth';

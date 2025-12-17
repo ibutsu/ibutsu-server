@@ -17,7 +17,9 @@ import {
   Title,
   Skeleton,
 } from '@patternfly/react-core';
-import { CheckIcon, PencilAltIcon, TimesIcon } from '@patternfly/react-icons';
+import CheckIcon from '@patternfly/react-icons/dist/esm/icons/check-icon';
+import PencilAltIcon from '@patternfly/react-icons/dist/esm/icons/pencil-alt-icon';
+import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from './settings';

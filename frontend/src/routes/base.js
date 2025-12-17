@@ -1,57 +1,71 @@
+import { lazy, Suspense } from 'react';
 import {
   BrowserRouter as Router,
   Route,
   Routes,
   Navigate,
 } from 'react-router-dom';
-import App from './app';
-import Admin from './admin';
-import Profile from './profile';
-import Login from '../pages/login';
-import { SignUp } from '../pages/sign-up';
-import ForgotPassword from '../pages/forgot-password';
-import ResetPassword from '../pages/reset-password';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 import { IbutsuContextProvider } from '../components/contexts/ibutsu-context';
 
+// Lazy load route-level components for code splitting
+const App = lazy(() => import('./app'));
+const Admin = lazy(() => import('./admin'));
+const Profile = lazy(() => import('./profile'));
+const Login = lazy(() => import('../pages/login'));
+const SignUp = lazy(() =>
+  import('../pages/sign-up').then((module) => ({ default: module.SignUp })),
+);
+const ForgotPassword = lazy(() => import('../pages/forgot-password'));
+const ResetPassword = lazy(() => import('../pages/reset-password'));
+
+const PageSpinner = () => (
+  <Bullseye style={{ height: '100vh' }}>
+    <Spinner size="xl" aria-label="Loading page..." />
+  </Bullseye>
+);
+
 export const Base = () => (
   <IbutsuContextProvider>
     <Router>
-      <Routes>
-        <Route path="login" element={<Login />} />
-        <Route path="sign-up" element={<SignUp />} />
-        <Route path="forgot-password" element={<ForgotPassword />} />
-        <Route
-          path="reset-password/:activationCode"
-          element={<ResetPassword />}
-        />
-        <Route
-          path="profile/*"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="admin/*"
-          element={
-            <ProtectedRoute requireSuperAdmin={true}>
-              <Admin />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="project/*"
-          element={
-            <ProtectedRoute>
-              <App />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="project" replace />} />
-      </Routes>
+      <Suspense fallback={<PageSpinner />}>
+        <Routes>
+          <Route path="login" element={<Login />} />
+          <Route path="sign-up" element={<SignUp />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route
+            path="reset-password/:activationCode"
+            element={<ResetPassword />}
+          />
+          <Route
+            path="profile/*"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin/*"
+            element={
+              <ProtectedRoute requireSuperAdmin={true}>
+                <Admin />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="project/*"
+            element={
+              <ProtectedRoute>
+                <App />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="project" replace />} />
+        </Routes>
+      </Suspense>
     </Router>
   </IbutsuContextProvider>
 );

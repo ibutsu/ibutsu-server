@@ -7,7 +7,7 @@ import {
   EmptyStateBody,
   Content,
 } from '@patternfly/react-core';
-import { SearchIcon } from '@patternfly/react-icons';
+import SearchIcon from '@patternfly/react-icons/dist/esm/icons/search-icon';
 
 import { NavLink } from 'react-router-dom';
 

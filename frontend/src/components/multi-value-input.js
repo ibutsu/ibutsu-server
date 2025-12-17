@@ -9,7 +9,7 @@ import {
   TextInputGroupUtilities,
 } from '@patternfly/react-core';
 
-import { TimesIcon } from '@patternfly/react-icons';
+import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 
 const MultiValueInput = ({
   onAddValue,

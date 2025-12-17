@@ -1,6 +1,6 @@
 import { Fragment, isValidElement } from 'react';
 import { Badge, Label } from '@patternfly/react-core';
-import { ChevronRightIcon } from '@patternfly/react-icons';
+import ChevronRightIcon from '@patternfly/react-icons/dist/esm/icons/chevron-right-icon';
 import { Link } from 'react-router-dom';
 import { ICON_RESULT_MAP } from '../constants';
 import RunSummary from '../components/run-summary';

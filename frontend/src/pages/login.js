@@ -16,16 +16,14 @@ import {
   LoginPage,
   TextInput,
 } from '@patternfly/react-core';
-import {
-  EyeIcon,
-  EyeSlashIcon,
-  GoogleIcon,
-  FacebookIcon,
-  GithubIcon,
-  GitlabIcon,
-  RedhatIcon,
-  KeyIcon,
-} from '@patternfly/react-icons';
+import EyeIcon from '@patternfly/react-icons/dist/esm/icons/eye-icon';
+import EyeSlashIcon from '@patternfly/react-icons/dist/esm/icons/eye-slash-icon';
+import GoogleIcon from '@patternfly/react-icons/dist/esm/icons/google-icon';
+import FacebookIcon from '@patternfly/react-icons/dist/esm/icons/facebook-icon';
+import GithubIcon from '@patternfly/react-icons/dist/esm/icons/github-icon';
+import GitlabIcon from '@patternfly/react-icons/dist/esm/icons/gitlab-icon';
+import RedhatIcon from '@patternfly/react-icons/dist/esm/icons/redhat-icon';
+import KeyIcon from '@patternfly/react-icons/dist/esm/icons/key-icon';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { GoogleLogin } from '@react-oauth/google';
 import OAuth2Login from 'react-simple-oauth2-login';

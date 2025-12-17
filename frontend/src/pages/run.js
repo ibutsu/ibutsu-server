@@ -24,18 +24,16 @@ import {
   Content,
   TreeView,
 } from '@patternfly/react-core';
-import {
-  CatalogIcon,
-  ChevronRightIcon,
-  CodeIcon,
-  FileAltIcon,
-  FileIcon,
-  FolderIcon,
-  FolderOpenIcon,
-  InfoCircleIcon,
-  MessagesIcon,
-  RepositoryIcon,
-} from '@patternfly/react-icons';
+import CatalogIcon from '@patternfly/react-icons/dist/esm/icons/catalog-icon';
+import ChevronRightIcon from '@patternfly/react-icons/dist/esm/icons/chevron-right-icon';
+import CodeIcon from '@patternfly/react-icons/dist/esm/icons/code-icon';
+import FileAltIcon from '@patternfly/react-icons/dist/esm/icons/file-alt-icon';
+import FileIcon from '@patternfly/react-icons/dist/esm/icons/file-icon';
+import FolderIcon from '@patternfly/react-icons/dist/esm/icons/folder-icon';
+import FolderOpenIcon from '@patternfly/react-icons/dist/esm/icons/folder-open-icon';
+import InfoCircleIcon from '@patternfly/react-icons/dist/esm/icons/info-circle-icon';
+import MessagesIcon from '@patternfly/react-icons/dist/esm/icons/messages-icon';
+import RepositoryIcon from '@patternfly/react-icons/dist/esm/icons/repository-icon';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import { HttpClient } from '../utilities/http';

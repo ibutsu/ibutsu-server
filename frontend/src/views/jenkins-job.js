@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 
-import { ChevronRightIcon } from '@patternfly/react-icons';
+import ChevronRightIcon from '@patternfly/react-icons/dist/esm/icons/chevron-right-icon';
 
 import { Link, useParams } from 'react-router-dom';
 
