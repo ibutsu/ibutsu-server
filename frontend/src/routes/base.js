@@ -5,10 +5,10 @@ import {
   Routes,
   Navigate,
 } from 'react-router-dom';
-import { Bullseye, Spinner } from '@patternfly/react-core';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 import { IbutsuContextProvider } from '../components/contexts/ibutsu-context';
+import { PageSpinner } from '../components/loading-spinners';
 
 // Lazy load route-level components for code splitting
 const App = lazy(() => import('./app'));
@@ -20,12 +20,6 @@ const SignUp = lazy(() =>
 );
 const ForgotPassword = lazy(() => import('../pages/forgot-password'));
 const ResetPassword = lazy(() => import('../pages/reset-password'));
-
-const PageSpinner = () => (
-  <Bullseye style={{ height: '100vh' }}>
-    <Spinner size="xl" aria-label="Loading page..." />
-  </Bullseye>
-);
 
 export const Base = () => (
   <IbutsuContextProvider>
