@@ -368,16 +368,68 @@ def test_add_result_with_metadata_project(flask_app, make_project, make_run, aut
     assert response_data["project_id"] == str(project.id)
 
 
-@pytest.mark.skip(
-    reason=(
-        "Metadata merging tested via other update tests, complex setup for this specific scenario"
-    )
-)
+@pytest.mark.integration
 def test_update_result_merge_metadata(flask_app, make_project, make_run, make_result, auth_headers):
     """Test update_result merges metadata instead of replacing"""
-    # This test validates metadata merging behavior in result controller
-    # Skipped as metadata updates are tested in other scenarios
-    pass
+    client, jwt_token = flask_app
+
+    project = make_project(name="metadata-project")
+    run = make_run(project_id=project.id)
+
+    # Create a result with initial metadata
+    initial_metadata = {
+        "jenkins_build": 145,
+        "commit_hash": "F4BA3E12",
+        "component": "original-component",
+    }
+    result = make_result(
+        run_id=run.id,
+        project_id=project.id,
+        test_id="test.metadata.merge",
+        result="passed",
+        metadata=initial_metadata,
+    )
+
+    # Update with new metadata - should merge with existing
+    update_data = {
+        "metadata": {
+            "component": "updated-component",  # This should update existing key
+            "new_field": "new_value",  # This should be added
+        }
+    }
+
+    headers = auth_headers(jwt_token)
+    response = client.put(
+        f"/api/result/{result.id}",
+        headers=headers,
+        json=update_data,
+    )
+    assert response.status_code == 200, f"Response body is : {response.text}"
+
+    # Verify merged metadata in response
+    response_data = response.json()
+    assert "metadata" in response_data
+    metadata = response_data["metadata"]
+
+    # Original keys should still exist
+    assert metadata["jenkins_build"] == 145
+    assert metadata["commit_hash"] == "F4BA3E12"
+
+    # Updated key should have new value
+    assert metadata["component"] == "updated-component"
+
+    # New key should be added
+    assert metadata["new_field"] == "new_value"
+
+    # Verify in database
+    with client.application.app_context():
+        updated_result = db.session.get(Result, str(result.id))
+        db_metadata = updated_result.data
+
+        assert db_metadata["jenkins_build"] == 145
+        assert db_metadata["commit_hash"] == "F4BA3E12"
+        assert db_metadata["component"] == "updated-component"
+        assert db_metadata["new_field"] == "new_value"
 
 
 @pytest.mark.integration

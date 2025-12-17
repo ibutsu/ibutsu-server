@@ -8,7 +8,7 @@ import pytest
 from flask import Flask, json
 from sqlalchemy.engine.url import URL as SQLA_URL
 
-from ibutsu_server import _AppRegistry, check_envvar, flower_app, get_app, maybe_sql_url
+from ibutsu_server import _AppRegistry, check_envvar, get_app, maybe_sql_url
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
@@ -586,6 +586,8 @@ def test_module_getattr_flower_app_initialization(reset_app_registry, monkeypatc
     # Set up minimal environment for flower_app
     monkeypatch.setenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
     monkeypatch.setenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+
+    from ibutsu_server import flower_app  # noqa: PLC0415 - Lazy import to avoid collection issues
 
     assert flower_app is not None
     assert flower_app.main == "ibutsu_server_flower"

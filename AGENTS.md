@@ -55,7 +55,7 @@
 - Test task registration and beat schedule in Flask-integrated mode
 - Verify delegation from `_AppRegistry` to `celery_utils`
 
-## Testing Instructions
+# Backend Testing Instructions
 - Find the CI plan in the .github/workflows folder.
 - Use `hatch run test` to execute tests and `hatch run test-cov` to include coverage from the backend directory as the working directory
 - Pass arguments to pytest through `hatch run test -- <-arg>`
@@ -66,16 +66,16 @@
 - Identify test coverage increases through parametrization of current test functions before creating new test functions
 - Examine and reuse existing fixtures before writing new ones.
 
-### Documentation Reference
+## Documentation Reference
 - **Backend testing guide**: `docs/source/developer-guide/backend-testing.rst`
 - Comprehensive guide with fixtures, patterns, SQLAlchemy 2.0 examples, and best practices
 
-### Coverage Requirements
+## Coverage Requirements
 - **Target**: 80% line coverage for all modules
 - **Run**: `hatch run test-cov` to verify coverage
 - Coverage reports generated in `htmlcov/` and `coverage.xml`
 
-### Available Test Fixtures
+## Available Test Fixtures
 **Database builders:** `make_project`, `make_run`, `make_result`, `make_artifact`, `make_import`, `make_user`, `make_group`, `make_dashboard`, `make_widget_config`
 
 **Composite hierarchies:** `artifact_test_hierarchy`, `result_test_hierarchy`, `widget_test_hierarchy`
@@ -84,7 +84,7 @@
 
 **Core fixtures:** `flask_app`, `db_session`, `app_context`, `auth_headers`
 
-### Parametrization Example
+## Parametrization Example
 ```python
 # Good: Single test function with multiple cases
 @pytest.mark.parametrize("case", [case1, case2, case3])
@@ -100,7 +100,7 @@ def test_feature_case3():
     pass
 ```
 
-### Integration Testing Approach
+## Integration Testing Approach
 - **Prefer integration tests over mocking**: Use `flask_app` fixture with real SQLite database operations
 - **Use builder fixtures**: `make_project`, `make_run`, `make_result`, etc. instead of mocks
 - **Mock only external services**: Celery tasks, Redis, external HTTP calls, email - not database operations
