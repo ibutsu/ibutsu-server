@@ -2,6 +2,7 @@
   "name": "ibutsu-frontend",
   "version": "3.0.0",
   "private": true,
+  "description": "Ibutsu Frontend",
   "dependencies": {
     "@babel/runtime": "^7.28.4",
     "@greatsumini/react-facebook-login": "^3.3.3",
@@ -73,13 +74,13 @@
     "prettier": "^3.7.4"
   },
   "scripts": {
-    "start": "serve -s build -l tcp://0.0.0.0:3000",
+    "start": "serve -s build -l tcp://0.0.0.0:8080",
     "build": "./bin/write-version-file.cjs && DISABLE_ESLINT_PLUGIN=true react-scripts build",
     "test": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
     "test:coverage": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --coverage --silent --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
     "test:coverage:ci": "./bin/write-version-file.cjs && react-scripts test --watchAll=false --coverage --silent --ci --maxWorkers=2 --transformIgnorePatterns \"node_modules/(?!@patternfly)/\"",
     "eject": "react-scripts eject",
-    "devserver": "./bin/write-version-file.cjs && CI=true DISABLE_ESLINT_PLUGIN=true react-scripts start",
+    "devserver": "./bin/write-version-file.cjs && PORT=3000 CI=true DISABLE_ESLINT_PLUGIN=true react-scripts start",
     "lint": "eslint --fix",
     "format": "prettier \"src/**/*.{js,html}\" --write",
     "format-check": "prettier \"src/**/*.{js,html}\" --check"
