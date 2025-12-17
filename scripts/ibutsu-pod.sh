@@ -15,18 +15,44 @@ CREATE_ADMIN=false
 CREATE_PROJECT=false
 IMPORT_FOLDER="./.archives"
 IMPORT_FILES=true
+USE_IMAGES=false
 # Array initialization for bash arrays (needed for += operations)
 POSTGRES_EXTRA_ARGS=()
 REDIS_EXTRA_ARGS=()
 BACKEND_EXTRA_ARGS=()
 PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-312:latest
 
+# Shared environment variable arrays to reduce duplication in podman run commands
+# These are populated after LOCAL_* variables are set
+function init_shared_env_arrays() {
+    # PostgreSQL connection environment variables
+    POSTGRES_ENV_ARGS=(
+        -e "POSTGRESQL_HOST=$LOCAL_HOST"
+        -e "POSTGRESQL_PORT=$LOCAL_PORT_POSTGRES"
+        -e POSTGRESQL_DATABASE=ibutsu
+        -e POSTGRESQL_USER=ibutsu
+        -e POSTGRESQL_PASSWORD=ibutsu
+    )
+
+    # Celery broker/result backend environment variables
+    CELERY_ENV_ARGS=(
+        -e "CELERY_BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS"
+        -e "CELERY_RESULT_BACKEND=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS"
+    )
+
+    # Common arguments for dev mode (volume mount + workdir)
+    DEV_MOUNT_BACKEND_ARGS=(
+        -w /mnt
+        -v ./backend:/mnt/:z
+    )
+}
+
 ADMIN_EMAIL="${ADMIN_EMAIL:-"admin@example.com"}"
 ADMIN_PASSWORD="${ADMIN_PASSWORD:-"admin12345"}"
 FLOWER_BASIC_AUTH="${ADMIN_EMAIL}:${ADMIN_PASSWORD}"
 
 function print_usage() {
-    echo "Usage: ibutsu-pod.sh [-h|--help] [-d|--data-persistent] [-v|--data-volumes] [-a|--create-admin] [-p|--create-project] [-s|--skip-import] [-f|--import-folder FOLDER] [POD_NAME]"
+    echo "Usage: ibutsu-pod.sh [-h|--help] [-d|--data-persistent] [-v|--data-volumes] [-a|--create-admin] [-p|--create-project] [-s|--skip-import] [-f|--import-folder FOLDER] [-i|--images] [POD_NAME]"
     echo ""
     echo "optional arguments:"
     echo "  -h, --help                 show this help message"
@@ -36,12 +62,93 @@ function print_usage() {
     echo "  -p, --create-project       create a default project ('my-project')"
     echo "  -s, --skip-import          skip importing files from the import folder"
     echo "  -f, --import-folder        folder containing files to import (./.archives/ by default)"
+    echo "  -i, --images               build and use local container images instead of runtime dev mounts"
     echo "  POD_NAME                   the name of the pod, 'ibutsu' if omitted"
     echo ""
     echo "environment variables:"
     echo "  ADMIN_EMAIL              Administrator email (optional)"
     echo "  ADMIN_PASSWORD           Administrator password (optional)"
     echo ""
+}
+
+# Resolve IMAGE_TAG once so it can be reused across the script
+function resolve_image_tag() {
+    if [[ -n "${IMAGE_TAG:-}" ]]; then
+        # Respect pre-set IMAGE_TAG (from environment or caller)
+        return
+    fi
+
+    local git_branch
+    git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr '/' '-') || git_branch=""
+
+    if [[ -n "$git_branch" ]]; then
+        IMAGE_TAG="$git_branch"
+    else
+        IMAGE_TAG="local"
+    fi
+}
+
+# Function to build container images locally
+function build_images() {
+    echo "================================="
+    echo "Building container images..."
+
+    # Ensure IMAGE_TAG is resolved once and reused
+    resolve_image_tag
+    echo "Using image tag: ${IMAGE_TAG}"
+
+    # Build backend images from the backend directory
+    echo ""
+    echo "Building backend images..."
+    pushd backend > /dev/null || { echo "Error: Cannot change to backend directory"; exit 1; }
+
+    echo "  Building ibutsu-backend:${IMAGE_TAG}..."
+    if ! podman build -t "ibutsu-backend:${IMAGE_TAG}" -f docker/Dockerfile.backend .; then
+        echo "Error: Failed to build ibutsu-backend image"
+        popd > /dev/null || exit
+        exit 1
+    fi
+
+    echo "  Building ibutsu-worker:${IMAGE_TAG}..."
+    if ! podman build -t "ibutsu-worker:${IMAGE_TAG}" -f docker/Dockerfile.worker .; then
+        echo "Error: Failed to build ibutsu-worker image"
+        popd > /dev/null || exit
+        exit 1
+    fi
+
+    echo "  Building ibutsu-scheduler:${IMAGE_TAG}..."
+    if ! podman build -t "ibutsu-scheduler:${IMAGE_TAG}" -f docker/Dockerfile.scheduler .; then
+        echo "Error: Failed to build ibutsu-scheduler image"
+        popd > /dev/null || exit
+        exit 1
+    fi
+
+    echo "  Building ibutsu-flower:${IMAGE_TAG}..."
+    if ! podman build -t "ibutsu-flower:${IMAGE_TAG}" -f docker/Dockerfile.flower .; then
+        echo "Error: Failed to build ibutsu-flower image"
+        popd > /dev/null || exit
+        exit 1
+    fi
+
+    popd > /dev/null || exit
+
+    # Build frontend image from the frontend directory
+    echo ""
+    echo "Building frontend image..."
+    pushd frontend > /dev/null || { echo "Error: Cannot change to frontend directory"; exit 1; }
+
+    echo "  Building ibutsu-frontend:${IMAGE_TAG}..."
+    if ! podman build -t "ibutsu-frontend:${IMAGE_TAG}" -f docker/Dockerfile.frontend .; then
+        echo "Error: Failed to build ibutsu-frontend image"
+        popd > /dev/null || exit
+        exit 1
+    fi
+
+    popd > /dev/null || exit
+
+    echo ""
+    echo "All images built successfully!"
+    echo "================================="
 }
 
 # Parse the arguments
@@ -62,6 +169,9 @@ while [[ $i -le $# ]]; do
             ;;
         -s|--skip-import)
             IMPORT_FILES=false
+            ;;
+        -i|--images)
+            USE_IMAGES=true
             ;;
         -f|--import-folder)
             ((i++))
@@ -101,6 +211,15 @@ done
 if [[ ! -d "backend" ]] || [[ ! -d "frontend" ]]; then
     echo "This script needs to be run from the root of the project"
     exit 1
+fi
+
+# Initialize shared environment variable arrays
+init_shared_env_arrays
+
+# Build images if --images flag is set
+if [[ $USE_IMAGES = true ]]; then
+    resolve_image_tag
+    build_images
 fi
 
 # If the data is persistent, check if there's a JWT secret in a file, or save it
@@ -147,6 +266,11 @@ fi
 
 # Print out a quick summary of actions
 echo "Summary of actions:"
+if [[ $USE_IMAGES = true ]]; then
+    echo "  Building and using local container images"
+else
+    echo "  Using runtime dev mounts (no image builds)"
+fi
 if [[ $DATA_PERSISTENT = true ]]; then
     if [[ $DATA_VOLUMES = true ]]; then
         echo "  Using volumes for persistent storage"
@@ -194,30 +318,43 @@ podman run -dt \
 echo "================================="
 echo -n "Adding backend to the pod:    "
 # https://docs.sqlalchemy.org/en/20/changelog/migration_20.html#migration-to-2-0-step-two-turn-on-removedin20warnings
-podman run -d \
-    --rm \
-    --pod "$POD_NAME" \
-    --name ibutsu-backend \
-    -e JWT_SECRET="$JWT_SECRET" \
-    -e POSTGRESQL_HOST=$LOCAL_HOST \
-    -e POSTGRESQL_PORT=$LOCAL_PORT_POSTGRES \
-    -e POSTGRESQL_DATABASE=ibutsu \
-    -e POSTGRESQL_USER=ibutsu \
-    -e POSTGRESQL_PASSWORD=ibutsu \
-    -e CELERY_BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
-    -e CELERY_RESULT_BACKEND=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
-    -e SQLALCHEMY_WARN_20=1 \
-    "${BACKEND_EXTRA_ARGS[@]}" \
-    -w /mnt \
-    -v ./backend:/mnt/:z \
-    $PYTHON_IMAGE \
-    /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
-                  pip install . &&
-                  ls -lh /mnt &&
-                  echo "Initializing database schema..." &&
-                  python scripts/init_db.py &&
-                  echo "Starting backend server..." &&
-                  uvicorn ibutsu_server:connexion_app --host 0.0.0.0 --port 8080 --reload --workers 1'
+if [[ $USE_IMAGES = true ]]; then
+    # Use pre-built image - run init_db.py first, then start gunicorn
+    podman run -d \
+        --rm \
+        --pod "$POD_NAME" \
+        --name ibutsu-backend \
+        -e JWT_SECRET="$JWT_SECRET" \
+        "${POSTGRES_ENV_ARGS[@]}" \
+        "${CELERY_ENV_ARGS[@]}" \
+        -e SQLALCHEMY_WARN_20=1 \
+        "${BACKEND_EXTRA_ARGS[@]}" \
+        "ibutsu-backend:${IMAGE_TAG}" \
+        /bin/bash -c 'echo "Initializing database schema..." &&
+                      python scripts/init_db.py &&
+                      echo "Starting backend server..." &&
+                      gunicorn -k uvicorn.workers.UvicornWorker -c config.py --bind 0.0.0.0:8080 --access-logfile - --error-logfile - ibutsu_server:connexion_app'
+else
+    # Use runtime dev mount with pip install
+    podman run -d \
+        --rm \
+        --pod "$POD_NAME" \
+        --name ibutsu-backend \
+        -e JWT_SECRET="$JWT_SECRET" \
+        "${POSTGRES_ENV_ARGS[@]}" \
+        "${CELERY_ENV_ARGS[@]}" \
+        -e SQLALCHEMY_WARN_20=1 \
+        "${BACKEND_EXTRA_ARGS[@]}" \
+        "${DEV_MOUNT_BACKEND_ARGS[@]}" \
+        $PYTHON_IMAGE \
+        /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
+                      pip install . &&
+                      ls -lh /mnt &&
+                      echo "Initializing database schema..." &&
+                      python scripts/init_db.py &&
+                      echo "Starting backend server..." &&
+                      uvicorn ibutsu_server:connexion_app --host 0.0.0.0 --port 8080 --reload --workers 1'
+fi
 echo -n "Waiting for backend to respond: "
 sleep 5
 until curl --output /dev/null --silent --head --fail http://$LOCAL_HOST:$LOCAL_PORT_BACKEND; do
@@ -230,24 +367,31 @@ echo " backend up."
 # Note the COLUMNS=80 env var is for https://github.com/celery/celery/issues/5761
 echo "================================="
 echo -n "Adding celery worker to the pod:    "
-podman run -d \
-    --rm \
-    --pod "$POD_NAME" \
-    --name ibutsu-worker \
-    -e COLUMNS=80 \
-    -e POSTGRESQL_HOST=$LOCAL_HOST \
-    -e POSTGRESQL_PORT=$LOCAL_PORT_POSTGRES \
-    -e POSTGRESQL_DATABASE=ibutsu \
-    -e POSTGRESQL_USER=ibutsu \
-    -e POSTGRESQL_PASSWORD=ibutsu \
-    -e CELERY_BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
-    -e CELERY_RESULT_BACKEND=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
-    -w /mnt \
-    -v ./backend:/mnt/:z \
-    $PYTHON_IMAGE \
-    /bin/bash -c 'pip install -U pip wheel &&
-                    pip install . &&
-                    celery --app ibutsu_server:worker_app --no-color worker --events'
+if [[ $USE_IMAGES = true ]]; then
+    # Use pre-built image
+    podman run -d \
+        --rm \
+        --pod "$POD_NAME" \
+        --name ibutsu-worker \
+        -e COLUMNS=80 \
+        "${POSTGRES_ENV_ARGS[@]}" \
+        "${CELERY_ENV_ARGS[@]}" \
+        "ibutsu-worker:${IMAGE_TAG}"
+else
+    # Use runtime dev mount with pip install
+    podman run -d \
+        --rm \
+        --pod "$POD_NAME" \
+        --name ibutsu-worker \
+        -e COLUMNS=80 \
+        "${POSTGRES_ENV_ARGS[@]}" \
+        "${CELERY_ENV_ARGS[@]}" \
+        "${DEV_MOUNT_BACKEND_ARGS[@]}" \
+        $PYTHON_IMAGE \
+        /bin/bash -c 'pip install -U pip wheel &&
+                        pip install . &&
+                        celery --app ibutsu_server:worker_app --no-color worker --events'
+fi
 echo -n "Waiting for celery to respond: "
 sleep 5
 until podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null | grep -q pong; do
@@ -258,21 +402,62 @@ echo " celery worker up."
 
 
 echo "================================="
-echo -n "Adding flower to the pod:    "
+echo -n "Adding celery scheduler to the pod:    "
+if [[ $USE_IMAGES = true ]]; then
+    # Use pre-built image
+    podman run -d \
+        --rm \
+        --pod "$POD_NAME" \
+        --name ibutsu-scheduler \
+        -e COLUMNS=80 \
+        "${POSTGRES_ENV_ARGS[@]}" \
+        "${CELERY_ENV_ARGS[@]}" \
+        "ibutsu-scheduler:${IMAGE_TAG}"
+else
+    # Use runtime dev mount with pip install
+    podman run -d \
+        --rm \
+        --pod "$POD_NAME" \
+        --name ibutsu-scheduler \
+        -e COLUMNS=80 \
+        "${POSTGRES_ENV_ARGS[@]}" \
+        "${CELERY_ENV_ARGS[@]}" \
+        "${DEV_MOUNT_BACKEND_ARGS[@]}" \
+        $PYTHON_IMAGE \
+        /bin/bash -c 'pip install -U pip wheel &&
+                        pip install . &&
+                        celery --app ibutsu_server:scheduler_app beat --loglevel=info'
+fi
+echo "done."
 
-podman run -d \
-    --rm \
-    --pod "$POD_NAME" \
-    --name ibutsu-flower \
-    -e BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
-    -e FLOWER_BASIC_AUTH="${FLOWER_BASIC_AUTH}" \
-    -w /mnt \
-    -v ./backend:/mnt/:z \
-    $PYTHON_IMAGE \
-    /bin/bash -c "pip install -U pip wheel &&
-                    pip install . &&
-                    pip install 'flower>=2.0.0' &&
-                    celery --app ibutsu_server:flower_app flower --port=5555"
+
+echo "================================="
+echo -n "Adding flower to the pod:    "
+if [[ $USE_IMAGES = true ]]; then
+    # Use pre-built image
+    podman run -d \
+        --rm \
+        --pod "$POD_NAME" \
+        --name ibutsu-flower \
+        -e CELERY_BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
+        -e FLOWER_BASIC_AUTH="${FLOWER_BASIC_AUTH}" \
+        "ibutsu-flower:${IMAGE_TAG}"
+else
+    # Use runtime dev mount with pip install
+    podman run -d \
+        --rm \
+        --pod "$POD_NAME" \
+        --name ibutsu-flower \
+        -e CELERY_BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
+        -e FLOWER_BASIC_AUTH="${FLOWER_BASIC_AUTH}" \
+        "${DEV_MOUNT_BACKEND_ARGS[@]}" \
+        $PYTHON_IMAGE \
+        /bin/bash -c "pip install -U pip wheel &&
+                        pip install . &&
+                        pip install 'flower>=2.0.0' &&
+                        celery --app ibutsu_server:flower_app flower --port=5555"
+fi
+echo "done."
 
 
 if [[ $CREATE_PROJECT = true ]]; then
@@ -664,17 +849,28 @@ fi
 
 echo "================================="
 echo -n "Adding frontend to the pod:    "
-
-podman run -d \
-    --rm \
-    --pod "$POD_NAME" \
-    --name ibutsu-frontend \
-    -w /mnt \
-    -v ./frontend:/mnt/:Z \
-    "node:$(cut -d 'v' -f 2 < './frontend/.nvmrc')" \
-    /bin/bash -c "node --dns-result-order=ipv4first /usr/local/bin/npm install --no-save --no-package-lock yarn &&
-        yarn install &&
-        CI=1 yarn devserver"
+if [[ $USE_IMAGES = true ]]; then
+    # Use pre-built image - override CMD to serve on the configured port
+    podman run -d \
+        --rm \
+        --pod "$POD_NAME" \
+        --name ibutsu-frontend \
+        -e REACT_APP_SERVER_URL="http://${LOCAL_HOST}:${LOCAL_PORT_BACKEND}/api" \
+        "ibutsu-frontend:${IMAGE_TAG}" \
+        serve -s build -l "tcp://0.0.0.0:${LOCAL_PORT_FRONTEND}"
+else
+    # Use runtime dev mount with yarn install
+    podman run -d \
+        --rm \
+        --pod "$POD_NAME" \
+        --name ibutsu-frontend \
+        -w /mnt \
+        -v ./frontend:/mnt/:Z \
+        "node:$(cut -d 'v' -f 2 < './frontend/.nvmrc')" \
+        /bin/bash -c "node --dns-result-order=ipv4first /usr/local/bin/npm install --no-save --no-package-lock yarn &&
+            yarn install &&
+            CI=1 yarn devserver"
+fi
 echo "done."
 
 echo -n "Waiting for frontend to respond: "

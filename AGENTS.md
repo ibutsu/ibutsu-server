@@ -1,8 +1,4 @@
 ## backend
-- Use `pre-commit run` to include all lint checks and auto fixes
-- Automatically work to resolve failures in the pre-commit output
-- Do not include excessive emoji in readme, contributing, and other documentation files
-- Use pytest parametrization over subtests
 - Suggest updates to pytest-ibutsu or the ibutsu-client-python when there are changes to the openAPI specification
 - validate any changes to the openapi specification
 - Suggest updates to backend controllers that align with modern implementation patterns
@@ -52,8 +48,14 @@ podman build -t ibutsu-scheduler:<branch-name> -f docker/Dockerfile.scheduler .
 podman build -t ibutsu-flower:<branch-name> -f docker/Dockerfile.flower .
 ```
 
-# general
+# general instructions
 - Do not create summary documents in markdown, add to the RST in `docs`
+- For linting, use `pre-commit run` to include all lint checks and auto fixes
+- Automatically work to resolve failures in the pre-commit output
+- Do not include excessive emoji in readme, contributing, and other documentation files
+
+
+
 
 ## Database Migrations
 - **Always use Alembic** for database schema changes
