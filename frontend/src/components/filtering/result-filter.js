@@ -17,7 +17,7 @@ import {
 
 import PropTypes from 'prop-types';
 import { useCallback, useContext, useEffect, useState } from 'react';
-import { TimesIcon } from '@patternfly/react-icons';
+import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 
 import MultiValueInput from '../multi-value-input';
 import ActiveFilters from './active-filters';

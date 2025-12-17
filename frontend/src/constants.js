@@ -1,15 +1,13 @@
 import packageJson from '../package.json';
 
-import {
-  CheckCircleIcon,
-  ChevronCircleRightIcon,
-  ClockIcon,
-  ExclamationCircleIcon,
-  InfoAltIcon,
-  QuestionCircleIcon,
-  TimesCircleIcon,
-  FlagIcon,
-} from '@patternfly/react-icons';
+import CheckCircleIcon from '@patternfly/react-icons/dist/esm/icons/check-circle-icon';
+import ChevronCircleRightIcon from '@patternfly/react-icons/dist/esm/icons/chevron-circle-right-icon';
+import ClockIcon from '@patternfly/react-icons/dist/esm/icons/clock-icon';
+import ExclamationCircleIcon from '@patternfly/react-icons/dist/esm/icons/exclamation-circle-icon';
+import InfoAltIcon from '@patternfly/react-icons/dist/esm/icons/info-alt-icon';
+import QuestionCircleIcon from '@patternfly/react-icons/dist/esm/icons/question-circle-icon';
+import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle-icon';
+import FlagIcon from '@patternfly/react-icons/dist/esm/icons/flag-icon';
 
 export const VERSION = packageJson.version;
 export const MONITOR_UPLOAD_TIMEOUT = 1 * 1000; // 1 second

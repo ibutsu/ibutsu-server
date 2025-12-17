@@ -15,11 +15,9 @@ import {
   Tabs,
   Content,
 } from '@patternfly/react-core';
-import {
-  CatalogIcon,
-  ChevronRightIcon,
-  CodeIcon,
-} from '@patternfly/react-icons';
+import CatalogIcon from '@patternfly/react-icons/dist/esm/icons/catalog-icon';
+import ChevronRightIcon from '@patternfly/react-icons/dist/esm/icons/chevron-right-icon';
+import CodeIcon from '@patternfly/react-icons/dist/esm/icons/code-icon';
 import {
   ChartLegend,
   ChartDonut,

@@ -12,11 +12,9 @@ import {
   ModalHeader,
   ModalVariant,
 } from '@patternfly/react-core';
-import {
-  PencilAltIcon,
-  PlusCircleIcon,
-  TrashIcon,
-} from '@patternfly/react-icons';
+import PencilAltIcon from '@patternfly/react-icons/dist/esm/icons/pencil-alt-icon';
+import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-icon';
+import TrashIcon from '@patternfly/react-icons/dist/esm/icons/trash-icon';
 import { Link } from 'react-router-dom';
 
 import { HttpClient } from '../../utilities/http';

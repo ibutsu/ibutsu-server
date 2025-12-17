@@ -28,13 +28,11 @@ import usePagination from '../../components/hooks/use-pagination';
 import FilterTable from '../../components/filtering/filtered-table-card';
 import { FilterContext } from '../../components/contexts/filter-context';
 import AdminFilter from '../../components/filtering/admin-filter';
-import {
-  BanIcon,
-  CheckIcon,
-  LinuxIcon,
-  PencilAltIcon,
-  TrashIcon,
-} from '@patternfly/react-icons';
+import BanIcon from '@patternfly/react-icons/dist/esm/icons/ban-icon';
+import CheckIcon from '@patternfly/react-icons/dist/esm/icons/check-icon';
+import LinuxIcon from '@patternfly/react-icons/dist/esm/icons/linux-icon';
+import PencilAltIcon from '@patternfly/react-icons/dist/esm/icons/pencil-alt-icon';
+import TrashIcon from '@patternfly/react-icons/dist/esm/icons/trash-icon';
 import { Link } from 'react-router-dom';
 
 const COLUMNS = Object.values(USER_COLUMNS);

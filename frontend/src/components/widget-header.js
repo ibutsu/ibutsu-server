@@ -1,10 +1,8 @@
 import PropTypes from 'prop-types';
 import { Button, CardHeader, Title } from '@patternfly/react-core';
-import {
-  PficonHistoryIcon,
-  TimesIcon,
-  PencilAltIcon,
-} from '@patternfly/react-icons';
+import PficonHistoryIcon from '@patternfly/react-icons/dist/esm/icons/pficon-history-icon';
+import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
+import PencilAltIcon from '@patternfly/react-icons/dist/esm/icons/pencil-alt-icon';
 
 const WidgetHeader = ({
   id,

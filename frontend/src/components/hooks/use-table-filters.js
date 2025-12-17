@@ -25,7 +25,7 @@ import {
   parseSearchToFilter,
 } from '../../utilities';
 import { IbutsuContext } from '../contexts/ibutsu-context';
-import { TimesIcon } from '@patternfly/react-icons';
+import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import PropTypes from 'prop-types';
 import { OPERATION_MODE_MAP, FILTER_MODE_MAP } from '../../constants';
 

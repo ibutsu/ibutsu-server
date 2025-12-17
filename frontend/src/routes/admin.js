@@ -1,35 +1,63 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import AdminHome from '../pages/admin/home';
-import UserList from '../pages/admin/user-list';
-import UserEdit from '../pages/admin/user-edit';
-import ProjectList from '../pages/admin/project-list';
-import ProjectEdit from '../pages/admin/project-edit';
+import { Bullseye, Spinner } from '@patternfly/react-core';
 
 import '../app.css';
 import AdminPage from './admin-page';
 import { STRING_PROJECT_FIELDS, STRING_USER_FIELDS } from '../constants';
 import FilterProvider from '../components/contexts/filter-context';
 
+// Lazy load admin page components for code splitting
+const AdminHome = lazy(() => import('../pages/admin/home'));
+const UserList = lazy(() => import('../pages/admin/user-list'));
+const UserEdit = lazy(() => import('../pages/admin/user-edit'));
+const ProjectList = lazy(() => import('../pages/admin/project-list'));
+const ProjectEdit = lazy(() => import('../pages/admin/project-edit'));
+
+const ContentSpinner = () => (
+  <Bullseye style={{ minHeight: '200px' }}>
+    <Spinner size="lg" aria-label="Loading content..." />
+  </Bullseye>
+);
+
 const Admin = () => {
   return (
     <Routes>
       <Route path="" element={<AdminPage />}>
-        <Route path="home" element={<AdminHome />} />
+        <Route
+          path="home"
+          element={
+            <Suspense fallback={<ContentSpinner />}>
+              <AdminHome />
+            </Suspense>
+          }
+        />
         <Route
           path="users"
           element={
             <FilterProvider key="users" fieldOptions={STRING_USER_FIELDS}>
-              <UserList />
+              <Suspense fallback={<ContentSpinner />}>
+                <UserList />
+              </Suspense>
             </FilterProvider>
           }
         />
-        <Route path="users/:id" element={<UserEdit />} />
+        <Route
+          path="users/:id"
+          element={
+            <Suspense fallback={<ContentSpinner />}>
+              <UserEdit />
+            </Suspense>
+          }
+        />
         <Route
           path="projects"
           element={
             <FilterProvider key="projects" fieldOptions={STRING_PROJECT_FIELDS}>
-              <ProjectList />
+              <Suspense fallback={<ContentSpinner />}>
+                <ProjectList />
+              </Suspense>
             </FilterProvider>
           }
         />
@@ -41,7 +69,9 @@ const Admin = () => {
               key="project_edit"
               fieldOptions={STRING_USER_FIELDS}
             >
-              <ProjectEdit />
+              <Suspense fallback={<ContentSpinner />}>
+                <ProjectEdit />
+              </Suspense>
             </FilterProvider>
           }
         />

@@ -16,12 +16,10 @@ import {
   Tab,
   Button,
 } from '@patternfly/react-core';
-import {
-  InfoCircleIcon,
-  CodeIcon,
-  SearchIcon,
-  FileAltIcon,
-} from '@patternfly/react-icons';
+import InfoCircleIcon from '@patternfly/react-icons/dist/esm/icons/info-circle-icon';
+import CodeIcon from '@patternfly/react-icons/dist/esm/icons/code-icon';
+import SearchIcon from '@patternfly/react-icons/dist/esm/icons/search-icon';
+import FileAltIcon from '@patternfly/react-icons/dist/esm/icons/file-alt-icon';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
 import { Link, useParams } from 'react-router-dom';

@@ -14,7 +14,8 @@ import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { filtersToSearchParams, toTitleCase } from '../../utilities';
 import { OPERATIONS } from '../../constants';
-import { ChevronRightIcon, TimesCircleIcon } from '@patternfly/react-icons';
+import ChevronRightIcon from '@patternfly/react-icons/dist/esm/icons/chevron-right-icon';
+import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle-icon';
 
 const BADGE_STYLE = {
   margin: '0.1rem',

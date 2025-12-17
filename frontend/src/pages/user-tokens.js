@@ -10,7 +10,7 @@ import {
   Content,
   Title,
 } from '@patternfly/react-core';
-import { PlusCircleIcon } from '@patternfly/react-icons';
+import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-icon';
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from './settings';

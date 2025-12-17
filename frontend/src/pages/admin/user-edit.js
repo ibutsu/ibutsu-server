@@ -26,7 +26,7 @@ import {
   Title,
 } from '@patternfly/react-core';
 
-import { TimesIcon } from '@patternfly/react-icons';
+import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 
 import { HttpClient } from '../../utilities/http';
 import { Settings } from '../settings';
