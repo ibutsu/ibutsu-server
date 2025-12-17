@@ -28,9 +28,7 @@ def get_count_estimate(query, no_filter=False, **kwargs):
     # if the estimate is < COUNT_ESTIMATE_LIMIT
     # then probably there aren't too many rows, just regularly count them
     if estimate < COUNT_ESTIMATE_LIMIT:
-        return db.session.execute(
-            db.select(db.func.count()).select_from(query.select_from())
-        ).scalar()
+        return db.session.execute(db.select(db.func.count()).select_from(query.subquery())).scalar()
     return estimate
 
 

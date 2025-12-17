@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import desc, func
 
@@ -20,7 +20,7 @@ def _build_filters(group_field, days, project, run_id, additional_filters):
         delta = timedelta(days=days).total_seconds()
         current_time = time.time()
         time_period_in_sec = current_time - delta
-        filters.append(f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}")
+        filters.append(f"start_time>{datetime.fromtimestamp(time_period_in_sec, UTC)}")
     if additional_filters:
         filters.extend(additional_filters.split(","))
     if project and is_uuid(project):

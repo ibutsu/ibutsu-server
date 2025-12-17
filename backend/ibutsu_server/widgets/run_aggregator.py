@@ -1,5 +1,5 @@
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from ibutsu_server.db import db
 from ibutsu_server.db.base import Float
@@ -25,7 +25,7 @@ def _get_recent_run_data(weeks, group_field, project=None, additional_filters=No
 
     # create filters for start time and that the group_field exists
     filters = [
-        f"start_time>{datetime.utcfromtimestamp(time_period_in_sec)}",
+        f"start_time>{datetime.fromtimestamp(time_period_in_sec, UTC)}",
         f"{group_field}@y",
     ]
     if additional_filters:
