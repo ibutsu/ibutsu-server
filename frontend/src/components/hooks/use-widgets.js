@@ -11,17 +11,15 @@ import PropTypes from 'prop-types';
 import { HttpClient } from '../../utilities/http';
 import { KNOWN_WIDGETS } from '../../constants';
 import { Settings } from '../../pages/settings';
-import { GridItem, Bullseye, Spinner } from '@patternfly/react-core';
+import { GridItem } from '@patternfly/react-core';
 import { IbutsuContext } from '../contexts/ibutsu-context';
+import { WidgetSpinner } from '../loading-spinners';
 
 // Lazy load widget components for code splitting
 const FilterHeatmapWidget = lazy(() =>
   import('../../widgets/filter-heatmap').then((module) => ({
     default: module.FilterHeatmapWidget,
   })),
-);
-const HEATMAP_TYPES_PROMISE = import('../../widgets/filter-heatmap').then(
-  (module) => module.HEATMAP_TYPES,
 );
 
 const GenericAreaWidget = lazy(() => import('../../widgets/generic-area'));
@@ -37,12 +35,18 @@ const ResultAggregateApex = lazy(
 );
 const RunAggregateApex = lazy(() => import('../../widgets/run-aggregate-apex'));
 
-// Cache for HEATMAP_TYPES
+// Lazy-loaded cache for HEATMAP_TYPES - only loads when actually needed
+let heatmapTypesPromise = null;
 let heatmapTypesCache = null;
+
 const getHeatmapTypes = async () => {
-  if (!heatmapTypesCache) {
-    heatmapTypesCache = await HEATMAP_TYPES_PROMISE;
+  if (heatmapTypesCache) return heatmapTypesCache;
+  if (!heatmapTypesPromise) {
+    heatmapTypesPromise = import('../../widgets/filter-heatmap').then(
+      (module) => module.HEATMAP_TYPES,
+    );
   }
+  heatmapTypesCache = await heatmapTypesPromise;
   return heatmapTypesCache;
 };
 
@@ -85,12 +89,6 @@ const ROW_SPAN = Object.freeze({
   'importance-component': DEFAULT_ROWSPAN,
 });
 
-const WidgetSpinner = () => (
-  <Bullseye style={{ minHeight: '200px' }}>
-    <Spinner size="lg" aria-label="Loading widget..." />
-  </Bullseye>
-);
-
 // Wrapper component for jenkins-heatmap that handles async HEATMAP_TYPES
 const JenkinsHeatmapWrapper = ({
   title,
@@ -101,7 +99,17 @@ const JenkinsHeatmapWrapper = ({
   const [heatmapType, setHeatmapType] = useState(null);
 
   useEffect(() => {
-    getHeatmapTypes().then((types) => setHeatmapType(types.jenkins));
+    let isMounted = true;
+
+    getHeatmapTypes().then((types) => {
+      if (isMounted) {
+        setHeatmapType(types.jenkins);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (!heatmapType) {

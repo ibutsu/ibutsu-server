@@ -1,12 +1,11 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { Bullseye, Spinner } from '@patternfly/react-core';
-
 import '../app.css';
 import AdminPage from './admin-page';
 import { STRING_PROJECT_FIELDS, STRING_USER_FIELDS } from '../constants';
 import FilterProvider from '../components/contexts/filter-context';
+import { ContentSpinner } from '../components/loading-spinners';
 
 // Lazy load admin page components for code splitting
 const AdminHome = lazy(() => import('../pages/admin/home'));
@@ -14,12 +13,6 @@ const UserList = lazy(() => import('../pages/admin/user-list'));
 const UserEdit = lazy(() => import('../pages/admin/user-edit'));
 const ProjectList = lazy(() => import('../pages/admin/project-list'));
 const ProjectEdit = lazy(() => import('../pages/admin/project-edit'));
-
-const ContentSpinner = () => (
-  <Bullseye style={{ minHeight: '200px' }}>
-    <Spinner size="lg" aria-label="Loading content..." />
-  </Bullseye>
-);
 
 const Admin = () => {
   return (

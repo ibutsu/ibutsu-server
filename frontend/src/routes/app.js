@@ -2,12 +2,12 @@ import { useEffect, lazy, Suspense } from 'react';
 
 import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { Bullseye, Spinner } from '@patternfly/react-core';
 import IbutsuPage from './ibutsu-page';
 
 import '../app.css';
 import FilterProvider from '../components/contexts/filter-context.js';
 import { RESULT_FIELDS, RUN_FIELDS } from '../constants';
+import { ContentSpinner } from '../components/loading-spinners';
 
 // Lazy load page components for code splitting
 const Dashboard = lazy(() => import('../pages/dashboard'));
@@ -16,12 +16,6 @@ const Run = lazy(() => import('../pages/run'));
 const ResultList = lazy(() => import('../pages/result-list'));
 const Result = lazy(() => import('../pages/result'));
 const View = lazy(() => import('../pages/View'));
-
-const ContentSpinner = () => (
-  <Bullseye style={{ minHeight: '200px' }}>
-    <Spinner size="lg" aria-label="Loading content..." />
-  </Bullseye>
-);
 
 const App = () => {
   // apparently it's good practice to set this after render via effect
