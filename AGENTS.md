@@ -18,6 +18,39 @@
 - use strict react-hooks rules for exhaustive deps
 - React imports are necessary for JSX
 
+## Building Container Images
+- Use podman to build container images from the backend or frontend directory as the build context
+- Use git branch-based tag names for local image tags
+- Execute builds from the appropriate directory (backend/ or frontend/) with `-f docker/Dockerfile.<name>` flag
+
+### Frontend Build
+From the `ibutsu-server/frontend` directory:
+```bash
+podman build -t ibutsu-frontend:<branch-name> -f docker/Dockerfile.frontend .
+```
+
+### Backend Builds
+From the `ibutsu-server/backend` directory:
+
+**Main backend API:**
+```bash
+podman build -t ibutsu-backend:<branch-name> -f docker/Dockerfile.backend .
+```
+
+**Celery worker:**
+```bash
+podman build -t ibutsu-worker:<branch-name> -f docker/Dockerfile.worker .
+```
+
+**Celery scheduler:**
+```bash
+podman build -t ibutsu-scheduler:<branch-name> -f docker/Dockerfile.scheduler .
+```
+
+**Flower monitoring:**
+```bash
+podman build -t ibutsu-flower:<branch-name> -f docker/Dockerfile.flower .
+```
 
 # general
 - Do not create summary documents in markdown, add to the RST in `docs`
