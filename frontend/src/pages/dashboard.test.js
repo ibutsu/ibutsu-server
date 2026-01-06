@@ -24,25 +24,25 @@ jest.mock('../components/hooks/use-widgets', () => ({
 // Mock all modal components
 jest.mock('../components/modals/new-dashboard-modal', () => {
   return function NewDashboardModal() {
-    return <div data-testid="new-dashboard-modal">New Dashboard Modal</div>;
+    return <div data-ouia-component-id="new-dashboard-modal">New Dashboard Modal</div>;
   };
 });
 
 jest.mock('../components/modals/new-widget-wizard', () => {
   return function NewWidgetWizard() {
-    return <div data-testid="new-widget-wizard">New Widget Wizard</div>;
+    return <div data-ouia-component-id="new-widget-wizard">New Widget Wizard</div>;
   };
 });
 
 jest.mock('../components/modals/edit-widget-modal', () => {
   return function EditWidgetModal() {
-    return <div data-testid="edit-widget-modal">Edit Widget Modal</div>;
+    return <div data-ouia-component-id="edit-widget-modal">Edit Widget Modal</div>;
   };
 });
 
 jest.mock('../components/modals/delete-modal', () => {
   return function DeleteModal() {
-    return <div data-testid="delete-modal">Delete Modal</div>;
+    return <div data-ouia-component-id="delete-modal">Delete Modal</div>;
   };
 });
 

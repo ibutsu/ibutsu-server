@@ -23,7 +23,7 @@ jest.mock('../pages/settings', () => ({
 jest.mock('./run-summary', () => {
   const PropTypes = require('prop-types');
   const MockRunSummary = ({ summary }) => (
-    <div data-testid="run-summary">
+    <div data-ouia-component-id="run-summary">
       {summary ? `${summary.passes || 0} passes` : 'No summary'}
     </div>
   );
@@ -33,13 +33,13 @@ jest.mock('./run-summary', () => {
 
 jest.mock('./last-passed', () => {
   return function LastPassed() {
-    return <div data-testid="last-passed">Last passed mock</div>;
+    return <div data-ouia-component-id="last-passed">Last passed mock</div>;
   };
 });
 
 jest.mock('./result-view', () => {
   return function ResultView() {
-    return <div data-testid="result-view">Result View Mock</div>;
+    return <div data-ouia-component-id="result-view">Result View Mock</div>;
   };
 });
 
@@ -53,8 +53,8 @@ jest.mock('./filtering/filtered-table-card', () => {
     footerChildren,
     filters,
   }) => (
-    <div data-testid="filter-table">
-      {fetching && <div data-testid="loading">Loading...</div>}
+    <div data-ouia-component-id="filter-table">
+      {fetching && <div data-ouia-component-id="loading">Loading...</div>}
       {headerChildren}
       {filters}
       <table>
@@ -68,7 +68,7 @@ jest.mock('./filtering/filtered-table-card', () => {
         <tbody>
           {rows &&
             rows.map((row, idx) => (
-              <tr key={idx} data-testid={`row-${idx}`}>
+              <tr key={idx} data-ouia-component-id={`row-${idx}`}>
                 {row.cells &&
                   row.cells.map((cell, cidx) => <td key={cidx}>{cell}</td>)}
               </tr>
@@ -91,7 +91,7 @@ jest.mock('./filtering/filtered-table-card', () => {
 
 jest.mock('./filtering/active-filters', () => {
   return function ActiveFilters() {
-    return <div data-testid="active-filters">Active Filters</div>;
+    return <div data-ouia-component-id="active-filters">Active Filters</div>;
   };
 });
 
@@ -222,7 +222,7 @@ describe('TestHistoryTable', () => {
       jest.advanceTimersByTime(100);
 
       await waitFor(() => {
-        expect(screen.getByText(/Last passed/i)).toBeInTheDocument();
+        expect(screen.getByText('Last passed mock')).toBeInTheDocument();
         expect(screen.getByTestId('last-passed')).toBeInTheDocument();
       });
     });

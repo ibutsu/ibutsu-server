@@ -18,13 +18,13 @@ jest.mock('../pages/settings', () => ({
 // Mock child components
 jest.mock('./file-upload', () => {
   return function FileUpload() {
-    return <div data-testid="file-upload">File Upload</div>;
+    return <div data-ouia-component-id="file-upload">File Upload</div>;
   };
 });
 
 jest.mock('./user-dropdown', () => {
   return function UserDropdown() {
-    return <div data-testid="user-dropdown">User Dropdown</div>;
+    return <div data-ouia-component-id="user-dropdown">User Dropdown</div>;
   };
 });
 

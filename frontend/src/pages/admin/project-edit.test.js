@@ -22,7 +22,7 @@ jest.mock('../settings', () => ({
 // Mock AdminFilter component
 jest.mock('../../components/filtering/admin-filter', () => {
   return function AdminFilter() {
-    return <div data-testid="admin-filter">Admin Filter</div>;
+    return <div data-ouia-component-id="admin-filter">Admin Filter</div>;
   };
 });
 
@@ -64,7 +64,7 @@ describe('ProjectEdit', () => {
             <Route path="/admin/project/:id" element={<ProjectEdit />} />
             <Route
               path="/admin/projects"
-              element={<div data-testid="projects-list">Projects List</div>}
+              element={<div data-ouia-component-id="projects-list">Projects List</div>}
             />
           </Routes>
         </FilterContext.Provider>

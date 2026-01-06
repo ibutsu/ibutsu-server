@@ -24,7 +24,7 @@ jest.mock('./settings', () => ({
 // Mock OAuth libraries
 jest.mock('@react-oauth/google', () => ({
   GoogleLogin: function MockGoogleLogin() {
-    return <div data-testid="google-login">Google Login</div>;
+    return <div data-ouia-component-id="google-login">Google Login</div>;
   },
 }));
 

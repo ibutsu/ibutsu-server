@@ -24,7 +24,7 @@ jest.mock('react-apexcharts', () => {
   const PropTypes = require('prop-types');
   const MockChart = ({ options, series, type, height }) => (
     <div
-      data-testid="apex-chart"
+      data-ouia-component-id="apex-chart"
       data-type={type}
       data-height={height}
       data-series-count={series?.length || 0}
@@ -45,15 +45,15 @@ jest.mock('react-apexcharts', () => {
 jest.mock('../components/widget-header', () => {
   const PropTypes = require('prop-types');
   const MockWidgetHeader = ({ title, onEditClick, onDeleteClick }) => (
-    <div data-testid="widget-header">
-      <span data-testid="widget-title">{title}</span>
+    <div data-ouia-component-id="widget-header">
+      <span data-ouia-component-id="widget-title">{title}</span>
       {onEditClick && (
-        <button data-testid="edit-button" onClick={onEditClick}>
+        <button data-ouia-component-id="edit-button" onClick={onEditClick}>
           Edit
         </button>
       )}
       {onDeleteClick && (
-        <button data-testid="delete-button" onClick={onDeleteClick}>
+        <button data-ouia-component-id="delete-button" onClick={onDeleteClick}>
           Delete
         </button>
       )}
@@ -75,9 +75,9 @@ jest.mock('../components/param-dropdown', () => {
     handleSelect,
     tooltip,
   }) => (
-    <div data-testid="param-dropdown" data-tooltip={tooltip}>
+    <div data-ouia-component-id="param-dropdown" data-tooltip={tooltip}>
       <select
-        data-testid={`param-select-${tooltip?.replace(/[^a-z]/gi, '-')}`}
+        data-ouia-component-id={`param-select-${tooltip?.replace(/[^a-z]/gi, '-')}`}
         value={defaultValue}
         onChange={(e) => handleSelect(e.target.value)}
       >
@@ -101,7 +101,7 @@ jest.mock('../components/param-dropdown', () => {
 jest.mock('./result-widget-legend', () => {
   const PropTypes = require('prop-types');
   const MockLegend = ({ datum, x, y }) => (
-    <g data-testid={`legend-${datum.name}`} transform={`translate(${x},${y})`}>
+    <g data-ouia-component-id={`legend-${datum.name}`} transform={`translate(${x},${y})`}>
       <text>{datum.name}</text>
     </g>
   );

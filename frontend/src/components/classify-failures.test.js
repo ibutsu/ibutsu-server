@@ -23,11 +23,11 @@ jest.mock('../pages/settings', () => ({
 // Mock child components
 jest.mock('./classification-dropdown', () => ({
   ClassificationDropdown: function ClassificationDropdown() {
-    return <div data-testid="classification-dropdown">Classification</div>;
+    return <div data-ouia-component-id="classification-dropdown">Classification</div>;
   },
   MultiClassificationDropdown: function MultiClassificationDropdown() {
     return (
-      <div data-testid="multi-classification-dropdown">
+      <div data-ouia-component-id="multi-classification-dropdown">
         Multi Classification
       </div>
     );
@@ -36,7 +36,7 @@ jest.mock('./classification-dropdown', () => ({
 
 jest.mock('./result-view', () => {
   return function ResultView() {
-    return <div data-testid="result-view">Result View</div>;
+    return <div data-ouia-component-id="result-view">Result View</div>;
   };
 });
 
@@ -50,11 +50,11 @@ jest.mock('./filtering/filtered-table-card', () => {
     filters,
     selectable,
   }) => (
-    <div data-testid="filter-table">
-      {fetching && <div data-testid="loading">Loading...</div>}
-      {isError && <div data-testid="error">Error loading data</div>}
+    <div data-ouia-component-id="filter-table">
+      {fetching && <div data-ouia-component-id="loading">Loading...</div>}
+      {isError && <div data-ouia-component-id="error">Error loading data</div>}
       {filters}
-      {selectable && <div data-testid="selectable-table">Selectable</div>}
+      {selectable && <div data-ouia-component-id="selectable-table">Selectable</div>}
       <table>
         <thead>
           <tr>
@@ -66,7 +66,7 @@ jest.mock('./filtering/filtered-table-card', () => {
         <tbody>
           {rows &&
             rows.map((row, idx) => (
-              <tr key={idx} data-testid={`row-${idx}`}>
+              <tr key={idx} data-ouia-component-id={`row-${idx}`}>
                 {row.cells &&
                   row.cells.map((cell, cidx) => <td key={cidx}>{cell}</td>)}
               </tr>
@@ -88,7 +88,7 @@ jest.mock('./filtering/filtered-table-card', () => {
 
 jest.mock('./filtering/result-filter', () => {
   return function ResultFilter() {
-    return <div data-testid="result-filter">Result Filter</div>;
+    return <div data-ouia-component-id="result-filter">Result Filter</div>;
   };
 });
 
