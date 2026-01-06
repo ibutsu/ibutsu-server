@@ -63,7 +63,7 @@ const FilterHeatmapWidget = ({
             { filter: 'widget=jenkins-analysis-view' },
           );
           const responseData = await HttpClient.handleResponse(response);
-          setAnalysisViewId(responseData.widgets[0]?.id || null);
+          setAnalysisViewId(responseData?.widgets?.[0]?.id || null);
         } catch (error) {
           console.error(error);
           setAnalysisViewId(null);
@@ -291,7 +291,7 @@ const FilterHeatmapWidget = ({
       />
       <CardBody
         className="ibutsu-widget-card-body"
-        data-id="heatmap"
+        data-ouia-component-id="heatmap-container"
         style={{ paddingTop: '0.5rem' }}
       >
         {!isError && isLoading && <Content component="h2">Loading ...</Content>}

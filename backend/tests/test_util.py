@@ -996,6 +996,7 @@ class TestJwtUtils:
 
     def test_decode_token_invalid(self, flask_app):
         """Test decode_token raises Unauthorized for invalid token."""
+
         client, _ = flask_app
 
         with client.application.app_context(), pytest.raises(Unauthorized):

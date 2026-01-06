@@ -51,7 +51,7 @@ const LastPassed = ({ filters = [] }) => {
   }, [filters]);
 
   return (
-    <>
+    <div data-ouia-component-id="last-passed">
       {resultData && (
         <Link
           target="_blank"
@@ -70,7 +70,7 @@ const LastPassed = ({ filters = [] }) => {
           Not Applicable
         </Badge>
       )}
-    </>
+    </div>
   );
 };
 
