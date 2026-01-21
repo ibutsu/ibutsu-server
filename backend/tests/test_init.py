@@ -492,8 +492,11 @@ def test_app_registry_get_flower_app_with_result_backend_url(reset_app_registry)
     broker = "redis://localhost:6379/0"
     result_backend = "redis://localhost:6379/2"
 
+    # Clear environment to prevent pytest_configure defaults from interfering
     with patch.dict(
-        "os.environ", {"CELERY_BROKER_URL": broker, "CELERY_RESULT_BACKEND_URL": result_backend}
+        "os.environ",
+        {"CELERY_BROKER_URL": broker, "CELERY_RESULT_BACKEND_URL": result_backend},
+        clear=True,
     ):
         app = _AppRegistry.get_flower_app()
 
@@ -712,7 +715,10 @@ def test_get_app_with_postgresql_connection_retry():
     }
 
     # Mock the engine and connection for the retry logic
+    # Also need to remove SQLALCHEMY_DATABASE_URI from environment so PostgreSQL path is taken
+    env_without_db_uri = {k: v for k, v in os.environ.items() if k != "SQLALCHEMY_DATABASE_URI"}
     with (
+        patch.dict("os.environ", env_without_db_uri, clear=True),
         patch("ibutsu_server.create_engine") as mock_create_engine,
         patch("ibutsu_server.db.db.init_app"),
         patch("ibutsu_server.add_superadmin"),
