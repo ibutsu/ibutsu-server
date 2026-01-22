@@ -3,22 +3,34 @@
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-20/6481a0ba5116096a4a70dba5
 FROM registry.access.redhat.com/ubi9/nodejs-20:9.7 AS builder
 
-ENV NODE_ENV=production
-
 # The nodejs-20 image sets workdir to /opt/app-root/src by default
 # but we'll explicitly set it for clarity
 WORKDIR /opt/app-root/src
-# Copy with correct ownership for the nodejs user (UID 1001, GID 0)
-COPY --chown=1001:0 . /opt/app-root/src
 
-# Install yarn globally - Node.js and npm are already installed in the base image
-# Set CI=false to allow build to succeed with warnings (CSS ordering warnings from
+# Install yarn globally first - this layer rarely changes and can be cached
+RUN npm install --global yarn@^1.22.22
+
+# Copy package files first for better layer caching
+# Changes to source code won't invalidate the dependency install layer
+COPY --chown=1001:0 package.json yarn.lock ./
+
+# Install all dependencies (devDependencies needed for build)
+# Using --frozen-lockfile for reproducible builds
+RUN yarn install --frozen-lockfile
+
+# Copy the rest of the source code (bin/ needed for build script)
+COPY --chown=1001:0 . .
+
+# Build the app with production optimizations
+# CI=false allows build to succeed with warnings (CSS ordering warnings from
 # mini-css-extract-plugin are expected when using code splitting with PatternFly React)
-# After building, prune to production dependencies only for a smaller runtime image
-RUN npm install --global yarn@^1.22.22 && \
-    yarn install && \
-    CI=false yarn build && \
-    yarn install --production --frozen-lockfile && \
+ENV NODE_ENV=production
+RUN CI=false yarn build
+
+# Prune to production dependencies and clean cache for smaller image
+# --ignore-scripts avoids re-running postinstall scripts
+# --prefer-offline uses cached packages where possible
+RUN yarn install --production --frozen-lockfile --ignore-scripts --prefer-offline && \
     yarn cache clean
 
 # Second stage copies only the build artifacts to the minimal image
