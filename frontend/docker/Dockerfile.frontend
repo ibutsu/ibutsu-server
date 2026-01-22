@@ -41,14 +41,14 @@ FROM registry.access.redhat.com/ubi9/nodejs-20-minimal:9.7
 WORKDIR /opt/app-root/src
 
 # Copy only the build artifacts (React static files) from the builder image
-COPY --from=builder /opt/app-root/src/build /opt/app-root/src/build
+COPY --from=builder --chown=1001:0 /opt/app-root/src/build /opt/app-root/src/build
 
 # Copy package.json for running yarn start
-COPY --from=builder /opt/app-root/src/package.json /opt/app-root/src/package.json
+COPY --from=builder --chown=1001:0 /opt/app-root/src/package.json /opt/app-root/src/package.json
 
 # Copy the already-pruned production node_modules from the builder
 # This avoids a second install in the runtime stage while keeping only production deps
-COPY --from=builder /opt/app-root/src/node_modules /opt/app-root/src/node_modules
+COPY --from=builder --chown=1001:0 /opt/app-root/src/node_modules /opt/app-root/src/node_modules
 
 # Copy the entrypoint script for runtime configuration
 # Use --chmod to set executable permissions directly (avoids permission issues in minimal image)
