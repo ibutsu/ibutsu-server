@@ -55,10 +55,8 @@ COPY --from=builder --chown=1001:0 /opt/app-root/src/node_modules /opt/app-root/
 COPY --chmod=755 ./docker/entrypoint.sh /opt/app-root/bin/entrypoint.sh
 
 # Ensure the build directory is group-writable for OpenShift arbitrary UID support
-# OpenShift runs containers with random UIDs in the root group (GID 0)
-# chmod g=u gives the group the same permissions as the owner (including write access)
 RUN chgrp -R 0 /opt/app-root/src && \
-    chmod -R g=u /opt/app-root/src
+    chmod -R g+rwX /opt/app-root/src
 
 # Set NODE_ENV to production (aligns with OpenShift template ocp-templates/mpp/frontend.yaml)
 ENV NODE_ENV=production
@@ -69,6 +67,7 @@ EXPOSE 8080
 # Use entrypoint to generate settings.js at runtime (for REACT_APP_SERVER_URL)
 ENTRYPOINT ["/opt/app-root/bin/entrypoint.sh"]
 
-# Use yarn to run the application (serves static build directory on port 8080)
+# Use npm to run the application (serves static build directory on port 8080)
 # The serve -s flag provides SPA routing (equivalent to nginx try_files $uri /index.html)
-CMD ["yarn", "start"]
+# Note: npm is included in nodejs-20-minimal, but yarn is not
+CMD ["npm", "start"]
