@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: Ibutsu API
-  version: 3.0.0
+  version: 3.0.1
 servers:
   - url: /api
 security:
