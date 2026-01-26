@@ -32,7 +32,7 @@ def test_delete_artifact(flask_app, artifact_test_hierarchy, auth_headers):
         f"/api/artifact/{artifact_id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.text}"
+    assert response.status_code == 200, f"Response body: {response.text}"
 
     # Verify artifact was deleted from database
     with client.application.app_context():
@@ -63,7 +63,7 @@ def test_download_artifact(flask_app, artifact_test_hierarchy, auth_headers):
         f"/api/artifact/{artifact_id}/download",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.text}"
+    assert response.status_code == 200, f"Response body: {response.text}"
     # Verify content is returned
     assert b"test file content" in response.content
 
@@ -92,7 +92,7 @@ def test_get_artifact(flask_app, artifact_test_hierarchy, auth_headers):
         f"/api/artifact/{artifact_id}",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.text}"
+    assert response.status_code == 200, f"Response body: {response.text}"
 
     response_data = response.json()
     assert response_data["filename"] == "test.log"
@@ -124,7 +124,7 @@ def test_get_artifact_list(flask_app, artifact_test_hierarchy, auth_headers):
         headers=headers,
         params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.text}"
+    assert response.status_code == 200, f"Response body: {response.text}"
 
     response_data = response.json()
     assert "artifacts" in response_data
@@ -188,7 +188,7 @@ def test_view_artifact(flask_app, artifact_test_hierarchy, auth_headers):
         f"/api/artifact/{artifact_id}/view",
         headers=headers,
     )
-    assert response.status_code == 200, f"Response body is : {response.text}"
+    assert response.status_code == 200, f"Response body: {response.text}"
     # Verify content is returned
     assert b"test file content for viewing" in response.content
     # Content-Type should be set (detected by magic)
@@ -420,7 +420,7 @@ def test_get_artifact_list_by_run_id(flask_app, make_project, make_run, auth_hea
         headers=headers,
         params=query_string,
     )
-    assert response.status_code == 200, f"Response body is : {response.text}"
+    assert response.status_code == 200, f"Response body: {response.text}"
 
     response_data = response.json()
     assert "artifacts" in response_data
@@ -458,3 +458,66 @@ def test_get_artifact_list_pagination(flask_app, artifact_test_hierarchy, auth_h
     assert len(response_data["artifacts"]) == 10
     assert response_data["pagination"]["totalItems"] == 30
     assert response_data["pagination"]["totalPages"] == 3
+
+
+@pytest.fixture
+def artifact_upload_data():
+    """Fixture providing common test data for artifact uploads.
+
+    Returns a dictionary with file content, filename, and metadata
+    to reduce duplication across artifact upload tests.
+    """
+    return {
+        "file_content": b"test file content for http upload",
+        "filename": "http-test.log",
+        "metadata": {"test": "metadata"},
+    }
+
+
+def test_upload_artifact_via_http(
+    flask_app, artifact_test_hierarchy, auth_headers, artifact_upload_data
+):
+    """Test artifact upload via actual HTTP multipart request through Connexion validation.
+
+    This test makes a real HTTP POST request through the Connexion validation layer,
+    unlike test_upload_artifact which uses test_request_context and bypasses validation.
+    This ensures the OpenAPI schema is correct and catches issues like missing 'format: binary'.
+    """
+    client, jwt_token = flask_app
+    hierarchy = artifact_test_hierarchy
+    result = hierarchy["result"]
+
+    # Get test data from fixture
+    file_content = artifact_upload_data["file_content"]
+    filename = artifact_upload_data["filename"]
+    metadata = artifact_upload_data["metadata"]
+
+    # Use headers without Content-Type so httpx can set multipart/form-data automatically
+    headers = {"Authorization": f"Bearer {jwt_token}"}
+
+    # Make actual HTTP POST request with multipart/form-data (httpx-style)
+    response = client.post(
+        "/api/artifact",
+        headers=headers,
+        data={
+            "resultId": str(result.id),
+            "filename": filename,
+            "additionalMetadata": json.dumps(metadata),
+        },
+        files={"file": (filename, file_content)},
+    )
+
+    # Verify successful upload - use httpx Response methods
+    assert response.status_code == 201, f"Response body: {response.text}"
+    response_data = response.json()
+    assert response_data["filename"] == filename
+    assert response_data["result_id"] == str(result.id)
+    assert "id" in response_data
+
+    # Verify artifact was actually saved
+    artifact_id = response_data["id"]
+    with client.application.app_context():
+        artifact = db.session.get(Artifact, artifact_id)
+        assert artifact is not None
+        assert artifact.content == file_content
+        assert artifact.data == metadata

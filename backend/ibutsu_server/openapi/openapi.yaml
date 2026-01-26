@@ -237,6 +237,7 @@ paths:
                   description: "name of the file"
                 file:
                   type: string
+                  format: binary
                   description: "file to upload"
                 additionalMetadata:
                   type: object
