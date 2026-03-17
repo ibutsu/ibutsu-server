@@ -153,7 +153,7 @@ protobuf==5.28.3
     #   proto-plus
 psycopg2-binary==2.9.11
     # via ibutsu-server (pyproject.toml)
-pyasn1==0.6.1
+pyasn1==0.6.3
     # via
     #   pyasn1-modules
     #   rsa
