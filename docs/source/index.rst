@@ -7,6 +7,7 @@ Welcome to Ibutsu's documentation!
 
    user-guide/getting-started
    user-guide/running-server
+   user-guide/widgets
    user-guide/filter-help
 
 

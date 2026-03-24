@@ -10,6 +10,8 @@ To get started using Ibutsu, you'll need to :ref:`set up a server <user-guide/ru
 and then start sending results to it.
 
 
+.. _user-guide/pytest-plugin:
+
 Using the pytest plugin
 -----------------------
 
@@ -70,19 +72,27 @@ following curl command:
   curl --form importFile=@<file-name>.tar.gz http://ibutsu-server/api/import
 
 
-Importing results from Junit XML
+Importing results from JUnit XML
 --------------------------------
+
+JUnit XML is supported from pytest, Jenkins, Maven/Surefire, Gradle, and other runners that emit
+standard JUnit-style reports.
 
 Via the Ibutsu UI
 #################
-If you have legacy pytest test results stored in Junit XML files, those can be imported
+If you have legacy pytest test results stored in JUnit XML files, those can be imported
 via the Ibutsu UI. Simply click on the "Import" button in the top right, and select your XML file.
 
 A run will be created for each ``testsuite`` in the XML file. For each ``testcase`` of the
 ``testsuite``, a result will be created.
 
-Note: for new test results, it is strongly recommended to use the pytest plugin. The XML import
-does not upload screenshots and log files.
+   .. figure:: ../_static/images/user-guide/import-button.png
+      :alt: Ibutsu header with Import action highlighted
+      :align: center
+
+A run will be created for each ``testsuite`` in the XML file. For each ``testcase`` of the ``testsuite`` a result will be created.
+
+Note: for new test results, it is strongly recommended to use the pytest plugin. The XML import does not upload screenshots and log files.
 
 Via the Ibutsu API
 ##################
@@ -91,7 +101,16 @@ one may use the following curl command:
 
 .. code-block:: shell
 
-  curl --form importFile=@<file-name>.xml http://ibusu-server/api/import
+   curl --request POST \
+     --header "Authorization: Bearer <token>" \
+     --form importFile=@<file-name>.xml \
+     --form project=my-project \
+     --form source=ci-pipeline-42 \
+     --form 'metadata={"env":"perf","build":"166"}' \
+     https://<ibutsu-host>/api/import
+
+The server responds when the file is **accepted** for background import; poll ``GET /import/{id}``
+or refresh the **Runs** view to see the new data.
 
 Installing the API client
 -------------------------
