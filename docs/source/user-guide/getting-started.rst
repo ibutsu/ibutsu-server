@@ -80,7 +80,7 @@ standard JUnit-style reports.
 
 Via the Ibutsu UI
 #################
-If you have legacy pytest test results stored in Junit XML files, those can be imported
+If you have legacy pytest test results stored in JUnit XML files, those can be imported
 via the Ibutsu UI. Simply click on the "Import" button in the top right, and select your XML file.
 
 A run will be created for each ``testsuite`` in the XML file. For each ``testcase`` of the
