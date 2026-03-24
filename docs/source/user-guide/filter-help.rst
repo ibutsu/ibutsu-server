@@ -76,7 +76,7 @@ Comma-separated list of filters
 -------------------------------
 There are two places in the UI where a user is able to enter a comma-separated list of filters:
 
-* the ``additional_filters`` parameter when creating a new widget
+* the ``additional_filters`` parameter when creating a new widget (see :ref:`user-guide/widgets`)
 * the ``Filter`` field when building a report
 
 These are simple text input components that take a string of comma-separated filters. Here, a user
