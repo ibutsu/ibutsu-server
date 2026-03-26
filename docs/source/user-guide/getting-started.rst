@@ -90,14 +90,18 @@ A run will be created for each ``testsuite`` in the XML file. For each ``testcas
       :alt: Ibutsu header with Import action highlighted
       :align: center
 
-A run will be created for each ``testsuite`` in the XML file. For each ``testcase`` of the ``testsuite`` a result will be created.
-
 Note: for new test results, it is strongly recommended to use the pytest plugin. The XML import does not upload screenshots and log files.
 
 Via the Ibutsu API
 ##################
-Junit XML files generated from pytest can be imported at the ``import`` API endpoint. For example,
-one may use the following curl command:
+For programmatic imports, prefer the official API clients:
+
+* Python: `ibutsu-client-python <https://github.com/ibutsu/ibutsu-client-python>`_
+* TypeScript/JavaScript: `ibutsu-client-javascript <https://github.com/ibutsu/ibutsu-client-javascript>`_
+
+Those repositories include usage examples and recommended integration patterns.
+
+You can also call the ``import`` API endpoint directly with ``curl``:
 
 .. code-block:: shell
 
@@ -112,12 +116,10 @@ one may use the following curl command:
 The server responds when the file is **accepted** for background import; poll ``GET /import/{id}``
 or refresh the **Runs** view to see the new data.
 
-Installing the API client
--------------------------
+Installing the Python API client
+--------------------------------
 
-There is also a Python API client that can be used to push results into Ibutsu.
-
-You can install the API client via pip:
+If you are using Python, install the API client via pip:
 
 .. code-block:: shell
 
