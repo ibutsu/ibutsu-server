@@ -159,7 +159,7 @@ pyasn1==0.6.3
     #   rsa
 pyasn1-modules==0.4.1
     # via google-auth
-pyjwt==2.9.0
+pyjwt==2.12.0
     # via ibutsu-server (pyproject.toml)
 pymongo==4.10.1
     # via ibutsu-server (pyproject.toml)
