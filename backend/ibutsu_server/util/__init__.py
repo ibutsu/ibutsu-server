@@ -7,6 +7,7 @@ from werkzeug.exceptions import BadRequest, Forbidden, InternalServerError, NotF
 __all__ = [
     "deserialize_date",
     "deserialize_datetime",
+    "flat_dict_keys",
     "get_test_idents",
     "json_response",
     "merge_dicts",
@@ -158,6 +159,19 @@ def _deserialize_dict(data, boxed_type):
     :rtype: dict
     """
     return {k: _deserialize(v, boxed_type) for k, v in data.items()}
+
+
+def flat_dict_keys(d, delimiter=".", _prefix=""):
+    """Yield flattened keys from a nested dictionary.
+
+    E.g. {"a": {"b": 1}, "c": 2} with delimiter="." yields ["a.b", "c"].
+    """
+    for key, value in d.items():
+        full_key = f"{_prefix}{delimiter}{key}" if _prefix else key
+        if isinstance(value, dict):
+            yield from flat_dict_keys(value, delimiter, full_key)
+        else:
+            yield full_key
 
 
 def safe_string(o):

@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-import flatdict
 from flask import request
 
 from ibutsu_server.constants import RESPONSE_JSON_REQ
@@ -8,6 +7,7 @@ from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Project, Result, User
 from ibutsu_server.filters import convert_filter
+from ibutsu_server.util import flat_dict_keys
 from ibutsu_server.util.projects import add_user_filter, project_has_user
 from ibutsu_server.util.query import get_offset
 from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
@@ -182,7 +182,4 @@ def get_filter_params(id_, user=None, token_info=None):
         # Return empty list if no results exist for this project
         return []
 
-    fields = flatdict.FlatDict(result.__dict__, delimiter=".").keys()
-    fields.remove("_sa_instance_state")
-
-    return list(fields)
+    return [k for k in flat_dict_keys(result.__dict__, delimiter=".") if k != "_sa_instance_state"]
