@@ -19,7 +19,7 @@ import logging
 
 import sqlalchemy as sa
 
-from alembic import op
+from alembic import context, op
 
 # revision identifiers, used by Alembic.
 revision = "e5736dbcc0b0"
@@ -68,7 +68,8 @@ def _batched_update(conn, table, extra_set="", params=None):
     """Update rows in batches, committing between each batch to release locks.
 
     Uses a CTE to SELECT a limited batch of IDs, then UPDATEs only those rows.
-    Explicit COMMIT/BEGIN between batches keeps lock duration short.
+    Each batch runs on a separate connection with its own transaction so that
+    Alembic's outer transaction (managed by env.py) is never desynchronized.
 
     Safe to re-run: each batch only touches rows still pointing at
     FROM_PROJECT, so already-migrated rows are never revisited.
@@ -82,15 +83,15 @@ def _batched_update(conn, table, extra_set="", params=None):
     stmt = _build_batch_sql(table, extra_set)
     total = 0
     batch_num = 0
+    engine = conn.engine
+
     while True:
         batch_num += 1
-        result = conn.execute(stmt, params)
-        moved = result.rowcount
+        with engine.connect() as batch_conn, batch_conn.begin():
+            result = batch_conn.execute(stmt, params)
+            moved = result.rowcount
         total += moved
         logger.info("  batch %d: updated %d %s rows (%d total)", batch_num, moved, table, total)
-
-        conn.execute(sa.text("COMMIT"))
-        conn.execute(sa.text("BEGIN"))
 
         if moved < BATCH_SIZE:
             break
@@ -100,6 +101,13 @@ def _batched_update(conn, table, extra_set="", params=None):
 
 def upgrade() -> None:
     """Move all data from hcc-perfscale-cpt into insights-qe, then delete the source project."""
+    if context.is_offline_mode():
+        raise RuntimeError(
+            "This migration requires a live database connection and does not support "
+            "offline SQL generation (alembic upgrade --sql). Run this migration in "
+            "online mode."
+        )
+
     conn = op.get_bind()
 
     # Guard: skip if source project doesn't exist (already migrated or different env)
@@ -119,23 +127,21 @@ def upgrade() -> None:
     if result.fetchone() is None:
         raise RuntimeError(f"Target project {TO_PROJECT} does not exist")
 
-    proj_json = f'{{"project": "{TO_PROJECT_NAME}"}}'
+    is_pg = conn.dialect.name == "postgresql"
+
+    if is_pg:
+        proj_json = f'{{"project": "{TO_PROJECT_NAME}"}}'
+        extra_set = ", data = COALESCE(data, '{}'::jsonb) || :proj_json::jsonb"
+        extra_params = {"proj_json": proj_json}
+    else:
+        extra_set = ""
+        extra_params = {}
 
     logger.info("Moving runs...")
-    _batched_update(
-        conn,
-        "runs",
-        extra_set=", data = COALESCE(data, '{}'::jsonb) || :proj_json",
-        params={"proj_json": proj_json},
-    )
+    _batched_update(conn, "runs", extra_set=extra_set, params=dict(extra_params))
 
     logger.info("Moving results...")
-    _batched_update(
-        conn,
-        "results",
-        extra_set=", data = COALESCE(data, '{}'::jsonb) || :proj_json",
-        params={"proj_json": proj_json},
-    )
+    _batched_update(conn, "results", extra_set=extra_set, params=dict(extra_params))
 
     logger.info("Moving dashboards...")
     _batched_update(conn, "dashboards")
