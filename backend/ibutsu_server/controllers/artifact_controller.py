@@ -82,6 +82,8 @@ def view_artifact(id_, token_info=None, user=None):
     :rtype: file
     """
     artifact, response = _build_artifact_response(id_)
+    if not isinstance(artifact, Artifact):
+        return artifact, response
     if not _user_has_artifact_access(artifact, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     return response
@@ -97,6 +99,8 @@ def download_artifact(id_, token_info=None, user=None):
     :rtype: file
     """
     artifact, response = _build_artifact_response(id_)
+    if not isinstance(artifact, Artifact):
+        return artifact, response
     if not _user_has_artifact_access(artifact, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     response.headers["Content-Disposition"] = f"attachment; filename={artifact.filename}"
