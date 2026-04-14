@@ -27,6 +27,20 @@ class BadRequestError(Exception):
         self.status = status
 
 
+def _user_has_artifact_access(artifact, user):
+    """Check whether the user has access to the artifact's project.
+
+    Access is determined by the project associated with the artifact's result or run.
+    If the artifact is not linked to either a result or a run, access is denied
+    to avoid silently granting access to orphaned artifacts.
+    """
+    if artifact.result:
+        return project_has_user(artifact.result.project, user)
+    if artifact.run:
+        return project_has_user(artifact.run.project, user)
+    return False
+
+
 def _get_form_param(form, *keys):
     """Get a form parameter supporting both camelCase and snake_case naming.
 
@@ -68,9 +82,7 @@ def view_artifact(id_, token_info=None, user=None):
     :rtype: file
     """
     artifact, response = _build_artifact_response(id_)
-    if (artifact.result and not project_has_user(artifact.result.project, user)) or (
-        artifact.run and not project_has_user(artifact.run.project, user)
-    ):
+    if not _user_has_artifact_access(artifact, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     return response
 
@@ -85,9 +97,7 @@ def download_artifact(id_, token_info=None, user=None):
     :rtype: file
     """
     artifact, response = _build_artifact_response(id_)
-    if (artifact.result and not project_has_user(artifact.result.project, user)) or (
-        artifact.run and not project_has_user(artifact.run.project, user)
-    ):
+    if not _user_has_artifact_access(artifact, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     response.headers["Content-Disposition"] = f"attachment; filename={artifact.filename}"
     return response
@@ -105,9 +115,7 @@ def get_artifact(id_, token_info=None, user=None):
     artifact = db.session.get(Artifact, id_)
     if not artifact:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
-    if (artifact.result and not project_has_user(artifact.result.project, user)) or (
-        artifact.run and not project_has_user(artifact.run.project, user)
-    ):
+    if not _user_has_artifact_access(artifact, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     return artifact.to_dict()
 
@@ -340,9 +348,7 @@ def delete_artifact(id_, token_info=None, user=None):
     artifact = db.session.get(Artifact, id_)
     if not artifact:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
-    if (artifact.result and not project_has_user(artifact.result.project, user)) or (
-        artifact.run and not project_has_user(artifact.run.project, user)
-    ):
+    if not _user_has_artifact_access(artifact, user):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     session.delete(artifact)
     session.commit()
