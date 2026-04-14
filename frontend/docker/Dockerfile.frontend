@@ -32,8 +32,10 @@ COPY --chown=1001:0 . .
 # Build the app with production optimizations
 # CI=false allows build to succeed with warnings (CSS ordering warnings from
 # mini-css-extract-plugin are expected when using code splitting with PatternFly React)
+# GENERATE_SOURCEMAP=false skips source maps to reduce build time and memory usage
+# The keepalive loop prints a heartbeat every 30s to prevent Quay.io inactivity timeouts
 ENV NODE_ENV=production
-RUN CI=false yarn build
+RUN sh -c '(while true; do echo "$(date): build still running..."; sleep 30; done) & KEEPALIVE_PID=$!; CI=false GENERATE_SOURCEMAP=false yarn build; BUILD_EXIT=$?; kill $KEEPALIVE_PID 2>/dev/null; exit $BUILD_EXIT'
 
 # Prune to production dependencies and clean cache for smaller image
 # --ignore-scripts avoids re-running postinstall scripts
