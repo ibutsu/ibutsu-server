@@ -10,6 +10,14 @@ WORKDIR /opt/app-root/src
 # Install yarn globally first - this layer rarely changes and can be cached
 RUN npm install --global yarn@^1.22.22
 
+# Skip downloading the Cypress binary — it is only needed for e2e tests,
+# not for the production build, and it consumes ~300 MB of memory/disk.
+ENV CYPRESS_INSTALL_BINARY=0
+
+# Constrain the V8 heap so webpack/react-scripts cannot grow past the
+# Quay.io builder's memory limit and get OOM-killed.
+ENV NODE_OPTIONS="--max-old-space-size=3072"
+
 # Copy package files first for better layer caching
 # Changes to source code won't invalidate the dependency install layer
 COPY --chown=1001:0 .yarnclean package.json yarn.lock ./
