@@ -35,7 +35,22 @@ COPY --chown=1001:0 . .
 # GENERATE_SOURCEMAP=false skips source maps to reduce build time and memory usage
 # The keepalive loop prints a heartbeat every 30s to prevent Quay.io inactivity timeouts
 ENV NODE_ENV=production
-RUN sh -c '(while true; do echo "$(date): build still running..."; sleep 30; done) & KEEPALIVE_PID=$!; CI=false GENERATE_SOURCEMAP=false yarn build; BUILD_EXIT=$?; kill $KEEPALIVE_PID 2>/dev/null; exit $BUILD_EXIT'
+RUN sh -c '\
+    cleanup() { \
+        if [ -n "$KEEPALIVE_PID" ]; then \
+            kill "$KEEPALIVE_PID" 2>/dev/null || true; \
+            wait "$KEEPALIVE_PID" 2>/dev/null || true; \
+        fi; \
+    }; \
+    trap cleanup EXIT INT TERM; \
+    while true; do \
+        echo "$(date): build still running..."; \
+        sleep 30; \
+    done & \
+    KEEPALIVE_PID=$!; \
+    CI=false GENERATE_SOURCEMAP=false yarn build; \
+    BUILD_EXIT=$?; \
+    exit "$BUILD_EXIT"'
 
 # Prune to production dependencies and clean cache for smaller image
 # --ignore-scripts avoids re-running postinstall scripts
