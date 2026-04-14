@@ -124,8 +124,6 @@ def get_artifact_list(
     """
     query = db.select(Artifact)
     user = db.session.get(User, user)
-    if "result_id" in request.args:
-        result_id = request.args["result_id"]
     if result_id:
         query = query.where(Artifact.result_id == result_id)
     if run_id:
