@@ -560,6 +560,12 @@ def test_project_has_user(make_project, make_user, user_role, expected_result):
     assert result is expected_result
 
 
+def test_project_has_user_none_project(make_user):
+    """Test project_has_user returns False when project is None (data integrity issue)."""
+    user = make_user(email="user@test.com")
+    assert project_has_user(None, user) is False
+
+
 def test_project_has_user_with_string_ids(make_project, make_user):
     """Test project_has_user with string IDs instead of objects."""
     owner = make_user(email="owner@test.com")
