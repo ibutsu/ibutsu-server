@@ -85,7 +85,9 @@ def download_artifact(id_, token_info=None, user=None):
     :rtype: file
     """
     artifact, response = _build_artifact_response(id_)
-    if not project_has_user(artifact.result.project, user):
+    if (artifact.result and not project_has_user(artifact.result.project, user)) or (
+        artifact.run and not project_has_user(artifact.run.project, user)
+    ):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     response.headers["Content-Disposition"] = f"attachment; filename={artifact.filename}"
     return response
@@ -103,7 +105,9 @@ def get_artifact(id_, token_info=None, user=None):
     artifact = db.session.get(Artifact, id_)
     if not artifact:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
-    if not project_has_user(artifact.result.project, user):
+    if (artifact.result and not project_has_user(artifact.result.project, user)) or (
+        artifact.run and not project_has_user(artifact.run.project, user)
+    ):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     return artifact.to_dict()
 
@@ -338,7 +342,9 @@ def delete_artifact(id_, token_info=None, user=None):
     artifact = db.session.get(Artifact, id_)
     if not artifact:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
-    if not project_has_user(artifact.result.project, user):
+    if (artifact.result and not project_has_user(artifact.result.project, user)) or (
+        artifact.run and not project_has_user(artifact.run.project, user)
+    ):
         return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     session.delete(artifact)
     session.commit()
