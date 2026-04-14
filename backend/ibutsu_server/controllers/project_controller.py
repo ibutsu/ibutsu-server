@@ -182,4 +182,8 @@ def get_filter_params(id_, user=None, token_info=None):
         # Return empty list if no results exist for this project
         return []
 
-    return [k for k in flat_dict_keys(result.__dict__, delimiter=".") if k != "_sa_instance_state"]
+    return [
+        k
+        for k in flat_dict_keys(result.__dict__, delimiter=".")
+        if not k.startswith("_sa_instance_state")
+    ]

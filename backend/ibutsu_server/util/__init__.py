@@ -1,5 +1,6 @@
 import datetime
 import json
+from collections.abc import Mapping
 
 from flask import Response
 from werkzeug.exceptions import BadRequest, Forbidden, InternalServerError, NotFound, Unauthorized
@@ -167,8 +168,8 @@ def flat_dict_keys(d, delimiter=".", _prefix=""):
     E.g. {"a": {"b": 1}, "c": 2} with delimiter="." yields ["a.b", "c"].
     """
     for key, value in d.items():
-        full_key = f"{_prefix}{delimiter}{key}" if _prefix else key
-        if isinstance(value, dict):
+        full_key = f"{_prefix}{delimiter}{key!s}" if _prefix else str(key)
+        if isinstance(value, Mapping):
             yield from flat_dict_keys(value, delimiter, full_key)
         else:
             yield full_key

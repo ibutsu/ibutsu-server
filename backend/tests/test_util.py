@@ -3,6 +3,7 @@
 import contextlib
 import datetime
 import uuid
+from collections import OrderedDict
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
@@ -34,6 +35,7 @@ from ibutsu_server.util import (
     deserialize_date,
     deserialize_datetime,
     deserialize_model,
+    flat_dict_keys,
     get_test_idents,
     json_response,
     merge_dicts,
@@ -216,6 +218,49 @@ class TestDeserializeDict:
         """Test _deserialize_dict with string types."""
         result = _deserialize_dict({"key1": "val1", "key2": "val2"}, str)
         assert result == {"key1": "val1", "key2": "val2"}
+
+
+class TestFlatDictKeys:
+    """Tests for the flat_dict_keys helper."""
+
+    def test_flat_dict(self):
+        assert list(flat_dict_keys({"a": 1, "b": 2})) == ["a", "b"]
+
+    def test_nested_dict(self):
+        result = list(flat_dict_keys({"a": {"b": 1}, "c": 2}))
+        assert result == ["a.b", "c"]
+
+    def test_deeply_nested(self):
+        result = list(flat_dict_keys({"a": {"b": {"c": 3}}}))
+        assert result == ["a.b.c"]
+
+    def test_empty_dict(self):
+        assert list(flat_dict_keys({})) == []
+
+    def test_nested_empty_dict(self):
+        assert list(flat_dict_keys({"a": {}})) == []
+
+    def test_custom_delimiter(self):
+        result = list(flat_dict_keys({"a": {"b": 1}}, delimiter="/"))
+        assert result == ["a/b"]
+
+    def test_non_dict_leaf_values(self):
+        result = list(flat_dict_keys({"a": [1, 2], "b": None, "c": "str", "d": True}))
+        assert result == ["a", "b", "c", "d"]
+
+    def test_non_string_keys(self):
+        result = list(flat_dict_keys({1: {"two": 3}}))
+        assert result == ["1.two"]
+
+    def test_mapping_subclass(self):
+        od = OrderedDict([("x", OrderedDict([("y", 1)])), ("z", 2)])
+        result = list(flat_dict_keys(od))
+        assert result == ["x.y", "z"]
+
+    def test_mixed_nesting(self):
+        data = {"a": {"b": 1, "c": {"d": 2}}, "e": 3}
+        result = list(flat_dict_keys(data))
+        assert result == ["a.b", "a.c.d", "e"]
 
 
 class TestDeserialize:
