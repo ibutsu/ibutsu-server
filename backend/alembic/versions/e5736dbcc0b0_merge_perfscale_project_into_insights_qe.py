@@ -131,7 +131,7 @@ def upgrade() -> None:
 
     if is_pg:
         proj_json = f'{{"project": "{TO_PROJECT_NAME}"}}'
-        extra_set = ", data = COALESCE(data, '{}'::jsonb) || :proj_json::jsonb"
+        extra_set = ", data = COALESCE(data, '{}'::jsonb) || CAST(:proj_json AS jsonb)"
         extra_params = {"proj_json": proj_json}
     else:
         extra_set = ""
