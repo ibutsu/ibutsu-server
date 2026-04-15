@@ -1,13 +1,14 @@
 """merge_perfscale_project_into_insights_qe
 
 Move all runs, results, dashboards, widget_configs, and user associations
-from the hcc-perfscale-cpt project into the insights-qe project, then delete
-the now-empty source project.
+from the hcc-perfscale-cpt project into the insights-qe project.
 
-Updates are batched (BATCH_SIZE rows per commit) to keep lock windows short
-and avoid timeouts on large tables.  Each batch is committed independently,
-so the migration is safe to re-run if interrupted: already-migrated rows
-have the target project_id and will not be touched again.
+The source project is intentionally NOT deleted here because it may still
+have FK references from tables not handled by this migration (e.g. artifacts).
+Clean up the empty project manually after verifying the migration succeeded.
+
+All operations use Alembic's managed connection so that the data changes
+and the alembic_version update commit atomically.
 
 Revision ID: e5736dbcc0b0
 Revises: 8cf9148b9ad9
@@ -33,74 +34,33 @@ FROM_PROJECT = "c6fd19a7-858a-4226-8c27-d8fa7ddf6d0c"  # hcc-perfscale-cpt
 TO_PROJECT = "3915c900-85fc-1222-833c-10d51af56f2e"  # insights-qe
 TO_PROJECT_NAME = "insights-qe"
 
-BATCH_SIZE = 10_000
 
 _ALLOWED_TABLES = frozenset({"runs", "results", "dashboards", "widget_configs"})
 
-# SQL template for batched project_id migration.  {table} and {extra_set} are
-# substituted at build time from hardcoded constants in upgrade(); all runtime
-# values use SQLAlchemy bind parameters (:from_proj, :to_proj, :batch_size).
-_BATCH_SQL = """
-    WITH batch AS (
-        SELECT id FROM {table}
-        WHERE project_id = :from_proj
-        LIMIT :batch_size
-    )
-    UPDATE {table}
-    SET project_id = :to_proj{extra_set}
-    WHERE id IN (SELECT id FROM batch)
-"""
 
+def _move_rows(conn, table, extra_set="", params=None):
+    """Move all rows in *table* from FROM_PROJECT to TO_PROJECT.
 
-def _build_batch_sql(table, extra_set=""):
-    """Build the batched UPDATE statement for a given table.
-
-    Table and extra_set are validated / hardcoded by callers in upgrade() --
-    they are never derived from external input.  All dynamic values flow
-    through SQLAlchemy bind parameters (:from_proj, :to_proj, etc.).
+    Uses the Alembic-managed connection so changes commit atomically
+    with the alembic_version update.
     """
     if table not in _ALLOWED_TABLES:
         raise ValueError(f"table must be one of {_ALLOWED_TABLES}, got {table!r}")
-    return sa.text(_BATCH_SQL.format(table=table, extra_set=extra_set))
-
-
-def _batched_update(conn, table, extra_set="", params=None):
-    """Update rows in batches, committing between each batch to release locks.
-
-    Uses a CTE to SELECT a limited batch of IDs, then UPDATEs only those rows.
-    Each batch runs on a separate connection with its own transaction so that
-    Alembic's outer transaction (managed by env.py) is never desynchronized.
-
-    Safe to re-run: each batch only touches rows still pointing at
-    FROM_PROJECT, so already-migrated rows are never revisited.
-    """
     if params is None:
         params = {}
     params.setdefault("from_proj", FROM_PROJECT)
     params.setdefault("to_proj", TO_PROJECT)
-    params.setdefault("batch_size", BATCH_SIZE)
 
-    stmt = _build_batch_sql(table, extra_set)
-    total = 0
-    batch_num = 0
-    engine = conn.engine
-
-    while True:
-        batch_num += 1
-        with engine.connect() as batch_conn, batch_conn.begin():
-            result = batch_conn.execute(stmt, params)
-            moved = result.rowcount
-        total += moved
-        logger.info("  batch %d: updated %d %s rows (%d total)", batch_num, moved, table, total)
-
-        if moved < BATCH_SIZE:
-            break
-
-    return total
+    stmt = sa.text(
+        f"UPDATE {table} SET project_id = :to_proj{extra_set} WHERE project_id = :from_proj"  # noqa: S608
+    )
+    result = conn.execute(stmt, params)
+    logger.info("  updated %d %s rows", result.rowcount, table)
+    return result.rowcount
 
 
 def upgrade() -> None:
-    """Move all data from hcc-perfscale-cpt into insights-qe, then delete the source project."""
+    """Move all data from hcc-perfscale-cpt into insights-qe."""
     if context.is_offline_mode():
         raise RuntimeError(
             "This migration requires a live database connection and does not support "
@@ -127,27 +87,24 @@ def upgrade() -> None:
     if result.fetchone() is None:
         raise RuntimeError(f"Target project {TO_PROJECT} does not exist")
 
-    is_pg = conn.dialect.name == "postgresql"
-
-    if is_pg:
+    extra_set = ""
+    extra_params = {}
+    if conn.dialect.name == "postgresql":
         proj_json = f'{{"project": "{TO_PROJECT_NAME}"}}'
         extra_set = ", data = COALESCE(data, '{}'::jsonb) || CAST(:proj_json AS jsonb)"
         extra_params = {"proj_json": proj_json}
-    else:
-        extra_set = ""
-        extra_params = {}
 
     logger.info("Moving runs...")
-    _batched_update(conn, "runs", extra_set=extra_set, params=dict(extra_params))
+    _move_rows(conn, "runs", extra_set=extra_set, params=dict(extra_params))
 
     logger.info("Moving results...")
-    _batched_update(conn, "results", extra_set=extra_set, params=dict(extra_params))
+    _move_rows(conn, "results", extra_set=extra_set, params=dict(extra_params))
 
     logger.info("Moving dashboards...")
-    _batched_update(conn, "dashboards")
+    _move_rows(conn, "dashboards")
 
     logger.info("Moving widget_configs...")
-    _batched_update(conn, "widget_configs")
+    _move_rows(conn, "widget_configs")
 
     logger.info("Migrating users_projects...")
     conn.execute(
@@ -162,17 +119,6 @@ def upgrade() -> None:
             """
         ),
         {"to_proj": TO_PROJECT, "from_proj": FROM_PROJECT},
-    )
-
-    conn.execute(
-        sa.text("DELETE FROM users_projects WHERE project_id = :from_proj"),
-        {"from_proj": FROM_PROJECT},
-    )
-
-    logger.info("Deleting source project...")
-    conn.execute(
-        sa.text("DELETE FROM projects WHERE id = :from_proj"),
-        {"from_proj": FROM_PROJECT},
     )
 
     logger.info("Migration complete")
