@@ -105,3 +105,8 @@ div.ibutsu-param-dropdown > div {
 :where(.pf-v5-theme-dark) .pf-v6-c-clipboard-copy .pf-v6-c-form-control[readonly] {
   border-bottom-color: var(--pf-v6-global--BorderColor--400) !important;
 }
+
+:where(.pf-v6-theme-dark) div[id="single-heatmap-cell"] a {
+  color: darkblue;
+  font-weight: bold;
+}
