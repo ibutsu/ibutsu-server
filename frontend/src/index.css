@@ -107,6 +107,6 @@ div.ibutsu-param-dropdown > div {
 }
 
 :where(.pf-v6-theme-dark) div[id="single-heatmap-cell"] a {
-  color: darkblue;
+  color: var(--pf-t--global--color--nonstatus--blue--500);
   font-weight: bold;
 }
