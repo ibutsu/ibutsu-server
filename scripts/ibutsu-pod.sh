@@ -298,18 +298,20 @@ echo "================================="
 echo -n "Adding postgres to the pod:    "
 podman run -dt \
     --rm \
+    --replace \
     --pod "$POD_NAME" \
     -e POSTGRESQL_USER=ibutsu \
     -e POSTGRESQL_DATABASE=ibutsu \
     -e POSTGRESQL_PASSWORD=ibutsu \
     "${POSTGRES_EXTRA_ARGS[@]}" \
     --name ibutsu-postgres \
-    registry.redhat.io/rhel8/postgresql-12
+    registry.redhat.io/rhel8/postgresql-15
 
 echo "================================="
 echo -n "Adding redis to the pod:    "
 podman run -dt \
     --rm \
+    --replace \
     --pod "$POD_NAME" \
     "${REDIS_EXTRA_ARGS[@]}" \
     --name ibutsu-redis \
@@ -322,6 +324,7 @@ if [[ $USE_IMAGES = true ]]; then
     # Use pre-built image - run init_db.py first, then start gunicorn
     podman run -d \
         --rm \
+        --replace \
         --pod "$POD_NAME" \
         --name ibutsu-backend \
         -e JWT_SECRET="$JWT_SECRET" \
@@ -338,6 +341,7 @@ else
     # Use runtime dev mount with pip install
     podman run -d \
         --rm \
+        --replace \
         --pod "$POD_NAME" \
         --name ibutsu-backend \
         -e JWT_SECRET="$JWT_SECRET" \
@@ -357,9 +361,20 @@ else
 fi
 echo -n "Waiting for backend to respond: "
 sleep 5
+BACKEND_WAIT=0
+BACKEND_TIMEOUT=600
 until curl --output /dev/null --silent --head --fail http://$LOCAL_HOST:$LOCAL_PORT_BACKEND; do
   echo -n ' .'
   sleep 2
+  BACKEND_WAIT=$((BACKEND_WAIT + 2))
+  if [ $BACKEND_WAIT -ge $BACKEND_TIMEOUT ]; then
+    echo ""
+    echo "ERROR: Backend failed to start within ${BACKEND_TIMEOUT}s. Container logs:"
+    echo "----- ibutsu-backend logs -----"
+    podman logs ibutsu-backend
+    echo "----- end logs -----"
+    exit 1
+  fi
 done
 echo " backend up."
 
@@ -371,6 +386,7 @@ if [[ $USE_IMAGES = true ]]; then
     # Use pre-built image
     podman run -d \
         --rm \
+        --replace \
         --pod "$POD_NAME" \
         --name ibutsu-worker \
         -e COLUMNS=80 \
@@ -381,6 +397,7 @@ else
     # Use runtime dev mount with pip install
     podman run -d \
         --rm \
+        --replace \
         --pod "$POD_NAME" \
         --name ibutsu-worker \
         -e COLUMNS=80 \
@@ -407,6 +424,7 @@ if [[ $USE_IMAGES = true ]]; then
     # Use pre-built image
     podman run -d \
         --rm \
+        --replace \
         --pod "$POD_NAME" \
         --name ibutsu-scheduler \
         -e COLUMNS=80 \
@@ -417,6 +435,7 @@ else
     # Use runtime dev mount with pip install
     podman run -d \
         --rm \
+        --replace \
         --pod "$POD_NAME" \
         --name ibutsu-scheduler \
         -e COLUMNS=80 \
@@ -437,6 +456,7 @@ if [[ $USE_IMAGES = true ]]; then
     # Use pre-built image
     podman run -d \
         --rm \
+        --replace \
         --pod "$POD_NAME" \
         --name ibutsu-flower \
         -e CELERY_BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
@@ -446,6 +466,7 @@ else
     # Use runtime dev mount with pip install
     podman run -d \
         --rm \
+        --replace \
         --pod "$POD_NAME" \
         --name ibutsu-flower \
         -e CELERY_BROKER_URL=redis://$LOCAL_HOST:$LOCAL_PORT_REDIS \
@@ -853,6 +874,7 @@ if [[ $USE_IMAGES = true ]]; then
     # Use pre-built image - override CMD to serve on the configured port
     podman run -d \
         --rm \
+        --replace \
         --pod "$POD_NAME" \
         --name ibutsu-frontend \
         -e REACT_APP_SERVER_URL="http://${LOCAL_HOST}:${LOCAL_PORT_BACKEND}/api" \
@@ -862,6 +884,7 @@ else
     # Use runtime dev mount with yarn install
     podman run -d \
         --rm \
+        --replace \
         --pod "$POD_NAME" \
         --name ibutsu-frontend \
         -w /mnt \
