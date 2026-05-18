@@ -78,7 +78,9 @@ def string_to_column(field, model):
                 continue
             column = column[part]
 
-        if field not in ARRAY_FIELDS and field not in NUMERIC_FIELDS:
+        if field in NUMERIC_FIELDS:
+            column = column.as_float()
+        elif field not in ARRAY_FIELDS:
             column = column.as_string()
     else:
         try:
@@ -132,8 +134,9 @@ def convert_filter(filter_string, model):
         return _null_compare(column, value)
     if oper == "*":
         value = value.split(";")
-    elif not is_version and "build_number" not in field:
-        # This is a horrible hack, because Jenkins build numbers are strings :-(
+    elif field in NUMERIC_FIELDS or (not is_version and "build_number" not in field):
+        # Always convert for numeric fields; version-like strings and Jenkins build numbers
+        # are kept as strings because they need string comparison semantics.
         value = _to_int_or_float(value)
     if is_array_field:
         return _array_compare(oper, column, value)

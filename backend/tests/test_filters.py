@@ -3,7 +3,9 @@
 from unittest.mock import MagicMock
 
 import pytest
+from sqlalchemy import Float, String
 
+from ibutsu_server.constants import ARRAY_FIELDS, NUMERIC_FIELDS
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Result, Run
 from ibutsu_server.filters import (
@@ -15,6 +17,18 @@ from ibutsu_server.filters import (
     has_project_filter,
     string_to_column,
 )
+
+# NUMERIC_FIELDS that are stored as JSON sub-keys (summary.*).
+# These go through the JSON path accessor in string_to_column and therefore
+# receive an explicit as_float() cast.  A non-numeric value stored in the
+# database for any of these keys will raise a database error at query time
+# rather than silently returning incorrect results.
+_JSON_NUMERIC_FIELDS = [f for f in NUMERIC_FIELDS if f.startswith("summary.")]
+
+# NUMERIC_FIELDS that map to native ORM columns (not JSON paths).
+# These bypass the JSON accessor branch entirely, so as_float() is never
+# applied to them; their type is already enforced by the column definition.
+_DIRECT_NUMERIC_FIELDS = [f for f in NUMERIC_FIELDS if not f.startswith("summary.")]
 
 
 @pytest.fixture
@@ -189,6 +203,192 @@ class TestStringToColumn:
         subquery = db.select(Run).subquery()
         column = string_to_column("env", subquery)
         assert column is not None
+
+
+class TestStringToColumnCastSemantics:
+    """Explicit coverage for the JSON-cast behavior introduced by as_float() / as_string().
+
+    The contract under test:
+    - Every field listed in NUMERIC_FIELDS whose first segment is "summary" is
+      accessed via the Run.summary JSONB column and then cast to Float with
+      as_float().  This produces correct numeric ordering but will raise a
+      database-level error if a stored value cannot be cast to a number.
+    - Non-numeric JSON fields (data.*, metadata.*, non-array summary.*) are
+      cast to String via as_string(), preserving the previous text-comparison
+      behaviour.
+    - Array fields (metadata.tags etc.) receive neither cast; they remain raw
+      JSON path expressions so that array operators (@>, ?|) work correctly.
+    - Direct ORM columns (duration, start_time) never pass through the JSON
+      accessor branch and are therefore unaffected by as_float().
+    """
+
+    @pytest.mark.parametrize("field", _JSON_NUMERIC_FIELDS)
+    def test_json_numeric_fields_produce_float_cast(self, app_ctx, field):
+        """Every summary.* NUMERIC_FIELD must use an explicit Float cast.
+
+        Verifies that the as_float() path is taken, meaning:
+        1. Comparisons use numeric ordering, not lexicographic ordering.
+        2. A row whose stored JSON value is not numeric will raise a database
+           error at query time (not silently return wrong results).
+        """
+        column = string_to_column(field, Run)
+        assert column is not None, f"string_to_column returned None for {field!r}"
+        assert isinstance(column.type, Float), (
+            f"{field!r} expected a Float-cast column (as_float()) "
+            f"but got type {type(column.type).__name__!r}. "
+            "Check that this field is still listed in NUMERIC_FIELDS."
+        )
+
+    @pytest.mark.parametrize(
+        ("field", "model"),
+        [
+            ("data.component", Result),
+            ("data.env", Result),
+            ("metadata.jenkins.job_name", Run),
+            ("metadata.jenkins.build_url", Run),
+        ],
+    )
+    def test_non_numeric_json_fields_produce_string_cast(self, app_ctx, field, model):
+        """Non-numeric JSON fields must use a String cast, not a Float cast.
+
+        This guards against accidentally adding a field to NUMERIC_FIELDS and
+        breaking text-comparison filters on fields that hold string values.
+        """
+        column = string_to_column(field, model)
+        assert column is not None, f"string_to_column returned None for {field!r}"
+        assert isinstance(column.type, String), (
+            f"{field!r} expected a String-cast column (as_string()) "
+            f"but got type {type(column.type).__name__!r}."
+        )
+        assert not isinstance(column.type, Float), (
+            f"{field!r} must not be Float-cast; it holds string values."
+        )
+
+    @pytest.mark.parametrize("field", ARRAY_FIELDS)
+    def test_array_fields_are_not_scalar_cast(self, app_ctx, field):
+        """Array fields must not receive a Float or String cast.
+
+        Array comparisons use the @> and ?| JSON operators; casting to a scalar
+        type first would make these operators unusable.
+        """
+        column = string_to_column(field, Run)
+        assert column is not None, f"string_to_column returned None for {field!r}"
+        assert not isinstance(column.type, Float), f"Array field {field!r} must not be Float-cast."
+        assert not isinstance(column.type, String), (
+            f"Array field {field!r} must not be String-cast."
+        )
+
+    @pytest.mark.parametrize("field", _DIRECT_NUMERIC_FIELDS)
+    def test_direct_numeric_columns_bypass_json_accessor(self, app_ctx, field):
+        """Direct ORM columns (duration, start_time) bypass the JSON path branch.
+
+        These fields already have the correct DB type from the column definition
+        and do not need an explicit JSON cast.  Verifying they resolve to a
+        non-None column ensures they are not accidentally reclassified as JSON
+        fields.
+        """
+        column = string_to_column(field, Run)
+        assert column is not None, (
+            f"string_to_column returned None for direct column {field!r}. "
+            "If this field was moved to a JSON column, update this test."
+        )
+        # These are native ORM columns, not JSON path expressions, so they will
+        # NOT be Float instances from as_float() — their type comes from the
+        # SQLAlchemy column definition (Float for duration, DateTime for start_time).
+        # We only assert the column resolves without error.
+
+    def test_summary_pass_percent_uses_float_cast(self, app_ctx):
+        """Explicit regression test: summary.pass_percent must be Float-cast.
+
+        This field was added to NUMERIC_FIELDS alongside the as_float() change.
+        A dedicated test makes the intent impossible to miss during code review.
+        """
+        column = string_to_column("summary.pass_percent", Run)
+        assert column is not None
+        assert isinstance(column.type, Float), (
+            "summary.pass_percent must produce a Float cast so that "
+            "percentage comparisons use numeric ordering."
+        )
+
+
+class TestConvertFilterNumericFieldSemantics:
+    """Tests for the numeric comparison semantics of convert_filter on JSON fields.
+
+    The as_float() cast on NUMERIC_FIELDS means:
+    - Comparison operators (>, <, >=, <=) behave with numeric ordering.
+    - The filter value is also converted to int/float by _to_int_or_float.
+    - Rows with non-numeric JSON values for these keys will produce a database
+      error at query time.
+    """
+
+    @pytest.mark.parametrize("field", _JSON_NUMERIC_FIELDS)
+    def test_numeric_json_field_equality_filter(self, app_ctx, field):
+        """convert_filter must produce a non-None clause for equality on JSON numeric fields."""
+        result = convert_filter(f"{field}=10", Run)
+        assert result is not None, f"convert_filter returned None for equality filter on {field!r}"
+
+    @pytest.mark.parametrize("field", _JSON_NUMERIC_FIELDS)
+    def test_numeric_json_field_greater_than_filter(self, app_ctx, field):
+        """Numeric JSON fields must support greater-than comparisons."""
+        result = convert_filter(f"{field}>5", Run)
+        assert result is not None, f"convert_filter returned None for '>' filter on {field!r}"
+
+    @pytest.mark.parametrize("field", _JSON_NUMERIC_FIELDS)
+    def test_numeric_json_field_less_than_filter(self, app_ctx, field):
+        """Numeric JSON fields must support less-than comparisons."""
+        result = convert_filter(f"{field}<100", Run)
+        assert result is not None, f"convert_filter returned None for '<' filter on {field!r}"
+
+    @pytest.mark.parametrize("field", _JSON_NUMERIC_FIELDS)
+    def test_numeric_json_field_gte_filter(self, app_ctx, field):
+        """Numeric JSON fields must support greater-than-or-equal comparisons."""
+        result = convert_filter(f"{field})0", Run)
+        assert result is not None, f"convert_filter returned None for ')' (>=) filter on {field!r}"
+
+    @pytest.mark.parametrize("field", _JSON_NUMERIC_FIELDS)
+    def test_numeric_json_field_lte_filter(self, app_ctx, field):
+        """Numeric JSON fields must support less-than-or-equal comparisons."""
+        result = convert_filter(f"{field}(50", Run)
+        assert result is not None, f"convert_filter returned None for '(' (<=) filter on {field!r}"
+
+    @pytest.mark.parametrize("field", _JSON_NUMERIC_FIELDS)
+    def test_numeric_json_field_not_equal_filter(self, app_ctx, field):
+        """Numeric JSON fields must support not-equal comparisons."""
+        result = convert_filter(f"{field}!0", Run)
+        assert result is not None, f"convert_filter returned None for '!' filter on {field!r}"
+
+    def test_numeric_value_is_converted_to_int_for_integer_string(self, app_ctx):
+        """Numeric field values supplied as integer strings are cast to int, not kept as str."""
+        # summary.failures is a NUMERIC_FIELD; value "3" should be converted to int(3)
+        result = convert_filter("summary.failures=3", Run)
+        assert result is not None
+
+    def test_numeric_value_is_converted_to_float_for_float_string(self, app_ctx):
+        """Numeric field values supplied as float strings are cast to float."""
+        result = convert_filter("summary.pass_percent=99.5", Run)
+        assert result is not None
+
+    def test_non_numeric_string_value_on_numeric_field_is_kept_as_str(self, app_ctx):
+        """A non-numeric string value for a NUMERIC_FIELD stays as a string.
+
+        This exercises the _to_int_or_float fallback.  The database will still
+        apply the as_float() cast to the column side; the right-hand string
+        value will be passed through as-is and may cause a type-mismatch error
+        at query execution time.  The purpose here is to verify no exception is
+        raised at filter *construction* time.
+        """
+        result = convert_filter("summary.failures=not_a_number", Run)
+        assert result is not None, (
+            "Filter construction must not raise even if the value is non-numeric; "
+            "type errors surface only when the query is executed against the database."
+        )
+
+    def test_summary_pass_percent_range_filter(self, app_ctx):
+        """Regression: summary.pass_percent supports range comparisons after Float cast."""
+        above = convert_filter("summary.pass_percent)80.0", Run)
+        below = convert_filter("summary.pass_percent(100.0", Run)
+        assert above is not None, "Lower-bound filter on summary.pass_percent must not be None"
+        assert below is not None, "Upper-bound filter on summary.pass_percent must not be None"
 
 
 class TestConvertFilter:

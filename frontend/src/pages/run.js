@@ -42,6 +42,7 @@ import {
   resultToRow,
   filtersToAPIParams,
   filtersToSearchParams,
+  getRunPassPercent,
   processPyTestPath,
   cleanPath,
 } from '../utilities';
@@ -596,6 +597,20 @@ const Run = ({ defaultTab = 'summary' }) => {
                                               {run?.summary?.collected ||
                                                 run?.summary?.tests ||
                                                 'Summary Error'}
+                                            </DataListCell>,
+                                          ]}
+                                        />
+                                      </DataListItemRow>
+                                    </DataListItem>
+                                    <DataListItem aria-labelledby="Pass Percentage">
+                                      <DataListItemRow>
+                                        <DataListItemCells
+                                          dataListCells={[
+                                            <DataListCell key={1}>
+                                              Pass %:
+                                            </DataListCell>,
+                                            <DataListCell key={2}>
+                                              {getRunPassPercent(run.summary)}
                                             </DataListCell>,
                                           ]}
                                         />

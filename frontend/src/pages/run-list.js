@@ -14,7 +14,7 @@ import usePagination from '../components/hooks/use-pagination';
 import { FilterContext } from '../components/contexts/filter-context';
 import { RUN_FIELDS } from '../constants';
 
-const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
+const COLUMNS = ['Run', 'Duration', 'Summary', 'Pass %', 'Started', ''];
 const HIDE = ['project_id'];
 
 // Sort functions for RunList columns

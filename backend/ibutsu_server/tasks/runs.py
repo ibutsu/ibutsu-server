@@ -86,6 +86,9 @@ def update_run(run_id):
             + summary["failures"]
             + summary["skips"]
         )
+        summary["pass_percent"] = (
+            int((summary["passes"] / summary["tests"]) * 100) if summary["tests"] > 0 else 0
+        )
         # determine the number of tests that didn't run
         summary["not_run"] = max(summary["collected"] - summary["tests"], 0)
 

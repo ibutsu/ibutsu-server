@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { ICON_RESULT_MAP } from '../constants';
 import RunSummary from '../components/run-summary';
 import { buildBadge } from './badges';
+import { getRunPassPercent } from './run';
 import { toTitleCase } from './strings';
 import { filtersToSearchParams } from './filters';
 
@@ -234,6 +235,7 @@ export const runToRow = (run, filterFunc) => {
     }
     badges.push(envBadge);
   }
+  const passPercent = getRunPassPercent(run.summary);
   return {
     cells: [
       <Fragment key="run">
@@ -241,6 +243,7 @@ export const runToRow = (run, filterFunc) => {
       </Fragment>,
       Math.ceil(run.duration) + 's',
       <RunSummary key="summary" summary={run.summary} />,
+      passPercent,
       created.toLocaleString(),
       <Link
         key="see-results"
