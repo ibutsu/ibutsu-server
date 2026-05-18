@@ -601,5 +601,51 @@ describe('Table Utilities', () => {
         expect(sorted[1].cells[1]).toBe('1/1/2023, 10:00:00 AM');
       });
     });
+
+    describe('passPercent', () => {
+      it('should sort pass percentage values correctly', () => {
+        const rows = [
+          { cells: ['test1', '75'] },
+          { cells: ['test2', '20'] },
+          { cells: ['test3', '100'] },
+        ];
+
+        const sorted = rows.sort((a, b) =>
+          tableSortFunctions.passPercent(a, b, 'asc', 1),
+        );
+        expect(sorted[0].cells[1]).toBe('20');
+        expect(sorted[2].cells[1]).toBe('100');
+      });
+
+      it('should sort in descending order', () => {
+        const rows = [{ cells: ['test1', '20'] }, { cells: ['test2', '100'] }];
+
+        const sorted = rows.sort((a, b) =>
+          tableSortFunctions.passPercent(a, b, 'desc', 1),
+        );
+        expect(sorted[0].cells[1]).toBe('100');
+        expect(sorted[1].cells[1]).toBe('20');
+      });
+
+      it('should treat N/A as lower than any percentage', () => {
+        const rows = [{ cells: ['test1', '20'] }, { cells: ['test2', 'N/A'] }];
+
+        const sorted = rows.sort((a, b) =>
+          tableSortFunctions.passPercent(a, b, 'asc', 1),
+        );
+        expect(sorted[0].cells[1]).toBe('N/A');
+        expect(sorted[1].cells[1]).toBe('20');
+      });
+
+      it('should handle missing pass percentage values', () => {
+        const rows = [{ cells: ['test1', null] }, { cells: ['test2', '60'] }];
+
+        const sorted = rows.sort((a, b) =>
+          tableSortFunctions.passPercent(a, b, 'asc', 1),
+        );
+        expect(sorted[0].cells[1]).toBe(null);
+        expect(sorted[1].cells[1]).toBe('60');
+      });
+    });
   });
 });

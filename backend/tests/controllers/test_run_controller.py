@@ -561,6 +561,166 @@ def test_get_run_list_various_filters(
     assert "runs" in response_data
 
 
+def test_filter_pass_percent_greater_than(flask_app, make_project, make_run, auth_headers):
+    """Test filtering runs where pass_percent > threshold returns only matching runs."""
+    client, jwt_token = flask_app
+
+    project = make_project(name="pass-pct-gt-project")
+
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 5, "errors": 0, "skips": 0, "pass_percent": 95},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 50, "errors": 0, "skips": 0, "pass_percent": 50},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 20, "errors": 0, "skips": 0, "pass_percent": 80},
+    )
+
+    query_string = [
+        ("filter", f"project_id={project.id}"),
+        ("filter", "summary.pass_percent>80"),
+    ]
+    headers = auth_headers(jwt_token)
+    response = client.get("/api/run", headers=headers, params=query_string)
+    assert response.status_code == 200
+
+    response_data = response.json()
+    assert len(response_data["runs"]) == 1
+    assert response_data["runs"][0]["summary"]["pass_percent"] == 95
+
+
+def test_filter_pass_percent_less_than(flask_app, make_project, make_run, auth_headers):
+    """Test filtering runs where pass_percent < threshold returns only matching runs."""
+    client, jwt_token = flask_app
+
+    project = make_project(name="pass-pct-lt-project")
+
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 5, "errors": 0, "skips": 0, "pass_percent": 95},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 50, "errors": 0, "skips": 0, "pass_percent": 50},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 20, "errors": 0, "skips": 0, "pass_percent": 80},
+    )
+
+    query_string = [
+        ("filter", f"project_id={project.id}"),
+        ("filter", "summary.pass_percent<80"),
+    ]
+    headers = auth_headers(jwt_token)
+    response = client.get("/api/run", headers=headers, params=query_string)
+    assert response.status_code == 200
+
+    response_data = response.json()
+    assert len(response_data["runs"]) == 1
+    assert response_data["runs"][0]["summary"]["pass_percent"] == 50
+
+
+def test_filter_pass_percent_equals(flask_app, make_project, make_run, auth_headers):
+    """Test filtering runs where pass_percent = exact value returns only matching runs."""
+    client, jwt_token = flask_app
+
+    project = make_project(name="pass-pct-eq-project")
+
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 5, "errors": 0, "skips": 0, "pass_percent": 95},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 50, "errors": 0, "skips": 0, "pass_percent": 50},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 20, "errors": 0, "skips": 0, "pass_percent": 80},
+    )
+
+    query_string = [
+        ("filter", f"project_id={project.id}"),
+        ("filter", "summary.pass_percent=80"),
+    ]
+    headers = auth_headers(jwt_token)
+    response = client.get("/api/run", headers=headers, params=query_string)
+    assert response.status_code == 200
+
+    response_data = response.json()
+    assert len(response_data["runs"]) == 1
+    assert response_data["runs"][0]["summary"]["pass_percent"] == 80
+
+
+def test_filter_pass_percent_gte(flask_app, make_project, make_run, auth_headers):
+    """Test filtering runs where pass_percent >= threshold includes the boundary value."""
+    client, jwt_token = flask_app
+
+    project = make_project(name="pass-pct-gte-project")
+
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 51, "errors": 0, "skips": 0, "pass_percent": 49},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 50, "errors": 0, "skips": 0, "pass_percent": 50},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 49, "errors": 0, "skips": 0, "pass_percent": 51},
+    )
+
+    query_string = [
+        ("filter", f"project_id={project.id}"),
+        ("filter", "summary.pass_percent>=50"),
+    ]
+    headers = auth_headers(jwt_token)
+    response = client.get("/api/run", headers=headers, params=query_string)
+    assert response.status_code == 200
+
+    response_data = response.json()
+    returned_percents = sorted(r["summary"]["pass_percent"] for r in response_data["runs"])
+    assert returned_percents == [50, 51], "49 should be excluded; 50 and 51 should be included"
+
+
+def test_filter_pass_percent_lte(flask_app, make_project, make_run, auth_headers):
+    """Test filtering runs where pass_percent <= threshold includes the boundary value."""
+    client, jwt_token = flask_app
+
+    project = make_project(name="pass-pct-lte-project")
+
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 51, "errors": 0, "skips": 0, "pass_percent": 49},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 50, "errors": 0, "skips": 0, "pass_percent": 50},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 100, "failures": 49, "errors": 0, "skips": 0, "pass_percent": 51},
+    )
+
+    query_string = [
+        ("filter", f"project_id={project.id}"),
+        ("filter", "summary.pass_percent<=50"),
+    ]
+    headers = auth_headers(jwt_token)
+    response = client.get("/api/run", headers=headers, params=query_string)
+    assert response.status_code == 200
+
+    response_data = response.json()
+    returned_percents = sorted(r["summary"]["pass_percent"] for r in response_data["runs"])
+    assert returned_percents == [49, 50], "51 should be excluded; 49 and 50 should be included"
+
+
 def test_get_run_not_found(flask_app, auth_headers):
     """Test get_run for non-existent run"""
     client, jwt_token = flask_app

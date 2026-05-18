@@ -6,7 +6,7 @@ from unittest.mock import patch
 from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run
-from ibutsu_server.tasks.runs import sync_aborted_runs, update_run
+from ibutsu_server.tasks.runs import compute_pass_percent, sync_aborted_runs, update_run
 
 
 def test_update_run(make_project, make_run, make_result, flask_app, fixed_time):
@@ -55,6 +55,7 @@ def test_update_run(make_project, make_run, make_result, flask_app, fixed_time):
         assert updated_run.summary["passes"] == 1
         assert updated_run.summary["failures"] == 1
         assert updated_run.summary["errors"] == 1
+        assert updated_run.summary["pass_percent"] == 33
         assert updated_run.duration == 4.5
 
 
@@ -224,6 +225,7 @@ def test_update_run_with_none_summary(make_project, make_run, make_result, flask
         assert updated_run.summary["tests"] == 2
         assert updated_run.summary["passes"] == 1
         assert updated_run.summary["failures"] == 1
+        assert updated_run.summary["pass_percent"] == 50
 
 
 def test_update_run_with_empty_summary(make_project, make_run, make_result, flask_app):
@@ -262,3 +264,86 @@ def test_update_run_with_empty_summary(make_project, make_run, make_result, flas
         assert "tests" in updated_run.summary
         assert updated_run.summary["tests"] == 1
         assert updated_run.summary["passes"] == 1
+        assert updated_run.summary["pass_percent"] == 100
+
+
+def test_update_run_pass_percent_zero_tests(make_project, make_run, flask_app):
+    """When there are zero tests, pass_percent should be forced to 0 (no division-by-zero)."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        project = make_project(name="test-project")
+        # collected > 0 but no results created, so tests will remain 0
+        run = make_run(
+            project_id=project.id,
+            summary={"collected": 10, "tests": 0, "failures": 0, "errors": 0},
+        )
+
+        with patch("ibutsu_server.tasks.runs.lock"):
+            update_run(str(run.id))
+
+        session.expire_all()
+        updated_run = db.session.get(Run, run.id)
+
+        assert updated_run.summary is not None
+        assert updated_run.summary["tests"] == 0
+        assert updated_run.summary["passes"] == 0
+        assert updated_run.summary["pass_percent"] == 0
+
+
+def test_update_run_pass_percent_floors(make_project, make_run, make_result, flask_app, fixed_time):
+    """Test that pass_percent is floored, not rounded -- 999/1000 should be 99, not 100."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        project = make_project(name="test-project")
+        run = make_run(
+            project_id=project.id,
+            summary={"collected": 1000, "tests": 0, "failures": 0, "errors": 0},
+        )
+
+        for i in range(1000):
+            make_result(
+                run_id=run.id,
+                project_id=project.id,
+                result="passed" if i < 999 else "failed",
+                duration=0.01,
+                start_time=fixed_time,
+            )
+
+        with patch("ibutsu_server.tasks.runs.lock"):
+            update_run(str(run.id))
+
+        session.expire_all()
+        updated_run = db.session.get(Run, run.id)
+
+        assert updated_run.summary["tests"] == 1000
+        assert updated_run.summary["passes"] == 999
+        assert updated_run.summary["failures"] == 1
+        assert updated_run.summary["pass_percent"] == 99
+
+
+# compute_pass_percent is the single source of truth for the pass_percent
+# formula (see its docstring); it is exercised directly here so the clamping
+# behaviour can be tested against inconsistent/malformed inputs that
+# update_run's own result-counting logic can never actually produce (since
+# it derives "tests" and "passes" from the same set of Result rows, so
+# passes can never legitimately exceed tests or go negative there).
+def test_compute_pass_percent_zero_tests():
+    assert compute_pass_percent(passes=0, tests=0) == 0
+    assert compute_pass_percent(passes=5, tests=0) == 0
+
+
+def test_compute_pass_percent_floors():
+    assert compute_pass_percent(passes=999, tests=1000) == 99
+    assert compute_pass_percent(passes=1, tests=3) == 33
+
+
+def test_compute_pass_percent_clamps_above_100():
+    """passes > tests (inconsistent/malformed summary) should clamp to 100, not overflow."""
+    assert compute_pass_percent(passes=15, tests=10) == 100
+
+
+def test_compute_pass_percent_clamps_below_0():
+    """A negative derived pass count (inconsistent/malformed summary) should clamp to 0."""
+    assert compute_pass_percent(passes=-2, tests=10) == 0

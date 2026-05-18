@@ -127,6 +127,7 @@ export const NUMERIC_RUN_FIELDS = [
   { value: 'duration', children: 'Duration' },
   { value: 'summary.errors', children: 'Summary Error Count' },
   { value: 'summary.failures', children: 'Summary Failure Count' },
+  { value: 'summary.pass_percent', children: 'Pass Percentage' },
   { value: 'summary.skips', children: 'Summary Skip Count' },
   { value: 'summary.xfailures', children: 'Summary Xfailure Count' },
   { value: 'summary.xpasses', children: 'Summary Xpasses Count' },
