@@ -57,6 +57,9 @@ def upgrade() -> None:
 
     conn = op.get_bind()
 
+    # The backfill and index use PostgreSQL-specific JSON operators and
+    # expression indexes.  SQLite (used in dev/test) has no runs with
+    # production data, so skipping is safe there.
     if conn.dialect.name != "postgresql":
         logger.info("Non-PostgreSQL dialect; skipping pass_percent backfill")
         return
@@ -64,55 +67,117 @@ def upgrade() -> None:
     result = conn.execute(
         sa.text(
             """
-            UPDATE runs
+            -- Normalize each counter field from text to numeric exactly once so
+            -- the UPDATE expression stays shallow and avoids repeating casts and
+            -- regex guards.  Fields that are absent or non-numeric are coerced to
+            -- NULL (tests/passes, which drive branching) or 0 (loss counters,
+            -- which default-to-zero is safe for subtraction arithmetic).
+            WITH normalized AS (
+                SELECT
+                    id,
+                    CASE
+                        WHEN summary->>'tests' ~ '^[0-9]+$'
+                        THEN (summary->>'tests')::numeric
+                        ELSE NULL
+                    END AS tests_num,
+                    CASE
+                        WHEN summary->>'passes' ~ '^[0-9]+$'
+                        THEN (summary->>'passes')::numeric
+                        ELSE NULL
+                    END AS passes_num,
+                    -- Loss counters default to 0 so the derived-passes arithmetic
+                    -- below stays correct even when a counter key is missing.
+                    CASE
+                        WHEN summary->>'failures' ~ '^[0-9]+$'
+                        THEN (summary->>'failures')::numeric
+                        ELSE 0
+                    END AS failures_num,
+                    CASE
+                        WHEN summary->>'errors' ~ '^[0-9]+$'
+                        THEN (summary->>'errors')::numeric
+                        ELSE 0
+                    END AS errors_num,
+                    CASE
+                        WHEN summary->>'skips' ~ '^[0-9]+$'
+                        THEN (summary->>'skips')::numeric
+                        ELSE 0
+                    END AS skips_num,
+                    -- xpasses and xfailures count as non-passing outcomes and are
+                    -- subtracted when deriving passes from counters.
+                    CASE
+                        WHEN summary->>'xpasses' ~ '^[0-9]+$'
+                        THEN (summary->>'xpasses')::numeric
+                        ELSE 0
+                    END AS xpasses_num,
+                    CASE
+                        WHEN summary->>'xfailures' ~ '^[0-9]+$'
+                        THEN (summary->>'xfailures')::numeric
+                        ELSE 0
+                    END AS xfailures_num
+                FROM runs
+                WHERE summary IS NOT NULL
+                  AND summary->'pass_percent' IS NULL   -- skip already-backfilled rows
+            )
+            UPDATE runs AS r
             SET summary = jsonb_set(
-                COALESCE(summary, '{}'::jsonb),
+                COALESCE(r.summary, '{}'::jsonb),
                 '{pass_percent}',
                 to_jsonb(
                     CASE
-                        -- passes key present: compute directly from passes/tests
-                        WHEN summary IS NOT NULL
-                         AND summary->>'tests' ~ '^[0-9]+$'
-                         AND (summary->>'tests')::int > 0
-                         AND summary->>'passes' ~ '^[0-9]+$'
-                        THEN floor(
-                            ((summary->>'passes')::numeric
-                             / (summary->>'tests')::numeric) * 100
-                        )::int
+                        -- Modern runs that recorded a 'passes' counter directly.
+                        -- This is the preferred path; divide passes by tests.
+                        WHEN n.tests_num IS NOT NULL
+                         AND n.tests_num > 0
+                         AND n.passes_num IS NOT NULL
+                        THEN LEAST(
+                            GREATEST(
+                                floor((n.passes_num / n.tests_num) * 100)::int,
+                                0    -- guard against a passes value > tests
+                            ),
+                            100      -- guard against a passes value > tests
+                        )
 
-                        -- no passes key (very old runs): derive from counters
-                        WHEN summary IS NOT NULL
-                         AND summary->>'tests' ~ '^[0-9]+$'
-                         AND (summary->>'tests')::int > 0
-                         AND summary->>'passes' IS NULL
-                        THEN floor(
-                            (
-                                (summary->>'tests')::numeric
-                                - CASE WHEN summary->>'failures' ~ '^[0-9]+$'
-                                       THEN (summary->>'failures')::numeric ELSE 0 END
-                                - CASE WHEN summary->>'errors' ~ '^[0-9]+$'
-                                       THEN (summary->>'errors')::numeric ELSE 0 END
-                                - CASE WHEN summary->>'skips' ~ '^[0-9]+$'
-                                       THEN (summary->>'skips')::numeric ELSE 0 END
-                                - CASE WHEN summary->>'xpasses' ~ '^[0-9]+$'
-                                       THEN (summary->>'xpasses')::numeric ELSE 0 END
-                                - CASE WHEN summary->>'xfailures' ~ '^[0-9]+$'
-                                       THEN (summary->>'xfailures')::numeric ELSE 0 END
-                            ) / (summary->>'tests')::numeric * 100
-                        )::int
+                        -- Very old runs that never stored a 'passes' key.
+                        -- Derive passes by subtracting every known loss counter
+                        -- from the total.  LEAST/GREATEST clamps the result to
+                        -- [0, 100] in case the historical counters are inconsistent
+                        -- (e.g. sum of losses exceeds tests due to data corruption).
+                        WHEN n.tests_num IS NOT NULL
+                         AND n.tests_num > 0
+                         AND n.passes_num IS NULL
+                        THEN LEAST(
+                            GREATEST(
+                                floor(
+                                    (
+                                        n.tests_num
+                                        - n.failures_num
+                                        - n.errors_num
+                                        - n.skips_num
+                                        - n.xpasses_num
+                                        - n.xfailures_num
+                                    ) / n.tests_num * 100
+                                )::int,
+                                0
+                            ),
+                            100
+                        )
 
-                        -- zero tests, missing tests key, or malformed values: store 0
+                        -- tests is 0, absent, or malformed: no meaningful
+                        -- percentage can be computed, store 0 as a sentinel.
                         ELSE 0
                     END
                 )
             )
-            WHERE summary IS NOT NULL
-              AND summary->'pass_percent' IS NULL
+            FROM normalized AS n
+            WHERE r.id = n.id
             """
         )
     )
     logger.info("Backfilled pass_percent for %d runs", result.rowcount)
 
+    # Expression index on the integer cast of summary->>'pass_percent' so that
+    # range filter queries (e.g. pass_percent >= 80) can use an index scan
+    # rather than a full sequential scan over the JSONB column.
     _ensure_index(
         "ix_runs_pass_percent",
         "runs",
@@ -124,4 +189,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Drops the expression index only.  The backfilled pass_percent values are
+    # left in place intentionally: removing them would require re-deriving each
+    # value and risks data loss if the source counters have since been modified.
+    # Re-running upgrade() after a downgrade is safe because the CTE filters on
+    # summary->'pass_percent' IS NULL, so already-populated rows are skipped.
     _ensure_index("ix_runs_pass_percent", "runs", None, create=False)
