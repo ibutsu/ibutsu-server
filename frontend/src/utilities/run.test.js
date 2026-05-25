@@ -6,9 +6,9 @@ describe('getRunPassPercent', () => {
     expect(getRunPassPercent(undefined)).toBe('N/A');
   });
 
-  it('should return N/A when summary has no tests', () => {
-    expect(getRunPassPercent({})).toBe('N/A');
-    expect(getRunPassPercent({ tests: 0 })).toBe('N/A');
+  it('should return 0% when summary has no tests, matching backend semantics', () => {
+    expect(getRunPassPercent({})).toBe('0%');
+    expect(getRunPassPercent({ tests: 0 })).toBe('0%');
   });
 
   it('should return stored pass_percent when available', () => {

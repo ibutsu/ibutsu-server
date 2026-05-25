@@ -602,7 +602,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                         />
                                       </DataListItemRow>
                                     </DataListItem>
-                                    <DataListItem aria-labelledby="Pass Percentage">
+                                    <DataListItem aria-label="Pass Percentage">
                                       <DataListItemRow>
                                         <DataListItemCells
                                           dataListCells={[

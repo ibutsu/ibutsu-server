@@ -119,6 +119,9 @@ def has_project_filter(filter_list):
 
 
 def convert_filter(filter_string, model):
+    # Normalize two-character operators to their single-char internal equivalents
+    # before regex matching, since FILTER_RE only captures one character.
+    filter_string = filter_string.replace(">=", ")").replace("<=", "(")
     match = FILTER_RE.match(filter_string)
     if not match:
         return None

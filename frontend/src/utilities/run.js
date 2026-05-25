@@ -1,7 +1,7 @@
 export const getRunPassPercent = (summary) => {
   if (!summary) return 'N/A';
   if (summary.pass_percent != null) return summary.pass_percent + '%';
-  if (!summary.tests) return 'N/A';
+  if (!summary.tests) return '0%';
   // Fallback for runs not yet backfilled
   const passed =
     summary.passes ??
