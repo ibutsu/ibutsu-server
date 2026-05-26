@@ -57,7 +57,7 @@ jobs:
   upload-coverage:
     runs-on: ubuntu-latest
     needs: lint-test-frontend
-    if: always()
+    if: needs['lint-test-frontend'].result == 'success'
     steps:
       - uses: actions/checkout@v4
       - name: Download coverage artifacts
