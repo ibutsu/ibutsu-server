@@ -26,32 +26,6 @@ depends_on = None
 logger = logging.getLogger("alembic.versions.d18de2b3253f")
 
 
-def _ensure_index(name: str, table: str, columns, *, create: bool, **kwargs) -> None:
-    """Idempotent index create/drop for PostgreSQL-specific indexes."""
-    conn = op.get_bind()
-    if conn.dialect.name != "postgresql":
-        return
-
-    exists = conn.execute(
-        sa.text(
-            """
-            SELECT EXISTS (
-                SELECT 1
-                FROM pg_indexes
-                WHERE indexname = :index_name
-                  AND tablename = :table_name
-            )
-            """
-        ),
-        {"index_name": name, "table_name": table},
-    ).scalar()
-
-    if create and not exists:
-        op.create_index(name, table, columns, **kwargs)
-    elif not create and exists:
-        op.drop_index(name, table_name=table)
-
-
 def upgrade() -> None:
     logger.info("Starting migration d18de2b3253f: backfill pass_percent")
 
@@ -132,9 +106,11 @@ def upgrade() -> None:
                         THEN LEAST(
                             GREATEST(
                                 floor((n.passes_num / n.tests_num) * 100)::int,
-                                0    -- guard against a passes value > tests
+                                0
+                                -- guard against negative % (passes_num > tests_num)
                             ),
-                            100      -- guard against a passes value > tests
+                            100
+                            -- guard against over-100 % (passes_num > tests_num)
                         )
 
                         -- Very old runs that never stored a 'passes' key.
@@ -178,12 +154,13 @@ def upgrade() -> None:
     # Expression index on the integer cast of summary->>'pass_percent' so that
     # range filter queries (e.g. pass_percent >= 80) can use an index scan
     # rather than a full sequential scan over the JSONB column.
-    _ensure_index(
+    op.create_index(
         "ix_runs_pass_percent",
         "runs",
         [sa.text("((summary->>'pass_percent')::int)")],
-        create=True,
         unique=False,
+        postgresql_using="btree",
+        if_not_exists=True,
     )
     logger.info("Created ix_runs_pass_percent index")
 
@@ -194,4 +171,7 @@ def downgrade() -> None:
     # value and risks data loss if the source counters have since been modified.
     # Re-running upgrade() after a downgrade is safe because the CTE filters on
     # summary->'pass_percent' IS NULL, so already-populated rows are skipped.
-    _ensure_index("ix_runs_pass_percent", "runs", None, create=False)
+    conn = op.get_bind()
+    if conn.dialect.name != "postgresql":
+        return
+    op.drop_index("ix_runs_pass_percent", table_name="runs", if_exists=True)

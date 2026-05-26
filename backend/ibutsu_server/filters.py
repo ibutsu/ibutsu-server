@@ -30,7 +30,8 @@ OPER_COMPARE = {
     "~": lambda column, value: column.op("~")(value),
     "%": lambda column, value: column.ilike("%" + value + "%"),
 }
-FILTER_RE = re.compile(r"([a-zA-Z\._]+)([" + "".join(OPERATORS.keys()) + "])(.*)")
+FIELD_RE_PATTERN = r"[a-zA-Z0-9._-]+"
+FILTER_RE = re.compile(r"(" + FIELD_RE_PATTERN + r")([" + "".join(OPERATORS.keys()) + "])(.*)")
 FLOAT_RE = re.compile(r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?")
 VERSION_RE = re.compile("([0-9].*[0-9])")
 
@@ -79,7 +80,7 @@ def string_to_column(field, model):
             column = column[part]
 
         if field in NUMERIC_FIELDS:
-            column = column.as_float()
+            column = column.as_integer()
         elif field not in ARRAY_FIELDS:
             column = column.as_string()
     else:
@@ -118,10 +119,16 @@ def has_project_filter(filter_list):
     return False
 
 
+_TWO_CHAR_OPER_RE = re.compile(r"^(" + FIELD_RE_PATTERN + r")(>=|<=)")
+
+
 def convert_filter(filter_string, model):
-    # Normalize two-character operators to their single-char internal equivalents
-    # before regex matching, since FILTER_RE only captures one character.
-    filter_string = filter_string.replace(">=", ")").replace("<=", "(")
+    # Normalize two-character operators only in the operator position so that
+    # occurrences of >= / <= inside the value portion are left untouched.
+    filter_string = _TWO_CHAR_OPER_RE.sub(
+        lambda m: m.group(1) + (")" if m.group(2) == ">=" else "("),
+        filter_string,
+    )
     match = FILTER_RE.match(filter_string)
     if not match:
         return None

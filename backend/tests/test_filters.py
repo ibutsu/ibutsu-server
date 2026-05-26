@@ -3,7 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from sqlalchemy import Float, String
+from sqlalchemy import Integer, String
 
 from ibutsu_server.constants import ARRAY_FIELDS, NUMERIC_FIELDS
 from ibutsu_server.db import db
@@ -20,13 +20,13 @@ from ibutsu_server.filters import (
 
 # NUMERIC_FIELDS that are stored as JSON sub-keys (summary.*).
 # These go through the JSON path accessor in string_to_column and therefore
-# receive an explicit as_float() cast.  A non-numeric value stored in the
+# receive an explicit as_integer() cast.  A non-numeric value stored in the
 # database for any of these keys will raise a database error at query time
 # rather than silently returning incorrect results.
 _JSON_NUMERIC_FIELDS = [f for f in NUMERIC_FIELDS if f.startswith("summary.")]
 
 # NUMERIC_FIELDS that map to native ORM columns (not JSON paths).
-# These bypass the JSON accessor branch entirely, so as_float() is never
+# These bypass the JSON accessor branch entirely, so as_integer() is never
 # applied to them; their type is already enforced by the column definition.
 _DIRECT_NUMERIC_FIELDS = [f for f in NUMERIC_FIELDS if not f.startswith("summary.")]
 
@@ -206,35 +206,38 @@ class TestStringToColumn:
 
 
 class TestStringToColumnCastSemantics:
-    """Explicit coverage for the JSON-cast behavior introduced by as_float() / as_string().
+    """Explicit coverage for the JSON-cast behavior introduced by as_integer() / as_string().
 
     The contract under test:
     - Every field listed in NUMERIC_FIELDS whose first segment is "summary" is
-      accessed via the Run.summary JSONB column and then cast to Float with
-      as_float().  This produces correct numeric ordering but will raise a
-      database-level error if a stored value cannot be cast to a number.
+      accessed via the Run.summary JSONB column and then cast to Integer with
+      as_integer().  This produces correct numeric ordering and matches the
+      ::int expression index, but will raise a database-level error if a stored
+      value cannot be cast to a number.
     - Non-numeric JSON fields (data.*, metadata.*, non-array summary.*) are
       cast to String via as_string(), preserving the previous text-comparison
       behaviour.
     - Array fields (metadata.tags etc.) receive neither cast; they remain raw
       JSON path expressions so that array operators (@>, ?|) work correctly.
     - Direct ORM columns (duration, start_time) never pass through the JSON
-      accessor branch and are therefore unaffected by as_float().
+      accessor branch and are therefore unaffected by as_integer().
     """
 
     @pytest.mark.parametrize("field", _JSON_NUMERIC_FIELDS)
-    def test_json_numeric_fields_produce_float_cast(self, app_ctx, field):
-        """Every summary.* NUMERIC_FIELD must use an explicit Float cast.
+    def test_json_numeric_fields_produce_integer_cast(self, app_ctx, field):
+        """Every summary.* NUMERIC_FIELD must use an explicit Integer cast.
 
-        Verifies that the as_float() path is taken, meaning:
+        Verifies that the as_integer() path is taken, meaning:
         1. Comparisons use numeric ordering, not lexicographic ordering.
-        2. A row whose stored JSON value is not numeric will raise a database
+        2. The cast matches the ::int expression index on ix_runs_pass_percent,
+           allowing PostgreSQL to use an index scan for range filters.
+        3. A row whose stored JSON value is not numeric will raise a database
            error at query time (not silently return wrong results).
         """
         column = string_to_column(field, Run)
         assert column is not None, f"string_to_column returned None for {field!r}"
-        assert isinstance(column.type, Float), (
-            f"{field!r} expected a Float-cast column (as_float()) "
+        assert isinstance(column.type, Integer), (
+            f"{field!r} expected an Integer-cast column (as_integer()) "
             f"but got type {type(column.type).__name__!r}. "
             "Check that this field is still listed in NUMERIC_FIELDS."
         )
@@ -260,8 +263,8 @@ class TestStringToColumnCastSemantics:
             f"{field!r} expected a String-cast column (as_string()) "
             f"but got type {type(column.type).__name__!r}."
         )
-        assert not isinstance(column.type, Float), (
-            f"{field!r} must not be Float-cast; it holds string values."
+        assert not isinstance(column.type, Integer), (
+            f"{field!r} must not be Integer-cast; it holds string values."
         )
 
     @pytest.mark.parametrize("field", ARRAY_FIELDS)
@@ -273,7 +276,9 @@ class TestStringToColumnCastSemantics:
         """
         column = string_to_column(field, Run)
         assert column is not None, f"string_to_column returned None for {field!r}"
-        assert not isinstance(column.type, Float), f"Array field {field!r} must not be Float-cast."
+        assert not isinstance(column.type, Integer), (
+            f"Array field {field!r} must not be Integer-cast."
+        )
         assert not isinstance(column.type, String), (
             f"Array field {field!r} must not be String-cast."
         )
@@ -293,29 +298,35 @@ class TestStringToColumnCastSemantics:
             "If this field was moved to a JSON column, update this test."
         )
         # These are native ORM columns, not JSON path expressions, so they will
-        # NOT be Float instances from as_float() — their type comes from the
+        # NOT be Integer instances from as_integer() — their type comes from the
         # SQLAlchemy column definition (Float for duration, DateTime for start_time).
         # We only assert the column resolves without error.
 
-    def test_summary_pass_percent_uses_float_cast(self, app_ctx):
-        """Explicit regression test: summary.pass_percent must be Float-cast.
+    def test_summary_pass_percent_uses_integer_cast(self, app_ctx):
+        """Explicit regression test: summary.pass_percent must be Integer-cast.
 
-        This field was added to NUMERIC_FIELDS alongside the as_float() change.
-        A dedicated test makes the intent impossible to miss during code review.
+        pass_percent is stored as a whole-number integer (0-100) and the
+        expression index ix_runs_pass_percent is defined on
+        ((summary->>'pass_percent')::int).  The query-side cast must be
+        as_integer() so PostgreSQL can match the index expression and use an
+        index scan for range filters instead of a sequential scan.
         """
         column = string_to_column("summary.pass_percent", Run)
         assert column is not None
-        assert isinstance(column.type, Float), (
-            "summary.pass_percent must produce a Float cast so that "
-            "percentage comparisons use numeric ordering."
+        assert isinstance(column.type, Integer), (
+            "summary.pass_percent must produce an Integer cast so that "
+            "percentage comparisons use numeric ordering and the expression "
+            "index ix_runs_pass_percent can be used."
         )
 
 
 class TestConvertFilterNumericFieldSemantics:
     """Tests for the numeric comparison semantics of convert_filter on JSON fields.
 
-    The as_float() cast on NUMERIC_FIELDS means:
+    The as_integer() cast on NUMERIC_FIELDS means:
     - Comparison operators (>, <, >=, <=) behave with numeric ordering.
+    - The cast matches the ::int expression indexes, allowing PostgreSQL to use
+      index scans for range filters rather than sequential scans.
     - The filter value is also converted to int/float by _to_int_or_float.
     - Rows with non-numeric JSON values for these keys will produce a database
       error at query time.
@@ -353,9 +364,22 @@ class TestConvertFilterNumericFieldSemantics:
 
     @pytest.mark.parametrize("field", _JSON_NUMERIC_FIELDS)
     def test_numeric_json_field_not_equal_filter(self, app_ctx, field):
-        """Numeric JSON fields must support not-equal comparisons."""
+        """Numeric JSON fields must support not-equal comparisons and cast values to int."""
         result = convert_filter(f"{field}!0", Run)
         assert result is not None, f"convert_filter returned None for '!' filter on {field!r}"
+
+        # Ensure the bound parameter value is actually an int(0), not the string "0"
+        right = getattr(result, "right", None)
+        assert right is not None, "Expected filter expression to have a .right side"
+        value = getattr(right, "value", None)
+        assert isinstance(value, int), (
+            f"Expected numeric JSON filter value for {field!r} to be int(0), "
+            f"got {value!r} ({type(value)})"
+        )
+        assert value == 0, (
+            f"Expected numeric JSON filter value for {field!r} to be int(0), "
+            f"got {value!r} ({type(value)})"
+        )
 
     def test_numeric_value_is_converted_to_int_for_integer_string(self, app_ctx):
         """Numeric field values supplied as integer strings are cast to int, not kept as str."""
@@ -363,16 +387,46 @@ class TestConvertFilterNumericFieldSemantics:
         result = convert_filter("summary.failures=3", Run)
         assert result is not None
 
-    def test_numeric_value_is_converted_to_float_for_float_string(self, app_ctx):
-        """Numeric field values supplied as float strings are cast to float."""
-        result = convert_filter("summary.pass_percent=99.5", Run)
+        # Ensure the bound parameter value is actually an int(3), not the string "3"
+        right = getattr(result, "right", None)
+        assert right is not None, "Expected filter expression to have a .right side"
+        value = getattr(right, "value", None)
+        assert isinstance(value, int), (
+            "Expected numeric filter value for 'summary.failures' to be int(3), "
+            f"got {value!r} ({type(value)})"
+        )
+        assert value == 3, (
+            "Expected numeric filter value for 'summary.failures' to be int(3), "
+            f"got {value!r} ({type(value)})"
+        )
+
+    def test_numeric_value_is_converted_to_int_for_integer_percent_string(self, app_ctx):
+        """pass_percent filter values supplied as integer strings are cast to int.
+
+        pass_percent is always stored as a whole number (0-100), so integer
+        filter values are the correct and expected input.
+        """
+        result = convert_filter("summary.pass_percent=99", Run)
         assert result is not None
+
+        # Ensure the bound parameter value is actually an int(99), not the string "99"
+        right = getattr(result, "right", None)
+        assert right is not None, "Expected filter expression to have a .right side"
+        value = getattr(right, "value", None)
+        assert isinstance(value, int), (
+            "Expected numeric filter value for 'summary.pass_percent' to be int(99), "
+            f"got {value!r} ({type(value)})"
+        )
+        assert value == 99, (
+            "Expected numeric filter value for 'summary.pass_percent' to be int(99), "
+            f"got {value!r} ({type(value)})"
+        )
 
     def test_non_numeric_string_value_on_numeric_field_is_kept_as_str(self, app_ctx):
         """A non-numeric string value for a NUMERIC_FIELD stays as a string.
 
         This exercises the _to_int_or_float fallback.  The database will still
-        apply the as_float() cast to the column side; the right-hand string
+        apply the as_integer() cast to the column side; the right-hand string
         value will be passed through as-is and may cause a type-mismatch error
         at query execution time.  The purpose here is to verify no exception is
         raised at filter *construction* time.
@@ -384,9 +438,9 @@ class TestConvertFilterNumericFieldSemantics:
         )
 
     def test_summary_pass_percent_range_filter(self, app_ctx):
-        """Regression: summary.pass_percent supports range comparisons after Float cast."""
-        above = convert_filter("summary.pass_percent)80.0", Run)
-        below = convert_filter("summary.pass_percent(100.0", Run)
+        """Regression: summary.pass_percent supports range comparisons after Integer cast."""
+        above = convert_filter("summary.pass_percent)80", Run)
+        below = convert_filter("summary.pass_percent(100", Run)
         assert above is not None, "Lower-bound filter on summary.pass_percent must not be None"
         assert below is not None, "Upper-bound filter on summary.pass_percent must not be None"
 
