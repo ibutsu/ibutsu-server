@@ -10,6 +10,8 @@ from ibutsu_server.db.types import PortableUUID
 OPERATORS = {
     "=": "$eq",
     "!": "$ne",
+    ">=": "$gte",
+    "<=": "$lte",
     ">": "$gt",
     ")": "$gte",
     "<": "$lt",
@@ -22,6 +24,8 @@ OPERATORS = {
 OPER_COMPARE = {
     "=": lambda column, value: column == value,
     "!": lambda column, value: column != value,
+    ">=": lambda column, value: column >= value,
+    "<=": lambda column, value: column <= value,
     ">": lambda column, value: column > value,
     "<": lambda column, value: column < value,
     ")": lambda column, value: column >= value,
@@ -31,7 +35,10 @@ OPER_COMPARE = {
     "%": lambda column, value: column.ilike("%" + value + "%"),
 }
 FIELD_RE_PATTERN = r"[a-zA-Z0-9._-]+"
-FILTER_RE = re.compile(r"(" + FIELD_RE_PATTERN + r")([" + "".join(OPERATORS.keys()) + "])(.*)")
+_OPERATOR_PATTERN = "|".join(
+    re.escape(op) for op in sorted(OPERATORS.keys(), key=len, reverse=True)
+)
+FILTER_RE = re.compile(r"(" + FIELD_RE_PATTERN + r")(" + _OPERATOR_PATTERN + r")(.*)")
 FLOAT_RE = re.compile(r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?")
 VERSION_RE = re.compile("([0-9].*[0-9])")
 
@@ -119,16 +126,7 @@ def has_project_filter(filter_list):
     return False
 
 
-_TWO_CHAR_OPER_RE = re.compile(r"^(" + FIELD_RE_PATTERN + r")(>=|<=)")
-
-
 def convert_filter(filter_string, model):
-    # Normalize two-character operators only in the operator position so that
-    # occurrences of >= / <= inside the value portion are left untouched.
-    filter_string = _TWO_CHAR_OPER_RE.sub(
-        lambda m: m.group(1) + (")" if m.group(2) == ">=" else "("),
-        filter_string,
-    )
     match = FILTER_RE.match(filter_string)
     if not match:
         return None
