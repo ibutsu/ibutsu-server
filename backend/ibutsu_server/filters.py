@@ -137,6 +137,10 @@ def convert_filter(filter_string, model):
     value = match.group(3).strip('"')
     is_version = VERSION_RE.match(value) is not None
     column = string_to_column(field, model)
+    if column is None:
+        # Unknown/invalid field -- return None so apply_filters skips the
+        # clause instead of producing a 500 or an accidental boolean filter.
+        return None
     # determine if the field is an array field, if so it requires some additional care
     is_array_field = field in ARRAY_FIELDS
     # Do some type casting

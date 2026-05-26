@@ -538,6 +538,23 @@ class TestConvertFilter:
         result = convert_filter('result="passed"', Result)
         assert result is not None
 
+    @pytest.mark.parametrize(
+        "filter_string",
+        [
+            "bogus_field=value",
+            "bogus_field>10",
+            "bogus_field<100",
+            "bogus_field~pattern",
+            "bogus_field!value",
+            "bogus_field%value",
+            "bogus_field@yes",
+        ],
+    )
+    def test_convert_filter_unknown_field_returns_none(self, app_ctx, filter_string):
+        """convert_filter must return None for fields that string_to_column cannot resolve."""
+        result = convert_filter(filter_string, Result)
+        assert result is None
+
 
 class TestApplyFilters:
     """Tests for the apply_filters function."""

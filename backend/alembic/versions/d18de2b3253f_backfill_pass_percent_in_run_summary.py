@@ -38,111 +38,90 @@ def upgrade() -> None:
         logger.info("Non-PostgreSQL dialect; skipping pass_percent backfill")
         return
 
+    # Canonical pass_percent formula: floor(passes * 100 / tests), clamped
+    # to [0, 100].  This matches the runtime calculation in
+    # ibutsu_server/tasks/runs.py (update_run) and the frontend fallback in
+    # frontend/src/utilities/run.js (getRunPassPercent).
+    #
+    # Non-passing outcomes subtracted when deriving passes (old runs that
+    # lack an explicit "passes" key): failures, errors, skips, xpasses,
+    # xfailures.  If this list changes, update update_run and
+    # getRunPassPercent as well.
     result = conn.execute(
         sa.text(
             """
-            -- Normalize each counter field from text to numeric exactly once so
-            -- the UPDATE expression stays shallow and avoids repeating casts and
-            -- regex guards.  Fields that are absent or non-numeric are coerced to
-            -- NULL (tests/passes, which drive branching) or 0 (loss counters,
-            -- which default-to-zero is safe for subtraction arithmetic).
             WITH normalized AS (
                 SELECT
                     id,
+                    -- Parse each counter once; tests/passes NULL when absent
+                    -- or non-numeric, loss counters default to 0.
+                    CASE WHEN summary->>'tests'   ~ '^[0-9]+$'
+                         THEN (summary->>'tests')::numeric   END AS tests_num,
+                    CASE WHEN summary->>'passes'  ~ '^[0-9]+$'
+                         THEN (summary->>'passes')::numeric  END AS passes_num,
+                    COALESCE(
+                        CASE WHEN summary->>'failures'  ~ '^[0-9]+$'
+                             THEN (summary->>'failures')::numeric  END, 0
+                    ) AS failures_num,
+                    COALESCE(
+                        CASE WHEN summary->>'errors'    ~ '^[0-9]+$'
+                             THEN (summary->>'errors')::numeric    END, 0
+                    ) AS errors_num,
+                    COALESCE(
+                        CASE WHEN summary->>'skips'     ~ '^[0-9]+$'
+                             THEN (summary->>'skips')::numeric     END, 0
+                    ) AS skips_num,
+                    COALESCE(
+                        CASE WHEN summary->>'xpasses'   ~ '^[0-9]+$'
+                             THEN (summary->>'xpasses')::numeric   END, 0
+                    ) AS xpasses_num,
+                    COALESCE(
+                        CASE WHEN summary->>'xfailures' ~ '^[0-9]+$'
+                             THEN (summary->>'xfailures')::numeric END, 0
+                    ) AS xfailures_num,
+
+                    -- Precompute: direct path (passes key present)
                     CASE
-                        WHEN summary->>'tests' ~ '^[0-9]+$'
-                        THEN (summary->>'tests')::numeric
-                        ELSE NULL
-                    END AS tests_num,
+                        WHEN summary->>'tests'  ~ '^[0-9]+$'
+                         AND (summary->>'tests')::numeric > 0
+                         AND summary->>'passes' ~ '^[0-9]+$'
+                        THEN LEAST(GREATEST(
+                            floor(
+                                (summary->>'passes')::numeric * 100
+                                / (summary->>'tests')::numeric
+                            )::int,
+                            0), 100)
+                    END AS pass_percent_direct,
+
+                    -- Precompute: derived path (passes key absent)
                     CASE
-                        WHEN summary->>'passes' ~ '^[0-9]+$'
-                        THEN (summary->>'passes')::numeric
-                        ELSE NULL
-                    END AS passes_num,
-                    -- Loss counters default to 0 so the derived-passes arithmetic
-                    -- below stays correct even when a counter key is missing.
-                    CASE
-                        WHEN summary->>'failures' ~ '^[0-9]+$'
-                        THEN (summary->>'failures')::numeric
-                        ELSE 0
-                    END AS failures_num,
-                    CASE
-                        WHEN summary->>'errors' ~ '^[0-9]+$'
-                        THEN (summary->>'errors')::numeric
-                        ELSE 0
-                    END AS errors_num,
-                    CASE
-                        WHEN summary->>'skips' ~ '^[0-9]+$'
-                        THEN (summary->>'skips')::numeric
-                        ELSE 0
-                    END AS skips_num,
-                    -- xpasses and xfailures count as non-passing outcomes and are
-                    -- subtracted when deriving passes from counters.
-                    CASE
-                        WHEN summary->>'xpasses' ~ '^[0-9]+$'
-                        THEN (summary->>'xpasses')::numeric
-                        ELSE 0
-                    END AS xpasses_num,
-                    CASE
-                        WHEN summary->>'xfailures' ~ '^[0-9]+$'
-                        THEN (summary->>'xfailures')::numeric
-                        ELSE 0
-                    END AS xfailures_num
+                        WHEN summary->>'tests'  ~ '^[0-9]+$'
+                         AND (summary->>'tests')::numeric > 0
+                         AND NOT (summary ? 'passes')
+                        THEN LEAST(GREATEST(
+                            floor(
+                                (
+                                    (summary->>'tests')::numeric
+                                    - COALESCE(CASE WHEN summary->>'failures'  ~ '^[0-9]+$' THEN (summary->>'failures')::numeric  END, 0)
+                                    - COALESCE(CASE WHEN summary->>'errors'    ~ '^[0-9]+$' THEN (summary->>'errors')::numeric    END, 0)
+                                    - COALESCE(CASE WHEN summary->>'skips'     ~ '^[0-9]+$' THEN (summary->>'skips')::numeric     END, 0)
+                                    - COALESCE(CASE WHEN summary->>'xpasses'   ~ '^[0-9]+$' THEN (summary->>'xpasses')::numeric   END, 0)
+                                    - COALESCE(CASE WHEN summary->>'xfailures' ~ '^[0-9]+$' THEN (summary->>'xfailures')::numeric END, 0)
+                                ) * 100
+                                / (summary->>'tests')::numeric
+                            )::int,
+                            0), 100)
+                    END AS pass_percent_derived
+
                 FROM runs
                 WHERE summary IS NOT NULL
-                  AND summary->'pass_percent' IS NULL   -- skip already-backfilled rows
+                  AND summary->'pass_percent' IS NULL
             )
             UPDATE runs AS r
             SET summary = jsonb_set(
                 COALESCE(r.summary, '{}'::jsonb),
                 '{pass_percent}',
-                to_jsonb(
-                    CASE
-                        -- Modern runs that recorded a 'passes' counter directly.
-                        -- This is the preferred path; divide passes by tests.
-                        WHEN n.tests_num IS NOT NULL
-                         AND n.tests_num > 0
-                         AND n.passes_num IS NOT NULL
-                        THEN LEAST(
-                            GREATEST(
-                                floor((n.passes_num / n.tests_num) * 100)::int,
-                                0
-                                -- guard against negative % (passes_num > tests_num)
-                            ),
-                            100
-                            -- guard against over-100 % (passes_num > tests_num)
-                        )
-
-                        -- Very old runs that never stored a 'passes' key.
-                        -- Derive passes by subtracting every known loss counter
-                        -- from the total.  LEAST/GREATEST clamps the result to
-                        -- [0, 100] in case the historical counters are inconsistent
-                        -- (e.g. sum of losses exceeds tests due to data corruption).
-                        WHEN n.tests_num IS NOT NULL
-                         AND n.tests_num > 0
-                         AND n.passes_num IS NULL
-                        THEN LEAST(
-                            GREATEST(
-                                floor(
-                                    (
-                                        n.tests_num
-                                        - n.failures_num
-                                        - n.errors_num
-                                        - n.skips_num
-                                        - n.xpasses_num
-                                        - n.xfailures_num
-                                    ) / n.tests_num * 100
-                                )::int,
-                                0
-                            ),
-                            100
-                        )
-
-                        -- tests is 0, absent, or malformed: no meaningful
-                        -- percentage can be computed, store 0 as a sentinel.
-                        ELSE 0
-                    END
-                )
+                to_jsonb(COALESCE(n.pass_percent_direct, n.pass_percent_derived, 0))
             )
             FROM normalized AS n
             WHERE r.id = n.id

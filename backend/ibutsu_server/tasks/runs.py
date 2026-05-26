@@ -86,10 +86,14 @@ def update_run(run_id):
             + summary["failures"]
             + summary["skips"]
         )
+        # Canonical pass_percent formula: integer arithmetic avoids float
+        # rounding; result is floored and clamped to [0, 100].  The same
+        # formula is replicated in the migration backfill SQL and the
+        # frontend getRunPassPercent fallback (frontend/src/utilities/run.js).
         summary["pass_percent"] = (
             max(
                 min(
-                    int((summary["passes"] / summary["tests"]) * 100),
+                    (summary["passes"] * 100) // summary["tests"],
                     100,
                 ),
                 0,
