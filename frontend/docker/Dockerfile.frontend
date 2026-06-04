@@ -7,6 +7,16 @@ FROM registry.access.redhat.com/ubi9/nodejs-20:9.7 AS builder
 # but we'll explicitly set it for clarity
 WORKDIR /opt/app-root/src
 
+# Optional overrides for air-gapped / corporate-proxy environments.
+# Pass --build-arg NPM_REGISTRY=<url> to redirect npm/Yarn to an internal mirror.
+# Pass --build-arg EXTRA_CA_CERTS=<path> (where <path> is a cert file mounted into
+# the build via --volume) to make Node.js trust a custom CA bundle.
+# Both default to empty string, which leaves Node.js/npm behaviour unchanged.
+ARG NPM_REGISTRY=""
+ARG EXTRA_CA_CERTS=""
+ENV NPM_CONFIG_REGISTRY=${NPM_REGISTRY} \
+    NODE_EXTRA_CA_CERTS=${EXTRA_CA_CERTS}
+
 # Install yarn globally first - this layer rarely changes and can be cached
 RUN npm install --global yarn@^1.22.22
 
@@ -17,6 +27,7 @@ ENV CYPRESS_INSTALL_BINARY=0
 # Constrain the V8 heap so webpack/react-scripts cannot grow past the
 # Quay.io builder's memory limit and get OOM-killed.
 ENV NODE_OPTIONS="--max-old-space-size=3072"
+
 
 # Copy package files first for better layer caching
 # Changes to source code won't invalidate the dependency install layer
