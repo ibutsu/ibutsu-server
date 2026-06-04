@@ -7,18 +7,18 @@ FROM registry.access.redhat.com/ubi9/nodejs-20:9.7 AS builder
 # but we'll explicitly set it for clarity
 WORKDIR /opt/app-root/src
 
-# Optional overrides for air-gapped / corporate-proxy environments.
-# Pass --build-arg NPM_REGISTRY=<url> to redirect npm/Yarn to an internal mirror.
-# Pass --build-arg EXTRA_CA_CERTS=<path> (where <path> is a cert file mounted into
-# the build via --volume) to make Node.js trust a custom CA bundle.
-# Both default to empty string, which leaves Node.js/npm behaviour unchanged.
+# Optional overrides for corporate-proxy environments.
 ARG NPM_REGISTRY=""
 ARG EXTRA_CA_CERTS=""
-ENV NPM_CONFIG_REGISTRY=${NPM_REGISTRY} \
-    NODE_EXTRA_CA_CERTS=${EXTRA_CA_CERTS}
+ENV NODE_EXTRA_CA_CERTS=${EXTRA_CA_CERTS}
 
-# Install yarn globally first - this layer rarely changes and can be cached
-RUN npm install --global yarn@^1.22.22
+# corepack is not bundled in ubi9/nodejs-20; install it via npm first.
+# Pinned to avoid unexpected behaviour from new corepack releases.
+# NOTE: corepack >=0.35.0 drops Node.js 20 support; update when base image moves to Node 22+.
+ARG COREPACK_VERSION="0.34.7"
+RUN if [ -n "${NPM_REGISTRY}" ]; then npm config set registry "${NPM_REGISTRY}"; fi && \
+    npm install -g "corepack@${COREPACK_VERSION}" && \
+    corepack enable
 
 # Skip downloading the Cypress binary — it is only needed for e2e tests,
 # not for the production build, and it consumes ~300 MB of memory/disk.
@@ -26,65 +26,54 @@ ENV CYPRESS_INSTALL_BINARY=0
 
 # Constrain the V8 heap so webpack/react-scripts cannot grow past the
 # Quay.io builder's memory limit and get OOM-killed.
+# NOTE: once react-scripts is replaced with Vite, this can be removed — Vite
+# is not memory-hungry and does not need a V8 heap override.
 ENV NODE_OPTIONS="--max-old-space-size=3072"
 
+# Copy package metadata and lockfile first for better layer caching.
+# Changes to source code won't invalidate the dependency install layer.
+COPY --chown=1001:0 .yarnrc.yml package.json yarn.lock ./
 
-# Copy package files first for better layer caching
-# Changes to source code won't invalidate the dependency install layer
-COPY --chown=1001:0 .yarnclean package.json yarn.lock ./
-
-# Install all dependencies (devDependencies needed for build)
-# Using --frozen-lockfile for reproducible builds
-RUN yarn install --frozen-lockfile
+# When an internal registry is specified, configure Yarn Berry to use it for
+# package downloads. Yarn Berry reads npmRegistryServer from .yarnrc.yml,
+# not NPM_CONFIG_REGISTRY.
+RUN if [ -n "${NPM_REGISTRY}" ]; then \
+      yarn config set npmRegistryServer "${NPM_REGISTRY}"; \
+    fi && \
+    yarn install --immutable
 
 # Copy the rest of the source code (bin/ needed for build script)
 COPY --chown=1001:0 . .
 
-# Build the app with production optimizations
-# CI=false allows build to succeed with warnings (CSS ordering warnings from
-# mini-css-extract-plugin are expected when using code splitting with PatternFly React)
-# GENERATE_SOURCEMAP=false skips source maps to reduce build time and memory usage
-# The keepalive loop prints a heartbeat every 30s to prevent Quay.io inactivity timeouts
+# CI=false suppresses react-scripts/webpack treating warnings as errors.
+# GENERATE_SOURCEMAP=false saves memory and time during the webpack build.
+# NOTE: both vars are react-scripts/CRA-specific and can be removed once
+# the project migrates to Vite.
 ENV NODE_ENV=production
-RUN sh -c '\
-    cleanup() { \
-        if [ -n "$KEEPALIVE_PID" ]; then \
-            kill "$KEEPALIVE_PID" 2>/dev/null || true; \
-            wait "$KEEPALIVE_PID" 2>/dev/null || true; \
-        fi; \
-    }; \
-    trap cleanup EXIT INT TERM; \
-    while true; do \
-        echo "$(date): build still running..."; \
-        sleep 30; \
-    done & \
-    KEEPALIVE_PID=$!; \
-    CI=false GENERATE_SOURCEMAP=false yarn build; \
-    BUILD_EXIT=$?; \
-    exit "$BUILD_EXIT"'
+RUN CI=false GENERATE_SOURCEMAP=false yarn build
 
-# Prune to production dependencies and clean cache for smaller image
-# --ignore-scripts avoids re-running postinstall scripts
-# --prefer-offline uses cached packages where possible
-RUN yarn install --production --frozen-lockfile --ignore-scripts --prefer-offline && \
-    yarn cache clean
-
-# Second stage copies only the build artifacts to the minimal image
+# Second stage: minimal runtime image containing only the compiled static
+# assets and the 'serve' binary. No node_modules are carried over from the
+# builder — the runtime does not need the full dependency tree.
+#
+# When react-scripts is replaced with Vite, the only change needed here is
+# updating the COPY source path from 'build' to 'dist'.
+#
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-20-minimal/64770ddd0e699534bb564b3b
 FROM registry.access.redhat.com/ubi9/nodejs-20-minimal:9.7
 
-# The nodejs-20-minimal image already sets the working directory to /opt/app-root/src
 WORKDIR /opt/app-root/src
 
-# Copy only the build artifacts (React static files) from the builder image
+# Copy only the compiled static files from the builder stage.
+# NOTE: update 'build' → 'dist' when migrating to Vite.
 COPY --from=builder --chown=1001:0 /opt/app-root/src/build /opt/app-root/src/build
 
-# Copy package.json for running yarn start
-COPY --from=builder --chown=1001:0 /opt/app-root/src/package.json /opt/app-root/src/package.json
-
-# Copy the already-pruned production node_modules from the builder
-# This avoids a second install in the runtime stage while keeping only production deps
-COPY --from=builder --chown=1001:0 /opt/app-root/src/node_modules /opt/app-root/src/node_modules
+# Install the static-file server. 'serve' is the only runtime dependency;
+# pulling it here keeps the image free of the full build-time node_modules.
+# Pinned for reproducible builds. Yarn Berry does not support global installs,
+# so npm is used in this minimal runtime stage.
+ARG SERVE_VERSION="14.2.6"
+RUN npm install -g "serve@${SERVE_VERSION}"
 
 # Copy the entrypoint script for runtime configuration
 # Use --chmod to set executable permissions directly (avoids permission issues in minimal image)
@@ -103,7 +92,7 @@ EXPOSE 8080
 # Use entrypoint to generate settings.js at runtime (for REACT_APP_SERVER_URL)
 ENTRYPOINT ["/opt/app-root/bin/entrypoint.sh"]
 
-# Use npm to run the application (serves static build directory on port 8080)
-# The serve -s flag provides SPA routing (equivalent to nginx try_files $uri /index.html)
-# Note: npm is included in nodejs-20-minimal, but yarn is not
-CMD ["npm", "start"]
+# Serve the static build directory on port 8080.
+# -s enables SPA routing (equivalent to nginx try_files $uri /index.html).
+# NOTE: update 'build' → 'dist' when migrating to Vite.
+CMD ["serve", "-s", "build", "-l", "tcp://0.0.0.0:8080"]

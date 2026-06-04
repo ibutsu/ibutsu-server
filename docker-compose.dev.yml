@@ -86,10 +86,10 @@ services:
     environment:
       NODE_ENV: production
       REACT_APP_SERVER_URL: http://127.0.0.1:8080/api
-    image: node:18
+    image: node:20
     command: >
       /bin/bash -c
-        "npm install --no-save --no-package-lock yarn &&
+        "corepack enable &&
         yarn install &&
         yarn run devserver"
     working_dir: /mnt

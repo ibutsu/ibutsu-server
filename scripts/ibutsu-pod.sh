@@ -559,13 +559,30 @@ if [[ $CREATE_PROJECT = true ]]; then
 
                     echo -n "Importing ${FILE} to ${PROJECT_NAME}... "
 
-                    # Submit the file for import
-                    if ! IMPORT_RESPONSE=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+                    # Verify backend is still responsive before uploading; abort early if it is down.
+                    # A silent worker crash (e.g. uvicorn worker dying and not being restarted)
+                    # would leave the listening socket open but unresponsive; this catches that case.
+                    if ! curl --output /dev/null --silent --head --max-time 10 \
+                        http://$LOCAL_HOST:$LOCAL_PORT_BACKEND; then
+                        echo ""
+                        echo "ERROR: Backend is not responding before import of ${FILE}. Aborting import loop."
+                        break
+                    fi
+
+                    # Submit the file for import.
+                    # -H "Expect:" disables the Expect: 100-continue negotiation to avoid a known
+                    # uvicorn/starlette stall where the server sends 100 Continue but then drops
+                    # the connection without sending the final response under load.
+                    # --max-time 120 prevents curl from hanging indefinitely if the server crashes.
+                    if ! IMPORT_RESPONSE=$(curl --no-progress-meter \
+                        --max-time 120 \
+                        -H "Expect:" \
+                        --header "Authorization: Bearer ${LOGIN_TOKEN}" \
                         --request POST \
                         --form "importFile=@${FILE}" \
                         --form "project=${CURRENT_PROJECT_ID}" \
                         http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/import); then
-                        echo "Failed to submit import for ${FILE}."
+                        echo "Failed to submit import for ${FILE} (curl exit code: $?)."
                         echo "import response: ${IMPORT_RESPONSE}"
 
                         if (( i % 2 == 0 )); then
@@ -579,7 +596,7 @@ if [[ $CREATE_PROJECT = true ]]; then
                     IMPORT_ID=$(echo "${IMPORT_RESPONSE}" | jq -r '.id')
                     IMPORT_STATUS=$(echo "${IMPORT_RESPONSE}" | jq -r '.status')
 
-                    if [[ -z "$IMPORT_ID" ]]; then
+                    if [[ -z "$IMPORT_ID" || "$IMPORT_ID" == "null" ]]; then
                         echo "Failed to get import ID."
                         if (( i % 2 == 0 )); then
                             ((FAILED_IMPORTS_1++))
@@ -588,18 +605,22 @@ if [[ $CREATE_PROJECT = true ]]; then
                         fi
                         continue
                     else
-                        # Wait for import to complete with a retry limit
+                        # Wait for import to complete with a retry limit.
+                        # Each archive can take several seconds to process under load;
+                        # 60 retries at 2s each = up to 120 seconds per file.
                         RETRY_COUNT=0
-                        MAX_RETRIES=10
+                        MAX_RETRIES=60
                         while [[ ("${IMPORT_STATUS}" == pending || "${IMPORT_STATUS}" == running) && ${RETRY_COUNT} -lt ${MAX_RETRIES} ]]; do
-                            IMPORT_STATUS=$(curl --no-progress-meter --header "Authorization: Bearer ${LOGIN_TOKEN}" \
+                            IMPORT_STATUS=$(curl --no-progress-meter \
+                                --max-time 30 \
+                                --header "Authorization: Bearer ${LOGIN_TOKEN}" \
                                 http://$LOCAL_HOST:$LOCAL_PORT_BACKEND/api/import/"${IMPORT_ID}" | jq -r '.status')
 
                             # Increment retry counter
                             ((RETRY_COUNT++))
 
                             # Wait before checking again
-                            sleep 1
+                            sleep 2
                             echo -n " ."
                         done
                     fi
@@ -890,7 +911,7 @@ else
         -w /mnt \
         -v ./frontend:/mnt/:Z \
         "node:$(cut -d 'v' -f 2 < './frontend/.nvmrc')" \
-        /bin/bash -c "node --dns-result-order=ipv4first /usr/local/bin/npm install --no-save --no-package-lock yarn &&
+        /bin/bash -c "corepack enable &&
             yarn install &&
             CI=1 yarn devserver"
 fi
