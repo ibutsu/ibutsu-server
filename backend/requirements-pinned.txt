@@ -56,7 +56,7 @@ click-repl==0.3.0
     # via celery
 connexion==3.3.0
     # via ibutsu-server (pyproject.toml)
-cryptography==48.0.0
+cryptography==48.0.1
     # via google-auth
 dnspython==2.8.0
     # via pymongo
