@@ -28,6 +28,8 @@ def project_has_user(project, user):
         return True
     if isinstance(project, str):
         project = get_project(project)
+    if project is None:
+        return False
     return user in project.users or project.owner.id == user.id
 
 
