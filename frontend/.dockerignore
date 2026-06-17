@@ -31,6 +31,10 @@ var/
 *.egg
 node_modules/
 
+# Yarn Berry -- corepack manages the binary; exclude all local Yarn state
+.yarn/
+.pnp.*
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.

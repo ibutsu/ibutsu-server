@@ -9,8 +9,7 @@ Requirements
 To run the server locally, you will need the following:
 
 - Python 3.9+
-- NodeJS
-- yarn
+- NodeJS 18+ (includes Corepack, which manages Yarn)
 - redis (strongly recommend a container)
 - PostgreSQL (strongly recommend a container)
 
@@ -71,32 +70,14 @@ Run the Frontend
 
 When running on your local computer, the server is made up of two parts, the frontend and the
 backend. The backend runs the api while the frontend hosts the UI.
-First, install yarn if you don't have it already, and set up the frontend.
-
-Many Linux distributions offer Yarn in their package repositories. Both Debian and Fedora package
-Yarn as ``yarnpkg``.
-
-Install Yarn on Fedora:
+Yarn is managed by `Corepack <https://nodejs.org/api/corepack.html>`_, which ships with Node.js 18+.
+Enable it once and the correct Yarn version (declared in ``package.json``) will be downloaded automatically:
 
 .. code-block:: shell
 
-   sudo dnf install -y yarnpkg
+   corepack enable
 
-
-If you don't want to use the packaged version of Yarn, you can install it via ``npm``:
-
-.. code-block:: shell
-
-    cd ibutsu-server/frontend
-    npm install yarn
-
-Just remember that you'll need to specify the full path when running Yarn:
-
-.. code-block:: shell
-
-    node_modules/.bin/yarn <action>
-
-Now that Yarn is installed, use Yarn to install the frontend's dependencies:
+Now install the frontend's dependencies:
 
 .. code-block:: shell
 

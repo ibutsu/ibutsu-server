@@ -85,6 +85,10 @@ frontend/.cache_hs66v4
 frontend/build/*
 frontend/coverage/*
 
+# Yarn Berry (4.x) -- corepack manages the binary; nothing in .yarn/ needs to be committed
+frontend/.yarn/
+frontend/.pnp.*
+
 # Settings
 backend/settings.yaml
 backend/settings.local.yaml

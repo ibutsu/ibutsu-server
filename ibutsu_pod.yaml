@@ -106,15 +106,13 @@ spec:
     - mountPath: /srv/:Z
       name: ibutsu-server-backend
   - name: frontend
-    image: docker.io/library/node:latest
+    image: docker.io/library/node:20
     args:
     - /bin/bash
     - -c
     - |-
-      yarn install && CI=TRUE yarn run devserver
+      corepack enable && yarn install && CI=TRUE yarn run devserver
     env:
-    - name: NODE_OPTIONS
-      value: --openssl-legacy-provider
     - name: CI
       value: "true"
     resources:
