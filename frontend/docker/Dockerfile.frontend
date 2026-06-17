@@ -20,6 +20,11 @@ RUN if [ -n "${NPM_REGISTRY}" ]; then npm config set registry "${NPM_REGISTRY}";
     npm install -g "corepack@${COREPACK_VERSION}" && \
     corepack enable
 
+# When an internal registry is specified, redirect corepack's package-manager
+# downloads through the same proxy (avoids direct access to repo.yarnpkg.com).
+ARG COREPACK_NPM_REGISTRY=""
+ENV COREPACK_NPM_REGISTRY=${COREPACK_NPM_REGISTRY}
+
 # Skip downloading the Cypress binary — it is only needed for e2e tests,
 # not for the production build, and it consumes ~300 MB of memory/disk.
 ENV CYPRESS_INSTALL_BINARY=0
