@@ -10,6 +10,8 @@ from ibutsu_server.db.types import PortableUUID
 OPERATORS = {
     "=": "$eq",
     "!": "$ne",
+    ">=": "$gte",
+    "<=": "$lte",
     ">": "$gt",
     ")": "$gte",
     "<": "$lt",
@@ -22,6 +24,8 @@ OPERATORS = {
 OPER_COMPARE = {
     "=": lambda column, value: column == value,
     "!": lambda column, value: column != value,
+    ">=": lambda column, value: column >= value,
+    "<=": lambda column, value: column <= value,
     ">": lambda column, value: column > value,
     "<": lambda column, value: column < value,
     ")": lambda column, value: column >= value,
@@ -30,7 +34,11 @@ OPER_COMPARE = {
     "~": lambda column, value: column.op("~")(value),
     "%": lambda column, value: column.ilike("%" + value + "%"),
 }
-FILTER_RE = re.compile(r"([a-zA-Z\._]+)([" + "".join(OPERATORS.keys()) + "])(.*)")
+FIELD_RE_PATTERN = r"[a-zA-Z0-9._-]+"
+_OPERATOR_PATTERN = "|".join(
+    re.escape(op) for op in sorted(OPERATORS.keys(), key=len, reverse=True)
+)
+FILTER_RE = re.compile(r"(" + FIELD_RE_PATTERN + r")(" + _OPERATOR_PATTERN + r")(.*)")
 FLOAT_RE = re.compile(r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?")
 VERSION_RE = re.compile("([0-9].*[0-9])")
 
@@ -78,7 +86,9 @@ def string_to_column(field, model):
                 continue
             column = column[part]
 
-        if field not in ARRAY_FIELDS and field not in NUMERIC_FIELDS:
+        if field in NUMERIC_FIELDS:
+            column = column.as_integer()
+        elif field not in ARRAY_FIELDS:
             column = column.as_string()
     else:
         try:
@@ -125,6 +135,10 @@ def convert_filter(filter_string, model):
     value = match.group(3).strip('"')
     is_version = VERSION_RE.match(value) is not None
     column = string_to_column(field, model)
+    if column is None:
+        # Unknown/invalid field -- return None so apply_filters skips the
+        # clause instead of producing a 500 or an accidental boolean filter.
+        return None
     # determine if the field is an array field, if so it requires some additional care
     is_array_field = field in ARRAY_FIELDS
     # Do some type casting
@@ -132,8 +146,9 @@ def convert_filter(filter_string, model):
         return _null_compare(column, value)
     if oper == "*":
         value = value.split(";")
-    elif not is_version and "build_number" not in field:
-        # This is a horrible hack, because Jenkins build numbers are strings :-(
+    elif field in NUMERIC_FIELDS or (not is_version and "build_number" not in field):
+        # Always convert for numeric fields; version-like strings and Jenkins build numbers
+        # are kept as strings because they need string comparison semantics.
         value = _to_int_or_float(value)
     if is_array_field:
         return _array_compare(oper, column, value)

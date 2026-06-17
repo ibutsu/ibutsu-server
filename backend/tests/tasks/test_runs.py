@@ -55,6 +55,7 @@ def test_update_run(make_project, make_run, make_result, flask_app, fixed_time):
         assert updated_run.summary["passes"] == 1
         assert updated_run.summary["failures"] == 1
         assert updated_run.summary["errors"] == 1
+        assert updated_run.summary["pass_percent"] == 33
         assert updated_run.duration == 4.5
 
 
@@ -224,6 +225,7 @@ def test_update_run_with_none_summary(make_project, make_run, make_result, flask
         assert updated_run.summary["tests"] == 2
         assert updated_run.summary["passes"] == 1
         assert updated_run.summary["failures"] == 1
+        assert updated_run.summary["pass_percent"] == 50
 
 
 def test_update_run_with_empty_summary(make_project, make_run, make_result, flask_app):
@@ -262,3 +264,60 @@ def test_update_run_with_empty_summary(make_project, make_run, make_result, flas
         assert "tests" in updated_run.summary
         assert updated_run.summary["tests"] == 1
         assert updated_run.summary["passes"] == 1
+        assert updated_run.summary["pass_percent"] == 100
+
+
+def test_update_run_pass_percent_zero_tests(make_project, make_run, flask_app):
+    """When there are zero tests, pass_percent should be forced to 0 (no division-by-zero)."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        project = make_project(name="test-project")
+        # collected > 0 but no results created, so tests will remain 0
+        run = make_run(
+            project_id=project.id,
+            summary={"collected": 10, "tests": 0, "failures": 0, "errors": 0},
+        )
+
+        with patch("ibutsu_server.tasks.runs.lock"):
+            update_run(str(run.id))
+
+        session.expire_all()
+        updated_run = db.session.get(Run, run.id)
+
+        assert updated_run.summary is not None
+        assert updated_run.summary["tests"] == 0
+        assert updated_run.summary["passes"] == 0
+        assert updated_run.summary["pass_percent"] == 0
+
+
+def test_update_run_pass_percent_floors(make_project, make_run, make_result, flask_app, fixed_time):
+    """Test that pass_percent is floored, not rounded -- 999/1000 should be 99, not 100."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        project = make_project(name="test-project")
+        run = make_run(
+            project_id=project.id,
+            summary={"collected": 1000, "tests": 0, "failures": 0, "errors": 0},
+        )
+
+        for i in range(1000):
+            make_result(
+                run_id=run.id,
+                project_id=project.id,
+                result="passed" if i < 999 else "failed",
+                duration=0.01,
+                start_time=fixed_time,
+            )
+
+        with patch("ibutsu_server.tasks.runs.lock"):
+            update_run(str(run.id))
+
+        session.expire_all()
+        updated_run = db.session.get(Run, run.id)
+
+        assert updated_run.summary["tests"] == 1000
+        assert updated_run.summary["passes"] == 999
+        assert updated_run.summary["failures"] == 1
+        assert updated_run.summary["pass_percent"] == 99

@@ -644,7 +644,7 @@ describe('RunList', () => {
         expect(screen.getByText('Test runs')).toBeInTheDocument();
       });
 
-      // Columns: 'Run', 'Duration', 'Summary', 'Started', ''
+      // Columns: 'Run', 'Duration', 'Summary', 'Pass %', 'Started', ''
       // These should be passed to FilterTable
     });
   });

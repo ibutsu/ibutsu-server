@@ -37,6 +37,7 @@ NUMERIC_FIELDS = [
     "start_time",
     "summary.failures",
     "summary.errors",
+    "summary.pass_percent",
     "summary.passes",
     "summary.skips",
     "summary.tests",
