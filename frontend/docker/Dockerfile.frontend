@@ -48,7 +48,7 @@ COPY --chown=1001:0 .yarnrc.yml package.json yarn.lock ./
 # and unrecognised keys cause a fatal error when enableStrictSettings is true.
 ARG PROXY_HTTP_TIMEOUT="300000"
 ARG PROXY_HTTP_RETRY="5"
-ARG PROXY_NETWORK_CONCURRENCY="8"
+ARG PROXY_NETWORK_CONCURRENCY="24"
 
 # Opt-in Node.js HTTP debug tracing for the fetch step. Yarn Berry 4.x has
 # no --verbose flag (yarnpkg/berry#6187); setting NODE_DEBUG=http,https is
