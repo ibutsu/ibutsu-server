@@ -39,9 +39,9 @@ ENV NODE_OPTIONS="--max-old-space-size=3072"
 # Changes to source code won't invalidate the dependency install layer.
 COPY --chown=1001:0 .yarnrc.yml package.json yarn.lock ./
 
-# Yarn Berry network tuning for internal registry proxies (e.g. Nexus).
-# Proxied fetches are significantly slower than direct npmjs.org access;
-# these defaults prevent silent hangs and reduce the chance of CI timeouts.
+# Yarn Berry network tuning — applied unconditionally to prevent silent
+# hangs and reduce the chance of CI timeouts regardless of whether traffic
+# is routed through a corporate proxy or an internal registry mirror.
 #
 # IMPORTANT: ARG names must NOT start with YARN_ — Yarn Berry interprets
 # all YARN_* environment variables as config overrides (snake_case → camelCase),
@@ -56,20 +56,34 @@ ARG PROXY_NETWORK_CONCURRENCY="24"
 # Pass --build-arg FETCH_DEBUG=http,https to enable.
 ARG FETCH_DEBUG=""
 
-# When an internal registry is specified, configure Yarn Berry to use it for
-# package downloads and apply network tuning. Yarn Berry reads
-# npmRegistryServer from .yarnrc.yml, not NPM_CONFIG_REGISTRY.
-# Telemetry is unconditionally disabled: the buildah build context does not
-# inherit CI=true from the GitLab runner, so Yarn defaults to telemetry=on
-# and the request to repo.yarnpkg.com hangs for up to 10 minutes in
-# restricted networks.
+# Yarn Berry 4.x does NOT honour the standard HTTP_PROXY / HTTPS_PROXY
+# environment variables for package fetching — it requires its own
+# httpProxy / httpsProxy configuration keys (set via `yarn config set`).
+# When proxy build-args are provided, we explicitly forward them so that
+# Yarn routes traffic through the corporate squid proxy instead of making
+# direct connections that are blocked by the namespace's default-deny
+# egress rules.
+#
+# When an internal registry is specified (NPM_REGISTRY), Yarn Berry is
+# additionally pointed at that mirror via npmRegistryServer.
+#
+# Network tuning (timeout, retry, concurrency) and telemetry suppression
+# are applied unconditionally — they are beneficial regardless of whether
+# a proxy or internal registry is in use. Telemetry in particular must be
+# disabled because the buildah build context does not inherit CI=true from
+# the GitLab runner, so Yarn defaults to telemetry=on and the request to
+# repo.yarnpkg.com hangs for up to 10 minutes in restricted networks.
 RUN if [ -n "${NPM_REGISTRY}" ]; then \
       yarn config set npmRegistryServer "${NPM_REGISTRY}"; \
-      yarn config set httpTimeout "${PROXY_HTTP_TIMEOUT}"; \
-      yarn config set httpRetry "${PROXY_HTTP_RETRY}"; \
-      yarn config set networkConcurrency "${PROXY_NETWORK_CONCURRENCY}"; \
-      yarn config set enableTelemetry false; \
     fi && \
+    if [ -n "${HTTPS_PROXY}" ] || [ -n "${HTTP_PROXY}" ]; then \
+      yarn config set httpProxy  "${HTTP_PROXY:-${HTTPS_PROXY}}"; \
+      yarn config set httpsProxy "${HTTPS_PROXY:-${HTTP_PROXY}}"; \
+    fi && \
+    yarn config set httpTimeout "${PROXY_HTTP_TIMEOUT}" && \
+    yarn config set httpRetry "${PROXY_HTTP_RETRY}" && \
+    yarn config set networkConcurrency "${PROXY_NETWORK_CONCURRENCY}" && \
+    yarn config set enableTelemetry false && \
     NODE_DEBUG="${FETCH_DEBUG}" yarn install --immutable
 
 # Copy the rest of the source code (bin/ needed for build script)
