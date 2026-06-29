@@ -1,6 +1,9 @@
 # hadolint global ignore=DL3013,DL3041,DL3025
 FROM registry.access.redhat.com/ubi9/python-312:9.8
 
+ARG VERSION_TAG=""
+LABEL version="${VERSION_TAG}"
+
 # add application sources with correct perms for OCP
 USER 0
 RUN dnf install -y libpq-devel gcc && \
