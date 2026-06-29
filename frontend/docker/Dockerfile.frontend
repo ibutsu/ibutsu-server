@@ -106,6 +106,9 @@ RUN CI=false GENERATE_SOURCEMAP=false yarn build
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-20-minimal/64770ddd0e699534bb564b3b
 FROM registry.access.redhat.com/ubi9/nodejs-20-minimal:9.7
 
+ARG VERSION_TAG=""
+LABEL version="${VERSION_TAG}"
+
 WORKDIR /opt/app-root/src
 
 # Copy only the compiled static files from the builder stage.
