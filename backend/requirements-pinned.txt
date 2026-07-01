@@ -92,7 +92,7 @@ google-auth-oauthlib==1.4.0
     # via ibutsu-server (pyproject.toml)
 googleapis-common-protos==1.75.0
     # via google-api-core
-greenlet==3.5.1
+greenlet==3.5.3
     # via sqlalchemy
 gunicorn==26.0.0
     # via ibutsu-server (pyproject.toml)
