@@ -6,7 +6,7 @@ alembic==1.18.5
     # via ibutsu-server (pyproject.toml)
 amqp==5.3.1
     # via kombu
-anyio==4.13.0
+anyio==4.14.1
     # via
     #   httpx
     #   starlette
