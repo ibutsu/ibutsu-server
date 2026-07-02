@@ -179,7 +179,7 @@ python-dotenv==1.2.2
     # via uvicorn
 python-magic==0.4.27
     # via ibutsu-server (pyproject.toml)
-python-multipart==0.0.31
+python-multipart==0.0.32
     # via connexion
 pyyaml==6.0.3
     # via
