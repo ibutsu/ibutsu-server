@@ -23,7 +23,7 @@
     "eslint-config": "^0.3.0",
     "fs-extra": "^11.3.5",
     "globals": "^17.6.0",
-    "keycloak-js": "^19.0.3",
+    "keycloak-js": "^26.0.0",
     "monaco-editor": "^0.55.1",
     "nanoid": "^5.1.11",
     "prop-types": "^15.8.1",
