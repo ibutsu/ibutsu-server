@@ -28,7 +28,7 @@
     "nanoid": "^5.1.11",
     "prop-types": "^15.8.1",
     "react": "^18.3.1",
-    "react-apexcharts": "^1.9.0",
+    "react-apexcharts": "^2.0.0",
     "react-dom": "^18.3.1",
     "react-error-boundary": "^6.1.2",
     "react-heatmap-grid": "^0.9.0",
