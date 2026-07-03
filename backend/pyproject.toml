@@ -31,7 +31,7 @@ dependencies = [
     "connexion[swagger-ui]",
     "connexion[flask]",
     "flask_bcrypt",
-    "bcrypt<5",
+    "bcrypt<6",
     "flask_mail",
     "Flask",
     "Flask-SQLAlchemy",

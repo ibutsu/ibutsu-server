@@ -19,7 +19,7 @@ attrs==26.1.0
     # via
     #   jsonschema
     #   referencing
-bcrypt==4.3.0
+bcrypt==5.0.0
     # via
     #   ibutsu-server (pyproject.toml)
     #   flask-bcrypt
