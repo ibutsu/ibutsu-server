@@ -75,7 +75,7 @@ flask-sqlalchemy==3.1.1
     # via ibutsu-server (pyproject.toml)
 google-api-core==2.31.0
     # via google-api-python-client
-google-api-python-client==2.196.0
+google-api-python-client==2.198.0
     # via ibutsu-server (pyproject.toml)
 google-auth==2.53.0
     # via
