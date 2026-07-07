@@ -19,8 +19,8 @@ jobs:
   lint-test-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           node-version-file: 'frontend/.nvmrc'
       - run: corepack enable
@@ -44,7 +44,7 @@ jobs:
     needs: lint-test-frontend
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build frontend image
         uses: redhat-actions/buildah-build@v2
         with:
@@ -58,7 +58,7 @@ jobs:
     needs: lint-test-frontend
     if: needs['lint-test-frontend'].result == 'success'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Download coverage artifacts
         uses: actions/download-artifact@v4
         with:
