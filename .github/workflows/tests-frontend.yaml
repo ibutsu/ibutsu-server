@@ -39,20 +39,6 @@ jobs:
           path: frontend/coverage/
           retention-days: 30
 
-  build-frontend:
-    runs-on: ubuntu-latest
-    needs: lint-test-frontend
-    if: github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v7
-      - name: Build frontend image
-        uses: redhat-actions/buildah-build@v2
-        with:
-          context: ./frontend
-          image: ibutsu-frontend
-          dockerfiles: |
-            ./frontend/docker/Dockerfile.frontend
-
   upload-coverage:
     runs-on: ubuntu-latest
     needs: lint-test-frontend
