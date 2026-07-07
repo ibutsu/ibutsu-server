@@ -2,11 +2,11 @@
 #    uv pip compile pyproject.toml -o requirements-pinned-new.txt
 a2wsgi==1.10.10
     # via connexion
-alembic==1.18.4
+alembic==1.18.5
     # via ibutsu-server (pyproject.toml)
 amqp==5.3.1
     # via kombu
-anyio==4.13.0
+anyio==4.14.1
     # via
     #   httpx
     #   starlette
@@ -31,7 +31,7 @@ blinker==1.9.0
     #   flask-mail
 celery==5.6.3
     # via ibutsu-server (pyproject.toml)
-certifi==2026.5.20
+certifi==2026.6.17
     # via
     #   httpcore
     #   httpx
@@ -40,7 +40,7 @@ cffi==2.0.0
     # via cryptography
 charset-normalizer==3.4.7
     # via requests
-click==8.4.1
+click==8.4.2
     # via
     #   celery
     #   click-didyoumean
@@ -73,11 +73,11 @@ flask-mail==0.10.0
     # via ibutsu-server (pyproject.toml)
 flask-sqlalchemy==3.1.1
     # via ibutsu-server (pyproject.toml)
-google-api-core==2.30.3
+google-api-core==2.31.0
     # via google-api-python-client
-google-api-python-client==2.196.0
+google-api-python-client==2.198.0
     # via ibutsu-server (pyproject.toml)
-google-auth==2.53.0
+google-auth==2.55.1
     # via
     #   ibutsu-server (pyproject.toml)
     #   google-api-core
@@ -92,7 +92,7 @@ google-auth-oauthlib==1.4.0
     # via ibutsu-server (pyproject.toml)
 googleapis-common-protos==1.75.0
     # via google-api-core
-greenlet==3.5.1
+greenlet==3.5.3
     # via sqlalchemy
 gunicorn==26.0.0
     # via ibutsu-server (pyproject.toml)
@@ -102,7 +102,7 @@ h11==0.16.0
     #   uvicorn
 httpcore==1.0.9
     # via httpx
-httplib2==0.31.2
+httplib2==0.32.0
     # via
     #   google-api-python-client
     #   google-auth-httplib2
@@ -152,7 +152,7 @@ prompt-toolkit==3.0.52
     # via click-repl
 proto-plus==1.28.0
     # via google-api-core
-protobuf==7.35.0
+protobuf==7.35.1
     # via
     #   google-api-core
     #   googleapis-common-protos
@@ -179,14 +179,14 @@ python-dotenv==1.2.2
     # via uvicorn
 python-magic==0.4.27
     # via ibutsu-server (pyproject.toml)
-python-multipart==0.0.31
+python-multipart==0.0.32
     # via connexion
 pyyaml==6.0.3
     # via
     #   ibutsu-server (pyproject.toml)
     #   connexion
     #   uvicorn
-redis==7.4.0
+redis==7.4.1
     # via ibutsu-server (pyproject.toml)
 referencing==0.37.0
     # via
@@ -207,7 +207,7 @@ setuptools==82.0.1
     # via ibutsu-server (pyproject.toml)
 six==1.17.0
     # via python-dateutil
-sqlalchemy==2.0.50
+sqlalchemy==2.0.51
     # via
     #   ibutsu-server (pyproject.toml)
     #   alembic
@@ -230,13 +230,13 @@ typing-extensions==4.15.0
     #   sqlalchemy
 tzdata==2026.2
     # via kombu
-tzlocal==5.3.1
+tzlocal==5.4.4
     # via celery
 uritemplate==4.2.0
     # via google-api-python-client
 urllib3==2.7.0
     # via requests
-uvicorn==0.48.0
+uvicorn==0.50.0
     # via ibutsu-server (pyproject.toml)
 uvloop==0.22.1
     # via uvicorn
@@ -248,7 +248,7 @@ vine==5.1.0
     #   kombu
 watchfiles==1.2.0
     # via uvicorn
-wcwidth==0.7.0
+wcwidth==0.8.2
     # via prompt-toolkit
 websockets==16.0
     # via uvicorn
