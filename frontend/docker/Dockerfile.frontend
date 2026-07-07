@@ -104,7 +104,7 @@ RUN CI=false GENERATE_SOURCEMAP=false yarn build
 # updating the COPY source path from 'build' to 'dist'.
 #
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-20-minimal/64770ddd0e699534bb564b3b
-FROM registry.access.redhat.com/ubi9/nodejs-20-minimal:9.7
+FROM registry.access.redhat.com/ubi9/nodejs-20-minimal:9.7-1778604817
 
 ARG VERSION_TAG=""
 LABEL version="${VERSION_TAG}"
