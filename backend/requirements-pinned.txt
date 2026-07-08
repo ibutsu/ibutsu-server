@@ -223,7 +223,7 @@ swagger-ui-bundle==1.1.0
     # via
     #   ibutsu-server (pyproject.toml)
     #   connexion
-typing-extensions==4.15.0
+typing-extensions==4.16.0
     # via
     #   alembic
     #   connexion
