@@ -1,5 +1,5 @@
 # hadolint global ignore=DL3013,DL3041,DL3025
-FROM registry.access.redhat.com/ubi9/python-312:9.8-1782966301
+FROM registry.access.redhat.com/ubi9/python-312:9.8-1783442686
 
 ARG VERSION_TAG=""
 LABEL version="${VERSION_TAG}"
