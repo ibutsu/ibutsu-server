@@ -1,7 +1,7 @@
 # hadolint global ignore=DL3013,DL3041
 FROM registry.access.redhat.com/ubi9/python-312:9.8-1782966301
 
-ARG VERSION_TAG=""
+ARG VERSION_TAG="latest"
 LABEL version="${VERSION_TAG}"
 
 ENV UPGRADE_PIP_TO_LATEST=1
