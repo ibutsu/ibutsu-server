@@ -52,7 +52,7 @@ jobs:
         working-directory: ./backend
         run: hatch run test-cov
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always() && matrix.python-version == '3.13'
         with:
           name: backend-coverage
@@ -66,7 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: Download coverage artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: coverage-reports
           pattern: '*-coverage*'
