@@ -3,8 +3,8 @@ import { MemoryRouter } from 'react-router-dom';
 import NewDashboardModal from './new-dashboard-modal';
 
 describe('NewDashboardModal', () => {
-  const mockSaveCallback = jest.fn();
-  const mockCloseCallback = jest.fn();
+  const mockSaveCallback = vi.fn();
+  const mockCloseCallback = vi.fn();
   const mockProject = {
     id: '550e8400-e29b-41d4-a716-446655440000',
     name: 'Test Project',
@@ -26,7 +26,7 @@ describe('NewDashboardModal', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Modal rendering', () => {

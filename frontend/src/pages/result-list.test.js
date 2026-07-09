@@ -11,17 +11,17 @@ import {
 } from '../test-utils/mock-data';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('./settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('./settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080',
   },
 }));
 
 describe('ResultList', () => {
-  const mockUpdateFilters = jest.fn();
-  const mockClearFilters = jest.fn();
-  const mockSetFieldOptions = jest.fn();
+  const mockUpdateFilters = vi.fn();
+  const mockClearFilters = vi.fn();
+  const mockSetFieldOptions = vi.fn();
 
   const defaultIbutsuContext = {
     primaryObject: {
@@ -29,10 +29,10 @@ describe('ResultList', () => {
       name: 'test-project',
     },
     primaryType: 'project',
-    setPrimaryObject: jest.fn(),
-    setPrimaryType: jest.fn(),
+    setPrimaryObject: vi.fn(),
+    setPrimaryType: vi.fn(),
     darkTheme: false,
-    setDarkTheme: jest.fn(),
+    setDarkTheme: vi.fn(),
   };
 
   const defaultFilterContext = {
@@ -43,12 +43,12 @@ describe('ResultList', () => {
     fieldSelection: null,
     operationSelection: 'eq',
     textFilter: '',
-    setTextFilter: jest.fn(),
-    onFieldSelect: jest.fn(),
-    onOperationSelect: jest.fn(),
-    onRemoveFilter: jest.fn(),
-    applyFilter: jest.fn(),
-    resetFilters: jest.fn(),
+    setTextFilter: vi.fn(),
+    onFieldSelect: vi.fn(),
+    onOperationSelect: vi.fn(),
+    onRemoveFilter: vi.fn(),
+    applyFilter: vi.fn(),
+    resetFilters: vi.fn(),
     filterMode: 'text',
     operationMode: 'single',
     operations: {
@@ -60,15 +60,15 @@ describe('ResultList', () => {
     boolToggle: (toggleRef) => <button ref={toggleRef}>Bool</button>,
     filteredFieldOptions: [],
     isFieldOpen: false,
-    setIsFieldOpen: jest.fn(),
+    setIsFieldOpen: vi.fn(),
     isOperationOpen: false,
-    setIsOperationOpen: jest.fn(),
+    setIsOperationOpen: vi.fn(),
     isBoolOpen: false,
-    setIsBoolOpen: jest.fn(),
+    setIsBoolOpen: vi.fn(),
     boolSelection: null,
-    onBoolSelect: jest.fn(),
+    onBoolSelect: vi.fn(),
     inValues: [],
-    setInValues: jest.fn(),
+    setInValues: vi.fn(),
   };
 
   const renderComponent = (
@@ -97,9 +97,9 @@ describe('ResultList', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    HttpClient.get = jest.fn();
-    HttpClient.handleResponse = jest.fn();
+    vi.clearAllMocks();
+    HttpClient.get = vi.fn();
+    HttpClient.handleResponse = vi.fn();
   });
 
   describe('Rendering', () => {
@@ -536,7 +536,7 @@ describe('ResultList', () => {
 
   describe('Debouncing', () => {
     it('should debounce data fetching', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const mockResults = [];
       const mockResponse = createMockResultsResponse(mockResults);
 
@@ -546,13 +546,13 @@ describe('ResultList', () => {
       renderComponent();
 
       // Fast advance past debounce
-      jest.advanceTimersByTime(200);
+      vi.advanceTimersByTime(200);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalled();
       });
 
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
   });
 

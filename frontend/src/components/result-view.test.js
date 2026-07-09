@@ -5,15 +5,15 @@ import { IbutsuContext } from './contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock ClassificationDropdown
-jest.mock('./classification-dropdown', () => ({
+vi.mock('./classification-dropdown', () => ({
   ClassificationDropdown: () => (
     <div data-ouia-component-id="classification-dropdown">
       Classification Dropdown
@@ -22,26 +22,26 @@ jest.mock('./classification-dropdown', () => ({
 }));
 
 // Mock TestHistoryTable
-jest.mock('./test-history', () => {
-  return function TestHistoryTable() {
+vi.mock('./test-history', () => {
+  return { default: function TestHistoryTable() {
     return (
       <div data-ouia-component-id="test-history-table">Test History Table</div>
     );
-  };
+  } };
 });
 
 // Mock ArtifactTab
-jest.mock('./artifact-tab', () => {
-  return function ArtifactTab() {
+vi.mock('./artifact-tab', () => {
+  return { default: function ArtifactTab() {
     return <div data-ouia-component-id="artifact-tab">Artifact Tab</div>;
-  };
+  } };
 });
 
 // Mock TabTitle
-jest.mock('./tab-title', () => {
-  return function TabTitle({ text }) {
+vi.mock('./tab-title', () => {
+  return { default: function TabTitle({ text }) {
     return <div>{text}</div>;
-  };
+  } };
 });
 
 describe('ResultView Component - Continuous Rendering Issue', () => {
@@ -79,7 +79,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
   } = {}) => {
     const contextValue = {
       darkTheme: false,
-      setDarkTheme: jest.fn(),
+      setDarkTheme: vi.fn(),
     };
 
     return render(
@@ -108,7 +108,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default mock for HttpClient.get - artifacts endpoint
     HttpClient.get.mockResolvedValue({
@@ -173,14 +173,14 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
     );
 
     // Clear mocks to track new calls
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Rerender with a new object reference but same data
     const sameDataNewReference = { ...mockResult };
 
     const contextValue = {
       darkTheme: false,
-      setDarkTheme: jest.fn(),
+      setDarkTheme: vi.fn(),
     };
 
     rerender(
@@ -232,7 +232,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
     );
 
     // Clear mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Now change to a different result with a different ID
     const differentResult = {
@@ -242,7 +242,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
 
     const contextValue = {
       darkTheme: false,
-      setDarkTheme: jest.fn(),
+      setDarkTheme: vi.fn(),
     };
 
     rerender(
@@ -538,7 +538,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
     it('should handle artifact fetch error gracefully', async () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       renderResultView({ skipHash: true });
 

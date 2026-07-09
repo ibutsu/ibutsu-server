@@ -11,44 +11,44 @@ import {
 } from '../test-utils';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('./settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('./settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock components that we don't need to test in detail
-jest.mock('../components/filtering/filtered-table-card', () => {
-  return function FilterTable() {
+vi.mock('../components/filtering/filtered-table-card', () => {
+  return { default: function FilterTable() {
     return <div data-ouia-component-id="filter-table">Filter Table</div>;
-  };
+  } };
 });
 
-jest.mock('../components/result-view', () => {
-  return function ResultView() {
+vi.mock('../components/result-view', () => {
+  return { default: function ResultView() {
     return <div data-ouia-component-id="result-view">Result View</div>;
-  };
+  } };
 });
 
-jest.mock('../components/classify-failures', () => {
-  return function ClassifyFailuresTable() {
+vi.mock('../components/classify-failures', () => {
+  return { default: function ClassifyFailuresTable() {
     return (
       <div data-ouia-component-id="classify-failures">Classify Failures</div>
     );
-  };
+  } };
 });
 
-jest.mock('../components/artifact-tab', () => {
-  return function ArtifactTab() {
+vi.mock('../components/artifact-tab', () => {
+  return { default: function ArtifactTab() {
     return <div data-ouia-component-id="artifact-tab">Artifact Tab</div>;
-  };
+  } };
 });
 
-jest.mock('../components/tab-title', () => {
-  return function TabTitle({ text }) {
+vi.mock('../components/tab-title', () => {
+  return { default: function TabTitle({ text }) {
     return <div>{text}</div>;
-  };
+  } };
 });
 
 describe('Run Page', () => {
@@ -66,7 +66,7 @@ describe('Run Page', () => {
     const contextValue = {
       primaryObject: mockProject,
       darkTheme: false,
-      setDarkTheme: jest.fn(),
+      setDarkTheme: vi.fn(),
     };
 
     return render(
@@ -81,7 +81,7 @@ describe('Run Page', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock HttpClient.get for run data
     HttpClient.get.mockImplementation((url) => {
@@ -158,7 +158,7 @@ describe('Run Page', () => {
     it('should handle fetch error gracefully', async () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       renderRun();
 
@@ -173,7 +173,7 @@ describe('Run Page', () => {
       HttpClient.get.mockRejectedValue(new Error('Not found'));
       HttpClient.handleResponse.mockRejectedValue(new Error('Not found'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       renderRun();
 

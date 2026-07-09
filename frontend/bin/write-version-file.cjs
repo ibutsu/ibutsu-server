@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-const fse = require('fs-extra');
+const fs = require('fs');
 
-let packageData = JSON.parse(fse.readFileSync('package.json'));
-fse.writeFileSync(
+let packageData = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+fs.writeFileSync(
   'public/version.json',
   JSON.stringify({ version: packageData.version }),
 );

@@ -3,33 +3,37 @@ import GenericBarWidget from './generic-bar';
 import { HttpClient } from '../utilities/http';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock WidgetHeader component
-jest.mock('../components/widget-header', () => {
-  return function WidgetHeader({ title }) {
+vi.mock('../components/widget-header', () => {
+  return { default: function WidgetHeader({ title }) {
     return <div data-ouia-component-id="widget-header">{title}</div>;
-  };
+  } };
 });
 
 // Mock ParamDropdown component
-jest.mock('../components/param-dropdown', () => {
-  return function ParamDropdown({ tooltip, defaultValue }) {
+vi.mock('../components/param-dropdown', () => {
+  return { default: function ParamDropdown({ tooltip, defaultValue }) {
     return (
       <div data-ouia-component-id="param-dropdown">
         {tooltip} {defaultValue}
       </div>
     );
-  };
+  } };
 });
 
 // Mock PatternFly Charts
+<<<<<<< HEAD
 jest.mock('@patternfly/react-charts/victory', () => ({
+=======
+vi.mock('@patternfly/react-charts/victory', () => ({
+>>>>>>> eec6279d (Migrate to vite)
   Chart: function Chart({ children }) {
     return <div data-ouia-component-id="chart">{children}</div>;
   },
@@ -64,12 +68,12 @@ describe('GenericBarWidget', () => {
     title: 'Test Bar Chart',
     params: { project: 'test-project', group_field: 'component' },
     widgetEndpoint: 'run-aggregator',
-    onDeleteClick: jest.fn(),
-    onEditClick: jest.fn(),
+    onDeleteClick: vi.fn(),
+    onEditClick: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default mock for HttpClient.get
     HttpClient.get.mockResolvedValue({
@@ -164,7 +168,7 @@ describe('GenericBarWidget', () => {
     it('should handle fetch error', async () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(<GenericBarWidget {...defaultProps} />);
 
@@ -220,7 +224,7 @@ describe('GenericBarWidget', () => {
 
   describe('Props Handling', () => {
     it('should pass onDeleteClick prop to WidgetHeader', async () => {
-      const onDeleteClick = jest.fn();
+      const onDeleteClick = vi.fn();
 
       render(
         <GenericBarWidget {...defaultProps} onDeleteClick={onDeleteClick} />,
@@ -236,7 +240,7 @@ describe('GenericBarWidget', () => {
     });
 
     it('should pass onEditClick prop to WidgetHeader', async () => {
-      const onEditClick = jest.fn();
+      const onEditClick = vi.fn();
 
       render(<GenericBarWidget {...defaultProps} onEditClick={onEditClick} />);
 
@@ -368,7 +372,7 @@ describe('GenericBarWidget', () => {
     it('should handle HTTP error response', async () => {
       HttpClient.handleResponse.mockRejectedValue(new Error('Server error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(<GenericBarWidget {...defaultProps} />);
 
@@ -382,7 +386,7 @@ describe('GenericBarWidget', () => {
     it('should display error message on fetch failure', async () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(<GenericBarWidget {...defaultProps} />);
 

@@ -5,15 +5,15 @@ import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock FilterTable
-jest.mock('../components/filtering/filtered-table-card', () => {
+vi.mock('../components/filtering/filtered-table-card', () => {
   const PropTypes = require('prop-types');
   const MockFilterTable = ({ columns, rows, headerChildren, isError }) => (
     <div data-ouia-component-id="filter-table">
@@ -45,7 +45,7 @@ jest.mock('../components/filtering/filtered-table-card', () => {
     headerChildren: PropTypes.node,
     isError: PropTypes.bool,
   };
-  return MockFilterTable;
+  return { default: MockFilterTable };
 });
 
 describe('CompareRunsView Component', () => {
@@ -80,10 +80,10 @@ describe('CompareRunsView Component', () => {
     const contextValue = {
       primaryObject,
       primaryType: 'project',
-      setPrimaryType: jest.fn(),
-      setPrimaryObject: jest.fn(),
+      setPrimaryType: vi.fn(),
+      setPrimaryObject: vi.fn(),
       darkTheme: false,
-      setDarkTheme: jest.fn(),
+      setDarkTheme: vi.fn(),
     };
 
     return render(
@@ -96,7 +96,7 @@ describe('CompareRunsView Component', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     HttpClient.get.mockResolvedValue({
       ok: true,

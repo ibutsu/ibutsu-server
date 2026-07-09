@@ -4,15 +4,15 @@ import AddTokenModal from './add-token-modal';
 import { HttpClient } from '../../utilities/http';
 
 // Mock dependencies
-jest.mock('../../utilities/http');
-jest.mock('../../pages/settings', () => ({
+vi.mock('../../utilities/http');
+vi.mock('../../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 describe('AddTokenModal', () => {
-  const mockOnClose = jest.fn();
+  const mockOnClose = vi.fn();
 
   const renderModal = (props = {}) => {
     const defaultProps = {
@@ -28,7 +28,7 @@ describe('AddTokenModal', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Modal rendering', () => {

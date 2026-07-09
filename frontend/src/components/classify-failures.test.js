@@ -11,15 +11,15 @@ import {
 } from '../test-utils';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock child components
-jest.mock('./classification-dropdown', () => ({
+vi.mock('./classification-dropdown', () => ({
   ClassificationDropdown: function ClassificationDropdown() {
     return (
       <div data-ouia-component-id="classification-dropdown">Classification</div>
@@ -34,13 +34,13 @@ jest.mock('./classification-dropdown', () => ({
   },
 }));
 
-jest.mock('./result-view', () => {
-  return function ResultView() {
+vi.mock('./result-view', () => {
+  return { default: function ResultView() {
     return <div data-ouia-component-id="result-view">Result View</div>;
-  };
+  } };
 });
 
-jest.mock('./filtering/filtered-table-card', () => {
+vi.mock('./filtering/filtered-table-card', () => {
   const PropTypes = require('prop-types');
   const MockFilterTable = ({
     columns,
@@ -85,13 +85,13 @@ jest.mock('./filtering/filtered-table-card', () => {
     filters: PropTypes.node,
     selectable: PropTypes.bool,
   };
-  return MockFilterTable;
+  return { default: MockFilterTable };
 });
 
-jest.mock('./filtering/result-filter', () => {
-  return function ResultFilter() {
+vi.mock('./filtering/result-filter', () => {
+  return { default: function ResultFilter() {
     return <div data-ouia-component-id="result-filter">Result Filter</div>;
-  };
+  } };
 });
 
 describe('ClassifyFailuresTable', () => {
@@ -115,10 +115,10 @@ describe('ClassifyFailuresTable', () => {
 
   const defaultFilterContext = {
     activeFilters: [],
-    updateFilters: jest.fn(),
-    clearFilters: jest.fn(),
-    setActiveFilters: jest.fn(),
-    onRemoveFilter: jest.fn(),
+    updateFilters: vi.fn(),
+    clearFilters: vi.fn(),
+    setActiveFilters: vi.fn(),
+    onRemoveFilter: vi.fn(),
   };
 
   const renderComponent = (filterContext = {}) => {
@@ -139,8 +139,8 @@ describe('ClassifyFailuresTable', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    vi.clearAllMocks();
+    vi.useFakeTimers();
 
     HttpClient.get.mockResolvedValue({
       ok: true,
@@ -156,13 +156,13 @@ describe('ClassifyFailuresTable', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('Rendering', () => {
     it('should render the card with title', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByText('Test Failures')).toBeInTheDocument();
@@ -171,7 +171,7 @@ describe('ClassifyFailuresTable', () => {
 
     it('should render FilterTable component', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -180,7 +180,7 @@ describe('ClassifyFailuresTable', () => {
 
     it('should display column headers', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByText('Test')).toBeInTheDocument();
@@ -193,7 +193,7 @@ describe('ClassifyFailuresTable', () => {
 
     it('should display include skips checkbox', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByText('Include skips, xfails')).toBeInTheDocument();
@@ -202,7 +202,7 @@ describe('ClassifyFailuresTable', () => {
 
     it('should display multi classification dropdown', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(
@@ -213,7 +213,7 @@ describe('ClassifyFailuresTable', () => {
 
     it('should display result filter', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('result-filter')).toBeInTheDocument();
@@ -222,7 +222,7 @@ describe('ClassifyFailuresTable', () => {
 
     it('should be selectable table', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('selectable-table')).toBeInTheDocument();
@@ -233,7 +233,7 @@ describe('ClassifyFailuresTable', () => {
   describe('Data Fetching', () => {
     it('should fetch results on mount', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalledWith(
@@ -248,7 +248,7 @@ describe('ClassifyFailuresTable', () => {
 
     it('should include run_id filter in request', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalledWith(
@@ -264,7 +264,7 @@ describe('ClassifyFailuresTable', () => {
 
     it('should include result filter for failed/error', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalledWith(
@@ -279,11 +279,11 @@ describe('ClassifyFailuresTable', () => {
     });
 
     it('should handle fetch error gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith(
@@ -304,7 +304,7 @@ describe('ClassifyFailuresTable', () => {
         .mockImplementation(() => {});
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('error')).toBeInTheDocument();
@@ -323,7 +323,7 @@ describe('ClassifyFailuresTable', () => {
   describe('User Interactions', () => {
     it('should toggle include skips checkbox', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(
@@ -339,7 +339,7 @@ describe('ClassifyFailuresTable', () => {
 
     it('should refetch with skipped results when checkbox toggled', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalled();
@@ -349,7 +349,7 @@ describe('ClassifyFailuresTable', () => {
 
       const checkbox = screen.getByLabelText('include-skips-checkbox');
       fireEvent.click(checkbox);
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get.mock.calls.length).toBeGreaterThan(
@@ -373,7 +373,7 @@ describe('ClassifyFailuresTable', () => {
       });
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -394,7 +394,7 @@ describe('ClassifyFailuresTable', () => {
       });
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -411,7 +411,7 @@ describe('ClassifyFailuresTable', () => {
       };
 
       renderComponent(filterContext);
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalledWith(
@@ -426,13 +426,13 @@ describe('ClassifyFailuresTable', () => {
     });
 
     it('should call clearFilters when filters cleared', async () => {
-      const clearFiltersMock = jest.fn();
+      const clearFiltersMock = vi.fn();
       const filterContext = {
         clearFilters: clearFiltersMock,
       };
 
       renderComponent(filterContext);
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -451,7 +451,7 @@ describe('ClassifyFailuresTable', () => {
       });
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -462,7 +462,7 @@ describe('ClassifyFailuresTable', () => {
   describe('Result Row Transformation', () => {
     it('should display test_id as link', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('row-0')).toBeInTheDocument();
@@ -471,7 +471,7 @@ describe('ClassifyFailuresTable', () => {
 
     it('should display classification dropdown for each result', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         const dropdowns = screen.getAllByTestId('classification-dropdown');

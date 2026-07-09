@@ -5,8 +5,8 @@ import { HttpClient } from '../../utilities/http';
 import { FilterContext } from '../../components/contexts/filter-context';
 
 // Mock dependencies
-jest.mock('../../utilities/http');
-jest.mock('../settings', () => ({
+vi.mock('../../utilities/http');
+vi.mock('../settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
@@ -56,28 +56,28 @@ describe('UserList Component', () => {
   const renderUserList = ({ activeFilters = [] } = {}) => {
     const contextValue = {
       activeFilters,
-      clearFilters: jest.fn(),
-      setActiveFilters: jest.fn(),
+      clearFilters: vi.fn(),
+      setActiveFilters: vi.fn(),
       // Add required toggle functions for PatternFly Select components
-      fieldToggle: jest.fn((toggleRef) => (
+      fieldToggle: vi.fn((toggleRef) => (
         <div ref={toggleRef}>Field Toggle</div>
       )),
-      operationToggle: jest.fn((toggleRef) => (
+      operationToggle: vi.fn((toggleRef) => (
         <div ref={toggleRef}>Operation Toggle</div>
       )),
       isFieldOpen: false,
-      setIsFieldOpen: jest.fn(),
+      setIsFieldOpen: vi.fn(),
       isOperationOpen: false,
-      setIsOperationOpen: jest.fn(),
+      setIsOperationOpen: vi.fn(),
       selectedField: null,
-      onFieldSelect: jest.fn(),
+      onFieldSelect: vi.fn(),
       operationSelection: 'eq',
-      onOperationSelect: jest.fn(),
+      onOperationSelect: vi.fn(),
       textFilter: '',
-      setTextFilter: jest.fn(),
+      setTextFilter: vi.fn(),
       filteredFieldOptions: [],
-      onRemoveFilter: jest.fn(),
-      applyFilter: jest.fn(),
+      onRemoveFilter: vi.fn(),
+      applyFilter: vi.fn(),
     };
 
     return render(
@@ -90,7 +90,7 @@ describe('UserList Component', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default mock for HttpClient.get
     HttpClient.get.mockResolvedValue({

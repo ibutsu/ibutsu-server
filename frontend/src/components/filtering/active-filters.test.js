@@ -4,15 +4,15 @@ import ActiveFilters from './active-filters';
 import { OPERATIONS } from '../../constants';
 
 // Mock useNavigate and useParams
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', () => ({
+  ...vi.importActual('react-router-dom'),
   useNavigate: () => mockNavigate,
   useParams: () => ({ project_id: 'test-project-id' }),
 }));
 
 describe('ActiveFilters', () => {
-  const mockOnRemoveFilter = jest.fn();
+  const mockOnRemoveFilter = vi.fn();
 
   const defaultProps = {
     activeFilters: [
@@ -33,7 +33,7 @@ describe('ActiveFilters', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Rendering', () => {

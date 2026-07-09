@@ -18,11 +18,8 @@ export default defineConfig([
   // Tracking: https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/issues/1075
   pluginCypress.configs.recommended,
   {
-    ...eslintReact.configs.recommended,
     files: ['src/**/*', 'cypress/**/*', 'bin/**/*'],
-  },
-  {
-    files: ['src/**/*', 'cypress/**/*', 'bin/**/*'],
+    extends: [eslintReact.configs.recommended],
     plugins: {
       'unused-imports': unusedImports,
       'react-hooks': reactHooksPlugin,
@@ -35,7 +32,6 @@ export default defineConfig([
         ...globals.browser,
         ...globals.node,
         ...globals.cypress,
-        process: 'readonly',
         es2020: true,
       },
       parserOptions: {
@@ -74,33 +70,37 @@ export default defineConfig([
       ],
     },
   },
-  // Specific configuration for service-worker.js to handle process.env
-  {
-    files: ['src/pages/service-worker.js'],
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        process: 'readonly',
-      },
-    },
-  },
-  // Specific configuration for test files to handle Jest globals
+  // Vitest globals for test files
   {
     files: ['**/*.test.js', '**/*.test.jsx', '**/*.spec.js', '**/*.spec.jsx'],
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.jest,
+        vi: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
       },
     },
   },
-  // Specific configuration for test utility files to handle Jest globals
+  // Vitest globals for test utility files
   {
     files: ['src/test-utils/**/*.js', 'src/setupTests.js'],
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.jest,
+        vi: 'readonly',
+        describe: 'readonly',
+        it: 'readonly',
+        expect: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
       },
     },
   },

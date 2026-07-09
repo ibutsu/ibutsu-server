@@ -5,20 +5,20 @@ import { FilterContext } from '../contexts/filter-context';
 import { IbutsuContext } from '../contexts/ibutsu-context';
 import { HttpClient } from '../../utilities/http';
 
-jest.mock('../../utilities/http');
+vi.mock('../../utilities/http');
 
 describe('ResultFilter', () => {
-  const mockUpdateFilters = jest.fn();
-  const mockResetFilters = jest.fn();
-  const mockOnRemoveFilter = jest.fn();
-  const mockOnFieldSelect = jest.fn();
-  const mockOnOperationSelect = jest.fn();
-  const mockOnBoolSelect = jest.fn();
-  const mockSetTextFilter = jest.fn();
-  const mockSetInValues = jest.fn();
-  const mockSetIsFieldOpen = jest.fn();
-  const mockSetIsOperationOpen = jest.fn();
-  const mockSetIsBoolOpen = jest.fn();
+  const mockUpdateFilters = vi.fn();
+  const mockResetFilters = vi.fn();
+  const mockOnRemoveFilter = vi.fn();
+  const mockOnFieldSelect = vi.fn();
+  const mockOnOperationSelect = vi.fn();
+  const mockOnBoolSelect = vi.fn();
+  const mockSetTextFilter = vi.fn();
+  const mockSetInValues = vi.fn();
+  const mockSetIsFieldOpen = vi.fn();
+  const mockSetIsOperationOpen = vi.fn();
+  const mockSetIsBoolOpen = vi.fn();
 
   const defaultContextValue = {
     activeFilters: [],
@@ -83,7 +83,7 @@ describe('ResultFilter', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     if (HttpClient.get.mock) {
       HttpClient.get.mockResolvedValue({ ok: true, json: () => [] });
       HttpClient.handleResponse.mockResolvedValue([]);

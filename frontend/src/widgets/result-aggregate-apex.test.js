@@ -2,28 +2,28 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import ResultAggregateApex from './result-aggregate-apex';
 
 // Mock dependencies
-jest.mock('../utilities', () => ({
-  getDarkTheme: jest.fn(() => false),
-  toTitleCase: jest.fn((str) =>
+vi.mock('../utilities', () => ({
+  getDarkTheme: vi.fn(() => false),
+  toTitleCase: vi.fn((str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1) : '',
   ),
   HttpClient: {
-    get: jest.fn(),
-    handleResponse: jest.fn(),
+    get: vi.fn(),
+    handleResponse: vi.fn(),
   },
 }));
 
 // Import HttpClient after mocking
 import { HttpClient } from '../utilities';
 
-jest.mock('../pages/settings', () => ({
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock ApexCharts
-jest.mock('react-apexcharts', () => {
+vi.mock('react-apexcharts', () => {
   const PropTypes = require('prop-types');
   const MockChart = ({ options, series, type }) => (
     <div
@@ -40,11 +40,11 @@ jest.mock('react-apexcharts', () => {
     series: PropTypes.array,
     type: PropTypes.string,
   };
-  return MockChart;
+  return { default: MockChart };
 });
 
 // Mock child components
-jest.mock('../components/widget-header', () => {
+vi.mock('../components/widget-header', () => {
   const PropTypes = require('prop-types');
   const MockWidgetHeader = ({ title, onEditClick, onDeleteClick }) => (
     <div data-ouia-component-id="widget-header">
@@ -66,10 +66,10 @@ jest.mock('../components/widget-header', () => {
     onEditClick: PropTypes.func,
     onDeleteClick: PropTypes.func,
   };
-  return MockWidgetHeader;
+  return { default: MockWidgetHeader };
 });
 
-jest.mock('../components/param-dropdown', () => {
+vi.mock('../components/param-dropdown', () => {
   const PropTypes = require('prop-types');
   const MockParamDropdown = ({
     dropdownItems,
@@ -97,10 +97,10 @@ jest.mock('../components/param-dropdown', () => {
     handleSelect: PropTypes.func,
     tooltip: PropTypes.string,
   };
-  return MockParamDropdown;
+  return { default: MockParamDropdown };
 });
 
-jest.mock('./result-widget-legend', () => {
+vi.mock('./result-widget-legend', () => {
   const PropTypes = require('prop-types');
   const MockLegend = ({ datum, x, y }) => (
     <g
@@ -116,10 +116,10 @@ jest.mock('./result-widget-legend', () => {
     y: PropTypes.number,
     style: PropTypes.object,
   };
-  return MockLegend;
+  return { default: MockLegend };
 });
 
-jest.mock('../components/hooks/use-svg-container-dimensions', () => ({
+vi.mock('../components/hooks/use-svg-container-dimensions', () => ({
   useSVGContainerDimensions: () => ({
     containerRef: { current: null },
     width: 400,
@@ -151,7 +151,7 @@ describe('ResultAggregateApex', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     HttpClient.get.mockResolvedValue({
       ok: true,
@@ -281,7 +281,7 @@ describe('ResultAggregateApex', () => {
     });
 
     it('should handle API error', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
       renderComponent();
@@ -318,7 +318,7 @@ describe('ResultAggregateApex', () => {
 
   describe('User Interactions', () => {
     it('should call onEditClick when edit button clicked', async () => {
-      const onEditClick = jest.fn();
+      const onEditClick = vi.fn();
 
       renderComponent({ onEditClick });
 
@@ -332,7 +332,7 @@ describe('ResultAggregateApex', () => {
     });
 
     it('should call onDeleteClick when delete button clicked', async () => {
-      const onDeleteClick = jest.fn();
+      const onDeleteClick = vi.fn();
 
       renderComponent({ onDeleteClick });
 

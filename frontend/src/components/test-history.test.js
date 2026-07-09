@@ -10,15 +10,15 @@ import {
 } from '../test-utils';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock child components that are tested separately
-jest.mock('./run-summary', () => {
+vi.mock('./run-summary', () => {
   const PropTypes = require('prop-types');
   const MockRunSummary = ({ summary }) => (
     <div data-ouia-component-id="run-summary">
@@ -26,22 +26,22 @@ jest.mock('./run-summary', () => {
     </div>
   );
   MockRunSummary.propTypes = { summary: PropTypes.object };
-  return MockRunSummary;
+  return { default: MockRunSummary };
 });
 
-jest.mock('./last-passed', () => {
-  return function LastPassed() {
+vi.mock('./last-passed', () => {
+  return { default: function LastPassed() {
     return <div data-ouia-component-id="last-passed">Last passed mock</div>;
-  };
+  } };
 });
 
-jest.mock('./result-view', () => {
-  return function ResultView() {
+vi.mock('./result-view', () => {
+  return { default: function ResultView() {
     return <div data-ouia-component-id="result-view">Result View Mock</div>;
-  };
+  } };
 });
 
-jest.mock('./filtering/filtered-table-card', () => {
+vi.mock('./filtering/filtered-table-card', () => {
   const PropTypes = require('prop-types');
   const MockFilterTable = ({
     columns,
@@ -84,13 +84,13 @@ jest.mock('./filtering/filtered-table-card', () => {
     footerChildren: PropTypes.node,
     filters: PropTypes.node,
   };
-  return MockFilterTable;
+  return { default: MockFilterTable };
 });
 
-jest.mock('./filtering/active-filters', () => {
-  return function ActiveFilters() {
+vi.mock('./filtering/active-filters', () => {
+  return { default: function ActiveFilters() {
     return <div data-ouia-component-id="active-filters">Active Filters</div>;
-  };
+  } };
 });
 
 describe('TestHistoryTable', () => {
@@ -123,8 +123,8 @@ describe('TestHistoryTable', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    vi.clearAllMocks();
+    vi.useFakeTimers();
 
     HttpClient.get.mockImplementation((url) => {
       const urlPath = Array.isArray(url) ? url.join('/') : url;
@@ -158,13 +158,13 @@ describe('TestHistoryTable', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('Rendering', () => {
     it('should render FilterTable component', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -173,7 +173,7 @@ describe('TestHistoryTable', () => {
 
     it('should display column headers', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByText('Result')).toBeInTheDocument();
@@ -186,7 +186,7 @@ describe('TestHistoryTable', () => {
 
     it('should display failures checkbox', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(
@@ -197,7 +197,7 @@ describe('TestHistoryTable', () => {
 
     it('should display time range selector', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByText('Time Range')).toBeInTheDocument();
@@ -207,7 +207,7 @@ describe('TestHistoryTable', () => {
 
     it('should display summary card', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByText('Summary')).toBeInTheDocument();
@@ -217,7 +217,7 @@ describe('TestHistoryTable', () => {
 
     it('should display last passed card', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByText('Last passed mock')).toBeInTheDocument();
@@ -227,7 +227,7 @@ describe('TestHistoryTable', () => {
 
     it('should display disclaimer note', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(
@@ -240,7 +240,7 @@ describe('TestHistoryTable', () => {
   describe('Data Fetching', () => {
     it('should fetch results on mount', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalledWith(
@@ -252,7 +252,7 @@ describe('TestHistoryTable', () => {
 
     it('should fetch result aggregator for summary', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalledWith(
@@ -263,11 +263,11 @@ describe('TestHistoryTable', () => {
     });
 
     it('should handle fetch error gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalled();
@@ -291,7 +291,7 @@ describe('TestHistoryTable', () => {
       ];
 
       renderComponent({ comparisonResults: comparisonRows });
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         // Should not fetch when comparisonResults provided
@@ -327,7 +327,7 @@ describe('TestHistoryTable', () => {
       });
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -358,7 +358,7 @@ describe('TestHistoryTable', () => {
       });
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -369,7 +369,7 @@ describe('TestHistoryTable', () => {
   describe('User Interactions', () => {
     it('should toggle failures only checkbox', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(
@@ -386,7 +386,7 @@ describe('TestHistoryTable', () => {
 
     it('should open time range selector on click', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByText('1 Week')).toBeInTheDocument();
@@ -410,7 +410,7 @@ describe('TestHistoryTable', () => {
           <TestHistoryTable />
         </MemoryRouter>,
       );
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -429,7 +429,7 @@ describe('TestHistoryTable', () => {
           <TestHistoryTable testResult={testResultNoEnv} />
         </MemoryRouter>,
       );
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -448,7 +448,7 @@ describe('TestHistoryTable', () => {
           <TestHistoryTable testResult={testResultNoTime} />
         </MemoryRouter>,
       );
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -473,7 +473,7 @@ describe('TestHistoryTable', () => {
       });
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
@@ -481,7 +481,7 @@ describe('TestHistoryTable', () => {
     });
 
     it('should handle aggregator fetch error', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       HttpClient.get.mockImplementation((url) => {
         const urlPath = Array.isArray(url) ? url.join('/') : url;
@@ -495,7 +495,7 @@ describe('TestHistoryTable', () => {
       });
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalled();
