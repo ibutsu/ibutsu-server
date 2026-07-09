@@ -203,7 +203,7 @@ rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
-setuptools==82.0.1
+setuptools==83.0.0
     # via ibutsu-server (pyproject.toml)
 six==1.17.0
     # via python-dateutil
