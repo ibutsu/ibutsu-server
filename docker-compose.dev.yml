@@ -86,7 +86,7 @@ services:
     environment:
       NODE_ENV: production
       REACT_APP_SERVER_URL: http://127.0.0.1:8080/api
-    image: node:20
+    image: node:22
     command: >
       /bin/bash -c
         "corepack enable &&

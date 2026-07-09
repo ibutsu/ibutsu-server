@@ -1,9 +1,9 @@
 # hadolint global ignore=DL3041,DL4006,SC2046,DL3033
-# Build the image first using the official UBI Node.js 20 builder image
-# See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-20/6481a0ba5116096a4a70dba5
-FROM registry.access.redhat.com/ubi9/nodejs-20:9.7-1778648167 AS builder
+# Build the image first using the official UBI Node.js 22 builder image
+# See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-22/66e8b9e5b613c0093ab45791
+FROM registry.access.redhat.com/ubi9/nodejs-22:1-1783399991 AS builder
 
-# The nodejs-20 image sets workdir to /opt/app-root/src by default
+# The nodejs-22 image sets workdir to /opt/app-root/src by default
 # but we'll explicitly set it for clarity
 WORKDIR /opt/app-root/src
 
@@ -12,10 +12,10 @@ ARG NPM_REGISTRY=""
 ARG EXTRA_CA_CERTS=""
 ENV NODE_EXTRA_CA_CERTS=${EXTRA_CA_CERTS}
 
-# corepack is not bundled in ubi9/nodejs-20; install it via npm first.
+# corepack is not bundled in ubi9/nodejs-22; install it via npm first.
 # Pinned to avoid unexpected behaviour from new corepack releases.
-# NOTE: corepack >=0.35.0 drops Node.js 20 support; update when base image moves to Node 22+.
-ARG COREPACK_VERSION="0.34.7"
+# NOTE: corepack 0.35.0 requires Node.js ^22.22.2 || ^24.15.0 || >=26.0.0.
+ARG COREPACK_VERSION="0.35.0"
 RUN if [ -n "${NPM_REGISTRY}" ]; then npm config set registry "${NPM_REGISTRY}"; fi && \
     npm install -g "corepack@${COREPACK_VERSION}" && \
     corepack enable
@@ -103,8 +103,8 @@ RUN CI=false GENERATE_SOURCEMAP=false yarn build
 # When react-scripts is replaced with Vite, the only change needed here is
 # updating the COPY source path from 'build' to 'dist'.
 #
-# See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-20-minimal/64770ddd0e699534bb564b3b
-FROM registry.access.redhat.com/ubi9/nodejs-20-minimal:9.7-1778604817
+# See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-22-minimal/664330aa459a2d3c807ccea9
+FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:1-1783399267
 
 ARG VERSION_TAG="latest"
 LABEL version="${VERSION_TAG}"
