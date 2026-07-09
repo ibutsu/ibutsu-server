@@ -29,9 +29,8 @@ export const processPyTestPath = (path) => {
 
 export const convertDate = (s) => {
   let remainingSeconds = s;
-  let days = 0;
   let date = new Date(0);
-  days = Math.floor(remainingSeconds / (24 * 60 * 60));
+  let days = Math.floor(remainingSeconds / (24 * 60 * 60));
   if (days !== 0) {
     remainingSeconds -= days * (24 * 60 * 60);
   }

@@ -13,7 +13,6 @@ jest.mock('../pages/settings', () => ({
 
 // Mock WidgetHeader component
 jest.mock('../components/widget-header', () => {
-  // eslint-disable-next-line react/prop-types
   return function WidgetHeader({ title }) {
     return <div data-ouia-component-id="widget-header">{title}</div>;
   };
@@ -21,7 +20,6 @@ jest.mock('../components/widget-header', () => {
 
 // Mock ParamDropdown component
 jest.mock('../components/param-dropdown', () => {
-  // eslint-disable-next-line react/prop-types
   return function ParamDropdown({ tooltip, defaultValue }) {
     return (
       <div data-ouia-component-id="param-dropdown">

@@ -39,7 +39,6 @@ jest.mock('./artifact-tab', () => {
 
 // Mock TabTitle
 jest.mock('./tab-title', () => {
-  // eslint-disable-next-line react/prop-types
   return function TabTitle({ text }) {
     return <div>{text}</div>;
   };

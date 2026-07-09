@@ -12,7 +12,6 @@ jest.mock('../pages/settings', () => ({
 
 // Mock WidgetHeader component
 jest.mock('../components/widget-header', () => {
-  // eslint-disable-next-line react/prop-types
   return function WidgetHeader({ title }) {
     return <div data-ouia-component-id="widget-header">{title}</div>;
   };
@@ -20,7 +19,6 @@ jest.mock('../components/widget-header', () => {
 
 // Mock PatternFly Charts
 jest.mock('@patternfly/react-charts/victory', () => ({
-  // eslint-disable-next-line react/prop-types
   Chart: function Chart({ children }) {
     return <div data-ouia-component-id="chart">{children}</div>;
   },
@@ -33,13 +31,11 @@ jest.mock('@patternfly/react-charts/victory', () => ({
   ChartContainer: function ChartContainer() {
     return <div data-ouia-component-id="chart-container" />;
   },
-  // eslint-disable-next-line react/prop-types
   ChartLegend: function ChartLegend({ data }) {
     return (
       <div data-ouia-component-id="chart-legend">{JSON.stringify(data)}</div>
     );
   },
-  // eslint-disable-next-line react/prop-types
   ChartStack: function ChartStack({ children }) {
     return <div data-ouia-component-id="chart-stack">{children}</div>;
   },
@@ -50,7 +46,6 @@ jest.mock('@patternfly/react-charts/victory', () => ({
     return <div data-ouia-component-id="chart-tooltip" />;
   },
   createContainer: () => {
-    // eslint-disable-next-line react/prop-types
     return function CursorVoronoiContainer({ children }) {
       return (
         <div data-ouia-component-id="cursor-voronoi-container">{children}</div>

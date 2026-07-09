@@ -180,9 +180,9 @@ export const useWidgets = ({
         };
         return (
           <GridItem
+            key={`${widget.id}-${loadKey}`}
             {...COLUMN_SPAN[widget.widget]}
             {...ROW_SPAN[widget.widget]}
-            key={`${widget.id}-${loadKey}`}
           >
             <Suspense fallback={<WidgetSpinner />}>
               {widget.type === 'widget' &&

@@ -35,13 +35,10 @@ import { useFilterContext } from '../components/contexts/filter-context';
 
 const runToRow = (run, filterFunc, analysisViewId) => {
   let badges = [];
-  let created = 0;
   let badge;
-  if (run.start_time) {
-    created = new Date(run.start_time);
-  } else {
-    created = new Date(run.created);
-  }
+  const created = run.start_time
+    ? new Date(run.start_time)
+    : new Date(run.created);
 
   if (filterFunc) {
     if (run.component) {
@@ -173,9 +170,9 @@ const AccessibilityDashboardView = ({ view }) => {
 
   const applyFilter = () => {
     const operationMode = OPERATION_MODE_MAP[operationSelection];
-    let value = '';
+    let value;
     if (operationMode === 'multi') {
-      value = inValues.join(';'); // translate list to ;-separated string for BE
+      value = inValues.join(';');
     } else if (operationMode === 'bool') {
       value = boolSelection;
     } else {

@@ -95,20 +95,17 @@ const ProjectEdit = () => {
       default_dashboard_id: selectedDashboard?.id || null,
     };
 
-    let request = null;
     try {
-      if (isNewProject) {
-        request = await HttpClient.post(
-          [Settings.serverUrl, 'admin', 'project'],
-          project,
-        );
-      } else {
-        request = await HttpClient.put(
-          [Settings.serverUrl, 'admin', 'project', id],
-          {},
-          project,
-        );
-      }
+      const request = isNewProject
+        ? await HttpClient.post(
+            [Settings.serverUrl, 'admin', 'project'],
+            project,
+          )
+        : await HttpClient.put(
+            [Settings.serverUrl, 'admin', 'project', id],
+            {},
+            project,
+          );
       await HttpClient.handleResponse(request);
     } catch (error) {
       console.error('Failed to POST/PUT project: ', error);

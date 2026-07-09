@@ -12,7 +12,6 @@ jest.mock('../pages/settings', () => ({
 
 // Mock WidgetHeader component
 jest.mock('../components/widget-header', () => {
-  // eslint-disable-next-line react/prop-types
   return function WidgetHeader({ title }) {
     return <div data-ouia-component-id="widget-header">{title}</div>;
   };
@@ -20,7 +19,6 @@ jest.mock('../components/widget-header', () => {
 
 // Mock ParamDropdown component
 jest.mock('../components/param-dropdown', () => {
-  // eslint-disable-next-line react/prop-types
   return function ParamDropdown({ tooltip, defaultValue }) {
     return (
       <div data-ouia-component-id="param-dropdown">
@@ -32,7 +30,6 @@ jest.mock('../components/param-dropdown', () => {
 
 // Mock PatternFly Charts
 jest.mock('@patternfly/react-charts/victory', () => ({
-  // eslint-disable-next-line react/prop-types
   Chart: function Chart({ children }) {
     return <div data-ouia-component-id="chart">{children}</div>;
   },
@@ -42,13 +39,11 @@ jest.mock('@patternfly/react-charts/victory', () => ({
   ChartBar: function ChartBar() {
     return <div data-ouia-component-id="chart-bar" />;
   },
-  // eslint-disable-next-line react/prop-types
   ChartLegend: function ChartLegend({ data }) {
     return (
       <div data-ouia-component-id="chart-legend">{JSON.stringify(data)}</div>
     );
   },
-  // eslint-disable-next-line react/prop-types
   ChartStack: function ChartStack({ children }) {
     return <div data-ouia-component-id="chart-stack">{children}</div>;
   },

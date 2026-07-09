@@ -14,7 +14,6 @@ jest.mock('../pages/settings', () => ({
 
 // Mock WidgetHeader component
 jest.mock('../components/widget-header', () => {
-  // eslint-disable-next-line react/prop-types
   return function WidgetHeader({ title, actions }) {
     return (
       <div data-ouia-component-id="widget-header">
@@ -29,7 +28,6 @@ jest.mock('../components/widget-header', () => {
 
 // Mock ParamDropdown component
 jest.mock('../components/param-dropdown', () => {
-  // eslint-disable-next-line react/prop-types
   return function ParamDropdown({ tooltip, defaultValue }) {
     return (
       <div data-ouia-component-id="param-dropdown">
@@ -41,7 +39,6 @@ jest.mock('../components/param-dropdown', () => {
 
 // Mock HeatMapWrapper component
 jest.mock('../components/heat-map-wrapper', () => {
-  /* eslint-disable react/prop-types */
   return function HeatMapWrapper({ xLabels, yLabels, data }) {
     return (
       <div data-ouia-component-id="heatmap">
@@ -55,7 +52,6 @@ jest.mock('../components/heat-map-wrapper', () => {
       </div>
     );
   };
-  /* eslint-enable react/prop-types */
 });
 
 describe('FilterHeatmapWidget', () => {
