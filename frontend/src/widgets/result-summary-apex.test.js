@@ -13,7 +13,6 @@ jest.mock('../pages/settings', () => ({
 
 // Mock WidgetHeader component
 jest.mock('../components/widget-header', () => {
-  // eslint-disable-next-line react/prop-types
   return function WidgetHeader({ title }) {
     return <div data-ouia-component-id="widget-header">{title}</div>;
   };
@@ -28,7 +27,6 @@ jest.mock('./result-widget-legend', () => {
 
 // Mock react-apexcharts
 jest.mock('react-apexcharts', () => {
-  // eslint-disable-next-line react/prop-types
   return function Chart({ series, options = {} }) {
     return (
       <div data-ouia-component-id="apex-chart">

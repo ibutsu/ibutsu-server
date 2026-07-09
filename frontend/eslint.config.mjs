@@ -1,13 +1,11 @@
 // eslint.config.mjs
-import reactPlugin from 'eslint-plugin-react';
+import eslintReact from '@eslint-react/eslint-plugin';
 import unusedImports from 'eslint-plugin-unused-imports';
 import globals from 'globals';
-import babelParser from '@babel/eslint-parser';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import js from '@eslint/js';
-import pluginCypress from 'eslint-plugin-cypress/flat';
-import eslintPluginJsxA11y from 'eslint-plugin-jsx-a11y';
+import pluginCypress from 'eslint-plugin-cypress';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
 export default defineConfig([
@@ -16,74 +14,48 @@ export default defineConfig([
     'Ignore build dir and node_modules',
   ),
   js.configs.recommended,
-  reactPlugin.configs.flat.recommended,
-  reactPlugin.configs.flat['jsx-runtime'],
-  eslintPluginJsxA11y.flatConfigs.recommended,
+  // TODO: Re-enable eslint-plugin-jsx-a11y when ESLint 10 support is released
+  // Tracking: https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/issues/1075
   pluginCypress.configs.recommended,
-  // Global settings for React
   {
-    settings: {
-      react: {
-        version: '18.3.1',
-      },
-    },
+    ...eslintReact.configs.recommended,
+    files: ['src/**/*', 'cypress/**/*', 'bin/**/*'],
   },
   {
     files: ['src/**/*', 'cypress/**/*', 'bin/**/*'],
     plugins: {
-      'unused-imports': unusedImports, // not flat config compatible
+      'unused-imports': unusedImports,
       'react-hooks': reactHooksPlugin,
     },
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
     },
     languageOptions: {
-      ...reactPlugin.configs.flat.recommended.languageOptions,
       globals: {
         ...globals.browser,
         ...globals.node,
         ...globals.cypress,
-        process: 'readonly', // Explicitly define process for build-time env vars
+        process: 'readonly',
         es2020: true,
       },
-      parser: babelParser,
       parserOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
         ecmaFeatures: {
           jsx: true,
         },
-        requireConfigFile: false,
-        plugins: [
-          '@babel/plugin-transform-class-properties',
-          '@babel/plugin-transform-private-methods',
-          '@babel/plugin-syntax-jsx',
-          '@babel/plugin-syntax-flow',
-        ],
-        babelOptions: {
-          presets: [
-            '@babel/preset-flow',
-            '@babel/preset-env',
-            '@babel/preset-react',
-          ],
-        },
       },
     },
     rules: {
-      'react/jsx-curly-brace-presence': [
-        'error',
-        {
-          props: 'never',
-          children: 'never',
-        },
-      ],
-      'react/react-in-jsx-scope': 'off',
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+      '@eslint-react/component-hook-factories': 'warn',
+      '@eslint-react/no-nested-component-definitions': 'warn',
+      '@eslint-react/no-access-state-in-setstate': 'warn',
       camelcase: 'off',
       quotes: ['warn', 'single'],
       'no-duplicate-imports': 'error',
-      'no-unused-vars': 'off', // Turn off base rule in favor of unused-imports
+      'no-unused-vars': 'off',
       'unused-imports/no-unused-imports': 'error',
     },
   },
@@ -108,7 +80,7 @@ export default defineConfig([
     languageOptions: {
       globals: {
         ...globals.browser,
-        process: 'readonly', // Allow process for build-time environment variables
+        process: 'readonly',
       },
     },
   },
@@ -118,7 +90,7 @@ export default defineConfig([
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.jest, // Add Jest globals for test files
+        ...globals.jest,
       },
     },
   },
@@ -128,7 +100,7 @@ export default defineConfig([
     languageOptions: {
       globals: {
         ...globals.browser,
-        ...globals.jest, // Add Jest globals for test utility files
+        ...globals.jest,
       },
     },
   },

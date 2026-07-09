@@ -358,14 +358,11 @@ const Run = ({ defaultTab = 'summary' }) => {
     xpassed = 0,
     skipped = 0,
     not_run = 0;
-  let created = 0;
   let calculatePasses = true;
 
-  if (run.start_time) {
-    created = new Date(run.start_time);
-  } else {
-    created = new Date(run.created);
-  }
+  const created = run.start_time
+    ? new Date(run.start_time)
+    : new Date(run.created);
   if (run?.summary) {
     if (run.summary.passes) {
       passed = run.summary.passes;

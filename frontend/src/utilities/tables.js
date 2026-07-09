@@ -200,13 +200,10 @@ export const resultToComparisonRow = (result) => {
 
 export const runToRow = (run, filterFunc) => {
   let badges = [];
-  let created = 0;
   let componentBadge;
-  if (run.start_time) {
-    created = new Date(run.start_time);
-  } else {
-    created = new Date(run.created);
-  }
+  const created = run.start_time
+    ? new Date(run.start_time)
+    : new Date(run.created);
 
   if (filterFunc) {
     if (run.component) {
