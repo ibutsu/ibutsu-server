@@ -236,7 +236,7 @@ uritemplate==4.2.0
     # via google-api-python-client
 urllib3==2.7.0
     # via requests
-uvicorn==0.50.0
+uvicorn==0.50.2
     # via ibutsu-server (pyproject.toml)
 uvloop==0.22.1
     # via uvicorn
