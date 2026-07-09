@@ -1,7 +1,7 @@
 # hadolint global ignore=DL3041,DL4006,SC2046,DL3033
 # Build the image first using the official UBI Node.js 22 builder image
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-22/66e8b9e5b613c0093ab45791
-FROM registry.access.redhat.com/ubi9/nodejs-22:1-1783399991 AS builder
+FROM registry.access.redhat.com/ubi9/nodejs-22:1-1783573424 AS builder
 
 # The nodejs-22 image sets workdir to /opt/app-root/src by default
 # but we'll explicitly set it for clarity
