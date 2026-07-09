@@ -34,7 +34,7 @@
     "react-heatmap-grid": "^0.9.1",
     "react-linkify": "^1.0.0-alpha",
     "react-password-strength-bar": "^0.4.1",
-    "react-router-dom": "^6.30.4",
+    "react-router-dom": "^7.0.0",
     "react-scripts": "^5.0.1",
     "react-simple-oauth2-login": "^0.5.4",
     "react-toastify": "^11.1.0",
