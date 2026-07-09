@@ -106,9 +106,6 @@ RUN CI=false GENERATE_SOURCEMAP=false yarn build
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-22-minimal/664330aa459a2d3c807ccea9
 FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:1-1783399267
 
-ARG VERSION_TAG="latest"
-LABEL version="${VERSION_TAG}"
-
 WORKDIR /opt/app-root/src
 
 # Copy only the compiled static files from the builder stage.
