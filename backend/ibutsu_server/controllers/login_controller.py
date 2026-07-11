@@ -291,7 +291,7 @@ def recover(body=None):
     if not user:
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
     # Create a random activation code. Base64 just for funsies
-    user.activation_code = urlsafe_b64encode(str(uuid4()).encode("utf8")).strip(b"=")
+    user.activation_code = urlsafe_b64encode(str(uuid4()).encode("utf8")).strip(b"=").decode()
     session.add(user)
     session.commit()
     return {}, HTTPStatus.CREATED

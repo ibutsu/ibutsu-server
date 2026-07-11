@@ -102,7 +102,7 @@ def add_import(
         project_obj = get_project(project)
         if not project_obj:
             return f"Project {project} doesn't exist", HTTPStatus.BAD_REQUEST
-        if not project_has_user(project, user):
+        if not project_has_user(project_obj, user):
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
         data["project_id"] = project_obj.id
     if request.form.get("metadata"):
