@@ -12,28 +12,28 @@ vi.mock('../pages/settings', () => ({
 
 // Mock WidgetHeader component
 vi.mock('../components/widget-header', () => {
-  return { default: function WidgetHeader({ title }) {
-    return <div data-ouia-component-id="widget-header">{title}</div>;
-  } };
+  return {
+    default: function WidgetHeader({ title }) {
+      return <div data-ouia-component-id="widget-header">{title}</div>;
+    },
+  };
 });
 
 // Mock ParamDropdown component
 vi.mock('../components/param-dropdown', () => {
-  return { default: function ParamDropdown({ tooltip, defaultValue }) {
-    return (
-      <div data-ouia-component-id="param-dropdown">
-        {tooltip} {defaultValue}
-      </div>
-    );
-  } };
+  return {
+    default: function ParamDropdown({ tooltip, defaultValue }) {
+      return (
+        <div data-ouia-component-id="param-dropdown">
+          {tooltip} {defaultValue}
+        </div>
+      );
+    },
+  };
 });
 
 // Mock PatternFly Charts
-<<<<<<< HEAD
-jest.mock('@patternfly/react-charts/victory', () => ({
-=======
 vi.mock('@patternfly/react-charts/victory', () => ({
->>>>>>> eec6279d (Migrate to vite)
   Chart: function Chart({ children }) {
     return <div data-ouia-component-id="chart">{children}</div>;
   },

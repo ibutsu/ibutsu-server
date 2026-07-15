@@ -12,43 +12,39 @@ vi.mock('../pages/settings', () => ({
 }));
 
 // Mock WidgetHeader component
-<<<<<<< HEAD
-jest.mock('../components/widget-header', () => {
-  return function WidgetHeader({ title }) {
-=======
 vi.mock('../components/widget-header', () => {
-  return { default: function WidgetHeader({ title }) {
->>>>>>> eec6279d (Migrate to vite)
-    return <div data-ouia-component-id="widget-header">{title}</div>;
-  } };
+  return {
+    default: function WidgetHeader({ title }) {
+      return <div data-ouia-component-id="widget-header">{title}</div>;
+    },
+  };
 });
 
 // Mock ResultWidgetLegend component
 vi.mock('./result-widget-legend', () => {
-  return { default: function ResultWidgetLegend() {
-    return <div data-ouia-component-id="result-widget-legend">Legend</div>;
-  } };
+  return {
+    default: function ResultWidgetLegend() {
+      return <div data-ouia-component-id="result-widget-legend">Legend</div>;
+    },
+  };
 });
 
 // Mock react-apexcharts
-<<<<<<< HEAD
-jest.mock('react-apexcharts', () => {
-  return function Chart({ series, options = {} }) {
-=======
 vi.mock('react-apexcharts', () => {
-  return { default: function Chart({ series, options = {} }) {
->>>>>>> eec6279d (Migrate to vite)
-    return (
-      <div data-ouia-component-id="apex-chart">
-        <div data-ouia-component-id="chart-series">
-          {JSON.stringify(series)}
+  return {
+    default: function Chart({ series, options = {} }) {
+      return (
+        <div data-ouia-component-id="apex-chart">
+          <div data-ouia-component-id="chart-series">
+            {JSON.stringify(series)}
+          </div>
+          <div data-ouia-component-id="chart-labels">
+            {JSON.stringify(options.labels)}
+          </div>
         </div>
-        <div data-ouia-component-id="chart-labels">
-          {JSON.stringify(options.labels)}
-        </div>
-      </div>
-    );
-  } };
+      );
+    },
+  };
 });
 
 // Mock useSVGContainerDimensions hook

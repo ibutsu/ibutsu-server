@@ -102,6 +102,10 @@ describe('RunList', () => {
     HttpClient.handleResponse = vi.fn();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('Rendering', () => {
     it('should render without crashing', async () => {
       const mockRuns = createMultipleMockRuns(3);
@@ -213,7 +217,7 @@ describe('RunList', () => {
     });
 
     it('should handle fetch error gracefully', async () => {
-      const consoleError = jest
+      const consoleError = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       HttpClient.get.mockRejectedValue(new Error('Network error'));
@@ -453,7 +457,7 @@ describe('RunList', () => {
       HttpClient.get.mockRejectedValue(new Error('Server error'));
 
       // Suppress expected console.error for this intentional failure
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -476,7 +480,7 @@ describe('RunList', () => {
     });
 
     it('should set isError state on fetch failure', async () => {
-      const consoleError = jest
+      const consoleError = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       HttpClient.get.mockRejectedValue(new Error('Network failure'));
@@ -491,7 +495,7 @@ describe('RunList', () => {
     });
 
     it('should clear rows on error', async () => {
-      const consoleError = jest
+      const consoleError = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -538,7 +542,7 @@ describe('RunList', () => {
 
   describe('Debouncing', () => {
     it('should debounce data fetching', async () => {
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
       const mockRuns = [];
       const mockResponse = createMockRunsResponse(mockRuns);
 
@@ -547,14 +551,11 @@ describe('RunList', () => {
 
       renderComponent();
 
-      // Fast advance past debounce
       vi.advanceTimersByTime(200);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalled();
       });
-
-      vi.useRealTimers();
     });
   });
 

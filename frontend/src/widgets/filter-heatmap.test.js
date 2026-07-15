@@ -14,45 +14,50 @@ vi.mock('../pages/settings', () => ({
 
 // Mock WidgetHeader component
 vi.mock('../components/widget-header', () => {
-  return { default: function WidgetHeader({ title, actions }) {
-    return (
-      <div data-ouia-component-id="widget-header">
-        {title}
-        {actions && (
-          <div data-ouia-component-id="header-actions">{actions}</div>
-        )}
-      </div>
-    );
-  } };
+  return {
+    default: function WidgetHeader({ title, actions }) {
+      return (
+        <div data-ouia-component-id="widget-header">
+          {title}
+          {actions && (
+            <div data-ouia-component-id="header-actions">{actions}</div>
+          )}
+        </div>
+      );
+    },
+  };
 });
 
 // Mock ParamDropdown component
 vi.mock('../components/param-dropdown', () => {
-  return { default: function ParamDropdown({ tooltip, defaultValue }) {
-    return (
-      <div data-ouia-component-id="param-dropdown">
-        {tooltip} {defaultValue}
-      </div>
-    );
-  } };
+  return {
+    default: function ParamDropdown({ tooltip, defaultValue }) {
+      return (
+        <div data-ouia-component-id="param-dropdown">
+          {tooltip} {defaultValue}
+        </div>
+      );
+    },
+  };
 });
 
 // Mock HeatMapWrapper component
 vi.mock('../components/heat-map-wrapper', () => {
-  return { default: function HeatMapWrapper({ xLabels, yLabels, data }) {
-    return (
-      <div data-ouia-component-id="heatmap">
-        <div data-ouia-component-id="heatmap-xlabels">
-          {xLabels?.length || 0}
+  return {
+    default: function HeatMapWrapper({ xLabels, yLabels, data }) {
+      return (
+        <div data-ouia-component-id="heatmap">
+          <div data-ouia-component-id="heatmap-xlabels">
+            {xLabels?.length || 0}
+          </div>
+          <div data-ouia-component-id="heatmap-ylabels">
+            {yLabels?.length || 0}
+          </div>
+          <div data-ouia-component-id="heatmap-data">{data?.length || 0}</div>
         </div>
-        <div data-ouia-component-id="heatmap-ylabels">
-          {yLabels?.length || 0}
-        </div>
-        <div data-ouia-component-id="heatmap-data">{data?.length || 0}</div>
-      </div>
-    );
-  } };
-  /* eslint-enable react/prop-types */
+      );
+    },
+  };
 });
 
 describe('FilterHeatmapWidget', () => {

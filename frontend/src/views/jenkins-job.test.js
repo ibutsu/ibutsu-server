@@ -306,7 +306,7 @@ describe('JenkinsJobView Component', () => {
 
   describe('Error handling', () => {
     it('should handle jobs API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -333,7 +333,7 @@ describe('JenkinsJobView Component', () => {
     });
 
     it('should handle missing jobs in response', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -360,7 +360,7 @@ describe('JenkinsJobView Component', () => {
     });
 
     it('should handle widget config API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 

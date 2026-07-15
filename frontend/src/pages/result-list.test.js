@@ -102,6 +102,10 @@ describe('ResultList', () => {
     HttpClient.handleResponse = vi.fn();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   describe('Rendering', () => {
     it('should render without crashing', async () => {
       const mockResults = createMultipleMockResults(3);
@@ -254,7 +258,7 @@ describe('ResultList', () => {
     });
 
     it('should handle fetch error gracefully', async () => {
-      const consoleError = jest
+      const consoleError = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       HttpClient.get.mockRejectedValue(new Error('Network error'));
@@ -304,7 +308,7 @@ describe('ResultList', () => {
     });
 
     it('should handle filter params fetch error', async () => {
-      const consoleError = jest
+      const consoleError = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       const mockResults = [];
@@ -496,7 +500,7 @@ describe('ResultList', () => {
       HttpClient.get.mockRejectedValue(new Error('Server error'));
 
       // Suppress expected console.error for this intentional failure
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -519,7 +523,7 @@ describe('ResultList', () => {
     });
 
     it('should set isError state on fetch failure', async () => {
-      const consoleError = jest
+      const consoleError = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       HttpClient.get.mockRejectedValue(new Error('Network failure'));
@@ -536,7 +540,7 @@ describe('ResultList', () => {
 
   describe('Debouncing', () => {
     it('should debounce data fetching', async () => {
-      vi.useFakeTimers();
+      vi.useFakeTimers({ shouldAdvanceTime: true });
       const mockResults = [];
       const mockResponse = createMockResultsResponse(mockResults);
 
@@ -545,14 +549,11 @@ describe('ResultList', () => {
 
       renderComponent();
 
-      // Fast advance past debounce
       vi.advanceTimersByTime(200);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalled();
       });
-
-      vi.useRealTimers();
     });
   });
 

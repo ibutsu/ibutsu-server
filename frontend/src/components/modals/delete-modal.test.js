@@ -196,7 +196,7 @@ describe('DeleteModal', () => {
 
   describe('Error handling', () => {
     it('should handle API errors and still close modal', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       HttpClient.delete.mockRejectedValue(new Error('API Error'));
@@ -216,7 +216,7 @@ describe('DeleteModal', () => {
     });
 
     it('should handle response errors', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       HttpClient.delete.mockResolvedValue({ ok: false });

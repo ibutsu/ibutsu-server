@@ -500,7 +500,7 @@ describe('ResultFilter', () => {
       HttpClient.get.mockReturnValue(Promise.reject(new Error('Fetch failed')));
 
       // Suppress expected console.error for this intentional failure
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -531,7 +531,7 @@ describe('ResultFilter', () => {
       abortError.name = 'AbortError';
       HttpClient.get.mockReturnValue(Promise.reject(abortError));
 
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 

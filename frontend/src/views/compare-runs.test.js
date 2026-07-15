@@ -1,4 +1,10 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import CompareRunsView from './compare-runs';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
@@ -158,9 +164,8 @@ describe('CompareRunsView Component', () => {
   });
 
   describe('Filter controls', () => {
-    it('should update includeSkipped state when checkbox is clicked', () => {
-      // Suppress warnings from incomplete filter structure (see TODO in compare-runs.js)
-      const consoleWarnSpy = jest
+    it('should update includeSkipped state when checkbox is clicked', async () => {
+      const consoleWarnSpy = vi
         .spyOn(console, 'warn')
         .mockImplementation(() => {});
 
@@ -169,9 +174,13 @@ describe('CompareRunsView Component', () => {
       const checkbox = screen.getByLabelText('include-skips-checkbox');
       expect(checkbox).not.toBeChecked();
 
-      fireEvent.click(checkbox);
+      await act(async () => {
+        fireEvent.click(checkbox);
+      });
 
-      expect(checkbox).toBeChecked();
+      await waitFor(() => {
+        expect(checkbox).toBeChecked();
+      });
 
       consoleWarnSpy.mockRestore();
     });
@@ -203,7 +212,7 @@ describe('CompareRunsView Component', () => {
 
   describe('Error handling', () => {
     it('should handle API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 

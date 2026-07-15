@@ -13,20 +13,24 @@ vi.mock('../pages/settings', () => ({
 
 // Mock WidgetHeader component
 vi.mock('../components/widget-header', () => {
-  return { default: function WidgetHeader({ title }) {
-    return <div data-ouia-component-id="widget-header">{title}</div>;
-  } };
+  return {
+    default: function WidgetHeader({ title }) {
+      return <div data-ouia-component-id="widget-header">{title}</div>;
+    },
+  };
 });
 
 // Mock ParamDropdown component
 vi.mock('../components/param-dropdown', () => {
-  return { default: function ParamDropdown({ tooltip, defaultValue }) {
-    return (
-      <div data-ouia-component-id="param-dropdown">
-        {tooltip} {defaultValue}
-      </div>
-    );
-  } };
+  return {
+    default: function ParamDropdown({ tooltip, defaultValue }) {
+      return (
+        <div data-ouia-component-id="param-dropdown">
+          {tooltip} {defaultValue}
+        </div>
+      );
+    },
+  };
 });
 
 describe('ImportanceComponentWidget', () => {

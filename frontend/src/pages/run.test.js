@@ -20,35 +20,45 @@ vi.mock('./settings', () => ({
 
 // Mock components that we don't need to test in detail
 vi.mock('../components/filtering/filtered-table-card', () => {
-  return { default: function FilterTable() {
-    return <div data-ouia-component-id="filter-table">Filter Table</div>;
-  } };
+  return {
+    default: function FilterTable() {
+      return <div data-ouia-component-id="filter-table">Filter Table</div>;
+    },
+  };
 });
 
 vi.mock('../components/result-view', () => {
-  return { default: function ResultView() {
-    return <div data-ouia-component-id="result-view">Result View</div>;
-  } };
+  return {
+    default: function ResultView() {
+      return <div data-ouia-component-id="result-view">Result View</div>;
+    },
+  };
 });
 
 vi.mock('../components/classify-failures', () => {
-  return { default: function ClassifyFailuresTable() {
-    return (
-      <div data-ouia-component-id="classify-failures">Classify Failures</div>
-    );
-  } };
+  return {
+    default: function ClassifyFailuresTable() {
+      return (
+        <div data-ouia-component-id="classify-failures">Classify Failures</div>
+      );
+    },
+  };
 });
 
 vi.mock('../components/artifact-tab', () => {
-  return { default: function ArtifactTab() {
-    return <div data-ouia-component-id="artifact-tab">Artifact Tab</div>;
-  } };
+  return {
+    default: function ArtifactTab() {
+      return <div data-ouia-component-id="artifact-tab">Artifact Tab</div>;
+    },
+  };
 });
 
 vi.mock('../components/tab-title', () => {
-  return { default: function TabTitle({ text }) {
-    return <div>{text}</div>;
-  } };
+  return {
+    default: function TabTitle({ text }) {
+      return <div>{text}</div>;
+    },
+  };
 });
 
 describe('Run Page', () => {

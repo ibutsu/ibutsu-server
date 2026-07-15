@@ -23,25 +23,33 @@ vi.mock('./classification-dropdown', () => ({
 
 // Mock TestHistoryTable
 vi.mock('./test-history', () => {
-  return { default: function TestHistoryTable() {
-    return (
-      <div data-ouia-component-id="test-history-table">Test History Table</div>
-    );
-  } };
+  return {
+    default: function TestHistoryTable() {
+      return (
+        <div data-ouia-component-id="test-history-table">
+          Test History Table
+        </div>
+      );
+    },
+  };
 });
 
 // Mock ArtifactTab
 vi.mock('./artifact-tab', () => {
-  return { default: function ArtifactTab() {
-    return <div data-ouia-component-id="artifact-tab">Artifact Tab</div>;
-  } };
+  return {
+    default: function ArtifactTab() {
+      return <div data-ouia-component-id="artifact-tab">Artifact Tab</div>;
+    },
+  };
 });
 
 // Mock TabTitle
 vi.mock('./tab-title', () => {
-  return { default: function TabTitle({ text }) {
-    return <div>{text}</div>;
-  } };
+  return {
+    default: function TabTitle({ text }) {
+      return <div>{text}</div>;
+    },
+  };
 });
 
 describe('ResultView Component - Continuous Rendering Issue', () => {

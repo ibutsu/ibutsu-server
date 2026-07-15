@@ -22,35 +22,43 @@ vi.mock('../components/hooks/use-widgets', () => ({
 
 // Mock all modal components
 vi.mock('../components/modals/new-dashboard-modal', () => {
-  return { default: function NewDashboardModal() {
-    return (
-      <div data-ouia-component-id="new-dashboard-modal">
-        New Dashboard Modal
-      </div>
-    );
-  } };
+  return {
+    default: function NewDashboardModal() {
+      return (
+        <div data-ouia-component-id="new-dashboard-modal">
+          New Dashboard Modal
+        </div>
+      );
+    },
+  };
 });
 
 vi.mock('../components/modals/new-widget-wizard', () => {
-  return { default: function NewWidgetWizard() {
-    return (
-      <div data-ouia-component-id="new-widget-wizard">New Widget Wizard</div>
-    );
-  } };
+  return {
+    default: function NewWidgetWizard() {
+      return (
+        <div data-ouia-component-id="new-widget-wizard">New Widget Wizard</div>
+      );
+    },
+  };
 });
 
 vi.mock('../components/modals/edit-widget-modal', () => {
-  return { default: function EditWidgetModal() {
-    return (
-      <div data-ouia-component-id="edit-widget-modal">Edit Widget Modal</div>
-    );
-  } };
+  return {
+    default: function EditWidgetModal() {
+      return (
+        <div data-ouia-component-id="edit-widget-modal">Edit Widget Modal</div>
+      );
+    },
+  };
 });
 
 vi.mock('../components/modals/delete-modal', () => {
-  return { default: function DeleteModal() {
-    return <div data-ouia-component-id="delete-modal">Delete Modal</div>;
-  } };
+  return {
+    default: function DeleteModal() {
+      return <div data-ouia-component-id="delete-modal">Delete Modal</div>;
+    },
+  };
 });
 
 // Mock nanoid
@@ -530,7 +538,7 @@ describe('Dashboard Component', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -810,6 +818,7 @@ describe('Dashboard Component', () => {
     it('should render widget grid when dashboard has widgets', async () => {
       // Mock useWidgets to return widgets
       vi.doMock('../components/hooks/use-widgets', () => ({
+        // eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
         useWidgets: () => ({
           widgets: [{ id: 'widget-1' }],
           widgetComponents: [<div key="w1">Widget 1</div>],

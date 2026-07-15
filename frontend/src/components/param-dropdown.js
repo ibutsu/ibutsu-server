@@ -16,17 +16,19 @@ const ParamDropdown = ({
   ouiaId = 'param-dropdown',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [value, setValue] = useState(defaultValue || 'Group data by?');
+  const [userSelection, setUserSelection] = useState(null);
+
+  useEffect(() => {
+    setUserSelection(null);
+  }, [defaultValue]);
+
+  const value = userSelection ?? defaultValue ?? 'Group data by?';
 
   const dropOnSelect = (_event, itemId) => {
     setIsOpen(false);
     handleSelect(itemId);
-    setValue(itemId);
+    setUserSelection(itemId);
   };
-
-  useEffect(() => {
-    setValue(defaultValue);
-  }, [defaultValue, setValue]);
 
   return (
     <>

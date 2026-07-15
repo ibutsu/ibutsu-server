@@ -19,9 +19,11 @@ vi.mock('../settings', () => ({
 
 // Mock AdminFilter component
 vi.mock('../../components/filtering/admin-filter', () => {
-  return { default: function AdminFilter() {
-    return <div data-ouia-component-id="admin-filter">Admin Filter</div>;
-  } };
+  return {
+    default: function AdminFilter() {
+      return <div data-ouia-component-id="admin-filter">Admin Filter</div>;
+    },
+  };
 });
 
 describe('ProjectEdit', () => {
@@ -74,7 +76,7 @@ describe('ProjectEdit', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
 
     HttpClient.get.mockImplementation((url) => {
       const urlPath = Array.isArray(url) ? url.join('/') : url;

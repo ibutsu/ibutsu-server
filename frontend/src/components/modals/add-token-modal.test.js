@@ -218,7 +218,7 @@ describe('AddTokenModal', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       HttpClient.post.mockRejectedValue(new Error('API Error'));

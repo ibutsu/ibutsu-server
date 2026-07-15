@@ -12,9 +12,11 @@ vi.mock('../pages/settings', () => ({
 
 // Mock WidgetHeader component
 vi.mock('../components/widget-header', () => {
-  return { default: function WidgetHeader({ title }) {
-    return <div data-ouia-component-id="widget-header">{title}</div>;
-  } };
+  return {
+    default: function WidgetHeader({ title }) {
+      return <div data-ouia-component-id="widget-header">{title}</div>;
+    },
+  };
 });
 
 // Mock PatternFly Charts
@@ -46,12 +48,15 @@ vi.mock('@patternfly/react-charts/victory', () => ({
     return <div data-ouia-component-id="chart-tooltip" />;
   },
   createContainer: () => {
-    // eslint-disable-next-line react/prop-types
-    return { default: function CursorVoronoiContainer({ children }) {
-      return (
-        <div data-ouia-component-id="cursor-voronoi-container">{children}</div>
-      );
-    } };
+    return {
+      default: function CursorVoronoiContainer({ children }) {
+        return (
+          <div data-ouia-component-id="cursor-voronoi-container">
+            {children}
+          </div>
+        );
+      },
+    };
   },
 }));
 

@@ -27,15 +27,19 @@ vi.mock('@react-oauth/google', () => ({
 }));
 
 vi.mock('react-simple-oauth2-login', () => {
-  return { default: function MockOAuth2Login({ render }) {
-    return render({ onClick: vi.fn() });
-  } };
+  return {
+    default: function MockOAuth2Login({ render }) {
+      return render({ onClick: vi.fn() });
+    },
+  };
 });
 
 vi.mock('@greatsumini/react-facebook-login', () => {
-  return { default: function MockFacebookLogin({ render }) {
-    return render({ onClick: vi.fn() });
-  } };
+  return {
+    default: function MockFacebookLogin({ render }) {
+      return render({ onClick: vi.fn() });
+    },
+  };
 });
 
 describe('Login', () => {

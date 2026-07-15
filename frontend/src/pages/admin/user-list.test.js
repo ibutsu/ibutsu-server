@@ -330,7 +330,7 @@ describe('UserList Component', () => {
 
   describe('Error handling', () => {
     it('should handle API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -346,7 +346,7 @@ describe('UserList Component', () => {
     });
 
     it('should handle delete errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 

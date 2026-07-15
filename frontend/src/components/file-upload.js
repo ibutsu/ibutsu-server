@@ -25,7 +25,7 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
   const inputRef = useRef();
   const toolTipRef = useRef();
   const importToastRef = useRef();
-  const intervalId = useRef();
+  const intervalIdRef = useRef();
 
   const onClick = () => {
     inputRef.current.click();
@@ -47,11 +47,11 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
         .then((response) => HttpClient.handleResponse(response))
         .then((data) => {
           if (data['status'] === 'done') {
-            clearInterval(intervalId.current);
+            clearInterval(intervalIdRef.current);
             setImportId();
             let action = null;
             if (data.metadata.run_id) {
-              const RunButton = () => (
+              action = (
                 <AlertActionLink
                   component="a"
                   href={`/project/${data.metadata.project_id || primaryObject.id}/runs/${data.metadata.run_id}#summary`}
@@ -59,7 +59,6 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
                   Go to Run
                 </AlertActionLink>
               );
-              action = <RunButton />;
             }
             toast.update(importToastRef.current, {
               data: {
@@ -97,7 +96,7 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
             theme: getDarkTheme() ? 'dark' : 'light',
           });
           setImportId(importObject['id']);
-          intervalId.current = setInterval(checkImportStatus, 5000);
+          intervalIdRef.current = setInterval(checkImportStatus, 5000);
         });
       })
       .catch((error) => {

@@ -15,15 +15,19 @@ vi.mock('../pages/settings', () => ({
 
 // Mock child components
 vi.mock('./file-upload', () => {
-  return { default: function FileUpload() {
-    return <div data-ouia-component-id="file-upload">File Upload</div>;
-  } };
+  return {
+    default: function FileUpload() {
+      return <div data-ouia-component-id="file-upload">File Upload</div>;
+    },
+  };
 });
 
 vi.mock('./user-dropdown', () => {
-  return { default: function UserDropdown() {
-    return <div data-ouia-component-id="user-dropdown">User Dropdown</div>;
-  } };
+  return {
+    default: function UserDropdown() {
+      return <div data-ouia-component-id="user-dropdown">User Dropdown</div>;
+    },
+  };
 });
 
 // Mock utility function
@@ -74,7 +78,7 @@ describe('IbutsuHeader', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
 
     // Default mock implementations
     HttpClient.get.mockImplementation((url) => {

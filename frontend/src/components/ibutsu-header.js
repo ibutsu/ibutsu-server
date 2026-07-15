@@ -236,9 +236,9 @@ const IbutsuHeader = () => {
                 {`No results found for "${filterValue}"`}
               </SelectOption>
             )}
-            {filteredProjects.map((project, index) => (
+            {filteredProjects.map((project) => (
               <SelectOption
-                key={project.id || index}
+                key={project.id}
                 onClick={() => {
                   setSelectedProject(project);
                 }}

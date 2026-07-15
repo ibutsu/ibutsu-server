@@ -30,15 +30,19 @@ vi.mock('./run-summary', () => {
 });
 
 vi.mock('./last-passed', () => {
-  return { default: function LastPassed() {
-    return <div data-ouia-component-id="last-passed">Last passed mock</div>;
-  } };
+  return {
+    default: function LastPassed() {
+      return <div data-ouia-component-id="last-passed">Last passed mock</div>;
+    },
+  };
 });
 
 vi.mock('./result-view', () => {
-  return { default: function ResultView() {
-    return <div data-ouia-component-id="result-view">Result View Mock</div>;
-  } };
+  return {
+    default: function ResultView() {
+      return <div data-ouia-component-id="result-view">Result View Mock</div>;
+    },
+  };
 });
 
 vi.mock('./filtering/filtered-table-card', () => {
@@ -88,9 +92,11 @@ vi.mock('./filtering/filtered-table-card', () => {
 });
 
 vi.mock('./filtering/active-filters', () => {
-  return { default: function ActiveFilters() {
-    return <div data-ouia-component-id="active-filters">Active Filters</div>;
-  } };
+  return {
+    default: function ActiveFilters() {
+      return <div data-ouia-component-id="active-filters">Active Filters</div>;
+    },
+  };
 });
 
 describe('TestHistoryTable', () => {
@@ -124,7 +130,7 @@ describe('TestHistoryTable', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
 
     HttpClient.get.mockImplementation((url) => {
       const urlPath = Array.isArray(url) ? url.join('/') : url;

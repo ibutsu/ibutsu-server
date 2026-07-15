@@ -35,9 +35,11 @@ vi.mock('./classification-dropdown', () => ({
 }));
 
 vi.mock('./result-view', () => {
-  return { default: function ResultView() {
-    return <div data-ouia-component-id="result-view">Result View</div>;
-  } };
+  return {
+    default: function ResultView() {
+      return <div data-ouia-component-id="result-view">Result View</div>;
+    },
+  };
 });
 
 vi.mock('./filtering/filtered-table-card', () => {
@@ -89,9 +91,11 @@ vi.mock('./filtering/filtered-table-card', () => {
 });
 
 vi.mock('./filtering/result-filter', () => {
-  return { default: function ResultFilter() {
-    return <div data-ouia-component-id="result-filter">Result Filter</div>;
-  } };
+  return {
+    default: function ResultFilter() {
+      return <div data-ouia-component-id="result-filter">Result Filter</div>;
+    },
+  };
 });
 
 describe('ClassifyFailuresTable', () => {
@@ -140,7 +144,7 @@ describe('ClassifyFailuresTable', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
 
     HttpClient.get.mockResolvedValue({
       ok: true,
@@ -299,7 +303,7 @@ describe('ClassifyFailuresTable', () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
       // Suppress expected console.error for this intentional failure
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 

@@ -2,14 +2,13 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import FilterTable from './filtered-table-card';
 
 // Mock SkeletonTable from react-component-groups
-vi.mock(
-  '@patternfly/react-component-groups/dist/dynamic/SkeletonTable',
-  () => {
-    return { default: function SkeletonTable() {
+vi.mock('@patternfly/react-component-groups/dist/dynamic/SkeletonTable', () => {
+  return {
+    default: function SkeletonTable() {
       return <div data-ouia-component-id="skeleton-table">Loading...</div>;
-    } };
-  },
-);
+    },
+  };
+});
 
 describe('FilterTable', () => {
   const mockOnClearFilters = vi.fn();
@@ -299,7 +298,7 @@ describe('FilterTable', () => {
     });
 
     it('should warn and stringify non-renderable objects', () => {
-      const consoleWarnSpy = jest
+      const consoleWarnSpy = vi
         .spyOn(console, 'warn')
         .mockImplementation(() => {});
 

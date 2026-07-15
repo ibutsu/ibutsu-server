@@ -1,9 +1,9 @@
 // eslint.config.mjs
 import eslintReact from '@eslint-react/eslint-plugin';
 import unusedImports from 'eslint-plugin-unused-imports';
+import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import { defineConfig, globalIgnores } from 'eslint/config';
-import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import js from '@eslint/js';
 import pluginCypress from 'eslint-plugin-cypress';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
@@ -19,10 +19,13 @@ export default defineConfig([
   pluginCypress.configs.recommended,
   {
     files: ['src/**/*', 'cypress/**/*', 'bin/**/*'],
-    extends: [eslintReact.configs.recommended],
+    extends: [
+      eslintReact.configs.recommended,
+      eslintReact.configs['disable-conflict-eslint-plugin-react-hooks'],
+    ],
     plugins: {
       'unused-imports': unusedImports,
-      'react-hooks': reactHooksPlugin,
+      'react-hooks': reactHooks,
     },
     linterOptions: {
       reportUnusedDisableDirectives: 'error',
@@ -43,15 +46,13 @@ export default defineConfig([
       },
     },
     rules: {
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-      '@eslint-react/component-hook-factories': 'warn',
       '@eslint-react/no-nested-component-definitions': 'warn',
       '@eslint-react/no-access-state-in-setstate': 'warn',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
       camelcase: 'off',
       quotes: ['warn', 'single'],
       'no-duplicate-imports': 'error',
-      'no-unused-vars': 'off',
       'unused-imports/no-unused-imports': 'error',
     },
   },
@@ -70,26 +71,16 @@ export default defineConfig([
       ],
     },
   },
-  // Vitest globals for test files
+  // Vitest globals for test and test utility files
   {
-    files: ['**/*.test.js', '**/*.test.jsx', '**/*.spec.js', '**/*.spec.jsx'],
-    languageOptions: {
-      globals: {
-        ...globals.browser,
-        vi: 'readonly',
-        describe: 'readonly',
-        it: 'readonly',
-        expect: 'readonly',
-        beforeEach: 'readonly',
-        afterEach: 'readonly',
-        beforeAll: 'readonly',
-        afterAll: 'readonly',
-      },
-    },
-  },
-  // Vitest globals for test utility files
-  {
-    files: ['src/test-utils/**/*.js', 'src/setupTests.js'],
+    files: [
+      '**/*.test.js',
+      '**/*.test.jsx',
+      '**/*.spec.js',
+      '**/*.spec.jsx',
+      'src/test-utils/**/*.js',
+      'src/setupTests.js',
+    ],
     languageOptions: {
       globals: {
         ...globals.browser,
