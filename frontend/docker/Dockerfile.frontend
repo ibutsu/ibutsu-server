@@ -91,7 +91,7 @@ RUN yarn build
 # builder — the runtime does not need the full dependency tree.
 #
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-22-minimal/664330aa459a2d3c807ccea9
-FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:1-1783399267
+FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:9.8-1783399267
 
 WORKDIR /opt/app-root/src
 
