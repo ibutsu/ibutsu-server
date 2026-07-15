@@ -26,7 +26,6 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
   const [isAreaChart, setIsAreaChart] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [barWidth, setBarWidth] = useState(DEFAULT_BAR);
   const [builds, setBuilds] = useState(20);
   const [countSkips, setCountSkips] = useState(true);
 
@@ -78,17 +77,14 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
     }
   }, [builds, countSkips, primaryObject, view, activeFilters]);
 
-  // Set the bar width based on the number of builds
-  useEffect(() => {
-    let newWidth = DEFAULT_BAR;
-    if (builds > HEATMAP_MAX_BUILDS) {
-      if (builds > 100) {
-        newWidth = 2;
-      } else {
-        newWidth = 5;
-      }
+  const barWidth = useMemo(() => {
+    if (builds > 100) {
+      return 2;
     }
-    setBarWidth(newWidth);
+    if (builds > HEATMAP_MAX_BUILDS) {
+      return 5;
+    }
+    return DEFAULT_BAR;
   }, [builds]);
 
   // include the count_skips parameter in the widget params

@@ -46,7 +46,6 @@ const NewWidgetWizard = ({
   const [params, setParams] = useState({});
   const [weight, setWeight] = useState(0);
   const [titleValid, setTitleValid] = useState(false);
-  const [paramsFilled, setParamsFilled] = useState(false);
   const [selectedType, setSelectedType] = useState({});
   const [selectedTypeId, setSelectedTypeId] = useState();
   const [stepIdReached, setStepIdReached] = useState(1);
@@ -71,7 +70,6 @@ const NewWidgetWizard = ({
     setParams({});
     setWeight(0);
     setTitleValid(false);
-    setParamsFilled(false);
     setSelectedType();
     setSelectedTypeId();
     setStepIdReached(1);
@@ -201,14 +199,10 @@ const NewWidgetWizard = ({
     [params],
   );
 
-  useEffect(() => {
-    // Filter out 'additional_filters' and 'project' params as they're handled separately
+  const paramsFilled = useMemo(() => {
     const nonFilterParams = filterNonFilterParams(selectedType?.params || []);
-    const areParamsFilled = nonFilterParams.every((param) =>
-      isParamValid(param),
-    );
-    setParamsFilled(areParamsFilled);
-  }, [params, selectedType, isParamValid]);
+    return nonFilterParams.every((param) => isParamValid(param));
+  }, [selectedType, isParamValid]);
 
   useEffect(() => {
     const fetchWidgetTypes = async () => {

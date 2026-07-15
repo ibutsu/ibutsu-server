@@ -73,12 +73,6 @@ const AccessibilityAnalysisView = ({ view }) => {
   const [totalItems, setTotalItems] = useState(0);
   // const [testResult, setTestResult] = useState();
   // const [chartParams, setChartParams] = useState({});
-  const [pieData, setPieData] = useState([
-    { x: '', y: 0 },
-    { x: '', y: 0 },
-    { total: 0 },
-  ]);
-
   // const [treeSearch, setTreeSearch] = useState();
 
   const [, setRunList] = useState([]);
@@ -93,9 +87,11 @@ const AccessibilityAnalysisView = ({ view }) => {
   // };
 
   useEffect(() => {
-    if (view) {
+    if (!view) {
+      return;
+    }
+    const fetchView = async () => {
       setIsError(false);
-
       let viewParams = { ...view.params };
       const { primaryObject } = context;
       if (primaryObject) {
@@ -103,15 +99,19 @@ const AccessibilityAnalysisView = ({ view }) => {
       } else {
         delete viewParams['project'];
       }
-      // probably don't need this, but maybe something similar
       viewParams['run_list'] = filters.run_list?.val;
-      HttpClient.get([Settings.serverUrl, 'widget', view.widget], viewParams)
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          setRunList(data.run_list);
-        })
-        .catch((error) => console.error(error));
-    }
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget', view.widget],
+          viewParams,
+        );
+        const data = await HttpClient.handleResponse(response);
+        setRunList(data.run_list);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+    fetchView();
   }, [view, builds, countSkips, filters?.run_list?.val, context]);
 
   // TODO remove?
@@ -220,53 +220,59 @@ const AccessibilityAnalysisView = ({ view }) => {
   //   }
   // };
 
-  // Fetch the Run by ID
   useEffect(() => {
-    if (id) {
-      setIsError(false);
-      HttpClient.get([Settings.serverUrl, 'run', id])
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          setRun(data);
-        })
-        .catch((error) => {
-          console.error(error);
-          setIsError(true);
-        });
+    if (!id) {
+      return;
     }
+    const fetchRun = async () => {
+      setIsError(false);
+      try {
+        const response = await HttpClient.get([Settings.serverUrl, 'run', id]);
+        const data = await HttpClient.handleResponse(response);
+        setRun(data);
+      } catch (error) {
+        console.error(error);
+        setIsError(true);
+      }
+    };
+    fetchRun();
   }, [id, activeTab]);
 
-  // getResultsforTable
   useEffect(() => {
-    setIsError(false);
-    HttpClient.get([Settings.serverUrl + '/result'], {
-      filter: ['run_id=' + id, 'metadata.markers*accessibility'],
-      page: page,
-      pageSize: pageSize,
-    })
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+    const fetchResults = async () => {
+      setIsError(false);
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl + '/result'],
+          {
+            filter: ['run_id=' + id, 'metadata.markers*accessibility'],
+            page: page,
+            pageSize: pageSize,
+          },
+        );
+        const data = await HttpClient.handleResponse(response);
         setResults(data.results);
-        setRows(data.results?.map((result) => resultToRow(result))); // TODO move to render
+        setRows(data.results?.map((result) => resultToRow(result)));
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error fetching result data:', error);
-        setRows([]); // TODO move to render
+        setRows([]);
         setResults([]);
         setIsError(true);
-      });
+      }
+    };
+    fetchResults();
   }, [page, pageSize, id, setPage, setPageSize]);
 
-  useEffect(() => {
-    if (!run || !run.metadata || !run.metadata.accessibility_data) {
-      return;
+  const pieData = useMemo(() => {
+    if (!run?.metadata?.accessibility_data) {
+      return [{ x: '', y: 0 }, { x: '', y: 0 }, { total: 0 }];
     }
-    let { passes, violations } = run.metadata.accessibility_data;
-    let total = passes + violations;
-    setPieData([
+    const { passes, violations } = run.metadata.accessibility_data;
+    const total = passes + violations;
+    return [
       {
         x: 'passes',
         y: passes,
@@ -277,10 +283,8 @@ const AccessibilityAnalysisView = ({ view }) => {
         y: violations,
         ratio: Math.round((100 * violations) / total, 2),
       },
-      {
-        total: total,
-      },
-    ]);
+      { total },
+    ];
   }, [run]);
 
   const accessTableHeader = useMemo(() => {

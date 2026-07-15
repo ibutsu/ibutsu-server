@@ -68,8 +68,8 @@ const ResultAggregateApex = ({
   }, [dropdownItems, groupField]);
 
   useEffect(() => {
-    setIsLoading(true);
     const fetchAggregated = async () => {
+      setIsLoading(true);
       try {
         const response = await HttpClient.get(
           [Settings.serverUrl, 'widget', 'result-aggregator'],
@@ -96,13 +96,12 @@ const ResultAggregateApex = ({
         });
         setChartData(_chartData);
         setTotal(_total);
-
-        setIsLoading(false);
         setResultAggregatorError(false);
       } catch (error) {
-        setIsLoading(false);
         setResultAggregatorError(true);
         console.error('Error fetching result aggregator data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchAggregated();

@@ -16,7 +16,7 @@ import {
 } from '@patternfly/react-core';
 
 import PropTypes from 'prop-types';
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 
 import MultiValueInput from '../multi-value-input';
@@ -74,8 +74,6 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
   const [runInputValue, setRunInputValue] = useState('');
   const [runFilterValue, setRunFilterValue] = useState('');
 
-  const [filteredRuns, setFilteredRuns] = useState([]);
-
   const [resultSelection, setResultSelection] = useState([]);
   const [isResultOpen, setIsResultOpen] = useState(false);
 
@@ -86,47 +84,50 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
 
   useEffect(() => {
     if (!(fieldSelection && fieldSelection.startsWith('metadata.'))) {
-      setValueOptions([]);
-      setLoadError(null);
+      const clearValues = async () => {
+        setValueOptions([]);
+        setLoadError(null);
+      };
+      clearValues();
       return;
     }
-
-    setLoadError(null);
-    const projectId = primaryObject ? primaryObject.id : '';
-
-    // Build params object with for_filter=true for optimized distinct query
-    // Include additional_filters to respect other active filters
-    const additionalFilters = filtersToAPIParams(activeFilters);
-    const params = {
-      group_field: fieldSelection,
-      project: projectId,
-      days: 365,
-      for_filter: true,
-      ...(additionalFilters.length > 0 && {
-        additional_filters: additionalFilters.join(','),
-      }),
-    };
 
     const controller = new AbortController();
     const { signal } = controller;
 
-    HttpClient.get(
-      [Settings.serverUrl, 'widget', 'result-aggregator'],
-      params,
-      { signal },
-    )
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+    const fetchValues = async () => {
+      setLoadError(null);
+      const projectId = primaryObject ? primaryObject.id : '';
+      const additionalFilters = filtersToAPIParams(activeFilters);
+      const params = {
+        group_field: fieldSelection,
+        project: projectId,
+        days: 365,
+        for_filter: true,
+        ...(additionalFilters.length > 0 && {
+          additional_filters: additionalFilters.join(','),
+        }),
+      };
+
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget', 'result-aggregator'],
+          params,
+          { signal },
+        );
+        const data = await HttpClient.handleResponse(response);
         setValueOptions(data || []);
-      })
-      .catch((error) => {
+      } catch (error) {
         if (error.name === 'AbortError') {
           return;
         }
         console.error('Error fetching dynamic values:', error);
         setValueOptions([]);
         setLoadError('Error loading values');
-      });
+      }
+    };
+
+    fetchValues();
 
     return () => {
       controller.abort();
@@ -405,16 +406,16 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
   );
 
   // filter run options based on input
-  useEffect(() => {
-    if (fieldSelection === 'run_id' && runs?.length) {
-      let newSelectOptionsRun = [...runs];
-      if (runInputValue) {
-        newSelectOptionsRun = runs.filter((menuItem) =>
-          menuItem.toLowerCase().includes(runFilterValue.toLowerCase()),
-        );
-      }
-      setFilteredRuns(newSelectOptionsRun);
+  const filteredRuns = useMemo(() => {
+    if (fieldSelection !== 'run_id' || !runs?.length) {
+      return [];
     }
+    if (!runInputValue) {
+      return [...runs];
+    }
+    return runs.filter((menuItem) =>
+      menuItem.toLowerCase().includes(runFilterValue.toLowerCase()),
+    );
   }, [fieldSelection, runFilterValue, runInputValue, runs]);
 
   // Helper functions for conditional rendering

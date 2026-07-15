@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 
 import {
   ActionGroup,
@@ -44,7 +44,6 @@ const UserEdit = () => {
   const [formProjects, setFormProjects] = useState([]);
 
   const [userLoaded, setUserLoaded] = useState(false);
-  const [filteredProjects, setFilteredProjects] = useState([]);
   const [projects, setProjects] = useState([]);
   const [isProjectsOpen, setIsProjectsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -156,30 +155,33 @@ const UserEdit = () => {
     return () => clearTimeout(debouncer);
   }, []);
 
+  const filteredProjects = useMemo(() => {
+    if (!inputValue) {
+      return projects;
+    }
+    const filtered = projects?.filter((menuItem) =>
+      String(menuItem.title).toLowerCase().includes(inputValue.toLowerCase()),
+    );
+    if (filtered.length === 0) {
+      return [
+        {
+          isDisabled: true,
+          value: {},
+          title: `No results found for "${inputValue}"`,
+        },
+      ];
+    }
+    return filtered;
+  }, [inputValue, projects]);
+
   useEffect(() => {
-    // handle input value changing for project filter
-    let newProjectOptions = projects;
-    if (inputValue) {
-      newProjectOptions = projects?.filter((menuItem) =>
-        String(menuItem.title).toLowerCase().includes(inputValue.toLowerCase()),
-      );
-
-      if (newProjectOptions.length === 0) {
-        newProjectOptions = [
-          {
-            isDisabled: true,
-            value: {},
-            title: `No results found for "${inputValue}"`,
-          },
-        ];
-      }
-
-      if (!isProjectsOpen) {
+    const openDropdown = async () => {
+      if (inputValue && !isProjectsOpen) {
         setIsProjectsOpen(true);
       }
-    }
-    setFilteredProjects(newProjectOptions);
-  }, [inputValue, projects, isProjectsOpen]);
+    };
+    openDropdown();
+  }, [inputValue, isProjectsOpen]);
 
   const toggle = useCallback(
     (toggleRef) => (

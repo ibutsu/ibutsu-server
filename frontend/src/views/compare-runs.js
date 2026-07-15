@@ -43,7 +43,6 @@ const CompareRunsView = () => {
   const { primaryObject } = context;
 
   const [results, setResults] = useState([]);
-  const [rows, setRows] = useState([]);
   const {
     page,
     setPage,
@@ -83,51 +82,47 @@ const CompareRunsView = () => {
   }, [setPage]);
 
   useEffect(() => {
-    // Check to see if filters have been set besides id and result
-    let isNew = false;
-    setIsError(false);
-    setIsLoading(true);
+    const hasNonDefaultFilters = Object.values(filters).some((filter) =>
+      Object.keys(filter).every((prop) => prop !== 'result'),
+    );
 
-    // not mutating filters state, looking if there is a filter name that's non-default
-    Object.values(filters).map((filter) => {
-      if (Object.keys(filter).every((prop) => prop !== 'result')) {
-        isNew = true;
-      }
-    });
-
-    if (isNew === true) {
-      // Add project id to params
-      const projectId = primaryObject ? primaryObject.id : '';
-      let filtersWithProject = {
-        ...filters,
-        project_id: { operator: 'eq', val: projectId },
-      };
-
-      // Retrieve results from database
-      HttpClient.get([Settings.serverUrl, 'widget', 'compare-runs-view'], {
-        filters: toAPIFilter(filtersWithProject),
-      })
-        .then((response) => HttpClient.handleResponse(response))
-        .then((data) => {
-          setResults(data.results);
-          setPage(data.pagination.page);
-          setPageSize(data.pagination.pageSize);
-          setTotalItems(data.pagination.totalItems);
-        })
-        .catch((error) => {
-          console.error('Error fetching result data:', error);
-          setIsError(true);
-        });
+    if (!hasNonDefaultFilters) {
+      return;
     }
 
-    setIsLoading(false);
+    const fetchResults = async () => {
+      setIsError(false);
+      setIsLoading(true);
+      try {
+        const projectId = primaryObject ? primaryObject.id : '';
+        const filtersWithProject = {
+          ...filters,
+          project_id: { operator: 'eq', val: projectId },
+        };
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget', 'compare-runs-view'],
+          { filters: toAPIFilter(filtersWithProject) },
+        );
+        const data = await HttpClient.handleResponse(response);
+        setResults(data.results);
+        setPage(data.pagination.page);
+        setPageSize(data.pagination.pageSize);
+        setTotalItems(data.pagination.totalItems);
+      } catch (error) {
+        console.error('Error fetching result data:', error);
+        setIsError(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchResults();
   }, [filters, primaryObject, setPage, setPageSize, setTotalItems]);
 
-  useEffect(() => {
-    setRows(
-      results.map((result, index) => resultToComparisonRow(result, index)),
-    );
-  }, [results]);
+  const rows = useMemo(
+    () => results.map((result, index) => resultToComparisonRow(result, index)),
+    [results],
+  );
 
   const compareHeader = useMemo(() => {
     return (

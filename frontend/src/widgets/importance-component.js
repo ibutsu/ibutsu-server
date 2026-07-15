@@ -23,28 +23,28 @@ const ImportanceComponentWidget = ({
   const [isLoading, setIsLoading] = useState(true);
   const [countSkips, setCountSkips] = useState('No');
 
-  const getData = useCallback(() => {
+  const getData = useCallback(async () => {
     setIsLoading(true);
-    HttpClient.get(
-      [Settings.serverUrl, 'widget', 'importance-component'],
-      params,
-    )
-      .then((response) => {
-        response = HttpClient.handleResponse(response, 'response');
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setTableData(data.table_data);
-        setIsLoading(false);
-        setDataError(false);
-      })
-      .catch((error) => {
-        setDataError(true);
-        console.error(error);
-      });
+    try {
+      const response = HttpClient.handleResponse(
+        await HttpClient.get(
+          [Settings.serverUrl, 'widget', 'importance-component'],
+          params,
+        ),
+        'response',
+      );
+      if (!response.ok) {
+        throw Error(response.statusText);
+      }
+      const data = await response.json();
+      setTableData(data.table_data);
+      setDataError(false);
+    } catch (error) {
+      setDataError(true);
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [params]);
 
   useEffect(() => {

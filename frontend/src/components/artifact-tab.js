@@ -23,6 +23,13 @@ const ArtifactTab = ({ artifact }) => {
 
   useEffect(() => {
     const fetchArtifact = async () => {
+      if (imageUrlRef.current) {
+        URL.revokeObjectURL(imageUrlRef.current);
+        imageUrlRef.current = undefined;
+      }
+      setBlob();
+      setBlobType();
+      setImageUrl();
       setIsLoading(true);
       try {
         const response = await HttpClient.get([
@@ -49,15 +56,6 @@ const ArtifactTab = ({ artifact }) => {
         setIsLoading(false);
       }
     };
-
-    // Reset state when artifact changes
-    if (imageUrlRef.current) {
-      URL.revokeObjectURL(imageUrlRef.current);
-      imageUrlRef.current = undefined;
-    }
-    setBlob();
-    setBlobType();
-    setImageUrl();
 
     const debouncer = setTimeout(() => {
       fetchArtifact();
@@ -93,17 +91,22 @@ const ArtifactTab = ({ artifact }) => {
   }, [blob, blobType, artifact.id, artifact.filename, imageUrl, isLoading]);
 
   useEffect(() => {
-    if (blobType === 'image' && blob) {
-      const objectUrl = URL.createObjectURL(blob);
-      setImageUrl(objectUrl);
-      imageUrlRef.current = objectUrl;
-      return () => {
-        URL.revokeObjectURL(objectUrl);
-      };
-    } else {
-      setImageUrl();
-      imageUrlRef.current = undefined;
-    }
+    const updateImageUrl = async () => {
+      if (blobType === 'image' && blob) {
+        const objectUrl = URL.createObjectURL(blob);
+        setImageUrl(objectUrl);
+        imageUrlRef.current = objectUrl;
+      } else {
+        setImageUrl();
+        imageUrlRef.current = undefined;
+      }
+    };
+    updateImageUrl();
+    return () => {
+      if (imageUrlRef.current) {
+        URL.revokeObjectURL(imageUrlRef.current);
+      }
+    };
   }, [blob, blobType]);
 
   // Cleanup effect for component unmount

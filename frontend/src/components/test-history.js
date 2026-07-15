@@ -281,8 +281,11 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
     };
 
     if (comparisonResults !== undefined) {
-      setRows([...comparisonResults]);
-      setFetching(false);
+      const applyComparisonResults = async () => {
+        setRows([...comparisonResults]);
+        setFetching(false);
+      };
+      applyComparisonResults();
     } else {
       const debouncer = setTimeout(() => {
         getResults();
@@ -291,7 +294,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
         clearTimeout(debouncer);
       };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps, @eslint-react/exhaustive-deps
   }, [
     activeFilters,
     comparisonResults,

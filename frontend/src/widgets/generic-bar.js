@@ -42,7 +42,6 @@ const GenericBarWidget = ({
   onEditClick,
 }) => {
   const [data, setData] = useState({});
-  const [barCharts, setBarCharts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [genericBarError, setGenericBarError] = useState(false);
   const [groupField, setGroupField] = useState(params.group_field);
@@ -82,19 +81,17 @@ const GenericBarWidget = ({
     }));
   }, [data]);
 
-  useEffect(() => {
-    const barCharts = [];
+  const barCharts = useMemo(() => {
+    const charts = [];
 
     const getLabels = () => {
       if (percentData) {
         return ({ datum }) => `${toTitleCase(datum.name)}: ${datum.y} %`;
+      } else if (xLabelTooltip) {
+        return ({ datum }) =>
+          `${xLabelTooltip}: ${datum.x} \n ${toTitleCase(datum.name)}: ${datum.y}`;
       } else {
-        if (xLabelTooltip) {
-          return ({ datum }) =>
-            `${xLabelTooltip}: ${datum.x} \n ${toTitleCase(datum.name)}: ${datum.y}`;
-        } else {
-          return ({ datum }) => `${toTitleCase(datum.name)}: ${datum.y}`;
-        }
+        return ({ datum }) => `${toTitleCase(datum.name)}: ${datum.y}`;
       }
     };
 
@@ -109,7 +106,7 @@ const GenericBarWidget = ({
           });
         }
         if (barData.length !== 0) {
-          barCharts.push(
+          charts.push(
             <ChartBar
               key={test_state}
               barWidth={barWidth}
@@ -136,7 +133,7 @@ const GenericBarWidget = ({
         }
       }
     }
-    setBarCharts(barCharts);
+    return charts;
   }, [
     data,
     barWidth,

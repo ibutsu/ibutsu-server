@@ -115,14 +115,13 @@ const FilterHeatmapWidget = ({
   ]);
 
   useEffect(() => {
-    // Fetch widget data
-    setIsLoading(true);
     const widgetParams = {
       ...params,
       ...(builds ? { builds: builds } : {}),
     };
 
     const fetchWidget = async (type, apiParams) => {
+      setIsLoading(true);
       try {
         const response = await HttpClient.get(
           [Settings.serverUrl, 'widget', type],
@@ -130,12 +129,12 @@ const FilterHeatmapWidget = ({
         );
         const responseData = await HttpClient.handleResponse(response);
         setData(responseData);
-        setIsLoading(false);
         setIsError(false);
       } catch (error) {
         setIsError(true);
-        setIsLoading(false);
         console.error('Error fetching heatmap data:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -143,7 +142,7 @@ const FilterHeatmapWidget = ({
       if (type === HEATMAP_TYPES.jenkins && widgetParams.job_name) {
         fetchWidget(HEATMAP_TYPES.jenkins, {
           ...widgetParams,
-          count_skips: countSkips, // only accepted for jenkins-heatmap type
+          count_skips: countSkips,
         });
       } else {
         fetchWidget(HEATMAP_TYPES.filter, widgetParams);
