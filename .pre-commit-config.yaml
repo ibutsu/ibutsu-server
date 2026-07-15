@@ -35,7 +35,7 @@ repos:
       - id: codespell
         args:
           - '-L'
-          - 'connexion'
+          - 'connexion,afterall'
           - '--skip'
           - 'frontend/yarn.lock,frontend/public/images/*'
           - '-w'

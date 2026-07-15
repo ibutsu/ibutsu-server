@@ -49,9 +49,9 @@ const ResultAggregateApex = ({
   const [resultAggregatorError, setResultAggregatorError] = useState(false);
   const [filterDays, setFilterDays] = useState(days);
   const [filterGroupField, setFilterGroupField] = useState(groupField);
-  const additionalFilters = useRef(params.additional_filters);
-  const runId = useRef(params.run_id);
-  const project = useRef(params.project);
+  const additionalFiltersRef = useRef(params.additional_filters);
+  const runIdRef = useRef(params.run_id);
+  const projectRef = useRef(params.project);
 
   // Dynamic SVG container measurement
   const { containerRef, width: containerWidth } = useSVGContainerDimensions();
@@ -76,11 +76,11 @@ const ResultAggregateApex = ({
           {
             days: filterDays,
             group_field: filterGroupField,
-            project: project.current,
-            ...(additionalFilters.current
-              ? { additional_filters: additionalFilters.current }
+            project: projectRef.current,
+            ...(additionalFiltersRef.current
+              ? { additional_filters: additionalFiltersRef.current }
               : {}),
-            ...(runId.current ? { run_id: runId.current } : {}),
+            ...(runIdRef.current ? { run_id: runIdRef.current } : {}),
           },
         );
         const data = await HttpClient.handleResponse(response);

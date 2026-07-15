@@ -1,20 +1,20 @@
 import { AuthService } from './auth';
 
 // Mock Settings
-jest.mock('../pages/settings', () => ({
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('Auth Utilities', () => {
   let mockLocalStorage;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Reset AuthService errors
     AuthService.loginError = null;
@@ -25,11 +25,11 @@ describe('Auth Utilities', () => {
 
     // Mock localStorage
     mockLocalStorage = {};
-    Storage.prototype.getItem = jest.fn((key) => mockLocalStorage[key] || null);
-    Storage.prototype.setItem = jest.fn((key, value) => {
+    Storage.prototype.getItem = vi.fn((key) => mockLocalStorage[key] || null);
+    Storage.prototype.setItem = vi.fn((key, value) => {
       mockLocalStorage[key] = value;
     });
-    Storage.prototype.removeItem = jest.fn((key) => {
+    Storage.prototype.removeItem = vi.fn((key) => {
       delete mockLocalStorage[key];
     });
 
@@ -239,7 +239,7 @@ describe('Auth Utilities', () => {
       const error = new Error('Network error');
       global.fetch.mockRejectedValue(error);
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       const result = await AuthService.register('new@example.com', 'password');
 
@@ -287,7 +287,7 @@ describe('Auth Utilities', () => {
       const error = new Error('Network error');
       global.fetch.mockRejectedValue(error);
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       const result = await AuthService.recover('test@example.com');
 
@@ -341,7 +341,7 @@ describe('Auth Utilities', () => {
       const error = new Error('Network error');
       global.fetch.mockRejectedValue(error);
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       const result = await AuthService.resetPassword(
         'activation123',
@@ -423,7 +423,7 @@ describe('Auth Utilities', () => {
 
       global.fetch.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
 
       const result = await AuthService.isSuperAdmin();
 

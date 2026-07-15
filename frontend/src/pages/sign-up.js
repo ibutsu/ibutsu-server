@@ -108,13 +108,15 @@ export class SignUp extends Component {
   };
 
   onPasswordVisibleClick = () => {
-    this.setState({ isPasswordVisible: !this.state.isPasswordVisible });
+    this.setState((prev) => ({
+      isPasswordVisible: !prev.isPasswordVisible,
+    }));
   };
 
   onConfirmPasswordVisibleClick = () => {
-    this.setState({
-      isConfirmPasswordVisible: !this.state.isConfirmPasswordVisible,
-    });
+    this.setState((prev) => ({
+      isConfirmPasswordVisible: !prev.isConfirmPasswordVisible,
+    }));
   };
 
   onRegisterButtonClick = async (event) => {

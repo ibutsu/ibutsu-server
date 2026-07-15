@@ -2,21 +2,20 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import FilterTable from './filtered-table-card';
 
 // Mock SkeletonTable from react-component-groups
-jest.mock(
-  '@patternfly/react-component-groups/dist/dynamic/SkeletonTable',
-  () => {
-    return function SkeletonTable() {
+vi.mock('@patternfly/react-component-groups/dist/dynamic/SkeletonTable', () => {
+  return {
+    default: function SkeletonTable() {
       return <div data-ouia-component-id="skeleton-table">Loading...</div>;
-    };
-  },
-);
+    },
+  };
+});
 
 describe('FilterTable', () => {
-  const mockOnClearFilters = jest.fn();
-  const mockOnSetPage = jest.fn();
-  const mockOnSetPageSize = jest.fn();
-  const mockOnRowSelectCallback = jest.fn();
-  const mockOnSort = jest.fn();
+  const mockOnClearFilters = vi.fn();
+  const mockOnSetPage = vi.fn();
+  const mockOnSetPageSize = vi.fn();
+  const mockOnRowSelectCallback = vi.fn();
+  const mockOnSort = vi.fn();
 
   const defaultProps = {
     columns: ['Name', 'Status', 'Date'],
@@ -40,7 +39,7 @@ describe('FilterTable', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Rendering', () => {
@@ -299,7 +298,7 @@ describe('FilterTable', () => {
     });
 
     it('should warn and stringify non-renderable objects', () => {
-      const consoleWarnSpy = jest
+      const consoleWarnSpy = vi
         .spyOn(console, 'warn')
         .mockImplementation(() => {});
 

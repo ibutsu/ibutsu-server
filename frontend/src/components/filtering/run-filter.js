@@ -115,8 +115,8 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
                 ouiaId="run-filter-operation-select"
               >
                 <SelectList style={{ maxHeight, overflowY: 'auto' }}>
-                  {Object.keys(operations)?.map((option, index) => (
-                    <SelectOption key={index} value={option}>
+                  {Object.keys(operations)?.map((option) => (
+                    <SelectOption key={option} value={option}>
                       {operations[option].opString}
                     </SelectOption>
                   ))}
@@ -135,8 +135,8 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
                   ouiaId="run-filter-bool-select"
                 >
                   <SelectList style={{ maxHeight, overflowY: 'auto' }}>
-                    {['True', 'False'].map((option, index) => (
-                      <SelectOption key={index} value={option}>
+                    {['True', 'False'].map((option) => (
+                      <SelectOption key={option} value={option}>
                         {option}
                       </SelectOption>
                     ))}
@@ -173,9 +173,9 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
                   )}
                 >
                   <SelectList style={{ maxHeight, overflowY: 'auto' }}>
-                    {valueOptions.map((option, index) => (
+                    {valueOptions.map((option) => (
                       <SelectOption
-                        key={index}
+                        key={option._id}
                         value={option._id}
                         hasCheckbox={operationMode === 'multi'}
                         isSelected={

@@ -6,46 +6,50 @@ import { HttpClient } from '../utilities/http';
 import { AuthService } from '../utilities/auth';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../utilities/auth');
-jest.mock('../utilities/keycloak', () => ({
+vi.mock('../utilities/http');
+vi.mock('../utilities/auth');
+vi.mock('../utilities/keycloak', () => ({
   KeycloakService: {
-    login: jest.fn(),
+    login: vi.fn(),
   },
 }));
-jest.mock('./settings', () => ({
+vi.mock('./settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock OAuth libraries
-jest.mock('@react-oauth/google', () => ({
+vi.mock('@react-oauth/google', () => ({
   GoogleLogin: function MockGoogleLogin() {
     return <div data-ouia-component-id="google-login">Google Login</div>;
   },
 }));
 
-jest.mock('react-simple-oauth2-login', () => {
-  return function MockOAuth2Login({ render }) {
-    return render({ onClick: jest.fn() });
+vi.mock('react-simple-oauth2-login', () => {
+  return {
+    default: function MockOAuth2Login({ render }) {
+      return render({ onClick: vi.fn() });
+    },
   };
 });
 
-jest.mock('@greatsumini/react-facebook-login', () => {
-  return function MockFacebookLogin({ render }) {
-    return render({ onClick: jest.fn() });
+vi.mock('@greatsumini/react-facebook-login', () => {
+  return {
+    default: function MockFacebookLogin({ render }) {
+      return render({ onClick: vi.fn() });
+    },
   };
 });
 
 describe('Login', () => {
   const defaultContextValue = {
     primaryObject: null,
-    setPrimaryObject: jest.fn(),
-    setPrimaryType: jest.fn(),
-    setDefaultDashboard: jest.fn(),
+    setPrimaryObject: vi.fn(),
+    setPrimaryType: vi.fn(),
+    setDefaultDashboard: vi.fn(),
     darkTheme: false,
-    setDarkTheme: jest.fn(),
+    setDarkTheme: vi.fn(),
   };
 
   const renderComponent = (contextValue = {}, initialRoute = '/login') => {
@@ -61,7 +65,7 @@ describe('Login', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default login support (user login enabled)
     HttpClient.get.mockImplementation((url) => {
@@ -210,7 +214,7 @@ describe('Login', () => {
     });
 
     it('should handle login support fetch error', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
       renderComponent();
@@ -332,7 +336,7 @@ describe('Login', () => {
     });
 
     it('should clear primary object on successful login', async () => {
-      const setPrimaryObject = jest.fn();
+      const setPrimaryObject = vi.fn();
       AuthService.login.mockResolvedValue(true);
 
       renderComponent({ setPrimaryObject });

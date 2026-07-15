@@ -48,11 +48,11 @@ export function renderWithIbutsuContext(ui, contextValue = {}) {
     primaryObject: null,
     defaultDashboard: null,
     primaryType: 'project',
-    setPrimaryType: jest.fn(),
-    setPrimaryObject: jest.fn(),
-    setDefaultDashboard: jest.fn(),
+    setPrimaryType: vi.fn(),
+    setPrimaryObject: vi.fn(),
+    setDefaultDashboard: vi.fn(),
     darkTheme: false,
-    setDarkTheme: jest.fn(),
+    setDarkTheme: vi.fn(),
     ...contextValue,
   };
 
@@ -80,11 +80,11 @@ export function renderWithRouterAndContext(
     primaryObject: null,
     defaultDashboard: null,
     primaryType: 'project',
-    setPrimaryType: jest.fn(),
-    setPrimaryObject: jest.fn(),
-    setDefaultDashboard: jest.fn(),
+    setPrimaryType: vi.fn(),
+    setPrimaryObject: vi.fn(),
+    setDefaultDashboard: vi.fn(),
     darkTheme: false,
-    setDarkTheme: jest.fn(),
+    setDarkTheme: vi.fn(),
     ...contextValue,
   };
 
@@ -137,20 +137,20 @@ export function renderWithAllProviders(
     primaryObject: null,
     defaultDashboard: null,
     primaryType: 'project',
-    setPrimaryType: jest.fn(),
-    setPrimaryObject: jest.fn(),
-    setDefaultDashboard: jest.fn(),
+    setPrimaryType: vi.fn(),
+    setPrimaryObject: vi.fn(),
+    setDefaultDashboard: vi.fn(),
     darkTheme: false,
-    setDarkTheme: jest.fn(),
+    setDarkTheme: vi.fn(),
     ...ibutsuContext,
   };
 
   const defaultFilterContext = {
     activeFilters: [],
-    setActiveFilters: jest.fn(),
-    clearFilters: jest.fn(),
-    updateFilters: jest.fn(),
-    onRemoveFilter: jest.fn(),
+    setActiveFilters: vi.fn(),
+    clearFilters: vi.fn(),
+    updateFilters: vi.fn(),
+    onRemoveFilter: vi.fn(),
     ...filterContext,
   };
 
@@ -229,11 +229,11 @@ export function mockHttpClientResponses(responseMap) {
  */
 export function createMockHttpClient(mockResponses = {}) {
   return {
-    get: jest.fn(),
-    post: jest.fn(),
-    put: jest.fn(),
-    delete: jest.fn(),
-    handleResponse: jest.fn(async (response) => {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+    handleResponse: vi.fn(async (response) => {
       if (response.ok) {
         return response.json ? response.json() : response;
       }
@@ -291,20 +291,20 @@ export function createMockLocalStorage() {
   let store = {};
 
   return {
-    getItem: jest.fn((key) => store[key] || null),
-    setItem: jest.fn((key, value) => {
+    getItem: vi.fn((key) => store[key] || null),
+    setItem: vi.fn((key, value) => {
       store[key] = value.toString();
     }),
-    removeItem: jest.fn((key) => {
+    removeItem: vi.fn((key) => {
       delete store[key];
     }),
-    clear: jest.fn(() => {
+    clear: vi.fn(() => {
       store = {};
     }),
     get length() {
       return Object.keys(store).length;
     },
-    key: jest.fn((index) => {
+    key: vi.fn((index) => {
       const keys = Object.keys(store);
       return keys[index] || null;
     }),
@@ -319,7 +319,7 @@ export function createMockLocalStorage() {
 export function mockConsoleMethods(methods = ['log', 'error', 'warn']) {
   const spies = {};
   methods.forEach((method) => {
-    spies[method] = jest.spyOn(console, method).mockImplementation(() => {});
+    spies[method] = vi.spyOn(console, method).mockImplementation(() => {});
   });
   return spies;
 }
@@ -351,15 +351,15 @@ export function createAuthHeaders(token) {
 export function mockMatchMedia(matches = false) {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query) => ({
       matches,
       media: query,
       onchange: null,
-      addListener: jest.fn(),
-      removeListener: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
     })),
   });
 }

@@ -2,20 +2,20 @@ import { HttpClient, buildUrl } from './http';
 import { AuthService } from './auth';
 
 // Mock AuthService
-jest.mock('./auth', () => ({
+vi.mock('./auth', () => ({
   AuthService: {
-    isLoggedIn: jest.fn(),
-    getToken: jest.fn(),
-    logout: jest.fn(),
+    isLoggedIn: vi.fn(),
+    getToken: vi.fn(),
+    logout: vi.fn(),
   },
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('HTTP Utilities', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     AuthService.isLoggedIn.mockReturnValue(false);
     AuthService.getToken.mockReturnValue(null);
     global.fetch.mockResolvedValue({

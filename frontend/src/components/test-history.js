@@ -80,7 +80,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   const [isError, setIsError] = useState(false);
   const [fetching, setFetching] = useState(true);
 
-  const [isTimeRangeSelectOpen, setTimeRangeOpen] = useState(false);
+  const [isTimeRangeSelectOpen, setIsTimeRangeSelectOpen] = useState(false);
   const [selectedTimeRange, setSelectedTimeRange] = useState('1 Week');
   const [onlyFailures, setOnlyFailures] = useState(false);
   const [historySummary, setHistorySummary] = useState();
@@ -367,7 +367,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   const onTimeRangeSelect = useCallback(
     (_, selection) => {
       if (Object.hasOwn(testResult, 'start_time')) {
-        setTimeRangeOpen(false);
+        setIsTimeRangeSelectOpen(false);
         setSelectedTimeRange(selection);
       }
     },
@@ -376,8 +376,8 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
 
   // Handle time range toggle
   const onTimeRangeToggleClick = useCallback(() => {
-    setTimeRangeOpen(!isTimeRangeSelectOpen);
-  }, [isTimeRangeSelectOpen, setTimeRangeOpen]);
+    setIsTimeRangeSelectOpen(!isTimeRangeSelectOpen);
+  }, [isTimeRangeSelectOpen, setIsTimeRangeSelectOpen]);
 
   // Render card header with only failures checkbox and time range select
   const historyHeader = useMemo(() => {
@@ -421,7 +421,7 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
                   selected={selectedTimeRange}
                   onSelect={onTimeRangeSelect}
                   onOpenChange={(isTimeRangeSelectOpen) =>
-                    setTimeRangeOpen(isTimeRangeSelectOpen)
+                    setIsTimeRangeSelectOpen(isTimeRangeSelectOpen)
                   }
                   toggle={(toggleRef) => (
                     <MenuToggle

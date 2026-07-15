@@ -169,7 +169,7 @@ const ResultSummaryApex = ({ title, params, onDeleteClick, onEditClick }) => {
         },
       ],
     };
-  }, [chartColors, chartLabels, summary.total]);
+  }, [chartColors, chartLabels, summary?.total]);
 
   return (
     <Card className="ibutsu-widget-card">

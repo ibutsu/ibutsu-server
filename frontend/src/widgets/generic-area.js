@@ -20,6 +20,8 @@ import { toTitleCase } from '../utilities';
 import WidgetHeader from '../components/widget-header';
 import { CHART_COLOR_MAP } from '../constants';
 
+const CursorVoronoiContainer = createContainer('cursor', 'voronoi');
+
 const GenericAreaWidget = ({
   fontSize,
   interpolation,
@@ -115,7 +117,6 @@ const GenericAreaWidget = ({
   }, [params, widgetEndpoint]);
 
   const toolTip = useMemo(() => {
-    const CursorVoronoiContainer = createContainer('cursor', 'voronoi');
     if (showTooltip) {
       return (
         <CursorVoronoiContainer

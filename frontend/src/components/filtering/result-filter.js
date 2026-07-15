@@ -264,15 +264,15 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
             placeholder="Select 1 or multiple results"
           >
             <LabelGroup aria-label="Current selections">
-              {resultSelection?.map((selection, index) => (
+              {resultSelection?.map((selection) => (
                 <Label
                   variant="outline"
-                  key={index}
+                  key={selection}
                   onClose={(ev) => {
                     ev.stopPropagation();
                     onResultSelect(ev, selection);
                   }}
-                  ouiaId={`result-filter-result-label-${index}`}
+                  ouiaId={`result-filter-result-label-${selection}`}
                 >
                   {selection}
                 </Label>
@@ -362,15 +362,15 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
             isExpanded={isRunOpen}
           >
             <LabelGroup aria-label="Current selections">
-              {runSelection?.map((selection, index) => (
+              {runSelection?.map((selection) => (
                 <Label
                   variant="outline"
-                  key={index}
+                  key={selection}
                   onClose={(ev) => {
                     ev.stopPropagation();
                     onRunSelect(ev, selection);
                   }}
-                  ouiaId={`result-filter-run-label-${index}`}
+                  ouiaId={`result-filter-run-label-${selection}`}
                 >
                   {selection}
                 </Label>
@@ -493,8 +493,8 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                 ouiaId="result-filter-operation-select"
               >
                 <SelectList style={{ maxHeight, overflowY: 'auto' }}>
-                  {Object.keys(operations).map((option, index) => (
-                    <SelectOption key={index} value={option}>
+                  {Object.keys(operations).map((option) => (
+                    <SelectOption key={option} value={option}>
                       {operations[option].opString}
                     </SelectOption>
                   ))}
@@ -513,8 +513,8 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   ouiaId="result-filter-bool-select"
                 >
                   <SelectList style={{ maxHeight, overflowY: 'auto' }}>
-                    {['True', 'False'].map((option, index) => (
-                      <SelectOption key={index} value={option}>
+                    {['True', 'False'].map((option) => (
+                      <SelectOption key={option} value={option}>
                         {option}
                       </SelectOption>
                     ))}
@@ -578,9 +578,9 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   )}
                 >
                   <SelectList style={{ maxHeight, overflowY: 'auto' }}>
-                    {valueOptions.map((option, index) => (
+                    {valueOptions.map((option) => (
                       <SelectOption
-                        key={index}
+                        key={option._id}
                         value={option._id}
                         hasCheckbox={operationMode === 'multi'}
                         isSelected={
@@ -631,8 +631,8 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                         {`No runs found for "${runFilterValue}"`}
                       </SelectOption>
                     )}
-                    {filteredRuns?.map((option, index) => (
-                      <SelectOption key={index} value={option}>
+                    {filteredRuns?.map((option) => (
+                      <SelectOption key={option} value={option}>
                         {option}
                       </SelectOption>
                     ))}
@@ -652,8 +652,8 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
                   ouiaId="result-filter-result-select"
                 >
                   <SelectList style={{ maxHeight, overflowY: 'auto' }}>
-                    {RESULT_SELECT_OPTIONS.map((option, index) => (
-                      <SelectOption key={index} value={option}>
+                    {RESULT_SELECT_OPTIONS.map((option) => (
+                      <SelectOption key={option} value={option}>
                         {option}
                       </SelectOption>
                     ))}

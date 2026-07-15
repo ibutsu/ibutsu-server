@@ -13,7 +13,10 @@ import { useNavigate } from 'react-router-dom';
 import { AuthService } from '../utilities/auth';
 
 const UserDropdown = () => {
-  const [displayName, setDisplayName] = useState('User');
+  const [displayName] = useState(() => {
+    const localUser = AuthService.getLocalUser();
+    return (localUser && (localUser.name || localUser.email)) || 'User';
+  });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
   const navigate = useNavigate();
@@ -24,12 +27,6 @@ const UserDropdown = () => {
   };
 
   useEffect(() => {
-    const localUser = AuthService.getLocalUser();
-    setDisplayName(
-      (localUser && (localUser.name || localUser.email)) || 'User',
-    );
-
-    // Check admin status
     const checkAdminStatus = async () => {
       try {
         const adminStatus = await AuthService.isSuperAdmin();

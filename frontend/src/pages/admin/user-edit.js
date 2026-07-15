@@ -204,10 +204,10 @@ const UserEdit = () => {
             aria-controls="select-multi-typeahead-listbox"
           >
             <LabelGroup aria-label="Current selections">
-              {formProjects?.map((userProject, index) => (
+              {formProjects?.map((userProject) => (
                 <Label
                   variant="outline"
-                  key={index}
+                  key={userProject.project.id}
                   onClose={(ev) => {
                     ev.stopPropagation();
                     onProjectsSelect(ev, userProject);
@@ -333,9 +333,9 @@ const UserEdit = () => {
                           No projects exists
                         </SelectOption>
                       )}
-                      {filteredProjects?.map((project, index) => (
+                      {filteredProjects?.map((project) => (
                         <SelectOption
-                          key={index}
+                          key={project.id}
                           value={projectToOption(project)}
                           description={project.name}
                           isDisabled={project.isDisabled}

@@ -8,7 +8,7 @@ const IbutsuContextProvider = (props) => {
   const [primaryType, setPrimaryType] = useState();
   const [primaryObject, setPrimaryObject] = useState();
   const [defaultDashboard, setDefaultDashboard] = useState();
-  const [darkTheme, setDarkTheme] = useState(getDarkTheme());
+  const [darkTheme, setDarkTheme] = useState(() => getDarkTheme());
 
   return (
     <IbutsuContext.Provider

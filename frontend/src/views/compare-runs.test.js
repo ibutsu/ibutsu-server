@@ -1,19 +1,25 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import CompareRunsView from './compare-runs';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock FilterTable
-jest.mock('../components/filtering/filtered-table-card', () => {
+vi.mock('../components/filtering/filtered-table-card', () => {
   const PropTypes = require('prop-types');
   const MockFilterTable = ({ columns, rows, headerChildren, isError }) => (
     <div data-ouia-component-id="filter-table">
@@ -45,7 +51,7 @@ jest.mock('../components/filtering/filtered-table-card', () => {
     headerChildren: PropTypes.node,
     isError: PropTypes.bool,
   };
-  return MockFilterTable;
+  return { default: MockFilterTable };
 });
 
 describe('CompareRunsView Component', () => {
@@ -80,10 +86,10 @@ describe('CompareRunsView Component', () => {
     const contextValue = {
       primaryObject,
       primaryType: 'project',
-      setPrimaryType: jest.fn(),
-      setPrimaryObject: jest.fn(),
+      setPrimaryType: vi.fn(),
+      setPrimaryObject: vi.fn(),
       darkTheme: false,
-      setDarkTheme: jest.fn(),
+      setDarkTheme: vi.fn(),
     };
 
     return render(
@@ -96,7 +102,7 @@ describe('CompareRunsView Component', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     HttpClient.get.mockResolvedValue({
       ok: true,
@@ -158,9 +164,8 @@ describe('CompareRunsView Component', () => {
   });
 
   describe('Filter controls', () => {
-    it('should update includeSkipped state when checkbox is clicked', () => {
-      // Suppress warnings from incomplete filter structure (see TODO in compare-runs.js)
-      const consoleWarnSpy = jest
+    it('should update includeSkipped state when checkbox is clicked', async () => {
+      const consoleWarnSpy = vi
         .spyOn(console, 'warn')
         .mockImplementation(() => {});
 
@@ -169,9 +174,13 @@ describe('CompareRunsView Component', () => {
       const checkbox = screen.getByLabelText('include-skips-checkbox');
       expect(checkbox).not.toBeChecked();
 
-      fireEvent.click(checkbox);
+      await act(async () => {
+        fireEvent.click(checkbox);
+      });
 
-      expect(checkbox).toBeChecked();
+      await waitFor(() => {
+        expect(checkbox).toBeChecked();
+      });
 
       consoleWarnSpy.mockRestore();
     });
@@ -203,7 +212,7 @@ describe('CompareRunsView Component', () => {
 
   describe('Error handling', () => {
     it('should handle API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 

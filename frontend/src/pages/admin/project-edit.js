@@ -379,9 +379,9 @@ const ProjectEdit = () => {
                   variant="default"
                 >
                   <SelectList>
-                    {filteredUsers?.map((user, index) => (
+                    {filteredUsers?.map((user) => (
                       <SelectOption
-                        key={user.id || index}
+                        key={user.id}
                         onClick={() => setSelectedOwner(user)}
                         value={userToOption(user)}
                         description={user.email}
@@ -417,9 +417,9 @@ const ProjectEdit = () => {
                   variant="typeahead"
                 >
                   <SelectList id="select-typeahead-listbox">
-                    {filteredDashboards.map((dashboard, index) => (
+                    {filteredDashboards.map((dashboard) => (
                       <SelectOption
-                        key={dashboard.id || index}
+                        key={dashboard.id}
                         onClick={() => setSelectedDashboard(dashboard)}
                         value={dashboardToOption(dashboard)}
                         description={dashboard.description}

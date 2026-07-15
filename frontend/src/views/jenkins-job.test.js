@@ -6,15 +6,15 @@ import { FilterContext } from '../components/contexts/filter-context';
 import { HttpClient } from '../utilities/http';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock FilterTable
-jest.mock('../components/filtering/filtered-table-card', () => {
+vi.mock('../components/filtering/filtered-table-card', () => {
   const PropTypes = require('prop-types');
   const MockFilterTable = ({ columns, rows, fetching, isError }) => (
     <div data-ouia-component-id="filter-table">
@@ -55,11 +55,11 @@ jest.mock('../components/filtering/filtered-table-card', () => {
     fetching: PropTypes.bool,
     isError: PropTypes.bool,
   };
-  return MockFilterTable;
+  return { default: MockFilterTable };
 });
 
 // Mock RunSummary
-jest.mock('../components/run-summary', () => {
+vi.mock('../components/run-summary', () => {
   const PropTypes = require('prop-types');
   const MockRunSummary = ({ summary }) => (
     <div data-ouia-component-id="run-summary">
@@ -69,11 +69,11 @@ jest.mock('../components/run-summary', () => {
   MockRunSummary.propTypes = {
     summary: PropTypes.object,
   };
-  return MockRunSummary;
+  return { default: MockRunSummary };
 });
 
 // Mock ActiveFilters
-jest.mock('../components/filtering/active-filters', () => {
+vi.mock('../components/filtering/active-filters', () => {
   const PropTypes = require('prop-types');
   const MockActiveFilters = () => (
     <div data-ouia-component-id="active-filters" />
@@ -82,7 +82,7 @@ jest.mock('../components/filtering/active-filters', () => {
     activeFilters: PropTypes.array,
     hideFilters: PropTypes.array,
   };
-  return MockActiveFilters;
+  return { default: MockActiveFilters };
 });
 
 describe('JenkinsJobView Component', () => {
@@ -146,16 +146,16 @@ describe('JenkinsJobView Component', () => {
     const ibutsuContextValue = {
       primaryObject,
       primaryType: 'project',
-      setPrimaryType: jest.fn(),
-      setPrimaryObject: jest.fn(),
+      setPrimaryType: vi.fn(),
+      setPrimaryObject: vi.fn(),
       darkTheme: false,
-      setDarkTheme: jest.fn(),
+      setDarkTheme: vi.fn(),
     };
 
     const filterContextValue = {
       activeFilters,
-      clearFilters: jest.fn(),
-      setActiveFilters: jest.fn(),
+      clearFilters: vi.fn(),
+      setActiveFilters: vi.fn(),
     };
 
     return render(
@@ -172,7 +172,7 @@ describe('JenkinsJobView Component', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock for widget config endpoint
     HttpClient.get.mockImplementation((url) => {
@@ -306,7 +306,7 @@ describe('JenkinsJobView Component', () => {
 
   describe('Error handling', () => {
     it('should handle jobs API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -333,7 +333,7 @@ describe('JenkinsJobView Component', () => {
     });
 
     it('should handle missing jobs in response', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -360,7 +360,7 @@ describe('JenkinsJobView Component', () => {
     });
 
     it('should handle widget config API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -424,16 +424,16 @@ describe('JenkinsJobView Component', () => {
       const ibutsuContextValue = {
         primaryObject: mockProject,
         primaryType: 'project',
-        setPrimaryType: jest.fn(),
-        setPrimaryObject: jest.fn(),
+        setPrimaryType: vi.fn(),
+        setPrimaryObject: vi.fn(),
         darkTheme: false,
-        setDarkTheme: jest.fn(),
+        setDarkTheme: vi.fn(),
       };
 
       const filterContextValue = {
         activeFilters: newFilters,
-        clearFilters: jest.fn(),
-        setActiveFilters: jest.fn(),
+        clearFilters: vi.fn(),
+        setActiveFilters: vi.fn(),
       };
 
       rerender(

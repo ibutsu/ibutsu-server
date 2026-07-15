@@ -1,5 +1,4 @@
 // src/setupTests.js
-import '../jest.polyfills.cjs';
 import '@testing-library/jest-dom';
 import { configure } from '@testing-library/react';
 import { resetTestCounters } from './test-utils/mock-data';

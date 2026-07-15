@@ -12,41 +12,41 @@ import { FilterContext } from '../components/contexts/filter-context';
 import { HttpClient } from '../utilities/http';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock widgets
-jest.mock('../widgets/filter-heatmap', () => ({
+vi.mock('../widgets/filter-heatmap', () => ({
   FilterHeatmapWidget: () => (
     <div data-ouia-component-id="heatmap-widget">Heatmap</div>
   ),
   HEATMAP_TYPES: { jenkins: 'jenkins' },
 }));
 
-jest.mock('../widgets/generic-bar', () => {
+vi.mock('../widgets/generic-bar', () => {
   const PropTypes = require('prop-types');
   const MockGenericBarWidget = ({ title }) => (
     <div data-ouia-component-id="bar-widget">{title}</div>
   );
   MockGenericBarWidget.propTypes = { title: PropTypes.string };
-  return MockGenericBarWidget;
+  return { default: MockGenericBarWidget };
 });
 
-jest.mock('../widgets/generic-area', () => {
+vi.mock('../widgets/generic-area', () => {
   const PropTypes = require('prop-types');
   const MockGenericAreaWidget = ({ title }) => (
     <div data-ouia-component-id="area-widget">{title}</div>
   );
   MockGenericAreaWidget.propTypes = { title: PropTypes.string };
-  return MockGenericAreaWidget;
+  return { default: MockGenericAreaWidget };
 });
 
 // Mock ParamDropdown
-jest.mock('../components/param-dropdown', () => {
+vi.mock('../components/param-dropdown', () => {
   const PropTypes = require('prop-types');
   const MockParamDropdown = ({ tooltip, defaultValue, handleSelect }) => (
     <div data-ouia-component-id="param-dropdown">
@@ -59,7 +59,7 @@ jest.mock('../components/param-dropdown', () => {
     defaultValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     handleSelect: PropTypes.func,
   };
-  return MockParamDropdown;
+  return { default: MockParamDropdown };
 });
 
 describe('JenkinsJobAnalysisView Component', () => {
@@ -101,16 +101,16 @@ describe('JenkinsJobAnalysisView Component', () => {
     const ibutsuContextValue = {
       primaryObject,
       primaryType: 'project',
-      setPrimaryType: jest.fn(),
-      setPrimaryObject: jest.fn(),
+      setPrimaryType: vi.fn(),
+      setPrimaryObject: vi.fn(),
       darkTheme: false,
-      setDarkTheme: jest.fn(),
+      setDarkTheme: vi.fn(),
     };
 
     const filterContextValue = {
       activeFilters,
-      clearFilters: jest.fn(),
-      setActiveFilters: jest.fn(),
+      clearFilters: vi.fn(),
+      setActiveFilters: vi.fn(),
     };
 
     return render(
@@ -125,7 +125,7 @@ describe('JenkinsJobAnalysisView Component', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     HttpClient.get.mockResolvedValue({
       ok: true,
@@ -334,7 +334,7 @@ describe('JenkinsJobAnalysisView Component', () => {
 
   describe('Error handling', () => {
     it('should handle API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -355,7 +355,7 @@ describe('JenkinsJobAnalysisView Component', () => {
 
   describe('Loading state', () => {
     it('should not display widgets while loading', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       let resolvePromise;
       HttpClient.get.mockImplementation(
         () =>
@@ -368,7 +368,7 @@ describe('JenkinsJobAnalysisView Component', () => {
 
       // Fast-forward past the debounce timeout
       act(() => {
-        jest.advanceTimersByTime(50);
+        vi.advanceTimersByTime(50);
       });
 
       // Check that widgets are not displayed while loading
@@ -385,7 +385,7 @@ describe('JenkinsJobAnalysisView Component', () => {
       });
 
       // Switch back to real timers
-      jest.useRealTimers();
+      vi.useRealTimers();
 
       await waitFor(() => {
         expect(screen.getByTestId('heatmap-widget')).toBeInTheDocument();
@@ -435,18 +435,18 @@ describe('JenkinsJobAnalysisView Component', () => {
       const ibutsuContextValue = {
         primaryObject: mockProject,
         primaryType: 'project',
-        setPrimaryType: jest.fn(),
-        setPrimaryObject: jest.fn(),
+        setPrimaryType: vi.fn(),
+        setPrimaryObject: vi.fn(),
         darkTheme: false,
-        setDarkTheme: jest.fn(),
+        setDarkTheme: vi.fn(),
       };
 
       const filterContextValue = {
         activeFilters: [
           { field: 'job_name', operator: 'eq', value: 'different-job' },
         ],
-        clearFilters: jest.fn(),
-        setActiveFilters: jest.fn(),
+        clearFilters: vi.fn(),
+        setActiveFilters: vi.fn(),
       };
 
       rerender(
