@@ -12,6 +12,7 @@ export class KeycloakService {
       onLoad: 'login-required',
       checkLoginIframe: false,
       responseMode: 'query',
+      pkceMethod: false,
       redirectUri: Settings.serverUrl + '/login/auth/keycloak',
     });
   }
