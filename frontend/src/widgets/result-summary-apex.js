@@ -32,8 +32,11 @@ const ResultSummaryApex = ({ title, params, onDeleteClick, onEditClick }) => {
   const { containerRef, width: containerWidth } = useSVGContainerDimensions();
 
   useEffect(() => {
-    setIsError(false);
+    if (!params) {
+      return;
+    }
     const fetchSummary = async () => {
+      setIsError(false);
       try {
         const response = await HttpClient.get(
           [Settings.serverUrl, 'widget', 'result-summary'],
@@ -41,16 +44,13 @@ const ResultSummaryApex = ({ title, params, onDeleteClick, onEditClick }) => {
         );
         const data = await HttpClient.handleResponse(response);
         setSummary(data);
-        setIsError(false);
       } catch (error) {
         setIsError(true);
         console.error(error);
       }
       setFetching(false);
     };
-    if (params) {
-      fetchSummary();
-    }
+    fetchSummary();
   }, [params]);
 
   // Prepare data for ApexCharts

@@ -39,8 +39,8 @@ const EditWidgetModal = ({
   const [weight, setWeight] = useState(10);
   const [componentLoaded, setComponentLoaded] = useState(false);
   const [params, setParams] = useState({});
-  const [isTitleValid, setIsTitleValid] = useState(false);
-  const [saveButtonDisabled, setSaveButtonDisabled] = useState(false);
+  const isTitleValid = title !== '';
+  const saveButtonDisabled = title === '';
   // Use the custom widget filters hook
   const {
     isResultBasedWidget,
@@ -81,7 +81,6 @@ const EditWidgetModal = ({
     setTitle('');
     setParams({});
     setWeight(0);
-    setIsTitleValid(false);
     setWidgetType({});
     resetFilterContext();
   }, [
@@ -99,22 +98,19 @@ const EditWidgetModal = ({
     setTitle('');
     setParams({});
     setWeight(0);
-    setIsTitleValid(false);
     setWidgetType({});
     resetFilterContext();
     onClose();
   }, [onClose, resetFilterContext]);
 
   useEffect(() => {
-    setTitle(data.title);
-    setWeight(data.weight || 0);
-    setParams(data.params || {});
+    const syncData = async () => {
+      setTitle(data.title);
+      setWeight(data.weight || 0);
+      setParams(data.params || {});
+    };
+    syncData();
   }, [data]);
-
-  useEffect(() => {
-    setIsTitleValid(title !== '');
-    setSaveButtonDisabled(title === '');
-  }, [title]);
 
   const onParamChange = useCallback((value, event) => {
     setParams((prevParams) => ({

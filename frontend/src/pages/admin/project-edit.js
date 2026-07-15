@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 
 import {
   ActionGroup,
@@ -57,16 +57,15 @@ const ProjectEdit = () => {
   const params = useParams();
   const navigate = useNavigate();
 
-  // is project new or existing
-  const [isNewProject, setIsNewProject] = useState(false);
+  const id = params.id;
+  const isNewProject = params.id === 'new';
 
   // project title and name states, required
-  const [id, setId] = useState();
   const [title, setTitle] = useState('');
   const [crumbTitle, setCrumbTitle] = useState('');
-  const [titleValid, setTitleValid] = useState(false);
+  const titleValid = title !== '';
   const [name, setName] = useState('');
-  const [nameValid, setNameValid] = useState(false);
+  const nameValid = name !== '';
 
   // owner selection state
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -74,18 +73,11 @@ const ProjectEdit = () => {
   const [selectedOwner, setSelectedOwner] = useState({});
 
   // dashboard selection state
-  const [filteredDashboards, setFilteredDashboards] = useState([]);
   const [dashboards, setDashboards] = useState([]);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [selectedDashboard, setSelectedDashboard] = useState();
   const [filterValueDashboard, setFilterValueDashboard] = useState('');
   const [inputValueDashboard, setInputValueDashboard] = useState('');
-
-  // sync URL and the state
-  useEffect(() => {
-    setId(params.id);
-    setIsNewProject(params.id === 'new');
-  }, [params]);
 
   const onSubmitClick = async () => {
     let project = {
@@ -167,44 +159,33 @@ const ProjectEdit = () => {
 
   // fetch the project if needed
   useEffect(() => {
-    const fetchProjectAdmin = async () => {
-      try {
-        const response = await HttpClient.get([
-          Settings.serverUrl,
-          'admin',
-          'project',
-          id,
-        ]);
-        const data = await HttpClient.handleResponse(response);
-        setTitle(data.title);
-        setCrumbTitle(data.title);
-        setName(data.name);
-        setSelectedOwner(data.owner);
-        setSelectedDashboard(data.defaultDashboard);
-        setInputValueDashboard(data.defaultDashboard?.title);
-      } catch (error) {
-        console.error('Failed to fetch project: ', error);
-        navigate('/admin/projects');
+    const initProject = async () => {
+      if (id === 'new') {
+        setTitle('New project');
+        setName(`new-project-${nanoid(6)}`);
+      } else if (id) {
+        try {
+          const response = await HttpClient.get([
+            Settings.serverUrl,
+            'admin',
+            'project',
+            id,
+          ]);
+          const data = await HttpClient.handleResponse(response);
+          setTitle(data.title);
+          setCrumbTitle(data.title);
+          setName(data.name);
+          setSelectedOwner(data.owner);
+          setSelectedDashboard(data.defaultDashboard);
+          setInputValueDashboard(data.defaultDashboard?.title);
+        } catch (error) {
+          console.error('Failed to fetch project: ', error);
+          navigate('/admin/projects');
+        }
       }
     };
-    // if the project is new, set the title and name
-    if (id === 'new') {
-      setTitle('New project');
-      setName(`new-project-${nanoid(6)}`);
-    } else if (id) {
-      fetchProjectAdmin();
-    }
+    initProject();
   }, [id, navigate]);
-
-  // validate Title
-  useEffect(() => {
-    setTitleValid(title !== '');
-  }, [title]);
-
-  // validate Name
-  useEffect(() => {
-    setNameValid(name !== '');
-  }, [name]);
 
   // get dashboards for the project
   useEffect(() => {
@@ -216,7 +197,6 @@ const ProjectEdit = () => {
         );
         const data = await HttpClient.handleResponse(response);
         setDashboards(data['dashboards']);
-        setFilteredDashboards(data['dashboards']);
       } catch (error) {
         console.error('Failed to fetch dashboards: ', error);
       }
@@ -232,27 +212,26 @@ const ProjectEdit = () => {
     }
   }, [id]);
 
-  // update dashboard filtering and selection items
-  useEffect(() => {
-    let newSelectOptionsDashboard = [...dashboards];
-    if (inputValueDashboard) {
-      newSelectOptionsDashboard = dashboards.filter((menuItem) =>
-        String(menuItem.title)
-          .toLowerCase()
-          .includes(filterValueDashboard.toLowerCase()),
-      );
-      if (newSelectOptionsDashboard.length === 0) {
-        newSelectOptionsDashboard = [
-          {
-            isDisabled: true,
-            value: {},
-            title: `No results found for "${filterValueDashboard}"`,
-          },
-        ];
-      }
+  const filteredDashboards = useMemo(() => {
+    if (!inputValueDashboard) {
+      return [...dashboards];
     }
-    setFilteredDashboards(newSelectOptionsDashboard);
-  }, [dashboards, filterValueDashboard, inputValueDashboard, isDashboardOpen]);
+    const filtered = dashboards.filter((menuItem) =>
+      String(menuItem.title)
+        .toLowerCase()
+        .includes(filterValueDashboard.toLowerCase()),
+    );
+    if (filtered.length === 0) {
+      return [
+        {
+          isDisabled: true,
+          value: {},
+          title: `No results found for "${filterValueDashboard}"`,
+        },
+      ];
+    }
+    return filtered;
+  }, [dashboards, filterValueDashboard, inputValueDashboard]);
 
   const toggleOwner = (toggleRef) => (
     <MenuToggle

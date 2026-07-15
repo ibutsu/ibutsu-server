@@ -245,11 +245,14 @@ const ClassifyFailuresTable = () => {
   }, []);
 
   useEffect(() => {
-    // set rows when filtered items update
-    const newRows = filteredResults.map((result) =>
-      resultToClassificationRow(result, updateFilters),
-    );
-    setRows(newRows);
+    const computeRows = async () => {
+      setRows(
+        filteredResults.map((result) =>
+          resultToClassificationRow(result, updateFilters),
+        ),
+      );
+    };
+    computeRows();
   }, [filteredResults, updateFilters, resultToClassificationRow]);
 
   const resultFilterMemo = useMemo(() => {

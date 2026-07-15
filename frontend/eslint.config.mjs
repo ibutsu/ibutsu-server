@@ -6,6 +6,7 @@ import globals from 'globals';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import js from '@eslint/js';
 import pluginCypress from 'eslint-plugin-cypress';
+import jsxA11yX from 'eslint-plugin-jsx-a11y-x';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
 export default defineConfig([
@@ -14,14 +15,13 @@ export default defineConfig([
     'Ignore build dir and node_modules',
   ),
   js.configs.recommended,
-  // TODO: Re-enable eslint-plugin-jsx-a11y when ESLint 10 support is released
-  // Tracking: https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/issues/1075
   pluginCypress.configs.recommended,
   {
     files: ['src/**/*', 'cypress/**/*', 'bin/**/*'],
     extends: [
       eslintReact.configs.recommended,
       eslintReact.configs['disable-conflict-eslint-plugin-react-hooks'],
+      jsxA11yX.configs.recommended,
     ],
     plugins: {
       'unused-imports': unusedImports,

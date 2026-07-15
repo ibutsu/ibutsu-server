@@ -19,7 +19,10 @@ const ParamDropdown = ({
   const [userSelection, setUserSelection] = useState(null);
 
   useEffect(() => {
-    setUserSelection(null);
+    const resetSelection = async () => {
+      setUserSelection(null);
+    };
+    resetSelection();
   }, [defaultValue]);
 
   const value = userSelection ?? defaultValue ?? 'Group data by?';

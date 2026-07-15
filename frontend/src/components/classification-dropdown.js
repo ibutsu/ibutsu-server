@@ -41,7 +41,10 @@ const ClassificationDropdown = ({ testResult: initialTestResult }) => {
   );
 
   useEffect(() => {
-    setTestResult(initialTestResult);
+    const syncResult = async () => {
+      setTestResult(initialTestResult);
+    };
+    syncResult();
   }, [initialTestResult]);
 
   return (

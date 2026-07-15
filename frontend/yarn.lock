@@ -504,7 +504,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eslint-react/eslint-plugin@npm:^5.11.2":
+"@eslint-react/eslint-plugin@npm:^5.14.5":
   version: 5.14.5
   resolution: "@eslint-react/eslint-plugin@npm:5.14.5"
   dependencies:
@@ -613,10 +613,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@eslint/js@npm:^9.39.4":
-  version: 9.39.5
-  resolution: "@eslint/js@npm:9.39.5"
-  checksum: 10c0/49894e98ba313a7d3bfb1b20d55c0f9826be45a7db876fd84e533ac7f101b1d95b51cd22c6a6db3a45066b9c0d068c31b4a22fa0db8a6cc8744a25540efdb824
+"@eslint/js@npm:^10.0.0":
+  version: 10.0.1
+  resolution: "@eslint/js@npm:10.0.1"
+  peerDependencies:
+    eslint: ^10.0.0
+  peerDependenciesMeta:
+    eslint:
+      optional: true
+  checksum: 10c0/9f3fcaf71ba7fdf65d82e8faad6ecfe97e11801cc3c362b306a88ea1ed1344ae0d35330dddb0e8ad18f010f6687a70b75491b9e01c8af57acd7987cee6b3ec6c
   languageName: node
   linkType: hard
 
@@ -1727,7 +1732,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"aria-query@npm:^5.0.0":
+"aria-query@npm:^5.0.0, aria-query@npm:^5.3.2":
   version: 5.3.2
   resolution: "aria-query@npm:5.3.2"
   checksum: 10c0/003c7e3e2cff5540bf7a7893775fc614de82b0c5dde8ae823d47b7a28a9d4da1f7ed85f340bdb93d5649caa927755f0e31ecc7ab63edfdfc00c8ef07e505e03e
@@ -1814,6 +1819,20 @@ __metadata:
   version: 1.13.2
   resolution: "aws4@npm:1.13.2"
   checksum: 10c0/c993d0d186d699f685d73113733695d648ec7d4b301aba2e2a559d0cd9c1c902308cc52f4095e1396b23fddbc35113644e7f0a6a32753636306e41e3ed6f1e79
+  languageName: node
+  linkType: hard
+
+"axe-core@npm:^4.10.2":
+  version: 4.12.1
+  resolution: "axe-core@npm:4.12.1"
+  checksum: 10c0/03438bd98cef38ad57554feea0d8de21705001db2655c27e0c33ff55e16dd7d6f49c28fb420dc93f7532e68ff363c0953056a5836e6f47068f193eb1765c7db7
+  languageName: node
+  linkType: hard
+
+"axobject-query@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "axobject-query@npm:4.1.0"
+  checksum: 10c0/c470e4f95008f232eadd755b018cb55f16c03ccf39c027b941cd8820ac6b68707ce5d7368a46756db4256fbc91bb4ead368f84f7fb034b2b7932f082f6dc0775
   languageName: node
   linkType: hard
 
@@ -2287,7 +2306,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cypress@npm:^15.18.0":
+"cypress@npm:^15.18.1":
   version: 15.18.1
   resolution: "cypress@npm:15.18.1"
   dependencies:
@@ -2433,6 +2452,13 @@ __metadata:
   version: 1.1.4
   resolution: "d3-voronoi@npm:1.1.4"
   checksum: 10c0/9fd4689323a8eed547dde44e9cae0b3e6a7333447cf37b069e278b8e899fc16e0251d099fe22d751c900a3a0b7a610a16e747224219538758afaf4561749047a
+  languageName: node
+  linkType: hard
+
+"damerau-levenshtein@npm:^1.0.8":
+  version: 1.0.8
+  resolution: "damerau-levenshtein@npm:1.0.8"
+  checksum: 10c0/4c2647e0f42acaee7d068756c1d396e296c3556f9c8314bac1ac63ffb236217ef0e7e58602b18bb2173deec7ec8e0cac8e27cccf8f5526666b4ff11a13ad54a3
   languageName: node
   linkType: hard
 
@@ -2729,7 +2755,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-cypress@npm:^6.0.0":
+"eslint-plugin-cypress@npm:^6.4.2":
   version: 6.4.2
   resolution: "eslint-plugin-cypress@npm:6.4.2"
   dependencies:
@@ -2741,6 +2767,23 @@ __metadata:
     "@typescript-eslint/parser":
       optional: true
   checksum: 10c0/0b886c66ba251949508abefedfee09e0d186d6be0960b5737d6c70abbf54d3ba7e0d07b907643524c2f223d09082bf6e516f1b40182a43546390acdd758875b7
+  languageName: node
+  linkType: hard
+
+"eslint-plugin-jsx-a11y-x@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "eslint-plugin-jsx-a11y-x@npm:0.2.0"
+  dependencies:
+    aria-query: "npm:^5.3.2"
+    axe-core: "npm:^4.10.2"
+    axobject-query: "npm:^4.1.0"
+    damerau-levenshtein: "npm:^1.0.8"
+    jsx-ast-utils-x: "npm:^0.1.0"
+    language-tags: "npm:^1.0.9"
+    minimatch: "npm:^10.2.5"
+  peerDependencies:
+    eslint: ^9.0.0 || ^10.0.0
+  checksum: 10c0/9e072841b523f9276857282dbd01d6719c6dcbc507bde6f237e1d558c717691539a3bbc6f9e6b163eb5500699b6ab4ec84e6cc5276471129e838e3b77b7f8a06
   languageName: node
   linkType: hard
 
@@ -2782,7 +2825,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-react-hooks@npm:^7.1.0":
+"eslint-plugin-react-hooks@npm:^7.1.1":
   version: 7.1.1
   resolution: "eslint-plugin-react-hooks@npm:7.1.1"
   dependencies:
@@ -2936,7 +2979,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint@npm:^10.0.1":
+"eslint@npm:^10.7.0":
   version: 10.7.0
   resolution: "eslint@npm:10.7.0"
   dependencies:
@@ -3519,8 +3562,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "ibutsu-frontend@workspace:."
   dependencies:
-    "@eslint-react/eslint-plugin": "npm:^5.11.2"
-    "@eslint/js": "npm:^9.39.4"
+    "@eslint-react/eslint-plugin": "npm:^5.14.5"
+    "@eslint/js": "npm:^10.0.0"
     "@greatsumini/react-facebook-login": "npm:^3.4.0"
     "@patternfly/patternfly": "npm:^6.6.0"
     "@patternfly/react-charts": "npm:^8.6.0"
@@ -3540,19 +3583,20 @@ __metadata:
     "@vitejs/plugin-react": "npm:^6.0.3"
     "@vitest/coverage-v8": "npm:^4.1.10"
     apexcharts: "npm:^5.16.0"
-    cypress: "npm:^15.18.0"
-    eslint: "npm:^10.0.1"
+    cypress: "npm:^15.18.1"
+    eslint: "npm:^10.7.0"
     eslint-config-prettier: "npm:^10.1.8"
-    eslint-plugin-cypress: "npm:^6.0.0"
+    eslint-plugin-cypress: "npm:^6.4.2"
+    eslint-plugin-jsx-a11y-x: "npm:^0.2.0"
     eslint-plugin-prettier: "npm:^5.5.6"
-    eslint-plugin-react-hooks: "npm:^7.1.0"
+    eslint-plugin-react-hooks: "npm:^7.1.1"
     eslint-plugin-unused-imports: "npm:^4.4.1"
     globals: "npm:^17.7.0"
     jsdom: "npm:^29.1.1"
     keycloak-js: "npm:^26.2.4"
     monaco-editor: "npm:^0.55.1"
     nanoid: "npm:^5.1.16"
-    prettier: "npm:^3.9.4"
+    prettier: "npm:^3.9.5"
     prop-types: "npm:^15.8.1"
     react: "npm:^18.3.1"
     react-apexcharts: "npm:^2.1.1"
@@ -3565,9 +3609,9 @@ __metadata:
     react-simple-oauth2-login: "npm:^0.5.4"
     react-toastify: "npm:^11.1.0"
     serve: "npm:^14.2.6"
-    typescript: "npm:^5"
+    typescript: "npm:^5.9.3"
     victory: "npm:^37.3.6"
-    vite: "npm:^8.1.3"
+    vite: "npm:^8.1.4"
     vitest: "npm:^4.1.10"
   languageName: unknown
   linkType: soft
@@ -4081,6 +4125,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jsx-ast-utils-x@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "jsx-ast-utils-x@npm:0.1.0"
+  checksum: 10c0/bd147ff19bace8309e48110ec5c7a0c9f750148bcab699b5ba5d44dfac6cea8f358127f3da35ebe073f81cfe46494ce1e9647dd45681bb6c84d83c315904b72b
+  languageName: node
+  linkType: hard
+
 "keycloak-js@npm:^26.2.4":
   version: 26.2.4
   resolution: "keycloak-js@npm:26.2.4"
@@ -4094,6 +4145,22 @@ __metadata:
   dependencies:
     json-buffer: "npm:3.0.1"
   checksum: 10c0/aa52f3c5e18e16bb6324876bb8b59dd02acf782a4b789c7b2ae21107fab95fab3890ed448d4f8dba80ce05391eeac4bfabb4f02a20221342982f806fa2cf271e
+  languageName: node
+  linkType: hard
+
+"language-subtag-registry@npm:^0.3.20":
+  version: 0.3.23
+  resolution: "language-subtag-registry@npm:0.3.23"
+  checksum: 10c0/e9b05190421d2cd36dd6c95c28673019c927947cb6d94f40ba7e77a838629ee9675c94accf897fbebb07923187deb843b8fbb8935762df6edafe6c28dcb0b86c
+  languageName: node
+  linkType: hard
+
+"language-tags@npm:^1.0.9":
+  version: 1.0.9
+  resolution: "language-tags@npm:1.0.9"
+  dependencies:
+    language-subtag-registry: "npm:^0.3.20"
+  checksum: 10c0/9ab911213c4bd8bd583c850201c17794e52cb0660d1ab6e32558aadc8324abebf6844e46f92b80a5d600d0fbba7eface2c207bfaf270a1c7fd539e4c3a880bff
   languageName: node
   linkType: hard
 
@@ -4467,7 +4534,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minimatch@npm:^10.2.2, minimatch@npm:^10.2.4":
+"minimatch@npm:^10.2.2, minimatch@npm:^10.2.4, minimatch@npm:^10.2.5":
   version: 10.2.5
   resolution: "minimatch@npm:10.2.5"
   dependencies:
@@ -4802,7 +4869,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.9.4":
+"prettier@npm:^3.9.5":
   version: 3.9.5
   resolution: "prettier@npm:3.9.5"
   bin:
@@ -5853,7 +5920,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5":
+"typescript@npm:^5.9.3":
   version: 5.9.3
   resolution: "typescript@npm:5.9.3"
   bin:
@@ -5863,7 +5930,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^5#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@npm%3A^5.9.3#optional!builtin<compat/typescript>":
   version: 5.9.3
   resolution: "typescript@patch:typescript@npm%3A5.9.3#optional!builtin<compat/typescript>::version=5.9.3&hash=5786d5"
   bin:
@@ -6373,7 +6440,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:^6.0.0 || ^7.0.0 || ^8.0.0, vite@npm:^8.1.3":
+"vite@npm:^6.0.0 || ^7.0.0 || ^8.0.0, vite@npm:^8.1.4":
   version: 8.1.4
   resolution: "vite@npm:8.1.4"
   dependencies:

@@ -84,30 +84,32 @@ const useTableFilters = ({
   });
 
   useEffect(() => {
-    if (project_id) {
-      setActiveFilters((prevActive) => {
-        const projectIdValue = primaryObject?.id || project_id;
-        const existingProjectFilter = prevActive.find(
-          (f) => f.field === 'project_id',
-        );
+    const syncProjectFilter = async () => {
+      if (project_id) {
+        setActiveFilters((prevActive) => {
+          const projectIdValue = primaryObject?.id || project_id;
+          const existingProjectFilter = prevActive.find(
+            (f) => f.field === 'project_id',
+          );
 
-        // Only update if the project_id filter doesn't exist or has a different value
-        if (
-          !existingProjectFilter ||
-          existingProjectFilter.value !== projectIdValue
-        ) {
-          return prevActive
-            .filter((f) => f.field !== 'project_id')
-            .concat({
-              field: 'project_id',
-              operator: 'eq',
-              value: projectIdValue,
-            });
-        }
+          if (
+            !existingProjectFilter ||
+            existingProjectFilter.value !== projectIdValue
+          ) {
+            return prevActive
+              .filter((f) => f.field !== 'project_id')
+              .concat({
+                field: 'project_id',
+                operator: 'eq',
+                value: projectIdValue,
+              });
+          }
 
-        return prevActive;
-      });
-    }
+          return prevActive;
+        });
+      }
+    };
+    syncProjectFilter();
   }, [project_id, primaryObject?.id]);
 
   // Use refs to store the latest values to avoid recreating updateFilters

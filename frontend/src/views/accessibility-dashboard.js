@@ -1,7 +1,7 @@
 // TODO This component is incomplete
 // The class was converted to functional react, but needs additional work.
 // It's not in use in downstream environments at the moment
-import { Fragment, useContext, useEffect, useState } from 'react';
+import { Fragment, useContext, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
@@ -118,9 +118,7 @@ const AccessibilityDashboardView = ({ view }) => {
   const [isError, setIsError] = useState(false);
 
   const [fieldSelection, setFieldSelection] = useState();
-  const [filteredFieldOptions, setFilteredFieldOptions] =
-    useState(ACCESSIBILITY_FIELDS);
-  const [fieldOptions] = useState(ACCESSIBILITY_FIELDS);
+  const [fieldOptions, setFieldOptions] = useState(ACCESSIBILITY_FIELDS);
   const [fieldInputValue, setFieldInputValue] = useState('');
   const [fieldFilterValue, setFieldFilterValue] = useState(''); // same as fieldInputValue?
   const [isFieldOpen, setIsFieldOpen] = useState(false);
@@ -137,7 +135,7 @@ const AccessibilityDashboardView = ({ view }) => {
 
   const onFieldSelect = (_, selection) => {
     if (selection == `Create "${fieldFilterValue}"`) {
-      setFilteredFieldOptions([...fieldOptions, fieldFilterValue]);
+      setFieldOptions((prev) => [...prev, fieldFilterValue]);
       setFieldSelection(fieldFilterValue);
       setFieldInputValue(fieldFilterValue);
       setOperationSelection('eq');
@@ -191,80 +189,82 @@ const AccessibilityDashboardView = ({ view }) => {
   };
 
   useEffect(() => {
-    // First, show a spinner
-    setIsError(false);
-    let analysisViewId = '';
-    let httpParams = { filter: [] };
-    let newFilters = { ...filters };
-    const { primaryObject } = context;
-    if (primaryObject) {
-      // todo array of filters
-      newFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
-    } else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
-      delete newFilters['project_id'];
-    }
-    // get the widget ID for the analysis view
-    HttpClient.get([Settings.serverUrl, 'widget-config'], {
-      filter: 'widget=accessibility-analysis-view',
-    })
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
-        analysisViewId = data.widgets[0]?.id;
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-    httpParams.filter.push('metadata.accessibility@t');
-    // Convert UI filters to API filters
-    for (let key in newFilters) {
-      if (
-        Object.prototype.hasOwnProperty.call(newFilters, key) &&
-        !!newFilters[key]
-      ) {
-        const val = newFilters[key]['val'];
-        const op = OPERATIONS[newFilters[key]['op']].opChar;
-        httpParams.filter.push(key + op + val);
+    const fetchData = async () => {
+      setIsError(false);
+      let analysisViewId = '';
+      let httpParams = { filter: [] };
+      let newFilters = { ...filters };
+      const { primaryObject } = context;
+      if (primaryObject) {
+        newFilters['project_id'] = { val: primaryObject.id, op: 'eq' };
+      } else if (Object.prototype.hasOwnProperty.call(filters, 'project_id')) {
+        delete newFilters['project_id'];
       }
-    }
-
-    httpParams.filter = httpParams.filter.join();
-    HttpClient.get([Settings.serverUrl + '/run'], httpParams)
-      .then((response) => HttpClient.handleResponse(response))
-      .then((data) => {
+      try {
+        const widgetResponse = await HttpClient.get(
+          [Settings.serverUrl, 'widget-config'],
+          { filter: 'widget=accessibility-analysis-view' },
+        );
+        const widgetData = await HttpClient.handleResponse(widgetResponse);
+        analysisViewId = widgetData.widgets[0]?.id;
+      } catch (error) {
+        console.error(error);
+      }
+      httpParams.filter.push('metadata.accessibility@t');
+      for (let key in newFilters) {
+        if (
+          Object.prototype.hasOwnProperty.call(newFilters, key) &&
+          !!newFilters[key]
+        ) {
+          const val = newFilters[key]['val'];
+          const op = OPERATIONS[newFilters[key]['op']].opChar;
+          httpParams.filter.push(key + op + val);
+        }
+      }
+      httpParams.filter = httpParams.filter.join();
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl + '/run'],
+          httpParams,
+        );
+        const data = await HttpClient.handleResponse(response);
         setRows(
           data.runs.map((run) => runToRow(run, setFilters, analysisViewId)),
         );
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
         setTotalItems(data.pagination.totalItems);
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Error fetching accessibility run data:', error);
         setRows([]);
         setIsError(true);
-      });
+      }
+    };
+
+    fetchData();
   }, [view, filters, context]);
 
-  useEffect(() => {
-    let newSelectOptionsField = [...fieldOptions];
-    if (fieldInputValue) {
-      newSelectOptionsField = fieldOptions.filter((menuItem) =>
-        menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase()),
-      );
-      if (
-        newSelectOptionsField.length !== 1 &&
-        !newSelectOptionsField.includes(fieldFilterValue)
-      ) {
-        newSelectOptionsField.push(`Create "${fieldFilterValue}"`);
-      }
+  const filteredFieldOptions = useMemo(() => {
+    if (!fieldInputValue) {
+      return [...fieldOptions];
+    }
+    const filtered = fieldOptions.filter((menuItem) =>
+      menuItem.toLowerCase().includes(fieldFilterValue.toLowerCase()),
+    );
+    if (filtered.length !== 1 && !filtered.includes(fieldFilterValue)) {
+      filtered.push(`Create "${fieldFilterValue}"`);
+    }
+    return filtered;
+  }, [fieldFilterValue, fieldInputValue, fieldOptions]);
 
-      if (!isFieldOpen) {
+  useEffect(() => {
+    const openDropdown = async () => {
+      if (fieldInputValue && !isFieldOpen) {
         setIsFieldOpen(true);
       }
-    }
-
-    setFilteredFieldOptions(newSelectOptionsField);
-  }, [fieldFilterValue, fieldInputValue, fieldOptions, isFieldOpen]);
+    };
+    openDropdown();
+  }, [fieldInputValue, isFieldOpen]);
 
   const filterMode = FILTER_MODE_MAP[fieldSelection];
   const operationMode = OPERATION_MODE_MAP[operationSelection];

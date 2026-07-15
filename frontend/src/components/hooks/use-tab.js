@@ -15,12 +15,15 @@ export const useTabHook = ({
 
   // set active tab based on URL hash
   useEffect(() => {
-    if (!skipHash) {
-      const currentHash = location.hash.slice(1);
-      setActiveTab(
-        validTabIndicies.includes(currentHash) ? currentHash : defaultTab,
-      );
-    }
+    const syncTab = async () => {
+      if (!skipHash) {
+        const currentHash = location.hash.slice(1);
+        setActiveTab(
+          validTabIndicies.includes(currentHash) ? currentHash : defaultTab,
+        );
+      }
+    };
+    syncTab();
   }, [defaultTab, location.hash, skipHash, validTabIndicies]);
 
   // navigate to default if the url hash isn't valid

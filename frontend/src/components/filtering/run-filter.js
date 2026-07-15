@@ -10,7 +10,7 @@ import {
   TextInput,
 } from '@patternfly/react-core';
 import PropTypes from 'prop-types';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 
 import ActiveFilters from './active-filters';
 import MultiValueInput from '../multi-value-input';
@@ -51,18 +51,13 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
     boolToggle,
   } = useContext(FilterContext);
 
-  const [valueOptions, setValueOptions] = useState([]);
+  // Dynamic values are disabled for RunFilter because:
+  // 1. Runs use 'data' field for metadata, not 'metadata'
+  // 2. The result-aggregator endpoint is for results, not runs
+  // 3. There is no equivalent run-aggregator endpoint that returns distinct values
+  // If this feature is needed, a new backend endpoint should be created
+  const valueOptions = [];
   const [isValueOpen, setIsValueOpen] = useState(false);
-
-  useEffect(() => {
-    // NOTE: Dynamic values are disabled for RunFilter because:
-    // 1. Runs use 'data' field for metadata, not 'metadata'
-    // 2. The result-aggregator endpoint is for results, not runs
-    // 3. There is no equivalent run-aggregator endpoint that returns distinct values
-    // If this feature is needed, a new backend endpoint should be created
-
-    setValueOptions([]);
-  }, [fieldSelection]);
 
   return (
     <CardBody key="filters">

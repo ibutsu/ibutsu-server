@@ -116,13 +116,19 @@ const Dashboard = () => {
 
   // Fetch all dashboards for the project
   useEffect(() => {
-    setSelectedDashboard();
-    setDashboards([]);
-    setSelectInputValue('');
-    setProcessedDashboardId(null);
-    let fetchedDashboards = [];
-    const fetchDashboards = async (page = 1) => {
-      try {
+    if (!primaryObject) {
+      return;
+    }
+
+    const fetchAllDashboards = async () => {
+      setSelectedDashboard();
+      setDashboards([]);
+      setSelectInputValue('');
+      setProcessedDashboardId(null);
+      setLoading(true);
+
+      let fetchedDashboards = [];
+      const fetchPage = async (page = 1) => {
         const response = await HttpClient.get(
           [Settings.serverUrl, 'dashboard'],
           {
@@ -136,72 +142,71 @@ const Dashboard = () => {
         const paginationData = data['pagination'];
         fetchedDashboards = [...fetchedDashboards, ...pagedDashboards];
         if (page < paginationData['totalPages']) {
-          await fetchDashboards(page + 1);
-        } else {
-          setDashboards(fetchedDashboards);
-          setLoading(false);
+          await fetchPage(page + 1);
         }
+      };
+
+      try {
+        await fetchPage();
+        setDashboards(fetchedDashboards);
       } catch (error) {
         console.error(error);
+      } finally {
         setLoading(false);
       }
     };
 
-    if (primaryObject) {
-      setLoading(true);
-      const debouncer = setTimeout(() => {
-        fetchDashboards();
-      }, 100);
+    const debouncer = setTimeout(() => {
+      fetchAllDashboards();
+    }, 100);
 
-      return () => {
-        clearTimeout(debouncer);
-      };
-    }
+    return () => {
+      clearTimeout(debouncer);
+    };
   }, [primaryObject]);
 
-  // Handle URL dashboard_id parameter selection
+  // Handle URL dashboard_id parameter selection and default dashboard
   useEffect(() => {
-    if (
-      dashboards.length > 0 &&
-      dashboard_id &&
-      dashboard_id !== processedDashboardId
-    ) {
-      const paramDashboard = dashboards.find((db) => db.id === dashboard_id);
-      if (paramDashboard) {
-        setSelectedDashboard(paramDashboard);
-        setSelectInputValue(paramDashboard.title);
-        setProcessedDashboardId(dashboard_id);
+    const applyDashboardSelection = async () => {
+      if (
+        dashboards.length > 0 &&
+        dashboard_id &&
+        dashboard_id !== processedDashboardId
+      ) {
+        const paramDashboard = dashboards.find((db) => db.id === dashboard_id);
+        if (paramDashboard) {
+          setSelectedDashboard(paramDashboard);
+          setSelectInputValue(paramDashboard.title);
+          setProcessedDashboardId(dashboard_id);
+        }
+      } else if (
+        dashboards.length > 0 &&
+        defaultDashboard &&
+        selectedDashboard === undefined &&
+        !dashboard_id
+      ) {
+        const default_db = dashboards
+          .filter((dash) => dash.id == defaultDashboard)
+          .pop();
+        if (default_db) {
+          setSelectedDashboard(default_db);
+          setSelectInputValue(default_db.title);
+          navigate(
+            `/project/${default_db.project_id}/dashboard/${default_db.id}`,
+          );
+        }
       }
-    }
-  }, [dashboards, dashboard_id, processedDashboardId]);
+    };
 
-  // Apply the default dashboard
-  useEffect(() => {
-    const hasDashboards = dashboards.length > 0;
-
-    // Only apply default dashboard if:
-    // 1. We have dashboards loaded
-    // 2. There's a default dashboard configured
-    // 3. No dashboard is currently selected
-    // 4. There's NO dashboard_id in the URL (user didn't navigate to specific dashboard)
-    if (
-      hasDashboards &&
-      defaultDashboard &&
-      selectedDashboard === undefined &&
-      !dashboard_id
-    ) {
-      const default_db = dashboards
-        .filter((dash) => dash.id == defaultDashboard)
-        .pop();
-      if (default_db) {
-        setSelectedDashboard(default_db);
-        setSelectInputValue(default_db.title);
-        navigate(
-          `/project/${default_db.project_id}/dashboard/${default_db.id}`,
-        );
-      }
-    }
-  }, [dashboards, selectedDashboard, defaultDashboard, navigate, dashboard_id]);
+    applyDashboardSelection();
+  }, [
+    dashboards,
+    dashboard_id,
+    processedDashboardId,
+    selectedDashboard,
+    defaultDashboard,
+    navigate,
+  ]);
 
   const filteredDashboards = useMemo(() => {
     if (selectFilterValue && dashboards.length) {

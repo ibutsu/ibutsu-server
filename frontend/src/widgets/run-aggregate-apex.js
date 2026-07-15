@@ -65,8 +65,8 @@ const RunAggregateApex = forwardRef(
       useSVGContainerDimensions();
 
     useEffect(() => {
-      setIsLoading(true);
       const fetchAggregated = async () => {
+        setIsLoading(true);
         try {
           const response = await HttpClient.get(
             [Settings.serverUrl, 'widget', 'run-aggregator'],
@@ -77,7 +77,6 @@ const RunAggregateApex = forwardRef(
             },
           );
 
-          // Check for non-200 responses and set error message
           if (!response.ok) {
             let errorText = 'Error fetching data';
             if (response.status === 400) {
@@ -87,7 +86,6 @@ const RunAggregateApex = forwardRef(
                 'Backend error processing widget data, review settings and contact administrator';
             }
             setErrorMessage(errorText);
-            setIsLoading(false);
             setRunAggregatorError(true);
             return;
           }
@@ -95,7 +93,6 @@ const RunAggregateApex = forwardRef(
           const data = await HttpClient.handleResponse(response);
           setChartData(data);
 
-          // Create legend data from chart data
           const _legendData = Object.keys(data || {})
             .filter((key) => key !== 'filter')
             .map((resultType) => ({
@@ -106,17 +103,16 @@ const RunAggregateApex = forwardRef(
               },
             }));
           setLegendData(_legendData);
-
-          setIsLoading(false);
           setRunAggregatorError(false);
           setErrorMessage('');
         } catch (error) {
-          setIsLoading(false);
           setRunAggregatorError(true);
           setErrorMessage(
             error.message || 'Error fetching run aggregator data',
           );
           console.error('Error fetching run aggregator data:', error);
+        } finally {
+          setIsLoading(false);
         }
       };
       if (Object.keys(params || {}).length) {
