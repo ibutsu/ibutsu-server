@@ -1,13 +1,13 @@
 # hadolint global ignore=DL3013,DL3041,DL3059
-FROM registry.access.redhat.com/ubi9/python-312:9.8-1784090967
+FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1784126640
 
 USER 0
 COPY . /app
 RUN /usr/bin/fix-permissions /app
 
 WORKDIR /app
-RUN dnf install --nodocs -y --disableplugin=subscription-manager gcc libpq-devel && \
-    dnf clean all
+RUN microdnf install --nodocs -y file-libs && \
+    microdnf clean all
 
 RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
     pip install --no-cache-dir -U -r requirements-pinned.txt .

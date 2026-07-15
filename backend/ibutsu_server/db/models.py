@@ -13,7 +13,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 from sqlalchemy_json import mutable_json_type
 
-from ibutsu_server.auth import bcrypt
+from ibutsu_server.auth import check_password_hash, generate_password_hash
 from ibutsu_server.db.base import (
     Boolean,
     Column,
@@ -308,10 +308,10 @@ class User(Model, ModelMixin):
 
     @password.setter
     def password(self, value):
-        self._password = bcrypt.generate_password_hash(value).decode("utf8")
+        self._password = generate_password_hash(value)
 
     def check_password(self, plaintext):
-        return bcrypt.check_password_hash(self.password, plaintext)
+        return check_password_hash(self.password, plaintext)
 
     def to_dict(self, with_projects=False):
         """An overridden method to include projects"""

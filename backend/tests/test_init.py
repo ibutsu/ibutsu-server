@@ -106,8 +106,6 @@ def test_get_app_basic():
 
     assert app is not None
     assert app.app.config["TESTING"] is True
-    assert "BCRYPT_LOG_ROUNDS" in app.app.config
-    assert app.app.config["BCRYPT_LOG_ROUNDS"] == 12
 
 
 def test_get_app_with_extra_config():

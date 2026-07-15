@@ -9,6 +9,7 @@ from flask import current_app, make_response, redirect, request
 from google.auth.transport.requests import Request
 from google.oauth2 import id_token
 
+from ibutsu_server.auth import MAX_PASSWORD_BYTES, validate_password_length
 from ibutsu_server.constants import LOCALHOST, RESPONSE_JSON_REQ
 from ibutsu_server.db import db
 from ibutsu_server.db.base import session
@@ -237,6 +238,14 @@ def register(body=None):
             "message": "Username and/or password are empty",
         }, HTTPStatus.UNAUTHORIZED
 
+    try:
+        validate_password_length(details["password"])
+    except ValueError:
+        return {
+            "code": "INVALID",
+            "message": f"Password is too long (max {MAX_PASSWORD_BYTES} bytes)",
+        }, HTTPStatus.BAD_REQUEST
+
     # Create a random activation code. Base64 just for funsies
     activation_code = urlsafe_b64encode(str(uuid4()).encode("utf8")).strip(b"=").decode()
     # Create a user
@@ -311,6 +320,13 @@ def reset_password(body=None):
         return result
     if not login.get("activation_code") or not login.get("password"):
         return HTTPStatus.BAD_REQUEST.phrase, HTTPStatus.BAD_REQUEST
+    try:
+        validate_password_length(login["password"])
+    except ValueError:
+        return {
+            "code": "INVALID",
+            "message": f"Password is too long (max {MAX_PASSWORD_BYTES} bytes)",
+        }, HTTPStatus.BAD_REQUEST
     user = db.session.execute(
         db.select(User).where(User.activation_code == login["activation_code"])
     ).scalar_one_or_none()

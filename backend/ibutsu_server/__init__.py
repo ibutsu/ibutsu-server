@@ -12,7 +12,6 @@ from sqlalchemy.engine.url import URL as SQLA_URL
 from starlette.middleware.cors import CORSMiddleware
 from yaml import full_load as yaml_load
 
-from ibutsu_server.auth import bcrypt
 from ibutsu_server.db.base import db
 from ibutsu_server.db.models import User
 from ibutsu_server.db.util import add_superadmin
@@ -74,7 +73,6 @@ def get_app(**extra_config):
     flask_app = connexion_app.app
     # Shortcut to the Flask app config
     config: flask.Config = flask_app.config
-    config.setdefault("BCRYPT_LOG_ROUNDS", 12)
     config.setdefault("SQLALCHEMY_TRACK_MODIFICATIONS", False)
     config.setdefault("SQLALCHEMY_ENGINE_OPTIONS", {})
 
@@ -194,7 +192,6 @@ def get_app(**extra_config):
 
     # Initialize Flask extensions on the underlying Flask app
     db.init_app(flask_app)
-    bcrypt.init_app(flask_app)
     Mail(flask_app)
 
     with flask_app.app_context():

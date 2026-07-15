@@ -190,7 +190,7 @@ def test_lock_locked(mock_redis_from_url, mock_log_info, flask_app):
             # Try to enter it - this will catch the LockError
             with cm:
                 executed = True
-        except (StopIteration, RuntimeError):
+        except StopIteration, RuntimeError:
             # Context manager doesn't yield when lock fails, which is correct
             pass
 
