@@ -8,8 +8,8 @@ Requirements
 
 To run the server locally, you will need the following:
 
-- Python 3.9+
-- NodeJS 22+ (includes Corepack, which manages Yarn)
+- Python 3.14+
+- Node.js 24+ (includes Corepack, which manages Yarn)
 - redis (strongly recommend a container)
 - PostgreSQL (strongly recommend a container)
 

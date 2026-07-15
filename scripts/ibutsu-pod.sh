@@ -20,7 +20,7 @@ USE_IMAGES=false
 POSTGRES_EXTRA_ARGS=()
 REDIS_EXTRA_ARGS=()
 BACKEND_EXTRA_ARGS=()
-PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-312:latest
+PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-314:latest
 
 # Shared environment variable arrays to reduce duplication in podman run commands
 # These are populated after LOCAL_* variables are set

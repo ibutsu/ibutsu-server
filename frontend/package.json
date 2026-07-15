@@ -71,7 +71,7 @@
     "format-check": "prettier \"src/**/*.{js,html}\" --check"
   },
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "packageManager": "yarn@4.17.0"
 }

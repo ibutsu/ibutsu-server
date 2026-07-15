@@ -84,8 +84,8 @@ docker-compose -f docker-compose.dev.yml up
 Using either `podman` or Docker Compose is the recommended way to run Ibutsu locally. If you don't
 want to use the containers, the following must be installed:
 
-- Python 3.9+
-- NodeJS 22+ (includes Corepack, which manages Yarn)
+- Python 3.14+
+- Node.js 24+ (includes Corepack, which manages Yarn)
 - redis (strongly recommend a container)
 - PostgreSQL (strongly recommend a container)
 
