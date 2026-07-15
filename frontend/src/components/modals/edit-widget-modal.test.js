@@ -10,20 +10,20 @@ import EditWidgetModal from './edit-widget-modal';
 import { HttpClient } from '../../utilities/http';
 
 // Mock dependencies
-jest.mock('../../utilities/http');
-jest.mock('../../pages/settings', () => ({
+vi.mock('../../utilities/http');
+vi.mock('../../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock the useWidgetFilters hook
-jest.mock('../hooks/use-widget-filters', () => ({
+vi.mock('../hooks/use-widget-filters', () => ({
   useWidgetFilters: () => ({
     isResultBasedWidget: false,
     hasFilterParam: true,
-    getActiveFiltersAsAPIString: jest.fn(() => 'test_id=test'),
-    resetFilterContext: jest.fn(),
+    getActiveFiltersAsAPIString: vi.fn(() => 'test_id=test'),
+    resetFilterContext: vi.fn(),
     CustomFilterProvider: ({ children }) => children,
     resetCounter: 0,
     runs: [],
@@ -34,7 +34,7 @@ jest.mock('../hooks/use-widget-filters', () => ({
 }));
 
 // Mock WidgetParameterFields component
-jest.mock('../widget-parameter-fields', () => {
+vi.mock('../widget-parameter-fields', () => {
   const PropTypes = require('prop-types');
 
   const MockWidgetParameterFields = ({ widgetType, params, onChange }) => {
@@ -67,12 +67,12 @@ jest.mock('../widget-parameter-fields', () => {
     onChange: PropTypes.func.isRequired,
   };
 
-  return MockWidgetParameterFields;
+  return { default: MockWidgetParameterFields };
 });
 
 describe('EditWidgetModal', () => {
-  const mockOnSave = jest.fn();
-  const mockOnClose = jest.fn();
+  const mockOnSave = vi.fn();
+  const mockOnClose = vi.fn();
 
   const mockWidgetData = {
     widget: 'jenkins-heatmap',
@@ -149,7 +149,7 @@ describe('EditWidgetModal', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock widget types endpoint
     HttpClient.get.mockResolvedValue({
@@ -682,7 +682,7 @@ describe('EditWidgetModal', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       HttpClient.get.mockRejectedValue(new Error('API Error'));

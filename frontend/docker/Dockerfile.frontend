@@ -29,12 +29,6 @@ ENV COREPACK_NPM_REGISTRY=${COREPACK_NPM_REGISTRY}
 # not for the production build, and it consumes ~300 MB of memory/disk.
 ENV CYPRESS_INSTALL_BINARY=0
 
-# Constrain the V8 heap so webpack/react-scripts cannot grow past the
-# Quay.io builder's memory limit and get OOM-killed.
-# NOTE: once react-scripts is replaced with Vite, this can be removed — Vite
-# is not memory-hungry and does not need a V8 heap override.
-ENV NODE_OPTIONS="--max-old-space-size=3072"
-
 # Copy package metadata and lockfile first for better layer caching.
 # Changes to source code won't invalidate the dependency install layer.
 COPY --chown=1001:0 .yarnrc.yml package.json yarn.lock ./
@@ -89,19 +83,12 @@ RUN if [ -n "${NPM_REGISTRY}" ]; then \
 # Copy the rest of the source code (bin/ needed for build script)
 COPY --chown=1001:0 . .
 
-# CI=false suppresses react-scripts/webpack treating warnings as errors.
-# GENERATE_SOURCEMAP=false saves memory and time during the webpack build.
-# NOTE: both vars are react-scripts/CRA-specific and can be removed once
-# the project migrates to Vite.
 ENV NODE_ENV=production
-RUN CI=false GENERATE_SOURCEMAP=false yarn build
+RUN yarn build
 
 # Second stage: minimal runtime image containing only the compiled static
 # assets and the 'serve' binary. No node_modules are carried over from the
 # builder — the runtime does not need the full dependency tree.
-#
-# When react-scripts is replaced with Vite, the only change needed here is
-# updating the COPY source path from 'build' to 'dist'.
 #
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-22-minimal/664330aa459a2d3c807ccea9
 FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:1-1783399267
@@ -109,7 +96,6 @@ FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:1-1783399267
 WORKDIR /opt/app-root/src
 
 # Copy only the compiled static files from the builder stage.
-# NOTE: update 'build' → 'dist' when migrating to Vite.
 COPY --from=builder --chown=1001:0 /opt/app-root/src/build /opt/app-root/src/build
 
 # Install the static-file server. 'serve' is the only runtime dependency;
@@ -138,5 +124,4 @@ ENTRYPOINT ["/opt/app-root/bin/entrypoint.sh"]
 
 # Serve the static build directory on port 8080.
 # -s enables SPA routing (equivalent to nginx try_files $uri /index.html).
-# NOTE: update 'build' → 'dist' when migrating to Vite.
 CMD ["serve", "-s", "build", "-l", "tcp://0.0.0.0:8080"]

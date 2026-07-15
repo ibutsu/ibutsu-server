@@ -4,16 +4,16 @@ import DeleteModal from './delete-modal';
 import { HttpClient } from '../../utilities/http';
 
 // Mock dependencies
-jest.mock('../../utilities/http');
-jest.mock('../../pages/settings', () => ({
+vi.mock('../../utilities/http');
+vi.mock('../../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 describe('DeleteModal', () => {
-  const mockOnDelete = jest.fn();
-  const mockOnClose = jest.fn();
+  const mockOnDelete = vi.fn();
+  const mockOnClose = vi.fn();
 
   const renderModal = (props = {}) => {
     const defaultProps = {
@@ -34,7 +34,7 @@ describe('DeleteModal', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     HttpClient.delete.mockResolvedValue({ ok: true });
     HttpClient.handleResponse.mockImplementation(async (response) => {
       if (response.ok) {
@@ -196,7 +196,7 @@ describe('DeleteModal', () => {
 
   describe('Error handling', () => {
     it('should handle API errors and still close modal', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       HttpClient.delete.mockRejectedValue(new Error('API Error'));
@@ -216,7 +216,7 @@ describe('DeleteModal', () => {
     });
 
     it('should handle response errors', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
       HttpClient.delete.mockResolvedValue({ ok: false });

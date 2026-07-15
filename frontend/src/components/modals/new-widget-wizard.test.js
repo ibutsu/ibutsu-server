@@ -10,20 +10,20 @@ import NewWidgetWizard from './new-widget-wizard';
 import { HttpClient } from '../../utilities/http';
 
 // Mock dependencies
-jest.mock('../../utilities/http');
-jest.mock('../../pages/settings', () => ({
+vi.mock('../../utilities/http');
+vi.mock('../../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock the useWidgetFilters hook
-jest.mock('../hooks/use-widget-filters', () => ({
+vi.mock('../hooks/use-widget-filters', () => ({
   useWidgetFilters: () => ({
     isResultBasedWidget: false,
     hasFilterParam: true,
-    getActiveFiltersAsAPIString: jest.fn(() => 'test_id=test'),
-    resetFilterContext: jest.fn(),
+    getActiveFiltersAsAPIString: vi.fn(() => 'test_id=test'),
+    resetFilterContext: vi.fn(),
     CustomFilterProvider: ({ children }) => children,
     resetCounter: 0,
     runs: [],
@@ -34,7 +34,7 @@ jest.mock('../hooks/use-widget-filters', () => ({
 }));
 
 // Mock WidgetParameterFields component
-jest.mock('../widget-parameter-fields', () => {
+vi.mock('../widget-parameter-fields', () => {
   const PropTypes = require('prop-types');
 
   const MockWidgetParameterFields = ({
@@ -76,7 +76,7 @@ jest.mock('../widget-parameter-fields', () => {
     handleRequiredParam: PropTypes.func,
   };
 
-  return MockWidgetParameterFields;
+  return { default: MockWidgetParameterFields };
 });
 
 describe('NewWidgetWizard', () => {
@@ -175,8 +175,8 @@ describe('NewWidgetWizard', () => {
   const renderWizard = (props = {}) => {
     const defaultProps = {
       dashboard: mockDashboard,
-      saveCallback: jest.fn(),
-      closeCallback: jest.fn(),
+      saveCallback: vi.fn(),
+      closeCallback: vi.fn(),
       isOpen: true,
     };
 
@@ -188,7 +188,7 @@ describe('NewWidgetWizard', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock widget types endpoint
     HttpClient.get.mockResolvedValue({
@@ -552,7 +552,7 @@ describe('NewWidgetWizard', () => {
 
   describe('Wizard navigation', () => {
     it('should have a close button in the wizard header', async () => {
-      const closeCallback = jest.fn();
+      const closeCallback = vi.fn();
       renderWizard({ closeCallback });
 
       await waitFor(() => {
@@ -566,7 +566,7 @@ describe('NewWidgetWizard', () => {
 
   describe('Widget saving', () => {
     it('should parse integer parameters correctly', async () => {
-      const saveCallback = jest.fn();
+      const saveCallback = vi.fn();
       renderWizard({ saveCallback });
 
       // Complete wizard with custom builds value

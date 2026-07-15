@@ -148,6 +148,9 @@ export const resultToRow = (result, filterFunc) => {
 };
 
 export const resultToComparisonRow = (result) => {
+  if (!Array.isArray(result)) {
+    return { cells: [] };
+  }
   let resultIcons = [];
   let markers = [];
   result.forEach((result) => {
@@ -183,10 +186,10 @@ export const resultToComparisonRow = (result) => {
       {markers}
     </Fragment>,
   );
-  result.forEach((result, index) => {
+  result.forEach((resultItem, index) => {
     cells.push(
-      <span key={`result-${index}`} className={result.result}>
-        {resultIcons[index]} {toTitleCase(result.result)}
+      <span key={resultItem.id} className={resultItem.result}>
+        {resultIcons[index]} {toTitleCase(resultItem.result)}
       </span>,
     );
   });

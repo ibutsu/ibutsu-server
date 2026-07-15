@@ -28,6 +28,9 @@ jobs:
         working-directory: ./frontend
       - run: yarn lint
         working-directory: ./frontend
+      - name: Verify production build
+        run: yarn build
+        working-directory: ./frontend
       - name: Run tests with coverage
         run: yarn test:coverage:ci
         working-directory: ./frontend

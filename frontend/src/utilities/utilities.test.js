@@ -44,7 +44,7 @@ const TEST_PARAMS = {
 };
 
 // Mock constants
-jest.mock('../constants', () => ({
+vi.mock('../constants', () => ({
   OPERATIONS: {
     eq: { opChar: '=' },
     ne: { opChar: '!' },
@@ -223,7 +223,7 @@ describe('Filter Utilities', () => {
       const filters = [
         { field: 'test_id', operator: 'unknown', value: 'test1' },
       ];
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation();
       expect(filtersToAPIParams(filters)).toEqual(['test_id=test1']);
       expect(consoleSpy).toHaveBeenCalled();
       consoleSpy.mockRestore();
@@ -355,7 +355,7 @@ describe('UI Utilities', () => {
     });
 
     it('should create a clickable badge when onClick is provided', () => {
-      const onClick = jest.fn();
+      const onClick = vi.fn();
       const badge = buildBadge('test-key', 'test-value', false, onClick);
       const { container } = render(badge);
       expect(container.querySelector('button')).toBeTruthy();
@@ -371,7 +371,7 @@ describe('UI Utilities', () => {
     });
 
     it('should handle object values by stringifying them', () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
       const badge = buildBadge('test-key', { test: 'object' }, false);
       const { container } = render(badge);
       expect(container.textContent).toContain('{"test":"object"}');
@@ -394,7 +394,7 @@ describe('UI Utilities', () => {
     });
 
     it('should create clickable badge when filterFunc provided', () => {
-      const filterFunc = jest.fn();
+      const filterFunc = vi.fn();
       const badge = exceptionToBadge('ValueError', filterFunc);
       const { container } = render(badge);
       expect(container.querySelector('button')).toBeTruthy();
@@ -482,7 +482,7 @@ describe('Theme Utilities', () => {
       // Mock matchMedia
       Object.defineProperty(window, 'matchMedia', {
         writable: true,
-        value: jest.fn().mockImplementation((query) => ({
+        value: vi.fn().mockImplementation((query) => ({
           matches: query === '(prefers-color-scheme: dark)',
           media: query,
         })),

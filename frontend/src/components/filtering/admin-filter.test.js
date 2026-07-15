@@ -5,13 +5,13 @@ import { FilterContext } from '../contexts/filter-context';
 import { STRING_OPERATIONS } from '../../constants';
 
 describe('AdminFilter', () => {
-  const mockApplyFilter = jest.fn();
-  const mockOnRemoveFilter = jest.fn();
-  const mockOnFieldSelect = jest.fn();
-  const mockOnOperationSelect = jest.fn();
-  const mockSetTextFilter = jest.fn();
-  const mockSetIsFieldOpen = jest.fn();
-  const mockSetIsOperationOpen = jest.fn();
+  const mockApplyFilter = vi.fn();
+  const mockOnRemoveFilter = vi.fn();
+  const mockOnFieldSelect = vi.fn();
+  const mockOnOperationSelect = vi.fn();
+  const mockSetTextFilter = vi.fn();
+  const mockSetIsFieldOpen = vi.fn();
+  const mockSetIsOperationOpen = vi.fn();
 
   const defaultContextValue = {
     applyFilter: mockApplyFilter,
@@ -56,7 +56,7 @@ describe('AdminFilter', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Rendering', () => {

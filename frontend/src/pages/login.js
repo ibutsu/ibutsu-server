@@ -86,7 +86,7 @@ const Login = () => {
   const [loginSupport, setLoginSupport] = useState({});
   const [externalLogins, setExternalLogins] = useState({});
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [alertMessage, setAlertMessage] = useState(getAlert(location));
+  const [alertMessage, setAlertMessage] = useState(() => getAlert(location));
 
   const from = useMemo(() => getLocationFrom(location), [location]);
 
@@ -133,7 +133,7 @@ const Login = () => {
             setIsValidPassword(false);
           }
         } catch (error) {
-          setAlertMessage({ message: error, status: 'danger' });
+          setAlertMessage({ message: error.message, status: 'danger' });
           setIsLoggingIn(false);
           setIsValidEmail(false);
           setIsValidPassword(false);

@@ -3,22 +3,24 @@ import GenericAreaWidget from './generic-area';
 import { HttpClient } from '../utilities/http';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock WidgetHeader component
-jest.mock('../components/widget-header', () => {
-  return function WidgetHeader({ title }) {
-    return <div data-ouia-component-id="widget-header">{title}</div>;
+vi.mock('../components/widget-header', () => {
+  return {
+    default: function WidgetHeader({ title }) {
+      return <div data-ouia-component-id="widget-header">{title}</div>;
+    },
   };
 });
 
 // Mock PatternFly Charts
-jest.mock('@patternfly/react-charts/victory', () => ({
+vi.mock('@patternfly/react-charts/victory', () => ({
   Chart: function Chart({ children }) {
     return <div data-ouia-component-id="chart">{children}</div>;
   },
@@ -46,10 +48,14 @@ jest.mock('@patternfly/react-charts/victory', () => ({
     return <div data-ouia-component-id="chart-tooltip" />;
   },
   createContainer: () => {
-    return function CursorVoronoiContainer({ children }) {
-      return (
-        <div data-ouia-component-id="cursor-voronoi-container">{children}</div>
-      );
+    return {
+      default: function CursorVoronoiContainer({ children }) {
+        return (
+          <div data-ouia-component-id="cursor-voronoi-container">
+            {children}
+          </div>
+        );
+      },
     };
   },
 }));
@@ -66,12 +72,12 @@ describe('GenericAreaWidget', () => {
     title: 'Test Area Chart',
     params: { project: 'test-project', group_field: 'component' },
     widgetEndpoint: 'jenkins-line-chart',
-    onDeleteClick: jest.fn(),
-    onEditClick: jest.fn(),
+    onDeleteClick: vi.fn(),
+    onEditClick: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default mock for HttpClient.get
     HttpClient.get.mockResolvedValue({
@@ -166,7 +172,7 @@ describe('GenericAreaWidget', () => {
     it('should handle fetch error', async () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(<GenericAreaWidget {...defaultProps} />);
 
@@ -222,7 +228,7 @@ describe('GenericAreaWidget', () => {
 
   describe('Props Handling', () => {
     it('should pass onDeleteClick prop to WidgetHeader', async () => {
-      const onDeleteClick = jest.fn();
+      const onDeleteClick = vi.fn();
 
       render(
         <GenericAreaWidget {...defaultProps} onDeleteClick={onDeleteClick} />,
@@ -238,7 +244,7 @@ describe('GenericAreaWidget', () => {
     });
 
     it('should pass onEditClick prop to WidgetHeader', async () => {
-      const onEditClick = jest.fn();
+      const onEditClick = vi.fn();
 
       render(<GenericAreaWidget {...defaultProps} onEditClick={onEditClick} />);
 
@@ -341,7 +347,7 @@ describe('GenericAreaWidget', () => {
     it('should handle HTTP error response', async () => {
       HttpClient.handleResponse.mockRejectedValue(new Error('Server error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(<GenericAreaWidget {...defaultProps} />);
 
@@ -355,7 +361,7 @@ describe('GenericAreaWidget', () => {
     it('should display error message on fetch failure', async () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(<GenericAreaWidget {...defaultProps} />);
 

@@ -52,7 +52,6 @@ const Dashboard = () => {
   // dashboard states
   const [loading, setLoading] = useState(true);
   const [dashboards, setDashboards] = useState([]);
-  const [filteredDashboards, setFilteredDashboards] = useState([]);
   const [selectedDashboard, setSelectedDashboard] = useState();
   const [isNewDBOpen, setIsNewDBOpen] = useState(false);
   const [isDeleteDBOpen, setIsDeleteDBOpen] = useState(false);
@@ -72,7 +71,7 @@ const Dashboard = () => {
   const [selectFilterValue, setSelectFilterValue] = useState('');
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const selectInputRef = useRef();
-  const [loadKey, setLoadKey] = useState(nanoid(6));
+  const [loadKey, setLoadKey] = useState(() => nanoid(6));
 
   const onDeleteWidgetClick = useCallback((id) => {
     setIsDeleteWidgetOpen(true);
@@ -204,24 +203,23 @@ const Dashboard = () => {
     }
   }, [dashboards, selectedDashboard, defaultDashboard, navigate, dashboard_id]);
 
-  // Apply filter inputs
-  useEffect(() => {
-    let filteredOptions = [...dashboards];
+  const filteredDashboards = useMemo(() => {
     if (selectFilterValue && dashboards.length) {
-      filteredOptions = dashboards.filter((dashboard) =>
+      const filtered = dashboards.filter((dashboard) =>
         dashboard.title.toLowerCase().includes(selectFilterValue.toLowerCase()),
       );
-      if (!filteredOptions.length) {
-        filteredOptions = [
+      if (!filtered.length) {
+        return [
           {
+            id: 'no-results-placeholder',
             isAriaDisabled: true,
             children: `No dashboards matching "${selectFilterValue}"`,
           },
         ];
       }
+      return filtered;
     }
-
-    setFilteredDashboards(filteredOptions);
+    return [...dashboards];
   }, [selectFilterValue, dashboards]);
 
   const onDashboardSelect = useCallback(
@@ -382,9 +380,9 @@ const Dashboard = () => {
             ouiaId="dashboard-select-dropdown"
           >
             <SelectList>
-              {filteredDashboards.map((dashboard, index) => (
+              {filteredDashboards.map((dashboard) => (
                 <SelectOption
-                  key={dashboard.id || index}
+                  key={dashboard.id}
                   value={dashboard.id}
                   description={dashboard.id}
                 >

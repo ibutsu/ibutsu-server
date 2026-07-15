@@ -4,16 +4,16 @@ import RunFilter from './run-filter';
 import { FilterContext } from '../contexts/filter-context';
 
 describe('RunFilter', () => {
-  const mockApplyFilter = jest.fn();
-  const mockOnRemoveFilter = jest.fn();
-  const mockOnFieldSelect = jest.fn();
-  const mockOnOperationSelect = jest.fn();
-  const mockOnBoolSelect = jest.fn();
-  const mockSetTextFilter = jest.fn();
-  const mockSetInValues = jest.fn();
-  const mockSetIsFieldOpen = jest.fn();
-  const mockSetIsOperationOpen = jest.fn();
-  const mockSetIsBoolOpen = jest.fn();
+  const mockApplyFilter = vi.fn();
+  const mockOnRemoveFilter = vi.fn();
+  const mockOnFieldSelect = vi.fn();
+  const mockOnOperationSelect = vi.fn();
+  const mockOnBoolSelect = vi.fn();
+  const mockSetTextFilter = vi.fn();
+  const mockSetInValues = vi.fn();
+  const mockSetIsFieldOpen = vi.fn();
+  const mockSetIsOperationOpen = vi.fn();
+  const mockSetIsBoolOpen = vi.fn();
 
   const defaultContextValue = {
     activeFilters: [],
@@ -63,7 +63,7 @@ describe('RunFilter', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Rendering', () => {

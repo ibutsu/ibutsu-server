@@ -6,29 +6,33 @@ import { HttpClient } from '../utilities/http';
 import { createMockProject } from '../test-utils';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock child components
-jest.mock('./file-upload', () => {
-  return function FileUpload() {
-    return <div data-ouia-component-id="file-upload">File Upload</div>;
+vi.mock('./file-upload', () => {
+  return {
+    default: function FileUpload() {
+      return <div data-ouia-component-id="file-upload">File Upload</div>;
+    },
   };
 });
 
-jest.mock('./user-dropdown', () => {
-  return function UserDropdown() {
-    return <div data-ouia-component-id="user-dropdown">User Dropdown</div>;
+vi.mock('./user-dropdown', () => {
+  return {
+    default: function UserDropdown() {
+      return <div data-ouia-component-id="user-dropdown">User Dropdown</div>;
+    },
   };
 });
 
 // Mock utility function
-jest.mock('../utilities', () => ({
-  setDocumentDarkTheme: jest.fn(),
+vi.mock('../utilities', () => ({
+  setDocumentDarkTheme: vi.fn(),
 }));
 
 describe('IbutsuHeader', () => {
@@ -50,11 +54,11 @@ describe('IbutsuHeader', () => {
     primaryObject: null,
     defaultDashboard: null,
     primaryType: 'project',
-    setPrimaryType: jest.fn(),
-    setPrimaryObject: jest.fn(),
-    setDefaultDashboard: jest.fn(),
+    setPrimaryType: vi.fn(),
+    setPrimaryObject: vi.fn(),
+    setDefaultDashboard: vi.fn(),
     darkTheme: false,
-    setDarkTheme: jest.fn(),
+    setDarkTheme: vi.fn(),
   };
 
   const renderComponent = (contextValue = {}, initialRoute = '/') => {
@@ -73,8 +77,8 @@ describe('IbutsuHeader', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    vi.clearAllMocks();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
 
     // Default mock implementations
     HttpClient.get.mockImplementation((url) => {
@@ -111,13 +115,13 @@ describe('IbutsuHeader', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('Rendering', () => {
     it('should render the masthead with brand logo', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByAltText('Ibutsu')).toBeInTheDocument();
@@ -126,7 +130,7 @@ describe('IbutsuHeader', () => {
 
     it('should render project selector', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(
@@ -137,7 +141,7 @@ describe('IbutsuHeader', () => {
 
     it('should render file upload button', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('file-upload')).toBeInTheDocument();
@@ -146,7 +150,7 @@ describe('IbutsuHeader', () => {
 
     it('should render user dropdown', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByTestId('user-dropdown')).toBeInTheDocument();
@@ -155,7 +159,7 @@ describe('IbutsuHeader', () => {
 
     it('should render about button', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByLabelText('About')).toBeInTheDocument();
@@ -164,7 +168,7 @@ describe('IbutsuHeader', () => {
 
     it('should render API button', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByText('API')).toBeInTheDocument();
@@ -173,7 +177,7 @@ describe('IbutsuHeader', () => {
 
     it('should render theme toggle', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByLabelText('Light theme')).toBeInTheDocument();
@@ -183,7 +187,7 @@ describe('IbutsuHeader', () => {
 
     it('should render navigation toggle button', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByLabelText('Global navigation')).toBeInTheDocument();
@@ -194,7 +198,7 @@ describe('IbutsuHeader', () => {
   describe('Project Selection', () => {
     it('should fetch projects on mount', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalledWith(
@@ -206,7 +210,7 @@ describe('IbutsuHeader', () => {
 
     it('should display projects in dropdown', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(
@@ -225,7 +229,7 @@ describe('IbutsuHeader', () => {
 
     it('should filter projects when typing', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(
@@ -235,7 +239,7 @@ describe('IbutsuHeader', () => {
 
       const input = screen.getByPlaceholderText('No active project');
       fireEvent.change(input, { target: { value: 'test' } });
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalledWith(
@@ -254,7 +258,7 @@ describe('IbutsuHeader', () => {
       });
 
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(
@@ -274,7 +278,7 @@ describe('IbutsuHeader', () => {
   describe('Project ID from URL', () => {
     it('should fetch project when project_id in URL', async () => {
       renderComponent({}, '/project/project-123/dashboard');
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(HttpClient.get).toHaveBeenCalledWith([
@@ -286,9 +290,9 @@ describe('IbutsuHeader', () => {
     });
 
     it('should set primary object from URL project', async () => {
-      const setPrimaryObject = jest.fn();
+      const setPrimaryObject = vi.fn();
       renderComponent({ setPrimaryObject }, '/project/project-123/dashboard');
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(setPrimaryObject).toHaveBeenCalledWith(mockProject);
@@ -296,7 +300,7 @@ describe('IbutsuHeader', () => {
     });
 
     it('should handle project fetch error', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
       HttpClient.get.mockImplementation((url) => {
         const urlPath = Array.isArray(url) ? url.join('/') : url;
         if (urlPath.includes('/project/') && urlPath.includes('project-123')) {
@@ -309,7 +313,7 @@ describe('IbutsuHeader', () => {
       });
 
       renderComponent({}, '/project/project-123/dashboard');
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(consoleSpy).toHaveBeenCalledWith(
@@ -325,7 +329,7 @@ describe('IbutsuHeader', () => {
   describe('Theme Toggle', () => {
     it('should have light theme selected by default', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         const lightButton = screen.getByLabelText('Light theme');
@@ -334,9 +338,9 @@ describe('IbutsuHeader', () => {
     });
 
     it('should call setDarkTheme when dark theme clicked', async () => {
-      const setDarkTheme = jest.fn();
+      const setDarkTheme = vi.fn();
       renderComponent({ setDarkTheme });
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByLabelText('Dark theme')).toBeInTheDocument();
@@ -348,9 +352,9 @@ describe('IbutsuHeader', () => {
     });
 
     it('should call setDarkTheme(false) when light theme clicked', async () => {
-      const setDarkTheme = jest.fn();
+      const setDarkTheme = vi.fn();
       renderComponent({ setDarkTheme, darkTheme: true });
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByLabelText('Light theme')).toBeInTheDocument();
@@ -365,7 +369,7 @@ describe('IbutsuHeader', () => {
   describe('About Modal', () => {
     it('should open about modal when about button clicked', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByLabelText('About')).toBeInTheDocument();
@@ -382,7 +386,7 @@ describe('IbutsuHeader', () => {
 
     it('should display links in about modal', async () => {
       renderComponent();
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       await waitFor(() => {
         expect(screen.getByLabelText('About')).toBeInTheDocument();
@@ -402,9 +406,9 @@ describe('IbutsuHeader', () => {
 
   describe('Project Clear', () => {
     it('should clear project when clear button clicked', async () => {
-      const setPrimaryObject = jest.fn();
+      const setPrimaryObject = vi.fn();
       renderComponent({ setPrimaryObject }, '/project/project-123/dashboard');
-      jest.advanceTimersByTime(100);
+      vi.advanceTimersByTime(100);
 
       // Wait for project to load
       await waitFor(() => {

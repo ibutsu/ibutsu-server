@@ -5,52 +5,58 @@ import { HttpClient } from '../utilities/http';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock WidgetHeader component
-jest.mock('../components/widget-header', () => {
-  return function WidgetHeader({ title, actions }) {
-    return (
-      <div data-ouia-component-id="widget-header">
-        {title}
-        {actions && (
-          <div data-ouia-component-id="header-actions">{actions}</div>
-        )}
-      </div>
-    );
+vi.mock('../components/widget-header', () => {
+  return {
+    default: function WidgetHeader({ title, actions }) {
+      return (
+        <div data-ouia-component-id="widget-header">
+          {title}
+          {actions && (
+            <div data-ouia-component-id="header-actions">{actions}</div>
+          )}
+        </div>
+      );
+    },
   };
 });
 
 // Mock ParamDropdown component
-jest.mock('../components/param-dropdown', () => {
-  return function ParamDropdown({ tooltip, defaultValue }) {
-    return (
-      <div data-ouia-component-id="param-dropdown">
-        {tooltip} {defaultValue}
-      </div>
-    );
+vi.mock('../components/param-dropdown', () => {
+  return {
+    default: function ParamDropdown({ tooltip, defaultValue }) {
+      return (
+        <div data-ouia-component-id="param-dropdown">
+          {tooltip} {defaultValue}
+        </div>
+      );
+    },
   };
 });
 
 // Mock HeatMapWrapper component
-jest.mock('../components/heat-map-wrapper', () => {
-  return function HeatMapWrapper({ xLabels, yLabels, data }) {
-    return (
-      <div data-ouia-component-id="heatmap">
-        <div data-ouia-component-id="heatmap-xlabels">
-          {xLabels?.length || 0}
+vi.mock('../components/heat-map-wrapper', () => {
+  return {
+    default: function HeatMapWrapper({ xLabels, yLabels, data }) {
+      return (
+        <div data-ouia-component-id="heatmap">
+          <div data-ouia-component-id="heatmap-xlabels">
+            {xLabels?.length || 0}
+          </div>
+          <div data-ouia-component-id="heatmap-ylabels">
+            {yLabels?.length || 0}
+          </div>
+          <div data-ouia-component-id="heatmap-data">{data?.length || 0}</div>
         </div>
-        <div data-ouia-component-id="heatmap-ylabels">
-          {yLabels?.length || 0}
-        </div>
-        <div data-ouia-component-id="heatmap-data">{data?.length || 0}</div>
-      </div>
-    );
+      );
+    },
   };
 });
 
@@ -72,8 +78,8 @@ describe('FilterHeatmapWidget', () => {
       builds: 5,
       group_field: 'component',
     },
-    onDeleteClick: jest.fn(),
-    onEditClick: jest.fn(),
+    onDeleteClick: vi.fn(),
+    onEditClick: vi.fn(),
   };
 
   const mockContextValue = {
@@ -82,7 +88,7 @@ describe('FilterHeatmapWidget', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default mock for HttpClient.get
     HttpClient.get.mockResolvedValue({
@@ -238,7 +244,7 @@ describe('FilterHeatmapWidget', () => {
     it('should handle fetch error', async () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(
         <MemoryRouter>
@@ -339,7 +345,7 @@ describe('FilterHeatmapWidget', () => {
     it('should display error message on fetch failure', async () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(
         <MemoryRouter>
@@ -460,7 +466,7 @@ describe('FilterHeatmapWidget', () => {
 
   describe('Props Handling', () => {
     it('should pass onDeleteClick prop to WidgetHeader', async () => {
-      const onDeleteClick = jest.fn();
+      const onDeleteClick = vi.fn();
 
       render(
         <MemoryRouter>
@@ -483,7 +489,7 @@ describe('FilterHeatmapWidget', () => {
     });
 
     it('should pass onEditClick prop to WidgetHeader', async () => {
-      const onEditClick = jest.fn();
+      const onEditClick = vi.fn();
 
       render(
         <MemoryRouter>
@@ -846,7 +852,7 @@ describe('FilterHeatmapWidget', () => {
     });
 
     it('should handle error when fetching analysisViewId', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       HttpClient.get
         .mockRejectedValueOnce(new Error('Failed to fetch widget config'))

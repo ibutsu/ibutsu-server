@@ -5,15 +5,15 @@ import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock the useWidgets hook
-jest.mock('../components/hooks/use-widgets', () => ({
+vi.mock('../components/hooks/use-widgets', () => ({
   useWidgets: () => ({
     widgets: [],
     widgetComponents: [],
@@ -21,40 +21,48 @@ jest.mock('../components/hooks/use-widgets', () => ({
 }));
 
 // Mock all modal components
-jest.mock('../components/modals/new-dashboard-modal', () => {
-  return function NewDashboardModal() {
-    return (
-      <div data-ouia-component-id="new-dashboard-modal">
-        New Dashboard Modal
-      </div>
-    );
+vi.mock('../components/modals/new-dashboard-modal', () => {
+  return {
+    default: function NewDashboardModal() {
+      return (
+        <div data-ouia-component-id="new-dashboard-modal">
+          New Dashboard Modal
+        </div>
+      );
+    },
   };
 });
 
-jest.mock('../components/modals/new-widget-wizard', () => {
-  return function NewWidgetWizard() {
-    return (
-      <div data-ouia-component-id="new-widget-wizard">New Widget Wizard</div>
-    );
+vi.mock('../components/modals/new-widget-wizard', () => {
+  return {
+    default: function NewWidgetWizard() {
+      return (
+        <div data-ouia-component-id="new-widget-wizard">New Widget Wizard</div>
+      );
+    },
   };
 });
 
-jest.mock('../components/modals/edit-widget-modal', () => {
-  return function EditWidgetModal() {
-    return (
-      <div data-ouia-component-id="edit-widget-modal">Edit Widget Modal</div>
-    );
+vi.mock('../components/modals/edit-widget-modal', () => {
+  return {
+    default: function EditWidgetModal() {
+      return (
+        <div data-ouia-component-id="edit-widget-modal">Edit Widget Modal</div>
+      );
+    },
   };
 });
 
-jest.mock('../components/modals/delete-modal', () => {
-  return function DeleteModal() {
-    return <div data-ouia-component-id="delete-modal">Delete Modal</div>;
+vi.mock('../components/modals/delete-modal', () => {
+  return {
+    default: function DeleteModal() {
+      return <div data-ouia-component-id="delete-modal">Delete Modal</div>;
+    },
   };
 });
 
 // Mock nanoid
-jest.mock('nanoid/non-secure', () => ({
+vi.mock('nanoid/non-secure', () => ({
   nanoid: () => 'test-nanoid',
 }));
 
@@ -105,11 +113,11 @@ describe('Dashboard Component', () => {
       primaryObject,
       defaultDashboard,
       primaryType: 'project',
-      setPrimaryType: jest.fn(),
-      setPrimaryObject: jest.fn(),
-      setDefaultDashboard: jest.fn(),
+      setPrimaryType: vi.fn(),
+      setPrimaryObject: vi.fn(),
+      setDefaultDashboard: vi.fn(),
       darkTheme: false,
-      setDarkTheme: jest.fn(),
+      setDarkTheme: vi.fn(),
     };
 
     return render(
@@ -127,7 +135,7 @@ describe('Dashboard Component', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default mock for HttpClient.get
     HttpClient.get.mockResolvedValue({
@@ -477,11 +485,11 @@ describe('Dashboard Component', () => {
         primaryObject: newProject,
         defaultDashboard: null,
         primaryType: 'project',
-        setPrimaryType: jest.fn(),
-        setPrimaryObject: jest.fn(),
-        setDefaultDashboard: jest.fn(),
+        setPrimaryType: vi.fn(),
+        setPrimaryObject: vi.fn(),
+        setDefaultDashboard: vi.fn(),
         darkTheme: false,
-        setDarkTheme: jest.fn(),
+        setDarkTheme: vi.fn(),
       };
 
       HttpClient.get.mockResolvedValue({
@@ -530,7 +538,7 @@ describe('Dashboard Component', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      const consoleErrorSpy = jest
+      const consoleErrorSpy = vi
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
@@ -809,7 +817,8 @@ describe('Dashboard Component', () => {
   describe('Dashboard grid rendering', () => {
     it('should render widget grid when dashboard has widgets', async () => {
       // Mock useWidgets to return widgets
-      jest.doMock('../components/hooks/use-widgets', () => ({
+      vi.doMock('../components/hooks/use-widgets', () => ({
+        // eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
         useWidgets: () => ({
           widgets: [{ id: 'widget-1' }],
           widgetComponents: [<div key="w1">Widget 1</div>],

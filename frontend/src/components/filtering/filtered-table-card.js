@@ -216,7 +216,11 @@ const FilterTable = ({
                     }
 
                     return (
-                      <Td key={`${rowKey}-${cellIndex}`}>{cellContent}</Td>
+                      <Td
+                        key={`${rowKey}-col-${typeof columns[cellIndex] === 'string' ? columns[cellIndex] : columns[cellIndex]?.title || cellIndex}`}
+                      >
+                        {cellContent}
+                      </Td>
                     );
                   })}
               </Tr>
@@ -300,10 +304,11 @@ const FilterTable = ({
                   const sortParams = getSortParams(columnIndex);
 
                   // For empty columns, don't render any children
+                  const columnKey = columnText || `col-${columnIndex}`;
                   if (isEmpty) {
                     return (
                       <Th
-                        key={columnIndex}
+                        key={columnKey}
                         {...sortParams}
                         screenReaderText="Actions"
                       />
@@ -311,7 +316,7 @@ const FilterTable = ({
                   }
 
                   return (
-                    <Th key={columnIndex} {...sortParams}>
+                    <Th key={columnKey} {...sortParams}>
                       {columnText}
                     </Th>
                   );

@@ -75,10 +75,10 @@ const MultiValueInput = ({
           type="text"
         >
           <LabelGroup aria-label="Current selections">
-            {values.map((item, index) => (
+            {values.map((item) => (
               <Label
                 variant="outline"
-                key={index}
+                key={item}
                 onClose={() => handleItemRemove(item)}
               >
                 {item}

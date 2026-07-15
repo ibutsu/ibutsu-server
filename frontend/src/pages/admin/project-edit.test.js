@@ -10,17 +10,19 @@ import {
 } from '../../test-utils';
 
 // Mock dependencies
-jest.mock('../../utilities/http');
-jest.mock('../settings', () => ({
+vi.mock('../../utilities/http');
+vi.mock('../settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock AdminFilter component
-jest.mock('../../components/filtering/admin-filter', () => {
-  return function AdminFilter() {
-    return <div data-ouia-component-id="admin-filter">Admin Filter</div>;
+vi.mock('../../components/filtering/admin-filter', () => {
+  return {
+    default: function AdminFilter() {
+      return <div data-ouia-component-id="admin-filter">Admin Filter</div>;
+    },
   };
 });
 
@@ -45,8 +47,8 @@ describe('ProjectEdit', () => {
 
   const defaultFilterContext = {
     activeFilters: [],
-    updateFilters: jest.fn(),
-    clearFilters: jest.fn(),
+    updateFilters: vi.fn(),
+    clearFilters: vi.fn(),
   };
 
   const renderComponent = (
@@ -73,8 +75,8 @@ describe('ProjectEdit', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    vi.clearAllMocks();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
 
     HttpClient.get.mockImplementation((url) => {
       const urlPath = Array.isArray(url) ? url.join('/') : url;
@@ -118,7 +120,7 @@ describe('ProjectEdit', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('Rendering - Edit Mode', () => {
@@ -284,7 +286,7 @@ describe('ProjectEdit', () => {
     });
 
     it('should handle project fetch error', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
       HttpClient.get.mockImplementation((url) => {
         const urlPath = Array.isArray(url) ? url.join('/') : url;
         if (urlPath.includes('admin/project/project-123')) {
@@ -389,7 +391,7 @@ describe('ProjectEdit', () => {
     });
 
     it('should handle submit error gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
       HttpClient.put.mockRejectedValue(new Error('Submit failed'));
 
       renderComponent();

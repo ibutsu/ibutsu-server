@@ -15,6 +15,23 @@ import {
 import { HttpClient } from '../../utilities/http';
 import { Settings } from '../../pages/settings';
 
+const FilterContextCapture = ({ children, onFilterContext }) => {
+  const filterContext = useContext(FilterContext);
+
+  useEffect(() => {
+    if (filterContext) {
+      onFilterContext(filterContext);
+    }
+  }, [filterContext, onFilterContext]);
+
+  return children;
+};
+
+FilterContextCapture.propTypes = {
+  children: PropTypes.node,
+  onFilterContext: PropTypes.func.isRequired,
+};
+
 // Constants for widget classification
 const RESULT_BASED_WIDGETS = [
   'result-summary',
@@ -65,21 +82,11 @@ export const useWidgetFilters = ({
   // Custom FilterProvider that captures the filter context
   const CustomFilterProvider = useCallback(
     ({ children, ...props }) => {
-      const FilterContextCapture = ({ children }) => {
-        const filterContext = useContext(FilterContext);
-
-        useEffect(() => {
-          if (filterContext) {
-            setFilterContextRef(filterContext);
-          }
-        }, [filterContext]);
-
-        return children;
-      };
-
       return (
         <FilterProvider {...props} initialFilters={initialFilters}>
-          <FilterContextCapture>{children}</FilterContextCapture>
+          <FilterContextCapture onFilterContext={setFilterContextRef}>
+            {children}
+          </FilterContextCapture>
         </FilterProvider>
       );
     },

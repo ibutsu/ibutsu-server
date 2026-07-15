@@ -4,15 +4,15 @@ import ActiveFilters from './active-filters';
 import { OPERATIONS } from '../../constants';
 
 // Mock useNavigate and useParams
-const mockNavigate = jest.fn();
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async (importOriginal) => ({
+  ...(await importOriginal()),
   useNavigate: () => mockNavigate,
   useParams: () => ({ project_id: 'test-project-id' }),
 }));
 
 describe('ActiveFilters', () => {
-  const mockOnRemoveFilter = jest.fn();
+  const mockOnRemoveFilter = vi.fn();
 
   const defaultProps = {
     activeFilters: [
@@ -33,7 +33,7 @@ describe('ActiveFilters', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Rendering', () => {
@@ -186,7 +186,7 @@ describe('ActiveFilters', () => {
 
   describe('Malformed filter handling', () => {
     it('should filter out malformed filters without field', () => {
-      const consoleWarnSpy = jest
+      const consoleWarnSpy = vi
         .spyOn(console, 'warn')
         .mockImplementation(() => {});
 
@@ -207,7 +207,7 @@ describe('ActiveFilters', () => {
     });
 
     it('should filter out malformed filters without operator', () => {
-      const consoleWarnSpy = jest
+      const consoleWarnSpy = vi
         .spyOn(console, 'warn')
         .mockImplementation(() => {});
 
@@ -224,7 +224,7 @@ describe('ActiveFilters', () => {
     });
 
     it('should filter out malformed filters with null value', () => {
-      const consoleWarnSpy = jest
+      const consoleWarnSpy = vi
         .spyOn(console, 'warn')
         .mockImplementation(() => {});
 
@@ -241,7 +241,7 @@ describe('ActiveFilters', () => {
     });
 
     it('should filter out malformed filters with undefined value', () => {
-      const consoleWarnSpy = jest
+      const consoleWarnSpy = vi
         .spyOn(console, 'warn')
         .mockImplementation(() => {});
 

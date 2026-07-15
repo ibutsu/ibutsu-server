@@ -4,45 +4,51 @@ import { HttpClient } from '../utilities/http';
 import { createMockResultSummaryData } from '../test-utils';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock WidgetHeader component
-jest.mock('../components/widget-header', () => {
-  return function WidgetHeader({ title }) {
-    return <div data-ouia-component-id="widget-header">{title}</div>;
+vi.mock('../components/widget-header', () => {
+  return {
+    default: function WidgetHeader({ title }) {
+      return <div data-ouia-component-id="widget-header">{title}</div>;
+    },
   };
 });
 
 // Mock ResultWidgetLegend component
-jest.mock('./result-widget-legend', () => {
-  return function ResultWidgetLegend() {
-    return <div data-ouia-component-id="result-widget-legend">Legend</div>;
+vi.mock('./result-widget-legend', () => {
+  return {
+    default: function ResultWidgetLegend() {
+      return <div data-ouia-component-id="result-widget-legend">Legend</div>;
+    },
   };
 });
 
 // Mock react-apexcharts
-jest.mock('react-apexcharts', () => {
-  return function Chart({ series, options = {} }) {
-    return (
-      <div data-ouia-component-id="apex-chart">
-        <div data-ouia-component-id="chart-series">
-          {JSON.stringify(series)}
+vi.mock('react-apexcharts', () => {
+  return {
+    default: function Chart({ series, options = {} }) {
+      return (
+        <div data-ouia-component-id="apex-chart">
+          <div data-ouia-component-id="chart-series">
+            {JSON.stringify(series)}
+          </div>
+          <div data-ouia-component-id="chart-labels">
+            {JSON.stringify(options.labels)}
+          </div>
         </div>
-        <div data-ouia-component-id="chart-labels">
-          {JSON.stringify(options.labels)}
-        </div>
-      </div>
-    );
+      );
+    },
   };
 });
 
 // Mock useSVGContainerDimensions hook
-jest.mock('../components/hooks/use-svg-container-dimensions', () => ({
+vi.mock('../components/hooks/use-svg-container-dimensions', () => ({
   useSVGContainerDimensions: () => ({
     containerRef: { current: null },
     width: 400,
@@ -55,25 +61,25 @@ describe('ResultSummaryApex Widget', () => {
   const defaultProps = {
     title: 'Test Summary',
     params: { project: 'test-project' },
-    onDeleteClick: jest.fn(),
-    onEditClick: jest.fn(),
+    onDeleteClick: vi.fn(),
+    onEditClick: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock window.matchMedia
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: jest.fn().mockImplementation((query) => ({
+      value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
       })),
     });
 
@@ -161,7 +167,7 @@ describe('ResultSummaryApex Widget', () => {
     it('should handle fetch error', async () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(<ResultSummaryApex {...defaultProps} />);
 
@@ -245,7 +251,7 @@ describe('ResultSummaryApex Widget', () => {
 
   describe('Props Handling', () => {
     it('should call onDeleteClick when delete is triggered', async () => {
-      const onDeleteClick = jest.fn();
+      const onDeleteClick = vi.fn();
 
       render(
         <ResultSummaryApex {...defaultProps} onDeleteClick={onDeleteClick} />,
@@ -257,7 +263,7 @@ describe('ResultSummaryApex Widget', () => {
     });
 
     it('should call onEditClick when edit is triggered', async () => {
-      const onEditClick = jest.fn();
+      const onEditClick = vi.fn();
 
       render(<ResultSummaryApex {...defaultProps} onEditClick={onEditClick} />);
 
@@ -382,7 +388,7 @@ describe('ResultSummaryApex Widget', () => {
     it('should handle HTTP error response', async () => {
       HttpClient.handleResponse.mockRejectedValue(new Error('Server error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(<ResultSummaryApex {...defaultProps} />);
 
@@ -399,7 +405,7 @@ describe('ResultSummaryApex Widget', () => {
         json: async () => null,
       });
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
       const { container } = render(<ResultSummaryApex {...defaultProps} />);
 
       await waitFor(() => {

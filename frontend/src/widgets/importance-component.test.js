@@ -4,28 +4,32 @@ import ImportanceComponentWidget from './importance-component';
 import { HttpClient } from '../utilities/http';
 
 // Mock dependencies
-jest.mock('../utilities/http');
-jest.mock('../pages/settings', () => ({
+vi.mock('../utilities/http');
+vi.mock('../pages/settings', () => ({
   Settings: {
     serverUrl: 'http://localhost:8080/api',
   },
 }));
 
 // Mock WidgetHeader component
-jest.mock('../components/widget-header', () => {
-  return function WidgetHeader({ title }) {
-    return <div data-ouia-component-id="widget-header">{title}</div>;
+vi.mock('../components/widget-header', () => {
+  return {
+    default: function WidgetHeader({ title }) {
+      return <div data-ouia-component-id="widget-header">{title}</div>;
+    },
   };
 });
 
 // Mock ParamDropdown component
-jest.mock('../components/param-dropdown', () => {
-  return function ParamDropdown({ tooltip, defaultValue }) {
-    return (
-      <div data-ouia-component-id="param-dropdown">
-        {tooltip} {defaultValue}
-      </div>
-    );
+vi.mock('../components/param-dropdown', () => {
+  return {
+    default: function ParamDropdown({ tooltip, defaultValue }) {
+      return (
+        <div data-ouia-component-id="param-dropdown">
+          {tooltip} {defaultValue}
+        </div>
+      );
+    },
   };
 });
 
@@ -70,12 +74,12 @@ describe('ImportanceComponentWidget', () => {
   const defaultProps = {
     title: 'Importance Component Test',
     params: { project: 'test-project' },
-    onDeleteClick: jest.fn(),
-    onEditClick: jest.fn(),
+    onDeleteClick: vi.fn(),
+    onEditClick: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock HttpClient.get
     HttpClient.get.mockResolvedValue({
@@ -170,7 +174,7 @@ describe('ImportanceComponentWidget', () => {
     it('should handle fetch error', async () => {
       HttpClient.get.mockRejectedValue(new Error('Network error'));
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(
         <MemoryRouter>
@@ -191,7 +195,7 @@ describe('ImportanceComponentWidget', () => {
         statusText: 'Not Found',
       });
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
 
       render(
         <MemoryRouter>
@@ -269,7 +273,7 @@ describe('ImportanceComponentWidget', () => {
 
   describe('Props Handling', () => {
     it('should pass onDeleteClick prop to WidgetHeader', async () => {
-      const onDeleteClick = jest.fn();
+      const onDeleteClick = vi.fn();
 
       render(
         <MemoryRouter>
@@ -290,7 +294,7 @@ describe('ImportanceComponentWidget', () => {
     });
 
     it('should pass onEditClick prop to WidgetHeader', async () => {
-      const onEditClick = jest.fn();
+      const onEditClick = vi.fn();
 
       render(
         <MemoryRouter>

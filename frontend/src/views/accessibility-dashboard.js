@@ -289,8 +289,8 @@ const AccessibilityDashboardView = ({ view }) => {
       )}
     >
       <SelectList id="select-typeahead-listbox">
-        {filteredFieldOptions.map((option, index) => (
-          <SelectOption key={index} value={option}>
+        {filteredFieldOptions.map((option) => (
+          <SelectOption key={option} value={option}>
             {option}
           </SelectOption>
         ))}
@@ -316,8 +316,8 @@ const AccessibilityDashboardView = ({ view }) => {
       )}
     >
       <SelectList>
-        {Object.keys(operations).map((option, index) => (
-          <SelectOption key={index} value={option}>
+        {Object.keys(operations).map((option) => (
+          <SelectOption key={option} value={option}>
             {operations[option]?.opString || option}
           </SelectOption>
         ))}
@@ -344,8 +344,8 @@ const AccessibilityDashboardView = ({ view }) => {
           )}
         >
           <SelectList>
-            {['True', 'False'].map((option, index) => (
-              <SelectOption key={index} value={option}>
+            {['True', 'False'].map((option) => (
+              <SelectOption key={option} value={option}>
                 {option}
               </SelectOption>
             ))}
