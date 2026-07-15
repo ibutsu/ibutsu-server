@@ -85,7 +85,7 @@ Using either `podman` or Docker Compose is the recommended way to run Ibutsu loc
 want to use the containers, the following must be installed:
 
 - Python 3.9+
-- NodeJS 18+ (includes Corepack, which manages Yarn)
+- NodeJS 22+ (includes Corepack, which manages Yarn)
 - redis (strongly recommend a container)
 - PostgreSQL (strongly recommend a container)
 

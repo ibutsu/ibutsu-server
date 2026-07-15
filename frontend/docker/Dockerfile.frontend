@@ -1,9 +1,9 @@
 # hadolint global ignore=DL3041,DL4006,SC2046,DL3033
-# Build the image first using the official UBI Node.js 22 builder image
-# See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-22/66e8b9e5b613c0093ab45791
-FROM registry.access.redhat.com/ubi9/nodejs-22:9.8-1784065768 AS builder
+# Build the image first using the official UBI Node.js 24 builder image
+# See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-24/67f6255dbaa28af763e21805
+FROM registry.access.redhat.com/ubi9/nodejs-24:9.8-1784075995 AS builder
 
-# The nodejs-22 image sets workdir to /opt/app-root/src by default
+# The nodejs-24 image sets workdir to /opt/app-root/src by default
 # but we'll explicitly set it for clarity
 WORKDIR /opt/app-root/src
 
@@ -12,9 +12,9 @@ ARG NPM_REGISTRY=""
 ARG EXTRA_CA_CERTS=""
 ENV NODE_EXTRA_CA_CERTS=${EXTRA_CA_CERTS}
 
-# corepack is not bundled in ubi9/nodejs-22; install it via npm first.
+# corepack is not bundled in ubi9/nodejs-24; install it via npm first.
 # Pinned to avoid unexpected behaviour from new corepack releases.
-# NOTE: corepack 0.35.0 requires Node.js ^22.22.2 || ^24.15.0 || >=26.0.0.
+# NOTE: corepack 0.35.0 requires Node.js ^24.15.0 (satisfied by this image).
 ARG COREPACK_VERSION="0.35.0"
 RUN if [ -n "${NPM_REGISTRY}" ]; then npm config set registry "${NPM_REGISTRY}"; fi && \
     npm install -g "corepack@${COREPACK_VERSION}" && \
@@ -90,8 +90,8 @@ RUN yarn build
 # assets and the 'serve' binary. No node_modules are carried over from the
 # builder — the runtime does not need the full dependency tree.
 #
-# See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-22-minimal/664330aa459a2d3c807ccea9
-FROM registry.access.redhat.com/ubi9/nodejs-22-minimal:9.8-1784124526
+# See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-24-minimal/67f62622a7637197c48f87ab
+FROM registry.access.redhat.com/ubi9/nodejs-24-minimal:9.8-1784131170
 
 WORKDIR /opt/app-root/src
 
