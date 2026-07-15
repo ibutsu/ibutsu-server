@@ -1,10 +1,10 @@
 # hadolint global ignore=DL3013,DL3041,DL3025
-FROM registry.access.redhat.com/ubi9/python-312:9.8-1784090967
+FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1784126640
 
 # add application sources with correct perms for OCP
 USER 0
-RUN dnf install -y libpq-devel gcc && \
-    dnf clean all
+RUN microdnf install --nodocs -y file-libs && \
+    microdnf clean all
 
 COPY . /app
 RUN /usr/bin/fix-permissions /app

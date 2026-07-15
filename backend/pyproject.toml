@@ -11,7 +11,7 @@ maintainers = [
     {name = "Egor Shamardin", email = "eshamard@redhat.com"},
 ]
 keywords = ["OpenAPI", "Ibutsu"]
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -20,7 +20,7 @@ classifiers = [
   "Topic :: Software Development :: Testing",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3 :: Only",
   "Operating System :: OS Independent",
 ]
@@ -30,8 +30,7 @@ dependencies = [
     "celery",
     "connexion[swagger-ui]",
     "connexion[flask]",
-    "flask_bcrypt",
-    "bcrypt<5",
+    "bcrypt>=5.0.0",
     "flask_mail",
     "Flask",
     "Flask-SQLAlchemy",
@@ -51,7 +50,7 @@ dependencies = [
     "python-magic",
     "python_dateutil",
     "PyYAML",
-    "redis",
+    "redis<8",
     "setuptools",
     "sqlalchemy-json",
     "sqlalchemy",
@@ -124,7 +123,7 @@ exclude = [
 
 
 [tool.hatch.envs.default]
-python = "3.12"
+python = "3.14"
 dependencies = [
   "psycopg2-binary",  # Use binary version to avoid compilation issues
   "pytest",
@@ -151,12 +150,13 @@ lint-check = "pre-commit run --all-files --show-diff-on-failure"
 template = "default"
 
 [[tool.hatch.envs.test-matrix.matrix]]
-python = ["3.12", "3.13"]
+python = ["3.14"]
 
 
 [tool.ruff]
 line-length = 100
 unsafe-fixes = true
+target-version = "py314"
 
 [tool.ruff.lint]
 select = [

@@ -1,12 +1,12 @@
 # hadolint global ignore=DL3013,DL3041
-FROM registry.access.redhat.com/ubi9/python-312:9.8-1784090967
+FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1784126640
 
 ENV UPGRADE_PIP_TO_LATEST=1
 
 USER 0
 
-RUN dnf install --nodocs -y --disableplugin=subscription-manager gcc libpq-devel && \
-    dnf clean all
+RUN microdnf install --nodocs -y file-libs && \
+    microdnf clean all
 
 COPY . /app
 
