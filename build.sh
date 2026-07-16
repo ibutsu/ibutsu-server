@@ -9,7 +9,7 @@ if [[ "$DC" == "" ]]; then
     exit 1
 fi
 
-# Yarn 4 is managed by corepack (ships with Node.js 18+).
+# Yarn 4 is managed by corepack (ships with Node.js 22+).
 # Running `corepack enable` makes the yarn binary available; corepack will
 # automatically download the exact Yarn version declared in frontend/package.json
 # (via the "packageManager" field) on first invocation.

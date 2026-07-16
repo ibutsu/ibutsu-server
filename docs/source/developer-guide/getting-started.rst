@@ -8,8 +8,8 @@ Requirements
 
 To run the server locally, you will need the following:
 
-- Python 3.9+
-- NodeJS 18+ (includes Corepack, which manages Yarn)
+- Python 3.14+
+- Node.js 24+ (includes Corepack, which manages Yarn)
 - redis (strongly recommend a container)
 - PostgreSQL (strongly recommend a container)
 
@@ -70,7 +70,7 @@ Run the Frontend
 
 When running on your local computer, the server is made up of two parts, the frontend and the
 backend. The backend runs the api while the frontend hosts the UI.
-Yarn is managed by `Corepack <https://nodejs.org/api/corepack.html>`_, which ships with Node.js 18+.
+Yarn is managed by `Corepack <https://nodejs.org/api/corepack.html>`_, which ships with Node.js 22+.
 Enable it once and the correct Yarn version (declared in ``package.json``) will be downloaded automatically:
 
 .. code-block:: shell

@@ -106,7 +106,7 @@ spec:
     - mountPath: /srv/:Z
       name: ibutsu-server-backend
   - name: frontend
-    image: docker.io/library/node:22
+    image: docker.io/library/node:24
     args:
     - /bin/bash
     - -c
