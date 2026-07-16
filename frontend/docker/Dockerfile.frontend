@@ -15,6 +15,7 @@ ENV NODE_EXTRA_CA_CERTS=${EXTRA_CA_CERTS}
 # corepack is not bundled in ubi9/nodejs-24; install it via npm first.
 # Pinned to avoid unexpected behaviour from new corepack releases.
 # NOTE: corepack 0.35.0 requires Node.js ^24.15.0 (satisfied by this image).
+# renovate: datasource=npm depName=corepack
 ARG COREPACK_VERSION="0.35.0"
 RUN if [ -n "${NPM_REGISTRY}" ]; then npm config set registry "${NPM_REGISTRY}"; fi && \
     npm install -g "corepack@${COREPACK_VERSION}" && \

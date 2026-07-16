@@ -1,0 +1,50 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "customManagers:dockerfileVersions"
+  ],
+  "constraints": {
+    "yarn": "4.17.0",
+    "node": "24",
+    "python": "3.14"
+  },
+  "enabledManagers": [
+    "npm",
+    "nvm",
+    "pep621",
+    "pip-compile",
+    "pip_requirements",
+    "dockerfile",
+    "github-actions",
+    "tekton",
+    "pre-commit",
+    "custom.regex"
+  ],
+  "ignorePaths": [
+    "backend/docker/Dockerfile.fuzz_testing",
+    "docker-compose-fuzz.yml"
+  ],
+  "packageRules": [
+    {
+      "description": "Upgrade Yarn/Corepack tooling separately from app deps; keep reviews focused on Corepack + Yarn 4 in MintMaker and the frontend image",
+      "matchPackageNames": [
+        "yarn",
+        "corepack",
+        "/^@yarnpkg\\//"
+      ],
+      "groupName": "yarn tooling",
+      "separateMajorMinor": true
+    },
+    {
+      "description": "Stay on Yarn 4.x (packageManager and any Yarn plugins) for Corepack compatibility",
+      "matchPackageNames": [
+        "yarn",
+        "/^@yarnpkg\\//"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
+    }
+  ]
+}
