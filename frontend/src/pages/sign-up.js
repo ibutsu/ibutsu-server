@@ -1,5 +1,4 @@
-import { Component, lazy, Suspense } from 'react';
-import PropTypes from 'prop-types';
+import { lazy, useState, Suspense } from 'react';
 import {
   ActionGroup,
   Alert,
@@ -19,322 +18,249 @@ import {
 import EyeIcon from '@patternfly/react-icons/dist/esm/icons/eye-icon';
 import EyeSlashIcon from '@patternfly/react-icons/dist/esm/icons/eye-slash-icon';
 import { NavLink } from 'react-router-dom';
+import { ErrorBoundary } from 'react-error-boundary';
 
 import { AuthService } from '../utilities/auth';
 
-// Lazy import the password strength indicator, it uses a very big library
-const PasswordStrengthBar = lazy(() => import('react-password-strength-bar'));
+const PasswordStrengthBar = lazy(() =>
+  import('react-password-strength-bar').then((m) => ({
+    default: m.default?.default || m.default,
+  })),
+);
 
-// This catches any potential errors if the password strength indicator fails to load
-class PasswordErrorBoundary extends Component {
-  static propTypes = {
-    children: PropTypes.node,
-  };
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
+export const SignUp = () => {
+  const [alertText, setAlertText] = useState('');
+  const [alertType, setAlertType] = useState('');
+  const [showAlert, setShowAlert] = useState(false);
+  const [emailValue, setEmailValue] = useState('');
+  const [isValidEmail, setIsValidEmail] = useState(true);
+  const [passwordValue, setPasswordValue] = useState('');
+  const [isValidPassword, setIsValidPassword] = useState(true);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [confirmPasswordValue, setConfirmPasswordValue] = useState('');
+  const [confirmPasswordHelpText, setConfirmPasswordHelpText] = useState('');
+  const [confirmPasswordValidation, setConfirmPasswordValidation] =
+    useState('default');
+  const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
+    useState(false);
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch() {
-    console.error('Failed to load password strength indicator');
-  }
-
-  render() {
-    if (this.state.hasError) {
-      // Hide the components, we don't need to worry about it
-      return '';
-    }
-    return this.props.children;
-  }
-}
-
-export class SignUp extends Component {
-  static propTypes = {};
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      alertText: '',
-      alertType: '',
-      showAlert: false,
-      emailValue: '',
-      isValidEmail: true,
-      passwordValue: '',
-      isValidPassword: true,
-      isPasswordVisible: false,
-      confirmPasswordValue: '',
-      confirmPasswordHelpText: '',
-      confirmPasswordValidation: 'default',
-      isConfirmPasswordVisible: false,
-    };
-  }
-
-  validatePasswordMatch = () => {
-    if (
-      this.state.confirmPasswordValue === '' &&
-      this.state.passwordValue === ''
-    ) {
-      this.setState({
-        confirmPasswordHelpText: '',
-        confirmPasswordValidation: 'default',
-      });
-    } else if (this.state.passwordValue === this.state.confirmPasswordValue) {
-      this.setState({
-        confirmPasswordHelpText: 'Passwords match!',
-        confirmPasswordValidation: 'success',
-      });
-    } else if (this.state.passwordValue !== this.state.confirmPasswordValue) {
-      this.setState({
-        confirmPasswordValidation: 'error',
-      });
+  const validatePasswordMatch = (password, confirmPassword) => {
+    if (confirmPassword === '') {
+      setConfirmPasswordHelpText('');
+      setConfirmPasswordValidation('default');
+    } else if (password === confirmPassword) {
+      setConfirmPasswordHelpText('Passwords match!');
+      setConfirmPasswordValidation('success');
+    } else {
+      setConfirmPasswordHelpText('');
+      setConfirmPasswordValidation('error');
     }
   };
 
-  onEmailChange = (emailValue) => {
-    this.setState({ emailValue });
+  const onEmailChange = (_, value) => {
+    setEmailValue(value);
   };
 
-  onPasswordChange = (passwordValue) => {
-    this.setState({ passwordValue }, this.validatePasswordMatch);
+  const onPasswordChange = (_, value) => {
+    setPasswordValue(value);
+    validatePasswordMatch(value, confirmPasswordValue);
   };
 
-  onConfirmPasswordChange = (confirmPasswordValue) => {
-    this.setState({ confirmPasswordValue }, this.validatePasswordMatch);
+  const onConfirmPasswordChange = (_, value) => {
+    setConfirmPasswordValue(value);
+    validatePasswordMatch(passwordValue, value);
   };
 
-  onPasswordVisibleClick = () => {
-    this.setState((prev) => ({
-      isPasswordVisible: !prev.isPasswordVisible,
-    }));
+  const onPasswordVisibleClick = () => {
+    setIsPasswordVisible((prev) => !prev);
   };
 
-  onConfirmPasswordVisibleClick = () => {
-    this.setState((prev) => ({
-      isConfirmPasswordVisible: !prev.isConfirmPasswordVisible,
-    }));
+  const onConfirmPasswordVisibleClick = () => {
+    setIsConfirmPasswordVisible((prev) => !prev);
   };
 
-  onRegisterButtonClick = async (event) => {
+  const onRegisterButtonClick = async (event) => {
     event.preventDefault();
-    const isValidEmail = !!this.state.emailValue;
-    const isValidPassword =
-      !!this.state.passwordValue &&
-      this.state.passwordValue === this.state.confirmPasswordValue;
-    this.setState({ isValidEmail, isValidPassword });
-    if (isValidEmail && isValidPassword) {
+    const validEmail = !!emailValue && EMAIL_REGEX.test(emailValue);
+    const validPassword =
+      !!passwordValue && passwordValue === confirmPasswordValue;
+    setIsValidEmail(validEmail);
+    setIsValidPassword(validPassword);
+    if (validEmail && validPassword) {
       try {
         const isSuccess = await AuthService.register(
-          this.state.emailValue,
-          this.state.passwordValue,
+          emailValue,
+          passwordValue,
         );
         if (isSuccess) {
-          this.setState({
-            alertText:
-              'Registration successful! Check your e-mail for a verification link.',
-            alertType: 'success',
-            showAlert: true,
-          });
+          setAlertText(
+            'Registration successful! Check your e-mail for a verification link.',
+          );
+          setAlertType('success');
+          setShowAlert(true);
         } else {
-          this.setState({
-            alertText: AuthService.registerError.message,
-            alertType: 'danger',
-            showAlert: true,
-          });
+          setAlertText(
+            AuthService.registerError?.message ?? 'Registration failed',
+          );
+          setAlertType('danger');
+          setShowAlert(true);
         }
       } catch (error) {
-        this.setState({
-          alertText: error,
-          alertType: 'danger',
-          showAlert: true,
-        });
+        setAlertText(error?.message ?? String(error));
+        setAlertType('danger');
+        setShowAlert(true);
       }
     } else {
-      this.setState({
-        alertText: 'E-mail and/or password fields are empty',
-        alertType: 'danger',
-        showAlert: true,
-      });
+      if (!validEmail) {
+        setAlertText('Please enter a valid e-mail address');
+      } else {
+        setAlertText('Passwords do not match or are empty');
+      }
+      setAlertType('danger');
+      setShowAlert(true);
     }
   };
 
-  render() {
-    const loginMessage = (
-      <LoginMainFooterBandItem>
-        Already registered? <NavLink to="/login">Log in.</NavLink>
-      </LoginMainFooterBandItem>
-    );
-    const forgotCredentials = (
-      <LoginMainFooterBandItem>
-        <NavLink to="/forgot-password">Forgot username or password?</NavLink>
-      </LoginMainFooterBandItem>
-    );
+  const loginMessage = (
+    <LoginMainFooterBandItem>
+      Already registered? <NavLink to="/login">Log in.</NavLink>
+    </LoginMainFooterBandItem>
+  );
 
-    return (
-      <LoginPage
-        footerListVariants="inline"
-        brandImgSrc="/images/ibutsu-wordart-164.png"
-        brandImgAlt="Ibutsu"
-        textContent="Ibutsu is an open source test result aggregation. Collect and display your test results, view artifacts, and monitor tests."
-        loginTitle="Register a new account"
-        loginSubtitle="Please type in your e-mail address and a secure password"
-        signUpForAccountMessage={loginMessage}
-        forgotCredentials={forgotCredentials}
-      >
-        <Form ouiaId="signup-form">
-          {this.state.showAlert && (
-            <FormAlert>
-              <Alert
-                variant={this.state.alertType}
-                title={this.state.alertText}
-                aria-live="polite"
-                isInline
-                ouiaId="signup-alert"
-              />
-            </FormAlert>
-          )}
-          <FormGroup label="Email address" isRequired fieldId="email">
+  const forgotCredentials = (
+    <LoginMainFooterBandItem>
+      <NavLink to="/forgot-password">Forgot username or password?</NavLink>
+    </LoginMainFooterBandItem>
+  );
+
+  return (
+    <LoginPage
+      footerListVariants="inline"
+      brandImgSrc="/images/ibutsu-wordart-164.png"
+      brandImgAlt="Ibutsu"
+      textContent="Ibutsu is an open source test result aggregation. Collect and display your test results, view artifacts, and monitor tests."
+      loginTitle="Register a new account"
+      loginSubtitle="Please type in your e-mail address and a secure password"
+      signUpForAccountMessage={loginMessage}
+      forgotCredentials={forgotCredentials}
+    >
+      <Form ouiaId="signup-form">
+        {showAlert && (
+          <FormAlert>
+            <Alert
+              variant={alertType}
+              title={alertText}
+              aria-live="polite"
+              isInline
+              ouiaId="signup-alert"
+            />
+          </FormAlert>
+        )}
+        <FormGroup label="Email address" isRequired fieldId="email">
+          <TextInput
+            isRequired
+            type="email"
+            id="email"
+            name="email"
+            validated={isValidEmail ? 'default' : 'error'}
+            aria-describedby="email-helper"
+            value={emailValue}
+            onChange={onEmailChange}
+            ouiaId="signup-email-input"
+          />
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem>
+                The e-mail address you want to use to log in
+              </HelperTextItem>
+            </HelperText>
+          </FormHelperText>
+        </FormGroup>
+        <FormGroup label="Password" isRequired fieldId="password">
+          <InputGroup>
             <TextInput
               isRequired
-              type="email"
-              id="email"
-              name="email"
-              validated={this.state.isValidEmail ? 'default' : 'error'}
-              aria-describedby="email-helper"
-              value={this.state.emailValue}
-              onChange={(_, emailValue) => this.onEmailChange(emailValue)}
-              ouiaId="signup-email-input"
+              type={isPasswordVisible ? 'text' : 'password'}
+              id="password"
+              name="password"
+              validated={isValidPassword ? 'default' : 'error'}
+              aria-describedby="password-helper"
+              value={passwordValue}
+              onChange={onPasswordChange}
+              ouiaId="signup-password-input"
             />
-            <FormHelperText>
-              <HelperText>
-                <HelperTextItem>
-                  The e-mail address you want to use to log in
-                </HelperTextItem>
-              </HelperText>
-            </FormHelperText>
-          </FormGroup>
-          <FormGroup label="Password" isRequired fieldId="password">
-            <InputGroup>
-              {!this.state.isPasswordVisible && (
-                <TextInput
-                  isRequired
-                  type="password"
-                  id="password"
-                  name="password"
-                  validated={this.state.isValidPassword ? 'default' : 'error'}
-                  aria-describedby="password-helper"
-                  value={this.state.passwordValue}
-                  onChange={(_, passwordValue) =>
-                    this.onPasswordChange(passwordValue)
-                  }
-                  ouiaId="signup-password-input"
-                />
-              )}
-              {this.state.isPasswordVisible && (
-                <TextInput
-                  isRequired
-                  type="text"
-                  id="password"
-                  name="password"
-                  validated={this.state.isValidPassword ? 'default' : 'error'}
-                  aria-describedby="password-helper"
-                  value={this.state.passwordValue}
-                  onChange={(_, passwordValue) =>
-                    this.onPasswordChange(passwordValue)
-                  }
-                  ouiaId="signup-password-input"
-                />
-              )}
-              <InputGroupItem>
-                <Button
-                  variant="control"
-                  aria-label="Show password"
-                  onClick={this.onPasswordVisibleClick}
-                  ouiaId="signup-password-toggle-button"
-                >
-                  {!this.state.isPasswordVisible && <EyeIcon />}
-                  {this.state.isPasswordVisible && <EyeSlashIcon />}
-                </Button>
-              </InputGroupItem>
-            </InputGroup>
-            <PasswordErrorBoundary>
-              <Suspense fallback="">
-                <PasswordStrengthBar password={this.state.passwordValue} />
-              </Suspense>
-            </PasswordErrorBoundary>
-          </FormGroup>
-          <FormGroup
-            label="Confirm password"
-            isRequired
-            fieldId="confirm-password"
+            <InputGroupItem>
+              <Button
+                variant="control"
+                aria-label={
+                  isPasswordVisible ? 'Hide password' : 'Show password'
+                }
+                onClick={onPasswordVisibleClick}
+                ouiaId="signup-password-toggle-button"
+              >
+                {isPasswordVisible ? <EyeSlashIcon /> : <EyeIcon />}
+              </Button>
+            </InputGroupItem>
+          </InputGroup>
+          <ErrorBoundary fallback={<div>Failed to load password strength indicator</div>}>
+            <Suspense fallback="">
+              <PasswordStrengthBar password={passwordValue} />
+            </Suspense>
+          </ErrorBoundary>
+        </FormGroup>
+        <FormGroup
+          label="Confirm password"
+          isRequired
+          fieldId="confirm-password"
+        >
+          <InputGroup>
+            <TextInput
+              isRequired
+              type={isConfirmPasswordVisible ? 'text' : 'password'}
+              id="confirm-password"
+              name="confirm-password"
+              aria-describedby="confirm-password-helper"
+              value={confirmPasswordValue}
+              onChange={onConfirmPasswordChange}
+              validated={confirmPasswordValidation}
+              ouiaId="signup-confirm-password-input"
+            />
+            <InputGroupItem>
+              <Button
+                variant="control"
+                aria-label={
+                  isConfirmPasswordVisible ? 'Hide password' : 'Show password'
+                }
+                onClick={onConfirmPasswordVisibleClick}
+                ouiaId="signup-confirm-password-toggle-button"
+              >
+                {isConfirmPasswordVisible ? <EyeSlashIcon /> : <EyeIcon />}
+              </Button>
+            </InputGroupItem>
+          </InputGroup>
+          <FormHelperText>
+            <HelperText>
+              <HelperTextItem variant={confirmPasswordValidation}>
+                {confirmPasswordHelpText}
+              </HelperTextItem>
+            </HelperText>
+          </FormHelperText>
+        </FormGroup>
+        <ActionGroup>
+          <Button
+            variant="primary"
+            isBlock
+            onClick={onRegisterButtonClick}
+            ouiaId="signup-register-button"
           >
-            <InputGroup>
-              {!this.state.isConfirmPasswordVisible && (
-                <TextInput
-                  isRequired
-                  type="password"
-                  id="confirm-password"
-                  name="confirm-password"
-                  aria-describedby="confirm-password-helper"
-                  value={this.state.confirmPasswordValue}
-                  onChange={(_, confirmPasswordValue) =>
-                    this.onConfirmPasswordChange(confirmPasswordValue)
-                  }
-                  validated={this.state.confirmPasswordValidation}
-                  ouiaId="signup-confirm-password-input"
-                />
-              )}
-              {this.state.isConfirmPasswordVisible && (
-                <TextInput
-                  isRequired
-                  type="text"
-                  id="confirm-password"
-                  name="confirm-password"
-                  aria-describedby="confirm-password-helper"
-                  value={this.state.confirmPasswordValue}
-                  onChange={(_, confirmPasswordValue) =>
-                    this.onConfirmPasswordChange(confirmPasswordValue)
-                  }
-                  validated={this.state.confirmPasswordValidation}
-                  ouiaId="signup-confirm-password-input"
-                />
-              )}
-              <InputGroupItem>
-                <Button
-                  variant="control"
-                  aria-label="Show password"
-                  onClick={this.onConfirmPasswordVisibleClick}
-                  ouiaId="signup-confirm-password-toggle-button"
-                >
-                  {!this.state.isConfirmPasswordVisible && <EyeIcon />}
-                  {this.state.isConfirmPasswordVisible && <EyeSlashIcon />}
-                </Button>
-              </InputGroupItem>
-            </InputGroup>
-            <FormHelperText>
-              <HelperText>
-                <HelperTextItem variant={this.state.confirmPasswordValidation}>
-                  {this.state.confirmPasswordHelpText}
-                </HelperTextItem>
-              </HelperText>
-            </FormHelperText>
-          </FormGroup>
-          <ActionGroup>
-            <Button
-              variant="primary"
-              isBlock
-              onClick={this.onRegisterButtonClick}
-              ouiaId="signup-register-button"
-            >
-              Register
-            </Button>
-          </ActionGroup>
-        </Form>
-      </LoginPage>
-    );
-  }
-}
+            Register
+          </Button>
+        </ActionGroup>
+      </Form>
+    </LoginPage>
+  );
+};
+
+export default SignUp;
