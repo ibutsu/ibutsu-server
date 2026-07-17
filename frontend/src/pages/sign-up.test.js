@@ -26,7 +26,7 @@ describe('SignUp', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    AuthService.register.mockResolvedValue(true);
+    AuthService.register = vi.fn().mockResolvedValue(true);
     AuthService.registerError = null;
   });
 
@@ -154,6 +154,57 @@ describe('SignUp', () => {
         expect(confirmInput).toHaveAttribute('type', 'text');
       });
     });
+
+    it('should toggle confirm password back to hidden on second click', async () => {
+      renderComponent();
+      const toggleButton = screen.getByTestId(
+        'signup-confirm-password-toggle-button',
+      );
+
+      fireEvent.click(toggleButton);
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('signup-confirm-password-input'),
+        ).toHaveAttribute('type', 'text');
+      });
+
+      fireEvent.click(toggleButton);
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('signup-confirm-password-input'),
+        ).toHaveAttribute('type', 'password');
+      });
+    });
+
+    it('should preserve input value when toggling visibility', async () => {
+      renderComponent();
+
+      fireEvent.change(screen.getByTestId('signup-password-input'), {
+        target: { value: 'MySecret123' },
+      });
+
+      const toggleButton = screen.getByTestId('signup-password-toggle-button');
+      fireEvent.click(toggleButton);
+
+      await waitFor(() => {
+        const input = screen.getByTestId('signup-password-input');
+        expect(input).toHaveAttribute('type', 'text');
+        expect(input).toHaveValue('MySecret123');
+      });
+    });
+
+    it('should update aria-label when password visibility changes', async () => {
+      renderComponent();
+      const toggleButton = screen.getByTestId('signup-password-toggle-button');
+
+      expect(toggleButton).toHaveAttribute('aria-label', 'Show password');
+
+      fireEvent.click(toggleButton);
+
+      await waitFor(() => {
+        expect(toggleButton).toHaveAttribute('aria-label', 'Hide password');
+      });
+    });
   });
 
   describe('Password Match Validation', () => {
@@ -165,11 +216,6 @@ describe('SignUp', () => {
       });
       fireEvent.change(screen.getByTestId('signup-confirm-password-input'), {
         target: { value: 'SecurePass1!' },
-      });
-      // Trigger a change with a different value so React's input tracking fires onChange.
-      // validatePasswordMatch now sees both values matching from the previous render.
-      fireEvent.change(screen.getByTestId('signup-confirm-password-input'), {
-        target: { value: 'SecurePass1!x' },
       });
 
       await waitFor(() => {
@@ -195,7 +241,7 @@ describe('SignUp', () => {
       });
     });
 
-    it('should reset validation when both fields are cleared', async () => {
+    it('should reset to default validation when confirm password is cleared', async () => {
       renderComponent();
 
       fireEvent.change(screen.getByTestId('signup-password-input'), {
@@ -204,17 +250,11 @@ describe('SignUp', () => {
       fireEvent.change(screen.getByTestId('signup-confirm-password-input'), {
         target: { value: 'SecurePass1!' },
       });
-      // Third event triggers validatePasswordMatch with matching closure values
-      fireEvent.change(screen.getByTestId('signup-confirm-password-input'), {
-        target: { value: 'SecurePass1!x' },
-      });
 
       await waitFor(() => {
         expect(screen.getByText('Passwords match!')).toBeInTheDocument();
       });
 
-      // Clearing the confirm field triggers validatePasswordMatch which sees
-      // pw="SecurePass1!" cpw="SecurePass1!x" → mismatch → validation becomes error
       fireEvent.change(screen.getByTestId('signup-confirm-password-input'), {
         target: { value: '' },
       });
@@ -223,7 +263,50 @@ describe('SignUp', () => {
         const confirmInput = screen.getByTestId(
           'signup-confirm-password-input',
         );
+        expect(confirmInput).not.toHaveAttribute('aria-invalid', 'true');
+        expect(screen.queryByText('Passwords match!')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should remain default when confirm is empty regardless of password value', async () => {
+      renderComponent();
+
+      fireEvent.change(screen.getByTestId('signup-password-input'), {
+        target: { value: 'SomePassword' },
+      });
+
+      await waitFor(() => {
+        const confirmInput = screen.getByTestId(
+          'signup-confirm-password-input',
+        );
+        expect(confirmInput).not.toHaveAttribute('aria-invalid', 'true');
+      });
+    });
+
+    it('should update validation when password changes after confirm is set', async () => {
+      renderComponent();
+
+      fireEvent.change(screen.getByTestId('signup-password-input'), {
+        target: { value: 'SecurePass1!' },
+      });
+      fireEvent.change(screen.getByTestId('signup-confirm-password-input'), {
+        target: { value: 'SecurePass1!' },
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText('Passwords match!')).toBeInTheDocument();
+      });
+
+      fireEvent.change(screen.getByTestId('signup-password-input'), {
+        target: { value: 'Changed!' },
+      });
+
+      await waitFor(() => {
+        const confirmInput = screen.getByTestId(
+          'signup-confirm-password-input',
+        );
         expect(confirmInput).toHaveAttribute('aria-invalid', 'true');
+        expect(screen.queryByText('Passwords match!')).not.toBeInTheDocument();
       });
     });
   });
@@ -236,7 +319,22 @@ describe('SignUp', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText('E-mail and/or password fields are empty'),
+          screen.getByText('Please enter a valid e-mail address'),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('should show error when email format is invalid on submit', async () => {
+      renderComponent();
+
+      fireEvent.change(screen.getByTestId('signup-email-input'), {
+        target: { value: 'not-an-email' },
+      });
+      fireEvent.click(screen.getByTestId('signup-register-button'));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Please enter a valid e-mail address'),
         ).toBeInTheDocument();
       });
     });
@@ -251,7 +349,7 @@ describe('SignUp', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText('E-mail and/or password fields are empty'),
+          screen.getByText('Passwords do not match or are empty'),
         ).toBeInTheDocument();
       });
     });
@@ -272,7 +370,7 @@ describe('SignUp', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText('E-mail and/or password fields are empty'),
+          screen.getByText('Passwords do not match or are empty'),
         ).toBeInTheDocument();
       });
     });
@@ -299,6 +397,28 @@ describe('SignUp', () => {
       await waitFor(() => {
         const passwordInput = screen.getByTestId('signup-password-input');
         expect(passwordInput).toHaveAttribute('aria-invalid', 'true');
+      });
+    });
+
+    it('should accept valid email formats', async () => {
+      renderComponent();
+
+      fireEvent.change(screen.getByTestId('signup-email-input'), {
+        target: { value: 'user@domain.co.uk' },
+      });
+      fireEvent.change(screen.getByTestId('signup-password-input'), {
+        target: { value: 'SecurePass1!' },
+      });
+      fireEvent.change(screen.getByTestId('signup-confirm-password-input'), {
+        target: { value: 'SecurePass1!' },
+      });
+      fireEvent.click(screen.getByTestId('signup-register-button'));
+
+      await waitFor(() => {
+        expect(AuthService.register).toHaveBeenCalledWith(
+          'user@domain.co.uk',
+          'SecurePass1!',
+        );
       });
     });
   });
@@ -371,8 +491,9 @@ describe('SignUp', () => {
       });
     });
 
-    it('should show danger alert when registration throws', async () => {
-      AuthService.register.mockRejectedValue('Network error');
+    it('should show fallback message when registerError is null', async () => {
+      AuthService.register.mockResolvedValue(false);
+      AuthService.registerError = null;
       renderComponent();
 
       fireEvent.change(screen.getByTestId('signup-email-input'), {
@@ -387,7 +508,53 @@ describe('SignUp', () => {
       fireEvent.click(screen.getByTestId('signup-register-button'));
 
       await waitFor(() => {
-        expect(screen.getByTestId('signup-alert')).toBeInTheDocument();
+        expect(screen.getByText('Registration failed')).toBeInTheDocument();
+      });
+    });
+
+    it('should show error message from Error object when registration throws', async () => {
+      AuthService.register.mockRejectedValue(
+        new Error('Network connection lost'),
+      );
+      renderComponent();
+
+      fireEvent.change(screen.getByTestId('signup-email-input'), {
+        target: { value: 'test@example.com' },
+      });
+      fireEvent.change(screen.getByTestId('signup-password-input'), {
+        target: { value: 'SecurePass1!' },
+      });
+      fireEvent.change(screen.getByTestId('signup-confirm-password-input'), {
+        target: { value: 'SecurePass1!' },
+      });
+      fireEvent.click(screen.getByTestId('signup-register-button'));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Network connection lost'),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('should show string error when registration throws a string', async () => {
+      AuthService.register.mockRejectedValue('Something went wrong');
+      renderComponent();
+
+      fireEvent.change(screen.getByTestId('signup-email-input'), {
+        target: { value: 'test@example.com' },
+      });
+      fireEvent.change(screen.getByTestId('signup-password-input'), {
+        target: { value: 'SecurePass1!' },
+      });
+      fireEvent.change(screen.getByTestId('signup-confirm-password-input'), {
+        target: { value: 'SecurePass1!' },
+      });
+      fireEvent.click(screen.getByTestId('signup-register-button'));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Something went wrong'),
+        ).toBeInTheDocument();
       });
     });
 

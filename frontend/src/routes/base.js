@@ -15,9 +15,7 @@ const App = lazy(() => import('./app'));
 const Admin = lazy(() => import('./admin'));
 const Profile = lazy(() => import('./profile'));
 const Login = lazy(() => import('../pages/login'));
-const SignUp = lazy(() =>
-  import('../pages/sign-up').then((module) => ({ default: module.SignUp })),
-);
+const SignUp = lazy(() => import('../pages/sign-up'));
 const ForgotPassword = lazy(() => import('../pages/forgot-password'));
 const ResetPassword = lazy(() => import('../pages/reset-password'));
 

@@ -1,4 +1,4 @@
-import { lazy, useState, useCallback, useMemo, Suspense } from 'react';
+import { lazy, useState, Suspense } from 'react';
 import {
   ActionGroup,
   Alert,
@@ -22,12 +22,9 @@ import { ErrorBoundary } from 'react-error-boundary';
 
 import { AuthService } from '../utilities/auth';
 
-// Lazy import the password strength indicator, it uses a very big library
-const PasswordStrengthBar = lazy(() =>
-  import('react-password-strength-bar').catch(() => ({
-    default: () => <div>Failed to load password strength indicator</div>,
-  })),
-);
+const PasswordStrengthBar = lazy(() => import('react-password-strength-bar'));
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const SignUp = () => {
   const [alertText, setAlertText] = useState('');
@@ -45,56 +42,54 @@ export const SignUp = () => {
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] =
     useState(false);
 
-  const validatePasswordMatch = useCallback(() => {
-    if (confirmPasswordValue === '' && passwordValue === '') {
+  const validatePasswordMatch = (password, confirmPassword) => {
+    if (confirmPassword === '') {
       setConfirmPasswordHelpText('');
       setConfirmPasswordValidation('default');
-    } else if (passwordValue === confirmPasswordValue) {
+    } else if (password === confirmPassword) {
       setConfirmPasswordHelpText('Passwords match!');
       setConfirmPasswordValidation('success');
     } else {
+      setConfirmPasswordHelpText('');
       setConfirmPasswordValidation('error');
     }
-  }, [passwordValue, confirmPasswordValue]);
+  };
 
-  const onEmailChange = useCallback((emailValue) => {
-    setEmailValue(emailValue);
-  }, []);
+  const onEmailChange = (_, value) => {
+    setEmailValue(value);
+  };
 
-  const onPasswordChange = useCallback(
-    (passwordValue) => {
-      setPasswordValue(passwordValue);
-      validatePasswordMatch();
-    },
-    [validatePasswordMatch],
-  );
+  const onPasswordChange = (_, value) => {
+    setPasswordValue(value);
+    validatePasswordMatch(value, confirmPasswordValue);
+  };
 
-  const onConfirmPasswordChange = useCallback(
-    (confirmPasswordValue) => {
-      setConfirmPasswordValue(confirmPasswordValue);
-      validatePasswordMatch();
-    },
-    [validatePasswordMatch],
-  );
+  const onConfirmPasswordChange = (_, value) => {
+    setConfirmPasswordValue(value);
+    validatePasswordMatch(passwordValue, value);
+  };
 
-  const onPasswordVisibleClick = useCallback(() => {
-    setIsPasswordVisible(!isPasswordVisible);
-  }, [isPasswordVisible]);
+  const onPasswordVisibleClick = () => {
+    setIsPasswordVisible((prev) => !prev);
+  };
 
-  const onConfirmPasswordVisibleClick = useCallback(() => {
-    setIsConfirmPasswordVisible(!isConfirmPasswordVisible);
-  }, [isConfirmPasswordVisible]);
+  const onConfirmPasswordVisibleClick = () => {
+    setIsConfirmPasswordVisible((prev) => !prev);
+  };
 
   const onRegisterButtonClick = async (event) => {
     event.preventDefault();
-    const validEmail = !!emailValue;
+    const validEmail = !!emailValue && EMAIL_REGEX.test(emailValue);
     const validPassword =
       !!passwordValue && passwordValue === confirmPasswordValue;
     setIsValidEmail(validEmail);
     setIsValidPassword(validPassword);
     if (validEmail && validPassword) {
       try {
-        const isSuccess = await AuthService.register(emailValue, passwordValue);
+        const isSuccess = await AuthService.register(
+          emailValue,
+          passwordValue,
+        );
         if (isSuccess) {
           setAlertText(
             'Registration successful! Check your e-mail for a verification link.',
@@ -102,38 +97,38 @@ export const SignUp = () => {
           setAlertType('success');
           setShowAlert(true);
         } else {
-          setAlertText(AuthService.registerError.message);
+          setAlertText(
+            AuthService.registerError?.message ?? 'Registration failed',
+          );
           setAlertType('danger');
           setShowAlert(true);
         }
       } catch (error) {
-        setAlertText(error);
+        setAlertText(error?.message ?? String(error));
         setAlertType('danger');
         setShowAlert(true);
       }
     } else {
-      setAlertText('E-mail and/or password fields are empty');
+      if (!validEmail) {
+        setAlertText('Please enter a valid e-mail address');
+      } else {
+        setAlertText('Passwords do not match or are empty');
+      }
       setAlertType('danger');
       setShowAlert(true);
     }
   };
 
-  const loginMessage = useMemo(
-    () => (
-      <LoginMainFooterBandItem>
-        Already registered? <NavLink to="/login">Log in.</NavLink>
-      </LoginMainFooterBandItem>
-    ),
-    [],
+  const loginMessage = (
+    <LoginMainFooterBandItem>
+      Already registered? <NavLink to="/login">Log in.</NavLink>
+    </LoginMainFooterBandItem>
   );
 
-  const forgotCredentials = useMemo(
-    () => (
-      <LoginMainFooterBandItem>
-        <NavLink to="/forgot-password">Forgot username or password?</NavLink>
-      </LoginMainFooterBandItem>
-    ),
-    [],
+  const forgotCredentials = (
+    <LoginMainFooterBandItem>
+      <NavLink to="/forgot-password">Forgot username or password?</NavLink>
+    </LoginMainFooterBandItem>
   );
 
   return (
@@ -168,7 +163,7 @@ export const SignUp = () => {
             validated={isValidEmail ? 'default' : 'error'}
             aria-describedby="email-helper"
             value={emailValue}
-            onChange={(_, emailValue) => onEmailChange(emailValue)}
+            onChange={onEmailChange}
             ouiaId="signup-email-input"
           />
           <FormHelperText>
@@ -181,45 +176,31 @@ export const SignUp = () => {
         </FormGroup>
         <FormGroup label="Password" isRequired fieldId="password">
           <InputGroup>
-            {!isPasswordVisible && (
-              <TextInput
-                isRequired
-                type="password"
-                id="password"
-                name="password"
-                validated={isValidPassword ? 'default' : 'error'}
-                aria-describedby="password-helper"
-                value={passwordValue}
-                onChange={(_, passwordValue) => onPasswordChange(passwordValue)}
-                ouiaId="signup-password-input"
-              />
-            )}
-            {isPasswordVisible && (
-              <TextInput
-                isRequired
-                type="text"
-                id="password"
-                name="password"
-                validated={isValidPassword ? 'default' : 'error'}
-                aria-describedby="password-helper"
-                value={passwordValue}
-                onChange={(_, passwordValue) => onPasswordChange(passwordValue)}
-                ouiaId="signup-password-input"
-              />
-            )}
+            <TextInput
+              isRequired
+              type={isPasswordVisible ? 'text' : 'password'}
+              id="password"
+              name="password"
+              validated={isValidPassword ? 'default' : 'error'}
+              aria-describedby="password-helper"
+              value={passwordValue}
+              onChange={onPasswordChange}
+              ouiaId="signup-password-input"
+            />
             <InputGroupItem>
               <Button
                 variant="control"
-                aria-label="Show password"
+                aria-label={
+                  isPasswordVisible ? 'Hide password' : 'Show password'
+                }
                 onClick={onPasswordVisibleClick}
                 ouiaId="signup-password-toggle-button"
               >
-                {!isPasswordVisible && <EyeIcon />}
-                {isPasswordVisible && <EyeSlashIcon />}
+                {isPasswordVisible ? <EyeSlashIcon /> : <EyeIcon />}
               </Button>
             </InputGroupItem>
           </InputGroup>
-          <ErrorBoundary fallback="Failed to load password strength indicator">
+          <ErrorBoundary fallback={<div>Failed to load password strength indicator</div>}>
             <Suspense fallback="">
               <PasswordStrengthBar password={passwordValue} />
             </Suspense>
@@ -231,45 +212,27 @@ export const SignUp = () => {
           fieldId="confirm-password"
         >
           <InputGroup>
-            {!isConfirmPasswordVisible && (
-              <TextInput
-                isRequired
-                type="password"
-                id="confirm-password"
-                name="confirm-password"
-                aria-describedby="confirm-password-helper"
-                value={confirmPasswordValue}
-                onChange={(_, confirmPasswordValue) =>
-                  onConfirmPasswordChange(confirmPasswordValue)
-                }
-                validated={confirmPasswordValidation}
-                ouiaId="signup-confirm-password-input"
-              />
-            )}
-            {isConfirmPasswordVisible && (
-              <TextInput
-                isRequired
-                type="text"
-                id="confirm-password"
-                name="confirm-password"
-                aria-describedby="confirm-password-helper"
-                value={confirmPasswordValue}
-                onChange={(_, confirmPasswordValue) =>
-                  onConfirmPasswordChange(confirmPasswordValue)
-                }
-                validated={confirmPasswordValidation}
-                ouiaId="signup-confirm-password-input"
-              />
-            )}
+            <TextInput
+              isRequired
+              type={isConfirmPasswordVisible ? 'text' : 'password'}
+              id="confirm-password"
+              name="confirm-password"
+              aria-describedby="confirm-password-helper"
+              value={confirmPasswordValue}
+              onChange={onConfirmPasswordChange}
+              validated={confirmPasswordValidation}
+              ouiaId="signup-confirm-password-input"
+            />
             <InputGroupItem>
               <Button
                 variant="control"
-                aria-label="Show password"
+                aria-label={
+                  isConfirmPasswordVisible ? 'Hide password' : 'Show password'
+                }
                 onClick={onConfirmPasswordVisibleClick}
                 ouiaId="signup-confirm-password-toggle-button"
               >
-                {!isConfirmPasswordVisible && <EyeIcon />}
-                {isConfirmPasswordVisible && <EyeSlashIcon />}
+                {isConfirmPasswordVisible ? <EyeSlashIcon /> : <EyeIcon />}
               </Button>
             </InputGroupItem>
           </InputGroup>
@@ -295,3 +258,5 @@ export const SignUp = () => {
     </LoginPage>
   );
 };
+
+export default SignUp;

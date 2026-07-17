@@ -127,8 +127,15 @@ export class AuthService {
         body: JSON.stringify({ email: email, password: password }),
         headers: { 'Content-Type': 'application/json; charset=UTF-8' },
       });
-      await response.json();
-      return true;
+      const data = await response.json();
+      if (response.ok) {
+        return true;
+      } else {
+        AuthService.registerError = {
+          message: data.message || 'Registration failed',
+        };
+        return false;
+      }
     } catch (error) {
       console.error(error);
       AuthService.registerError = error;
