@@ -125,13 +125,13 @@ export const ARRAY_RUN_FIELDS = [
 
 export const NUMERIC_RUN_FIELDS = [
   { value: 'duration', children: 'Duration' },
-  { value: 'summary.errors', children: 'Summary Error Count' },
-  { value: 'summary.failures', children: 'Summary Failure Count' },
+  { value: 'summary.errors', children: 'Error Count' },
+  { value: 'summary.failures', children: 'Failure Count' },
   { value: 'summary.pass_percent', children: 'Pass Percentage' },
-  { value: 'summary.skips', children: 'Summary Skip Count' },
-  { value: 'summary.xfailures', children: 'Summary Xfailure Count' },
-  { value: 'summary.xpasses', children: 'Summary Xpasses Count' },
-  { value: 'summary.tests', children: 'Summary Total Count' },
+  { value: 'summary.skips', children: 'Skip Count' },
+  { value: 'summary.xfailures', children: 'Xfailure Count' },
+  { value: 'summary.xpasses', children: 'Xpasses Count' },
+  { value: 'summary.tests', children: 'Total Count' },
 ];
 
 export const STRING_RUN_FIELDS = [
