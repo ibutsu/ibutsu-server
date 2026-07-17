@@ -31,6 +31,26 @@ def _status_to_summary(status):
     }.get(status, status)
 
 
+def compute_pass_percent(passes: int, tests: int) -> int:
+    """Canonical pass_percent formula, shared by ``update_run`` below.
+
+    floor(passes * 100 / tests), clamped to [0, 100]. Integer arithmetic
+    avoids float rounding; the result is floored and clamped to guard
+    against inconsistent/malformed inputs (e.g. passes > tests, or a
+    negative derived pass count).
+
+    This formula is also replicated in the migration backfill SQL
+    (d18de2b3253f_backfill_pass_percent_in_run_summary.py) and the frontend
+    fallback (getRunPassPercent in frontend/src/utilities/run.js), since
+    those run outside this Python process. Keep all three in sync -- see
+    test_runs.py::test_compute_pass_percent_* for the cases that must match
+    across implementations.
+    """
+    if tests <= 0:
+        return 0
+    return max(min((passes * 100) // tests, 100), 0)
+
+
 @shared_task(max_retries=1000)
 def update_run(run_id):
     """Update the run summary from the results, this task will retry 1000 times"""
@@ -86,6 +106,7 @@ def update_run(run_id):
             + summary["failures"]
             + summary["skips"]
         )
+        summary["pass_percent"] = compute_pass_percent(summary["passes"], summary["tests"])
         # determine the number of tests that didn't run
         summary["not_run"] = max(summary["collected"] - summary["tests"], 0)
 

@@ -69,7 +69,15 @@ def run_migrations_online() -> None:
         connectable = db.engine
 
         with connectable.connect() as connection:
-            context.configure(connection=connection, target_metadata=target_metadata)
+            # transaction_per_migration: each revision commits independently.
+            # Required for migrations that use autocommit_block() (e.g. CREATE
+            # INDEX CONCURRENTLY / batched backfills that must not share a
+            # long-lived transaction with prior DDL locks).
+            context.configure(
+                connection=connection,
+                target_metadata=target_metadata,
+                transaction_per_migration=True,
+            )
 
             with context.begin_transaction():
                 context.run_migrations()

@@ -254,6 +254,7 @@ class Run(Model, ModelMixin):
     - ix_runs_jjn_jbn: Composite on both Jenkins fields
     - ix_runs_summary: GIN index on summary JSONB field
     - ix_runs_tags: GIN index on data->'tags'
+    - ix_runs_pass_percent: Expression index on ((summary->>'pass_percent')::int)
     """
 
     __tablename__ = "runs"

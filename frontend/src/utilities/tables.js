@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { ICON_RESULT_MAP } from '../constants';
 import RunSummary from '../components/run-summary';
 import { buildBadge } from './badges';
+import { getRunPassPercent } from './run';
 import { toTitleCase } from './strings';
 import { filtersToSearchParams } from './filters';
 
@@ -39,6 +40,31 @@ export const tableSortFunctions = {
 
     const aValue = getDateValue(a.cells[cellIndex]);
     const bValue = getDateValue(b.cells[cellIndex]);
+    return direction === 'asc' ? aValue - bValue : bValue - aValue;
+  },
+
+  passPercent: (a, b, direction, cellIndex) => {
+    // Extract pass percentage values from cells (format: "85" or "N/A")
+    //
+    // Missing cells and explicit "N/A" text are intentionally treated the
+    // same (both map to the -1 sentinel), so both sort to the bottom in
+    // descending order alongside real 0% runs never being confused with
+    // "no data". If a caller ever needs to tell "no data" apart from a
+    // parsable value, replace this single sentinel with two distinct ones
+    // (e.g. null for missing vs. a dedicated NaN/undefined for "N/A") and
+    // update the comparison below accordingly.
+    const getPassPercentValue = (passPercentCell) => {
+      if (!passPercentCell) return -1;
+      const cellContent =
+        typeof passPercentCell === 'string'
+          ? passPercentCell
+          : passPercentCell.toString();
+      const match = cellContent.match(/(\d+(?:\.\d+)?)/);
+      return match ? parseFloat(match[1]) : -1;
+    };
+
+    const aValue = getPassPercentValue(a.cells[cellIndex]);
+    const bValue = getPassPercentValue(b.cells[cellIndex]);
     return direction === 'asc' ? aValue - bValue : bValue - aValue;
   },
 };
@@ -234,6 +260,7 @@ export const runToRow = (run, filterFunc) => {
     }
     badges.push(envBadge);
   }
+  const passPercent = getRunPassPercent(run.summary);
   return {
     cells: [
       <Fragment key="run">
@@ -241,6 +268,7 @@ export const runToRow = (run, filterFunc) => {
       </Fragment>,
       Math.ceil(run.duration) + 's',
       <RunSummary key="summary" summary={run.summary} />,
+      passPercent,
       created.toLocaleString(),
       <Link
         key="see-results"

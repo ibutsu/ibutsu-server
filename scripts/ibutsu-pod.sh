@@ -71,6 +71,34 @@ function print_usage() {
     echo ""
 }
 
+# Fail immediately if a container has exited (or been removed via --rm).
+# Call from wait loops so we do not spin until timeout after a crash.
+function ensure_container_running() {
+    local name="$1"
+    local label="${2:-$1}"
+
+    if ! podman container exists "$name" 2>/dev/null; then
+        echo ""
+        echo "ERROR: ${label} container (${name}) is gone — it likely exited and was removed (--rm)."
+        echo "Start the pod again and follow logs in another terminal, e.g.:"
+        echo "  podman logs -f ${name}"
+        exit 1
+    fi
+
+    local state
+    state=$(podman inspect -f '{{.State.Status}}' "$name" 2>/dev/null || echo "unknown")
+    if [[ "$state" != "running" ]]; then
+        local exit_code
+        exit_code=$(podman inspect -f '{{.State.ExitCode}}' "$name" 2>/dev/null || echo "?")
+        echo ""
+        echo "ERROR: ${label} container (${name}) is not running (state: ${state}, exit code: ${exit_code})."
+        echo "----- ${name} logs -----"
+        podman logs "$name" 2>/dev/null || echo "(unable to read logs)"
+        echo "----- end logs -----"
+        exit 1
+    fi
+}
+
 # Resolve IMAGE_TAG once so it can be reused across the script
 function resolve_image_tag() {
     if [[ -n "${IMAGE_TAG:-}" ]]; then
@@ -328,6 +356,7 @@ if [[ $USE_IMAGES = true ]]; then
         --pod "$POD_NAME" \
         --name ibutsu-backend \
         -e JWT_SECRET="$JWT_SECRET" \
+        -e PYTHONUNBUFFERED=1 \
         "${POSTGRES_ENV_ARGS[@]}" \
         "${CELERY_ENV_ARGS[@]}" \
         -e SQLALCHEMY_WARN_20=1 \
@@ -345,6 +374,7 @@ else
         --pod "$POD_NAME" \
         --name ibutsu-backend \
         -e JWT_SECRET="$JWT_SECRET" \
+        -e PYTHONUNBUFFERED=1 \
         "${POSTGRES_ENV_ARGS[@]}" \
         "${CELERY_ENV_ARGS[@]}" \
         -e SQLALCHEMY_WARN_20=1 \
@@ -364,6 +394,7 @@ sleep 5
 BACKEND_WAIT=0
 BACKEND_TIMEOUT=600
 until curl --output /dev/null --silent --head --fail http://$LOCAL_HOST:$LOCAL_PORT_BACKEND; do
+  ensure_container_running ibutsu-backend "Backend"
   echo -n ' .'
   sleep 2
   BACKEND_WAIT=$((BACKEND_WAIT + 2))
@@ -371,7 +402,7 @@ until curl --output /dev/null --silent --head --fail http://$LOCAL_HOST:$LOCAL_P
     echo ""
     echo "ERROR: Backend failed to start within ${BACKEND_TIMEOUT}s. Container logs:"
     echo "----- ibutsu-backend logs -----"
-    podman logs ibutsu-backend
+    podman logs ibutsu-backend 2>/dev/null || echo "(unable to read logs — container may have been removed)"
     echo "----- end logs -----"
     exit 1
   fi
@@ -411,9 +442,21 @@ else
 fi
 echo -n "Waiting for celery to respond: "
 sleep 5
+CELERY_WAIT=0
+CELERY_TIMEOUT=600
 until podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null | grep -q pong; do
+    ensure_container_running ibutsu-worker "Celery worker"
     echo -n ' .'
     sleep 2
+    CELERY_WAIT=$((CELERY_WAIT + 2))
+    if [ $CELERY_WAIT -ge $CELERY_TIMEOUT ]; then
+        echo ""
+        echo "ERROR: Celery worker failed to respond within ${CELERY_TIMEOUT}s. Container logs:"
+        echo "----- ibutsu-worker logs -----"
+        podman logs ibutsu-worker 2>/dev/null || echo "(unable to read logs — container may have been removed)"
+        echo "----- end logs -----"
+        exit 1
+    fi
 done
 echo " celery worker up."
 
@@ -918,9 +961,21 @@ fi
 echo "done."
 
 echo -n "Waiting for frontend to respond: "
+FRONTEND_WAIT=0
+FRONTEND_TIMEOUT=600
 until curl --output /dev/null --silent --head --fail http://$LOCAL_HOST:$LOCAL_PORT_FRONTEND; do
+  ensure_container_running ibutsu-frontend "Frontend"
   printf ' .'
   sleep 5
+  FRONTEND_WAIT=$((FRONTEND_WAIT + 5))
+  if [ $FRONTEND_WAIT -ge $FRONTEND_TIMEOUT ]; then
+    echo ""
+    echo "ERROR: Frontend failed to start within ${FRONTEND_TIMEOUT}s. Container logs:"
+    echo "----- ibutsu-frontend logs -----"
+    podman logs ibutsu-frontend 2>/dev/null || echo "(unable to read logs — container may have been removed)"
+    echo "----- end logs -----"
+    exit 1
+  fi
 done
 echo " frontend available."
 

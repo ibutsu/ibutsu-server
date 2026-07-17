@@ -14,7 +14,7 @@ import usePagination from '../components/hooks/use-pagination';
 import { FilterContext } from '../components/contexts/filter-context';
 import { RUN_FIELDS } from '../constants';
 
-const COLUMNS = ['Run', 'Duration', 'Summary', 'Started', ''];
+const COLUMNS = ['Run', 'Duration', 'Summary', 'Pass %', 'Started', ''];
 const HIDE = ['project_id'];
 
 // Sort functions for RunList columns
@@ -24,6 +24,8 @@ const sortFunctions = {
     tableSortFunctions.duration(a, b, direction, COLUMNS.indexOf('Duration')),
   started: (a, b, direction) =>
     tableSortFunctions.started(a, b, direction, COLUMNS.indexOf('Started')),
+  'pass %': (a, b, direction) =>
+    tableSortFunctions.passPercent(a, b, direction, COLUMNS.indexOf('Pass %')),
 };
 
 const RunList = () => {

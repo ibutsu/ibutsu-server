@@ -156,7 +156,9 @@ def test_run_migrations_online_function_exists(reset_app_registry):
     assert "def run_migrations_online() -> None:" in env_content
     assert "connectable = db.engine" in env_content
     assert "with connectable.connect() as connection:" in env_content
-    assert "context.configure(connection=connection" in env_content
+    assert "context.configure(" in env_content
+    assert "connection=connection" in env_content
+    assert "transaction_per_migration=True" in env_content
 
 
 def test_alembic_flask_app_cached(reset_app_registry):
