@@ -24,9 +24,13 @@ import { AuthService } from '../utilities/auth';
 
 // Lazy import the password strength indicator, it uses a very big library
 const PasswordStrengthBar = lazy(() =>
-  import('react-password-strength-bar').catch(() => ({
-    default: () => <div>Failed to load password strength indicator</div>,
-  })),
+  import('react-password-strength-bar')
+    .then((m) => ({
+      default: m.default?.default || m.default,
+    }))
+    .catch(() => ({
+      default: () => <div>Failed to load password strength indicator</div>,
+    })),
 );
 
 const ResetPassword = () => {

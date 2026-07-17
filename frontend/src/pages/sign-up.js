@@ -22,7 +22,11 @@ import { ErrorBoundary } from 'react-error-boundary';
 
 import { AuthService } from '../utilities/auth';
 
-const PasswordStrengthBar = lazy(() => import('react-password-strength-bar'));
+const PasswordStrengthBar = lazy(() =>
+  import('react-password-strength-bar').then((m) => ({
+    default: m.default?.default || m.default,
+  })),
+);
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
