@@ -162,11 +162,11 @@ describe('JenkinsJobView Component', () => {
       <MemoryRouter
         initialEntries={[`/project/${mockProject.id}/jenkins-jobs`]}
       >
-        <IbutsuContext.Provider value={ibutsuContextValue}>
-          <FilterContext.Provider value={filterContextValue}>
+        <IbutsuContext value={ibutsuContextValue}>
+          <FilterContext value={filterContextValue}>
             <JenkinsJobView view={view} />
-          </FilterContext.Provider>
-        </IbutsuContext.Provider>
+          </FilterContext>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };
@@ -440,11 +440,11 @@ describe('JenkinsJobView Component', () => {
         <MemoryRouter
           initialEntries={[`/project/${mockProject.id}/jenkins-jobs`]}
         >
-          <IbutsuContext.Provider value={ibutsuContextValue}>
-            <FilterContext.Provider value={filterContextValue}>
+          <IbutsuContext value={ibutsuContextValue}>
+            <FilterContext value={filterContextValue}>
               <JenkinsJobView view={mockView} />
-            </FilterContext.Provider>
-          </IbutsuContext.Provider>
+            </FilterContext>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 

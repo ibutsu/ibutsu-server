@@ -71,9 +71,9 @@ describe('ProjectList Component', () => {
 
     return render(
       <MemoryRouter>
-        <FilterContext.Provider value={contextValue}>
+        <FilterContext value={contextValue}>
           <ProjectList />
-        </FilterContext.Provider>
+        </FilterContext>
       </MemoryRouter>,
     );
   };

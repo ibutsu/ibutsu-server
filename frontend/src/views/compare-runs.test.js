@@ -94,9 +94,9 @@ describe('CompareRunsView Component', () => {
 
     return render(
       <MemoryRouter>
-        <IbutsuContext.Provider value={contextValue}>
+        <IbutsuContext value={contextValue}>
           <CompareRunsView />
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };

@@ -82,9 +82,9 @@ describe('UserList Component', () => {
 
     return render(
       <MemoryRouter>
-        <FilterContext.Provider value={contextValue}>
+        <FilterContext value={contextValue}>
           <UserList />
-        </FilterContext.Provider>
+        </FilterContext>
       </MemoryRouter>,
     );
   };

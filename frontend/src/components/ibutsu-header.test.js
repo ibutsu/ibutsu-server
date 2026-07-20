@@ -66,12 +66,12 @@ describe('IbutsuHeader', () => {
 
     return render(
       <MemoryRouter initialEntries={[initialRoute]}>
-        <IbutsuContext.Provider value={mergedContext}>
+        <IbutsuContext value={mergedContext}>
           <Routes>
             <Route path="/*" element={<IbutsuHeader />} />
             <Route path="/project/:project_id/*" element={<IbutsuHeader />} />
           </Routes>
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };

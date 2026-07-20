@@ -10,7 +10,7 @@ const IbutsuContextProvider = (props) => {
   const [darkTheme, setDarkTheme] = useState(() => getDarkTheme());
 
   return (
-    <IbutsuContext.Provider
+    <IbutsuContext
       value={{
         primaryType: primaryType,
         setPrimaryType: setPrimaryType,
@@ -23,7 +23,7 @@ const IbutsuContextProvider = (props) => {
       }}
     >
       {props.children}
-    </IbutsuContext.Provider>
+    </IbutsuContext>
   );
 };
 

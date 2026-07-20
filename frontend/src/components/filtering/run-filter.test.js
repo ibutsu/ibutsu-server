@@ -55,9 +55,9 @@ describe('RunFilter', () => {
     const mergedContext = { ...defaultContextValue, ...contextValue };
     return render(
       <MemoryRouter>
-        <FilterContext.Provider value={mergedContext}>
+        <FilterContext value={mergedContext}>
           <RunFilter {...props} />
-        </FilterContext.Provider>
+        </FilterContext>
       </MemoryRouter>,
     );
   };
@@ -251,14 +251,14 @@ describe('RunFilter', () => {
       // Field changes are handled by useEffect
       rerender(
         <MemoryRouter>
-          <FilterContext.Provider
+          <FilterContext
             value={{
               ...defaultContextValue,
               fieldSelection: 'env',
             }}
           >
             <RunFilter />
-          </FilterContext.Provider>
+          </FilterContext>
         </MemoryRouter>,
       );
 
@@ -445,14 +445,14 @@ describe('RunFilter', () => {
       // Change fieldSelection
       rerender(
         <MemoryRouter>
-          <FilterContext.Provider
+          <FilterContext
             value={{
               ...defaultContextValue,
               fieldSelection: 'env',
             }}
           >
             <RunFilter />
-          </FilterContext.Provider>
+          </FilterContext>
         </MemoryRouter>,
       );
 

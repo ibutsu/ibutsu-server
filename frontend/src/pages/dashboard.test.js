@@ -122,14 +122,14 @@ describe('Dashboard Component', () => {
 
     return render(
       <MemoryRouter initialEntries={[initialRoute]}>
-        <IbutsuContext.Provider value={contextValue}>
+        <IbutsuContext value={contextValue}>
           <Routes>
             <Route
               path="/project/:project_id/dashboard/:dashboard_id?"
               element={<Dashboard />}
             />
           </Routes>
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };
@@ -499,14 +499,14 @@ describe('Dashboard Component', () => {
 
       rerender(
         <MemoryRouter initialEntries={[`/project/${newProject.id}/dashboard/`]}>
-          <IbutsuContext.Provider value={newContextValue}>
+          <IbutsuContext value={newContextValue}>
             <Routes>
               <Route
                 path="/project/:project_id/dashboard/:dashboard_id?"
                 element={<Dashboard />}
               />
             </Routes>
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 

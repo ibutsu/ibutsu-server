@@ -48,9 +48,9 @@ describe('AdminFilter', () => {
     const mergedContext = { ...defaultContextValue, ...contextValue };
     return render(
       <MemoryRouter>
-        <FilterContext.Provider value={mergedContext}>
+        <FilterContext value={mergedContext}>
           <AdminFilter />
-        </FilterContext.Provider>
+        </FilterContext>
       </MemoryRouter>,
     );
   };

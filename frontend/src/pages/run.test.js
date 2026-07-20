@@ -81,11 +81,11 @@ describe('Run Page', () => {
 
     return render(
       <MemoryRouter initialEntries={[initialRoute]}>
-        <IbutsuContext.Provider value={contextValue}>
+        <IbutsuContext value={contextValue}>
           <Routes>
             <Route path="/project/:project_id/runs/:run_id" element={<Run />} />
           </Routes>
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };

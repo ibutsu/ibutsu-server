@@ -57,9 +57,7 @@ export function renderWithIbutsuContext(ui, contextValue = {}) {
   };
 
   return render(
-    <IbutsuContext.Provider value={defaultContextValue}>
-      {ui}
-    </IbutsuContext.Provider>,
+    <IbutsuContext value={defaultContextValue}>{ui}</IbutsuContext>,
   );
 }
 
@@ -95,19 +93,17 @@ export function renderWithRouterAndContext(
   const wrappedUi =
     routes.length > 0 ? (
       <MemoryRouter initialEntries={initialEntries}>
-        <IbutsuContext.Provider value={defaultContextValue}>
+        <IbutsuContext value={defaultContextValue}>
           <Routes>
             {routes.map((route, index) => (
               <Route key={index} path={route.path} element={route.element} />
             ))}
           </Routes>
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>
     ) : (
       <MemoryRouter initialEntries={initialEntries}>
-        <IbutsuContext.Provider value={defaultContextValue}>
-          {ui}
-        </IbutsuContext.Provider>
+        <IbutsuContext value={defaultContextValue}>{ui}</IbutsuContext>
       </MemoryRouter>
     );
 
@@ -161,23 +157,21 @@ export function renderWithAllProviders(
   const wrappedUi =
     routes.length > 0 ? (
       <MemoryRouter initialEntries={initialEntries}>
-        <IbutsuContext.Provider value={defaultIbutsuContext}>
-          <FilterContext.Provider value={defaultFilterContext}>
+        <IbutsuContext value={defaultIbutsuContext}>
+          <FilterContext value={defaultFilterContext}>
             <Routes>
               {routes.map((route, index) => (
                 <Route key={index} path={route.path} element={route.element} />
               ))}
             </Routes>
-          </FilterContext.Provider>
-        </IbutsuContext.Provider>
+          </FilterContext>
+        </IbutsuContext>
       </MemoryRouter>
     ) : (
       <MemoryRouter initialEntries={initialEntries}>
-        <IbutsuContext.Provider value={defaultIbutsuContext}>
-          <FilterContext.Provider value={defaultFilterContext}>
-            {ui}
-          </FilterContext.Provider>
-        </IbutsuContext.Provider>
+        <IbutsuContext value={defaultIbutsuContext}>
+          <FilterContext value={defaultFilterContext}>{ui}</FilterContext>
+        </IbutsuContext>
       </MemoryRouter>
     );
 

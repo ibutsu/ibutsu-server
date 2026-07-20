@@ -7,11 +7,7 @@ export const useFilterContext = () => useContext(FilterContext);
 
 const FilterProvider = ({ children, ...props }) => {
   const tableFilters = useTableFilters(props);
-  return (
-    <FilterContext.Provider value={tableFilters}>
-      {children}
-    </FilterContext.Provider>
-  );
+  return <FilterContext value={tableFilters}>{children}</FilterContext>;
 };
 
 export default FilterProvider;

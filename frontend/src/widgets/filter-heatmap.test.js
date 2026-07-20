@@ -109,9 +109,9 @@ describe('FilterHeatmapWidget', () => {
     it('should render widget with title', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -125,9 +125,9 @@ describe('FilterHeatmapWidget', () => {
     it('should render heatmap when data is loaded', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -139,13 +139,13 @@ describe('FilterHeatmapWidget', () => {
     it('should use job_name as title when title is not provided', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               title={undefined}
               params={{ ...defaultProps.params, job_name: 'Test Job' }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -159,13 +159,13 @@ describe('FilterHeatmapWidget', () => {
     it('should use Heatmap as default title when neither title nor job_name is provided', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               title={undefined}
               params={{ ...defaultProps.params, job_name: undefined }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -181,9 +181,9 @@ describe('FilterHeatmapWidget', () => {
     it('should fetch filter heatmap data by default', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -202,7 +202,7 @@ describe('FilterHeatmapWidget', () => {
     it('should fetch jenkins heatmap data when type is jenkins', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.jenkins}
@@ -211,7 +211,7 @@ describe('FilterHeatmapWidget', () => {
                 job_name: 'test-job',
               }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -228,12 +228,12 @@ describe('FilterHeatmapWidget', () => {
     it('should not fetch when required params are missing', () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               params={{ project: 'test-project' }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -248,9 +248,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -269,12 +269,12 @@ describe('FilterHeatmapWidget', () => {
     it('should support filter heatmap type', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.filter}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -289,7 +289,7 @@ describe('FilterHeatmapWidget', () => {
     it('should support jenkins heatmap type', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.jenkins}
@@ -298,7 +298,7 @@ describe('FilterHeatmapWidget', () => {
                 job_name: 'test-job',
               }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -317,9 +317,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -329,9 +329,9 @@ describe('FilterHeatmapWidget', () => {
     it('should update state after data loads', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -349,9 +349,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -372,9 +372,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -390,9 +390,9 @@ describe('FilterHeatmapWidget', () => {
     it('should render exactly 1 dropdown control by default for filter heatmap', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -406,9 +406,9 @@ describe('FilterHeatmapWidget', () => {
     it('should hide dropdown controls when hideDropdown is true', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} hideDropdown={true} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -421,7 +421,7 @@ describe('FilterHeatmapWidget', () => {
     it('should render 2 dropdowns for jenkins heatmap (builds and count skips)', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.jenkins}
@@ -430,7 +430,7 @@ describe('FilterHeatmapWidget', () => {
                 job_name: 'test-job',
               }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -447,12 +447,12 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               dropdownItems={customItems}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -470,12 +470,12 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               onDeleteClick={onDeleteClick}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -493,9 +493,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} onEditClick={onEditClick} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -511,9 +511,9 @@ describe('FilterHeatmapWidget', () => {
     it('should render heatmap with custom labelWidth prop', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} labelWidth={300} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -545,7 +545,7 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.jenkins}
@@ -554,7 +554,7 @@ describe('FilterHeatmapWidget', () => {
                 job_name: 'test-job',
               }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -569,12 +569,12 @@ describe('FilterHeatmapWidget', () => {
     it('should not fetch analysis view ID for filter heatmap', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.filter}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -616,9 +616,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -650,9 +650,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -678,9 +678,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -706,9 +706,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -734,9 +734,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -759,9 +759,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -800,9 +800,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -830,7 +830,7 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.jenkins}
@@ -839,7 +839,7 @@ describe('FilterHeatmapWidget', () => {
                 job_name: 'my-jenkins-job',
               }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -863,7 +863,7 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.jenkins}
@@ -872,7 +872,7 @@ describe('FilterHeatmapWidget', () => {
                 job_name: 'my-jenkins-job',
               }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -903,7 +903,7 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.jenkins}
@@ -912,7 +912,7 @@ describe('FilterHeatmapWidget', () => {
                 job_name: 'my-jenkins-job',
               }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -926,7 +926,7 @@ describe('FilterHeatmapWidget', () => {
     it('should use default countSkips=true when not specified', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.jenkins}
@@ -936,7 +936,7 @@ describe('FilterHeatmapWidget', () => {
                 // count_skips not specified
               }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -953,7 +953,7 @@ describe('FilterHeatmapWidget', () => {
     it('should use specified countSkips value from params', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.jenkins}
@@ -963,7 +963,7 @@ describe('FilterHeatmapWidget', () => {
                 count_skips: false,
               }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -997,9 +997,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -1028,9 +1028,9 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -1045,11 +1045,11 @@ describe('FilterHeatmapWidget', () => {
     it('should use params.project when primaryObject is null', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider
+          <IbutsuContext
             value={{ primaryObject: null, primaryType: 'project' }}
           >
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -1072,14 +1072,14 @@ describe('FilterHeatmapWidget', () => {
 
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider
+          <IbutsuContext
             value={{
               primaryObject: { id: 'context-project' },
               primaryType: 'project',
             }}
           >
             <FilterHeatmapWidget {...defaultProps} />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -1093,12 +1093,12 @@ describe('FilterHeatmapWidget', () => {
     it('should initialize builds from params', async () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               params={{ ...defaultProps.params, builds: 7 }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -1115,12 +1115,12 @@ describe('FilterHeatmapWidget', () => {
     it('should not fetch when group_field is missing', () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               params={{ project: 'test', builds: 5 }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -1130,7 +1130,7 @@ describe('FilterHeatmapWidget', () => {
     it('should not fetch jenkins heatmap when job_name is missing', () => {
       render(
         <MemoryRouter>
-          <IbutsuContext.Provider value={mockContextValue}>
+          <IbutsuContext value={mockContextValue}>
             <FilterHeatmapWidget
               {...defaultProps}
               type={HEATMAP_TYPES.jenkins}
@@ -1141,7 +1141,7 @@ describe('FilterHeatmapWidget', () => {
                 // job_name missing
               }}
             />
-          </IbutsuContext.Provider>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 

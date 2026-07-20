@@ -130,14 +130,14 @@ describe('ClassifyFailuresTable', () => {
 
     return render(
       <MemoryRouter initialEntries={[`/project/proj-1/runs/${mockRunId}`]}>
-        <FilterContext.Provider value={mergedFilterContext}>
+        <FilterContext value={mergedFilterContext}>
           <Routes>
             <Route
               path="/project/:project_id/runs/:run_id"
               element={<ClassifyFailuresTable />}
             />
           </Routes>
-        </FilterContext.Provider>
+        </FilterContext>
       </MemoryRouter>,
     );
   };

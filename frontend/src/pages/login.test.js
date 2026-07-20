@@ -57,9 +57,9 @@ describe('Login', () => {
 
     return render(
       <MemoryRouter initialEntries={[initialRoute]}>
-        <IbutsuContext.Provider value={mergedContext}>
+        <IbutsuContext value={mergedContext}>
           <Login />
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };

@@ -59,7 +59,7 @@ describe('ProjectEdit', () => {
 
     return render(
       <MemoryRouter initialEntries={[initialRoute]}>
-        <FilterContext.Provider value={mergedFilterContext}>
+        <FilterContext value={mergedFilterContext}>
           <Routes>
             <Route path="/admin/project/:id" element={<ProjectEdit />} />
             <Route
@@ -69,7 +69,7 @@ describe('ProjectEdit', () => {
               }
             />
           </Routes>
-        </FilterContext.Provider>
+        </FilterContext>
       </MemoryRouter>,
     );
   };
