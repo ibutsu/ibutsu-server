@@ -17,7 +17,7 @@
     "@patternfly/react-table": "^6.6.0",
     "@react-oauth/google": "^0.13.5",
     "@types/react": "^18.3.31",
-    "apexcharts": "^5.16.0",
+    "apexcharts": "^6.0.0",
     "keycloak-js": "^26.2.4",
     "monaco-editor": "^0.55.1",
     "nanoid": "^6.0.0",
