@@ -68,7 +68,7 @@ flask-mail==0.10.0
     # via ibutsu-server (pyproject.toml)
 flask-sqlalchemy==3.1.1
     # via ibutsu-server (pyproject.toml)
-google-api-core==2.31.0
+google-api-core==2.32.0
     # via google-api-python-client
 google-api-python-client==2.198.0
     # via ibutsu-server (pyproject.toml)
