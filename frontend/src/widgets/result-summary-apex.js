@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 import Chart from 'react-apexcharts';
 
 import { Card, CardBody, Content } from '@patternfly/react-core';
@@ -250,13 +249,6 @@ const ResultSummaryApex = ({ title, params, onDeleteClick, onEditClick }) => {
       </CardBody>
     </Card>
   );
-};
-
-ResultSummaryApex.propTypes = {
-  title: PropTypes.string,
-  params: PropTypes.object,
-  onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func,
 };
 
 export default ResultSummaryApex;

@@ -9,7 +9,6 @@ import {
   SelectOption,
   TextInput,
 } from '@patternfly/react-core';
-import PropTypes from 'prop-types';
 import { useContext, useState } from 'react';
 
 import ActiveFilters from './active-filters';
@@ -224,11 +223,6 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
       </Flex>
     </CardBody>
   );
-};
-
-RunFilter.propTypes = {
-  hideFilters: PropTypes.arrayOf(PropTypes.string),
-  maxHeight: PropTypes.string,
 };
 
 export default RunFilter;

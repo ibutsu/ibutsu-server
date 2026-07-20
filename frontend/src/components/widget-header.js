@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { Button, CardHeader, Title } from '@patternfly/react-core';
 import PficonHistoryIcon from '@patternfly/react-icons/dist/esm/icons/pficon-history-icon';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
@@ -68,16 +67,6 @@ const WidgetHeader = ({
       <Title headingLevel="h2">{title}</Title>
     </CardHeader>
   );
-};
-
-WidgetHeader.propTypes = {
-  id: PropTypes.string,
-  getDataFunc: PropTypes.func,
-  onDeleteClick: PropTypes.func,
-  title: PropTypes.string,
-  actions: PropTypes.array,
-  onEditClick: PropTypes.func,
-  ouiaId: PropTypes.string,
 };
 
 export default WidgetHeader;

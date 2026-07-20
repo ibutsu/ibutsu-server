@@ -1,5 +1,4 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   Button,
@@ -14,7 +13,7 @@ import ArrowDownIcon from '@patternfly/react-icons/dist/esm/icons/arrow-down-ico
 import ArrowRightIcon from '@patternfly/react-icons/dist/esm/icons/arrow-right-icon';
 import ArrowUpIcon from '@patternfly/react-icons/dist/esm/icons/arrow-up-icon';
 import ChartLineIcon from '@patternfly/react-icons/dist/esm/icons/chart-line-icon';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import HeatMapWrapper from '../components/heat-map-wrapper';
 
 import { HttpClient } from '../utilities/http';
@@ -340,17 +339,6 @@ const FilterHeatmapWidget = ({
       )}
     </Card>
   );
-};
-
-FilterHeatmapWidget.propTypes = {
-  title: PropTypes.string,
-  params: PropTypes.object,
-  labelWidth: PropTypes.number,
-  hideDropdown: PropTypes.bool,
-  dropdownItems: PropTypes.array,
-  onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func,
-  type: PropTypes.string,
 };
 
 export { FilterHeatmapWidget, HEATMAP_TYPES };

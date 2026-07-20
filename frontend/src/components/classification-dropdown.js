@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   Dropdown,
@@ -75,10 +74,6 @@ const ClassificationDropdown = ({ testResult: initialTestResult }) => {
   );
 };
 
-ClassificationDropdown.propTypes = {
-  testResult: PropTypes.object,
-};
-
 const MultiClassificationDropdown = ({ selectedResults }) => {
   const [classificationOpen, setClassificationOpen] = useState(false);
 
@@ -133,10 +128,6 @@ const MultiClassificationDropdown = ({ selectedResults }) => {
       </DropdownList>
     </Dropdown>
   );
-};
-
-MultiClassificationDropdown.propTypes = {
-  selectedResults: PropTypes.array,
 };
 
 export { ClassificationDropdown, MultiClassificationDropdown };

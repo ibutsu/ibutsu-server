@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { render } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { FilterContext } from '../components/contexts/filter-context';
 import { HttpClient } from '../utilities/http';

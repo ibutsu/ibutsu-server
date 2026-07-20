@@ -3,7 +3,6 @@
 // The class was converted to functional react, but needs additional work.
 // It's not in use in downstream environments at the moment
 import { useContext, useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 import {
   Button,
   Card,
@@ -23,12 +22,7 @@ import {
   ChartDonut,
   ChartThemeColor,
 } from '@patternfly/react-charts/victory';
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
 import { resultToRow } from '../utilities';
@@ -409,10 +403,6 @@ const AccessibilityAnalysisView = ({ view }) => {
       </PageSection>
     </>
   );
-};
-
-AccessibilityAnalysisView.propTypes = {
-  view: PropTypes.object,
 };
 
 export default AccessibilityAnalysisView;

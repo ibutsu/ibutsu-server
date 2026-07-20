@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import PropTypes from 'prop-types';
 import {
   Label,
   LabelGroup,
@@ -102,13 +101,6 @@ const MultiValueInput = ({
       </TextInputGroup>
     </>
   );
-};
-
-MultiValueInput.propTypes = {
-  onAddValue: PropTypes.func,
-  onRemoveValue: PropTypes.func,
-  onValuesChange: PropTypes.func,
-  style: PropTypes.object,
 };
 
 export default MultiValueInput;

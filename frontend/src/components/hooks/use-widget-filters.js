@@ -1,6 +1,5 @@
 // Custom hook to manage widget filter functionality
 import { useState, useCallback, useMemo, useContext, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import { filtersToAPIParams, apiParamsToFilters } from '../../utilities';
 import { RESULT_FIELDS, RUN_FIELDS } from '../../constants';
 import FilterProvider, { FilterContext } from '../contexts/filter-context';
@@ -25,11 +24,6 @@ const FilterContextCapture = ({ children, onFilterContext }) => {
   }, [filterContext, onFilterContext]);
 
   return children;
-};
-
-FilterContextCapture.propTypes = {
-  children: PropTypes.node,
-  onFilterContext: PropTypes.func.isRequired,
 };
 
 // Constants for widget classification
@@ -181,13 +175,4 @@ export const WidgetFilterComponent = ({
       </FormHelperText>
     </FormGroup>
   );
-};
-
-WidgetFilterComponent.propTypes = {
-  isResultBasedWidget: PropTypes.bool.isRequired,
-  runs: PropTypes.arrayOf(PropTypes.string),
-  hideFilters: PropTypes.arrayOf(PropTypes.string),
-  CustomFilterProvider: PropTypes.func.isRequired,
-  widgetId: PropTypes.string.isRequired,
-  resetCounter: PropTypes.number,
 };

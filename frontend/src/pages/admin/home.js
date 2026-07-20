@@ -13,6 +13,4 @@ const AdminHome = () => (
   </>
 );
 
-AdminHome.propTypes = {};
-
 export default AdminHome;

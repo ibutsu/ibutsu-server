@@ -172,6 +172,4 @@ const UserTokens = () => {
   );
 };
 
-UserTokens.propTypes = {};
-
 export default UserTokens;

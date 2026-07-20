@@ -170,6 +170,4 @@ const RunList = () => {
   );
 };
 
-RunList.propTypes = {};
-
 export default RunList;

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Badge } from '@patternfly/react-core';
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
@@ -72,10 +71,6 @@ const LastPassed = ({ filters = [] }) => {
       )}
     </div>
   );
-};
-
-LastPassed.propTypes = {
-  filters: PropTypes.arrayOf(PropTypes.object),
 };
 
 export default LastPassed;

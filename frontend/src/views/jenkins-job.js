@@ -1,9 +1,8 @@
 import { useCallback, useContext, useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 
 import ChevronRightIcon from '@patternfly/react-icons/dist/esm/icons/chevron-right-icon';
 
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router';
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
@@ -211,10 +210,6 @@ const JenkinsJobView = ({ view }) => {
       onSetPageSize={onSetPageSize}
     />
   );
-};
-
-JenkinsJobView.propTypes = {
-  view: PropTypes.object,
 };
 
 export default JenkinsJobView;

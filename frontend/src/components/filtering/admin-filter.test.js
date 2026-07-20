@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import AdminFilter from './admin-filter';
 import { FilterContext } from '../contexts/filter-context';
 import { STRING_OPERATIONS } from '../../constants';

@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router';
 
 import {
   Badge,
@@ -55,7 +55,6 @@ import ArtifactTab from '../components/artifact-tab';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { useTabHook } from '../components/hooks/use-tab';
 import usePagination from '../components/hooks/use-pagination';
-import PropTypes from 'prop-types';
 import {
   ICON_RESULT_MAP,
   RESULT_FIELDS,
@@ -1059,10 +1058,6 @@ const Run = ({ defaultTab = 'summary' }) => {
       </PageSection>
     </>
   );
-};
-
-Run.propTypes = {
-  defaultTab: PropTypes.string,
 };
 
 export default Run;

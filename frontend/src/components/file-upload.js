@@ -1,5 +1,4 @@
 import { useContext, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
 import UploadIcon from '@patternfly/react-icons/dist/esm/icons/upload-icon';
 
 import { HttpClient } from '../utilities/http';
@@ -143,10 +142,6 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
       />
     </>
   );
-};
-
-FileUpload.propTypes = {
-  name: PropTypes.string,
 };
 
 export default FileUpload;

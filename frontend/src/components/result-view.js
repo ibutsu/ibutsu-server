@@ -1,5 +1,4 @@
 import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   Card,
@@ -22,12 +21,12 @@ import SearchIcon from '@patternfly/react-icons/dist/esm/icons/search-icon';
 import FileAltIcon from '@patternfly/react-icons/dist/esm/icons/file-alt-icon';
 import { CodeEditor, Language } from '@patternfly/react-code-editor';
 
-import { Link, useParams } from 'react-router-dom';
-import Linkify from 'react-linkify';
+import { Link, useParams } from 'react-router';
+import Linkify from 'linkify-react';
 
 import { HttpClient } from '../utilities/http';
 import { ClassificationDropdown } from './classification-dropdown';
-import { linkifyDecorator } from './decorators';
+import { LINKIFY_OPTIONS } from './decorators';
 import { Settings } from '../pages/settings';
 import { filtersToSearchParams, toTitleCase } from '../utilities';
 import { ICON_RESULT_MAP } from '../constants';
@@ -331,7 +330,7 @@ const ResultView = ({
                                 <strong>Code Link:</strong>
                               </DataListCell>,
                               <DataListCell key="code-link-data" width={4}>
-                                <Linkify componentDecorator={linkifyDecorator}>
+                                <Linkify options={LINKIFY_OPTIONS}>
                                   {testResult.metadata.code_link}
                                 </Linkify>
                               </DataListCell>,
@@ -378,9 +377,7 @@ const ResultView = ({
                                   <strong>Reason skipped:</strong>
                                 </DataListCell>,
                                 <DataListCell key="skip-reason-data" width={4}>
-                                  <Linkify
-                                    componentDecorator={linkifyDecorator}
-                                  >
+                                  <Linkify options={LINKIFY_OPTIONS}>
                                     {testResult.metadata.skip_reason}
                                   </Linkify>
                                 </DataListCell>,
@@ -403,9 +400,7 @@ const ResultView = ({
                                   <strong>Reason xfailed:</strong>
                                 </DataListCell>,
                                 <DataListCell key="xfail-reason-data" width={4}>
-                                  <Linkify
-                                    componentDecorator={linkifyDecorator}
-                                  >
+                                  <Linkify options={LINKIFY_OPTIONS}>
                                     {testResult.metadata.xfail_reason}
                                   </Linkify>
                                 </DataListCell>,
@@ -829,17 +824,6 @@ const ResultView = ({
       )}
     </>
   );
-};
-
-ResultView.propTypes = {
-  comparisonResults: PropTypes.array,
-  defaultTab: PropTypes.string,
-  hideArtifact: PropTypes.bool,
-  hideSummary: PropTypes.bool,
-  hideTestObject: PropTypes.bool,
-  hideTestHistory: PropTypes.bool,
-  testResult: PropTypes.object,
-  skipHash: PropTypes.bool,
 };
 
 export default ResultView;

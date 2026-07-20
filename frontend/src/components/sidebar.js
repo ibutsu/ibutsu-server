@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { IbutsuContext } from './contexts/ibutsu-context';
 import {
   PageSidebar,

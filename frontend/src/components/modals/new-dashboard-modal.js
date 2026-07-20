@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   Button,
@@ -106,14 +105,6 @@ const NewDashboardModal = ({
       </ModalFooter>
     </Modal>
   );
-};
-
-NewDashboardModal.propTypes = {
-  project: PropTypes.object,
-  saveCallback: PropTypes.func,
-  closeCallback: PropTypes.func,
-  isOpen: PropTypes.bool,
-  ouiaId: PropTypes.string,
 };
 
 export default NewDashboardModal;

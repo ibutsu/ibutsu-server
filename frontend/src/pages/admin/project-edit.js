@@ -23,7 +23,7 @@ import {
   Title,
   ValidatedOptions,
 } from '@patternfly/react-core';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router';
 import { nanoid } from 'nanoid/non-secure';
 
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
@@ -444,7 +444,5 @@ const ProjectEdit = () => {
     </>
   );
 };
-
-ProjectEdit.propTypes = {};
 
 export default ProjectEdit;

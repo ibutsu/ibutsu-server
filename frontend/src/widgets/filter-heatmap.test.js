@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { FilterHeatmapWidget, HEATMAP_TYPES } from './filter-heatmap';
 import { HttpClient } from '../utilities/http';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';

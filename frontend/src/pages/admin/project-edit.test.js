@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import ProjectEdit from './project-edit';
 import { FilterContext } from '../../components/contexts/filter-context';
 import { HttpClient } from '../../utilities/http';

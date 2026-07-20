@@ -1,10 +1,5 @@
 import { lazy, Suspense } from 'react';
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  Navigate,
-} from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 import { IbutsuContextProvider } from '../components/contexts/ibutsu-context';

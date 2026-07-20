@@ -1,5 +1,4 @@
 import { Fragment } from 'react';
-import PropTypes from 'prop-types';
 import {
   Checkbox,
   FormGroup,
@@ -9,8 +8,8 @@ import {
   TextArea,
   TextInput,
 } from '@patternfly/react-core';
-import Linkify from 'react-linkify';
-import { linkifyDecorator } from './decorators';
+import Linkify from 'linkify-react';
+import { LINKIFY_OPTIONS } from './decorators';
 import { filterNonFilterParams } from '../utilities/widget';
 
 /**
@@ -64,7 +63,7 @@ const WidgetParameterFields = ({
               <FormHelperText>
                 <HelperText>
                   <HelperTextItem variant="default">
-                    <Linkify componentDecorator={linkifyDecorator}>
+                    <Linkify options={LINKIFY_OPTIONS}>
                       {param.description}
                     </Linkify>
                   </HelperTextItem>
@@ -119,14 +118,6 @@ const WidgetParameterFields = ({
       ))}
     </>
   );
-};
-
-WidgetParameterFields.propTypes = {
-  widgetType: PropTypes.object,
-  params: PropTypes.object.isRequired,
-  onChange: PropTypes.func.isRequired,
-  handleRequiredParam: PropTypes.func, // Optional validation function
-  isLoaded: PropTypes.bool,
 };
 
 export default WidgetParameterFields;

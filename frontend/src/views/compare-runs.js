@@ -185,8 +185,4 @@ const CompareRunsView = () => {
   );
 };
 
-CompareRunsView.propTypes = {
-  // view: PropTypes.object
-};
-
 export default CompareRunsView;

@@ -1,5 +1,4 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 import { Flex, FlexItem, Switch, Tab, Tabs } from '@patternfly/react-core';
 
 import { HttpClient } from '../utilities/http';
@@ -249,11 +248,6 @@ const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
       </Tabs>
     </>
   );
-};
-
-JenkinsJobAnalysisView.propTypes = {
-  view: PropTypes.object,
-  defaultTab: PropTypes.string,
 };
 
 export default JenkinsJobAnalysisView;

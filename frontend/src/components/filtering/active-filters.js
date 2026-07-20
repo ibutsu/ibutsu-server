@@ -9,9 +9,8 @@ import {
   Divider,
 } from '@patternfly/react-core';
 
-import PropTypes from 'prop-types';
 import { useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { filtersToSearchParams, toTitleCase } from '../../utilities';
 import { OPERATIONS } from '../../constants';
 import ChevronRightIcon from '@patternfly/react-icons/dist/esm/icons/chevron-right-icon';
@@ -139,19 +138,6 @@ const ActiveFilters = ({
       </Flex>
     </Flex>
   );
-};
-
-ActiveFilters.propTypes = {
-  activeFilters: PropTypes.arrayOf(
-    PropTypes.shape({
-      field: PropTypes.string,
-      operator: PropTypes.string,
-      value: PropTypes.any,
-    }),
-  ),
-  onRemoveFilter: PropTypes.func,
-  hideFilters: PropTypes.arrayOf(PropTypes.string),
-  transferTarget: PropTypes.string,
 };
 
 export default ActiveFilters;

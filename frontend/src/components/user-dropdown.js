@@ -8,7 +8,7 @@ import {
 } from '@patternfly/react-core';
 
 import UserIcon from '@patternfly/react-icons/dist/esm/icons/user-icon';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 
 import { AuthService } from '../utilities/auth';
 

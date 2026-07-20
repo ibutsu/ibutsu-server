@@ -1,7 +1,6 @@
-import PropTypes from 'prop-types';
 import { useState, useEffect, useCallback } from 'react';
 
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router';
 
 const DEFAULT_PAGE_SIZE = '20';
 const DEFAULT_PAGE = '1';
@@ -45,10 +44,6 @@ const usePagination = ({ setParams = true }) => {
     totalItems,
     setTotalItems,
   };
-};
-
-usePagination.propTypes = {
-  setParams: PropTypes.bool,
 };
 
 export default usePagination;

@@ -249,6 +249,4 @@ const ResultList = () => {
   );
 };
 
-ResultList.propTypes = {};
-
 export default ResultList;

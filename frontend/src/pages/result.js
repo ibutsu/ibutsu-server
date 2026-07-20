@@ -6,7 +6,7 @@ import { HttpClient } from '../utilities/http';
 import { Settings } from './settings';
 import EmptyObject from '../components/empty-object';
 import ResultView from '../components/result-view';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 
 const Result = () => {
   const { result_id } = useParams();
@@ -73,7 +73,5 @@ const Result = () => {
     </>
   );
 };
-
-Result.propTypes = {};
 
 export default Result;

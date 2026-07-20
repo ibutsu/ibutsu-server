@@ -6,7 +6,7 @@ import {
   PageSidebarBody,
 } from '@patternfly/react-core';
 
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router';
 
 import IbutsuHeader from '../components/ibutsu-header';
 import { ToastContainer } from 'react-toastify';

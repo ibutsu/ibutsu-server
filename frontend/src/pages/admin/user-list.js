@@ -33,7 +33,7 @@ import CheckIcon from '@patternfly/react-icons/dist/esm/icons/check-icon';
 import LinuxIcon from '@patternfly/react-icons/dist/esm/icons/linux-icon';
 import PencilAltIcon from '@patternfly/react-icons/dist/esm/icons/pencil-alt-icon';
 import TrashIcon from '@patternfly/react-icons/dist/esm/icons/trash-icon';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 const COLUMNS = Object.values(USER_COLUMNS);
 
@@ -279,7 +279,5 @@ const UserList = () => {
     </Fragment>
   );
 };
-
-UserList.propTypes = {};
 
 export default UserList;

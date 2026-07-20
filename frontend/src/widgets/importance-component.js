@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import PropTypes from 'prop-types';
 
 import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 
 import { Thead, Th, Tbody, Tr, Td, Table } from '@patternfly/react-table';
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
@@ -134,13 +133,6 @@ const ImportanceComponentWidget = ({
       </CardFooter>
     </Card>
   );
-};
-
-ImportanceComponentWidget.propTypes = {
-  title: PropTypes.string,
-  params: PropTypes.object,
-  onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func,
 };
 
 export default ImportanceComponentWidget;

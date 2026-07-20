@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import {
   MenuToggle,
   Content,
@@ -67,14 +66,6 @@ const ParamDropdown = ({
       </div>
     </>
   );
-};
-
-ParamDropdown.propTypes = {
-  defaultValue: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  dropdownItems: PropTypes.array,
-  handleSelect: PropTypes.func,
-  tooltip: PropTypes.string,
-  ouiaId: PropTypes.string,
 };
 
 export default ParamDropdown;

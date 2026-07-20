@@ -1,5 +1,3 @@
-import PropTypes from 'prop-types';
-
 import {
   Button,
   Content,
@@ -62,17 +60,6 @@ const DeleteModal = ({
       </ModalFooter>
     </Modal>
   );
-};
-
-DeleteModal.propTypes = {
-  toDeleteId: PropTypes.string,
-  title: PropTypes.string,
-  body: PropTypes.node,
-  onDelete: PropTypes.func,
-  onClose: PropTypes.func,
-  isOpen: PropTypes.bool,
-  toDeletePath: PropTypes.array,
-  ouiaId: PropTypes.string,
 };
 
 export default DeleteModal;

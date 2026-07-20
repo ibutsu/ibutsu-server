@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import ResultFilter from './result-filter';
 import { FilterContext } from '../contexts/filter-context';
 import { IbutsuContext } from '../contexts/ibutsu-context';

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router';
 
 import '../app.css';
 import AdminPage from './admin-page';
@@ -73,7 +73,5 @@ const Admin = () => {
     </Routes>
   );
 };
-
-Admin.propTypes = {};
 
 export default Admin;

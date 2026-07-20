@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import RunList from './run-list';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { FilterContext } from '../components/contexts/filter-context';

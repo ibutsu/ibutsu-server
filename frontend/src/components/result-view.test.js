@@ -1,5 +1,5 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import ResultView from './result-view';
 import { IbutsuContext } from './contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';

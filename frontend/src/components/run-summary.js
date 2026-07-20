@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { Label, LabelGroup } from '@patternfly/react-core';
 import { ICON_RESULT_MAP } from '../constants';
 
@@ -92,10 +91,6 @@ const RunSummary = ({ summary }) => {
       )}
     </>
   );
-};
-
-RunSummary.propTypes = {
-  summary: PropTypes.object,
 };
 
 export default RunSummary;

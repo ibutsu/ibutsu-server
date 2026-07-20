@@ -15,7 +15,6 @@ import {
   TextInputGroupUtilities,
 } from '@patternfly/react-core';
 
-import PropTypes from 'prop-types';
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 
@@ -691,12 +690,6 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
       </Flex>
     </CardBody>
   );
-};
-
-ResultFilter.propTypes = {
-  hideFilters: PropTypes.arrayOf(PropTypes.string),
-  runs: PropTypes.arrayOf(PropTypes.string),
-  maxHeight: PropTypes.string,
 };
 
 export default ResultFilter;

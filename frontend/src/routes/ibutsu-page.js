@@ -4,7 +4,7 @@
 
 import { useContext, useEffect } from 'react';
 
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 
 import { EmptyState, EmptyStateBody, Page } from '@patternfly/react-core';
 
@@ -49,7 +49,5 @@ const IbutsuPage = () => {
     </>
   );
 };
-
-IbutsuPage.propTypes = {};
 
 export default IbutsuPage;

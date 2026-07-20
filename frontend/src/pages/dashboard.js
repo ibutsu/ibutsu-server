@@ -30,7 +30,7 @@ import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-i
 import TachometerAltIcon from '@patternfly/react-icons/dist/esm/icons/tachometer-alt-icon';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle-icon';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from './settings';
@@ -584,7 +584,5 @@ const Dashboard = () => {
     </>
   );
 };
-
-Dashboard.propTypes = {};
 
 export default Dashboard;

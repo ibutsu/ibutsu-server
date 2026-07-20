@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import IbutsuHeader from './ibutsu-header';
 import { IbutsuContext } from './contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';

@@ -13,7 +13,7 @@ import {
   LoginPage,
   TextInput,
 } from '@patternfly/react-core';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router';
 
 import { AuthService } from '../utilities/auth';
 
@@ -137,7 +137,5 @@ export const ForgotPassword = () => {
     </LoginPage>
   );
 };
-
-ForgotPassword.propTypes = {};
 
 export default ForgotPassword;

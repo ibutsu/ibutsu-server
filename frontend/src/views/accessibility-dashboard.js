@@ -2,7 +2,6 @@
 // The class was converted to functional react, but needs additional work.
 // It's not in use in downstream environments at the moment
 import { Fragment, useContext, useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   MenuToggle,
@@ -12,7 +11,7 @@ import {
   TextInput,
 } from '@patternfly/react-core';
 
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
@@ -387,10 +386,6 @@ const AccessibilityDashboardView = ({ view }) => {
       removeCallback={() => setPage(1)}
     />
   );
-};
-
-AccessibilityDashboardView.propTypes = {
-  view: PropTypes.object,
 };
 
 export default AccessibilityDashboardView;

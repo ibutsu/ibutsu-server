@@ -40,7 +40,7 @@ import ResultView from './result-view';
 import usePagination from './hooks/use-pagination';
 import { FilterContext } from './contexts/filter-context';
 import ResultFilter from './filtering/result-filter';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router';
 
 const HIDE = ['project_id', 'run_id'];
 
@@ -307,7 +307,5 @@ const ClassifyFailuresTable = () => {
     </Card>
   );
 };
-
-ClassifyFailuresTable.propTypes = {};
 
 export default ClassifyFailuresTable;

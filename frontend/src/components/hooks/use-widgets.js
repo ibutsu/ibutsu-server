@@ -7,7 +7,6 @@ import {
   lazy,
   Suspense,
 } from 'react';
-import PropTypes from 'prop-types';
 import { HttpClient } from '../../utilities/http';
 import { KNOWN_WIDGETS } from '../../constants';
 import { Settings } from '../../pages/settings';
@@ -125,13 +124,6 @@ const JenkinsHeatmapWrapper = ({
       onEditClick={onEditClick}
     />
   );
-};
-
-JenkinsHeatmapWrapper.propTypes = {
-  title: PropTypes.string,
-  params: PropTypes.object,
-  onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func,
 };
 
 export const useWidgets = ({

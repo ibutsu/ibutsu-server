@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import ClassifyFailuresTable from './classify-failures';
 import { FilterContext } from './contexts/filter-context';
 import { HttpClient } from '../utilities/http';
