@@ -1,5 +1,3 @@
-import PropTypes from 'prop-types';
-
 import {
   Button,
   EmptyState,
@@ -9,7 +7,7 @@ import {
 } from '@patternfly/react-core';
 import SearchIcon from '@patternfly/react-icons/dist/esm/icons/search-icon';
 
-import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router';
 
 const EmptyObject = ({ headingText, bodyText, returnLink, returnLinkText }) => {
   return (
@@ -36,13 +34,6 @@ const EmptyObject = ({ headingText, bodyText, returnLink, returnLinkText }) => {
       </EmptyState>
     </>
   );
-};
-
-EmptyObject.propTypes = {
-  headingText: PropTypes.string,
-  bodyText: PropTypes.string,
-  returnLink: PropTypes.string,
-  returnLinkText: PropTypes.string,
 };
 
 export default EmptyObject;

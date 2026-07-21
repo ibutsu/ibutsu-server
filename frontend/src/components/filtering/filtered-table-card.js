@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, { isValidElement, useState } from 'react';
 
 import {
@@ -383,31 +382,6 @@ const FilterTable = ({
       ) : null}
     </Card>
   );
-};
-
-FilterTable.propTypes = {
-  columns: PropTypes.array,
-  rows: PropTypes.array,
-  filters: PropTypes.node,
-  isError: PropTypes.bool,
-  onCollapse: PropTypes.func,
-  onClearFilters: PropTypes.func,
-  onSetPage: PropTypes.func,
-  onSetPageSize: PropTypes.func,
-  onRowSelectCallback: PropTypes.func,
-  variant: PropTypes.node,
-  footerChildren: PropTypes.node,
-  headerChildren: PropTypes.node,
-  cardClass: PropTypes.string,
-  fetching: PropTypes.bool,
-  page: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  pageSize: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  totalItems: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  selectable: PropTypes.bool,
-  expandable: PropTypes.bool,
-  sortBy: PropTypes.object,
-  onSort: PropTypes.func,
-  sortFunctions: PropTypes.object,
 };
 
 export default FilterTable;

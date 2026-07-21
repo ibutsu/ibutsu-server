@@ -1,5 +1,4 @@
 import { createContext, useState } from 'react';
-import PropTypes from 'prop-types';
 import { getDarkTheme } from '../../utilities';
 
 const IbutsuContext = createContext({ primaryType: 'project' });
@@ -11,7 +10,7 @@ const IbutsuContextProvider = (props) => {
   const [darkTheme, setDarkTheme] = useState(() => getDarkTheme());
 
   return (
-    <IbutsuContext.Provider
+    <IbutsuContext
       value={{
         primaryType: primaryType,
         setPrimaryType: setPrimaryType,
@@ -24,12 +23,8 @@ const IbutsuContextProvider = (props) => {
       }}
     >
       {props.children}
-    </IbutsuContext.Provider>
+    </IbutsuContext>
   );
-};
-
-IbutsuContextProvider.propTypes = {
-  children: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
 };
 
 export { IbutsuContext, IbutsuContextProvider };

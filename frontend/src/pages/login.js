@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState, useContext } from 'react';
+import { use, useEffect, useMemo, useCallback, useState } from 'react';
 import {
   Alert,
   ActionGroup,
@@ -24,7 +24,7 @@ import GithubIcon from '@patternfly/react-icons/dist/esm/icons/github-icon';
 import GitlabIcon from '@patternfly/react-icons/dist/esm/icons/gitlab-icon';
 import RedhatIcon from '@patternfly/react-icons/dist/esm/icons/redhat-icon';
 import KeyIcon from '@patternfly/react-icons/dist/esm/icons/key-icon';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router';
 import { GoogleLogin } from '@react-oauth/google';
 import OAuth2Login from 'react-simple-oauth2-login';
 import FacebookLogin from '@greatsumini/react-facebook-login';
@@ -74,7 +74,7 @@ const getSearchUser = (location) => {
 const Login = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const context = useContext(IbutsuContext);
+  const context = use(IbutsuContext);
 
   const { setPrimaryObject } = context;
 
@@ -521,7 +521,5 @@ const Login = () => {
     </LoginPage>
   );
 };
-
-Login.propTypes = {};
 
 export default Login;

@@ -1,5 +1,4 @@
 import { Bullseye, Spinner } from '@patternfly/react-core';
-import PropTypes from 'prop-types';
 
 /**
  * Shared loading spinner components for consistent loading UX across the application.
@@ -16,10 +15,6 @@ export const PageSpinner = ({ ariaLabel = 'Loading page...' }) => (
   </Bullseye>
 );
 
-PageSpinner.propTypes = {
-  ariaLabel: PropTypes.string,
-};
-
 /**
  * Content spinner for lazy-loaded page content.
  * Uses a smaller minimum height suitable for content sections.
@@ -30,10 +25,6 @@ export const ContentSpinner = ({ ariaLabel = 'Loading content...' }) => (
   </Bullseye>
 );
 
-ContentSpinner.propTypes = {
-  ariaLabel: PropTypes.string,
-};
-
 /**
  * Widget spinner for dashboard widget loading states.
  * Alias for ContentSpinner but semantically named for widget context.
@@ -43,7 +34,3 @@ export const WidgetSpinner = ({ ariaLabel = 'Loading widget...' }) => (
     <Spinner size="lg" aria-label={ariaLabel} />
   </Bullseye>
 );
-
-WidgetSpinner.propTypes = {
-  ariaLabel: PropTypes.string,
-};

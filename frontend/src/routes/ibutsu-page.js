@@ -2,9 +2,9 @@
   /* TODO: Consider renaming to projects-page, maybe updates for static routing? */
 }
 
-import { useContext, useEffect } from 'react';
+import { use, useEffect } from 'react';
 
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 
 import { EmptyState, EmptyStateBody, Page } from '@patternfly/react-core';
 
@@ -16,7 +16,7 @@ import { ToastContainer } from 'react-toastify';
 import { ALERT_TIMEOUT } from '../constants';
 
 const IbutsuPage = () => {
-  const { primaryObject } = useContext(IbutsuContext);
+  const { primaryObject } = use(IbutsuContext);
 
   useEffect(() => {
     document.title = 'Ibutsu';
@@ -49,7 +49,5 @@ const IbutsuPage = () => {
     </>
   );
 };
-
-IbutsuPage.propTypes = {};
 
 export default IbutsuPage;

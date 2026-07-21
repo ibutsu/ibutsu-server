@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import RunList from './run-list';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { FilterContext } from '../components/contexts/filter-context';
@@ -87,11 +87,11 @@ describe('RunList', () => {
 
     return render(
       <MemoryRouter initialEntries={[route]}>
-        <IbutsuContext.Provider value={mergedIbutsuContext}>
-          <FilterContext.Provider value={mergedFilterContext}>
+        <IbutsuContext value={mergedIbutsuContext}>
+          <FilterContext value={mergedFilterContext}>
             <RunList />
-          </FilterContext.Provider>
-        </IbutsuContext.Provider>
+          </FilterContext>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };
@@ -397,13 +397,13 @@ describe('RunList', () => {
 
       rerender(
         <MemoryRouter initialEntries={['/runs']}>
-          <IbutsuContext.Provider value={defaultIbutsuContext}>
-            <FilterContext.Provider
+          <IbutsuContext value={defaultIbutsuContext}>
+            <FilterContext
               value={{ ...defaultFilterContext, ...newFilterContext }}
             >
               <RunList />
-            </FilterContext.Provider>
-          </IbutsuContext.Provider>
+            </FilterContext>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -517,8 +517,8 @@ describe('RunList', () => {
 
       rerender(
         <MemoryRouter initialEntries={['/runs']}>
-          <IbutsuContext.Provider value={defaultIbutsuContext}>
-            <FilterContext.Provider
+          <IbutsuContext value={defaultIbutsuContext}>
+            <FilterContext
               value={{
                 ...defaultFilterContext,
                 activeFilters: [
@@ -527,8 +527,8 @@ describe('RunList', () => {
               }}
             >
               <RunList />
-            </FilterContext.Provider>
-          </IbutsuContext.Provider>
+            </FilterContext>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -594,16 +594,16 @@ describe('RunList', () => {
       // Change primaryObject
       rerender(
         <MemoryRouter initialEntries={['/runs']}>
-          <IbutsuContext.Provider
+          <IbutsuContext
             value={{
               ...defaultIbutsuContext,
               primaryObject: { id: 'project-2' },
             }}
           >
-            <FilterContext.Provider value={defaultFilterContext}>
+            <FilterContext value={defaultFilterContext}>
               <RunList />
-            </FilterContext.Provider>
-          </IbutsuContext.Provider>
+            </FilterContext>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -685,16 +685,16 @@ describe('RunList', () => {
       // Change primaryObject
       rerender(
         <MemoryRouter initialEntries={['/runs']}>
-          <IbutsuContext.Provider
+          <IbutsuContext
             value={{
               ...defaultIbutsuContext,
               primaryObject: { id: 'project-2' },
             }}
           >
-            <FilterContext.Provider value={defaultFilterContext}>
+            <FilterContext value={defaultFilterContext}>
               <RunList />
-            </FilterContext.Provider>
-          </IbutsuContext.Provider>
+            </FilterContext>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 

@@ -1,7 +1,7 @@
 import {
   Fragment,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -40,7 +40,7 @@ import ResultView from './result-view';
 import usePagination from './hooks/use-pagination';
 import { FilterContext } from './contexts/filter-context';
 import ResultFilter from './filtering/result-filter';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router';
 
 const HIDE = ['project_id', 'run_id'];
 
@@ -53,8 +53,7 @@ const COLUMNS = [
 ];
 
 const ClassifyFailuresTable = () => {
-  const { activeFilters, updateFilters, clearFilters } =
-    useContext(FilterContext);
+  const { activeFilters, updateFilters, clearFilters } = use(FilterContext);
 
   const { run_id } = useParams();
 
@@ -307,7 +306,5 @@ const ClassifyFailuresTable = () => {
     </Card>
   );
 };
-
-ClassifyFailuresTable.propTypes = {};
 
 export default ClassifyFailuresTable;

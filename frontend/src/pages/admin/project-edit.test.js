@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import ProjectEdit from './project-edit';
 import { FilterContext } from '../../components/contexts/filter-context';
 import { HttpClient } from '../../utilities/http';
@@ -59,7 +59,7 @@ describe('ProjectEdit', () => {
 
     return render(
       <MemoryRouter initialEntries={[initialRoute]}>
-        <FilterContext.Provider value={mergedFilterContext}>
+        <FilterContext value={mergedFilterContext}>
           <Routes>
             <Route path="/admin/project/:id" element={<ProjectEdit />} />
             <Route
@@ -69,7 +69,7 @@ describe('ProjectEdit', () => {
               }
             />
           </Routes>
-        </FilterContext.Provider>
+        </FilterContext>
       </MemoryRouter>,
     );
   };

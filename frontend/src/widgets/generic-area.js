@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   Chart,
@@ -203,23 +202,6 @@ const GenericAreaWidget = ({
       </CardFooter>
     </Card>
   );
-};
-
-GenericAreaWidget.propTypes = {
-  fontSize: PropTypes.number,
-  interpolation: PropTypes.string,
-  padding: PropTypes.object,
-  params: PropTypes.object,
-  percentData: PropTypes.bool,
-  showTooltip: PropTypes.bool,
-  sortOrder: PropTypes.string,
-  title: PropTypes.string,
-  varExplanation: PropTypes.string,
-  widgetEndpoint: PropTypes.string,
-  xLabel: PropTypes.string,
-  yLabel: PropTypes.string,
-  onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func,
 };
 
 export default GenericAreaWidget;

@@ -1,22 +1,13 @@
 // FilterContext.js
-import { createContext, useContext } from 'react';
+import { createContext, use } from 'react';
 import useTableFilters from '../hooks/use-table-filters';
-import PropTypes from 'prop-types';
 
 export const FilterContext = createContext();
-export const useFilterContext = () => useContext(FilterContext);
+export const useFilterContext = () => use(FilterContext);
 
 const FilterProvider = ({ children, ...props }) => {
   const tableFilters = useTableFilters(props);
-  return (
-    <FilterContext.Provider value={tableFilters}>
-      {children}
-    </FilterContext.Provider>
-  );
-};
-
-FilterProvider.propTypes = {
-  children: PropTypes.node.isRequired,
+  return <FilterContext value={tableFilters}>{children}</FilterContext>;
 };
 
 export default FilterProvider;

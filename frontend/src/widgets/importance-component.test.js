@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import ImportanceComponentWidget from './importance-component';
 import { HttpClient } from '../utilities/http';
 

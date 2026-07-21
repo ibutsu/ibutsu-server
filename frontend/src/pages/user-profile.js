@@ -258,6 +258,4 @@ const UserProfile = () => {
   );
 };
 
-UserProfile.propTypes = {};
-
 export default UserProfile;

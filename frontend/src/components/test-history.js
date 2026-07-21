@@ -6,7 +6,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import PropTypes from 'prop-types';
 import {
   Checkbox,
   Flex,
@@ -530,11 +529,6 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
       }
     />
   );
-};
-
-TestHistoryTable.propTypes = {
-  testResult: PropTypes.object,
-  comparisonResults: PropTypes.array,
 };
 
 export default TestHistoryTable;

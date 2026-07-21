@@ -1,5 +1,4 @@
 import { ICON_RESULT_MAP } from '../constants';
-import PropTypes from 'prop-types';
 
 // Define the legend component outside of the hook
 const ResultWidgetLegend = ({ x, y, datum, style }) => {
@@ -71,20 +70,6 @@ const ResultWidgetLegend = ({ x, y, datum, style }) => {
       </text>
     </g>
   );
-};
-
-// Define PropTypes for the component
-ResultWidgetLegend.propTypes = {
-  x: PropTypes.number.isRequired,
-  y: PropTypes.number.isRequired,
-  datum: PropTypes.shape({
-    name: PropTypes.string,
-    symbol: PropTypes.shape({
-      type: PropTypes.string,
-      fill: PropTypes.string,
-    }),
-  }).isRequired,
-  style: PropTypes.object,
 };
 
 export default ResultWidgetLegend;

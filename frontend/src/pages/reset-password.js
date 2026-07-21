@@ -17,7 +17,7 @@ import {
 } from '@patternfly/react-core';
 import EyeIcon from '@patternfly/react-icons/dist/esm/icons/eye-icon';
 import EyeSlashIcon from '@patternfly/react-icons/dist/esm/icons/eye-slash-icon';
-import { NavLink, useParams } from 'react-router-dom';
+import { NavLink, useParams } from 'react-router';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { AuthService } from '../utilities/auth';
@@ -264,7 +264,5 @@ const ResetPassword = () => {
     </LoginPage>
   );
 };
-
-ResetPassword.propTypes = {};
 
 export default ResetPassword;

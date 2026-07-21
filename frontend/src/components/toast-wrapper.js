@@ -1,5 +1,4 @@
 import { Alert, Icon } from '@patternfly/react-core';
-import PropTypes from 'prop-types';
 
 const ToastWrapper = ({ data }) => (
   <Alert
@@ -11,9 +10,5 @@ const ToastWrapper = ({ data }) => (
     {data.message}
   </Alert>
 );
-
-ToastWrapper.propTypes = {
-  data: PropTypes.object,
-};
 
 export default ToastWrapper;

@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   EmptyState,
@@ -30,7 +23,7 @@ import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-i
 import TachometerAltIcon from '@patternfly/react-icons/dist/esm/icons/tachometer-alt-icon';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import TimesCircleIcon from '@patternfly/react-icons/dist/esm/icons/times-circle-icon';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from './settings';
@@ -44,7 +37,7 @@ import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { nanoid } from 'nanoid/non-secure';
 
 const Dashboard = () => {
-  const { defaultDashboard, primaryObject } = useContext(IbutsuContext);
+  const { defaultDashboard, primaryObject } = use(IbutsuContext);
   const { dashboard_id, project_id } = useParams();
 
   const navigate = useNavigate();
@@ -584,7 +577,5 @@ const Dashboard = () => {
     </>
   );
 };
-
-Dashboard.propTypes = {};
 
 export default Dashboard;

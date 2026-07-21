@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-import PropTypes from 'prop-types';
+import { Navigate } from 'react-router';
 import { AuthService } from '../utilities/auth';
 
 const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
@@ -52,11 +51,6 @@ const ProtectedRoute = ({ children, requireSuperAdmin = false }) => {
   }
 
   return children;
-};
-
-ProtectedRoute.propTypes = {
-  children: PropTypes.node.isRequired,
-  requireSuperAdmin: PropTypes.bool,
 };
 
 export default ProtectedRoute;

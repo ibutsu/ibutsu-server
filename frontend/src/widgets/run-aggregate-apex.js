@@ -1,5 +1,4 @@
-import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Chart from 'react-apexcharts';
 
 import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
@@ -13,437 +12,406 @@ import { CHART_COLOR_MAP } from '../constants';
 import ResultWidgetLegend from './result-widget-legend';
 import { useSVGContainerDimensions } from '../components/hooks/use-svg-container-dimensions';
 
-// React 19 compatibility: This component supports both forwardRef (current React)
-// and ref as a prop (React 19). The actualRef variable handles both cases.
-const RunAggregateApex = forwardRef(
-  (
-    {
-      title,
-      params,
-      horizontal = true,
-      dropdownItems,
-      onDeleteClick,
-      onEditClick,
-      // React 19 compatibility: accept ref as a prop
-      ref: refProp,
-    },
-    ref,
-  ) => {
-    // Use the forwarded ref or the prop ref (React 19 compatibility)
-    const actualRef = ref || refProp;
-    const [chartData, setChartData] = useState({});
-    const [legendData, setLegendData] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [runAggregatorError, setRunAggregatorError] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
-    const [groupField, setGroupField] = useState(params.group_field);
-    const [weeks, setWeeks] = useState(params.weeks);
-    const [containerHeight, setContainerHeight] = useState(null);
-    const cardRef = useRef(null);
-    const resizeObserverRef = useRef(null);
-    const timeoutRef = useRef(null);
+const RunAggregateApex = ({
+  title,
+  params,
+  horizontal = true,
+  dropdownItems,
+  onDeleteClick,
+  onEditClick,
+  ref,
+}) => {
+  const [chartData, setChartData] = useState({});
+  const [legendData, setLegendData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [runAggregatorError, setRunAggregatorError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [groupField, setGroupField] = useState(params.group_field);
+  const [weeks, setWeeks] = useState(params.weeks);
+  const [containerHeight, setContainerHeight] = useState(null);
+  const cardRef = useRef(null);
+  const resizeObserverRef = useRef(null);
+  const timeoutRef = useRef(null);
 
-    // Callback ref to handle both internal cardRef and forwarded ref
-    const setCardRef = (node) => {
-      cardRef.current = node;
-      // Forward the ref to the parent component
-      if (actualRef) {
-        if (typeof actualRef === 'function') {
-          actualRef(node);
-        } else if (
-          actualRef &&
-          typeof actualRef === 'object' &&
-          'current' in actualRef
-        ) {
-          actualRef.current = node;
+  const setCardRef = (node) => {
+    cardRef.current = node;
+    if (ref) {
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (typeof ref === 'object' && 'current' in ref) {
+        ref.current = node;
+      }
+    }
+  };
+
+  // Dynamic SVG container measurement
+  const { containerRef: legendContainerRef, width: legendContainerWidth } =
+    useSVGContainerDimensions();
+
+  useEffect(() => {
+    const fetchAggregated = async () => {
+      setIsLoading(true);
+      try {
+        const response = await HttpClient.get(
+          [Settings.serverUrl, 'widget', 'run-aggregator'],
+          {
+            ...params,
+            group_field: groupField,
+            weeks: weeks,
+          },
+        );
+
+        if (!response.ok) {
+          let errorText = 'Error fetching data';
+          if (response.status === 400) {
+            errorText = 'Bad request for widget data, review settings';
+          } else if (response.status >= 500) {
+            errorText =
+              'Backend error processing widget data, review settings and contact administrator';
+          }
+          setErrorMessage(errorText);
+          setRunAggregatorError(true);
+          return;
         }
+
+        const data = await HttpClient.handleResponse(response);
+        setChartData(data);
+
+        const _legendData = Object.keys(data || {})
+          .filter((key) => key !== 'filter')
+          .map((resultType) => ({
+            name: `${toTitleCase(resultType)}`,
+            symbol: {
+              fill: CHART_COLOR_MAP[resultType] || CHART_COLOR_MAP.default,
+              type: resultType,
+            },
+          }));
+        setLegendData(_legendData);
+        setRunAggregatorError(false);
+        setErrorMessage('');
+      } catch (error) {
+        setRunAggregatorError(true);
+        setErrorMessage(error.message || 'Error fetching run aggregator data');
+        console.error('Error fetching run aggregator data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (Object.keys(params || {}).length) {
+      fetchAggregated();
+    }
+  }, [params, groupField, weeks]);
+
+  // Effect to monitor container height changes
+  useEffect(() => {
+    if (!cardRef.current) return;
+
+    const updateContainerHeight = () => {
+      if (cardRef.current) {
+        const cardHeight = cardRef.current.offsetHeight;
+        // Debounce height updates to prevent excessive re-renders
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => {
+          setContainerHeight(cardHeight);
+        }, 100);
       }
     };
 
-    // Dynamic SVG container measurement
-    const { containerRef: legendContainerRef, width: legendContainerWidth } =
-      useSVGContainerDimensions();
+    // Initial measurement with a small delay to ensure DOM is ready
+    timeoutRef.current = setTimeout(updateContainerHeight, 100);
 
-    useEffect(() => {
-      const fetchAggregated = async () => {
-        setIsLoading(true);
-        try {
-          const response = await HttpClient.get(
-            [Settings.serverUrl, 'widget', 'run-aggregator'],
-            {
-              ...params,
-              group_field: groupField,
-              weeks: weeks,
-            },
-          );
+    // Set up ResizeObserver to watch for container size changes
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserverRef.current = new ResizeObserver(() => {
+        updateContainerHeight();
+      });
+      resizeObserverRef.current.observe(cardRef.current);
+    }
 
-          if (!response.ok) {
-            let errorText = 'Error fetching data';
-            if (response.status === 400) {
-              errorText = 'Bad request for widget data, review settings';
-            } else if (response.status >= 500) {
-              errorText =
-                'Backend error processing widget data, review settings and contact administrator';
-            }
-            setErrorMessage(errorText);
-            setRunAggregatorError(true);
-            return;
-          }
+    // Fallback: listen for window resize
+    window.addEventListener('resize', updateContainerHeight);
 
-          const data = await HttpClient.handleResponse(response);
-          setChartData(data);
-
-          const _legendData = Object.keys(data || {})
-            .filter((key) => key !== 'filter')
-            .map((resultType) => ({
-              name: `${toTitleCase(resultType)}`,
-              symbol: {
-                fill: CHART_COLOR_MAP[resultType] || CHART_COLOR_MAP.default,
-                type: resultType,
-              },
-            }));
-          setLegendData(_legendData);
-          setRunAggregatorError(false);
-          setErrorMessage('');
-        } catch (error) {
-          setRunAggregatorError(true);
-          setErrorMessage(
-            error.message || 'Error fetching run aggregator data',
-          );
-          console.error('Error fetching run aggregator data:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      if (Object.keys(params || {}).length) {
-        fetchAggregated();
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
       }
-    }, [params, groupField, weeks]);
+      window.removeEventListener('resize', updateContainerHeight);
+    };
+  }, []);
 
-    // Effect to monitor container height changes
-    useEffect(() => {
-      if (!cardRef.current) return;
+  // Prepare data for ApexCharts horizontal bar chart
+  const { chartSeries, chartCategories } = useMemo(() => {
+    if (!Object.keys(chartData || {}).length) {
+      return { chartSeries: [], chartCategories: [] };
+    }
 
-      const updateContainerHeight = () => {
-        if (cardRef.current) {
-          const cardHeight = cardRef.current.offsetHeight;
-          // Debounce height updates to prevent excessive re-renders
-          if (timeoutRef.current) clearTimeout(timeoutRef.current);
-          timeoutRef.current = setTimeout(() => {
-            setContainerHeight(cardHeight);
-          }, 100);
-        }
-      };
+    const series = [];
+    const categories = new Set();
 
-      // Initial measurement with a small delay to ensure DOM is ready
-      timeoutRef.current = setTimeout(updateContainerHeight, 100);
-
-      // Set up ResizeObserver to watch for container size changes
-      if (typeof ResizeObserver !== 'undefined') {
-        resizeObserverRef.current = new ResizeObserver(() => {
-          updateContainerHeight();
+    // Collect all categories first
+    Object.keys(chartData).forEach((testState) => {
+      if (testState !== 'filter') {
+        Object.keys(chartData[testState]).forEach((groupField) => {
+          categories.add(groupField);
         });
-        resizeObserverRef.current.observe(cardRef.current);
       }
+    });
 
-      // Fallback: listen for window resize
-      window.addEventListener('resize', updateContainerHeight);
+    const sortedCategories = Array.from(categories).sort();
 
-      return () => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        if (resizeObserverRef.current) {
-          resizeObserverRef.current.disconnect();
-        }
-        window.removeEventListener('resize', updateContainerHeight);
-      };
-    }, []);
+    // Create series data for each test state
+    Object.keys(chartData).forEach((testState) => {
+      if (testState !== 'filter') {
+        const data = sortedCategories.map((category) => {
+          return chartData[testState][category] || 0;
+        });
 
-    // Prepare data for ApexCharts horizontal bar chart
-    const { chartSeries, chartCategories } = useMemo(() => {
-      if (!Object.keys(chartData || {}).length) {
-        return { chartSeries: [], chartCategories: [] };
+        series.push({
+          name: toTitleCase(testState),
+          data: data,
+          color: CHART_COLOR_MAP[testState] || CHART_COLOR_MAP.default,
+        });
       }
+    });
 
-      const series = [];
-      const categories = new Set();
+    return {
+      chartSeries: series,
+      chartCategories: sortedCategories,
+    };
+  }, [chartData]);
 
-      // Collect all categories first
-      Object.keys(chartData).forEach((testState) => {
-        if (testState !== 'filter') {
-          Object.keys(chartData[testState]).forEach((groupField) => {
-            categories.add(groupField);
-          });
-        }
-      });
+  // Calculate responsive height based on data and container
+  const chartHeight = useMemo(() => {
+    const minHeight = 250;
+    const maxHeight = 600;
+    const categoryCount = chartCategories.length;
 
-      const sortedCategories = Array.from(categories).sort();
+    if (!containerHeight) {
+      // Default calculation when container height not available
+      return horizontal
+        ? Math.min(Math.max(minHeight, categoryCount * 35), maxHeight)
+        : minHeight;
+    }
 
-      // Create series data for each test state
-      Object.keys(chartData).forEach((testState) => {
-        if (testState !== 'filter') {
-          const data = sortedCategories.map((category) => {
-            return chartData[testState][category] || 0;
-          });
+    // Use 70% of container height for chart, leaving space for header/footer
+    const availableHeight = Math.max(minHeight, containerHeight * 0.7);
+    return Math.min(availableHeight, maxHeight);
+  }, [chartCategories.length, horizontal, containerHeight]);
 
-          series.push({
-            name: toTitleCase(testState),
-            data: data,
-            color: CHART_COLOR_MAP[testState] || CHART_COLOR_MAP.default,
-          });
-        }
-      });
-
-      return {
-        chartSeries: series,
-        chartCategories: sortedCategories,
-      };
-    }, [chartData]);
-
-    // Calculate responsive height based on data and container
-    const chartHeight = useMemo(() => {
-      const minHeight = 250;
-      const maxHeight = 600;
-      const categoryCount = chartCategories.length;
-
-      if (!containerHeight) {
-        // Default calculation when container height not available
-        return horizontal
-          ? Math.min(Math.max(minHeight, categoryCount * 35), maxHeight)
-          : minHeight;
-      }
-
-      // Use 70% of container height for chart, leaving space for header/footer
-      const availableHeight = Math.max(minHeight, containerHeight * 0.7);
-      return Math.min(availableHeight, maxHeight);
-    }, [chartCategories.length, horizontal, containerHeight]);
-
-    // ApexCharts configuration for horizontal bar chart
-    const chartOptions = useMemo(() => {
-      return {
-        chart: {
-          type: 'bar',
-          stacked: true,
-          stackType: '100%',
-          height: chartHeight,
-        },
-        toolbar: {
-          show: false,
-        },
-        colors: chartSeries.map((series) => series.color),
-        plotOptions: {
-          bar: {
-            horizontal: horizontal,
-            dataLabels: {
-              position: 'center',
-            },
+  // ApexCharts configuration for horizontal bar chart
+  const chartOptions = useMemo(() => {
+    return {
+      chart: {
+        type: 'bar',
+        stacked: true,
+        stackType: '100%',
+        height: chartHeight,
+      },
+      toolbar: {
+        show: false,
+      },
+      colors: chartSeries.map((series) => series.color),
+      plotOptions: {
+        bar: {
+          horizontal: horizontal,
+          dataLabels: {
+            position: 'center',
           },
         },
-        dataLabels: {
-          enabled: false,
-        },
-        xaxis: {
-          categories: chartCategories,
-          labels: {
-            style: {
-              fontFamily: 'RedHatText, sans-serif',
-              fontSize: '12px',
-              colors: 'var(--pf-t--global--text--color--regular)',
-            },
-          },
-        },
-        yaxis: {
-          labels: {
-            style: {
-              fontFamily: 'RedHatText, sans-serif',
-              fontSize: '12px',
-              colors: 'var(--pf-t--global--text--color--regular)',
-            },
-            formatter: function (val) {
-              return val;
-            },
-          },
-        },
-        legend: {
-          show: false,
-        },
-        tooltip: {
-          enabled: true,
-          theme: getDarkTheme() ? 'dark' : 'light',
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      xaxis: {
+        categories: chartCategories,
+        labels: {
           style: {
             fontFamily: 'RedHatText, sans-serif',
+            fontSize: '12px',
+            colors: 'var(--pf-t--global--text--color--regular)',
           },
-          y: {
-            formatter: function (val) {
-              return `${val} %`;
+        },
+      },
+      yaxis: {
+        labels: {
+          style: {
+            fontFamily: 'RedHatText, sans-serif',
+            fontSize: '12px',
+            colors: 'var(--pf-t--global--text--color--regular)',
+          },
+          formatter: function (val) {
+            return val;
+          },
+        },
+      },
+      legend: {
+        show: false,
+      },
+      tooltip: {
+        enabled: true,
+        theme: getDarkTheme() ? 'dark' : 'light',
+        style: {
+          fontFamily: 'RedHatText, sans-serif',
+        },
+        y: {
+          formatter: function (val) {
+            return `${val} %`;
+          },
+        },
+      },
+      responsive: [
+        {
+          breakpoint: 768,
+          options: {
+            chart: {
+              height: Math.max(200, chartHeight * 0.75), // Smaller height for mobile
             },
           },
         },
-        responsive: [
-          {
-            breakpoint: 768,
-            options: {
-              chart: {
-                height: Math.max(200, chartHeight * 0.75), // Smaller height for mobile
-              },
-            },
-          },
-        ],
-      };
-    }, [chartSeries, chartCategories, horizontal, chartHeight]);
-
-    const onGroupFieldSelect = (value) => {
-      setGroupField(value);
+      ],
     };
+  }, [chartSeries, chartCategories, horizontal, chartHeight]);
 
-    const onWeekSelect = (value) => {
-      setWeeks(value);
-    };
+  const onGroupFieldSelect = (value) => {
+    setGroupField(value);
+  };
 
-    const itemsPerRow = Math.ceil(legendData.length / 3);
+  const onWeekSelect = (value) => {
+    setWeeks(value);
+  };
 
-    return (
-      <Card
-        className="ibutsu-widget-card"
-        ref={setCardRef}
-        style={{ height: '100%' }}
-      >
-        <WidgetHeader
-          title={title || 'Recent Run Results'}
-          onEditClick={onEditClick}
-          onDeleteClick={onDeleteClick}
+  const itemsPerRow = Math.ceil(legendData.length / 3);
+
+  return (
+    <Card
+      className="ibutsu-widget-card"
+      ref={setCardRef}
+      style={{ height: '100%' }}
+    >
+      <WidgetHeader
+        title={title || 'Recent Run Results'}
+        onEditClick={onEditClick}
+        onDeleteClick={onDeleteClick}
+      />
+      <CardBody className="ibutsu-widget-card-body">
+        {runAggregatorError && (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '20px',
+            }}
+          >
+            <Content
+              component="h3"
+              style={{ color: 'var(--pf-v6-global--danger-color--100)' }}
+            >
+              Widget Error
+            </Content>
+            <Content
+              style={{
+                color: 'var(--pf-t--global--text--color--regular)',
+                marginTop: '10px',
+              }}
+            >
+              {errorMessage && (
+                <div style={{ marginBottom: '10px', fontStyle: 'italic' }}>
+                  {errorMessage}
+                </div>
+              )}
+              <div>
+                Unable to load run aggregation data. Please review your filter
+                and group field combination to ensure a valid aggregation can be
+                created.
+              </div>
+              <div style={{ marginTop: '10px' }}>
+                If this issue persists, please contact your system
+                administrators.
+              </div>
+            </Content>
+          </div>
+        )}
+        {!runAggregatorError && isLoading && (
+          <div
+            style={{
+              textAlign: 'center',
+            }}
+          >
+            <Content component="h2">Loading ...</Content>
+          </div>
+        )}
+        {!runAggregatorError &&
+          !isLoading &&
+          Object.keys(chartData || {}).length > 0 && (
+            <>
+              <div
+                className="ibutsu-widget-chart-container"
+                style={{ height: chartHeight }}
+              >
+                <Chart
+                  className="ibutsu-widget-chart"
+                  options={chartOptions}
+                  series={chartSeries}
+                  type="bar"
+                  height={chartHeight}
+                />
+              </div>
+              {legendData.length > 0 && (
+                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                  <svg
+                    ref={legendContainerRef}
+                    style={{
+                      overflow: 'visible',
+                      width: '100%',
+                      height: '60px',
+                    }}
+                  >
+                    {legendData.map((item, index) => {
+                      const row = Math.floor(index / itemsPerRow);
+                      const col = index % itemsPerRow;
+                      const itemWidth = 120;
+                      const totalLegendWidth = itemsPerRow * itemWidth;
+                      const startX = Math.max(
+                        0,
+                        (legendContainerWidth - totalLegendWidth) / 2,
+                      );
+
+                      return (
+                        <ResultWidgetLegend
+                          key={item.name}
+                          x={startX + col * itemWidth}
+                          y={20 + row * 25}
+                          datum={item}
+                          style={{
+                            fill: 'var(--pf-t--global--text--color--regular)',
+                          }}
+                        />
+                      );
+                    })}
+                  </svg>
+                </div>
+              )}
+            </>
+          )}
+      </CardBody>
+      <CardFooter className="ibutsu-widget-footer">
+        <ParamDropdown
+          dropdownItems={
+            dropdownItems || ['component', 'env', 'metadata.jenkins.job_name']
+          }
+          defaultValue={groupField}
+          handleSelect={onGroupFieldSelect}
+          tooltip="Group data by:"
         />
-        <CardBody className="ibutsu-widget-card-body">
-          {runAggregatorError && (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '20px',
-              }}
-            >
-              <Content
-                component="h3"
-                style={{ color: 'var(--pf-v6-global--danger-color--100)' }}
-              >
-                Widget Error
-              </Content>
-              <Content
-                style={{
-                  color: 'var(--pf-t--global--text--color--regular)',
-                  marginTop: '10px',
-                }}
-              >
-                {errorMessage && (
-                  <div style={{ marginBottom: '10px', fontStyle: 'italic' }}>
-                    {errorMessage}
-                  </div>
-                )}
-                <div>
-                  Unable to load run aggregation data. Please review your filter
-                  and group field combination to ensure a valid aggregation can
-                  be created.
-                </div>
-                <div style={{ marginTop: '10px' }}>
-                  If this issue persists, please contact your system
-                  administrators.
-                </div>
-              </Content>
-            </div>
-          )}
-          {!runAggregatorError && isLoading && (
-            <div
-              style={{
-                textAlign: 'center',
-              }}
-            >
-              <Content component="h2">Loading ...</Content>
-            </div>
-          )}
-          {!runAggregatorError &&
-            !isLoading &&
-            Object.keys(chartData || {}).length > 0 && (
-              <>
-                <div
-                  className="ibutsu-widget-chart-container"
-                  style={{ height: chartHeight }}
-                >
-                  <Chart
-                    className="ibutsu-widget-chart"
-                    options={chartOptions}
-                    series={chartSeries}
-                    type="bar"
-                    height={chartHeight}
-                  />
-                </div>
-                {legendData.length > 0 && (
-                  <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                    <svg
-                      ref={legendContainerRef}
-                      style={{
-                        overflow: 'visible',
-                        width: '100%',
-                        height: '60px',
-                      }}
-                    >
-                      {legendData.map((item, index) => {
-                        const row = Math.floor(index / itemsPerRow);
-                        const col = index % itemsPerRow;
-                        const itemWidth = 120;
-                        const totalLegendWidth = itemsPerRow * itemWidth;
-                        const startX = Math.max(
-                          0,
-                          (legendContainerWidth - totalLegendWidth) / 2,
-                        );
-
-                        return (
-                          <ResultWidgetLegend
-                            key={item.name}
-                            x={startX + col * itemWidth}
-                            y={20 + row * 25}
-                            datum={item}
-                            style={{
-                              fill: 'var(--pf-t--global--text--color--regular)',
-                            }}
-                          />
-                        );
-                      })}
-                    </svg>
-                  </div>
-                )}
-              </>
-            )}
-        </CardBody>
-        <CardFooter className="ibutsu-widget-footer">
-          <ParamDropdown
-            dropdownItems={
-              dropdownItems || ['component', 'env', 'metadata.jenkins.job_name']
-            }
-            defaultValue={groupField}
-            handleSelect={onGroupFieldSelect}
-            tooltip="Group data by:"
-          />
-          <ParamDropdown
-            dropdownItems={[1, 2, 3, 4, 5, 6]}
-            handleSelect={onWeekSelect}
-            defaultValue={weeks}
-            tooltip="Set weeks to:"
-          />
-        </CardFooter>
-      </Card>
-    );
-  },
-);
-
-RunAggregateApex.displayName = 'RunAggregateApex';
-
-RunAggregateApex.propTypes = {
-  title: PropTypes.string,
-  params: PropTypes.object,
-  horizontal: PropTypes.bool,
-  dropdownItems: PropTypes.array,
-  onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func,
-  // React 19 compatibility: ref can be passed as a prop
-  ref: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
+        <ParamDropdown
+          dropdownItems={[1, 2, 3, 4, 5, 6]}
+          handleSelect={onWeekSelect}
+          defaultValue={weeks}
+          tooltip="Set weeks to:"
+        />
+      </CardFooter>
+    </Card>
+  );
 };
 
 export default RunAggregateApex;

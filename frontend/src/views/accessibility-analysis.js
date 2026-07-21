@@ -2,8 +2,7 @@
 // and should not be implemented as a view type widget, but as a normal component
 // The class was converted to functional react, but needs additional work.
 // It's not in use in downstream environments at the moment
-import { useContext, useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
+import { use, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   Card,
@@ -23,12 +22,7 @@ import {
   ChartDonut,
   ChartThemeColor,
 } from '@patternfly/react-charts/victory';
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useSearchParams,
-} from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
 import { resultToRow } from '../utilities';
@@ -41,7 +35,7 @@ import usePagination from '../components/hooks/use-pagination';
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 
 const AccessibilityAnalysisView = ({ view }) => {
-  const context = useContext(IbutsuContext);
+  const context = use(IbutsuContext);
   const { darkTheme } = context;
   const location = useLocation();
   const navigate = useNavigate();
@@ -56,7 +50,6 @@ const AccessibilityAnalysisView = ({ view }) => {
     () => filters.run_list?.val || searchParams.get('run_list'),
     [filters.run_list?.val, searchParams],
   );
-  const [, setResults] = useState([]);
   // const [selectedResults, setSelectedResults] = useState([]);
 
   // const [areaChart, setAreaChart] = useState(false);
@@ -75,7 +68,6 @@ const AccessibilityAnalysisView = ({ view }) => {
   // const [chartParams, setChartParams] = useState({});
   // const [treeSearch, setTreeSearch] = useState();
 
-  const [, setRunList] = useState([]);
   const [countSkips] = useState(false);
 
   // TODO? search param sync
@@ -105,8 +97,7 @@ const AccessibilityAnalysisView = ({ view }) => {
           [Settings.serverUrl, 'widget', view.widget],
           viewParams,
         );
-        const data = await HttpClient.handleResponse(response);
-        setRunList(data.run_list);
+        await HttpClient.handleResponse(response);
       } catch (error) {
         console.error(error);
       }
@@ -251,7 +242,6 @@ const AccessibilityAnalysisView = ({ view }) => {
           },
         );
         const data = await HttpClient.handleResponse(response);
-        setResults(data.results);
         setRows(data.results?.map((result) => resultToRow(result)));
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
@@ -259,7 +249,6 @@ const AccessibilityAnalysisView = ({ view }) => {
       } catch (error) {
         console.error('Error fetching result data:', error);
         setRows([]);
-        setResults([]);
         setIsError(true);
       }
     };
@@ -409,10 +398,6 @@ const AccessibilityAnalysisView = ({ view }) => {
       </PageSection>
     </>
   );
-};
-
-AccessibilityAnalysisView.propTypes = {
-  view: PropTypes.object,
 };
 
 export default AccessibilityAnalysisView;

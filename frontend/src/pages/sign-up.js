@@ -17,7 +17,7 @@ import {
 } from '@patternfly/react-core';
 import EyeIcon from '@patternfly/react-icons/dist/esm/icons/eye-icon';
 import EyeSlashIcon from '@patternfly/react-icons/dist/esm/icons/eye-slash-icon';
-import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { AuthService } from '../utilities/auth';
@@ -90,10 +90,7 @@ export const SignUp = () => {
     setIsValidPassword(validPassword);
     if (validEmail && validPassword) {
       try {
-        const isSuccess = await AuthService.register(
-          emailValue,
-          passwordValue,
-        );
+        const isSuccess = await AuthService.register(emailValue, passwordValue);
         if (isSuccess) {
           setAlertText(
             'Registration successful! Check your e-mail for a verification link.',
@@ -204,7 +201,9 @@ export const SignUp = () => {
               </Button>
             </InputGroupItem>
           </InputGroup>
-          <ErrorBoundary fallback={<div>Failed to load password strength indicator</div>}>
+          <ErrorBoundary
+            fallback={<div>Failed to load password strength indicator</div>}
+          >
             <Suspense fallback="">
               <PasswordStrengthBar password={passwordValue} />
             </Suspense>

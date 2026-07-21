@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import ResultFilter from './result-filter';
 import { FilterContext } from '../contexts/filter-context';
 import { IbutsuContext } from '../contexts/ibutsu-context';
@@ -73,11 +73,11 @@ describe('ResultFilter', () => {
     const mergedIbutsuContext = { ...defaultIbutsuContext, ...ibutsuContext };
     return render(
       <MemoryRouter>
-        <IbutsuContext.Provider value={mergedIbutsuContext}>
-          <FilterContext.Provider value={mergedContext}>
+        <IbutsuContext value={mergedIbutsuContext}>
+          <FilterContext value={mergedContext}>
             <ResultFilter {...props} />
-          </FilterContext.Provider>
-        </IbutsuContext.Provider>
+          </FilterContext>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };
@@ -432,8 +432,8 @@ describe('ResultFilter', () => {
 
       rerender(
         <MemoryRouter>
-          <IbutsuContext.Provider value={defaultIbutsuContext}>
-            <FilterContext.Provider
+          <IbutsuContext value={defaultIbutsuContext}>
+            <FilterContext
               value={{
                 ...defaultContextValue,
                 fieldSelection: 'metadata.browser',
@@ -445,8 +445,8 @@ describe('ResultFilter', () => {
               }}
             >
               <ResultFilter />
-            </FilterContext.Provider>
-          </IbutsuContext.Provider>
+            </FilterContext>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -472,8 +472,8 @@ describe('ResultFilter', () => {
 
       rerender(
         <MemoryRouter>
-          <IbutsuContext.Provider value={defaultIbutsuContext}>
-            <FilterContext.Provider
+          <IbutsuContext value={defaultIbutsuContext}>
+            <FilterContext
               value={{
                 ...defaultContextValue,
                 fieldSelection: 'metadata.component',
@@ -482,8 +482,8 @@ describe('ResultFilter', () => {
               }}
             >
               <ResultFilter />
-            </FilterContext.Provider>
-          </IbutsuContext.Provider>
+            </FilterContext>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 

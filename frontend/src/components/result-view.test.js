@@ -1,5 +1,5 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import ResultView from './result-view';
 import { IbutsuContext } from './contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';
@@ -96,7 +96,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
           '/project/550e8400-e29b-41d4-a716-446655440000/result/550e8400-e29b-41d4-a716-446655440000',
         ]}
       >
-        <IbutsuContext.Provider value={contextValue}>
+        <IbutsuContext value={contextValue}>
           <Routes>
             <Route
               path="/project/:project_id/result/:result_id"
@@ -110,7 +110,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
               }
             />
           </Routes>
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };
@@ -197,7 +197,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
           '/project/550e8400-e29b-41d4-a716-446655440000/result/550e8400-e29b-41d4-a716-446655440000',
         ]}
       >
-        <IbutsuContext.Provider value={contextValue}>
+        <IbutsuContext value={contextValue}>
           <Routes>
             <Route
               path="/project/:project_id/result/:result_id"
@@ -211,7 +211,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
               }
             />
           </Routes>
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
 
@@ -259,7 +259,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
           '/project/550e8400-e29b-41d4-a716-446655440000/result/550e8400-e29b-41d4-a716-446655440099',
         ]}
       >
-        <IbutsuContext.Provider value={contextValue}>
+        <IbutsuContext value={contextValue}>
           <Routes>
             <Route
               path="/project/:project_id/result/:result_id"
@@ -273,7 +273,7 @@ describe('ResultView Component - Continuous Rendering Issue', () => {
               }
             />
           </Routes>
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
 

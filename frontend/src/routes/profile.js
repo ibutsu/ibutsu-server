@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router';
 
 import UserProfile from '../pages/user-profile';
 import UserTokens from '../pages/user-tokens';
@@ -14,7 +14,5 @@ const Profile = () => (
     </Route>
   </Routes>
 );
-
-Profile.propTypes = {};
 
 export default Profile;

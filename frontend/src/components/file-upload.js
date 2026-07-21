@@ -1,5 +1,4 @@
-import { useContext, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
+import { use, useRef, useState } from 'react';
 import UploadIcon from '@patternfly/react-icons/dist/esm/icons/upload-icon';
 
 import { HttpClient } from '../utilities/http';
@@ -18,7 +17,7 @@ import { Settings } from '../pages/settings';
 import { ALERT_TIMEOUT, FILE_IMPORT_KEY } from '../constants';
 
 const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
-  const context = useContext(IbutsuContext);
+  const context = use(IbutsuContext);
 
   const [importId, setImportId] = useState();
 
@@ -143,10 +142,6 @@ const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
       />
     </>
   );
-};
-
-FileUpload.propTypes = {
-  name: PropTypes.string,
 };
 
 export default FileUpload;

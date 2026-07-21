@@ -9,8 +9,7 @@ import {
   SelectOption,
   TextInput,
 } from '@patternfly/react-core';
-import PropTypes from 'prop-types';
-import { useContext, useState } from 'react';
+import { use, useState } from 'react';
 
 import ActiveFilters from './active-filters';
 import MultiValueInput from '../multi-value-input';
@@ -49,7 +48,7 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
     fieldToggle,
     operationToggle,
     boolToggle,
-  } = useContext(FilterContext);
+  } = use(FilterContext);
 
   // Dynamic values are disabled for RunFilter because:
   // 1. Runs use 'data' field for metadata, not 'metadata'
@@ -224,11 +223,6 @@ const RunFilter = ({ hideFilters, maxHeight = '600px' }) => {
       </Flex>
     </CardBody>
   );
-};
-
-RunFilter.propTypes = {
-  hideFilters: PropTypes.arrayOf(PropTypes.string),
-  maxHeight: PropTypes.string,
 };
 
 export default RunFilter;

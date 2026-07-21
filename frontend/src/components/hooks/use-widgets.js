@@ -1,13 +1,5 @@
 // Assisted by watsonx Code Assistant
-import {
-  useState,
-  useEffect,
-  useMemo,
-  useContext,
-  lazy,
-  Suspense,
-} from 'react';
-import PropTypes from 'prop-types';
+import { use, useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { HttpClient } from '../../utilities/http';
 import { KNOWN_WIDGETS } from '../../constants';
 import { Settings } from '../../pages/settings';
@@ -127,20 +119,13 @@ const JenkinsHeatmapWrapper = ({
   );
 };
 
-JenkinsHeatmapWrapper.propTypes = {
-  title: PropTypes.string,
-  params: PropTypes.object,
-  onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func,
-};
-
 export const useWidgets = ({
   dashboardId = null,
   editCallback = () => {},
   deleteCallback = () => {},
   loadKey,
 }) => {
-  const { primaryObject } = useContext(IbutsuContext);
+  const { primaryObject } = use(IbutsuContext);
   const [widgets, setWidgets] = useState([]);
 
   useEffect(() => {

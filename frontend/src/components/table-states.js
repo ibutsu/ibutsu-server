@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import {
   Bullseye,
   Button,
@@ -40,10 +39,6 @@ const TableEmptyState = ({ onClearFilters }) => {
   );
 };
 
-TableEmptyState.propTypes = {
-  onClearFilters: PropTypes.func,
-};
-
 const TableErrorState = (props) => {
   const { onClearFilters } = props;
 
@@ -72,10 +67,6 @@ const TableErrorState = (props) => {
       </EmptyState>
     </Bullseye>
   );
-};
-
-TableErrorState.propTypes = {
-  onClearFilters: PropTypes.func,
 };
 
 export { TableEmptyState, TableErrorState };

@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import Login from './login';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';
@@ -57,9 +57,9 @@ describe('Login', () => {
 
     return render(
       <MemoryRouter initialEntries={[initialRoute]}>
-        <IbutsuContext.Provider value={mergedContext}>
+        <IbutsuContext value={mergedContext}>
           <Login />
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };

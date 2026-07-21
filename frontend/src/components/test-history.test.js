@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import TestHistoryTable from './test-history';
 import { HttpClient } from '../utilities/http';
 import {
@@ -54,32 +54,39 @@ vi.mock('./filtering/filtered-table-card', () => {
     headerChildren,
     footerChildren,
     filters,
-  }) => (
-    <div data-ouia-component-id="filter-table">
-      {fetching && <div data-ouia-component-id="loading">Loading...</div>}
-      {headerChildren}
-      {filters}
-      <table>
-        <thead>
-          <tr>
-            {columns.map((col, idx) => (
-              <th key={idx}>{col}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows &&
-            rows.map((row, idx) => (
-              <tr key={idx} data-ouia-component-id={`row-${idx}`}>
+  }) => {
+    const keyedRows = (rows || []).map((row, i) => ({
+      ...row,
+      _mockKey: `row-${i}`,
+    }));
+    return (
+      <div data-ouia-component-id="filter-table">
+        {fetching && <div data-ouia-component-id="loading">Loading...</div>}
+        {headerChildren}
+        {filters}
+        <table>
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th key={col}>{col}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {keyedRows.map((row) => (
+              <tr key={row._mockKey} data-ouia-component-id={row._mockKey}>
                 {row.cells &&
-                  row.cells.map((cell, cidx) => <td key={cidx}>{cell}</td>)}
+                  columns.map((col, cidx) => (
+                    <td key={col}>{row.cells[cidx]}</td>
+                  ))}
               </tr>
             ))}
-        </tbody>
-      </table>
-      {footerChildren}
-    </div>
-  );
+          </tbody>
+        </table>
+        {footerChildren}
+      </div>
+    );
+  };
   MockFilterTable.propTypes = {
     columns: PropTypes.array,
     rows: PropTypes.array,

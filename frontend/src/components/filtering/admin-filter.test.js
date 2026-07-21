@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import AdminFilter from './admin-filter';
 import { FilterContext } from '../contexts/filter-context';
 import { STRING_OPERATIONS } from '../../constants';
@@ -48,9 +48,9 @@ describe('AdminFilter', () => {
     const mergedContext = { ...defaultContextValue, ...contextValue };
     return render(
       <MemoryRouter>
-        <FilterContext.Provider value={mergedContext}>
+        <FilterContext value={mergedContext}>
           <AdminFilter />
-        </FilterContext.Provider>
+        </FilterContext>
       </MemoryRouter>,
     );
   };

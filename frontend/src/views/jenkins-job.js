@@ -1,9 +1,8 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
+import { use, useCallback, useEffect, useState } from 'react';
 
 import ChevronRightIcon from '@patternfly/react-icons/dist/esm/icons/chevron-right-icon';
 
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router';
 
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
@@ -28,7 +27,7 @@ const COLUMNS = [
 const HIDE = ['project_id'];
 
 const JenkinsJobView = ({ view }) => {
-  const { primaryObject } = useContext(IbutsuContext);
+  const { primaryObject } = use(IbutsuContext);
   const { project_id } = useParams();
   const [analysisViewId, setAnalysisViewId] = useState();
 
@@ -48,7 +47,7 @@ const JenkinsJobView = ({ view }) => {
     setTotalItems,
   } = usePagination({});
 
-  const { activeFilters } = useContext(FilterContext);
+  const { activeFilters } = use(FilterContext);
 
   useEffect(() => {
     const getViewId = async () => {
@@ -211,10 +210,6 @@ const JenkinsJobView = ({ view }) => {
       onSetPageSize={onSetPageSize}
     />
   );
-};
-
-JenkinsJobView.propTypes = {
-  view: PropTypes.object,
 };
 
 export default JenkinsJobView;

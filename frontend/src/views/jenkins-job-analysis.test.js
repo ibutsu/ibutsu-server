@@ -5,7 +5,7 @@ import {
   fireEvent,
   act,
 } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import JenkinsJobAnalysisView from './jenkins-job-analysis';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { FilterContext } from '../components/contexts/filter-context';
@@ -115,11 +115,11 @@ describe('JenkinsJobAnalysisView Component', () => {
 
     return render(
       <MemoryRouter>
-        <IbutsuContext.Provider value={ibutsuContextValue}>
-          <FilterContext.Provider value={filterContextValue}>
+        <IbutsuContext value={ibutsuContextValue}>
+          <FilterContext value={filterContextValue}>
             <JenkinsJobAnalysisView view={view} defaultTab={defaultTab} />
-          </FilterContext.Provider>
-        </IbutsuContext.Provider>
+          </FilterContext>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };
@@ -451,11 +451,11 @@ describe('JenkinsJobAnalysisView Component', () => {
 
       rerender(
         <MemoryRouter>
-          <IbutsuContext.Provider value={ibutsuContextValue}>
-            <FilterContext.Provider value={filterContextValue}>
+          <IbutsuContext value={ibutsuContextValue}>
+            <FilterContext value={filterContextValue}>
               <JenkinsJobAnalysisView view={newView} />
-            </FilterContext.Provider>
-          </IbutsuContext.Provider>
+            </FilterContext>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 

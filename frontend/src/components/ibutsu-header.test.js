@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import IbutsuHeader from './ibutsu-header';
 import { IbutsuContext } from './contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';
@@ -66,12 +66,12 @@ describe('IbutsuHeader', () => {
 
     return render(
       <MemoryRouter initialEntries={[initialRoute]}>
-        <IbutsuContext.Provider value={mergedContext}>
+        <IbutsuContext value={mergedContext}>
           <Routes>
             <Route path="/*" element={<IbutsuHeader />} />
             <Route path="/project/:project_id/*" element={<IbutsuHeader />} />
           </Routes>
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };

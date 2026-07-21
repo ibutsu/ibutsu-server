@@ -1,5 +1,3 @@
-import PropTypes from 'prop-types';
-
 import { Button } from '@patternfly/react-core';
 
 import { HttpClient } from '../utilities/http';
@@ -28,12 +26,6 @@ const DownloadButton = ({ url, filename, children, ...rest }) => {
       {children}
     </Button>
   );
-};
-
-DownloadButton.propTypes = {
-  url: PropTypes.string,
-  filename: PropTypes.string,
-  children: PropTypes.node,
 };
 
 export default DownloadButton;

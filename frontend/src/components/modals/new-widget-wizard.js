@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   Content,
@@ -471,14 +470,6 @@ const NewWidgetWizard = ({
       </Wizard>
     </Modal>
   );
-};
-
-NewWidgetWizard.propTypes = {
-  dashboard: PropTypes.object,
-  saveCallback: PropTypes.func,
-  closeCallback: PropTypes.func,
-  isOpen: PropTypes.bool,
-  ouiaId: PropTypes.string,
 };
 
 export default NewWidgetWizard;

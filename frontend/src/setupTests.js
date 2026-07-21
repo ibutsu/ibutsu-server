@@ -30,10 +30,7 @@ console.error = (...args) => {
     // Suppress React DOM property warnings (common in PatternFly components)
     errorString.includes('Warning: Invalid DOM property') ||
     errorString.includes('Did you mean `className`?') ||
-    // Suppress other common React/testing warnings
-    errorString.includes('Warning: ReactDOM.render') ||
     errorString.includes('Warning: useLayoutEffect') ||
-    errorString.includes("Warning: Can't perform a React state update") ||
     // Suppress expected errors from test cases
     errorString.includes('Error fetching analysis view ID') ||
     errorString.includes('Widget config error') ||
@@ -47,12 +44,7 @@ console.error = (...args) => {
 console.warn = (...args) => {
   const warnString = args[0]?.toString() || '';
   if (
-    warnString.includes('React Router Future Flag Warning') ||
     warnString.includes('⚠️') ||
-    // Suppress common React/component warnings
-    warnString.includes('componentWillReceiveProps') ||
-    warnString.includes('componentWillMount') ||
-    warnString.includes('findDOMNode') ||
     // Suppress PatternFly table header accessibility warnings from SkeletonTable
     // These are internal to PatternFly components and not actionable in our code
     warnString.includes('Th: Table headers must have an accessible name')

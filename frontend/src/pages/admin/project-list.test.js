@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import ProjectList from './project-list';
 import { HttpClient } from '../../utilities/http';
 import { FilterContext } from '../../components/contexts/filter-context';
@@ -71,9 +71,9 @@ describe('ProjectList Component', () => {
 
     return render(
       <MemoryRouter>
-        <FilterContext.Provider value={contextValue}>
+        <FilterContext value={contextValue}>
           <ProjectList />
-        </FilterContext.Provider>
+        </FilterContext>
       </MemoryRouter>,
     );
   };

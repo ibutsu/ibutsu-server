@@ -1,11 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import ActiveFilters from './active-filters';
 import { OPERATIONS } from '../../constants';
 
 // Mock useNavigate and useParams
 const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async (importOriginal) => ({
+vi.mock('react-router', async (importOriginal) => ({
   ...(await importOriginal()),
   useNavigate: () => mockNavigate,
   useParams: () => ({ project_id: 'test-project-id' }),

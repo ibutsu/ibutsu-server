@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 
 import {
   ActionGroup,
@@ -23,7 +23,7 @@ import {
   Title,
   ValidatedOptions,
 } from '@patternfly/react-core';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router';
 import { nanoid } from 'nanoid/non-secure';
 
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
@@ -128,7 +128,7 @@ const ProjectEdit = () => {
     setFilterValueDashboard(value);
   };
 
-  const { activeFilters } = useContext(FilterContext);
+  const { activeFilters } = use(FilterContext);
 
   // fetch the admin users with the active filter
   useEffect(() => {
@@ -444,7 +444,5 @@ const ProjectEdit = () => {
     </>
   );
 };
-
-ProjectEdit.propTypes = {};
 
 export default ProjectEdit;

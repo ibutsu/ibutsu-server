@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   Button,
@@ -261,14 +260,6 @@ const EditWidgetModal = ({
       </ModalFooter>
     </Modal>
   );
-};
-
-EditWidgetModal.propTypes = {
-  onSave: PropTypes.func,
-  onClose: PropTypes.func,
-  isOpen: PropTypes.bool,
-  data: PropTypes.object,
-  ouiaId: PropTypes.string,
 };
 
 export default EditWidgetModal;

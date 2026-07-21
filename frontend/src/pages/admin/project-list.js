@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 
 import {
   Button,
@@ -15,7 +15,7 @@ import {
 import PencilAltIcon from '@patternfly/react-icons/dist/esm/icons/pencil-alt-icon';
 import PlusCircleIcon from '@patternfly/react-icons/dist/esm/icons/plus-circle-icon';
 import TrashIcon from '@patternfly/react-icons/dist/esm/icons/trash-icon';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 import { HttpClient } from '../../utilities/http';
 import { Settings } from '../settings';
@@ -48,7 +48,7 @@ const ProjectList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const { activeFilters, clearFilters } = useContext(FilterContext);
+  const { activeFilters, clearFilters } = use(FilterContext);
 
   const projectToRow = (project) => ({
     id: project.id,
@@ -249,7 +249,5 @@ const ProjectList = () => {
     </>
   );
 };
-
-ProjectList.propTypes = {};
 
 export default ProjectList;

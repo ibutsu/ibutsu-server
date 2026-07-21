@@ -31,7 +31,7 @@ import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 import { HttpClient } from '../../utilities/http';
 import { Settings } from '../settings';
 import { projectToOption } from '../../utilities';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 
 const UserEdit = () => {
   const params = useParams();

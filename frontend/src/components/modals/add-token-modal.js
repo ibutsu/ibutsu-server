@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   Button,
@@ -152,12 +151,6 @@ const AddTokenModal = ({ isOpen, onClose, ouiaId = 'add-token-modal' }) => {
       </ModalFooter>
     </Modal>
   );
-};
-
-AddTokenModal.propTypes = {
-  isOpen: PropTypes.bool,
-  onClose: PropTypes.func,
-  ouiaId: PropTypes.string,
 };
 
 export default AddTokenModal;

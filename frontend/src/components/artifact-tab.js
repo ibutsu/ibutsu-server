@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import PropTypes from 'prop-types';
 import {
   Card,
   CardBody,
@@ -134,10 +133,6 @@ const ArtifactTab = ({ artifact }) => {
       </CardExpandableContent>
     </Card>
   );
-};
-
-ArtifactTab.propTypes = {
-  artifact: PropTypes.object.isRequired,
 };
 
 export default ArtifactTab;

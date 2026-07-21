@@ -9,7 +9,7 @@ import {
   NavItem,
 } from '@patternfly/react-core';
 
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet } from 'react-router';
 
 import IbutsuHeader from '../components/ibutsu-header';
 

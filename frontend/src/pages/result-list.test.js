@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import ResultList from './result-list';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { FilterContext } from '../components/contexts/filter-context';
@@ -87,11 +87,11 @@ describe('ResultList', () => {
 
     return render(
       <MemoryRouter initialEntries={[route]}>
-        <IbutsuContext.Provider value={mergedIbutsuContext}>
-          <FilterContext.Provider value={mergedFilterContext}>
+        <IbutsuContext value={mergedIbutsuContext}>
+          <FilterContext value={mergedFilterContext}>
             <ResultList />
-          </FilterContext.Provider>
-        </IbutsuContext.Provider>
+          </FilterContext>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };
@@ -457,13 +457,13 @@ describe('ResultList', () => {
 
       rerender(
         <MemoryRouter initialEntries={['/results']}>
-          <IbutsuContext.Provider value={defaultIbutsuContext}>
-            <FilterContext.Provider
+          <IbutsuContext value={defaultIbutsuContext}>
+            <FilterContext
               value={{ ...defaultFilterContext, ...newFilterContext }}
             >
               <ResultList />
-            </FilterContext.Provider>
-          </IbutsuContext.Provider>
+            </FilterContext>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 
@@ -592,16 +592,16 @@ describe('ResultList', () => {
       // Change primaryObject
       rerender(
         <MemoryRouter initialEntries={['/results']}>
-          <IbutsuContext.Provider
+          <IbutsuContext
             value={{
               ...defaultIbutsuContext,
               primaryObject: { id: 'project-2' },
             }}
           >
-            <FilterContext.Provider value={defaultFilterContext}>
+            <FilterContext value={defaultFilterContext}>
               <ResultList />
-            </FilterContext.Provider>
-          </IbutsuContext.Provider>
+            </FilterContext>
+          </IbutsuContext>
         </MemoryRouter>,
       );
 

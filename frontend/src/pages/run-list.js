@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useMemo } from 'react';
+import { use, useState, useEffect, useMemo } from 'react';
 
 import { PageSection, Content } from '@patternfly/react-core';
 
@@ -29,9 +29,9 @@ const sortFunctions = {
 };
 
 const RunList = () => {
-  const { primaryObject } = useContext(IbutsuContext);
+  const { primaryObject } = use(IbutsuContext);
   const { activeFilters, updateFilters, clearFilters, setFieldOptions } =
-    useContext(FilterContext);
+    use(FilterContext);
 
   const [rows, setRows] = useState([]);
   const [sortedRows, setSortedRows] = useState([]);
@@ -169,7 +169,5 @@ const RunList = () => {
     </>
   );
 };
-
-RunList.propTypes = {};
 
 export default RunList;

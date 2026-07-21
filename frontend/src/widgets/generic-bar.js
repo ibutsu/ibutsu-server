@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 
 import {
   Chart,
@@ -224,25 +223,6 @@ const GenericBarWidget = ({
       </CardFooter>
     </Card>
   );
-};
-
-GenericBarWidget.propTypes = {
-  barWidth: PropTypes.number,
-  dropdownItems: PropTypes.array,
-  fontSize: PropTypes.number,
-  hideDropdown: PropTypes.bool,
-  horizontal: PropTypes.bool,
-  onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func,
-  padding: PropTypes.object,
-  params: PropTypes.object,
-  percentData: PropTypes.bool,
-  sortOrder: PropTypes.string,
-  title: PropTypes.string,
-  widgetEndpoint: PropTypes.string,
-  xLabel: PropTypes.string,
-  xLabelTooltip: PropTypes.string,
-  yLabel: PropTypes.string,
 };
 
 export default GenericBarWidget;

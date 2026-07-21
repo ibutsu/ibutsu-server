@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import {
   AboutModal,
   Brand,
@@ -43,7 +43,7 @@ import { VERSION } from '../constants';
 import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
 import { IbutsuContext } from './contexts/ibutsu-context';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router';
 import { setDocumentDarkTheme } from '../utilities';
 
 const IbutsuHeader = () => {
@@ -54,7 +54,7 @@ const IbutsuHeader = () => {
     setDefaultDashboard,
     darkTheme,
     setDarkTheme,
-  } = useContext(IbutsuContext);
+  } = use(IbutsuContext);
   const params = useParams();
   const navigate = useNavigate();
 

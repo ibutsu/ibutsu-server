@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { SignUp } from './sign-up';
 import { AuthService } from '../utilities/auth';
 
@@ -530,9 +530,7 @@ describe('SignUp', () => {
       fireEvent.click(screen.getByTestId('signup-register-button'));
 
       await waitFor(() => {
-        expect(
-          screen.getByText('Network connection lost'),
-        ).toBeInTheDocument();
+        expect(screen.getByText('Network connection lost')).toBeInTheDocument();
       });
     });
 
@@ -552,9 +550,7 @@ describe('SignUp', () => {
       fireEvent.click(screen.getByTestId('signup-register-button'));
 
       await waitFor(() => {
-        expect(
-          screen.getByText('Something went wrong'),
-        ).toBeInTheDocument();
+        expect(screen.getByText('Something went wrong')).toBeInTheDocument();
       });
     });
 

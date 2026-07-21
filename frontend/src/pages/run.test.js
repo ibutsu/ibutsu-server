@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import Run from './run';
 import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';
@@ -81,11 +81,11 @@ describe('Run Page', () => {
 
     return render(
       <MemoryRouter initialEntries={[initialRoute]}>
-        <IbutsuContext.Provider value={contextValue}>
+        <IbutsuContext value={contextValue}>
           <Routes>
             <Route path="/project/:project_id/runs/:run_id" element={<Run />} />
           </Routes>
-        </IbutsuContext.Provider>
+        </IbutsuContext>
       </MemoryRouter>,
     );
   };

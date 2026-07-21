@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
 import Chart from 'react-apexcharts';
 
 import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
@@ -359,16 +358,6 @@ const ResultAggregateApex = ({
       </CardFooter>
     </Card>
   );
-};
-
-ResultAggregateApex.propTypes = {
-  title: PropTypes.string,
-  params: PropTypes.object,
-  days: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-  groupField: PropTypes.string,
-  dropdownItems: PropTypes.array,
-  onDeleteClick: PropTypes.func,
-  onEditClick: PropTypes.func,
 };
 
 export default ResultAggregateApex;

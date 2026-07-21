@@ -1,17 +1,10 @@
-import {
-  useState,
-  useCallback,
-  useMemo,
-  useContext,
-  useEffect,
-  useRef,
-} from 'react';
+import { use, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   useSearchParams,
   useParams,
   useNavigate,
   useLocation,
-} from 'react-router-dom';
+} from 'react-router';
 import {
   Button,
   MenuToggle,
@@ -26,7 +19,6 @@ import {
 } from '../../utilities';
 import { IbutsuContext } from '../contexts/ibutsu-context';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
-import PropTypes from 'prop-types';
 import { OPERATION_MODE_MAP, FILTER_MODE_MAP } from '../../constants';
 
 const useTableFilters = ({
@@ -39,7 +31,7 @@ const useTableFilters = ({
   const { project_id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { primaryObject } = useContext(IbutsuContext);
+  const { primaryObject } = use(IbutsuContext);
 
   // set initial fieldOptions, but we don't try to keep it in sync with the prop
   const [fieldOptionsState, setFieldOptionsState] = useState([
@@ -447,13 +439,6 @@ const useTableFilters = ({
     operationMode,
     operations,
   };
-};
-
-useTableFilters.propTypes = {
-  fieldOptions: PropTypes.arrayOf(PropTypes.string),
-  hideFilters: PropTypes.arrayOf(PropTypes.string),
-  blockRemove: PropTypes.arrayOf(PropTypes.string),
-  removeCallback: PropTypes.func,
 };
 
 export default useTableFilters;

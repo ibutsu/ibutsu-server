@@ -11,7 +11,7 @@ import {
 
 import { STRING_OPERATIONS } from '../../constants';
 import ActiveFilters from './active-filters';
-import { useContext } from 'react';
+import { use } from 'react';
 import { FilterContext } from '../contexts/filter-context';
 
 const AdminFilter = () => {
@@ -32,7 +32,7 @@ const AdminFilter = () => {
     onRemoveFilter,
     fieldToggle,
     operationToggle,
-  } = useContext(FilterContext);
+  } = use(FilterContext);
   return (
     <CardBody key="filters">
       <Flex
