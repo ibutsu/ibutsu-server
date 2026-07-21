@@ -50,7 +50,6 @@ const AccessibilityAnalysisView = ({ view }) => {
     () => filters.run_list?.val || searchParams.get('run_list'),
     [filters.run_list?.val, searchParams],
   );
-  const [_results, setResults] = useState([]);
   // const [selectedResults, setSelectedResults] = useState([]);
 
   // const [areaChart, setAreaChart] = useState(false);
@@ -69,7 +68,6 @@ const AccessibilityAnalysisView = ({ view }) => {
   // const [chartParams, setChartParams] = useState({});
   // const [treeSearch, setTreeSearch] = useState();
 
-  const [_runList, setRunList] = useState([]);
   const [countSkips] = useState(false);
 
   // TODO? search param sync
@@ -99,8 +97,7 @@ const AccessibilityAnalysisView = ({ view }) => {
           [Settings.serverUrl, 'widget', view.widget],
           viewParams,
         );
-        const data = await HttpClient.handleResponse(response);
-        setRunList(data.run_list);
+        await HttpClient.handleResponse(response);
       } catch (error) {
         console.error(error);
       }
@@ -245,7 +242,6 @@ const AccessibilityAnalysisView = ({ view }) => {
           },
         );
         const data = await HttpClient.handleResponse(response);
-        setResults(data.results);
         setRows(data.results?.map((result) => resultToRow(result)));
         setPage(data.pagination.page);
         setPageSize(data.pagination.pageSize);
@@ -253,7 +249,6 @@ const AccessibilityAnalysisView = ({ view }) => {
       } catch (error) {
         console.error('Error fetching result data:', error);
         setRows([]);
-        setResults([]);
         setIsError(true);
       }
     };
