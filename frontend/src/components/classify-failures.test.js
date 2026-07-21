@@ -51,34 +51,43 @@ vi.mock('./filtering/filtered-table-card', () => {
     isError,
     filters,
     selectable,
-  }) => (
-    <div data-ouia-component-id="filter-table">
-      {fetching && <div data-ouia-component-id="loading">Loading...</div>}
-      {isError && <div data-ouia-component-id="error">Error loading data</div>}
-      {filters}
-      {selectable && (
-        <div data-ouia-component-id="selectable-table">Selectable</div>
-      )}
-      <table>
-        <thead>
-          <tr>
-            {columns.map((col, idx) => (
-              <th key={idx}>{col}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows &&
-            rows.map((row, idx) => (
-              <tr key={idx} data-ouia-component-id={`row-${idx}`}>
+  }) => {
+    const keyedRows = (rows || []).map((row, i) => ({
+      ...row,
+      _mockKey: `row-${i}`,
+    }));
+    return (
+      <div data-ouia-component-id="filter-table">
+        {fetching && <div data-ouia-component-id="loading">Loading...</div>}
+        {isError && (
+          <div data-ouia-component-id="error">Error loading data</div>
+        )}
+        {filters}
+        {selectable && (
+          <div data-ouia-component-id="selectable-table">Selectable</div>
+        )}
+        <table>
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th key={col}>{col}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {keyedRows.map((row) => (
+              <tr key={row._mockKey} data-ouia-component-id={row._mockKey}>
                 {row.cells &&
-                  row.cells.map((cell, cidx) => <td key={cidx}>{cell}</td>)}
+                  columns.map((col, cidx) => (
+                    <td key={col}>{row.cells[cidx]}</td>
+                  ))}
               </tr>
             ))}
-        </tbody>
-      </table>
-    </div>
-  );
+          </tbody>
+        </table>
+      </div>
+    );
+  };
   MockFilterTable.propTypes = {
     columns: PropTypes.array,
     rows: PropTypes.array,

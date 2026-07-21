@@ -25,8 +25,8 @@ export function renderWithRouter(ui, { initialRoute = '/', routes = [] } = {}) {
     routes.length > 0 ? (
       <MemoryRouter initialEntries={initialEntries}>
         <Routes>
-          {routes.map((route, index) => (
-            <Route key={index} path={route.path} element={route.element} />
+          {routes.map((route) => (
+            <Route key={route.path} path={route.path} element={route.element} />
           ))}
         </Routes>
       </MemoryRouter>
@@ -95,8 +95,12 @@ export function renderWithRouterAndContext(
       <MemoryRouter initialEntries={initialEntries}>
         <IbutsuContext value={defaultContextValue}>
           <Routes>
-            {routes.map((route, index) => (
-              <Route key={index} path={route.path} element={route.element} />
+            {routes.map((route) => (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={route.element}
+              />
             ))}
           </Routes>
         </IbutsuContext>
@@ -160,8 +164,12 @@ export function renderWithAllProviders(
         <IbutsuContext value={defaultIbutsuContext}>
           <FilterContext value={defaultFilterContext}>
             <Routes>
-              {routes.map((route, index) => (
-                <Route key={index} path={route.path} element={route.element} />
+              {routes.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={route.element}
+                />
               ))}
             </Routes>
           </FilterContext>

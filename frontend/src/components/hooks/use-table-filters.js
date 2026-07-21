@@ -1,11 +1,4 @@
-import {
-  useState,
-  useCallback,
-  useMemo,
-  useContext,
-  useEffect,
-  useRef,
-} from 'react';
+import { use, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   useSearchParams,
   useParams,
@@ -38,7 +31,7 @@ const useTableFilters = ({
   const { project_id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { primaryObject } = useContext(IbutsuContext);
+  const { primaryObject } = use(IbutsuContext);
 
   // set initial fieldOptions, but we don't try to keep it in sync with the prop
   const [fieldOptionsState, setFieldOptionsState] = useState([

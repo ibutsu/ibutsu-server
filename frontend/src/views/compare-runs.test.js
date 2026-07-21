@@ -21,30 +21,36 @@ vi.mock('../pages/settings', () => ({
 // Mock FilterTable
 vi.mock('../components/filtering/filtered-table-card', () => {
   const PropTypes = require('prop-types');
-  const MockFilterTable = ({ columns, rows, headerChildren, isError }) => (
-    <div data-ouia-component-id="filter-table">
-      <div data-ouia-component-id="filter-table-header">{headerChildren}</div>
-      {isError && <div>Error loading data</div>}
-      <table>
-        <thead>
-          <tr>
-            {columns.map((col, idx) => (
-              <th key={idx}>{col}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, idx) => (
-            <tr key={idx}>
-              {row.cells.map((cell, cidx) => (
-                <td key={cidx}>{cell}</td>
+  const MockFilterTable = ({ columns, rows, headerChildren, isError }) => {
+    const keyedRows = rows.map((row, i) => ({
+      ...row,
+      _mockKey: `row-${i}`,
+    }));
+    return (
+      <div data-ouia-component-id="filter-table">
+        <div data-ouia-component-id="filter-table-header">{headerChildren}</div>
+        {isError && <div>Error loading data</div>}
+        <table>
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th key={col}>{col}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+          </thead>
+          <tbody>
+            {keyedRows.map((row) => (
+              <tr key={row._mockKey}>
+                {columns.map((col, cidx) => (
+                  <td key={col}>{row.cells[cidx]}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
   MockFilterTable.propTypes = {
     columns: PropTypes.array,
     rows: PropTypes.array,

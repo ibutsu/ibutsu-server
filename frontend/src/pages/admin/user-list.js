@@ -1,7 +1,7 @@
 import {
   Fragment,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -58,7 +58,7 @@ const UserList = () => {
 
   const [fetching, setFetching] = useState(true);
 
-  const { activeFilters, clearFilters } = useContext(FilterContext);
+  const { activeFilters, clearFilters } = use(FilterContext);
 
   const userToRow = (user, setSelectedUser, setIsDeleteModalOpen) => {
     let userName = user.name;

@@ -1,5 +1,5 @@
 // Custom hook to manage widget filter functionality
-import { useState, useCallback, useMemo, useContext, useEffect } from 'react';
+import { use, useState, useCallback, useMemo, useEffect } from 'react';
 import { filtersToAPIParams, apiParamsToFilters } from '../../utilities';
 import { RESULT_FIELDS, RUN_FIELDS } from '../../constants';
 import FilterProvider, { FilterContext } from '../contexts/filter-context';
@@ -15,7 +15,7 @@ import { HttpClient } from '../../utilities/http';
 import { Settings } from '../../pages/settings';
 
 const FilterContextCapture = ({ children, onFilterContext }) => {
-  const filterContext = useContext(FilterContext);
+  const filterContext = use(FilterContext);
 
   useEffect(() => {
     if (filterContext) {

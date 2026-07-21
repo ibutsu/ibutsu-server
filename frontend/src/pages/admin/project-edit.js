@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 
 import {
   ActionGroup,
@@ -128,7 +128,7 @@ const ProjectEdit = () => {
     setFilterValueDashboard(value);
   };
 
-  const { activeFilters } = useContext(FilterContext);
+  const { activeFilters } = use(FilterContext);
 
   // fetch the admin users with the active filter
   useEffect(() => {

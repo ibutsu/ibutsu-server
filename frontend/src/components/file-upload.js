@@ -1,4 +1,4 @@
-import { useContext, useRef, useState } from 'react';
+import { use, useRef, useState } from 'react';
 import UploadIcon from '@patternfly/react-icons/dist/esm/icons/upload-icon';
 
 import { HttpClient } from '../utilities/http';
@@ -17,7 +17,7 @@ import { Settings } from '../pages/settings';
 import { ALERT_TIMEOUT, FILE_IMPORT_KEY } from '../constants';
 
 const FileUpload = ({ name = FILE_IMPORT_KEY }) => {
-  const context = useContext(IbutsuContext);
+  const context = use(IbutsuContext);
 
   const [importId, setImportId] = useState();
 

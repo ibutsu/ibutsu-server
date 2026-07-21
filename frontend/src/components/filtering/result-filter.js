@@ -15,7 +15,7 @@ import {
   TextInputGroupUtilities,
 } from '@patternfly/react-core';
 
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import TimesIcon from '@patternfly/react-icons/dist/esm/icons/times-icon';
 
 import MultiValueInput from '../multi-value-input';
@@ -64,9 +64,9 @@ const ResultFilter = ({ hideFilters, runs, maxHeight = '600px' }) => {
     fieldToggle,
     operationToggle,
     boolToggle,
-  } = useContext(FilterContext);
+  } = use(FilterContext);
 
-  const { primaryObject } = useContext(IbutsuContext);
+  const { primaryObject } = use(IbutsuContext);
 
   const [runSelection, setRunSelection] = useState([]);
   const [isRunOpen, setIsRunOpen] = useState(false);

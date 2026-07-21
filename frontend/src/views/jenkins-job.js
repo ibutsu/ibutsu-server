@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 
 import ChevronRightIcon from '@patternfly/react-icons/dist/esm/icons/chevron-right-icon';
 
@@ -27,7 +27,7 @@ const COLUMNS = [
 const HIDE = ['project_id'];
 
 const JenkinsJobView = ({ view }) => {
-  const { primaryObject } = useContext(IbutsuContext);
+  const { primaryObject } = use(IbutsuContext);
   const { project_id } = useParams();
   const [analysisViewId, setAnalysisViewId] = useState();
 
@@ -47,7 +47,7 @@ const JenkinsJobView = ({ view }) => {
     setTotalItems,
   } = usePagination({});
 
-  const { activeFilters } = useContext(FilterContext);
+  const { activeFilters } = use(FilterContext);
 
   useEffect(() => {
     const getViewId = async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
+import { use, useState, useEffect, useMemo, useCallback } from 'react';
 
 import {
   Card,
@@ -47,7 +47,7 @@ const ResultView = ({
   hideTestHistory = false,
   skipHash = false,
 }) => {
-  const { darkTheme } = useContext(IbutsuContext);
+  const { darkTheme } = use(IbutsuContext);
   const { project_id } = useParams();
 
   // State

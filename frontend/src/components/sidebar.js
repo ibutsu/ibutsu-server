@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 
 import { Link } from 'react-router';
 import { IbutsuContext } from './contexts/ibutsu-context';
@@ -12,7 +12,7 @@ import { HttpClient } from '../utilities/http';
 import { Settings } from '../pages/settings';
 
 const IbutsuSidebar = () => {
-  const context = useContext(IbutsuContext);
+  const context = use(IbutsuContext);
   const { primaryType, primaryObject } = context;
 
   const [views, setViews] = useState();

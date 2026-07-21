@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import {
   AboutModal,
   Brand,
@@ -54,7 +54,7 @@ const IbutsuHeader = () => {
     setDefaultDashboard,
     darkTheme,
     setDarkTheme,
-  } = useContext(IbutsuContext);
+  } = use(IbutsuContext);
   const params = useParams();
   const navigate = useNavigate();
 

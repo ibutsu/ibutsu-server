@@ -2,7 +2,7 @@
 // and should not be implemented as a view type widget, but as a normal component
 // The class was converted to functional react, but needs additional work.
 // It's not in use in downstream environments at the moment
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   Card,
@@ -35,7 +35,7 @@ import usePagination from '../components/hooks/use-pagination';
 const COLUMNS = ['Test', 'Run', 'Result', 'Duration', 'Started'];
 
 const AccessibilityAnalysisView = ({ view }) => {
-  const context = useContext(IbutsuContext);
+  const context = use(IbutsuContext);
   const { darkTheme } = context;
   const location = useLocation();
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ const AccessibilityAnalysisView = ({ view }) => {
     () => filters.run_list?.val || searchParams.get('run_list'),
     [filters.run_list?.val, searchParams],
   );
-  const [, setResults] = useState([]);
+  const [_results, setResults] = useState([]);
   // const [selectedResults, setSelectedResults] = useState([]);
 
   // const [areaChart, setAreaChart] = useState(false);
@@ -69,7 +69,7 @@ const AccessibilityAnalysisView = ({ view }) => {
   // const [chartParams, setChartParams] = useState({});
   // const [treeSearch, setTreeSearch] = useState();
 
-  const [, setRunList] = useState([]);
+  const [_runList, setRunList] = useState([]);
   const [countSkips] = useState(false);
 
   // TODO? search param sync

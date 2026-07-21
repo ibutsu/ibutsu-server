@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 
 import {
   Button,
@@ -48,7 +48,7 @@ const ProjectList = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  const { activeFilters, clearFilters } = useContext(FilterContext);
+  const { activeFilters, clearFilters } = use(FilterContext);
 
   const projectToRow = (project) => ({
     id: project.id,

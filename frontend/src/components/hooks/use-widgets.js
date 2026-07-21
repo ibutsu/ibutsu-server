@@ -1,12 +1,5 @@
 // Assisted by watsonx Code Assistant
-import {
-  useState,
-  useEffect,
-  useMemo,
-  useContext,
-  lazy,
-  Suspense,
-} from 'react';
+import { use, useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { HttpClient } from '../../utilities/http';
 import { KNOWN_WIDGETS } from '../../constants';
 import { Settings } from '../../pages/settings';
@@ -132,7 +125,7 @@ export const useWidgets = ({
   deleteCallback = () => {},
   loadKey,
 }) => {
-  const { primaryObject } = useContext(IbutsuContext);
+  const { primaryObject } = use(IbutsuContext);
   const [widgets, setWidgets] = useState([]);
 
   useEffect(() => {

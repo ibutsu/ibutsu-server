@@ -1,7 +1,7 @@
 import {
   Fragment,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -53,8 +53,7 @@ const COLUMNS = [
 ];
 
 const ClassifyFailuresTable = () => {
-  const { activeFilters, updateFilters, clearFilters } =
-    useContext(FilterContext);
+  const { activeFilters, updateFilters, clearFilters } = use(FilterContext);
 
   const { run_id } = useParams();
 

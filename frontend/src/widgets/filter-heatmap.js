@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 
 import {
   Button,
@@ -49,7 +49,7 @@ const FilterHeatmapWidget = ({
   const [builds, setBuilds] = useState(params?.builds);
   const [analysisViewId, setAnalysisViewId] = useState(null);
 
-  const context = useContext(IbutsuContext);
+  const context = use(IbutsuContext);
   const { primaryObject } = context;
 
   // Fetch the analysis view ID separately from the rendering

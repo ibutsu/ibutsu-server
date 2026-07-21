@@ -2,7 +2,7 @@
   /* TODO: Consider renaming to projects-page, maybe updates for static routing? */
 }
 
-import { useContext, useEffect } from 'react';
+import { use, useEffect } from 'react';
 
 import { Outlet } from 'react-router';
 
@@ -16,7 +16,7 @@ import { ToastContainer } from 'react-toastify';
 import { ALERT_TIMEOUT } from '../constants';
 
 const IbutsuPage = () => {
-  const { primaryObject } = useContext(IbutsuContext);
+  const { primaryObject } = use(IbutsuContext);
 
   useEffect(() => {
     document.title = 'Ibutsu';

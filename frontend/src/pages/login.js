@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useState, useContext } from 'react';
+import { use, useEffect, useMemo, useCallback, useState } from 'react';
 import {
   Alert,
   ActionGroup,
@@ -74,7 +74,7 @@ const getSearchUser = (location) => {
 const Login = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const context = useContext(IbutsuContext);
+  const context = use(IbutsuContext);
 
   const { setPrimaryObject } = context;
 

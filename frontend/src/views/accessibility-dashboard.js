@@ -1,7 +1,7 @@
 // TODO This component is incomplete
 // The class was converted to functional react, but needs additional work.
 // It's not in use in downstream environments at the moment
-import { Fragment, useContext, useEffect, useMemo, useState } from 'react';
+import { Fragment, use, useEffect, useMemo, useState } from 'react';
 
 import {
   MenuToggle,
@@ -97,7 +97,7 @@ const fieldToColumnName = (fields) => {
 const COLUMNS = [...fieldToColumnName(ACCESSIBILITY_FIELDS)];
 
 const AccessibilityDashboardView = ({ view }) => {
-  const context = useContext(IbutsuContext);
+  const context = use(IbutsuContext);
   // const params = useSearchParams();
 
   const [page, setPage] = useState(1);

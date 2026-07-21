@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { use, useEffect, useMemo, useState } from 'react';
 import { Flex, FlexItem, Switch, Tab, Tabs } from '@patternfly/react-core';
 
 import { HttpClient } from '../utilities/http';
@@ -19,8 +19,8 @@ const SHORT_BUILDS = [10, 20, 30, 40];
 const LONG_BUILDS = [...SHORT_BUILDS, 70, 150];
 
 const JenkinsJobAnalysisView = ({ view, defaultTab = 'heatmap' }) => {
-  const { primaryObject } = useContext(IbutsuContext);
-  const { activeFilters } = useContext(FilterContext);
+  const { primaryObject } = use(IbutsuContext);
+  const { activeFilters } = use(FilterContext);
 
   const [isAreaChart, setIsAreaChart] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

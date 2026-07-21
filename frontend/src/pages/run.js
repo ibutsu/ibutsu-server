@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useMemo, useCallback } from 'react';
+import { use, useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router';
 
 import {
@@ -71,7 +71,7 @@ const MAX_PAGE = 300;
 const Run = ({ defaultTab = 'summary' }) => {
   const { run_id } = useParams();
 
-  const { darkTheme, primaryObject } = useContext(IbutsuContext);
+  const { darkTheme, primaryObject } = use(IbutsuContext);
   const { project_id } = useParams();
 
   const [run, setRun] = useState({});

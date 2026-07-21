@@ -2,7 +2,7 @@
 // It has been converted to functional, but aspects of the view aren't working in production and aren't fixed here
 // The Apply Filters button needs connection to table rendering
 // It would be great to better control the selectable fields in the filter for this view as not all fields are relevant
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
   Flex,
@@ -39,7 +39,7 @@ const DEFAULT_FILTER = {
 const CompareRunsView = () => {
   // const {view} = props;
 
-  const context = useContext(IbutsuContext);
+  const context = use(IbutsuContext);
   const { primaryObject } = context;
 
   const [results, setResults] = useState([]);

@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Button,
   EmptyState,
@@ -44,7 +37,7 @@ import { IbutsuContext } from '../components/contexts/ibutsu-context';
 import { nanoid } from 'nanoid/non-secure';
 
 const Dashboard = () => {
-  const { defaultDashboard, primaryObject } = useContext(IbutsuContext);
+  const { defaultDashboard, primaryObject } = use(IbutsuContext);
   const { dashboard_id, project_id } = useParams();
 
   const navigate = useNavigate();

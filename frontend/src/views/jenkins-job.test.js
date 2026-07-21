@@ -16,39 +16,43 @@ vi.mock('../pages/settings', () => ({
 // Mock FilterTable
 vi.mock('../components/filtering/filtered-table-card', () => {
   const PropTypes = require('prop-types');
-  const MockFilterTable = ({ columns, rows, fetching, isError }) => (
-    <div data-ouia-component-id="filter-table">
-      {fetching && <div>Loading...</div>}
-      {isError && <div>Error loading data</div>}
-      <table>
-        <thead>
-          <tr>
-            {columns.map((col, idx) => (
-              <th key={idx}>{col}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows &&
-            rows.map((row, idx) => (
-              <tr key={idx}>
-                {row.cells.map((cell, cidx) => {
-                  // Handle PatternFly table cell format { title: <Component /> }
+  const MockFilterTable = ({ columns, rows, fetching, isError }) => {
+    const keyedRows = (rows || []).map((row, i) => ({
+      ...row,
+      _mockKey: `row-${i}`,
+    }));
+    return (
+      <div data-ouia-component-id="filter-table">
+        {fetching && <div>Loading...</div>}
+        {isError && <div>Error loading data</div>}
+        <table>
+          <thead>
+            <tr>
+              {columns.map((col) => (
+                <th key={col}>{col}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {keyedRows.map((row) => (
+              <tr key={row._mockKey}>
+                {columns.map((col, cidx) => {
+                  const cell = row.cells[cidx];
                   if (cell && typeof cell === 'object' && cell.title) {
-                    return <td key={cidx}>{cell.title}</td>;
+                    return <td key={col}>{cell.title}</td>;
                   }
-                  // Render React elements directly
                   if (typeof cell === 'object' && cell !== null) {
-                    return <td key={cidx}>{cell}</td>;
+                    return <td key={col}>{cell}</td>;
                   }
-                  return <td key={cidx}>{cell}</td>;
+                  return <td key={col}>{cell}</td>;
                 })}
               </tr>
             ))}
-        </tbody>
-      </table>
-    </div>
-  );
+          </tbody>
+        </table>
+      </div>
+    );
+  };
   MockFilterTable.propTypes = {
     columns: PropTypes.array,
     rows: PropTypes.array,
