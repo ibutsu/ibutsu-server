@@ -29,8 +29,8 @@ vi.mock('./result-widget-legend', () => {
   };
 });
 
-// Mock react-apexcharts
-vi.mock('react-apexcharts', () => {
+// Mock react-apexcharts/core
+vi.mock('react-apexcharts/core', () => {
   return {
     default: function Chart({ series, options = {} }) {
       return (
@@ -46,6 +46,9 @@ vi.mock('react-apexcharts', () => {
     },
   };
 });
+
+// Mock apexcharts tree-shaking import
+vi.mock('apexcharts/donut', () => ({}));
 
 // Mock useSVGContainerDimensions hook
 vi.mock('../components/hooks/use-svg-container-dimensions', () => ({
