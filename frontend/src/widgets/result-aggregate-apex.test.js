@@ -23,7 +23,7 @@ vi.mock('../pages/settings', () => ({
 }));
 
 // Mock ApexCharts
-vi.mock('react-apexcharts', () => {
+vi.mock('react-apexcharts/core', () => {
   const PropTypes = require('prop-types');
   const MockChart = ({ options, series, type }) => (
     <div
@@ -42,6 +42,9 @@ vi.mock('react-apexcharts', () => {
   };
   return { default: MockChart };
 });
+
+// Mock apexcharts tree-shaking import
+vi.mock('apexcharts/donut', () => ({}));
 
 // Mock child components
 vi.mock('../components/widget-header', () => {

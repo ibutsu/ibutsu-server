@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import Chart from 'react-apexcharts';
+import Chart from 'react-apexcharts/core';
+import 'apexcharts/donut';
 
 import { Card, CardBody, Content } from '@patternfly/react-core';
 

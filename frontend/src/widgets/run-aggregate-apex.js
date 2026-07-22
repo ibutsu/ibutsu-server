@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Chart from 'react-apexcharts';
+import Chart from 'react-apexcharts/core';
+import 'apexcharts/bar';
 
 import { Card, CardBody, CardFooter, Content } from '@patternfly/react-core';
 
@@ -207,9 +208,9 @@ const RunAggregateApex = ({
         stacked: true,
         stackType: '100%',
         height: chartHeight,
-      },
-      toolbar: {
-        show: false,
+        toolbar: {
+          show: false,
+        },
       },
       colors: chartSeries.map((series) => series.color),
       plotOptions: {

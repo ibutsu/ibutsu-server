@@ -15,6 +15,9 @@ const jsxInJs = () => ({
 
 export default defineConfig({
   plugins: [react(), jsxInJs()],
+  resolve: {
+    dedupe: ['apexcharts'],
+  },
   server: {
     port: 3000,
     host: '0.0.0.0',
