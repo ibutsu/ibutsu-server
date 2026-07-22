@@ -9,6 +9,7 @@ RUN microdnf install --nodocs -y file-libs && \
     microdnf clean all
 
 COPY . /app
+COPY licenses/ /licenses/
 
 WORKDIR /app
 RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \

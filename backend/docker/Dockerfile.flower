@@ -7,6 +7,7 @@ RUN microdnf install --nodocs -y file-libs && \
     microdnf clean all
 
 COPY . /app
+COPY licenses/ /licenses/
 RUN /usr/bin/fix-permissions /app
 
 USER 1001
