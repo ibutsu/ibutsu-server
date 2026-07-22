@@ -1,7 +1,7 @@
 # hadolint global ignore=DL3041,DL4006,SC2046,DL3033
 # Build the image first using the official UBI Node.js 24 builder image
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-24/67f6255dbaa28af763e21805
-FROM registry.access.redhat.com/ubi9/nodejs-24:9.8-1784608222 AS builder
+FROM registry.access.redhat.com/ubi9/nodejs-24:9.8-1784704860 AS builder
 
 # The nodejs-24 image sets workdir to /opt/app-root/src by default
 # but we'll explicitly set it for clarity
