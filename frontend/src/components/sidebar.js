@@ -1,6 +1,6 @@
 import { use, useEffect, useState } from 'react';
 
-import { Link } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { IbutsuContext } from './contexts/ibutsu-context';
 import {
   PageSidebar,
@@ -14,6 +14,7 @@ import { Settings } from '../pages/settings';
 const IbutsuSidebar = () => {
   const context = use(IbutsuContext);
   const { primaryType, primaryObject } = context;
+  const { project_id } = useParams();
 
   const [views, setViews] = useState();
 
@@ -51,47 +52,51 @@ const IbutsuSidebar = () => {
     }
   }, [primaryObject]);
 
-  if (primaryType == 'project' && primaryObject) {
-    return (
-      <PageSidebar ouiaId="project-sidebar">
-        <PageSidebarBody isFilled>
-          <Nav aria-label="Nav" ouiaId="project-nav">
-            <NavList>
-              <li className="pf-v6-c-nav__item">
-                <Link to="dashboard" className="pf-v6-c-nav__link">
-                  Dashboard
-                </Link>
-              </li>
-              <li className="pf-v6-c-nav__item">
-                <Link to="runs/" className="pf-v6-c-nav__link">
-                  Runs
-                </Link>
-              </li>
-              <li className="pf-v6-c-nav__item">
-                <Link to="results/" className="pf-v6-c-nav__link">
-                  Test Results
-                </Link>
-              </li>
-              {views &&
-                views.map(
-                  (view) =>
-                    view.widget !== 'jenkins-analysis-view' && (
-                      <li className="pf-v6-c-nav__item" key={view.id}>
-                        <Link
-                          to={`view/${view.id}`}
-                          className="pf-v6-c-nav__link"
-                        >
-                          {view.title}
-                        </Link>
-                      </li>
-                    ),
-                )}
-            </NavList>
-          </Nav>
-        </PageSidebarBody>
-      </PageSidebar>
-    );
+  if (!project_id || primaryType !== 'project' || !primaryObject) {
+    return;
   }
+
+  const projectBasePath = `/project/${project_id}`;
+
+  return (
+    <PageSidebar ouiaId="project-sidebar">
+      <PageSidebarBody isFilled>
+        <Nav aria-label="Nav" ouiaId="project-nav">
+          <NavList>
+            <li className="pf-v6-c-nav__item">
+              <Link to={`${projectBasePath}/dashboard`} className="pf-v6-c-nav__link">
+                Dashboard
+              </Link>
+            </li>
+            <li className="pf-v6-c-nav__item">
+              <Link to={`${projectBasePath}/runs`} className="pf-v6-c-nav__link">
+                Runs
+              </Link>
+            </li>
+            <li className="pf-v6-c-nav__item">
+              <Link to={`${projectBasePath}/results`} className="pf-v6-c-nav__link">
+                Test Results
+              </Link>
+            </li>
+            {views &&
+              views.map(
+                (view) =>
+                  view.widget !== 'jenkins-analysis-view' && (
+                    <li className="pf-v6-c-nav__item" key={view.id}>
+                      <Link
+                        to={`${projectBasePath}/view/${view.id}`}
+                        className="pf-v6-c-nav__link"
+                      >
+                        {view.title}
+                      </Link>
+                    </li>
+                  ),
+              )}
+          </NavList>
+        </Nav>
+      </PageSidebarBody>
+    </PageSidebar>
+  );
 };
 
 export default IbutsuSidebar;
