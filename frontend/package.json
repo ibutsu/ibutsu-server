@@ -21,7 +21,7 @@
     "keycloak-js": "^26.2.4",
     "linkify-react": "^4.3.3",
     "linkifyjs": "^4.3.3",
-    "monaco-editor": "^0.55.1",
+    "monaco-editor": "^0.56.0",
     "nanoid": "^6.0.0",
     "prop-types": "^15.8.1",
     "react": "^19.2.7",
