@@ -1,5 +1,5 @@
 # hadolint global ignore=DL3013,DL3041
-FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1784706048
+FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1784730907
 
 ENV UPGRADE_PIP_TO_LATEST=1
 
