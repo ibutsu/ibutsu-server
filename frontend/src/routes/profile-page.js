@@ -23,13 +23,18 @@ const ProfilePage = () => {
             <PageSidebarBody>
               <Nav aria-label="Nav">
                 <NavList>
+                  {/*
+                    Absolute paths avoid relative-splat resolution ambiguity
+                    (see admin-page.js for details). The target route is
+                    "user", not "profile".
+                  */}
                   <li className="pf-v6-c-nav__item">
-                    <NavLink to="profile" className="pf-v6-c-nav__link">
+                    <NavLink to="/profile/user" className="pf-v6-c-nav__link">
                       Profile
                     </NavLink>
                   </li>
                   <li className="pf-v6-c-nav__item">
-                    <NavLink to="tokens" className="pf-v6-c-nav__link">
+                    <NavLink to="/profile/tokens" className="pf-v6-c-nav__link">
                       Tokens
                     </NavLink>
                   </li>
