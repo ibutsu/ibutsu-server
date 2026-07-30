@@ -10,7 +10,7 @@ const Profile = () => (
     <Route path="" element={<ProfilePage />}>
       <Route path="user" element={<UserProfile />} />
       <Route path="tokens" element={<UserTokens />} />
-      {/* Absolute target avoids relative-splat resolution ambiguity (see admin.js) */}
+      {/* Absolute target: keeps this catch-all's redirect unambiguous. */}
       <Route path="*" element={<Navigate to="/profile/user" replace />} />
     </Route>
   </Routes>

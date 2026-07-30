@@ -69,13 +69,7 @@ const Admin = () => {
           }
         />
       </Route>
-      {/*
-        Use an absolute target here: a relative "" would resolve relative to
-        whatever splat-captured path this catch-all itself matched (e.g. an
-        unmatched /admin/home/users would self-redirect back to
-        /admin/home/users under React Router v7's relative-splat resolution),
-        producing a blank page instead of a real redirect.
-      */}
+      {/* Absolute target: keeps this catch-all's redirect unambiguous. */}
       <Route path="*" element={<Navigate to="/admin/home" replace />} />
     </Routes>
   );

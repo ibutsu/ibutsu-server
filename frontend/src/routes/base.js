@@ -27,24 +27,11 @@ export const Base = () => (
             element={<ResetPassword />}
           />
           {/*
-            NOTE: Admin/Profile/App each mount their own descendant <Routes>
-            internally, which requires their parent Route's path to end in
-            "/*" (React Router will warn and fail to match anything beyond
-            the first render otherwise). That means these three must stay as
-            single combined "x/*" routes here rather than being split into a
-            static parent + separate "*"/"index" children.
-
-            React Router v7 makes the `v7_relativeSplatPath` fix the
-            default: relative link resolution no longer ignores the
-            splat-matched portion of the URL for multi-segment splat paths
-            like "admin/*". Combined with a descendant <Routes> boundary,
-            this means bare relative links inside Admin/Profile (e.g.
-            <Link to="users">) resolve relative to whatever sub-page is
-            currently active instead of to "/admin", producing broken URLs.
-            Rather than restructure the mount points, the sidebars in
-            admin-page.js and profile-page.js use absolute paths
-            (e.g. "/admin/users") to avoid the ambiguity entirely.
-            See: https://reactrouter.com/upgrading/v6#v7_relativesplatpath
+            Admin/Profile/App each mount their own descendant <Routes>, so
+            their Route path must keep the combined "x/*" form here. Links
+            inside those pages use absolute paths (e.g. "/admin/users")
+            rather than relative ones, per React Router v7's
+            v7_relativeSplatPath resolution rules for splat routes.
           */}
           <Route
             path="profile/*"
@@ -70,7 +57,8 @@ export const Base = () => (
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="project" replace />} />
+          {/* Absolute target: keeps this catch-all's redirect unambiguous. */}
+          <Route path="*" element={<Navigate to="/project" replace />} />
         </Routes>
       </Suspense>
     </Router>

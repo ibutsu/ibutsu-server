@@ -23,11 +23,7 @@ const ProfilePage = () => {
             <PageSidebarBody>
               <Nav aria-label="Nav">
                 <NavList>
-                  {/*
-                    Absolute paths avoid relative-splat resolution ambiguity
-                    (see admin-page.js for details). The target route is
-                    "user", not "profile".
-                  */}
+                  {/* Absolute paths: this sidebar is nested under Profile's own splat route. */}
                   <li className="pf-v6-c-nav__item">
                     <NavLink to="/profile/user" className="pf-v6-c-nav__link">
                       Profile
