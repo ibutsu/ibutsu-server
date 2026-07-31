@@ -143,7 +143,7 @@ packaging==26.2
     # via
     #   gunicorn
     #   kombu
-prompt-toolkit==3.0.52
+prompt-toolkit==3.0.53
     # via click-repl
 proto-plus==1.28.1
     # via google-api-core
