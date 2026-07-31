@@ -116,6 +116,15 @@ const IbutsuHeader = () => {
         setIsProjectSelectOpen(false);
       } catch (error) {
         console.error('Error fetching project:', error);
+        // Bad/unknown project_id: clear any stale selection and drop it
+        // from the URL rather than leaving the page on an invalid path.
+        setPrimaryObject();
+        setDefaultDashboard();
+        setSelectedProject();
+        setInputValue('');
+        setFilterValue('');
+        setIsProjectSelectOpen(false);
+        navigate('/project/', { replace: true });
       }
     };
 
@@ -132,6 +141,7 @@ const IbutsuHeader = () => {
     setDefaultDashboard,
     setPrimaryObject,
     setPrimaryType,
+    navigate,
   ]);
 
   const onProjectSelect = (_, value) => {

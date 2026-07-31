@@ -23,13 +23,14 @@ const ProfilePage = () => {
             <PageSidebarBody>
               <Nav aria-label="Nav">
                 <NavList>
+                  {/* Absolute paths: this sidebar is nested under Profile's own splat route. */}
                   <li className="pf-v6-c-nav__item">
-                    <NavLink to="profile" className="pf-v6-c-nav__link">
+                    <NavLink to="/profile/user" className="pf-v6-c-nav__link">
                       Profile
                     </NavLink>
                   </li>
                   <li className="pf-v6-c-nav__item">
-                    <NavLink to="tokens" className="pf-v6-c-nav__link">
+                    <NavLink to="/profile/tokens" className="pf-v6-c-nav__link">
                       Tokens
                     </NavLink>
                   </li>

@@ -19,18 +19,19 @@ const AdminPage = () => {
       <PageSidebarBody>
         <Nav aria-label="Nav">
           <NavList>
+            {/* Absolute paths: this sidebar is nested under Admin's own splat route. */}
             <NavItem>
-              <Link to="home" className="pf-v6-c-nav__link">
+              <Link to="/admin/home" className="pf-v6-c-nav__link">
                 Admin Home
               </Link>
             </NavItem>
             <NavItem>
-              <Link to="users" className="pf-v6-c-nav__link">
+              <Link to="/admin/users" className="pf-v6-c-nav__link">
                 Users
               </Link>
             </NavItem>
             <NavItem>
-              <Link to="projects" className="pf-v6-c-nav__link">
+              <Link to="/admin/projects" className="pf-v6-c-nav__link">
                 Projects
               </Link>
             </NavItem>

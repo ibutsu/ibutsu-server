@@ -26,6 +26,13 @@ export const Base = () => (
             path="reset-password/:activationCode"
             element={<ResetPassword />}
           />
+          {/*
+            Admin/Profile/App each mount their own descendant <Routes>, so
+            their Route path must keep the combined "x/*" form here. Links
+            inside those pages use absolute paths (e.g. "/admin/users")
+            rather than relative ones, per React Router v7's
+            v7_relativeSplatPath resolution rules for splat routes.
+          */}
           <Route
             path="profile/*"
             element={
@@ -50,7 +57,8 @@ export const Base = () => (
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="project" replace />} />
+          {/* Absolute target: keeps this catch-all's redirect unambiguous. */}
+          <Route path="*" element={<Navigate to="/project" replace />} />
         </Routes>
       </Suspense>
     </Router>

@@ -69,7 +69,8 @@ const Admin = () => {
           }
         />
       </Route>
-      <Route path="*" element={<Navigate to="" replace />} />
+      {/* Absolute target: keeps this catch-all's redirect unambiguous. */}
+      <Route path="*" element={<Navigate to="/admin/home" replace />} />
     </Routes>
   );
 };

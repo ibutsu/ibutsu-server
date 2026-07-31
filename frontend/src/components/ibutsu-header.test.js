@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import IbutsuHeader from './ibutsu-header';
 import { IbutsuContext } from './contexts/ibutsu-context';
 import { HttpClient } from '../utilities/http';
@@ -61,12 +61,24 @@ describe('IbutsuHeader', () => {
     setDarkTheme: vi.fn(),
   };
 
-  const renderComponent = (contextValue = {}, initialRoute = '/') => {
+  const LocationDisplay = () => {
+    const location = useLocation();
+    return (
+      <div data-ouia-component-id="location-display">{location.pathname}</div>
+    );
+  };
+
+  const renderComponent = (
+    contextValue = {},
+    initialRoute = '/',
+    { withLocationDisplay = false } = {},
+  ) => {
     const mergedContext = { ...defaultContextValue, ...contextValue };
 
     return render(
       <MemoryRouter initialEntries={[initialRoute]}>
         <IbutsuContext value={mergedContext}>
+          {withLocationDisplay && <LocationDisplay />}
           <Routes>
             <Route path="/*" element={<IbutsuHeader />} />
             <Route path="/project/:project_id/*" element={<IbutsuHeader />} />
@@ -319,6 +331,42 @@ describe('IbutsuHeader', () => {
         expect(consoleSpy).toHaveBeenCalledWith(
           'Error fetching project:',
           expect.any(Error),
+        );
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should clear the selected project and reset the URL when project_id is invalid', async () => {
+      const setPrimaryObject = vi.fn();
+      const setDefaultDashboard = vi.fn();
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+      HttpClient.get.mockImplementation((url) => {
+        const urlPath = Array.isArray(url) ? url.join('/') : url;
+        if (urlPath.includes('/project/') && urlPath.includes('bad-uuid')) {
+          return Promise.reject(new Error('Not found'));
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ projects: [] }),
+        });
+      });
+
+      renderComponent(
+        { setPrimaryObject, setDefaultDashboard },
+        '/project/bad-uuid/dashboard',
+        { withLocationDisplay: true },
+      );
+      vi.advanceTimersByTime(100);
+
+      await waitFor(() => {
+        expect(setPrimaryObject).toHaveBeenCalledWith();
+        expect(setDefaultDashboard).toHaveBeenCalledWith();
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('location-display').textContent).toBe(
+          '/project/',
         );
       });
 

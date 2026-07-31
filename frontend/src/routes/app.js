@@ -1,6 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react';
 
-import { Navigate, Route, Routes } from 'react-router';
+import { Navigate, Route, Routes, useParams } from 'react-router';
 
 import IbutsuPage from './ibutsu-page';
 
@@ -16,6 +16,13 @@ const Run = lazy(() => import('../pages/run'));
 const ResultList = lazy(() => import('../pages/result-list'));
 const Result = lazy(() => import('../pages/result'));
 const View = lazy(() => import('../pages/View'));
+
+// Builds an absolute path so the redirect target is unambiguous regardless
+// of the unmatched sub-path that triggered it.
+const ProjectNotFoundRedirect = () => {
+  const { project_id } = useParams();
+  return <Navigate to={`/project/${project_id}/dashboard`} replace />;
+};
 
 const App = () => {
   // apparently it's good practice to set this after render via effect
@@ -94,7 +101,7 @@ const App = () => {
             </Suspense>
           }
         />
-        <Route path="*" element={<Navigate to="dashboard" replace />} />
+        <Route path="*" element={<ProjectNotFoundRedirect />} />
       </Route>
     </Routes>
   );
