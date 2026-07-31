@@ -29,7 +29,7 @@ blinker==1.9.0
     #   flask-mail
 celery==5.6.3
     # via ibutsu-server (pyproject.toml)
-certifi==2026.6.17
+certifi==2026.7.22
     # via
     #   httpcore
     #   httpx
