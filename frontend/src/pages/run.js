@@ -614,7 +614,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     </DataListItem>
                                     <DataListItem
                                       aria-labelledby="Passed"
-                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                      className="pf-m-clickable"
                                     >
                                       <Link
                                         to={{
@@ -655,7 +655,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     </DataListItem>
                                     <DataListItem
                                       aria-labelledby="Failed"
-                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                      className="pf-m-clickable"
                                     >
                                       <Link
                                         to={{
@@ -696,7 +696,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     </DataListItem>
                                     <DataListItem
                                       aria-labelledby="Error"
-                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                      className="pf-m-clickable"
                                     >
                                       <Link
                                         to={{
@@ -737,7 +737,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     </DataListItem>
                                     <DataListItem
                                       aria-labelledby="Xfailed"
-                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                      className="pf-m-clickable"
                                     >
                                       <Link
                                         to={{
@@ -778,7 +778,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     </DataListItem>
                                     <DataListItem
                                       aria-labelledby="Xpassed"
-                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                      className="pf-m-clickable"
                                     >
                                       <Link
                                         to={{
@@ -819,7 +819,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     </DataListItem>
                                     <DataListItem
                                       aria-labelledby="Skipped"
-                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                      className="pf-m-clickable"
                                     >
                                       <Link
                                         to={{
@@ -860,7 +860,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     </DataListItem>
                                     <DataListItem
                                       aria-labelledby="Not Run"
-                                      class="pf-v6-c-data-list__item pf-m-clickable"
+                                      className="pf-m-clickable"
                                     >
                                       <Link
                                         to={{

@@ -212,8 +212,7 @@ const GenericBarWidget = ({
       <CardFooter className="ibutsu-widget-footer">
         <div className="ibutsu-widget-chart-legend">
           <ChartLegend
-            height="auto"
-            width="auto"
+            height={60}
             data={legendData}
             itemsPerRow={itemsPerRow}
             responsive={true}
