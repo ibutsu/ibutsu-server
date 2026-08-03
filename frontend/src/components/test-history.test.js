@@ -98,9 +98,11 @@ vi.mock('./filtering/filtered-table-card', () => {
   return { default: MockFilterTable };
 });
 
+const activeFiltersMock = vi.fn();
 vi.mock('./filtering/active-filters', () => {
   return {
-    default: function ActiveFilters() {
+    default: function ActiveFilters(props) {
+      activeFiltersMock(props);
       return <div data-ouia-component-id="active-filters">Active Filters</div>;
     },
   };
@@ -466,6 +468,63 @@ describe('TestHistoryTable', () => {
       await waitFor(() => {
         expect(screen.getByTestId('filter-table')).toBeInTheDocument();
       });
+    });
+
+    it('should not build a malformed component filter when testResult has no component', async () => {
+      activeFiltersMock.mockClear();
+      const testResultNoComponent = createMockResult({
+        test_id: 'test.module.test_func',
+        component: undefined,
+      });
+
+      render(
+        <MemoryRouter>
+          <TestHistoryTable testResult={testResultNoComponent} />
+        </MemoryRouter>,
+      );
+      vi.advanceTimersByTime(100);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('filter-table')).toBeInTheDocument();
+      });
+
+      // ActiveFilters should still be invoked with an activeFilters array
+      expect(activeFiltersMock).toHaveBeenCalled();
+      expect(activeFiltersMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          activeFilters: expect.any(Array),
+        }),
+      );
+
+      // None of the activeFilters passed down should ever include a
+      // component filter with a null/undefined value
+      for (const call of activeFiltersMock.mock.calls) {
+        const passedFilters = call[0]?.activeFilters || [];
+        const componentFilter = passedFilters.find(
+          (f) => f.field === 'component',
+        );
+        expect(componentFilter).toBeUndefined();
+      }
+
+      // The non-component filters derived from the test result (result,
+      // test_id, env) should still be passed through in the final state
+      const lastCallFilters =
+        activeFiltersMock.mock.calls[activeFiltersMock.mock.calls.length - 1][0]
+          ?.activeFilters || [];
+
+      expect(lastCallFilters).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: 'result' }),
+          expect.objectContaining({
+            field: 'test_id',
+            value: testResultNoComponent.test_id,
+          }),
+          expect.objectContaining({
+            field: 'env',
+            value: testResultNoComponent.env,
+          }),
+        ]),
+      );
     });
   });
 
