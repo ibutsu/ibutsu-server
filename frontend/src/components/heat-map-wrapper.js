@@ -27,9 +27,9 @@ const HeatMapWrapper = ({
       {/* X-axis labels row */}
       <div style={{ display: 'flex' }}>
         <div style={{ width: `${yLabelWidth}px`, flexShrink: 0 }} />
-        {xLabels.map((label) => (
+        {xLabels.map((label, xi) => (
           <div
-            key={label}
+            key={xi}
             style={{
               flex: squares ? undefined : 1,
               width: cellSize,
@@ -45,7 +45,7 @@ const HeatMapWrapper = ({
 
       {/* Data rows */}
       {yLabels.map((yLabel, yi) => (
-        <div key={yLabel} style={{ display: 'flex', alignItems: 'center' }}>
+        <div key={yi} style={{ display: 'flex', alignItems: 'center' }}>
           {/* Y-axis label */}
           <div
             style={{
@@ -68,7 +68,7 @@ const HeatMapWrapper = ({
             const style = cellStyle(null, value, min, max, data, xi, yi);
             return (
               <div
-                key={xLabel}
+                key={xi}
                 role="button"
                 tabIndex={0}
                 title={title(value, xi, yi)}
