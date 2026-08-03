@@ -151,6 +151,14 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
   // Set active filters for result, test_id, component, time, and env based on test result
   useEffect(() => {
     if (testResult) {
+      const componentFilter = testResult?.component
+        ? {
+            field: 'component',
+            operator: 'eq',
+            value: testResult.component,
+          }
+        : {};
+
       const envFilter = testResult?.env
         ? {
             field: 'env',
@@ -185,11 +193,6 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
             operator: 'eq',
             value: testResult?.test_id,
           },
-          {
-            field: 'component',
-            operator: 'eq',
-            value: testResult?.component,
-          },
           ...prevFilters.filter(
             (f) =>
               !['result', 'test_id', 'component', 'start_time', 'env'].includes(
@@ -198,7 +201,11 @@ const TestHistoryTable = ({ comparisonResults, testResult }) => {
           ),
         ];
 
-        // Only add timeFilter and envFilter if they have a field property (not empty objects)
+        // Only add componentFilter, timeFilter, and envFilter if they have a field
+        // property (not empty objects) -- the result may not have this metadata set
+        if (componentFilter?.field) {
+          newFilters.push(componentFilter);
+        }
         if (timeFilter?.field) {
           newFilters.push(timeFilter);
         }
