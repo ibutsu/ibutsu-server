@@ -30,8 +30,10 @@ export const Base = () => (
             Admin/Profile/App each mount their own descendant <Routes>, so
             their Route path must keep the combined "x/*" form here. Links
             inside those pages use absolute paths (e.g. "/admin/users")
-            rather than relative ones, per React Router v7's
-            v7_relativeSplatPath resolution rules for splat routes.
+            rather than relative ones, since relative link/navigate
+            resolution for splat routes is resolved against the full
+            matched splat path (standard behavior since React Router v7,
+            unchanged in v8).
           */}
           <Route
             path="profile/*"
