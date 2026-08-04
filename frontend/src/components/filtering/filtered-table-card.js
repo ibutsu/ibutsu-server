@@ -25,6 +25,44 @@ import {
 
 import { TableEmptyState, TableErrorState } from '../table-states';
 
+// Columns are either plain strings or objects with a `title` property
+const getColumnText = (column) => column?.title ?? column;
+
+const isColumnEmpty = (column) => {
+  const columnText = getColumnText(column);
+  if (columnText == null) {
+    return true;
+  }
+  // Preserve the previous `!columnText` semantics (0/false/'' are empty)
+  // for non-string values, while safely trimming whitespace-only strings.
+  return typeof columnText === 'string'
+    ? columnText.trim() === ''
+    : !columnText;
+};
+
+// Empty-titled columns render as headers with no accessible name. A column
+// definition may opt in to its own label via `screenReaderText` (either on
+// the column itself or under `props`); otherwise fall back to "Actions" only
+// for the conventional trailing empty column, since that's the sole empty
+// column used across the app today. Any other empty column gets a generic,
+// index-based label so it isn't mislabeled as "Actions".
+const getEmptyColumnScreenReaderText = (column, columnIndex, columnCount) => {
+  const explicitText =
+    (typeof column === 'object' &&
+      column !== null &&
+      column.screenReaderText) ||
+    (typeof column === 'object' &&
+      column !== null &&
+      column.props?.screenReaderText);
+  if (explicitText) {
+    return explicitText;
+  }
+
+  return columnIndex === columnCount - 1
+    ? 'Actions'
+    : `Column ${columnIndex + 1}`;
+};
+
 const FilterTable = ({
   selectable = false,
   expandable = false,
@@ -55,6 +93,31 @@ const FilterTable = ({
     : rows
       ? rows.length !== 0
       : false;
+
+  // Mirror the real Thead: non-empty columns are passed through unchanged so
+  // the skeleton keeps any existing column props (width, transforms, etc.),
+  // while empty columns get the same derived screen-reader label used below.
+  const skeletonColumns = columns.map((column, columnIndex) => {
+    if (!isColumnEmpty(column)) {
+      return column;
+    }
+
+    const screenReaderText = getEmptyColumnScreenReaderText(
+      column,
+      columnIndex,
+      columns.length,
+    );
+
+    if (typeof column === 'object' && column !== null) {
+      return {
+        ...column,
+        cell: '',
+        props: { ...column.props, screenReaderText },
+      };
+    }
+
+    return { cell: '', props: { screenReaderText } };
+  });
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [expandedRows, setExpandedRows] = useState([]);
@@ -255,7 +318,11 @@ const FilterTable = ({
       {filters || null}
       {fetching && (
         <CardBody key="loading-table">
-          <SkeletonTable rowsCount={10} columns={columns} variant={variant} />
+          <SkeletonTable
+            rowsCount={10}
+            columns={skeletonColumns}
+            variant={variant}
+          />
         </CardBody>
       )}
       {!fetching && !isError && populatedRows && (
@@ -297,19 +364,21 @@ const FilterTable = ({
                 )}
                 {expandable && <Th screenReaderText="Row expansion" />}
                 {columns.map((column, columnIndex) => {
-                  const columnText =
-                    typeof column === 'string' ? column : column?.title;
-                  const isEmpty = !columnText || columnText.trim() === '';
+                  const columnText = getColumnText(column);
                   const sortParams = getSortParams(columnIndex);
 
                   // For empty columns, don't render any children
                   const columnKey = columnText || `col-${columnIndex}`;
-                  if (isEmpty) {
+                  if (isColumnEmpty(column)) {
                     return (
                       <Th
                         key={columnKey}
                         {...sortParams}
-                        screenReaderText="Actions"
+                        screenReaderText={getEmptyColumnScreenReaderText(
+                          column,
+                          columnIndex,
+                          columns.length,
+                        )}
                       />
                     );
                   }
