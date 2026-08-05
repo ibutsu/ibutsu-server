@@ -182,13 +182,12 @@ describe('ResultList', () => {
 
       await waitFor(() => {
         // Verify result endpoint is called with expected parameters
-        // Note: page/pageSize come from URL search params as strings
         expect(HttpClient.get).toHaveBeenCalledWith(
           ['http://localhost:8080', 'result'],
           expect.objectContaining({
             estimate: true,
-            page: '1',
-            pageSize: '20',
+            page: 1,
+            pageSize: 20,
             filter: [],
           }),
         );
