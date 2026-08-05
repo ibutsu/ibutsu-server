@@ -42,10 +42,7 @@ describe('IbutsuSidebar', () => {
       <MemoryRouter initialEntries={[initialRoute]}>
         <IbutsuContext value={mergedContext}>
           <Routes>
-            <Route
-              path="/project/:project_id/*"
-              element={<IbutsuSidebar />}
-            />
+            <Route path="/project/:project_id/*" element={<IbutsuSidebar />} />
           </Routes>
         </IbutsuContext>
       </MemoryRouter>,
@@ -80,10 +77,7 @@ describe('IbutsuSidebar', () => {
 
       await waitFor(() => {
         const link = screen.getByRole('link', { name: 'Dashboard' });
-        expect(link).toHaveAttribute(
-          'href',
-          `/project/${projectId}/dashboard`,
-        );
+        expect(link).toHaveAttribute('href', `/project/${projectId}/dashboard`);
       });
     });
 
@@ -103,10 +97,7 @@ describe('IbutsuSidebar', () => {
 
       await waitFor(() => {
         const link = screen.getByRole('link', { name: 'Test Results' });
-        expect(link).toHaveAttribute(
-          'href',
-          `/project/${projectId}/results`,
-        );
+        expect(link).toHaveAttribute('href', `/project/${projectId}/results`);
       });
     });
 
@@ -116,10 +107,7 @@ describe('IbutsuSidebar', () => {
 
       await waitFor(() => {
         const runsLink = screen.getByRole('link', { name: 'Runs' });
-        expect(runsLink).toHaveAttribute(
-          'href',
-          `/project/${projectId}/runs`,
-        );
+        expect(runsLink).toHaveAttribute('href', `/project/${projectId}/runs`);
         expect(runsLink.getAttribute('href')).not.toContain('dashboard');
       });
     });

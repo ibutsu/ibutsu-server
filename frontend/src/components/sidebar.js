@@ -64,17 +64,26 @@ const IbutsuSidebar = () => {
         <Nav aria-label="Nav" ouiaId="project-nav">
           <NavList>
             <li className="pf-v6-c-nav__item">
-              <Link to={`${projectBasePath}/dashboard`} className="pf-v6-c-nav__link">
+              <Link
+                to={`${projectBasePath}/dashboard`}
+                className="pf-v6-c-nav__link"
+              >
                 Dashboard
               </Link>
             </li>
             <li className="pf-v6-c-nav__item">
-              <Link to={`${projectBasePath}/runs`} className="pf-v6-c-nav__link">
+              <Link
+                to={`${projectBasePath}/runs`}
+                className="pf-v6-c-nav__link"
+              >
                 Runs
               </Link>
             </li>
             <li className="pf-v6-c-nav__item">
-              <Link to={`${projectBasePath}/results`} className="pf-v6-c-nav__link">
+              <Link
+                to={`${projectBasePath}/results`}
+                className="pf-v6-c-nav__link"
+              >
                 Test Results
               </Link>
             </li>
