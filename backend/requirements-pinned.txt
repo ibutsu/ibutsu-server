@@ -2,7 +2,7 @@
 #    uv pip compile pyproject.toml -o requirements-pinned.txt
 a2wsgi==1.10.10
     # via connexion
-alembic==1.18.5
+alembic==1.19.0
     # via ibutsu-server (pyproject.toml)
 amqp==5.3.1
     # via kombu
