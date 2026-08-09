@@ -85,7 +85,7 @@ google-auth-httplib2==0.4.0
     #   google-api-python-client
 google-auth-oauthlib==1.4.0
     # via ibutsu-server (pyproject.toml)
-googleapis-common-protos==1.75.0
+googleapis-common-protos==1.75.1
     # via google-api-core
 greenlet==3.5.4
     # via sqlalchemy
