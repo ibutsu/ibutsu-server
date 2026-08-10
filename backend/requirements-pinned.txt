@@ -79,7 +79,7 @@ google-auth==2.56.3
     #   google-api-python-client
     #   google-auth-httplib2
     #   google-auth-oauthlib
-google-auth-httplib2==0.4.0
+google-auth-httplib2==0.4.1
     # via
     #   ibutsu-server (pyproject.toml)
     #   google-api-python-client
