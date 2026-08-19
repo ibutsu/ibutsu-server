@@ -57,6 +57,13 @@ def compute_pass_percent(passes: int, tests: int) -> int:
 @shared_task(max_retries=1000)
 def update_run(run_id):
     """Update the run summary from the results, this task will retry 1000 times"""
+    # Check this before touching Redis at all: a missing run is a plain DB
+    # read, so there's no reason to pay for a lock round-trip (or block
+    # waiting on one) for a run_id that doesn't exist.
+    run = db.session.get(Run, run_id)
+    if not run:
+        return
+
     lock_name = f"update-run-lock-{run_id}"
     if is_locked(lock_name):
         logging.warning(f"{lock_name}: Already locked, discarding.")
@@ -64,10 +71,6 @@ def update_run(run_id):
 
     try:
         with lock(lock_name):
-            run = db.session.get(Run, run_id)
-            if not run:
-                return
-
             # initialize some necessary variables
             summary = {
                 "errors": 0,
