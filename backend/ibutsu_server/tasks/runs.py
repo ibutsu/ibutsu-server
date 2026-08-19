@@ -1,26 +1,29 @@
+import logging
 from datetime import UTC, datetime, timedelta
+
+from redis.exceptions import LockError
 
 from ibutsu_server.constants import SYNC_RUN_TIME
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Result, Run
 from ibutsu_server.tasks import shared_task
-from ibutsu_server.util.redis_lock import lock
+from ibutsu_server.util.redis_lock import is_locked, lock
 
 METADATA_TO_COPY = ["jenkins", "tags"]
 COLUMNS_TO_COPY = ["start_time", "env", "component", "project_id", "source"]
 
 
-def _copy_result_metadata(result, metadata, key):
+def _copy_result_metadata(result: Result, metadata: dict, key: str) -> None:
     if not metadata.get(key) and result.data and result.data.get(key):
         metadata[key] = result.data[key]
 
 
-def _copy_column(result, run, key):
+def _copy_column(result: Result, run: Run, key: str) -> None:
     if not getattr(run, key, None):
         setattr(run, key, getattr(result, key, None))
 
 
-def _status_to_summary(status):
+def _status_to_summary(status: str) -> str:
     return {
         "failed": "failures",
         "error": "errors",
@@ -52,71 +55,87 @@ def compute_pass_percent(passes: int, tests: int) -> int:
 
 
 @shared_task(max_retries=1000)
-def update_run(run_id):
+def update_run(run_id: str) -> None:
     """Update the run summary from the results, this task will retry 1000 times"""
-    with lock(f"update-run-lock-{run_id}"):
-        run = db.session.get(Run, run_id)
-        if not run:
-            return
+    # Check this before touching Redis at all: a missing run is a plain DB
+    # read, so there's no reason to pay for a lock round-trip (or block
+    # waiting on one) for a run_id that doesn't exist.
+    run = db.session.get(Run, run_id)
+    if not run:
+        return
 
-        # initialize some necessary variables
-        summary = {
-            "errors": 0,
-            "failures": 0,
-            "skips": 0,
-            "tests": 0,
-            "xpasses": 0,
-            "xfailures": 0,
-            "collected": run.summary.get("collected", 0) if run.summary else 0,
-        }
-        run.duration = 0.0
-        metadata = run.data or {}
+    lock_name = f"update-run-lock-{run_id}"
+    if is_locked(lock_name):
+        logging.warning(f"{lock_name}: Already locked, discarding.")
+        return
 
-        # Fetch all the results for the runs and calculate the summary
-        results = (
-            db.session.execute(
-                db.select(Result).where(Result.run_id == run_id).order_by(Result.start_time.asc())
+    try:
+        with lock(lock_name):
+            # initialize some necessary variables
+            summary = {
+                "errors": 0,
+                "failures": 0,
+                "skips": 0,
+                "tests": 0,
+                "xpasses": 0,
+                "xfailures": 0,
+                "collected": run.summary.get("collected", 0) if run.summary else 0,
+            }
+            run.duration = 0.0
+            metadata = run.data or {}
+
+            # Fetch all the results for the runs and calculate the summary
+            results = (
+                db.session.execute(
+                    db.select(Result)
+                    .where(Result.run_id == run_id)
+                    .order_by(Result.start_time.asc())
+                )
+                .scalars()
+                .all()
             )
-            .scalars()
-            .all()
-        )
 
-        for i, result in enumerate(results):
-            if i == 0:
-                # on the first result, copy over some metadata
-                for column in COLUMNS_TO_COPY:
-                    _copy_column(result, run, column)
+            for i, result in enumerate(results):
+                if i == 0:
+                    # on the first result, copy over some metadata
+                    for column in COLUMNS_TO_COPY:
+                        _copy_column(result, run, column)
 
-                for key in METADATA_TO_COPY:
-                    _copy_result_metadata(result, metadata, key)
+                    for key in METADATA_TO_COPY:
+                        _copy_result_metadata(result, metadata, key)
 
-            key = _status_to_summary(result.result)
-            if key in summary:
-                summary[key] = summary.get(key, 0) + 1
-            # update the number of tests that actually ran
-            summary["tests"] += 1
-            if result.duration:
-                run.duration += result.duration
+                key = _status_to_summary(result.result)
+                if key in summary:
+                    summary[key] = summary.get(key, 0) + 1
+                # update the number of tests that actually ran
+                summary["tests"] += 1
+                if result.duration:
+                    run.duration += result.duration
 
-        # determine the number of passes
-        summary["passes"] = summary["tests"] - (
-            summary["errors"]
-            + summary["xpasses"]
-            + summary["xfailures"]
-            + summary["failures"]
-            + summary["skips"]
-        )
-        summary["pass_percent"] = compute_pass_percent(summary["passes"], summary["tests"])
-        # determine the number of tests that didn't run
-        summary["not_run"] = max(summary["collected"] - summary["tests"], 0)
+            # determine the number of passes
+            summary["passes"] = summary["tests"] - (
+                summary["errors"]
+                + summary["xpasses"]
+                + summary["xfailures"]
+                + summary["failures"]
+                + summary["skips"]
+            )
+            summary["pass_percent"] = compute_pass_percent(summary["passes"], summary["tests"])
+            # determine the number of tests that didn't run
+            summary["not_run"] = max(summary["collected"] - summary["tests"], 0)
 
-        run.update({"summary": summary, "data": metadata})
-        db.session.add(run)
-        db.session.commit()
+            run.update({"summary": summary, "data": metadata})
+            db.session.add(run)
+            db.session.commit()
+    except LockError:
+        # Lost a race to acquire the lock after the is_locked() check above --
+        # another update_run for this run is already in progress. Discard rather
+        # than let the uncaught exception trigger the global task-failure retry.
+        logging.warning(f"{lock_name}: Lock acquisition failed, discarding.")
 
 
 @shared_task(max_retries=1)
-def sync_aborted_runs():
+def sync_aborted_runs() -> None:
     """
     When test runs are prematurely aborted, e.g. due to a connection failure or outage, the number
     of tests that are stored in summary.tests on a Run will not match the number of results for that

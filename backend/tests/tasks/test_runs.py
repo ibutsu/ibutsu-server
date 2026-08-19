@@ -3,6 +3,8 @@
 from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 
+from redis.exceptions import LockError
+
 from ibutsu_server.db import db
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Run
@@ -44,7 +46,10 @@ def test_update_run(make_project, make_run, make_result, flask_app, fixed_time):
         )
 
         # Mock the lock to prevent Redis dependency
-        with patch("ibutsu_server.tasks.runs.lock"):
+        with (
+            patch("ibutsu_server.tasks.runs.is_locked", return_value=False),
+            patch("ibutsu_server.tasks.runs.lock"),
+        ):
             update_run(str(run.id))
 
         # Refresh run from database
@@ -60,12 +65,80 @@ def test_update_run(make_project, make_run, make_result, flask_app, fixed_time):
 
 
 def test_update_run_nonexistent(flask_app):
-    """Test update_run with non-existent run ID."""
+    """Test update_run with non-existent run ID.
+
+    The run existence check must happen before any locking, so a bogus/missing
+    run_id never touches Redis at all.
+    """
     client, _ = flask_app
 
-    with client.application.app_context(), patch("ibutsu_server.tasks.runs.lock"):
+    with (
+        client.application.app_context(),
+        patch("ibutsu_server.tasks.runs.is_locked") as mock_is_locked,
+        patch("ibutsu_server.tasks.runs.lock") as mock_lock,
+    ):
         # Should not raise an error
         result = update_run("00000000-0000-0000-0000-000000000000")
+        assert result is None
+
+        # Never even checked/acquired the lock for a run that doesn't exist.
+        mock_is_locked.assert_not_called()
+        mock_lock.assert_not_called()
+
+
+def test_update_run_skips_when_already_locked(make_project, make_run, make_result, flask_app):
+    """update_run should discard early -- and never touch the DB -- when the
+    per-run lock is already held, instead of entering the lock context at all.
+
+    Regression test for the removed is_locked() guard (reintroduced a fixed
+    RuntimeError: generator didn't yield crash) and for the underlying lock()
+    bug, since is_locked() checks the *same* key ("update-run-lock-{run_id}")
+    that lock() acquires.
+    """
+    client, _ = flask_app
+
+    with client.application.app_context():
+        project = make_project(name="test-project")
+        run = make_run(
+            project_id=project.id,
+            summary={"collected": 1, "tests": 0, "failures": 0, "errors": 0},
+        )
+        make_result(run_id=run.id, project_id=project.id, result="passed")
+
+        with (
+            patch("ibutsu_server.tasks.runs.is_locked", return_value=True) as mock_is_locked,
+            patch("ibutsu_server.tasks.runs.lock") as mock_lock,
+        ):
+            result = update_run(str(run.id))
+
+        mock_is_locked.assert_called_once_with(f"update-run-lock-{run.id}")
+        mock_lock.assert_not_called()
+        assert result is None
+
+        # The run's summary must be untouched -- update_run never ran its body.
+        session.expire_all()
+        untouched_run = db.session.get(Run, run.id)
+        assert untouched_run.summary == {"collected": 1, "tests": 0, "failures": 0, "errors": 0}
+
+
+def test_update_run_discards_on_lock_error_race(make_project, make_run, make_result, flask_app):
+    """If is_locked() races and lock() still raises LockError, update_run should
+    discard cleanly instead of letting the exception propagate (which would
+    otherwise trip the global task_failure auto-retry handler)."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        project = make_project(name="test-project")
+        run = make_run(project_id=project.id)
+        make_result(run_id=run.id, project_id=project.id, result="passed")
+
+        with (
+            patch("ibutsu_server.tasks.runs.is_locked", return_value=False),
+            patch("ibutsu_server.tasks.runs.lock", side_effect=LockError("busy")),
+        ):
+            # Should not raise
+            result = update_run(str(run.id))
+
         assert result is None
 
 
@@ -213,7 +286,10 @@ def test_update_run_with_none_summary(make_project, make_run, make_result, flask
         )
 
         # Mock the lock to prevent Redis dependency
-        with patch("ibutsu_server.tasks.runs.lock"):
+        with (
+            patch("ibutsu_server.tasks.runs.is_locked", return_value=False),
+            patch("ibutsu_server.tasks.runs.lock"),
+        ):
             update_run(str(run_id))
 
         # Refresh run from database
@@ -252,7 +328,10 @@ def test_update_run_with_empty_summary(make_project, make_run, make_result, flas
         )
 
         # Mock the lock to prevent Redis dependency
-        with patch("ibutsu_server.tasks.runs.lock"):
+        with (
+            patch("ibutsu_server.tasks.runs.is_locked", return_value=False),
+            patch("ibutsu_server.tasks.runs.lock"),
+        ):
             update_run(str(run_id))
 
         # Refresh run from database
@@ -279,7 +358,10 @@ def test_update_run_pass_percent_zero_tests(make_project, make_run, flask_app):
             summary={"collected": 10, "tests": 0, "failures": 0, "errors": 0},
         )
 
-        with patch("ibutsu_server.tasks.runs.lock"):
+        with (
+            patch("ibutsu_server.tasks.runs.is_locked", return_value=False),
+            patch("ibutsu_server.tasks.runs.lock"),
+        ):
             update_run(str(run.id))
 
         session.expire_all()
@@ -311,7 +393,10 @@ def test_update_run_pass_percent_floors(make_project, make_run, make_result, fla
                 start_time=fixed_time,
             )
 
-        with patch("ibutsu_server.tasks.runs.lock"):
+        with (
+            patch("ibutsu_server.tasks.runs.is_locked", return_value=False),
+            patch("ibutsu_server.tasks.runs.lock"),
+        ):
             update_run(str(run.id))
 
         session.expire_all()

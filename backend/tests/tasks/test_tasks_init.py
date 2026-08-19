@@ -6,6 +6,7 @@ import pytest
 from celery import Celery
 from redis.exceptions import LockError
 
+from ibutsu_server.constants import LOCK_TTL
 from ibutsu_server.tasks import IbutsuTask, create_celery_app, get_celery_app, lock, task
 
 
@@ -151,52 +152,50 @@ def test_lock_successful(mock_redis_from_url, flask_app):
     # Mock only the Redis external service
     mock_redis_client = MagicMock()
     mock_lock = MagicMock()
-    mock_redis_client.lock.return_value.__enter__.return_value = mock_lock
+    mock_lock.acquire.return_value = True
+    mock_redis_client.lock.return_value = mock_lock
     mock_redis_from_url.return_value = mock_redis_client
 
+    executed = False
     with client.application.app_context(), lock("my-lock"):
         # This code should run
-        pass
+        executed = True
 
-    mock_redis_client.lock.assert_called_once_with("my-lock", blocking_timeout=1)
+    assert executed
+    mock_redis_client.lock.assert_called_once_with("my-lock", timeout=LOCK_TTL, blocking_timeout=1)
+    mock_lock.acquire.assert_called_once_with(blocking=True)
+    mock_lock.release.assert_called_once()
 
 
-@patch("logging.info")
+@patch("logging.warning")
 @patch("redis.Redis.from_url")
-def test_lock_locked(mock_redis_from_url, mock_log_info, flask_app):
-    """Test that the lock handles LockError gracefully."""
+def test_lock_locked(mock_redis_from_url, mock_log_warning, flask_app):
+    """Test that a busy lock raises LockError cleanly, instead of the previous
+    behavior of silently swallowing it (which manifested as an unrelated
+    ``RuntimeError: generator didn't yield``)."""
     client, _ = flask_app
 
-    # Mock Redis to raise LockError when trying to acquire lock
+    # Mock Redis so the lock cannot be acquired
     mock_redis_client = MagicMock()
     mock_lock = MagicMock()
-    mock_lock.__enter__.side_effect = LockError("Already locked")
+    mock_lock.acquire.return_value = False
     mock_redis_client.lock.return_value = mock_lock
     mock_redis_from_url.return_value = mock_redis_client
 
     with client.application.app_context():
-        # When a lock cannot be acquired (LockError), the lock context manager
-        # catches it and doesn't yield. This means the code inside the 'with' never runs.
-        # We can test this by checking that the log message was generated.
+        mock_log_warning.reset_mock()
 
-        # Before the lock call, clear previous log calls
-        mock_log_info.reset_mock()
-
-        # Try to use the lock - this will catch LockError internally
         executed = False
-        try:
-            # Create the context manager
-            cm = lock("my-lock")
-            # Try to enter it - this will catch the LockError
-            with cm:
-                executed = True
-        except StopIteration, RuntimeError:
-            # Context manager doesn't yield when lock fails, which is correct
-            pass
+        with pytest.raises(LockError), lock("my-lock"):
+            executed = True
 
-        # Code inside should not have executed
+        # Code inside should not have executed, and the lock was never released
+        # since it was never acquired.
         assert not executed
+        mock_lock.release.assert_not_called()
 
-    # Verify the correct log messages were generated
-    log_calls = [call[0][0] for call in mock_log_info.call_args_list]
-    assert any("already locked" in msg.lower() for msg in log_calls)
+    # An informative log message should still be emitted before raising --
+    # phrased as a timeout/ambiguous-cause warning, not "already locked",
+    # since acquisition can also fail for non-contention reasons.
+    log_calls = [call.args[0] % call.args[1:] for call in mock_log_warning.call_args_list]
+    assert any("failed to acquire lock" in msg.lower() for msg in log_calls)
