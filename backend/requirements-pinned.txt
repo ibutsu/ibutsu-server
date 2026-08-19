@@ -202,7 +202,7 @@ setuptools==83.0.0
     # via ibutsu-server (pyproject.toml)
 six==1.17.0
     # via python-dateutil
-sqlalchemy==2.0.51
+sqlalchemy==2.0.52
     # via
     #   ibutsu-server (pyproject.toml)
     #   alembic
