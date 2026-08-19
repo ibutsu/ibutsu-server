@@ -1,10 +1,15 @@
 import logging
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 
 from redis import Redis
 from redis.exceptions import LockError
 
-from ibutsu_server.constants import LOCK_EXPIRE, SOCKET_CONNECT_TIMEOUT, SOCKET_TIMEOUT
+from ibutsu_server.constants import (
+    LOCK_EXPIRE,
+    LOCK_TTL,
+    SOCKET_CONNECT_TIMEOUT,
+    SOCKET_TIMEOUT,
+)
 
 
 def get_redis_client(app=None):
@@ -27,13 +32,35 @@ def is_locked(name, app=None):
 
 @contextmanager
 def lock(name, timeout=LOCK_EXPIRE, app=None):
+    """Acquire a distributed Redis lock for the duration of the ``with`` block.
+
+    ``timeout`` bounds how long to wait to *acquire* the lock (blocking_timeout).
+    The lock itself is created with a TTL (``LOCK_TTL``) so that if the holder
+    dies (e.g. a worker crash/OOM) before releasing it, the lock self-expires
+    instead of being held forever.
+
+    Raises ``redis.exceptions.LockError`` if the lock can't be acquired within
+    ``timeout`` seconds, rather than swallowing it here. A generator-based
+    context manager must yield at least once for ``__enter__`` to succeed;
+    catching ``LockError`` and falling through without yielding previously
+    made this function return early, which contextlib surfaces as a confusing
+    ``RuntimeError: generator didn't yield`` instead of the real cause.
+    Callers that want to discard the work when the lock is busy should check
+    ``is_locked()`` first and/or catch ``LockError`` around their
+    ``with lock(...):`` block.
+    """
     redis_client = get_redis_client(app=app)
+    redis_lock = redis_client.lock(name, timeout=LOCK_TTL, blocking_timeout=timeout)
+
+    logging.info(f"Trying to get a lock for {name}")
+    if not redis_lock.acquire(blocking=True):
+        logging.info(f"Task {name} is already locked, discarding")
+        msg = f"Unable to acquire lock for {name} within {timeout}s"
+        raise LockError(msg)
 
     try:
-        # Get a lock so that we don't run this task concurrently
-        logging.info(f"Trying to get a lock for {name}")
-        with redis_client.lock(name, blocking_timeout=timeout):
-            yield
-    except LockError:
-        # If this task is locked, discard it so that it doesn't clog up the system
-        logging.info(f"Task {name} is already locked, discarding")
+        yield
+    finally:
+        # Already released, or expired via LOCK_TTL out from under us; nothing to do.
+        with suppress(LockError):
+            redis_lock.release()

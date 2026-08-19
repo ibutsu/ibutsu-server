@@ -470,7 +470,8 @@ WIDGET_TYPES = {
 
 RESPONSE_JSON_REQ = f"{HTTPStatus.BAD_REQUEST.phrase} JSON required", HTTPStatus.BAD_REQUEST
 
-LOCK_EXPIRE = 1
+LOCK_EXPIRE = 1  # seconds to wait when trying to *acquire* a lock before giving up
+LOCK_TTL = 300  # seconds before a held lock auto-expires, in case its holder crashes
 
 SOCKET_TIMEOUT = 5
 SOCKET_CONNECT_TIMEOUT = 5
