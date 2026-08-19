@@ -167,9 +167,9 @@ def test_lock_successful(mock_redis_from_url, flask_app):
     mock_lock.release.assert_called_once()
 
 
-@patch("logging.info")
+@patch("logging.warning")
 @patch("redis.Redis.from_url")
-def test_lock_locked(mock_redis_from_url, mock_log_info, flask_app):
+def test_lock_locked(mock_redis_from_url, mock_log_warning, flask_app):
     """Test that a busy lock raises LockError cleanly, instead of the previous
     behavior of silently swallowing it (which manifested as an unrelated
     ``RuntimeError: generator didn't yield``)."""
@@ -183,7 +183,7 @@ def test_lock_locked(mock_redis_from_url, mock_log_info, flask_app):
     mock_redis_from_url.return_value = mock_redis_client
 
     with client.application.app_context():
-        mock_log_info.reset_mock()
+        mock_log_warning.reset_mock()
 
         executed = False
         with pytest.raises(LockError), lock("my-lock"):
@@ -194,6 +194,8 @@ def test_lock_locked(mock_redis_from_url, mock_log_info, flask_app):
         assert not executed
         mock_lock.release.assert_not_called()
 
-    # An informative log message should still be emitted before raising.
-    log_calls = [call[0][0] for call in mock_log_info.call_args_list]
-    assert any("already locked" in msg.lower() for msg in log_calls)
+    # An informative log message should still be emitted before raising --
+    # phrased as a timeout/ambiguous-cause warning, not "already locked",
+    # since acquisition can also fail for non-contention reasons.
+    log_calls = [call.args[0] % call.args[1:] for call in mock_log_warning.call_args_list]
+    assert any("failed to acquire lock" in msg.lower() for msg in log_calls)

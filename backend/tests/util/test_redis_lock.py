@@ -121,3 +121,13 @@ def test_is_locked_checks_key_existence():
         assert is_locked("some-lock")
 
     mock_client.exists.assert_called_once_with("some-lock")
+
+
+def test_is_locked_returns_false_when_key_missing():
+    mock_client = MagicMock()
+    mock_client.exists.return_value = 0
+
+    with patch("ibutsu_server.util.redis_lock.get_redis_client", return_value=mock_client):
+        assert not is_locked("some-lock")
+
+    mock_client.exists.assert_called_once_with("some-lock")

@@ -54,7 +54,15 @@ def lock(name, timeout=LOCK_EXPIRE, app=None):
 
     logging.info(f"Trying to get a lock for {name}")
     if not redis_lock.acquire(blocking=True):
-        logging.info(f"Task {name} is already locked, discarding")
+        # Acquisition can fail for reasons other than another worker holding
+        # the lock (e.g. Redis connectivity issues), so don't claim it's
+        # necessarily "already locked" -- just that we couldn't get it in time.
+        logging.warning(
+            "Failed to acquire lock for %s within %ss; this may be due to lock "
+            "contention or Redis availability issues; discarding task",
+            name,
+            timeout,
+        )
         msg = f"Unable to acquire lock for {name} within {timeout}s"
         raise LockError(msg)
 
