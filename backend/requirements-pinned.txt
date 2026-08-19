@@ -210,7 +210,7 @@ sqlalchemy==2.0.52
     #   sqlalchemy-json
 sqlalchemy-json==0.7.0
     # via ibutsu-server (pyproject.toml)
-starlette==1.4.1
+starlette==1.6.0
     # via
     #   ibutsu-server (pyproject.toml)
     #   connexion
