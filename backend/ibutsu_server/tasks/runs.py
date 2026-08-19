@@ -13,17 +13,17 @@ METADATA_TO_COPY = ["jenkins", "tags"]
 COLUMNS_TO_COPY = ["start_time", "env", "component", "project_id", "source"]
 
 
-def _copy_result_metadata(result, metadata, key):
+def _copy_result_metadata(result: Result, metadata: dict, key: str) -> None:
     if not metadata.get(key) and result.data and result.data.get(key):
         metadata[key] = result.data[key]
 
 
-def _copy_column(result, run, key):
+def _copy_column(result: Result, run: Run, key: str) -> None:
     if not getattr(run, key, None):
         setattr(run, key, getattr(result, key, None))
 
 
-def _status_to_summary(status):
+def _status_to_summary(status: str) -> str:
     return {
         "failed": "failures",
         "error": "errors",
@@ -55,7 +55,7 @@ def compute_pass_percent(passes: int, tests: int) -> int:
 
 
 @shared_task(max_retries=1000)
-def update_run(run_id):
+def update_run(run_id: str) -> None:
     """Update the run summary from the results, this task will retry 1000 times"""
     # Check this before touching Redis at all: a missing run is a plain DB
     # read, so there's no reason to pay for a lock round-trip (or block
@@ -135,7 +135,7 @@ def update_run(run_id):
 
 
 @shared_task(max_retries=1)
-def sync_aborted_runs():
+def sync_aborted_runs() -> None:
     """
     When test runs are prematurely aborted, e.g. due to a connection failure or outage, the number
     of tests that are stored in summary.tests on a Run will not match the number of results for that

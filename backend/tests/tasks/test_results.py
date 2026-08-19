@@ -3,41 +3,78 @@
 from unittest.mock import patch
 
 import pytest
+from redis.exceptions import LockError
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Result
 from ibutsu_server.tasks.results import add_result_start_time
 
 
-def test_add_result_start_time_with_locked_run(flask_app):
-    """Test that the task returns early when the run is already locked"""
+def test_add_result_start_time_with_locked_run(make_project, make_run, flask_app):
+    """Test that the task returns early -- and never touches the DB -- when the
+    per-run lock is already held.
+
+    Regression test for the is_locked()/lock() key mismatch: is_locked() must
+    be called with the *same* key ("update-run-lock-{run_id}") that lock()
+    acquires, not the bare run_id.
+    """
     client, _ = flask_app
-    run_id = "12345678-1234-5678-1234-567812345678"
 
-    with (
-        client.application.app_context(),
-        patch("ibutsu_server.tasks.results.is_locked", return_value=True) as mock_is_locked,
-    ):
-        result = add_result_start_time(run_id)
+    with client.application.app_context():
+        project = make_project(name="test-project")
+        run = make_run(project_id=project.id)
 
-        mock_is_locked.assert_called_once_with(run_id)
+        with (
+            patch("ibutsu_server.tasks.results.is_locked", return_value=True) as mock_is_locked,
+            patch("ibutsu_server.tasks.results.lock") as mock_lock,
+        ):
+            result = add_result_start_time(str(run.id))
+
+        mock_is_locked.assert_called_once_with(f"update-run-lock-{run.id}")
+        mock_lock.assert_not_called()
         assert result is None
 
 
 def test_add_result_start_time_with_nonexistent_run(flask_app):
-    """Test that the task returns early when the run doesn't exist"""
+    """Test that the task returns early when the run doesn't exist.
+
+    The run existence check must happen before any locking, so a bogus/missing
+    run_id never touches Redis at all.
+    """
     client, _ = flask_app
     run_id = "12345678-1234-5678-1234-567812345678"
 
     with (
         client.application.app_context(),
-        patch("ibutsu_server.tasks.results.is_locked", return_value=False),
+        patch("ibutsu_server.tasks.results.is_locked") as mock_is_locked,
         patch("ibutsu_server.tasks.results.lock") as mock_lock,
     ):
         result = add_result_start_time(run_id)
 
-        # Task should enter the lock context but return when run not found
-        mock_lock.assert_called_once_with(f"update-run-lock-{run_id}")
+        assert result is None
+
+        # Never even checked/acquired the lock for a run that doesn't exist.
+        mock_is_locked.assert_not_called()
+        mock_lock.assert_not_called()
+
+
+def test_add_result_start_time_discards_on_lock_error_race(make_project, make_run, flask_app):
+    """If is_locked() races and lock() still raises LockError, the task should
+    discard cleanly instead of letting the exception propagate (which would
+    otherwise trip the global task_failure auto-retry handler)."""
+    client, _ = flask_app
+
+    with client.application.app_context():
+        project = make_project(name="test-project")
+        run = make_run(project_id=project.id)
+
+        with (
+            patch("ibutsu_server.tasks.results.is_locked", return_value=False),
+            patch("ibutsu_server.tasks.results.lock", side_effect=LockError("busy")),
+        ):
+            # Should not raise
+            result = add_result_start_time(str(run.id))
+
         assert result is None
 
 
@@ -189,14 +226,18 @@ def test_add_result_start_time_handles_results_without_starttime(flask_app, make
     ],
 )
 def test_add_result_start_time_with_various_run_ids(flask_app, run_id):
-    """Test that the task handles various UUID formats for run_id"""
+    """Test that the task handles various UUID formats for run_id.
+
+    None of these correspond to a real Run, so the task should discard via
+    the run-existence check without ever touching Redis.
+    """
     client, _ = flask_app
 
     with (
         client.application.app_context(),
-        patch("ibutsu_server.tasks.results.is_locked", return_value=True) as mock_is_locked,
+        patch("ibutsu_server.tasks.results.is_locked") as mock_is_locked,
     ):
         result = add_result_start_time(run_id)
 
-        mock_is_locked.assert_called_once_with(run_id)
+        mock_is_locked.assert_not_called()
         assert result is None

@@ -1,6 +1,8 @@
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager, suppress
 
+from flask import Flask
 from redis import Redis
 from redis.exceptions import LockError
 
@@ -12,7 +14,7 @@ from ibutsu_server.constants import (
 )
 
 
-def get_redis_client(app=None):
+def get_redis_client(app: Flask | None = None) -> Redis:
     if not app:
         from ibutsu_server.util.celery_task import get_flask_app  # noqa: PLC0415
 
@@ -25,13 +27,13 @@ def get_redis_client(app=None):
     )
 
 
-def is_locked(name, app=None):
+def is_locked(name: str, app: Flask | None = None) -> bool:
     redis_client = get_redis_client(app=app)
-    return redis_client.exists(name)
+    return bool(redis_client.exists(name))
 
 
 @contextmanager
-def lock(name, timeout=LOCK_EXPIRE, app=None):
+def lock(name: str, timeout: float = LOCK_EXPIRE, app: Flask | None = None) -> Iterator[None]:
     """Acquire a distributed Redis lock for the duration of the ``with`` block.
 
     ``timeout`` bounds how long to wait to *acquire* the lock (blocking_timeout).
