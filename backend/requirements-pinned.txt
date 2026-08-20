@@ -170,7 +170,7 @@ python-dateutil==2.9.0.post0
     # via
     #   ibutsu-server (pyproject.toml)
     #   celery
-python-dotenv==1.2.2
+python-dotenv==1.2.3
     # via uvicorn
 python-magic==0.4.27
     # via ibutsu-server (pyproject.toml)
