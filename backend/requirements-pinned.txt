@@ -105,7 +105,7 @@ httptools==0.8.0
     # via uvicorn
 httpx==0.28.1
     # via connexion
-idna==3.18
+idna==3.19
     # via
     #   anyio
     #   httpx
