@@ -37,6 +37,7 @@ dependencies = [
     "starlette",
     "uvicorn[standard]",
 
+    "gevent>=24.0.0",
     "google-api-python-client",
     "google-auth",
     "google-auth-httplib2",

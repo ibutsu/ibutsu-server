@@ -191,6 +191,15 @@ def create_flask_celery_app(app=None, name="ibutsu_server"):
         "socket_connect_timeout": SOCKET_CONNECT_TIMEOUT,
     }
 
+    # Worker performance optimizations (Celery 5.6+)
+    celery_app.conf.worker_prefetch_multiplier = (
+        1  # Only fetch 1 task at a time for better load distribution
+    )
+    celery_app.conf.result_expires = 3600  # Keep task results for 1 hour only
+    celery_app.conf.result_backend_max_retries = 3  # Retry result backend operations up to 3 times
+    celery_app.conf.broker_pool_limit = 10  # Connection pool limit for broker
+    celery_app.conf.redis_max_connections = 50  # Maximum Redis connections
+
     # Make sure all task modules are imported so tasks are registered
     # This is crucial for Celery task discovery
     import ibutsu_server.tasks.db  # noqa: PLC0415

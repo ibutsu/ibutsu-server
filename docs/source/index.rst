@@ -20,6 +20,7 @@ Welcome to Ibutsu's documentation!
    developer-guide/deployment-architecture
    developer-guide/celery-architecture
    developer-guide/celery-utils
+   developer-guide/celery-worker-scaling
    developer-guide/database-maintenance
    developer-guide/hatch-usage
    developer-guide/backend-testing
