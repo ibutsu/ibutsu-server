@@ -45,12 +45,42 @@ def test_add_result_start_time_with_nonexistent_run(flask_app):
     client, _ = flask_app
     run_id = "12345678-1234-5678-1234-567812345678"
 
+    # Track whether db.session.get was called inside the lock context
+    lock_entered = False
+    db_queried_inside_lock = False
+
+    def track_lock_entry(*args, **kwargs):
+        nonlocal lock_entered
+        lock_entered = True
+
+    def track_lock_exit(*args, **kwargs):
+        nonlocal lock_entered
+        lock_entered = False
+
+    def track_db_query(model, run_id):
+        """Track when db.session.get is called"""
+        nonlocal db_queried_inside_lock
+        if lock_entered:
+            db_queried_inside_lock = True
+        return None  # Simulate nonexistent run
+
     with (
         client.application.app_context(),
         patch("ibutsu_server.tasks.results.is_locked", return_value=False),
-        patch("ibutsu_server.tasks.results.lock"),
+        patch("ibutsu_server.tasks.results.lock") as mock_lock,
+        patch("ibutsu_server.tasks.results.db.session.get", side_effect=track_db_query),
     ):
+        # Configure the mock to track context manager entry/exit
+        mock_lock.return_value.__enter__ = track_lock_entry
+        mock_lock.return_value.__exit__ = track_lock_exit
+
         result = add_result_start_time(run_id)
+
+        # Verify lock was called with the correct key
+        mock_lock.assert_called_once_with(f"update-run-lock-{run_id}")
+
+        # Verify the database query happened inside the lock context
+        assert db_queried_inside_lock, "db.session.get must be called inside the lock context"
 
         assert result is None
 
@@ -230,11 +260,41 @@ def test_add_result_start_time_with_various_run_ids(flask_app, run_id):
     """
     client, _ = flask_app
 
+    # Track whether db.session.get was called inside the lock context
+    lock_entered = False
+    db_queried_inside_lock = False
+
+    def track_lock_entry(*args, **kwargs):
+        nonlocal lock_entered
+        lock_entered = True
+
+    def track_lock_exit(*args, **kwargs):
+        nonlocal lock_entered
+        lock_entered = False
+
+    def track_db_query(model, run_id_param):
+        """Track when db.session.get is called"""
+        nonlocal db_queried_inside_lock
+        if lock_entered:
+            db_queried_inside_lock = True
+        return None  # Simulate nonexistent run
+
     with (
         client.application.app_context(),
         patch("ibutsu_server.tasks.results.is_locked", return_value=False),
-        patch("ibutsu_server.tasks.results.lock"),
+        patch("ibutsu_server.tasks.results.lock") as mock_lock,
+        patch("ibutsu_server.tasks.results.db.session.get", side_effect=track_db_query),
     ):
+        # Configure the mock to track context manager entry/exit
+        mock_lock.return_value.__enter__ = track_lock_entry
+        mock_lock.return_value.__exit__ = track_lock_exit
+
         result = add_result_start_time(run_id)
+
+        # Verify lock was called with the correct key
+        mock_lock.assert_called_once_with(f"update-run-lock-{run_id}")
+
+        # Verify the database query happened inside the lock context
+        assert db_queried_inside_lock, "db.session.get must be called inside the lock context"
 
         assert result is None
