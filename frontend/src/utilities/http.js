@@ -133,6 +133,16 @@ export class HttpClient {
       AuthService.logout();
       window.location.href = '/login';
       throw new Error('Unauthorized - redirecting to login');
+    } else if (response.status === 500) {
+      // Check if it's a timeout error
+      return response.text().then((text) => {
+        if (text.includes('statement timeout') || text.includes('QueryCanceled')) {
+          throw new Error('Query timeout: This dataset is very large. The page count may be approximate.');
+        }
+        throw new Error(`Server Error: ${response.statusText}`);
+      });
+    } else if (response.status === 504) {
+      throw new Error('Request timeout: The server took too long to respond.');
     } else {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }

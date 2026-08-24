@@ -183,6 +183,7 @@ const ClassifyFailuresTable = () => {
       const apiParams = {
         pageSize: pageSize,
         page: page,
+        estimate: true,
         ...(apiFilters?.length
           ? { filter: filtersToAPIParams(apiFilters) }
           : {}),
