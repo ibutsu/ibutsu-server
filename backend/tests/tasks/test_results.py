@@ -62,7 +62,6 @@ def test_add_result_start_time_with_nonexistent_run(flask_app):
         nonlocal db_queried_inside_lock
         if lock_entered:
             db_queried_inside_lock = True
-        return None  # Simulate nonexistent run
 
     with (
         client.application.app_context(),
@@ -277,7 +276,6 @@ def test_add_result_start_time_with_various_run_ids(flask_app, run_id):
         nonlocal db_queried_inside_lock
         if lock_entered:
             db_queried_inside_lock = True
-        return None  # Simulate nonexistent run
 
     with (
         client.application.app_context(),
