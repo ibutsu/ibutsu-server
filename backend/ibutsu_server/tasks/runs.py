@@ -57,13 +57,6 @@ def compute_pass_percent(passes: int, tests: int) -> int:
 @shared_task(max_retries=1000)
 def update_run(run_id: str) -> None:
     """Update the run summary from the results, this task will retry 1000 times"""
-    # Check this before touching Redis at all: a missing run is a plain DB
-    # read, so there's no reason to pay for a lock round-trip (or block
-    # waiting on one) for a run_id that doesn't exist.
-    run = db.session.get(Run, run_id)
-    if not run:
-        return
-
     lock_name = f"update-run-lock-{run_id}"
     if is_locked(lock_name):
         logging.warning(f"{lock_name}: Already locked, discarding.")
@@ -71,6 +64,16 @@ def update_run(run_id: str) -> None:
 
     try:
         with lock(lock_name):
+            # Fetch the run INSIDE the lock to ensure we see the most recent
+            # committed state and avoid TOCTOU races. The pre-lock optimization
+            # of checking run existence before acquiring the lock created a race
+            # where db.session.get() could read from a stale session under high
+            # load, causing update_run to exit early for runs that actually exist,
+            # leading to missing metadata and cascading database issues.
+            run = db.session.get(Run, run_id)
+            if not run:
+                return
+
             # initialize some necessary variables
             summary = {
                 "errors": 0,

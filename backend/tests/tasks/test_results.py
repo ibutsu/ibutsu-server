@@ -38,24 +38,50 @@ def test_add_result_start_time_with_locked_run(make_project, make_run, flask_app
 def test_add_result_start_time_with_nonexistent_run(flask_app):
     """Test that the task returns early when the run doesn't exist.
 
-    The run existence check must happen before any locking, so a bogus/missing
-    run_id never touches Redis at all.
+    The run existence check happens inside the lock to avoid TOCTOU races.
+    The lock is acquired, the run is checked, and if it doesn't exist,
+    the function returns early without processing.
     """
     client, _ = flask_app
     run_id = "12345678-1234-5678-1234-567812345678"
 
+    # Track whether db.session.get was called inside the lock context
+    lock_entered = False
+    db_queried_inside_lock = False
+
+    def track_lock_entry(*args, **kwargs):
+        nonlocal lock_entered
+        lock_entered = True
+
+    def track_lock_exit(*args, **kwargs):
+        nonlocal lock_entered
+        lock_entered = False
+
+    def track_db_query(model, run_id):
+        """Track when db.session.get is called"""
+        nonlocal db_queried_inside_lock
+        if lock_entered:
+            db_queried_inside_lock = True
+
     with (
         client.application.app_context(),
-        patch("ibutsu_server.tasks.results.is_locked") as mock_is_locked,
+        patch("ibutsu_server.tasks.results.is_locked", return_value=False),
         patch("ibutsu_server.tasks.results.lock") as mock_lock,
+        patch("ibutsu_server.tasks.results.db.session.get", side_effect=track_db_query),
     ):
+        # Configure the mock to track context manager entry/exit
+        mock_lock.return_value.__enter__ = track_lock_entry
+        mock_lock.return_value.__exit__ = track_lock_exit
+
         result = add_result_start_time(run_id)
 
-        assert result is None
+        # Verify lock was called with the correct key
+        mock_lock.assert_called_once_with(f"update-run-lock-{run_id}")
 
-        # Never even checked/acquired the lock for a run that doesn't exist.
-        mock_is_locked.assert_not_called()
-        mock_lock.assert_not_called()
+        # Verify the database query happened inside the lock context
+        assert db_queried_inside_lock, "db.session.get must be called inside the lock context"
+
+        assert result is None
 
 
 def test_add_result_start_time_discards_on_lock_error_race(make_project, make_run, flask_app):
@@ -228,16 +254,45 @@ def test_add_result_start_time_handles_results_without_starttime(flask_app, make
 def test_add_result_start_time_with_various_run_ids(flask_app, run_id):
     """Test that the task handles various UUID formats for run_id.
 
-    None of these correspond to a real Run, so the task should discard via
-    the run-existence check without ever touching Redis.
+    None of these correspond to a real Run, so the task will acquire the lock,
+    check for the run inside the lock, and return early when not found.
     """
     client, _ = flask_app
 
+    # Track whether db.session.get was called inside the lock context
+    lock_entered = False
+    db_queried_inside_lock = False
+
+    def track_lock_entry(*args, **kwargs):
+        nonlocal lock_entered
+        lock_entered = True
+
+    def track_lock_exit(*args, **kwargs):
+        nonlocal lock_entered
+        lock_entered = False
+
+    def track_db_query(model, run_id_param):
+        """Track when db.session.get is called"""
+        nonlocal db_queried_inside_lock
+        if lock_entered:
+            db_queried_inside_lock = True
+
     with (
         client.application.app_context(),
-        patch("ibutsu_server.tasks.results.is_locked") as mock_is_locked,
+        patch("ibutsu_server.tasks.results.is_locked", return_value=False),
+        patch("ibutsu_server.tasks.results.lock") as mock_lock,
+        patch("ibutsu_server.tasks.results.db.session.get", side_effect=track_db_query),
     ):
+        # Configure the mock to track context manager entry/exit
+        mock_lock.return_value.__enter__ = track_lock_entry
+        mock_lock.return_value.__exit__ = track_lock_exit
+
         result = add_result_start_time(run_id)
 
-        mock_is_locked.assert_not_called()
+        # Verify lock was called with the correct key
+        mock_lock.assert_called_once_with(f"update-run-lock-{run_id}")
+
+        # Verify the database query happened inside the lock context
+        assert db_queried_inside_lock, "db.session.get must be called inside the lock context"
+
         assert result is None

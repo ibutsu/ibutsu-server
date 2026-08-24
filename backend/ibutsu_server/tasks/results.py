@@ -11,13 +11,6 @@ from ibutsu_server.util.redis_lock import is_locked, lock
 @shared_task
 def add_result_start_time(run_id: str) -> None:
     """Update all results in a run to add the 'start_time' field to a result"""
-    # Check this before touching Redis at all: a missing run is a plain DB
-    # read, so there's no reason to pay for a lock round-trip for a run_id
-    # that doesn't exist.
-    run = db.session.get(Run, run_id)
-    if not run:
-        return
-
     # Use the *same* lock key that update_run() uses for this run_id: these two
     # tasks must not run concurrently against the same run, and is_locked()
     # must check the exact key that lock() acquires, or the guard is a no-op.
@@ -28,6 +21,14 @@ def add_result_start_time(run_id: str) -> None:
 
     try:
         with lock(lock_name):
+            # Fetch the run INSIDE the lock to ensure we see the most recent
+            # committed state and avoid TOCTOU races with the same pattern as
+            # update_run(). The pre-lock optimization created a race where
+            # db.session.get() could read from a stale session under high load.
+            run = db.session.get(Run, run_id)
+            if not run:
+                return
+
             results = db.session.execute(
                 db.select(Result).where(Result.data["metadata"]["run"] == run_id)
             ).scalars()

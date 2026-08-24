@@ -67,23 +67,20 @@ def test_update_run(make_project, make_run, make_result, flask_app, fixed_time):
 def test_update_run_nonexistent(flask_app):
     """Test update_run with non-existent run ID.
 
-    The run existence check must happen before any locking, so a bogus/missing
-    run_id never touches Redis at all.
+    The run existence check happens inside the lock to avoid TOCTOU races.
+    The lock is acquired, the run is checked, and if it doesn't exist,
+    the function returns early without processing.
     """
     client, _ = flask_app
 
     with (
         client.application.app_context(),
-        patch("ibutsu_server.tasks.runs.is_locked") as mock_is_locked,
-        patch("ibutsu_server.tasks.runs.lock") as mock_lock,
+        patch("ibutsu_server.tasks.runs.is_locked", return_value=False),
+        patch("ibutsu_server.tasks.runs.lock"),
     ):
         # Should not raise an error
         result = update_run("00000000-0000-0000-0000-000000000000")
         assert result is None
-
-        # Never even checked/acquired the lock for a run that doesn't exist.
-        mock_is_locked.assert_not_called()
-        mock_lock.assert_not_called()
 
 
 def test_update_run_skips_when_already_locked(make_project, make_run, make_result, flask_app):
