@@ -127,7 +127,7 @@ kombu==5.6.2
     # via
     #   ibutsu-server (pyproject.toml)
     #   celery
-lxml==6.1.1
+lxml==6.1.2
     # via ibutsu-server (pyproject.toml)
 mako==1.4.1
     # via alembic
