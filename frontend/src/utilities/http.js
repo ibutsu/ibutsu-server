@@ -136,8 +136,13 @@ export class HttpClient {
     } else if (response.status === 500) {
       // Check if it's a timeout error
       return response.text().then((text) => {
-        if (text.includes('statement timeout') || text.includes('QueryCanceled')) {
-          throw new Error('Query timeout: This dataset is very large. The page count may be approximate.');
+        if (
+          text.includes('statement timeout') ||
+          text.includes('QueryCanceled')
+        ) {
+          throw new Error(
+            'Query timeout: This dataset is very large. The page count may be approximate.',
+          );
         }
         throw new Error(`Server Error: ${response.statusText}`);
       });

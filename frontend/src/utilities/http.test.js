@@ -390,7 +390,7 @@ describe('HTTP Utilities', () => {
       window.location = originalLocation;
     });
 
-    it('should not redirect for other error status codes', () => {
+    it('should not redirect for other error status codes', async () => {
       const originalLocation = window.location;
       delete window.location;
       window.location = { href: '' };
@@ -399,10 +399,11 @@ describe('HTTP Utilities', () => {
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
+        text: async () => 'Some error message',
       };
 
-      expect(() => HttpClient.handleResponse(response)).toThrow(
-        'HTTP 500: Internal Server Error',
+      await expect(HttpClient.handleResponse(response)).rejects.toThrow(
+        'Server Error: Internal Server Error',
       );
       expect(window.location.href).toBe('');
 
