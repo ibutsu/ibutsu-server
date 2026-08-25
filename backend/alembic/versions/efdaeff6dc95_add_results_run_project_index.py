@@ -65,9 +65,7 @@ def _create_index_if_not_exists(index_name, table_name, columns, **kwargs):
         logger.info(f"Index {index_name} already exists, skipping creation")
         return
     logger.info(f"Creating index {index_name} on {table_name} CONCURRENTLY")
-    op.create_index(
-        index_name, table_name, columns, postgresql_concurrently=True, **kwargs
-    )
+    op.create_index(index_name, table_name, columns, postgresql_concurrently=True, **kwargs)
 
 
 def _drop_index_if_exists(index_name, table_name):
@@ -132,6 +130,4 @@ def downgrade() -> None:
                 postgresql_concurrently=True,
             )
         else:
-            logger.info(
-                "Index ix_results_run_id_project_id does not exist, skipping drop"
-            )
+            logger.info("Index ix_results_run_id_project_id does not exist, skipping drop")
