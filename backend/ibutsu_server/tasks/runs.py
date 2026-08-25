@@ -2,6 +2,7 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from redis.exceptions import LockError
+from sqlalchemy import case, func
 
 from ibutsu_server.constants import SYNC_RUN_TIME
 from ibutsu_server.db import db
@@ -74,48 +75,63 @@ def update_run(run_id: str) -> None:
             if not run:
                 return
 
-            # initialize some necessary variables
-            summary = {
-                "errors": 0,
-                "failures": 0,
-                "skips": 0,
-                "tests": 0,
-                "xpasses": 0,
-                "xfailures": 0,
-                "collected": run.summary.get("collected", 0) if run.summary else 0,
-            }
-            run.duration = 0.0
+            # Initialize metadata container
             metadata = run.data or {}
 
-            # Fetch all the results for the runs and calculate the summary
-            results = (
+            # OPTIMIZATION: Instead of fetching ALL result rows (which can timeout
+            # for runs with 100k+ results), use SQL aggregations to calculate summary
+            # stats and only fetch the first result for metadata copying.
+
+            # Step 1: Get the first result (by start_time) for metadata copying
+            first_result = (
                 db.session.execute(
                     db.select(Result)
                     .where(Result.run_id == run_id)
                     .order_by(Result.start_time.asc())
+                    .limit(1)
                 )
                 .scalars()
-                .all()
+                .first()
             )
 
-            for i, result in enumerate(results):
-                if i == 0:
-                    # on the first result, copy over some metadata
-                    for column in COLUMNS_TO_COPY:
-                        _copy_column(result, run, column)
+            # Step 2: Get aggregated counts and total duration via SQL
+            # This executes as a single query and returns one row, regardless of
+            # how many results exist (much faster than fetching all rows)
+            aggregates = db.session.execute(
+                db.select(
+                    func.count(Result.id).label("total_tests"),
+                    func.sum(case((Result.result == "failed", 1), else_=0)).label("failures"),
+                    func.sum(case((Result.result == "error", 1), else_=0)).label("errors"),
+                    func.sum(case((Result.result == "skipped", 1), else_=0)).label("skips"),
+                    func.sum(case((Result.result == "xfailed", 1), else_=0)).label("xfailures"),
+                    func.sum(case((Result.result == "xpassed", 1), else_=0)).label("xpasses"),
+                    func.coalesce(func.sum(Result.duration), 0.0).label("total_duration"),
+                ).where(Result.run_id == run_id)
+            ).one()
 
-                    for key in METADATA_TO_COPY:
-                        _copy_result_metadata(result, metadata, key)
+            # Step 3: Copy metadata from first result (if it exists)
+            if first_result:
+                for column in COLUMNS_TO_COPY:
+                    _copy_column(first_result, run, column)
 
-                key = _status_to_summary(result.result)
-                if key in summary:
-                    summary[key] = summary.get(key, 0) + 1
-                # update the number of tests that actually ran
-                summary["tests"] += 1
-                if result.duration:
-                    run.duration += result.duration
+                for key in METADATA_TO_COPY:
+                    _copy_result_metadata(first_result, metadata, key)
 
-            # determine the number of passes
+            # Step 4: Build summary from aggregated counts
+            summary = {
+                "tests": aggregates.total_tests,
+                "failures": aggregates.failures or 0,
+                "errors": aggregates.errors or 0,
+                "skips": aggregates.skips or 0,
+                "xfailures": aggregates.xfailures or 0,
+                "xpasses": aggregates.xpasses or 0,
+                "collected": run.summary.get("collected", 0) if run.summary else 0,
+            }
+
+            # Set run duration from aggregated sum
+            run.duration = aggregates.total_duration
+
+            # Calculate derived values
             summary["passes"] = summary["tests"] - (
                 summary["errors"]
                 + summary["xpasses"]
@@ -124,7 +140,6 @@ def update_run(run_id: str) -> None:
                 + summary["skips"]
             )
             summary["pass_percent"] = compute_pass_percent(summary["passes"], summary["tests"])
-            # determine the number of tests that didn't run
             summary["not_run"] = max(summary["collected"] - summary["tests"], 0)
 
             run.update({"summary": summary, "data": metadata})

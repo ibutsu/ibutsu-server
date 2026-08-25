@@ -131,6 +131,7 @@ const Run = ({ defaultTab = 'summary' }) => {
           filter: filterParams,
           pageSize: pageSize,
           page: page,
+          estimate: true,
         });
         const data = await HttpClient.handleResponse(response);
         setRows(data.results.map((result) => resultToRow(result)));
@@ -325,6 +326,7 @@ const Run = ({ defaultTab = 'summary' }) => {
               filter: filterParams,
               pageSize: MAX_PAGE,
               page: treePage,
+              estimate: true,
             },
           );
           const data = await HttpClient.handleResponse(response);
