@@ -88,9 +88,9 @@ export const resultToRow = (result, filterFunc) => {
     } else {
       componentBadge = buildBadge('component', resultComponent, false);
     }
+    badges.push(componentBadge);
+    badges.push(' ');
   }
-  badges.push(componentBadge);
-  badges.push(' ');
   const resultEnv = result.metadata?.env ?? result.env ?? null;
   if (resultEnv) {
     let envBadge;
@@ -179,10 +179,12 @@ export const resultToComparisonRow = (result) => {
   }
   let resultIcons = [];
   let markers = [];
-  result.forEach((result) => {
-    resultIcons.push(ICON_RESULT_MAP(result.result));
-    if (result.metadata && result.metadata.markers) {
-      for (const marker of result.metadata.markers) {
+  result.forEach((resultItem) => {
+    resultIcons.push(
+      ICON_RESULT_MAP[resultItem.result] || ICON_RESULT_MAP.manual,
+    );
+    if (resultItem.metadata && resultItem.metadata.markers) {
+      for (const marker of resultItem.metadata.markers) {
         // Don't add duplicate markers
         if (markers.filter((m) => m.key === marker).length === 0) {
           markers.push(
@@ -195,12 +197,9 @@ export const resultToComparisonRow = (result) => {
     }
   });
 
-  if (result[0].metadata && result[0].metadata.component) {
-    markers.push(
-      <Badge key={result[0].metadata.component}>
-        {result[0].metadata.component}
-      </Badge>,
-    );
+  const comp = result[0]?.component ?? result[0]?.metadata?.component;
+  if (comp) {
+    markers.push(<Badge key={comp}>{comp}</Badge>);
   }
 
   let cells = [];
@@ -234,29 +233,31 @@ export const runToRow = (run, filterFunc) => {
     ? new Date(run.start_time)
     : new Date(run.created);
 
-  if (filterFunc) {
-    if (run.component) {
-      componentBadge = buildBadge('component', run.component, false, () =>
+  const runComponent = run.component ?? run.metadata?.component ?? null;
+  if (runComponent) {
+    if (filterFunc) {
+      componentBadge = buildBadge('component', runComponent, false, () =>
         filterFunc({
           field: 'component',
           operator: 'eq',
-          value: run.component,
+          value: runComponent,
         }),
       );
+    } else {
+      componentBadge = buildBadge('component', runComponent, false);
     }
-  } else {
-    componentBadge = buildBadge('component', run.component, false);
+    badges.push(componentBadge);
   }
-  badges.push(componentBadge);
 
-  if (run.env) {
+  const runEnv = run.env ?? run.metadata?.env ?? null;
+  if (runEnv) {
     let envBadge;
     if (filterFunc) {
-      envBadge = buildBadge(run.env, run.env, false, () =>
-        filterFunc({ field: 'env', operator: 'eq', value: run.env }),
+      envBadge = buildBadge(runEnv, runEnv, false, () =>
+        filterFunc({ field: 'env', operator: 'eq', value: runEnv }),
       );
     } else {
-      envBadge = buildBadge(run.env, run.env, false);
+      envBadge = buildBadge(runEnv, runEnv, false);
     }
     badges.push(envBadge);
   }

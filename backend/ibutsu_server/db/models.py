@@ -78,6 +78,13 @@ class ModelMixin:
     def update(self, record_dict):
         if "id" in record_dict:
             record_dict.pop("id")
+        # Parse datetime strings to datetime objects
+        mapper = inspect(self.__class__)
+        for column in mapper.columns:
+            if isinstance(column.type, DateTime) and column.key in record_dict:
+                value = record_dict[column.key]
+                if isinstance(value, str):
+                    record_dict[column.key] = datetime.fromisoformat(value.replace("Z", "+00:00"))
         values_dict = self.to_dict()
         # Deep merge metadata to preserve existing fields not in the update
         if "metadata" in values_dict and "metadata" in record_dict:
