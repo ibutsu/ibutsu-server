@@ -764,16 +764,121 @@ class TestRunArchiveImport:
             run = db.session.get(Run, run_id)
             assert run is not None
 
-            # Verify result was created (archive import creates new IDs for results)
-            result = db.session.execute(
-                db.select(Result).filter_by(test_id="test.example", run_id=run.id)
-            ).scalar_one_or_none()
+            # Verify result was created and original UUID was preserved
+            result = db.session.get(Result, result_id)
             assert result is not None
             assert result.test_id == "test.example"
+            assert result.run_id == run.id
 
             # Verify import status
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "done"
+
+    def test_run_archive_import_idempotency_no_duplicate_results(self, make_import, flask_app):
+        """Test that re-importing the same archive updates results without creating duplicates"""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = str(uuid4())
+            result_id = str(uuid4())
+
+            run_data = {
+                "id": run_id,
+                "metadata": {"build": "101", "component": "backend", "env": "stage"},
+                "summary": {"tests": 1, "passed": 1},
+            }
+
+            result_data = {
+                "id": result_id,
+                "test_id": "test.idempotent",
+                "result": "passed",
+                "duration": 2.0,
+                "start_time": datetime.now(UTC).isoformat(),
+                "metadata": {"component": "backend", "env": "stage"},
+            }
+
+            # Create tarball with artifact
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                run_json = json.dumps(run_data).encode()
+                run_info = tarfile.TarInfo(name=f"{run_id}/run.json")
+                run_info.size = len(run_json)
+                tar.addfile(run_info, BytesIO(run_json))
+
+                result_json = json.dumps(result_data).encode()
+                result_info = tarfile.TarInfo(name=f"{run_id}/{result_id}/result.json")
+                result_info.size = len(result_json)
+                tar.addfile(result_info, BytesIO(result_json))
+
+                artifact_content = b"log output line"
+                art_info = tarfile.TarInfo(name=f"{run_id}/{result_id}/traceback.log")
+                art_info.size = len(artifact_content)
+                tar.addfile(art_info, BytesIO(artifact_content))
+
+            tar_buffer.seek(0)
+            tar_content = tar_buffer.read()
+
+            # First import
+            import_record1 = make_import(
+                filename="archive1.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file1 = ImportFile(
+                id=str(uuid4()), import_id=import_record1.id, content=tar_content
+            )
+            session.add(import_file1)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record1.id)})
+
+            # Verify initial counts
+            all_results = (
+                db.session.execute(db.select(Result).where(Result.run_id == run_id)).scalars().all()
+            )
+            assert len(all_results) == 1
+            assert all_results[0].id == result_id
+            assert all_results[0].component == "backend"
+            assert all_results[0].env == "stage"
+
+            all_artifacts = (
+                db.session.execute(db.select(Artifact).where(Artifact.result_id == result_id))
+                .scalars()
+                .all()
+            )
+            assert len(all_artifacts) == 1
+
+            # Second import of the same archive
+            import_record2 = make_import(
+                filename="archive2.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file2 = ImportFile(
+                id=str(uuid4()), import_id=import_record2.id, content=tar_content
+            )
+            session.add(import_file2)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record2.id)})
+
+            # Verify no duplicates were created
+            all_results_after = (
+                db.session.execute(db.select(Result).where(Result.run_id == run_id)).scalars().all()
+            )
+            assert len(all_results_after) == 1
+            assert all_results_after[0].id == result_id
+
+            all_artifacts_after = (
+                db.session.execute(db.select(Artifact).where(Artifact.result_id == result_id))
+                .scalars()
+                .all()
+            )
+            assert len(all_artifacts_after) == 1
 
     def test_run_archive_import_missing_file(self, make_import, flask_app):
         """Test archive import with missing file"""

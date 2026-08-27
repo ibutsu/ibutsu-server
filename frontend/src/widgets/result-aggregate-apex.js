@@ -19,8 +19,12 @@ import { useSVGContainerDimensions } from '../components/hooks/use-svg-container
 
 // Helper function to get color for a label
 const getColorForLabel = (label, index) => {
+  if (!label) {
+    return DEFAULT_CHART_COLORS[index % DEFAULT_CHART_COLORS.length];
+  }
   // First check if it's a result type
-  const resultColor = CHART_COLOR_MAP[label.toLowerCase()];
+  const labelStr = String(label).toLowerCase();
+  const resultColor = CHART_COLOR_MAP[labelStr];
   if (resultColor) {
     return resultColor;
   }
@@ -118,7 +122,11 @@ const ResultAggregateApex = ({
 
     chartData.forEach((datum) => {
       series.push(datum.y);
-      labels.push(toTitleCase(datum.x));
+      labels.push(
+        datum.x !== null && datum.x !== undefined && datum.x !== ''
+          ? toTitleCase(datum.x)
+          : 'N/A',
+      );
     });
 
     return {
@@ -130,8 +138,11 @@ const ResultAggregateApex = ({
   const chartLegend = useMemo(() => {
     if (
       chartLabels?.length > 0 &&
-      chartLabels.every((label) =>
-        Object.keys(ICON_RESULT_MAP).includes(label.toLowerCase()),
+      chartLabels.every(
+        (label) =>
+          label &&
+          typeof label === 'string' &&
+          Object.keys(ICON_RESULT_MAP).includes(label.toLowerCase()),
       )
     ) {
       return {
@@ -139,17 +150,23 @@ const ResultAggregateApex = ({
           show: false,
         },
         legendData: chartLabels.map((resultLabel, index) => {
+          const lowerLabel = resultLabel
+            ? String(resultLabel).toLowerCase()
+            : '';
           // Find the corresponding count from chartData
           const chartItem = chartData.find(
-            (item) => item.x === resultLabel.toLowerCase(),
+            (item) =>
+              (item.x ? String(item.x).toLowerCase() : 'n/a') === lowerLabel,
           );
           const count = chartItem ? chartItem.y : chartSeries[index] || 0;
 
           return {
             name: `${resultLabel} (${count})`,
             symbol: {
-              fill: CHART_COLOR_MAP[resultLabel.toLowerCase()],
-              type: resultLabel.toLowerCase(),
+              fill:
+                CHART_COLOR_MAP[lowerLabel] ||
+                DEFAULT_CHART_COLORS[index % DEFAULT_CHART_COLORS.length],
+              type: lowerLabel,
             },
           };
         }),

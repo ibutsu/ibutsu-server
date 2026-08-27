@@ -25,42 +25,58 @@ uuid_pattern = re.compile(
 
 @shared_task
 def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
-    """Create a result with artifacts, used in the archive importer"""
+    """Create or update a result with artifacts, used in the archive importer"""
     old_id = None
     result_id = result.get("id")
     result_record = db.session.get(Result, result_id) if is_uuid(result_id) else None
+
+    # Merge metadata
+    if metadata:
+        result["metadata"] = result.get("metadata", {})
+        result["metadata"].update(metadata)
+    # promote user_properties to the level of metadata
+    if "user_properties" in result.get("metadata", {}):
+        user_properties = result["metadata"].pop("user_properties")
+        result["metadata"].update(user_properties)
+
+    # Support both top-level and metadata for component and env
+    result["env"] = result.get("env") or result.get("metadata", {}).get("env")
+    result["component"] = result.get("component") or result.get("metadata", {}).get("component")
+    result["run_id"] = run_id
+    if project_id:
+        result["project_id"] = project_id
+
     if result_record:
-        result_record.run_id = run_id
+        result_record.update(result)
     else:
-        old_id = result["id"]
-        if "id" in result:
-            result.pop("id")
-        result["run_id"] = run_id
-        if project_id:
-            result["project_id"] = project_id
-        if metadata:
-            result["metadata"] = result.get("metadata", {})
-            result["metadata"].update(metadata)
-        # promote user_properties to the level of metadata
-        if "user_properties" in result.get("metadata", {}):
-            user_properties = result["metadata"].pop("user_properties")
-            result["metadata"].update(user_properties)
-        result["env"] = result.get("metadata", {}).get("env")
-        result["component"] = result.get("metadata", {}).get("component")
+        if not is_uuid(result_id) and "id" in result:
+            old_id = result.pop("id")
         result_record = Result.from_dict(**result)
-    db.session.add(result_record)
-    db.session.commit()
-    result = result_record.to_dict()
+        db.session.add(result_record)
+
+    db.session.flush()
+
     for artifact in artifacts:
-        db.session.add(
-            Artifact(
-                filename=artifact.name.split("/")[-1],
-                result_id=result["id"],
-                data={"contentType": "text/plain", "resultId": result["id"]},
-                content=tar.extractfile(artifact).read(),
+        filename = artifact.name.split("/")[-1]
+        existing_artifact = db.session.execute(
+            db.select(Artifact).where(
+                Artifact.result_id == result_record.id,
+                Artifact.filename == filename,
             )
-        )
-    db.session.commit()
+        ).scalar_one_or_none()
+        content = tar.extractfile(artifact).read()
+        if existing_artifact:
+            existing_artifact.content = content
+        else:
+            db.session.add(
+                Artifact(
+                    filename=filename,
+                    result_id=result_record.id,
+                    data={"contentType": "text/plain", "resultId": result_record.id},
+                    content=content,
+                )
+            )
+    db.session.flush()
     return old_id
 
 
@@ -337,7 +353,7 @@ def run_junit_import(import_):  # noqa: PLR0912
 
             result = Result.from_dict(**result_dict)
             db.session.add(result)
-            db.session.commit()
+            db.session.flush()
             _add_artifacts(result, testcase, traceback)
 
             if traceback:
@@ -369,7 +385,7 @@ def run_junit_import(import_):  # noqa: PLR0912
                         content=system_err,
                     )
                 )
-            db.session.commit()
+            db.session.flush()
 
     # Check if we need to update the run
     if not run.duration:
@@ -485,14 +501,25 @@ def run_archive_import(import_):  # noqa: PLR0912
         import_record.data["run_id"] = [run.id]
         # Loop through any artifacts associated with the run and upload them
         for artifact in run_artifacts:
-            db.session.add(
-                Artifact(
-                    filename=artifact.name.split("/")[-1],
-                    run_id=run.id,
-                    data={"contentType": "text/plain", "runId": run.id},
-                    content=tar.extractfile(artifact).read(),
+            filename = artifact.name.split("/")[-1]
+            existing_artifact = db.session.execute(
+                db.select(Artifact).where(
+                    Artifact.run_id == run.id,
+                    Artifact.filename == filename,
                 )
-            )
+            ).scalar_one_or_none()
+            content = tar.extractfile(artifact).read()
+            if existing_artifact:
+                existing_artifact.content = content
+            else:
+                db.session.add(
+                    Artifact(
+                        filename=filename,
+                        run_id=run.id,
+                        data={"contentType": "text/plain", "runId": run.id},
+                        content=content,
+                    )
+                )
         # Now loop through all the results, and create or update them
         for result in results:
             artifacts = result_artifacts.get(result["id"], [])
@@ -504,6 +531,7 @@ def run_archive_import(import_):  # noqa: PLR0912
                 project_id=run_dict.get("project_id") or import_record.data.get("project_id"),
                 metadata=metadata,
             )
+        db.session.commit()
     # Update the import record
     log.info("Setting import status to done")
     _update_import_status(import_record, "done")
