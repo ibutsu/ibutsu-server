@@ -20,6 +20,13 @@ from ibutsu_server.util.jwt import decode_token
 
 FRONTEND_PATH = Path("/app/frontend")
 
+_DEFAULT_POOL_RECYCLE = 1800
+
+
+# TODO: Adopt pydantic or environs (https://github.com/sloria/environs) for
+# environment variable scoping and type casting instead of the ad-hoc
+# config.get()/int() handling here and elsewhere in this module.
+
 
 def maybe_sql_url(conf: dict[str, Any]) -> SQLA_URL | None:
     host = conf.get("host") or conf.get("hostname")
@@ -128,18 +135,27 @@ def get_app(**extra_config):
     # Load any extra config
     config.update(extra_config)
 
-    if "SQLALCHEMY_ENGINE_OPTIONS" not in config or not config["SQLALCHEMY_ENGINE_OPTIONS"]:
-        db_uri = config.get("SQLALCHEMY_DATABASE_URI", "")
-        is_sqlite = False
-        if (isinstance(db_uri, str) and db_uri.startswith("sqlite")) or (
-            isinstance(db_uri, SQLA_URL) and db_uri.drivername.startswith("sqlite")
-        ):
-            is_sqlite = True
+    db_uri = config.get("SQLALCHEMY_DATABASE_URI", "")
+    if isinstance(db_uri, SQLA_URL):
+        _drivername = db_uri.drivername
+    elif isinstance(db_uri, str):
+        _drivername = db_uri.split("://", 1)[0].split("+", 1)[0] if "://" in db_uri else ""
+    else:
+        _drivername = ""
 
-        if not is_sqlite:
-            config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-                "connect_args": {"options": "-c statement_timeout=25000"}
-            }
+    if _drivername == "postgresql":
+        caller_opts = config.get("SQLALCHEMY_ENGINE_OPTIONS") or {}
+        caller_connect_args = caller_opts.pop("connect_args", {})
+
+        config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "connect_args": {
+                "options": "-c statement_timeout=25000",
+                **caller_connect_args,
+            },
+            "pool_pre_ping": True,
+            "pool_recycle": int(config.get("SQLALCHEMY_POOL_RECYCLE", _DEFAULT_POOL_RECYCLE)),
+            **caller_opts,
+        }
 
     # Configure Celery in the Flask app config
     # Using Celery 6-compatible configuration keys

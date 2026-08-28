@@ -634,6 +634,25 @@ def test_get_app_sqlite_engine_options():
     )
 
 
+def test_get_app_mysql_engine_options_skipped():
+    """Test that PostgreSQL-specific engine options are NOT applied to MySQL URIs"""
+    with (
+        patch("ibutsu_server.db.db.init_app"),
+        patch("ibutsu_server.add_superadmin"),
+    ):
+        app = get_app(
+            TESTING=True,
+            SQLALCHEMY_DATABASE_URI="mysql+pymysql://user:pass@localhost/testdb",
+            CELERY_BROKER_URL="redis://localhost:6379/0",
+            CELERY_RESULT_BACKEND="redis://localhost:6379/0",
+        )
+
+        engine_opts = app.app.config.get("SQLALCHEMY_ENGINE_OPTIONS", {})
+        assert "connect_args" not in engine_opts
+        assert "pool_pre_ping" not in engine_opts
+        assert "pool_recycle" not in engine_opts
+
+
 def test_get_app_postgresql_engine_options():
     """Test get_app sets statement_timeout for PostgreSQL"""
     db_url = SQLA_URL.create(
@@ -661,6 +680,147 @@ def test_get_app_postgresql_engine_options():
         assert "SQLALCHEMY_ENGINE_OPTIONS" in app.app.config
         assert "connect_args" in app.app.config["SQLALCHEMY_ENGINE_OPTIONS"]
         assert "options" in app.app.config["SQLALCHEMY_ENGINE_OPTIONS"]["connect_args"]
+
+
+def test_get_app_postgresql_pool_defaults():
+    """Test get_app sets pool_pre_ping and pool_recycle defaults for PostgreSQL"""
+    db_url = SQLA_URL.create(
+        drivername="postgresql",
+        host="localhost",
+        database="testdb",
+        username="testuser",
+        password="testpass",
+    )
+
+    with (
+        patch("ibutsu_server.db.db.init_app"),
+        patch("ibutsu_server.add_superadmin"),
+    ):
+        app = get_app(
+            TESTING=True,
+            SQLALCHEMY_DATABASE_URI=db_url,
+            CELERY_BROKER_URL="redis://localhost:6379/0",
+            CELERY_RESULT_BACKEND="redis://localhost:6379/0",
+        )
+
+        engine_opts = app.app.config["SQLALCHEMY_ENGINE_OPTIONS"]
+        assert engine_opts["pool_pre_ping"] is True
+        assert engine_opts["pool_recycle"] == 1800
+
+
+def test_get_app_postgresql_pool_recycle_from_string():
+    """Test pool_recycle is correctly parsed from a string env var value"""
+    db_url = SQLA_URL.create(
+        drivername="postgresql",
+        host="localhost",
+        database="testdb",
+        username="testuser",
+        password="testpass",
+    )
+
+    with (
+        patch("ibutsu_server.db.db.init_app"),
+        patch("ibutsu_server.add_superadmin"),
+    ):
+        app = get_app(
+            TESTING=True,
+            SQLALCHEMY_DATABASE_URI=db_url,
+            SQLALCHEMY_POOL_RECYCLE="900",
+            CELERY_BROKER_URL="redis://localhost:6379/0",
+            CELERY_RESULT_BACKEND="redis://localhost:6379/0",
+        )
+
+        assert app.app.config["SQLALCHEMY_ENGINE_OPTIONS"]["pool_recycle"] == 900
+
+
+def test_get_app_postgresql_pool_recycle_invalid_raises():
+    """Test a non-numeric pool_recycle value raises instead of silently falling back.
+
+    See the TODO in ibutsu_server.__init__: proper envvar type casting
+    (e.g. via pydantic or environs) should replace this bare int() cast.
+    """
+    db_url = SQLA_URL.create(
+        drivername="postgresql",
+        host="localhost",
+        database="testdb",
+        username="testuser",
+        password="testpass",
+    )
+
+    with (
+        patch("ibutsu_server.db.db.init_app"),
+        patch("ibutsu_server.add_superadmin"),
+        pytest.raises(ValueError, match="30m"),
+    ):
+        get_app(
+            TESTING=True,
+            SQLALCHEMY_DATABASE_URI=db_url,
+            SQLALCHEMY_POOL_RECYCLE="30m",
+            CELERY_BROKER_URL="redis://localhost:6379/0",
+            CELERY_RESULT_BACKEND="redis://localhost:6379/0",
+        )
+
+
+def test_get_app_postgresql_caller_engine_options_preserved():
+    """Test caller-supplied SQLALCHEMY_ENGINE_OPTIONS keys are preserved"""
+    db_url = SQLA_URL.create(
+        drivername="postgresql",
+        host="localhost",
+        database="testdb",
+        username="testuser",
+        password="testpass",
+    )
+
+    with (
+        patch("ibutsu_server.db.db.init_app"),
+        patch("ibutsu_server.add_superadmin"),
+    ):
+        app = get_app(
+            TESTING=True,
+            SQLALCHEMY_DATABASE_URI=db_url,
+            SQLALCHEMY_ENGINE_OPTIONS={"pool_size": 20, "pool_pre_ping": False},
+            CELERY_BROKER_URL="redis://localhost:6379/0",
+            CELERY_RESULT_BACKEND="redis://localhost:6379/0",
+        )
+
+        engine_opts = app.app.config["SQLALCHEMY_ENGINE_OPTIONS"]
+        # Caller override wins
+        assert engine_opts["pool_size"] == 20
+        assert engine_opts["pool_pre_ping"] is False
+        # Defaults still present for non-overridden keys
+        assert engine_opts["pool_recycle"] == 1800
+        assert "options" in engine_opts["connect_args"]
+
+
+def test_get_app_postgresql_caller_connect_args_merged():
+    """Test caller connect_args are merged with default statement_timeout"""
+    db_url = SQLA_URL.create(
+        drivername="postgresql",
+        host="localhost",
+        database="testdb",
+        username="testuser",
+        password="testpass",
+    )
+
+    with (
+        patch("ibutsu_server.db.db.init_app"),
+        patch("ibutsu_server.add_superadmin"),
+    ):
+        app = get_app(
+            TESTING=True,
+            SQLALCHEMY_DATABASE_URI=db_url,
+            SQLALCHEMY_ENGINE_OPTIONS={
+                "connect_args": {"sslmode": "require"},
+            },
+            CELERY_BROKER_URL="redis://localhost:6379/0",
+            CELERY_RESULT_BACKEND="redis://localhost:6379/0",
+        )
+
+        connect_args = app.app.config["SQLALCHEMY_ENGINE_OPTIONS"]["connect_args"]
+        # Caller's connect_args merged in
+        assert connect_args["sslmode"] == "require"
+        # Default statement_timeout preserved
+        assert connect_args["options"] == "-c statement_timeout=25000"
 
 
 def test_get_app_celery_config():
