@@ -139,6 +139,7 @@ All data has been **thoroughly sanitized** to remove Red Hat-specific informatio
 ```python
 from tests.fixtures.loader import load_sample_data
 
+
 def test_with_sample_data(db_session):
     """Use sample data in integration tests."""
     project, runs, results, artifacts = load_sample_data(db_session)
@@ -153,6 +154,7 @@ def test_with_sample_data(db_session):
 ```python
 from tests.fixtures.loader import load_sample_run_with_results
 
+
 def test_specific_scenario(db_session):
     """Load just one run with its results."""
     project, run, results = load_sample_run_with_results(db_session, run_index=0)
@@ -166,16 +168,13 @@ def test_specific_scenario(db_session):
 ```python
 from tests.fixtures.loader import load_json_data
 
+
 def test_import_functionality(flask_app, auth_headers):
     """Test importing via API."""
     client, jwt_token = flask_app
     data = load_json_data()
 
-    response = client.post(
-        '/api/project',
-        json=data['project'],
-        headers=auth_headers(jwt_token)
-    )
+    response = client.post("/api/project", json=data["project"], headers=auth_headers(jwt_token))
     assert response.status_code == 201
 ```
 
@@ -184,13 +183,14 @@ def test_import_functionality(flask_app, auth_headers):
 ```python
 from tests.fixtures.loader import load_failed_results_only
 
+
 def test_error_handling(db_session):
     """Load only failed results."""
     project, run, failed_results = load_failed_results_only(db_session)
 
     # All results are failures or errors
     for result in failed_results:
-        assert result.result in ('failed', 'error')
+        assert result.result in ("failed", "error")
 ```
 
 ## Use Cases
@@ -252,13 +252,11 @@ def test_example(flask_app, db_session):
 
     # Load sample data
     from tests.fixtures.loader import load_sample_data
+
     project, runs, results, artifacts = load_sample_data(db_session)
 
     # Test with flask_app client
-    response = client.get(
-        f'/api/project/{project.id}',
-        headers=auth_headers(jwt_token)
-    )
+    response = client.get(f"/api/project/{project.id}", headers=auth_headers(jwt_token))
     assert response.status_code == 200
 ```
 
@@ -319,6 +317,7 @@ Comprehensive documentation is included:
 4. **Start simple:**
    ```python
    from tests.fixtures.loader import load_sample_data
+
 
    def test_my_feature(db_session):
        project, runs, results, artifacts = load_sample_data(db_session)
