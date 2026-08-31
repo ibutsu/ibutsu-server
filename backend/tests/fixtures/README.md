@@ -140,11 +140,13 @@ The test data can be loaded and used in tests in several ways:
 import json
 from pathlib import Path
 
+
 def load_test_data():
     """Load sample test data from fixtures."""
     fixture_path = Path(__file__).parent / "fixtures" / "data" / "sample_test_data.json"
     with open(fixture_path) as f:
         return json.load(f)
+
 
 def test_with_sample_data(db_session):
     """Example test using sample data."""
@@ -152,6 +154,7 @@ def test_with_sample_data(db_session):
 
     # Create project
     from ibutsu_server.db.models import Project
+
     project_data = data["project"]
     project = Project(**project_data)
     db_session.add(project)
@@ -166,20 +169,17 @@ def test_with_sample_data(db_session):
 ```python
 from tests.helpers import create_project_with_runs, create_run_with_results
 
+
 def test_with_builders(db_session):
     """Create similar data using builder functions."""
     # The JSON data can serve as a reference for metadata structure
-    project, runs = create_project_with_runs(
-        db_session,
-        num_runs=3,
-        name='sample-test-project'
-    )
+    project, runs = create_project_with_runs(db_session, num_runs=3, name="sample-test-project")
 
     for run in runs:
         run.metadata = {
             "build_system": {
                 "name": "continuous-integration",
-                "job_name": "main-pipeline/test-suite"
+                "job_name": "main-pipeline/test-suite",
             }
         }
 ```
@@ -195,11 +195,7 @@ def test_import_via_api(flask_app, auth_headers):
     data = load_test_data()
 
     # Import via API
-    response = client.post(
-        '/api/project',
-        json=data['project'],
-        headers=auth_headers(jwt_token)
-    )
+    response = client.post("/api/project", json=data["project"], headers=auth_headers(jwt_token))
     assert response.status_code == 201
 ```
 
@@ -213,14 +209,14 @@ def test_junit_import(flask_app, auth_headers):
     client, jwt_token = flask_app
 
     fixture_path = Path(__file__).parent / "fixtures" / "data" / "sample_test_data.xml"
-    with open(fixture_path, 'rb') as f:
+    with open(fixture_path, "rb") as f:
         xml_content = f.read()
 
     # Import via API
     response = client.post(
-        '/api/import',
-        data={'file': (io.BytesIO(xml_content), 'test_data.xml')},
-        headers=auth_headers(jwt_token)
+        "/api/import",
+        data={"file": (io.BytesIO(xml_content), "test_data.xml")},
+        headers=auth_headers(jwt_token),
     )
 ```
 
@@ -234,16 +230,17 @@ def test_with_artifacts(flask_app, db_session):
 
     # Load artifact content
     log_path = Path(__file__).parent / "fixtures" / "data" / "log_authentication_failure.txt"
-    with open(log_path, 'rb') as f:
+    with open(log_path, "rb") as f:
         log_content = f.read()
 
     # Create artifact
     from ibutsu_server.db.models import Artifact
+
     artifact = Artifact(
         result_id=result.id,
         filename="test.log",
         content=log_content,
-        data={"contentType": "text/plain"}
+        data={"contentType": "text/plain"},
     )
     db_session.add(artifact)
     db_session.commit()
