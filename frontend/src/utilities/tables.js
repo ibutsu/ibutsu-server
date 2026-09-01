@@ -233,7 +233,7 @@ export const runToRow = (run, filterFunc) => {
     ? new Date(run.start_time)
     : new Date(run.created);
 
-  const runComponent = run.component ?? run.metadata?.component ?? null;
+  const runComponent = run.component || run.metadata?.component || null;
   if (runComponent) {
     if (filterFunc) {
       componentBadge = buildBadge('component', runComponent, false, () =>
@@ -249,7 +249,7 @@ export const runToRow = (run, filterFunc) => {
     badges.push(componentBadge);
   }
 
-  const runEnv = run.env ?? run.metadata?.env ?? null;
+  const runEnv = run.env || run.metadata?.env || null;
   if (runEnv) {
     let envBadge;
     if (filterFunc) {

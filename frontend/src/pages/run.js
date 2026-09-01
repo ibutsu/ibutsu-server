@@ -474,7 +474,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     <strong>Component:</strong>
                                   </DataListCell>,
                                   <DataListCell key={2} width={4}>
-                                    {run.component ?? run.metadata?.component}
+                                    {run.component || run.metadata?.component}
                                   </DataListCell>,
                                 ]}
                               />
@@ -490,7 +490,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     <strong>Environment:</strong>
                                   </DataListCell>,
                                   <DataListCell key={2} width={4}>
-                                    {run.env ?? run.metadata?.env}
+                                    {run.env || run.metadata?.env}
                                   </DataListCell>,
                                 ]}
                               />

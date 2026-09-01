@@ -124,7 +124,7 @@ const ResultAggregateApex = ({
       series.push(datum.y);
       labels.push(
         datum.x !== null && datum.x !== undefined && datum.x !== ''
-          ? toTitleCase(datum.x)
+          ? toTitleCase(String(datum.x))
           : 'N/A',
       );
     });
