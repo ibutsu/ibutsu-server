@@ -1,6 +1,7 @@
 import json
 import re
 import tarfile
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from io import BytesIO
 
@@ -30,18 +31,19 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
     result_id = result.get("id")
     result_record = db.session.get(Result, result_id) if is_uuid(result_id) else None
 
-    # Merge metadata
+    # Merge metadata - normalize to dict to handle null metadata gracefully
+    result_metadata = result.get("metadata") or {}
     if metadata:
-        result["metadata"] = result.get("metadata", {})
-        result["metadata"].update(metadata)
+        result_metadata.update(metadata)
+        result["metadata"] = result_metadata
     # promote user_properties to the level of metadata
-    if "user_properties" in result.get("metadata", {}):
-        user_properties = result["metadata"].pop("user_properties")
-        result["metadata"].update(user_properties)
+    if "user_properties" in result_metadata:
+        user_properties = result_metadata.pop("user_properties")
+        result_metadata.update(user_properties)
 
     # Support both top-level and metadata for component and env
-    result["env"] = result.get("env") or result.get("metadata", {}).get("env")
-    result["component"] = result.get("component") or result.get("metadata", {}).get("component")
+    result["env"] = result.get("env") or result_metadata.get("env")
+    result["component"] = result.get("component") or result_metadata.get("component")
     result["run_id"] = run_id
     if project_id:
         result["project_id"] = project_id
@@ -58,12 +60,25 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
 
     for artifact in artifacts:
         filename = artifact.name.split("/")[-1]
-        existing_artifact = db.session.execute(
-            db.select(Artifact).where(
-                Artifact.result_id == result_record.id,
-                Artifact.filename == filename,
+        # Handle potential legacy duplicates by fetching all matching artifacts
+        existing_artifacts = (
+            db.session.execute(
+                db.select(Artifact)
+                .where(
+                    Artifact.result_id == result_record.id,
+                    Artifact.filename == filename,
+                )
+                .order_by(Artifact.upload_date, Artifact.id)
             )
-        ).scalar_one_or_none()
+            .scalars()
+            .all()
+        )
+
+        existing_artifact = existing_artifacts[0] if existing_artifacts else None
+        # Clean up any legacy duplicates
+        for duplicate in existing_artifacts[1:]:
+            db.session.delete(duplicate)
+
         content = tar.extractfile(artifact).read()
         if existing_artifact:
             existing_artifact.content = content
@@ -92,6 +107,27 @@ def _update_import_status(import_record, status):
         db.session.commit()
     else:
         log.error(f"Could not find import with ID {import_record.id} to update status to {status}")
+
+
+@contextmanager
+def _import_failure_handling(import_record):
+    """Roll back and mark an import as errored if processing raises.
+
+    The importers build up the run and all of its results/artifacts inside a
+    single transaction, committing only once everything has been staged. If any
+    step fails part-way through -- an unexpected exception, a malformed archive,
+    or a Celery soft time limit -- roll the whole transaction back so we never
+    leave a run committed without its results/artifacts, and flip the import
+    status to ``error`` so it isn't left stuck in ``running``. The original
+    exception is re-raised so Celery still records the task as failed.
+    """
+    try:
+        yield
+    except Exception:
+        log.exception(f"Import {import_record.id} failed during processing")
+        db.session.rollback()
+        _update_import_status(import_record, "error")
+        raise
 
 
 def _get_ts_element(tree):
@@ -161,7 +197,9 @@ def _add_artifacts(result, testcase, traceback):
                 content=system_err,
             )
         )
-    db.session.commit()
+    # Flush rather than commit so these artifacts remain part of the importing
+    # task's transaction and roll back with the run/result if a later step fails.
+    db.session.flush()
 
 
 def _get_properties(xml_element: objectify.Element) -> dict:
@@ -239,171 +277,149 @@ def run_junit_import(import_):  # noqa: PLR0912
     if not import_file:
         _update_import_status(import_record, "error")
         return
-    # Parse the XML and create a run object(s)
-    tree = objectify.fromstring(import_file.content)
-    import_record.data["run_id"] = []
-    # Use current time as start time if no start time is present
-    start_time = parser.parse(tree.get("timestamp")) if tree.get("timestamp") else datetime.now(UTC)
-    run_dict = {
-        "created": datetime.now(UTC),
-        "start_time": start_time,
-        "duration": float(tree.get("time", 0.0)),
-        "summary": {
-            "errors": int(tree.get("errors", 0)),
-            "failures": int(tree.get("failures", 0)),
-            "skips": int(tree.get("skipped", 0)),
-            "xfailures": int(tree.get("xfailures", 0)),
-            "xpasses": int(tree.get("xpasses", 0)),
-            "tests": int(tree.get("tests", 0)),
-        },
-    }
+    # Process the JUnit file within a single transaction so a failure part-way
+    # through rolls back cleanly and marks the import as errored.
+    with _import_failure_handling(import_record):
+        # Parse the XML and create a run object(s)
+        tree = objectify.fromstring(import_file.content)
+        import_record.data["run_id"] = []
+        # Use current time as start time if no start time is present
+        start_time = (
+            parser.parse(tree.get("timestamp")) if tree.get("timestamp") else datetime.now(UTC)
+        )
+        run_dict = {
+            "created": datetime.now(UTC),
+            "start_time": start_time,
+            "duration": float(tree.get("time", 0.0)),
+            "summary": {
+                "errors": int(tree.get("errors", 0)),
+                "failures": int(tree.get("failures", 0)),
+                "skips": int(tree.get("skipped", 0)),
+                "xfailures": int(tree.get("xfailures", 0)),
+                "xpasses": int(tree.get("xpasses", 0)),
+                "tests": int(tree.get("tests", 0)),
+            },
+        }
 
-    # If the filename contains a uuid4, let's use that for the run ID
-    if match := uuid_pattern.search(import_record.filename):
-        run_dict["id"] = match.group(1)
+        # If the filename contains a uuid4, let's use that for the run ID
+        if match := uuid_pattern.search(import_record.filename):
+            run_dict["id"] = match.group(1)
 
-    # Get metadata from the XML file
-    metadata = _get_properties(tree)
+        # Get metadata from the XML file
+        metadata = _get_properties(tree)
 
-    # Update metadata from import data
-    if import_record.data.get("metadata"):
-        metadata.update(import_record.data["metadata"])
+        # Update metadata from import data
+        if import_record.data.get("metadata"):
+            metadata.update(import_record.data["metadata"])
 
-    # Populate metadata
-    run_dict["data"] = metadata
-    # add env and component directly to the run dict if it exists in the metadata
-    run_dict["env"] = metadata.get("env")
-    run_dict["component"] = metadata.get("component")
-    run_dict["source"] = metadata.get("source")
+        # Populate metadata
+        run_dict["data"] = metadata
+        # add env and component directly to the run dict if it exists in the metadata
+        run_dict["env"] = metadata.get("env")
+        run_dict["component"] = metadata.get("component")
+        run_dict["source"] = metadata.get("source")
 
-    # Set the project if it exists
-    if metadata.get("project"):
-        run_dict["project_id"] = get_project_id(metadata["project"])
+        # Set the project if it exists
+        if metadata.get("project"):
+            run_dict["project_id"] = get_project_id(metadata["project"])
 
-    # If there are any properties set by the importer, overwrite with those
-    if import_record.data.get("project_id"):
-        run_dict["project_id"] = import_record.data["project_id"]
-    if import_record.data.get("source"):
-        run_dict["source"] = import_record.data["source"]
+        # If there are any properties set by the importer, overwrite with those
+        if import_record.data.get("project_id"):
+            run_dict["project_id"] = import_record.data["project_id"]
+        if import_record.data.get("source"):
+            run_dict["source"] = import_record.data["source"]
 
-    # Insert the run, and then update the import with the run id
-    run = Run.from_dict(**run_dict)
-    db.session.add(run)
-    db.session.commit()
-    run_dict = run.to_dict()
-    import_record.run_id = run.id
-    import_record.data["run_id"].append(run.id)
+        # Insert the run, and then update the import with the run id. Flush (not
+        # commit) so the run gets an ID while staying in the same transaction as
+        # its results/artifacts -- a later failure then rolls the run back too.
+        run = Run.from_dict(**run_dict)
+        db.session.add(run)
+        db.session.flush()
+        run_dict = run.to_dict()
+        import_record.run_id = run.id
+        import_record.data["run_id"].append(run.id)
 
-    # If the top level "testsuites" element doesn't have these, we'll need to build them manually
-    run_data = {
-        "duration": 0.0,
-        "errors": 0,
-        "failures": 0,
-        "skips": 0,
-        "xfailures": 0,
-        "xpasses": 0,
-        "tests": 0,
-    }
+        # If the top level "testsuites" element doesn't have these, build them manually
+        run_data = {
+            "duration": 0.0,
+            "errors": 0,
+            "failures": 0,
+            "skips": 0,
+            "xfailures": 0,
+            "xpasses": 0,
+            "tests": 0,
+        }
 
-    # Handle structures where testsuite is/isn't the top level tag
-    testsuites = _get_ts_element(tree)
+        # Handle structures where testsuite is/isn't the top level tag
+        testsuites = _get_ts_element(tree)
 
-    # Run through the test suites and import all the test results
-    for ts in testsuites:
-        run_data["duration"] += float(ts.get("time", 0.0))
-        run_data["errors"] += int(ts.get("errors", 0))
-        run_data["failures"] += int(ts.get("failures", 0))
-        run_data["skips"] += int(ts.get("skipped", 0))
-        run_data["xfailures"] += int(ts.get("xfailures", 0))
-        run_data["xpasses"] += int(ts.get("xpasses", 0))
-        run_data["tests"] += int(ts.get("tests", 0))
-        fspath = ts.get("file")
-        run_properties = _get_properties(ts)
+        # Run through the test suites and import all the test results
+        for ts in testsuites:
+            run_data["duration"] += float(ts.get("time", 0.0))
+            run_data["errors"] += int(ts.get("errors", 0))
+            run_data["failures"] += int(ts.get("failures", 0))
+            run_data["skips"] += int(ts.get("skipped", 0))
+            run_data["xfailures"] += int(ts.get("xfailures", 0))
+            run_data["xpasses"] += int(ts.get("xpasses", 0))
+            run_data["tests"] += int(ts.get("tests", 0))
+            fspath = ts.get("file")
+            run_properties = _get_properties(ts)
 
-        for testcase in ts.iterchildren(tag="testcase"):
-            test_name, backup_fspath = _get_test_name_path(testcase)
-            result_dict = {
-                "test_id": test_name,
-                "start_time": run_dict["start_time"],
-                "duration": float(testcase.get("time") or 0),
-                "run_id": run.id,
-                "metadata": {
-                    "run": run.id,
-                    "fspath": fspath or testcase.get("file") or backup_fspath,
-                    "line": testcase.get("line"),
-                },
-                "params": {},
-                "source": ts.get("name"),
-            }
+            for testcase in ts.iterchildren(tag="testcase"):
+                test_name, backup_fspath = _get_test_name_path(testcase)
+                result_dict = {
+                    "test_id": test_name,
+                    "start_time": run_dict["start_time"],
+                    "duration": float(testcase.get("time") or 0),
+                    "run_id": run.id,
+                    "metadata": {
+                        "run": run.id,
+                        "fspath": fspath or testcase.get("file") or backup_fspath,
+                        "line": testcase.get("line"),
+                    },
+                    "params": {},
+                    "source": ts.get("name"),
+                }
 
-            # If there are any properties set by the importer, overwrite with those
-            if import_record.data.get("project_id"):
-                result_dict["project_id"] = import_record.data["project_id"]
-            if import_record.data.get("source"):
-                result_dict["source"] = import_record.data["source"]
+                # If there are any properties set by the importer, overwrite with those
+                if import_record.data.get("project_id"):
+                    result_dict["project_id"] = import_record.data["project_id"]
+                if import_record.data.get("source"):
+                    result_dict["source"] = import_record.data["source"]
 
-            # If the JUnit XML has a properties object, add those properties in
-            result_properties = {}
-            result_properties.update(metadata)
-            result_properties.update(run_properties)
-            result_properties.update(_get_properties(testcase))
+                # If the JUnit XML has a properties object, add those properties in
+                result_properties = {}
+                result_properties.update(metadata)
+                result_properties.update(run_properties)
+                result_properties.update(_get_properties(testcase))
 
-            _populate_result_metadata(run_dict, result_dict, result_properties)
-            result_dict, traceback = _process_result(result_dict, testcase)
+                _populate_result_metadata(run_dict, result_dict, result_properties)
+                result_dict, traceback = _process_result(result_dict, testcase)
 
-            result = Result.from_dict(**result_dict)
-            db.session.add(result)
-            db.session.flush()
-            _add_artifacts(result, testcase, traceback)
+                result = Result.from_dict(**result_dict)
+                db.session.add(result)
+                db.session.flush()
+                # _add_artifacts stages the traceback, system-out and system-err
+                # artifacts for this result -- don't duplicate that work here.
+                _add_artifacts(result, testcase, traceback)
 
-            if traceback:
-                db.session.add(
-                    Artifact(
-                        filename="traceback.log",
-                        result_id=result.id,
-                        data={"contentType": "text/plain", "resultId": result.id},
-                        content=traceback,
-                    )
-                )
-            if testcase.find("system-out") is not None:
-                system_out = bytes(str(testcase["system-out"]), "utf8")
-                db.session.add(
-                    Artifact(
-                        filename="system-out.log",
-                        result_id=result.id,
-                        data={"contentType": "text/plain", "resultId": result.id},
-                        content=system_out,
-                    )
-                )
-            if testcase.find("system-err") is not None:
-                system_err = bytes(str(testcase["system-err"]), "utf8")
-                db.session.add(
-                    Artifact(
-                        filename="system-err.log",
-                        result_id=result.id,
-                        data={"contentType": "text/plain", "resultId": result.id},
-                        content=system_err,
-                    )
-                )
-            db.session.flush()
-
-    # Check if we need to update the run
-    if not run.duration:
-        run.duration = run_data["duration"]
-    if not run.summary["errors"]:
-        run.summary["errors"] = run_data["errors"]
-    if not run.summary["failures"]:
-        run.summary["failures"] = run_data["failures"]
-    if not run.summary["skips"]:
-        run.summary["skips"] = run_data["skips"]
-    if not run.summary["xfailures"]:
-        run.summary["xfailures"] = run_data["xfailures"]
-    if not run.summary["xpasses"]:
-        run.summary["xpasses"] = run_data["xpasses"]
-    if not run.summary["tests"]:
-        run.summary["tests"] = run_data["tests"]
-    db.session.add(run)
-    db.session.commit()
+        # Check if we need to update the run
+        if not run.duration:
+            run.duration = run_data["duration"]
+        if not run.summary["errors"]:
+            run.summary["errors"] = run_data["errors"]
+        if not run.summary["failures"]:
+            run.summary["failures"] = run_data["failures"]
+        if not run.summary["skips"]:
+            run.summary["skips"] = run_data["skips"]
+        if not run.summary["xfailures"]:
+            run.summary["xfailures"] = run_data["xfailures"]
+        if not run.summary["xpasses"]:
+            run.summary["xpasses"] = run_data["xpasses"]
+        if not run.summary["tests"]:
+            run.summary["tests"] = run_data["tests"]
+        db.session.add(run)
+        db.session.commit()
 
     # Update the status of the import, now that we're all done
     _update_import_status(import_record, "done")
@@ -440,7 +456,10 @@ def run_archive_import(import_):  # noqa: PLR0912
     result_artifacts = {}
     start_time = None
     file_object = BytesIO(import_file.content)
-    with tarfile.open(fileobj=file_object) as tar:
+    # Process the archive within a single transaction so a failure part-way
+    # through rolls back cleanly and marks the import as errored -- the run is
+    # never committed without its results/artifacts.
+    with _import_failure_handling(import_record), tarfile.open(fileobj=file_object) as tar:
         for member in tar.getmembers():
             # We don't care about directories, skip them
             if member.isdir():
@@ -496,18 +515,33 @@ def run_archive_import(import_):  # noqa: PLR0912
         else:
             run = Run.from_dict(**run_dict)
         db.session.add(run)
-        db.session.commit()
+        # Flush (not commit) so the run receives an ID while staying in the same
+        # transaction as its results/artifacts -- committed together at the end.
+        db.session.flush()
         import_record.run_id = run.id
         import_record.data["run_id"] = [run.id]
         # Loop through any artifacts associated with the run and upload them
         for artifact in run_artifacts:
             filename = artifact.name.split("/")[-1]
-            existing_artifact = db.session.execute(
-                db.select(Artifact).where(
-                    Artifact.run_id == run.id,
-                    Artifact.filename == filename,
+            # Handle potential legacy duplicates by fetching all matching artifacts
+            existing_artifacts = (
+                db.session.execute(
+                    db.select(Artifact)
+                    .where(
+                        Artifact.run_id == run.id,
+                        Artifact.filename == filename,
+                    )
+                    .order_by(Artifact.upload_date, Artifact.id)
                 )
-            ).scalar_one_or_none()
+                .scalars()
+                .all()
+            )
+
+            existing_artifact = existing_artifacts[0] if existing_artifacts else None
+            # Clean up any legacy duplicates
+            for duplicate in existing_artifacts[1:]:
+                db.session.delete(duplicate)
+
             content = tar.extractfile(artifact).read()
             if existing_artifact:
                 existing_artifact.content = content
