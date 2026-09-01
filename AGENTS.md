@@ -349,11 +349,16 @@ podman build -t ibutsu-flower:<branch-name> -f docker/Dockerfile.flower .
 def test_feature(case):
     pass
 
+
 # Avoid: Multiple similar test functions
 def test_feature_case1():
     pass
+
+
 def test_feature_case2():
     pass
+
+
 def test_feature_case3():
     pass
 ```
