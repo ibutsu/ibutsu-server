@@ -2060,10 +2060,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"apexcharts@npm:^6.6.1":
-  version: 6.6.1
-  resolution: "apexcharts@npm:6.6.1"
-  checksum: 10c0/06c647a87a76623c74872d6639a20b6be6c3c5f312bddcfe8ea8dce49c296bca2f7fb0247f91cb469bf672d1b8730e0af97bace557712f58c8a185c3da2f404a
+"apex-commons@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "apex-commons@npm:0.5.0"
+  checksum: 10c0/0764069117fc4a5b7986eff0736ae0356d9a6cacba59a242c48841355bd721f6d5351bdd88fe7f0932574a7eb3fa5f7ef8648487c0fa99bbe6c0c68df63b8248
+  languageName: node
+  linkType: hard
+
+"apexcharts@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "apexcharts@npm:7.0.0"
+  dependencies:
+    apex-commons: "npm:^0.5.0"
+  checksum: 10c0/eab3948ba628be9ed1e747421565a1a79acfe8699597237b6f49cc80697b520d74ec75b28f6ab1bb4cb7046dc496daf7922289a9e3a2c03b8f51e8ae8e81cb22
   languageName: node
   linkType: hard
 
@@ -3956,7 +3965,7 @@ __metadata:
     "@typescript/native": "npm:typescript@^7.0.2"
     "@vitejs/plugin-react": "npm:^6.0.5"
     "@vitest/coverage-v8": "npm:^4.1.10"
-    apexcharts: "npm:^6.6.1"
+    apexcharts: "npm:^7.0.0"
     cypress: "npm:^15.19.0"
     eslint: "npm:^10.8.0"
     eslint-config-prettier: "npm:^10.1.8"
