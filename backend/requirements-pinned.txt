@@ -72,7 +72,7 @@ google-api-core==2.34.0
     # via google-api-python-client
 google-api-python-client==2.199.0
     # via ibutsu-server (pyproject.toml)
-google-auth==2.56.3
+google-auth==2.57.0
     # via
     #   ibutsu-server (pyproject.toml)
     #   google-api-core
