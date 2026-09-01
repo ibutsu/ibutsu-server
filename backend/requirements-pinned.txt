@@ -145,7 +145,7 @@ packaging==26.3
     #   kombu
 prompt-toolkit==3.0.53
     # via click-repl
-proto-plus==1.28.3
+proto-plus==1.28.4
     # via google-api-core
 protobuf==7.36.0
     # via
