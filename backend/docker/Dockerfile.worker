@@ -21,16 +21,6 @@ USER 1001
 
 # Run application - Use worker_app (full Flask integration with database)
 # worker_app is exposed via __getattr__ in ibutsu_server/__init__.py
-#
-# Pool type options:
-#   --pool=prefork (default): multiprocessing, CPU-bound tasks, higher memory
-#   --pool=gevent: I/O-bound tasks, low memory, requires gevent package
-#   --pool=threads: I/O-bound tasks, moderate memory, GIL limitations
-#
-# Autoscaling options:
-#   --autoscale=MAX,MIN: Dynamic worker count (e.g., --autoscale=10,2)
-#   --concurrency=N: Fixed worker count
-#
 # Environment variables:
 #   CELERY_POOL: Pool type (prefork/gevent/threads) - default: gevent
 #   CELERY_AUTOSCALE: Autoscale settings (e.g., "10,2") - overrides CELERY_CONCURRENCY
@@ -41,4 +31,4 @@ USER 1001
 #   prefork with fixed concurrency: CELERY_POOL=prefork CELERY_CONCURRENCY=4
 #   threads with autoscaling: CELERY_POOL=threads CELERY_AUTOSCALE=10,2
 #
-CMD ["/bin/sh", "-c", "celery --app ibutsu_server:worker_app worker --events --loglevel=info --pool=${CELERY_POOL:-gevent} ${CELERY_AUTOSCALE:+--autoscale=${CELERY_AUTOSCALE}} ${CELERY_AUTOSCALE:---concurrency=${CELERY_CONCURRENCY:-4}} --max-tasks-per-child=100 --hostname=ibutsu-worker@%n"]
+CMD ["celery", "--app", "ibutsu_server:worker_app", "worker"]
