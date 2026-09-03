@@ -25,10 +25,15 @@ USER 1001
 #   CELERY_POOL: Pool type (prefork/gevent/threads) - default: gevent
 #   CELERY_AUTOSCALE: Autoscale settings (e.g., "10,2") - overrides CELERY_CONCURRENCY
 #   CELERY_CONCURRENCY: Fixed concurrency - default: 4
+#   CELERY_LOGLEVEL: Log level - default: info
 #
 # Examples:
 #   gevent with autoscaling: CELERY_POOL=gevent CELERY_AUTOSCALE=20,2
 #   prefork with fixed concurrency: CELERY_POOL=prefork CELERY_CONCURRENCY=4
 #   threads with autoscaling: CELERY_POOL=threads CELERY_AUTOSCALE=10,2
 #
-CMD ["celery", "--app", "ibutsu_server:worker_app", "worker"]
+# Critical flags:
+#   --events: Required for Flower monitoring (sends task events to broker)
+#   --hostname: Static worker name for consistent identification across restarts
+#               %n expands to node name, preventing worker name conflicts
+CMD ["celery", "--app", "ibutsu_server:worker_app", "worker", "--events", "--hostname", "ibutsu-worker@%n"]
