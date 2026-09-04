@@ -202,10 +202,12 @@ def get_test_idents(item):
 
 
 def merge_dicts(old_dict, new_dict):
+    if not isinstance(old_dict, dict) or not isinstance(new_dict, dict):
+        return
     for key, value in old_dict.items():
         if key not in new_dict or new_dict[key] is None:
             new_dict[key] = value
-        elif isinstance(value, dict):
+        elif isinstance(value, dict) and isinstance(new_dict[key], dict):
             merge_dicts(value, new_dict[key])
 
 

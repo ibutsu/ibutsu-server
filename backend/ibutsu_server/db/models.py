@@ -92,9 +92,14 @@ class ModelMixin:
         # missing keys from old, so incoming values win while existing-only keys
         # are preserved.
         # Example: existing={a:1, b:2}, incoming={b:3, c:4} → result={a:1, b:3, c:4}
-        if "metadata" in values_dict and "metadata" in record_dict:
-            merge_dicts(values_dict["metadata"], record_dict["metadata"])
-            values_dict["metadata"] = record_dict.pop("metadata")
+        if "metadata" in record_dict:
+            incoming_meta = record_dict.pop("metadata")
+            existing_meta = values_dict.get("metadata")
+            if isinstance(existing_meta, dict) and isinstance(incoming_meta, dict):
+                merge_dicts(existing_meta, incoming_meta)
+                values_dict["metadata"] = incoming_meta
+            elif incoming_meta is not None:
+                values_dict["metadata"] = incoming_meta
         values_dict.update(record_dict)
         if "metadata" in values_dict:
             values_dict["data"] = values_dict.pop("metadata")
