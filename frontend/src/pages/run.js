@@ -465,7 +465,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                             />
                           </DataListItemRow>
                         </DataListItem>
-                        {run.metadata && run.metadata.component && (
+                        {(run.component || run.metadata?.component) && (
                           <DataListItem aria-labelledby="Component">
                             <DataListItemRow>
                               <DataListItemCells
@@ -474,14 +474,14 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     <strong>Component:</strong>
                                   </DataListCell>,
                                   <DataListCell key={2} width={4}>
-                                    {run.metadata.component}
+                                    {run.component || run.metadata?.component}
                                   </DataListCell>,
                                 ]}
                               />
                             </DataListItemRow>
                           </DataListItem>
                         )}
-                        {run.metadata && run.metadata.env && (
+                        {(run.env || run.metadata?.env) && (
                           <DataListItem aria-labelledby="Environment">
                             <DataListItemRow>
                               <DataListItemCells
@@ -490,7 +490,7 @@ const Run = ({ defaultTab = 'summary' }) => {
                                     <strong>Environment:</strong>
                                   </DataListCell>,
                                   <DataListCell key={2} width={4}>
-                                    {run.metadata.env}
+                                    {run.env || run.metadata?.env}
                                   </DataListCell>,
                                 ]}
                               />
