@@ -65,8 +65,11 @@ describe('resultToComparisonRow', () => {
     expect(resultRow.cells.length).toBe(3); // 1 test cell + 2 result cells
   });
 
-  it('handles non-array inputs gracefully', () => {
+  it('handles non-array and empty array inputs gracefully', () => {
     expect(resultToComparisonRow(null)).toEqual({ cells: [] });
+    expect(resultToComparisonRow(undefined)).toEqual({ cells: [] });
+    expect(resultToComparisonRow({})).toEqual({ cells: [] });
+    expect(resultToComparisonRow([])).toEqual({ cells: [] });
   });
 });
 
