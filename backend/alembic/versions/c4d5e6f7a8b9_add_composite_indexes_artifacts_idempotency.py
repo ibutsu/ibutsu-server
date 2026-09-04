@@ -14,7 +14,7 @@ Create Date: 2026-08-27 00:00:00.000000
 
 import logging
 
-from sqlalchemy import text
+from sqlalchemy import inspect
 
 from alembic import op
 
@@ -27,57 +27,25 @@ depends_on = None
 logger = logging.getLogger("alembic.versions.c4d5e6f7a8b9")
 
 
-def _is_postgresql():
-    """Check if the current database is PostgreSQL."""
-    return op.get_bind().dialect.name == "postgresql"
+def _index_exists(index_name: str, table_name: str) -> bool:
+    """Check if an index already exists using dialect-agnostic inspection."""
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    return any(idx.get("name") == index_name for idx in inspector.get_indexes(table_name))
 
 
-def _index_exists(index_name, table_name) -> bool:
-    """Check if an index already exists in PostgreSQL."""
-    conn = op.get_bind()
-    result = conn.execute(
-        text(
-            """
-            SELECT EXISTS (
-                SELECT 1
-                FROM pg_indexes
-                WHERE indexname = :index_name
-                AND tablename = :table_name
-            )
-        """
-        ),
-        {"index_name": index_name, "table_name": table_name},
-    )
-    return result.scalar()
-
-
-def _create_index_if_not_exists(index_name, table_name, columns, **kwargs):
-    """Idempotent index creation."""
-    if not _is_postgresql():
-        # Generic create index for non-PostgreSQL (e.g. SQLite)
-        # Wrap in try/except since SQLite doesn't have a simple index existence check
-        try:
-            op.create_index(index_name, table_name, columns, **kwargs)
-        except Exception as e:
-            # Index may already exist - log and continue
-            logger.warning(f"Could not create index {index_name}: {e}")
-        return
+def _create_index_if_not_exists(index_name: str, table_name: str, columns: list, **kwargs) -> None:
+    """Idempotent index creation across all supported database dialects."""
     if _index_exists(index_name, table_name):
+        logger.info(f"Index {index_name} already exists on {table_name}, skipping creation")
         return
     op.create_index(index_name, table_name, columns, **kwargs)
 
 
-def _drop_index_if_exists(index_name, table_name):
-    """Idempotent index drop."""
-    if not _is_postgresql():
-        # Wrap in try/except for SQLite since we can't check existence easily
-        try:
-            op.drop_index(index_name, table_name=table_name)
-        except Exception as e:
-            # Index may not exist - log and continue
-            logger.warning(f"Could not drop index {index_name}: {e}")
-        return
+def _drop_index_if_exists(index_name: str, table_name: str) -> None:
+    """Idempotent index drop across all supported database dialects."""
     if not _index_exists(index_name, table_name):
+        logger.info(f"Index {index_name} does not exist on {table_name}, skipping drop")
         return
     op.drop_index(index_name, table_name=table_name)
 
