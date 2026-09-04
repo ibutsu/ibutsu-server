@@ -147,7 +147,7 @@ prompt-toolkit==3.0.53
     # via click-repl
 proto-plus==1.28.4
     # via google-api-core
-protobuf==7.36.0
+protobuf==7.36.1
     # via
     #   google-api-core
     #   googleapis-common-protos
