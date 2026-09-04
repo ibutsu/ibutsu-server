@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import pytest
 from lxml import objectify
+from sqlalchemy import func
 
 from ibutsu_server.db import db
 from ibutsu_server.db.base import session
@@ -1051,3 +1052,224 @@ class TestRunArchiveImport:
             assert result.data["env"] == "stage"
             # Updated fields from the archive must be applied
             assert result.result == "failed"
+
+    def test_run_archive_import_with_null_result_metadata(
+        self, make_import, make_run, make_result, flask_app
+    ):
+        """Re-importing where result.json has metadata: null must not raise TypeError."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = str(uuid4())
+            result_id = str(uuid4())
+
+            make_run(id=run_id, metadata={"build": "1"})
+            make_result(
+                id=result_id,
+                run_id=run_id,
+                test_id="test.null_meta",
+                result="passed",
+                metadata={"component": "backend"},
+            )
+
+            run_data = {"id": run_id, "metadata": {}, "summary": {"tests": 1}}
+            result_data = {
+                "id": result_id,
+                "test_id": "test.null_meta",
+                "result": "passed",
+                "start_time": datetime.now(UTC).isoformat(),
+                "metadata": None,
+            }
+
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                for name, payload in [
+                    (f"{run_id}/run.json", run_data),
+                    (f"{run_id}/{result_id}/result.json", result_data),
+                ]:
+                    data = json.dumps(payload).encode()
+                    info = tarfile.TarInfo(name=name)
+                    info.size = len(data)
+                    tar.addfile(info, BytesIO(data))
+            tar_buffer.seek(0)
+            tar_content = tar_buffer.read()
+
+            import_record = make_import(
+                filename="null_meta.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=tar_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            result = db.session.get(Result, result_id)
+            assert result is not None
+            assert result.data["component"] == "backend"
+
+    def test_run_archive_import_without_run_json_is_idempotent(self, make_import, flask_app):
+        """Archive without run.json should use the directory run_id
+        and be idempotent on re-import.
+        """
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = str(uuid4())
+            result_id = str(uuid4())
+
+            result_data = {
+                "id": result_id,
+                "test_id": "test.no_run_json",
+                "result": "passed",
+                "start_time": datetime.now(UTC).isoformat(),
+                "metadata": {"env": "prod"},
+            }
+
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                data = json.dumps(result_data).encode()
+                info = tarfile.TarInfo(name=f"{run_id}/{result_id}/result.json")
+                info.size = len(data)
+                tar.addfile(info, BytesIO(data))
+            tar_buffer.seek(0)
+            tar_content = tar_buffer.read()
+
+            import_record = make_import(filename="no_run.tar.gz", format="ibutsu", status="pending")
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=tar_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            run = db.session.get(Run, run_id)
+            assert run is not None
+            run_count = db.session.execute(db.select(func.count(Run.id))).scalar()
+
+            # Second import using same archive content should update, not create duplicate
+            import_record_2 = make_import(
+                filename="no_run.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file_2 = ImportFile(
+                id=str(uuid4()), import_id=import_record_2.id, content=tar_content
+            )
+            session.add(import_file_2)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record_2.id)})
+
+            new_run_count = db.session.execute(db.select(func.count(Run.id))).scalar()
+            assert new_run_count == run_count
+
+    def test_run_archive_import_result_without_id_field(self, make_import, flask_app):
+        """Archive where result.json omits 'id' uses the directory result_id without KeyError."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = str(uuid4())
+            result_id = str(uuid4())
+
+            run_data = {"id": run_id, "summary": {"tests": 1}}
+            # Omit 'id' from result.json payload
+            result_data = {
+                "test_id": "test.missing_id_key",
+                "result": "passed",
+                "start_time": datetime.now(UTC).isoformat(),
+                "metadata": {"env": "prod"},
+            }
+
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                for name, payload in [
+                    (f"{run_id}/run.json", run_data),
+                    (f"{run_id}/{result_id}/result.json", result_data),
+                ]:
+                    data = json.dumps(payload).encode()
+                    info = tarfile.TarInfo(name=name)
+                    info.size = len(data)
+                    tar.addfile(info, BytesIO(data))
+                # Add an artifact for this result
+                artifact_data = b"artifact log"
+                art_info = tarfile.TarInfo(name=f"{run_id}/{result_id}/log.txt")
+                art_info.size = len(artifact_data)
+                tar.addfile(art_info, BytesIO(artifact_data))
+            tar_buffer.seek(0)
+            tar_content = tar_buffer.read()
+
+            import_record = make_import(
+                filename="missing_res_id.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=tar_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            result = db.session.get(Result, result_id)
+            assert result is not None
+            assert result.test_id == "test.missing_id_key"
+            artifact = db.session.execute(
+                db.select(Artifact).where(
+                    Artifact.result_id == result_id, Artifact.filename == "log.txt"
+                )
+            ).scalar_one_or_none()
+            assert artifact is not None
+
+    def test_run_junit_import_idempotent_retry(self, make_import, flask_app):
+        """Retrying JUnit import updates existing run/results without creating duplicates."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_uuid = str(uuid4())
+            junit_content = b"""<testsuites time="1.5">
+                <testsuite name="my-suite" time="1.5" tests="1" errors="0" failures="0" skipped="0">
+                    <testcase classname="pkg.TestFoo" name="test_bar" time="1.5" />
+                </testsuite>
+            </testsuites>"""
+
+            import_record = make_import(
+                filename=f"results-{run_uuid}.xml", format="junit", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=junit_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            run = db.session.get(Run, run_uuid)
+            assert run is not None
+            run_count = db.session.execute(db.select(func.count(Run.id))).scalar()
+            result_count = db.session.execute(db.select(func.count(Result.id))).scalar()
+
+            # Re-run the import (simulating a retry)
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            new_run_count = db.session.execute(db.select(func.count(Run.id))).scalar()
+            new_result_count = db.session.execute(db.select(func.count(Result.id))).scalar()
+            assert new_run_count == run_count
+            assert new_result_count == result_count
