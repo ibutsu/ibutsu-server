@@ -75,7 +75,7 @@ export const resultToRow = (result, filterFunc) => {
   let classification = '';
   let componentBadge;
   const resultComponent =
-    result.metadata?.component ?? result.component ?? null;
+    result.component || result.metadata?.component || null;
   if (resultComponent) {
     if (filterFunc) {
       componentBadge = buildBadge('component', resultComponent, false, () =>
@@ -91,7 +91,7 @@ export const resultToRow = (result, filterFunc) => {
     badges.push(componentBadge);
     badges.push(' ');
   }
-  const resultEnv = result.metadata?.env ?? result.env ?? null;
+  const resultEnv = result.env || result.metadata?.env || null;
   if (resultEnv) {
     let envBadge;
     if (filterFunc) {
@@ -174,7 +174,7 @@ export const resultToRow = (result, filterFunc) => {
 };
 
 export const resultToComparisonRow = (result) => {
-  if (!Array.isArray(result)) {
+  if (!Array.isArray(result) || result.length === 0) {
     return { cells: [] };
   }
   let resultIcons = [];
@@ -197,7 +197,7 @@ export const resultToComparisonRow = (result) => {
     }
   });
 
-  const comp = result[0]?.component ?? result[0]?.metadata?.component;
+  const comp = result[0]?.component || result[0]?.metadata?.component;
   if (comp) {
     markers.push(<Badge key={comp}>{comp}</Badge>);
   }
