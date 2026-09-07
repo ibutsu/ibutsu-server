@@ -3,9 +3,10 @@
 from unittest.mock import MagicMock
 
 import pytest
-from sqlalchemy import Integer, String
+from sqlalchemy import Float, Integer, String
+from sqlalchemy.dialects import postgresql
 
-from ibutsu_server.constants import ARRAY_FIELDS, NUMERIC_FIELDS
+from ibutsu_server.constants import ARRAY_FIELDS, FLOAT_FIELDS, INTEGER_FIELDS, NUMERIC_FIELDS
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Result, Run
 from ibutsu_server.filters import (
@@ -18,17 +19,13 @@ from ibutsu_server.filters import (
     string_to_column,
 )
 
-# NUMERIC_FIELDS that are stored as JSON sub-keys (summary.*).
-# These go through the JSON path accessor in string_to_column and therefore
-# receive an explicit as_integer() cast.  A non-numeric value stored in the
-# database for any of these keys will raise a database error at query time
-# rather than silently returning incorrect results.
-_JSON_NUMERIC_FIELDS = [f for f in NUMERIC_FIELDS if f.startswith("summary.")]
+# summary.* fields categorized by type
+_JSON_INTEGER_FIELDS = sorted(f for f in INTEGER_FIELDS if f.startswith("summary."))
+_JSON_FLOAT_FIELDS = sorted(f for f in FLOAT_FIELDS if f.startswith("summary."))
+_JSON_NUMERIC_FIELDS = sorted(f for f in NUMERIC_FIELDS if f.startswith("summary."))
 
 # NUMERIC_FIELDS that map to native ORM columns (not JSON paths).
-# These bypass the JSON accessor branch entirely, so as_integer() is never
-# applied to them; their type is already enforced by the column definition.
-_DIRECT_NUMERIC_FIELDS = [f for f in NUMERIC_FIELDS if not f.startswith("summary.")]
+_DIRECT_NUMERIC_FIELDS = sorted(f for f in NUMERIC_FIELDS if not f.startswith("summary."))
 
 
 @pytest.fixture
@@ -205,41 +202,62 @@ class TestStringToColumn:
         assert column is not None
 
 
+def test_numeric_fields_is_union_of_integer_and_float_fields():
+    """Verify NUMERIC_FIELDS is the union of INTEGER_FIELDS and FLOAT_FIELDS."""
+    assert NUMERIC_FIELDS == INTEGER_FIELDS | FLOAT_FIELDS
+    assert not (INTEGER_FIELDS & FLOAT_FIELDS), "INTEGER_FIELDS and FLOAT_FIELDS must be disjoint"
+
+
 class TestStringToColumnCastSemantics:
-    """Explicit coverage for the JSON-cast behavior introduced by as_integer() / as_string().
+    """Explicit coverage for JSON-cast behavior (as_float / as_integer / as_string).
 
     The contract under test:
-    - Every field listed in NUMERIC_FIELDS whose first segment is "summary" is
-      accessed via the Run.summary JSONB column and then cast to Integer with
-      as_integer().  This produces correct numeric ordering and matches the
-      ::int expression index, but will raise a database-level error if a stored
-      value cannot be cast to a number.
+    - Fields in INTEGER_FIELDS (such as summary.pass_percent) are cast to Integer
+      with as_integer() to match the ::int expression index ix_runs_pass_percent.
+    - Fields in FLOAT_FIELDS (such as summary.tests, summary.failures) are cast to
+      Float with as_float(). This produces correct numeric ordering and allows
+      PostgreSQL to evaluate both integer and floating-point JSON representations
+      (such as 3.0 or 0.0) without throwing invalid input syntax errors.
     - Non-numeric JSON fields (data.*, metadata.*, non-array summary.*) are
-      cast to String via as_string(), preserving the previous text-comparison
-      behaviour.
+      cast to String via as_string(), preserving text-comparison behaviour.
     - Array fields (metadata.tags etc.) receive neither cast; they remain raw
       JSON path expressions so that array operators (@>, ?|) work correctly.
     - Direct ORM columns (duration, start_time) never pass through the JSON
-      accessor branch and are therefore unaffected by as_integer().
+      accessor branch and are therefore unaffected by as_integer()/as_float().
     """
 
-    @pytest.mark.parametrize("field", _JSON_NUMERIC_FIELDS)
-    def test_json_numeric_fields_produce_integer_cast(self, app_ctx, field):
-        """Every summary.* NUMERIC_FIELD must use an explicit Integer cast.
+    @pytest.mark.parametrize("field", _JSON_FLOAT_FIELDS)
+    def test_json_float_fields_produce_float_cast(self, app_ctx, field):
+        """Every JSON FLOAT_FIELD must use an explicit Float cast.
+
+        Verifies that the as_float() path is taken, meaning:
+        1. Comparisons use numeric ordering, not lexicographic ordering.
+        2. Stored float values (such as 3.0 or 0.0) do not cause PostgreSQL syntax
+           errors when evaluated.
+        """
+        column = string_to_column(field, Run)
+        assert column is not None, f"string_to_column returned None for {field!r}"
+        assert isinstance(column.type, Float), (
+            f"{field!r} expected a Float-cast column (as_float()) "
+            f"but got type {type(column.type).__name__!r}. "
+            "Check that this field is still listed in FLOAT_FIELDS."
+        )
+
+    @pytest.mark.parametrize("field", _JSON_INTEGER_FIELDS)
+    def test_json_integer_fields_produce_integer_cast(self, app_ctx, field):
+        """Every JSON INTEGER_FIELD must use an explicit Integer cast.
 
         Verifies that the as_integer() path is taken, meaning:
         1. Comparisons use numeric ordering, not lexicographic ordering.
         2. The cast matches the ::int expression index on ix_runs_pass_percent,
            allowing PostgreSQL to use an index scan for range filters.
-        3. A row whose stored JSON value is not numeric will raise a database
-           error at query time (not silently return wrong results).
         """
         column = string_to_column(field, Run)
         assert column is not None, f"string_to_column returned None for {field!r}"
         assert isinstance(column.type, Integer), (
             f"{field!r} expected an Integer-cast column (as_integer()) "
             f"but got type {type(column.type).__name__!r}. "
-            "Check that this field is still listed in NUMERIC_FIELDS."
+            "Check that this field is still listed in INTEGER_FIELDS."
         )
 
     @pytest.mark.parametrize(
@@ -473,6 +491,28 @@ class TestConvertFilterNumericFieldSemantics:
         below = convert_filter("summary.pass_percent(100", Run)
         assert above is not None, "Lower-bound filter on summary.pass_percent must not be None"
         assert below is not None, "Upper-bound filter on summary.pass_percent must not be None"
+
+    def test_summary_tests_postgresql_compilation(self, app_ctx):
+        """Verify summary.tests compiles to CAST(... AS FLOAT) in PostgreSQL dialect."""
+        clause = convert_filter("summary.tests>5000", Run)
+        compiled = str(clause.compile(dialect=postgresql.dialect()))
+        assert "CAST((runs.summary ->> %(summary_1)s) AS FLOAT) > %(param_1)s" in compiled
+
+    def test_summary_pass_percent_postgresql_compilation(self, app_ctx):
+        """Verify summary.pass_percent compiles to CAST(... AS INTEGER) in PostgreSQL dialect."""
+        clause = convert_filter("summary.pass_percent>80", Run)
+        compiled = str(clause.compile(dialect=postgresql.dialect()))
+        assert "CAST((runs.summary ->> %(summary_1)s) AS INTEGER) > %(param_1)s" in compiled
+
+    def test_summary_tests_with_float_filter_value(self, app_ctx):
+        """Verify summary.tests supports float filter values without error."""
+        result = convert_filter("summary.tests>5000.5", Run)
+        assert result is not None
+        right = getattr(result, "right", None)
+        assert right is not None
+        value = getattr(right, "value", None)
+        assert isinstance(value, float)
+        assert value == 5000.5
 
 
 class TestConvertFilter:

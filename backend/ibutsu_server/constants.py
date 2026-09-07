@@ -32,18 +32,21 @@ OAUTH_CONFIG = {
 }
 ALLOWED_TRUE_BOOLEANS = ["y", "t", "1"]
 ARRAY_FIELDS = ["metadata.tags", "metadata.markers", "metadata.annotations"]
-NUMERIC_FIELDS = [
+INTEGER_FIELDS = {
+    "summary.pass_percent",
+}
+FLOAT_FIELDS = {
     "duration",
     "start_time",
     "summary.failures",
     "summary.errors",
-    "summary.pass_percent",
     "summary.passes",
     "summary.skips",
     "summary.tests",
     "summary.xfailures",
     "summary.xpasses",
-]
+}
+NUMERIC_FIELDS = INTEGER_FIELDS | FLOAT_FIELDS
 MAX_PAGE_SIZE = 500  # max page size API can return, page_sizes over this are sent to a worker
 HEATMAP_MAX_BUILDS = 40  # max for number of builds that are possible to display in heatmap
 BARCHART_MAX_BUILDS = 150  # max for number of builds possible to display in bar chart

@@ -561,6 +561,36 @@ def test_get_run_list_various_filters(
     assert "runs" in response_data
 
 
+def test_filter_summary_tests_with_float_representation(
+    flask_app, make_project, make_run, auth_headers
+):
+    """Test filtering runs when summary.tests contains float values like 3.0."""
+    client, jwt_token = flask_app
+
+    project = make_project(name="float-tests-project")
+
+    make_run(
+        project_id=project.id,
+        summary={"tests": 3.0, "failures": 0.0},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 6000, "failures": 1},
+    )
+
+    query_string = [
+        ("filter", f"project_id={project.id}"),
+        ("filter", "summary.tests>5000"),
+    ]
+    headers = auth_headers(jwt_token)
+    response = client.get("/api/run", headers=headers, params=query_string)
+    assert response.status_code == 200
+
+    response_data = response.json()
+    assert len(response_data["runs"]) == 1
+    assert response_data["runs"][0]["summary"]["tests"] == 6000
+
+
 def test_filter_pass_percent_greater_than(flask_app, make_project, make_run, auth_headers):
     """Test filtering runs where pass_percent > threshold returns only matching runs."""
     client, jwt_token = flask_app

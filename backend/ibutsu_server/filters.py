@@ -4,7 +4,7 @@ from contextlib import suppress
 from sqlalchemy import Text, cast
 from sqlalchemy.dialects.postgresql import array
 
-from ibutsu_server.constants import ARRAY_FIELDS, NUMERIC_FIELDS
+from ibutsu_server.constants import ARRAY_FIELDS, FLOAT_FIELDS, INTEGER_FIELDS, NUMERIC_FIELDS
 from ibutsu_server.db.types import PortableUUID
 
 # gte/lte each have two operator spellings, and both are actively used (not
@@ -96,8 +96,10 @@ def string_to_column(field, model):
                 continue
             column = column[part]
 
-        if field in NUMERIC_FIELDS:
+        if field in INTEGER_FIELDS:
             column = column.as_integer()
+        elif field in FLOAT_FIELDS:
+            column = column.as_float()
         elif field not in ARRAY_FIELDS:
             column = column.as_string()
     else:
