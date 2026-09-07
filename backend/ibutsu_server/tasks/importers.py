@@ -294,6 +294,15 @@ def run_junit_import(import_):  # noqa: PLR0912
     with _import_failure_handling(import_record):
         # Parse the XML and create a run object(s)
         tree = objectify.fromstring(import_file.content)
+        # If import_record already has a run_id or filename has a uuid4, use that
+        existing_run_id = None
+        if import_record.data and import_record.data.get("run_id"):
+            run_ids = import_record.data["run_id"]
+            if isinstance(run_ids, list) and run_ids:
+                existing_run_id = run_ids[0]
+            elif isinstance(run_ids, str):
+                existing_run_id = run_ids
+
         import_record.data["run_id"] = []
         # Use current time as start time if no start time is present
         start_time = (
@@ -313,15 +322,6 @@ def run_junit_import(import_):  # noqa: PLR0912
             },
         }
 
-        # If import_record already has a run_id or filename has a uuid4, use that
-        existing_run_id = None
-        if import_record.data and import_record.data.get("run_id"):
-            run_ids = import_record.data["run_id"]
-            if isinstance(run_ids, list) and run_ids:
-                existing_run_id = run_ids[0]
-            elif isinstance(run_ids, str):
-                existing_run_id = run_ids
-
         if existing_run_id and is_uuid(str(existing_run_id)):
             run_dict["id"] = str(existing_run_id)
         elif match := uuid_pattern.search(import_record.filename):
@@ -335,7 +335,7 @@ def run_junit_import(import_):  # noqa: PLR0912
             metadata.update(import_record.data["metadata"])
 
         # Populate metadata
-        run_dict["data"] = metadata
+        run_dict["metadata"] = metadata
         # add env and component directly to the run dict if it exists in the metadata
         run_dict["env"] = metadata.get("env")
         run_dict["component"] = metadata.get("component")
@@ -523,12 +523,12 @@ def run_archive_import(import_):  # noqa: PLR0912
                 raise ValueError(msg)
             if member.name.endswith("result.json"):
                 result = json.loads(tar.extractfile(member).read())
-                if not result.get("id") and is_uuid(result_id):
+                if (not result.get("id") or not is_uuid(result.get("id"))) and is_uuid(result_id):
                     result["id"] = result_id
                 result_start_time = result.get("start_time")
                 if not start_time or start_time > result_start_time:
                     start_time = result_start_time
-                results.append(result)
+                results.append((result_id, result))
             else:
                 try:
                     result_artifacts[result_id].append(member)
@@ -572,8 +572,8 @@ def run_archive_import(import_):  # noqa: PLR0912
             content = tar.extractfile(artifact).read()
             _upsert_run_artifact(run.id, filename, content)
         # Now loop through all the results, and create or update them
-        for result in results:
-            artifacts = result_artifacts.get(result.get("id"), [])
+        for res_id, result in results:
+            artifacts = result_artifacts.get(res_id, [])
             _create_result(
                 tar,
                 run.id,

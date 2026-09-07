@@ -199,7 +199,7 @@ export const resultToComparisonRow = (result) => {
 
   const comp = result[0]?.component || result[0]?.metadata?.component;
   if (comp) {
-    markers.push(<Badge key={comp}>{comp}</Badge>);
+    markers.push(<Badge key={`comp-${comp}`}>{comp}</Badge>);
   }
 
   let cells = [];

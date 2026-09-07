@@ -238,20 +238,22 @@ def create_flask_celery_app(app=None, name="ibutsu_server"):
         },
     }
 
-    @signals.task_failure.connect
-    def retry_task_on_exception(*_args, **kwargs):
-        """Retry a task automatically when it fails"""
-        task = kwargs.get("sender")
-        einfo = kwargs.get("einfo")
-        logging.warning("Uncaught exception: %r for task %s", einfo, task)
-        # Do not retry tasks configured with no retries (e.g. non-transient import processing)
-        if not task or getattr(task, "max_retries", None) == 0:
-            return
-        # Incremental backoff, starts at a minute and maxes out at 1 hour.
-        backoff = min(2**task.request.retries, 3600)
-        task.retry(countdown=backoff)
+    signals.task_failure.connect(retry_task_on_exception)
 
     return celery_app
 
 
-__all__ = ["create_broker_celery_app", "create_flask_celery_app"]
+def retry_task_on_exception(*_args, **kwargs):
+    """Retry a task automatically when it fails"""
+    task = kwargs.get("sender")
+    einfo = kwargs.get("einfo")
+    logging.warning("Uncaught exception: %r for task %s", einfo, task)
+    # Do not retry tasks configured with no retries (e.g. non-transient import processing)
+    if not task or getattr(task, "max_retries", None) == 0:
+        return
+    # Incremental backoff, starts at a minute and maxes out at 1 hour.
+    backoff = min(2**task.request.retries, 3600)
+    task.retry(countdown=backoff)
+
+
+__all__ = ["create_broker_celery_app", "create_flask_celery_app", "retry_task_on_exception"]

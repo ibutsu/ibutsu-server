@@ -71,6 +71,26 @@ describe('resultToComparisonRow', () => {
     expect(resultToComparisonRow({})).toEqual({ cells: [] });
     expect(resultToComparisonRow([])).toEqual({ cells: [] });
   });
+
+  it('does not cause React key collisions when a marker matches the component name', () => {
+    const results = [
+      {
+        id: 'res-1',
+        test_id: 'test_foo',
+        result: 'passed',
+        component: 'frontend',
+        metadata: { markers: ['frontend', 'unit'] },
+      },
+    ];
+
+    const resultRow = resultToComparisonRow(results);
+    const fragment = resultRow.cells[0];
+    const badges = fragment.props.children[2];
+    const keys = badges.map((b) => b.key);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys).toContain('frontend');
+    expect(keys).toContain('comp-frontend');
+  });
 });
 
 describe('runToRow', () => {

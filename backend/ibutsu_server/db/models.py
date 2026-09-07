@@ -83,6 +83,11 @@ class ModelMixin:
     def update(self, record_dict):
         if "id" in record_dict:
             record_dict.pop("id")
+        # Normalize data to metadata so callers using either key are handled
+        if "data" in record_dict and "metadata" not in record_dict:
+            record_dict["metadata"] = record_dict.pop("data")
+        elif "data" in record_dict and "metadata" in record_dict:
+            record_dict.pop("data")
         # Parse datetime strings to datetime objects
         self.__class__._parse_datetime_fields(record_dict)
         values_dict = self.to_dict()
