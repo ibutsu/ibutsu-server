@@ -205,7 +205,8 @@ class Result(Model, ModelMixin):
     1. Added to the Alembic migration with dialect checks
     2. Documented in this comment block
 
-    Current PostgreSQL-only indexes (managed via migration):
+    Current indexes (managed via migration):
+    PostgreSQL-only:
     - ix_results_assignee: Index on data->>'assignee'
     - ix_results_classification: Index on data->>'classification'
     - ix_results_exception_name: Index on data->>'exception_name'
@@ -216,6 +217,8 @@ class Result(Model, ModelMixin):
     - ix_results_result_satver_project_id_run_id_snapver: Composite with JSON fields
     - ix_results_requirements: GIN index on data->'requirements'
     - ix_results_tags: GIN index on data->'tags'
+    Cross-dialect:
+    - ix_results_run_id_project_id: Composite index on (run_id, project_id)
     """
 
     __tablename__ = "results"
