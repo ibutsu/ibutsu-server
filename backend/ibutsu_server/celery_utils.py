@@ -249,10 +249,17 @@ def retry_task_on_exception(*_args, **kwargs):
     einfo = kwargs.get("einfo")
     logging.warning("Uncaught exception: %r for task %s", einfo, task)
     # Do not retry tasks configured with no retries (e.g. non-transient import processing)
-    if not task or getattr(task, "max_retries", None) == 0:
+    if not task:
+        return
+    max_retries = getattr(task, "max_retries", None)
+    if max_retries == 0:
+        return
+    request = getattr(task, "request", None)
+    retries = getattr(request, "retries", 0) if request else 0
+    if max_retries is not None and retries >= max_retries:
         return
     # Incremental backoff, starts at a minute and maxes out at 1 hour.
-    backoff = min(2**task.request.retries, 3600)
+    backoff = min(2**retries, 3600)
     task.retry(countdown=backoff)
 
 

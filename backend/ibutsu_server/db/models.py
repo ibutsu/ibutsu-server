@@ -3,6 +3,7 @@ from uuid import uuid4
 
 # SQLAlchemy 2.0+ imports
 from sqlalchemy import (
+    Index,
     Text as sa_text,  # noqa: N813
     cast as sa_cast,
     delete as sqlalchemy_delete,
@@ -81,6 +82,7 @@ class ModelMixin:
         return cls(**record_dict)
 
     def update(self, record_dict):
+        record_dict = record_dict.copy()
         if "id" in record_dict:
             record_dict.pop("id")
         # Normalize data to metadata so callers using either key are handled
@@ -125,6 +127,10 @@ class FileMixin(ModelMixin):
 
 class Artifact(Model, FileMixin):
     __tablename__ = "artifacts"
+    __table_args__ = (
+        Index("ix_artifacts_result_id_filename", "result_id", "filename"),
+        Index("ix_artifacts_run_id_filename", "run_id", "filename"),
+    )
     result_id = Column(PortableUUID(), ForeignKey("results.id"), index=True)
     run_id = Column(PortableUUID(), ForeignKey("runs.id"), index=True)
     filename = Column(Text, index=True)

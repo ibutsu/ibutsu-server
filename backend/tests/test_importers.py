@@ -716,9 +716,13 @@ class TestRunJunitImport:
             with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
                 run_junit_import({"id": str(import_record.id)})
 
-            run = Run.query.order_by(Run.id).all()[-1]
-            result = Result.query.filter_by(run_id=run.id).one()
-            artifacts = Artifact.query.filter_by(result_id=result.id).all()
+            run = db.session.execute(db.select(Run).order_by(Run.id)).scalars().all()[-1]
+            result = db.session.execute(db.select(Result).filter_by(run_id=run.id)).scalar_one()
+            artifacts = (
+                db.session.execute(db.select(Artifact).filter_by(result_id=result.id))
+                .scalars()
+                .all()
+            )
             filenames = [a.filename for a in artifacts]
 
             # Each artifact type should appear exactly once (no duplication)
@@ -728,6 +732,62 @@ class TestRunJunitImport:
                 "traceback.log",
             ]
             assert len(filenames) == len(set(filenames))
+
+    def test_run_junit_import_error_rolls_back_and_marks_error(self, make_import, flask_app):
+        """A failure during JUnit processing rolls back the run and marks the import errored"""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            junit_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+            <testsuite name="suite" tests="1" failures="0">
+                <testcase name="test_rollback" classname="tests.mod" time="1.0" />
+            </testsuite>
+            """
+
+            import_record = make_import(filename="rollback.xml", format="junit", status="pending")
+            import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
+            session.add(import_file)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock,
+                patch(
+                    "ibutsu_server.tasks.importers._process_result",
+                    side_effect=RuntimeError("junit boom"),
+                ),
+                pytest.raises(RuntimeError, match="junit boom"),
+            ):
+                run_junit_import({"id": str(import_record.id)})
+
+            # The import must be marked error, not left stuck in "running"
+            updated = db.session.get(Import, import_record.id)
+            assert updated.status == "error"
+            # Cleanup must not run on a failed import
+            clear_mock.delay.assert_not_called()
+
+    def test_run_junit_import_with_none_data(self, make_import, flask_app):
+        """JUnit import succeeds even when import_record.data is None"""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            junit_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+            <testsuite name="suite" tests="1">
+                <testcase name="test_one" classname="tests.mod" time="0.5" />
+            </testsuite>
+            """
+            import_record = make_import(filename="none_data.xml", format="junit", status="pending")
+            import_record.data = None
+            db.session.add(import_record)
+            import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
+            db.session.add(import_file)
+            db.session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            updated = db.session.get(Import, import_record.id)
+            assert updated.status == "done"
+            assert "run_id" in updated.data
 
 
 class TestRunArchiveImport:
@@ -989,6 +1049,57 @@ class TestRunArchiveImport:
             assert updated.status == "error"
             # Cleanup must not run on a failed import
             clear_mock.delay.assert_not_called()
+
+    def test_run_archive_import_with_none_data(self, make_import, flask_app):
+        """Archive import succeeds even when import_record.data is None"""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = str(uuid4())
+            result_id = str(uuid4())
+
+            run_data = {"id": run_id, "metadata": {}, "summary": {"tests": 1}}
+            result_data = {
+                "id": result_id,
+                "test_id": "test.none_data",
+                "result": "passed",
+                "start_time": datetime.now(UTC).isoformat(),
+            }
+
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                for name, payload in [
+                    (f"{run_id}/run.json", run_data),
+                    (f"{run_id}/{result_id}/result.json", result_data),
+                ]:
+                    data = json.dumps(payload).encode()
+                    info = tarfile.TarInfo(name=name)
+                    info.size = len(data)
+                    tar.addfile(info, BytesIO(data))
+            tar_buffer.seek(0)
+            tar_content = tar_buffer.read()
+
+            import_record = make_import(
+                filename="none_data.tar.gz", format="ibutsu", status="pending"
+            )
+            import_record.data = None
+            db.session.add(import_record)
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=tar_content
+            )
+            db.session.add(import_file)
+            db.session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            updated = db.session.get(Import, import_record.id)
+            assert updated.status == "done"
+            assert "run_id" in updated.data
+            assert updated.data["run_id"] == [run_id]
 
     def test_run_archive_import_preserves_existing_result_metadata(
         self, make_import, make_run, make_result, flask_app

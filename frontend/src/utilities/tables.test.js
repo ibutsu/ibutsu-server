@@ -121,6 +121,8 @@ describe('runToRow', () => {
 
     const rowData = runToRow(runWithTopLevel);
     expect(rowData.cells.length).toBeGreaterThan(0);
+    const badges = rowData.cells[0].props.children[2];
+    expect(badges).toHaveLength(2);
   });
 
   it('handles runs with empty string component/env falling back to metadata', () => {
@@ -137,8 +139,8 @@ describe('runToRow', () => {
     const filterFunc = vi.fn();
     const rowData = runToRow(run, filterFunc);
     expect(rowData.cells.length).toBeGreaterThan(0);
-    // Verify that badges were created for the metadata values
-    // (The implementation should use || which treats empty string as falsy)
+    const badges = rowData.cells[0].props.children[2];
+    expect(badges).toHaveLength(2);
   });
 });
 
@@ -158,6 +160,8 @@ describe('resultToRow', () => {
     const filterFunc = vi.fn();
     const rowData = resultToRow(result, filterFunc);
     expect(rowData.cells.length).toBeGreaterThan(0);
+    const badges = rowData.cells[0].props.children[2];
+    expect(badges).toHaveLength(0);
   });
 
   it('handles results with empty string component/env falling back to metadata', () => {
@@ -175,7 +179,9 @@ describe('resultToRow', () => {
     const filterFunc = vi.fn();
     const rowData = resultToRow(result, filterFunc);
     expect(rowData.cells.length).toBeGreaterThan(0);
-    // Verify that badges were created for the metadata values
-    // (The implementation should use || which treats empty string as falsy)
+    const badges = rowData.cells[0].props.children[2].filter(
+      (badge) => typeof badge !== 'string',
+    );
+    expect(badges).toHaveLength(2);
   });
 });

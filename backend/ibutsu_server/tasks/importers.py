@@ -24,13 +24,17 @@ uuid_pattern = re.compile(
 )
 
 
-def _upsert_result_artifact(result_id, filename, content):
-    """Insert or update a result artifact, deduplicating any legacy duplicate rows."""
+def _upsert_artifact(filename, content, result_id=None, run_id=None):
+    """Insert or update an artifact, deduplicating any legacy duplicate rows."""
+    target_col = Artifact.result_id if result_id else Artifact.run_id
+    target_id = result_id or run_id
+    meta_key = "resultId" if result_id else "runId"
+
     existing_artifacts = (
         db.session.execute(
             db.select(Artifact)
             .where(
-                Artifact.result_id == result_id,
+                target_col == target_id,
                 Artifact.filename == filename,
             )
             .order_by(Artifact.upload_date, Artifact.id)
@@ -45,48 +49,28 @@ def _upsert_result_artifact(result_id, filename, content):
     if existing_artifact:
         existing_artifact.content = content
     else:
-        db.session.add(
-            Artifact(
-                filename=filename,
-                result_id=result_id,
-                data={"contentType": "text/plain", "resultId": result_id},
-                content=content,
-            )
-        )
+        artifact_kwargs = {
+            "filename": filename,
+            "data": {"contentType": "text/plain", meta_key: target_id},
+            "content": content,
+        }
+        if result_id:
+            artifact_kwargs["result_id"] = result_id
+        else:
+            artifact_kwargs["run_id"] = run_id
+        db.session.add(Artifact(**artifact_kwargs))
+
+
+def _upsert_result_artifact(result_id, filename, content):
+    """Insert or update a result artifact, deduplicating any legacy duplicate rows."""
+    _upsert_artifact(filename, content, result_id=result_id)
 
 
 def _upsert_run_artifact(run_id, filename, content):
     """Insert or update a run artifact, deduplicating any legacy duplicate rows."""
-    existing_artifacts = (
-        db.session.execute(
-            db.select(Artifact)
-            .where(
-                Artifact.run_id == run_id,
-                Artifact.filename == filename,
-            )
-            .order_by(Artifact.upload_date, Artifact.id)
-        )
-        .scalars()
-        .all()
-    )
-    existing_artifact = existing_artifacts[0] if existing_artifacts else None
-    for duplicate in existing_artifacts[1:]:
-        db.session.delete(duplicate)
-
-    if existing_artifact:
-        existing_artifact.content = content
-    else:
-        db.session.add(
-            Artifact(
-                filename=filename,
-                run_id=run_id,
-                data={"contentType": "text/plain", "runId": run_id},
-                content=content,
-            )
-        )
+    _upsert_artifact(filename, content, run_id=run_id)
 
 
-@shared_task
 def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
     """Create or update a result with artifacts, used in the archive importer"""
     old_id = None
@@ -158,8 +142,11 @@ def _import_failure_handling(import_record):
         yield
     except Exception:
         log.exception(f"Import {import_record.id} failed during processing")
-        db.session.rollback()
-        _update_import_status(import_record, "error")
+        try:
+            db.session.rollback()
+            _update_import_status(import_record, "error")
+        except Exception:
+            log.exception(f"Failed to cleanly roll back or mark import {import_record.id} as error")
         raise
 
 
@@ -198,7 +185,6 @@ def _process_result(result_dict, testcase):
     return result_dict, traceback
 
 
-@shared_task
 def _add_artifacts(result, testcase, traceback):
     """To reduce cognitive complexity"""
     if traceback:
@@ -239,16 +225,17 @@ def _populate_created_times(run_dict, start_time):
 
 def _populate_metadata(run_dict, import_record):
     """To reduce cognitive complexity"""
-    if import_record.data.get("project_id"):
-        run_dict["project_id"] = import_record.data["project_id"]
+    import_data = import_record.data or {}
+    if import_data.get("project_id"):
+        run_dict["project_id"] = import_data["project_id"]
     elif run_dict.get("metadata", {}).get("project"):
         run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
     if run_dict.get("metadata", {}).get("component"):
         run_dict["component"] = run_dict["metadata"]["component"]
     if run_dict.get("metadata", {}).get("env"):
         run_dict["env"] = run_dict["metadata"]["env"]
-    if import_record.data.get("source"):
-        run_dict["source"] = import_record.data["source"]
+    if import_data.get("source"):
+        run_dict["source"] = import_data["source"]
 
 
 def _populate_result_metadata(run_dict, result_dict, metadata):
@@ -281,6 +268,10 @@ def run_junit_import(import_):  # noqa: PLR0912
     """Import a test run from a JUnit file"""
     # Update the status of the import
     import_record = db.session.get(Import, import_["id"])
+    if not import_record:
+        return
+    if import_record.data is None:
+        import_record.data = {}
     _update_import_status(import_record, "running")
     # Fetch the file contents
     import_file = db.session.execute(
@@ -463,9 +454,6 @@ def run_junit_import(import_):  # noqa: PLR0912
         db.session.add(import_record)
         db.session.commit()
 
-    # Update the status of the import, now that we're all done
-    _update_import_status(import_record, "done")
-
     # Clear the import file content to save database space
     # The import record is kept for audit/history, but the large binary content is removed
     clear_import_file_content.delay(import_record.id)
@@ -476,6 +464,10 @@ def run_archive_import(import_):  # noqa: PLR0912
     """Import a test run from an Ibutsu archive file"""
     # Update the status of the import
     import_record = db.session.get(Import, str(import_["id"]))
+    if not import_record:
+        return
+    if import_record.data is None:
+        import_record.data = {}
     log.info(f"Starting archive import for import record {import_record.id}")
     metadata = {}
     if import_record.data.get("metadata"):
@@ -585,9 +577,7 @@ def run_archive_import(import_):  # noqa: PLR0912
         import_record.status = "done"
         db.session.add(import_record)
         db.session.commit()
-    # Update the import record
-    log.info("Setting import status to done")
-    _update_import_status(import_record, "done")
+
     if run:
         update_run.delay(run.id)
 
