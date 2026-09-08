@@ -75,10 +75,40 @@ def _upsert_run_artifact(run_id, filename, content):
     _upsert_artifact(filename, content, run_id=run_id)
 
 
-def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None):
+def _find_matching_archive_result(
+    result: dict,
+    run_id: str | None = None,
+    candidates: dict | None = None,
+) -> Result | None:
+    """Find an existing result matching by ID or test_id."""
+    result_id = result.get("id")
+    if not candidates:
+        if is_uuid(result_id):
+            cand = db.session.get(Result, result_id)
+            if cand and (not run_id or cand.run_id == run_id):
+                return cand
+        return None
+
+    existing_by_id = candidates.get("by_id", {})
+    existing_by_test_id = candidates.get("by_test_id", {})
+    matched_ids = candidates.get("matched_ids", set())
+
+    # Exact ID match - looked up strictly in-memory from candidates for this run
+    if result_id and result_id in existing_by_id:
+        return existing_by_id[result_id]
+
+    # Fallback to test_id match for candidates that haven't been matched yet
+    test_id = result.get("test_id")
+    if test_id:
+        test_candidates = existing_by_test_id.get(test_id, [])
+        return next((r for r in test_candidates if r.id not in matched_ids), None)
+    return None
+
+
+def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=None, candidates=None):
     """Create or update a result with artifacts, used in the archive importer"""
     result_id = result.get("id")
-    result_record = db.session.get(Result, result_id) if is_uuid(result_id) else None
+    result_record = _find_matching_archive_result(result, run_id=run_id, candidates=candidates)
 
     # Merge metadata - normalize to dict to handle null metadata gracefully
     result_metadata = result.get("metadata") or {}
@@ -110,6 +140,13 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         db.session.add(result_record)
 
     db.session.flush()
+
+    if candidates and "matched_ids" in candidates:
+        candidates["matched_ids"].add(result_record.id)
+    if candidates and "by_id" in candidates:
+        candidates["by_id"][result_record.id] = result_record
+        if result_id and is_uuid(result_id):
+            candidates["by_id"][result_id] = result_record
 
     for artifact in artifacts:
         filename = artifact.name.split("/")[-1]
@@ -430,7 +467,9 @@ def run_junit_import(import_):
         if is_existing_run:
             existing_results = (
                 db.session.execute(
-                    db.select(Result).where(Result.run_id == run.id).order_by(Result.id)
+                    db.select(Result)
+                    .where(Result.run_id == run.id)
+                    .order_by(Result.start_time.asc(), Result.id.asc())
                 )
                 .scalars()
                 .all()
@@ -561,8 +600,10 @@ def run_archive_import(import_):  # noqa: PLR0912
         _populate_created_times(run_dict, start_time)
 
         # If this run has a valid ID, check if this run exists
+        run = None
         if is_uuid(run_dict.get("id")):
             run = db.session.get(Run, run_dict["id"])
+        is_existing_run = run is not None
         if run:
             run.update(run_dict)
         else:
@@ -577,6 +618,29 @@ def run_archive_import(import_):  # noqa: PLR0912
             filename = artifact.name.split("/")[-1]
             content = tar.extractfile(artifact).read()
             _upsert_run_artifact(run.id, filename, content)
+
+        candidates = {
+            "by_id": {},
+            "by_test_id": defaultdict(list),
+            "matched_ids": set(),
+        }
+        if is_existing_run:
+            existing_results = (
+                db.session.execute(
+                    db.select(Result)
+                    .where(Result.run_id == run.id)
+                    .order_by(Result.start_time.asc(), Result.id.asc())
+                )
+                .scalars()
+                .all()
+            )
+            for r in existing_results:
+                candidates["by_id"][r.id] = r
+                candidates["by_test_id"][r.test_id].append(r)
+
+        # Sort results chronologically so multi-attempt test runs match 1:1 in order
+        results.sort(key=lambda item: (str(item[1].get("start_time") or ""), item[0]))
+
         # Now loop through all the results, and create or update them
         for res_id, result in results:
             artifacts = result_artifacts.get(res_id, [])
@@ -587,6 +651,7 @@ def run_archive_import(import_):  # noqa: PLR0912
                 artifacts,
                 project_id=run_dict.get("project_id") or import_record.data.get("project_id"),
                 metadata=metadata,
+                candidates=candidates,
             )
         import_record.status = "done"
         db.session.add(import_record)
