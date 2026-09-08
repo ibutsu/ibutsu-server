@@ -5,19 +5,17 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import js from '@eslint/js';
-import pluginCypress from 'eslint-plugin-cypress';
 import jsxA11yX from 'eslint-plugin-jsx-a11y-x';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
 export default defineConfig([
   globalIgnores(
-    ['build/**/*', 'node_modules/'],
-    'Ignore build dir and node_modules',
+    ['build/**/*', 'coverage/**/*', 'node_modules/'],
+    'Ignore build dir, coverage, and node_modules',
   ),
   js.configs.recommended,
-  pluginCypress.configs.recommended,
   {
-    files: ['src/**/*', 'cypress/**/*', 'bin/**/*'],
+    files: ['src/**/*', 'bin/**/*', 'public/**/*'],
     extends: [
       eslintReact.configs.recommended,
       eslintReact.configs['disable-conflict-eslint-plugin-react-hooks'],
@@ -34,7 +32,6 @@ export default defineConfig([
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.cypress,
         es2020: true,
       },
       parserOptions: {
