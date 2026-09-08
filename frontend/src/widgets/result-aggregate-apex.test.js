@@ -445,5 +445,50 @@ describe('ResultAggregateApex', () => {
         expect(labels).toContain('Failed');
       });
     });
+
+    it('should handle null/undefined _id values safely without crashing', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { _id: 'backend', count: 10 },
+          { _id: null, count: 5 },
+          { _id: '', count: 2 },
+        ],
+      });
+
+      renderComponent({ groupField: 'component' });
+
+      await waitFor(() => {
+        const chart = screen.getByTestId('apex-chart');
+        const labels = JSON.parse(chart.getAttribute('data-labels'));
+        expect(labels).toContain('Backend');
+        expect(labels).toContain('N/A');
+        expect(chart).toHaveTextContent('Total: 17');
+      });
+    });
+
+    it('should handle non-string _id values safely without crashing', async () => {
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => [
+          { _id: 200, count: 15 },
+          { _id: 404, count: 3 },
+          { _id: 0, count: 1 },
+          { _id: false, count: 2 },
+        ],
+      });
+
+      renderComponent({ groupField: 'metadata.response_code' });
+
+      await waitFor(() => {
+        const chart = screen.getByTestId('apex-chart');
+        const labels = JSON.parse(chart.getAttribute('data-labels'));
+        expect(labels).toContain('200');
+        expect(labels).toContain('404');
+        expect(labels).toContain('0');
+        expect(labels).toContain('False');
+        expect(chart).toHaveTextContent('Total: 21');
+      });
+    });
   });
 });
