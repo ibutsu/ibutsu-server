@@ -4,7 +4,7 @@ from contextlib import suppress
 from sqlalchemy import Text, cast
 from sqlalchemy.dialects.postgresql import array
 
-from ibutsu_server.constants import ARRAY_FIELDS, NUMERIC_FIELDS
+from ibutsu_server.constants import ARRAY_FIELDS, FLOAT_FIELDS, INTEGER_FIELDS, NUMERIC_FIELDS
 from ibutsu_server.db.types import PortableUUID
 
 # gte/lte each have two operator spellings, and both are actively used (not
@@ -83,6 +83,19 @@ def _array_compare(oper, column, value):
 
 
 def string_to_column(field, model):
+    """Convert a field string to a SQLAlchemy column object.
+
+    Handles JSON sub-keys (data.*, metadata.*, summary.*) with explicit typing:
+    - INTEGER_FIELDS (e.g. summary.pass_percent) are cast to Integer with
+      as_integer() to match integer expression indexes (e.g. ix_runs_pass_percent).
+    - FLOAT_FIELDS (e.g. summary count fields like summary.tests, summary.failures)
+      are cast to Float with as_float(), allowing both integer and float JSON
+      representations (such as 3.0 or 0.0) without query-time cast errors.
+    - Other non-array JSON fields are cast to String with as_string().
+    - ARRAY_FIELDS remain raw JSON path expressions for array containment operators.
+    - Direct ORM columns (e.g. duration, start_time in DIRECT_NUMERIC_FIELDS)
+      are accessed directly via model attributes.
+    """
     field_parts = field.split(".")
 
     # For subqueries, access columns directly via .c
@@ -96,8 +109,15 @@ def string_to_column(field, model):
                 continue
             column = column[part]
 
-        if field in NUMERIC_FIELDS:
+        # Cast JSON fields based on type category:
+        # - INTEGER_FIELDS: cast to Integer with as_integer() to match expression indexes
+        # - FLOAT_FIELDS: cast to Float with as_float() to support numeric ordering and handle
+        #   both integer and float representations (e.g. 3.0 or 0.0)
+        # - Non-array scalar fields: cast to String with as_string() for text comparison
+        if field in INTEGER_FIELDS:
             column = column.as_integer()
+        elif field in FLOAT_FIELDS:
+            column = column.as_float()
         elif field not in ARRAY_FIELDS:
             column = column.as_string()
     else:
