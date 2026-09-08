@@ -561,6 +561,61 @@ def test_get_run_list_various_filters(
     assert "runs" in response_data
 
 
+def test_filter_summary_tests_with_float_representation(
+    flask_app, make_project, make_run, auth_headers
+):
+    """Test filtering runs when summary.tests contains float values like 3.0."""
+    client, jwt_token = flask_app
+
+    project = make_project(name="float-tests-project")
+
+    make_run(
+        project_id=project.id,
+        summary={"tests": 3.0, "failures": 0.0},
+    )
+    make_run(
+        project_id=project.id,
+        summary={"tests": 6000, "failures": 1},
+    )
+
+    # 1. Verify filtering out the float row returns only the integer row
+    query_string = [
+        ("filter", f"project_id={project.id}"),
+        ("filter", "summary.tests>5000"),
+    ]
+    headers = auth_headers(jwt_token)
+    response = client.get("/api/run", headers=headers, params=query_string)
+    assert response.status_code == 200
+
+    response_data = response.json()
+    assert len(response_data["runs"]) == 1
+    assert response_data["runs"][0]["summary"]["tests"] == 6000
+
+    # 2. Verify filtering for the float-represented run matches and returns it
+    query_string_match = [
+        ("filter", f"project_id={project.id}"),
+        ("filter", "summary.tests<=5000"),
+    ]
+    response_match = client.get("/api/run", headers=headers, params=query_string_match)
+    assert response_match.status_code == 200
+
+    match_data = response_match.json()
+    assert len(match_data["runs"]) == 1
+    assert match_data["runs"][0]["summary"]["tests"] == 3.0
+
+    # 3. Verify equality filter on float-represented summary field
+    query_string_eq = [
+        ("filter", f"project_id={project.id}"),
+        ("filter", "summary.failures=0"),
+    ]
+    response_eq = client.get("/api/run", headers=headers, params=query_string_eq)
+    assert response_eq.status_code == 200
+
+    eq_data = response_eq.json()
+    assert len(eq_data["runs"]) == 1
+    assert eq_data["runs"][0]["summary"]["failures"] == 0.0
+
+
 def test_filter_pass_percent_greater_than(flask_app, make_project, make_run, auth_headers):
     """Test filtering runs where pass_percent > threshold returns only matching runs."""
     client, jwt_token = flask_app

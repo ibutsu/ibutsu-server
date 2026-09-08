@@ -32,18 +32,36 @@ OAUTH_CONFIG = {
 }
 ALLOWED_TRUE_BOOLEANS = ["y", "t", "1"]
 ARRAY_FIELDS = ["metadata.tags", "metadata.markers", "metadata.annotations"]
-NUMERIC_FIELDS = [
-    "duration",
-    "start_time",
-    "summary.failures",
-    "summary.errors",
-    "summary.pass_percent",
-    "summary.passes",
-    "summary.skips",
-    "summary.tests",
-    "summary.xfailures",
-    "summary.xpasses",
-]
+# Direct ORM columns that are numeric or timestamps (these bypass the JSON path accessor)
+DIRECT_NUMERIC_FIELDS = frozenset(
+    {
+        "duration",
+        "start_time",
+    }
+)
+# JSON fields cast to Integer (as_integer()) to match ::int expression indexes
+INTEGER_FIELDS = frozenset(
+    {
+        "summary.pass_percent",
+    }
+)
+# JSON fields cast to Float (as_float()), including summary count fields to allow both
+# integer and floating-point JSON representations (such as 3.0 or 0.0) without syntax errors
+FLOAT_FIELDS = frozenset(
+    {
+        "summary.collected",
+        "summary.errors",
+        "summary.failures",
+        "summary.not_run",
+        "summary.passes",
+        "summary.skips",
+        "summary.tests",
+        "summary.xfailures",
+        "summary.xpasses",
+    }
+)
+# Union of all numeric fields used for filter value conversion and comparison handling
+NUMERIC_FIELDS = INTEGER_FIELDS | FLOAT_FIELDS | DIRECT_NUMERIC_FIELDS
 MAX_PAGE_SIZE = 500  # max page size API can return, page_sizes over this are sent to a worker
 HEATMAP_MAX_BUILDS = 40  # max for number of builds that are possible to display in heatmap
 BARCHART_MAX_BUILDS = 150  # max for number of builds possible to display in bar chart
