@@ -10,7 +10,7 @@ from ibutsu_server.filters import convert_filter
 from ibutsu_server.util import flat_dict_keys
 from ibutsu_server.util.projects import add_user_filter, project_has_user
 from ibutsu_server.util.query import get_offset
-from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
+from ibutsu_server.util.uuid import validate_uuid
 
 
 def add_project(body=None, token_info=None, user=None):
@@ -47,8 +47,6 @@ def get_project(id_, token_info=None, user=None):
 
     :rtype: Project
     """
-    if not is_uuid(id_):
-        id_ = convert_objectid_to_uuid(id_)
     project = db.session.execute(db.select(Project).where(Project.name == id_)).scalar_one_or_none()
     if not project:
         project = db.session.get(Project, id_)
@@ -124,8 +122,6 @@ def update_project(id_, body=None, token_info=None, user=None, **_kwargs):
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    if not is_uuid(id_):
-        id_ = convert_objectid_to_uuid(id_)
     project = db.session.get(Project, id_)
 
     if not project:

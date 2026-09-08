@@ -13,7 +13,6 @@ __all__ = [
     "json_response",
     "merge_dicts",
     "safe_string",
-    "serialize",
     "serialize_error",
 ]
 
@@ -209,19 +208,6 @@ def merge_dicts(old_dict, new_dict):
             new_dict[key] = value
         elif isinstance(value, dict) and isinstance(new_dict[key], dict):
             merge_dicts(value, new_dict[key])
-
-
-def serialize(mongo_dict):
-    """Serialize just converts the MongoDB "_id" ObjectId into a string "id" in a dictionary
-
-    :param mongo_dict: The dict from MongoDB
-    :type: mongo_dict: dict
-
-    :rtype: dict
-    """
-    if mongo_dict and "_id" in mongo_dict:
-        mongo_dict["id"] = str(mongo_dict.pop("_id"))
-    return mongo_dict
 
 
 def json_response(obj, status_code=200):

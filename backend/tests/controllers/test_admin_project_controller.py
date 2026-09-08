@@ -270,42 +270,37 @@ def test_admin_update_project_success(flask_app, make_project, make_user, auth_h
         assert str(new_user.id) in user_ids
 
 
-def test_admin_update_project_not_found(flask_app, auth_headers):
-    """Test case for admin_update_project - project not found"""
+@pytest.mark.validation
+@pytest.mark.parametrize(
+    ("project_id", "expected_status", "description"),
+    [
+        ("not-a-uuid", HTTPStatus.BAD_REQUEST, "Invalid UUID format triggers validation error"),
+        (
+            "507f1f77bcf86cd799439011",
+            HTTPStatus.BAD_REQUEST,
+            "ObjectId format triggers validation error",
+        ),
+        (
+            "00000000-0000-0000-0000-000000000000",
+            HTTPStatus.NOT_FOUND,
+            "Valid UUID format but project not found",
+        ),
+    ],
+)
+def test_admin_update_project_validation_errors(
+    flask_app, project_id, expected_status, description, auth_headers
+):
+    """Test case for admin_update_project validation errors - parametrized"""
     client, jwt_token = flask_app
 
     update_data = {"title": "Updated Project Title"}
     headers = auth_headers(jwt_token)
-
     response = client.put(
-        "/api/admin/project/00000000-0000-0000-0000-000000000000",
+        f"/api/admin/project/{project_id}",
         headers=headers,
         json=update_data,
     )
-
-    assert response.status_code == HTTPStatus.NOT_FOUND
-
-
-def test_admin_update_project_converts_objectid(flask_app, make_project, auth_headers):
-    """Test case for admin_update_project - converts ObjectId to UUID"""
-    client, jwt_token = flask_app
-
-    # Create project
-    make_project(name="test-project", title="Original Title")
-
-    # Use ObjectId format
-    object_id = "507f1f77bcf86cd799439011"
-
-    update_data = {"title": "Updated Project Title"}
-    headers = auth_headers(jwt_token)
-    response = client.put(
-        f"/api/admin/project/{object_id}",
-        headers=headers,
-        json=update_data,
-    )
-
-    # ObjectId conversion should happen and fail gracefully if no project found
-    assert response.status_code in [200, 400, 404]
+    assert response.status_code == expected_status, description
 
 
 def test_admin_delete_project_success(flask_app, make_project, auth_headers):

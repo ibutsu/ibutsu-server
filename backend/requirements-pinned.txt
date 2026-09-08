@@ -56,8 +56,6 @@ connexion==3.3.0
     # via ibutsu-server (pyproject.toml)
 cryptography==50.0.1
     # via google-auth
-dnspython==2.8.0
-    # via pymongo
 flask==3.1.3
     # via
     #   ibutsu-server (pyproject.toml)
@@ -161,8 +159,6 @@ pyasn1-modules==0.4.2
 pycparser==3.0
     # via cffi
 pyjwt==2.13.0
-    # via ibutsu-server (pyproject.toml)
-pymongo==4.17.0
     # via ibutsu-server (pyproject.toml)
 pyparsing==3.3.2
     # via httplib2
