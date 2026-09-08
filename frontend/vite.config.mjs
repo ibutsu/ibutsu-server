@@ -41,8 +41,10 @@ export default defineConfig({
         'Date',
       ],
     },
-    deps: {
-      inline: [/@patternfly/, /@testing-library/],
+    server: {
+      deps: {
+        inline: [/@patternfly/, /@testing-library/],
+      },
     },
     coverage: {
       provider: 'v8',
