@@ -1,7 +1,9 @@
 """Tests for ibutsu_server.celery_utils module."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from celery import Celery
+from celery import Celery, signals
 
 from ibutsu_server import _AppRegistry
 from ibutsu_server.celery_utils import create_broker_celery_app, create_flask_celery_app
@@ -275,3 +277,42 @@ class TestBeatScheduleConfiguration:
         schedule_config = app.conf.beat_schedule["sync-aborted-runs"]
         assert schedule_config["task"] == "ibutsu_server.tasks.runs.sync_aborted_runs"
         assert schedule_config["schedule"] == 0.5 * 60 * 60  # 30 minutes in seconds
+
+
+class TestTaskFailureSignalHandler:
+    """Tests for the task_failure signal handler registered by create_flask_celery_app."""
+
+    @pytest.mark.parametrize(
+        ("sender", "max_retries", "retries", "expected_retry", "expected_countdown"),
+        [
+            (None, None, 0, False, None),
+            ("mock_task", 0, 0, False, None),
+            ("mock_task", 3, 0, True, 1),
+            ("mock_task", 3, 2, True, 4),
+            ("mock_task", 3, 3, False, None),
+            ("mock_task", 3, 5, False, None),
+            ("mock_task", None, 5, True, 32),
+            ("mock_task", None, 20, True, 3600),
+        ],
+    )
+    def test_task_failure_retry_behavior(
+        self, flask_app, sender, max_retries, retries, expected_retry, expected_countdown
+    ):
+        """Test task retry behavior on task_failure signal based on max_retries and backoff."""
+        client, _ = flask_app
+        create_flask_celery_app(client.application)
+
+        if sender == "mock_task":
+            mock_task = MagicMock()
+            mock_task.max_retries = max_retries
+            mock_task.request.retries = retries
+            task_sender = mock_task
+        else:
+            task_sender = None
+
+        signals.task_failure.send(sender=task_sender, einfo=None)
+
+        if expected_retry:
+            task_sender.retry.assert_called_once_with(countdown=expected_countdown)
+        elif task_sender is not None:
+            task_sender.retry.assert_not_called()
