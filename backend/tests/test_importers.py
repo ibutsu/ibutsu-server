@@ -8,14 +8,14 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
-from lxml import objectify
+from lxml import etree, objectify
 from sqlalchemy import func
 
 from ibutsu_server.db import db
-from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
 from ibutsu_server.tasks.importers import (
     _add_artifacts,
+    _extract_run_id,
     _get_properties,
     _get_test_name_path,
     _get_ts_element,
@@ -25,11 +25,36 @@ from ibutsu_server.tasks.importers import (
     _populate_result_metadata,
     _process_result,
     _update_import_status,
+    _update_run_summary,
+    _upsert_artifact,
     _upsert_result_artifact,
     _upsert_run_artifact,
     run_archive_import,
     run_junit_import,
 )
+
+
+def make_archive_bytes(members: dict) -> bytes:
+    """Create an in-memory tar.gz archive from a mapping of path -> content."""
+    buf = BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+        for name, content in members.items():
+            if content is None or content == "dir":
+                info = tarfile.TarInfo(name=name)
+                info.type = tarfile.DIRTYPE
+                tar.addfile(info)
+            else:
+                if isinstance(content, dict):
+                    payload = json.dumps(content).encode()
+                elif isinstance(content, str):
+                    payload = content.encode()
+                else:
+                    payload = content
+                info = tarfile.TarInfo(name=name)
+                info.size = len(payload)
+                tar.addfile(info, BytesIO(payload))
+    buf.seek(0)
+    return buf.read()
 
 
 class TestGetProperties:
@@ -576,30 +601,46 @@ class TestAddArtifacts:
 class TestUpsertArtifact:
     """Tests for _upsert_artifact, _upsert_result_artifact, and _upsert_run_artifact"""
 
-    def test_upsert_result_artifact_insert_and_update(self, make_result, flask_app):
-        """Test inserting a new result artifact and updating it in-place."""
+    @pytest.mark.parametrize("target_type", ["result", "run"])
+    def test_upsert_artifact_insert_and_update(self, make_result, make_run, flask_app, target_type):
+        """Test inserting a new artifact and updating it in-place."""
         client, _ = flask_app
         with client.application.app_context():
-            result = make_result()
-            _upsert_result_artifact(result.id, "log.txt", b"initial content")
+            if target_type == "result":
+                target = make_result()
+                target_col = Artifact.result_id
+                meta_key = "resultId"
+                filename = "log.txt"
+                initial_content = b"initial content"
+                updated_content = b"updated content"
+                _upsert_result_artifact(target.id, filename, initial_content)
+            else:
+                target = make_run()
+                target_col = Artifact.run_id
+                meta_key = "runId"
+                filename = "console.log"
+                initial_content = b"console output"
+                updated_content = b"new console output"
+                _upsert_run_artifact(target.id, filename, initial_content)
+
             db.session.flush()
 
             art = db.session.execute(
-                db.select(Artifact).where(
-                    Artifact.result_id == result.id, Artifact.filename == "log.txt"
-                )
+                db.select(Artifact).where(target_col == target.id, Artifact.filename == filename)
             ).scalar_one()
-            assert art.content == b"initial content"
-            assert art.data["resultId"] == result.id
-            assert art.data["contentType"] == "text/plain"
+            assert art.content == initial_content
+            assert art.data[meta_key] == target.id
 
-            _upsert_result_artifact(result.id, "log.txt", b"updated content")
+            if target_type == "result":
+                _upsert_result_artifact(target.id, filename, updated_content)
+            else:
+                _upsert_run_artifact(target.id, filename, updated_content)
             db.session.flush()
 
             artifacts = (
                 db.session.execute(
                     db.select(Artifact).where(
-                        Artifact.result_id == result.id, Artifact.filename == "log.txt"
+                        target_col == target.id, Artifact.filename == filename
                     )
                 )
                 .scalars()
@@ -607,39 +648,16 @@ class TestUpsertArtifact:
             )
             assert len(artifacts) == 1
             assert artifacts[0].id == art.id
-            assert artifacts[0].content == b"updated content"
+            assert artifacts[0].content == updated_content
 
-    def test_upsert_run_artifact_insert_and_update(self, make_run, flask_app):
-        """Test inserting a new run artifact and updating it in-place."""
+    def test_upsert_artifact_missing_target_raises(self, flask_app):
+        """_upsert_artifact raises ValueError when neither result_id nor run_id is supplied."""
         client, _ = flask_app
-        with client.application.app_context():
-            run = make_run()
-            _upsert_run_artifact(run.id, "console.log", b"console output")
-            db.session.flush()
-
-            art = db.session.execute(
-                db.select(Artifact).where(
-                    Artifact.run_id == run.id, Artifact.filename == "console.log"
-                )
-            ).scalar_one()
-            assert art.content == b"console output"
-            assert art.data["runId"] == run.id
-
-            _upsert_run_artifact(run.id, "console.log", b"new console output")
-            db.session.flush()
-
-            artifacts = (
-                db.session.execute(
-                    db.select(Artifact).where(
-                        Artifact.run_id == run.id, Artifact.filename == "console.log"
-                    )
-                )
-                .scalars()
-                .all()
-            )
-            assert len(artifacts) == 1
-            assert artifacts[0].id == art.id
-            assert artifacts[0].content == b"new console output"
+        with (
+            client.application.app_context(),
+            pytest.raises(ValueError, match="Either result_id or run_id"),
+        ):
+            _upsert_artifact("test.txt", b"content")
 
     @pytest.mark.parametrize("target_type", ["result", "run"])
     def test_upsert_artifact_deduplicates_legacy_rows(
@@ -737,53 +755,50 @@ class TestRunJunitImport:
             </testsuite>
             """
 
-        import_record = make_import(filename="test.xml", format="junit", status="pending")
+            import_record = make_import(filename="test.xml", format="junit", status="pending")
+            import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
+            db.session.add(import_file)
+            db.session.commit()
 
-        # Create import file
-        import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
+            # Run the import - mock clear_import_file_content to avoid Redis dependency
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock:
+                run_junit_import({"id": str(import_record.id)})
 
-        session.add(import_file)
-        session.commit()
+            # Ensure cleanup task is invoked
+            clear_mock.delay.assert_called_once_with(import_record.id)
 
-        # Run the import - mock clear_import_file_content to avoid Redis dependency
-        with patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock:
-            run_junit_import({"id": str(import_record.id)})
+            # Verify run was created
+            runs = Run.query.all()
+            assert len(runs) > 0
+            run = runs[-1]  # Get the latest run
+            assert run.summary["tests"] == 2
+            assert run.summary["failures"] == 1
 
-        # Ensure cleanup task is invoked
-        clear_mock.delay.assert_called_once_with(import_record.id)
+            # Verify results were created
+            results = Result.query.filter_by(run_id=run.id).order_by(Result.id).all()
+            assert len(results) == 2
 
-        # Verify run was created
-        runs = Run.query.all()
-        assert len(runs) > 0
-        run = runs[-1]  # Get the latest run
-        assert run.summary["tests"] == 2
-        assert run.summary["failures"] == 1
+            # Verify per-test behavior: one passed and one failed result
+            statuses = {r.result for r in results}
+            assert statuses == {"passed", "failed"}
 
-        # Verify results were created
-        results = Result.query.filter_by(run_id=run.id).order_by(Result.id).all()
-        assert len(results) == 2
+            # Check that test identifiers/names were correctly mapped from the XML
+            test_ids = {r.test_id for r in results}
+            # Test IDs should contain both test case names
+            assert any("test_pass" in tid for tid in test_ids)
+            assert any("test_fail" in tid for tid in test_ids)
 
-        # Verify per-test behavior: one passed and one failed result
-        statuses = {r.result for r in results}
-        assert statuses == {"passed", "failed"}
+            # Verify the failed test has a traceback artifact attached
+            failed_result = next(r for r in results if r.result == "failed")
+            failed_artifacts = Artifact.query.filter_by(result_id=failed_result.id).all()
+            failed_filenames = {a.filename for a in failed_artifacts}
 
-        # Check that test identifiers/names were correctly mapped from the XML
-        test_ids = {r.test_id for r in results}
-        # Test IDs should contain both test case names
-        assert any("test_pass" in tid for tid in test_ids)
-        assert any("test_fail" in tid for tid in test_ids)
+            # We expect a traceback artifact for the failed test
+            assert "traceback.log" in failed_filenames
 
-        # Verify the failed test has a traceback artifact attached
-        failed_result = next(r for r in results if r.result == "failed")
-        failed_artifacts = Artifact.query.filter_by(result_id=failed_result.id).all()
-        failed_filenames = {a.filename for a in failed_artifacts}
-
-        # We expect a traceback artifact for the failed test
-        assert "traceback.log" in failed_filenames
-
-        # Verify import status updated
-        updated_import = db.session.get(Import, import_record.id)
-        assert updated_import.status == "done"
+            # Verify import status updated
+            updated_import = db.session.get(Import, import_record.id)
+            assert updated_import.status == "done"
 
     def test_run_junit_import_with_properties(self, make_import, make_project, flask_app):
         """Test JUnit import with properties"""
@@ -811,8 +826,8 @@ class TestRunJunitImport:
 
             import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
 
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             # Mock clear_import_file_content to avoid Redis dependency
             with patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock:
@@ -859,8 +874,8 @@ class TestRunJunitImport:
 
             import_record = make_import(filename="dup.xml", format="junit", status="pending")
             import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
                 run_junit_import({"id": str(import_record.id)})
@@ -898,8 +913,32 @@ class TestRunJunitImport:
                 filename=f"rollback-{run_uuid}.xml", format="junit", status="pending"
             )
             import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock,
+                patch(
+                    "ibutsu_server.tasks.importers._process_result",
+                    side_effect=RuntimeError("junit boom"),
+                ),
+                pytest.raises(RuntimeError, match="junit boom"),
+            ):
+                run_junit_import({"id": str(import_record.id)})
+
+            # The run and results must not have been committed
+            assert db.session.get(Run, run_uuid) is None
+            assert (
+                db.session.execute(db.select(Result).where(Result.run_id == run_uuid))
+                .scalars()
+                .all()
+                == []
+            )
+            # The import must be marked error, not left stuck in "running"
+            updated = db.session.get(Import, import_record.id)
+            assert updated.status == "error"
+            # Cleanup must not run on a failed import
+            clear_mock.delay.assert_not_called()
 
             with (
                 patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock,
@@ -1068,8 +1107,8 @@ class TestRunJunitImport:
             import_file = ImportFile(
                 id=str(uuid4()), import_id=import_record.id, content=junit_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
                 run_junit_import({"id": str(import_record.id)})
@@ -1118,8 +1157,8 @@ class TestRunJunitImport:
             import_file = ImportFile(
                 id=str(uuid4()), import_id=import_record.id, content=junit_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
                 run_junit_import({"id": str(import_record.id)})
@@ -1155,8 +1194,8 @@ class TestRunJunitImport:
             import_file = ImportFile(
                 id=str(uuid4()), import_id=import_record.id, content=junit_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
                 run_junit_import({"id": str(import_record.id)})
@@ -1180,6 +1219,150 @@ class TestRunJunitImport:
             assert len(retry_results) == 2
             assert {r.id for r in results} == {r.id for r in retry_results}
 
+    def test_run_junit_import_malformed_xml_rolls_back_and_marks_error(
+        self, make_import, flask_app
+    ):
+        """Malformed XML syntax must roll back, mark import as error, and re-raise."""
+        client, _ = flask_app
+        with client.application.app_context():
+            import_record = make_import(filename="bad.xml", format="junit", status="pending")
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=b"<testsuite><unclosed>"
+            )
+            db.session.add(import_file)
+            db.session.commit()
+
+            with pytest.raises(etree.XMLSyntaxError):
+                run_junit_import({"id": str(import_record.id)})
+
+            updated = db.session.get(Import, import_record.id)
+            assert updated.status == "error"
+
+    def test_run_junit_import_artifact_idempotency_on_retry(self, make_import, flask_app):
+        """Re-importing JUnit XML with logs updates artifacts without duplicating."""
+        client, _ = flask_app
+        with client.application.app_context():
+            run_uuid = str(uuid4())
+            xml_v1 = """
+            <testsuite name="suite" timestamp="2026-01-01T00:00:00" tests="1">
+                <testcase name="test_art_idemp" classname="pkg.test">
+                    <failure message="fail1">Traceback v1</failure>
+                    <system-out>stdout v1</system-out>
+                    <system-err>stderr v1</system-err>
+                </testcase>
+            </testsuite>
+            """
+            import_record = make_import(
+                filename=f"junit-{run_uuid}.xml", format="junit", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=xml_v1.encode()
+            )
+            db.session.add(import_file)
+            db.session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            result = db.session.execute(
+                db.select(Result).where(Result.run_id == run_uuid)
+            ).scalar_one()
+            arts_v1 = (
+                db.session.execute(db.select(Artifact).where(Artifact.result_id == result.id))
+                .scalars()
+                .all()
+            )
+            assert len(arts_v1) == 3
+            art_map = {a.filename: a for a in arts_v1}
+            assert b"Traceback v1" in art_map["traceback.log"].content
+            assert b"stdout v1" in art_map["system-out.log"].content
+
+            # Second import with updated output
+            xml_v2 = """
+            <testsuite name="suite" timestamp="2026-01-01T00:00:00" tests="1">
+                <testcase name="test_art_idemp" classname="pkg.test">
+                    <failure message="fail2">Traceback v2</failure>
+                    <system-out>stdout v2</system-out>
+                    <system-err>stderr v2</system-err>
+                </testcase>
+            </testsuite>
+            """
+            import_file.content = xml_v2.encode()
+            import_record.status = "pending"
+            db.session.add_all([import_record, import_file])
+            db.session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            arts_v2 = (
+                db.session.execute(db.select(Artifact).where(Artifact.result_id == result.id))
+                .scalars()
+                .all()
+            )
+            assert len(arts_v2) == 3
+            art_map2 = {a.filename: a for a in arts_v2}
+            assert b"Traceback v2" in art_map2["traceback.log"].content
+            assert b"stdout v2" in art_map2["system-out.log"].content
+
+    def test_run_junit_import_preserves_existing_env_and_component(self, make_import, flask_app):
+        """Re-importing JUnit XML without env/component preserves existing values."""
+        client, _ = flask_app
+        with client.application.app_context():
+            run_uuid = str(uuid4())
+            xml_v1 = """
+            <testsuite name="suite" timestamp="2026-01-01T00:00:00" tests="1">
+                <properties>
+                    <property key="env" value="staging"/>
+                    <property key="component" value="backend"/>
+                </properties>
+                <testcase name="test_env" classname="pkg.test"/>
+            </testsuite>
+            """
+            import_record = make_import(
+                filename=f"junit-{run_uuid}.xml", format="junit", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=xml_v1.encode()
+            )
+            db.session.add(import_file)
+            db.session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            run = db.session.get(Run, run_uuid)
+            assert run.env == "staging"
+            assert run.component == "backend"
+            result = db.session.execute(
+                db.select(Result).where(Result.run_id == run_uuid)
+            ).scalar_one()
+            assert result.env == "staging"
+            assert result.component == "backend"
+
+            # Re-import without env and component
+            xml_v2 = """
+            <testsuite name="suite" timestamp="2026-01-01T00:00:00" tests="1">
+                <testcase name="test_env" classname="pkg.test"/>
+            </testsuite>
+            """
+            import_file.content = xml_v2.encode()
+            import_record.status = "pending"
+            db.session.add_all([import_record, import_file])
+            db.session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            run_reloaded = db.session.get(Run, run_uuid)
+            assert run_reloaded.env == "staging"
+            assert run_reloaded.component == "backend"
+            result_reloaded = db.session.execute(
+                db.select(Result).where(Result.run_id == run_uuid)
+            ).scalar_one()
+            assert result_reloaded.env == "staging"
+            assert result_reloaded.component == "backend"
+
 
 class TestRunArchiveImport:
     """Integration tests for run_archive_import task"""
@@ -1189,7 +1372,6 @@ class TestRunArchiveImport:
         client, _ = flask_app
 
         with client.application.app_context():
-            # Create a simple tarball with run and result
             run_id = str(uuid4())
             result_id = str(uuid4())
 
@@ -1207,59 +1389,42 @@ class TestRunArchiveImport:
                 "start_time": datetime.now(UTC).isoformat(),
             }
 
-            # Create tarball
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                # Add run.json
-                run_json = json.dumps(run_data).encode()
-                run_info = tarfile.TarInfo(name=f"{run_id}/run.json")
-                run_info.size = len(run_json)
-                tar.addfile(run_info, BytesIO(run_json))
-
-                # Add result.json
-                result_json = json.dumps(result_data).encode()
-                result_info = tarfile.TarInfo(name=f"{run_id}/{result_id}/result.json")
-                result_info.size = len(result_json)
-                tar.addfile(result_info, BytesIO(result_json))
-
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                }
+            )
 
             import_record = make_import(
                 filename="archive.tar.gz", format="ibutsu", status="pending"
             )
 
-            # Create import file
             import_file = ImportFile(
                 id=str(uuid4()),
                 import_id=import_record.id,
                 content=tar_content,
             )
 
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
-            # Mock celery tasks to avoid Redis dependency
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
                 patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock,
             ):
                 run_archive_import({"id": str(import_record.id)})
 
-            # Ensure cleanup task is invoked
             clear_mock.delay.assert_called_once_with(import_record.id)
 
-            # Verify run was created or updated
             run = db.session.get(Run, run_id)
             assert run is not None
 
-            # Verify result was created and original UUID was preserved
             result = db.session.get(Result, result_id)
             assert result is not None
             assert result.test_id == "test.example"
             assert result.run_id == run.id
 
-            # Verify import status
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "done"
 
@@ -1286,26 +1451,13 @@ class TestRunArchiveImport:
                 "metadata": {"component": "backend", "env": "stage"},
             }
 
-            # Create tarball with artifact
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                run_json = json.dumps(run_data).encode()
-                run_info = tarfile.TarInfo(name=f"{run_id}/run.json")
-                run_info.size = len(run_json)
-                tar.addfile(run_info, BytesIO(run_json))
-
-                result_json = json.dumps(result_data).encode()
-                result_info = tarfile.TarInfo(name=f"{run_id}/{result_id}/result.json")
-                result_info.size = len(result_json)
-                tar.addfile(result_info, BytesIO(result_json))
-
-                artifact_content = b"log output line"
-                art_info = tarfile.TarInfo(name=f"{run_id}/{result_id}/traceback.log")
-                art_info.size = len(artifact_content)
-                tar.addfile(art_info, BytesIO(artifact_content))
-
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                    f"{run_id}/{result_id}/traceback.log": b"log output line",
+                }
+            )
 
             # First import
             import_record1 = make_import(
@@ -1314,8 +1466,8 @@ class TestRunArchiveImport:
             import_file1 = ImportFile(
                 id=str(uuid4()), import_id=import_record1.id, content=tar_content
             )
-            session.add(import_file1)
-            session.commit()
+            db.session.add(import_file1)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -1323,7 +1475,6 @@ class TestRunArchiveImport:
             ):
                 run_archive_import({"id": str(import_record1.id)})
 
-            # Verify initial counts
             all_results = (
                 db.session.execute(db.select(Result).where(Result.run_id == run_id)).scalars().all()
             )
@@ -1346,8 +1497,8 @@ class TestRunArchiveImport:
             import_file2 = ImportFile(
                 id=str(uuid4()), import_id=import_record2.id, content=tar_content
             )
-            session.add(import_file2)
-            session.commit()
+            db.session.add(import_file2)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -1355,7 +1506,6 @@ class TestRunArchiveImport:
             ):
                 run_archive_import({"id": str(import_record2.id)})
 
-            # Verify no duplicates were created
             all_results_after = (
                 db.session.execute(db.select(Result).where(Result.run_id == run_id)).scalars().all()
             )
@@ -1378,12 +1528,69 @@ class TestRunArchiveImport:
                 filename="missing.tar.gz", format="ibutsu", status="pending"
             )
 
-            # Don't create import file
             run_archive_import({"id": str(import_record.id)})
 
-            # Verify status updated to error
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "error"
+
+    def test_run_archive_import_corrupt_archive_rolls_back_and_marks_error(
+        self, make_import, flask_app
+    ):
+        """A corrupt/non-tar archive must roll back, mark import error, and re-raise ReadError."""
+        client, _ = flask_app
+        with client.application.app_context():
+            import_record = make_import(
+                filename="corrupt.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=b"not a valid tar archive"
+            )
+            db.session.add(import_file)
+            db.session.commit()
+
+            with pytest.raises(tarfile.ReadError):
+                run_archive_import({"id": str(import_record.id)})
+
+            updated = db.session.get(Import, import_record.id)
+            assert updated.status == "error"
+
+    def test_run_archive_import_nested_artifact_paths(self, make_import, flask_app):
+        """Archive with nested artifact paths (e.g. subdir/nested.png) imports successfully."""
+        client, _ = flask_app
+        with client.application.app_context():
+            run_id = str(uuid4())
+            result_id = str(uuid4())
+
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": {"id": run_id, "summary": {"tests": 1}},
+                    f"{run_id}/{result_id}/result.json": {
+                        "id": result_id,
+                        "test_id": "test.nested_art",
+                        "result": "passed",
+                    },
+                    f"{run_id}/{result_id}/subfolder/screenshot.png": b"image-data",
+                }
+            )
+
+            import_record = make_import(filename="nested.tar.gz", format="ibutsu", status="pending")
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=tar_content
+            )
+            db.session.add(import_file)
+            db.session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            art = db.session.execute(
+                db.select(Artifact).where(Artifact.result_id == result_id)
+            ).scalar_one()
+            assert art.filename == "screenshot.png"
+            assert art.content == b"image-data"
 
     def test_run_archive_import_error_rolls_back_and_marks_error(self, make_import, flask_app):
         """A failure during processing rolls back the run and marks the import errored"""
@@ -1401,27 +1608,20 @@ class TestRunArchiveImport:
                 "start_time": datetime.now(UTC).isoformat(),
             }
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                for name, payload in [
-                    (f"{run_id}/run.json", run_data),
-                    (f"{run_id}/{result_id}/result.json", result_data),
-                ]:
-                    data = json.dumps(payload).encode()
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(data)
-                    tar.addfile(info, BytesIO(data))
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                }
+            )
 
             import_record = make_import(filename="boom.tar.gz", format="ibutsu", status="pending")
             import_file = ImportFile(
                 id=str(uuid4()), import_id=import_record.id, content=tar_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
-            # Force a failure while creating results, after the run has been staged
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
                 patch("ibutsu_server.tasks.importers.clear_import_file_content") as clear_mock,
@@ -1433,12 +1633,9 @@ class TestRunArchiveImport:
             ):
                 run_archive_import({"id": str(import_record.id)})
 
-            # The run must not have been committed without its contents
             assert db.session.get(Run, run_id) is None
-            # The import must be marked error, not left stuck in "running"
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "error"
-            # Cleanup must not run on a failed import
             clear_mock.delay.assert_not_called()
 
     def test_run_archive_import_with_none_data(self, make_import, flask_app):
@@ -1457,18 +1654,12 @@ class TestRunArchiveImport:
                 "start_time": datetime.now(UTC).isoformat(),
             }
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                for name, payload in [
-                    (f"{run_id}/run.json", run_data),
-                    (f"{run_id}/{result_id}/result.json", result_data),
-                ]:
-                    data = json.dumps(payload).encode()
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(data)
-                    tar.addfile(info, BytesIO(data))
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                }
+            )
 
             import_record = make_import(
                 filename="none_data.tar.gz", format="ibutsu", status="pending"
@@ -1502,7 +1693,6 @@ class TestRunArchiveImport:
             run_id = str(uuid4())
             result_id = str(uuid4())
 
-            # Pre-existing run and result with metadata that the archive won't contain
             make_run(id=run_id, metadata={"build": "1"})
             make_result(
                 id=result_id,
@@ -1521,25 +1711,19 @@ class TestRunArchiveImport:
                 "metadata": {"component": "backend", "env": "stage"},
             }
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                for name, payload in [
-                    (f"{run_id}/run.json", run_data),
-                    (f"{run_id}/{result_id}/result.json", result_data),
-                ]:
-                    data = json.dumps(payload).encode()
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(data)
-                    tar.addfile(info, BytesIO(data))
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                }
+            )
 
             import_record = make_import(filename="keep.tar.gz", format="ibutsu", status="pending")
             import_file = ImportFile(
                 id=str(uuid4()), import_id=import_record.id, content=tar_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -1548,19 +1732,16 @@ class TestRunArchiveImport:
                 run_archive_import({"id": str(import_record.id)})
 
             result = db.session.get(Result, result_id)
-            # Existing-only metadata key must survive the re-import
             assert result.data["classification"] == "product_failure"
-            # Incoming metadata key must be merged in
             assert result.data["env"] == "stage"
-            # Updated fields from the archive must be applied
             assert result.result == "failed"
 
-    def test_run_archive_import_with_null_result_metadata(
-        self, make_import, make_run, make_result, flask_app
+    @pytest.mark.parametrize("null_target", ["result", "run", "both"])
+    def test_run_archive_import_with_null_metadata(
+        self, make_import, make_run, make_result, flask_app, null_target
     ):
-        """Re-importing where result.json has metadata: null must not raise TypeError."""
+        """Archive where run.json or result.json has metadata: null must import gracefully."""
         client, _ = flask_app
-
         with client.application.app_context():
             run_id = str(uuid4())
             result_id = str(uuid4())
@@ -1574,27 +1755,25 @@ class TestRunArchiveImport:
                 metadata={"component": "backend"},
             )
 
-            run_data = {"id": run_id, "metadata": {}, "summary": {"tests": 1}}
+            run_data = {
+                "id": run_id,
+                "metadata": None if null_target in ("run", "both") else {"build": "1"},
+                "summary": {"tests": 1},
+            }
             result_data = {
                 "id": result_id,
                 "test_id": "test.null_meta",
                 "result": "passed",
                 "start_time": datetime.now(UTC).isoformat(),
-                "metadata": None,
+                "metadata": None if null_target in ("result", "both") else {"component": "backend"},
             }
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                for name, payload in [
-                    (f"{run_id}/run.json", run_data),
-                    (f"{run_id}/{result_id}/result.json", result_data),
-                ]:
-                    data = json.dumps(payload).encode()
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(data)
-                    tar.addfile(info, BytesIO(data))
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                }
+            )
 
             import_record = make_import(
                 filename="null_meta.tar.gz", format="ibutsu", status="pending"
@@ -1602,57 +1781,8 @@ class TestRunArchiveImport:
             import_file = ImportFile(
                 id=str(uuid4()), import_id=import_record.id, content=tar_content
             )
-            session.add(import_file)
-            session.commit()
-
-            with (
-                patch("ibutsu_server.tasks.importers.update_run"),
-                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
-            ):
-                run_archive_import({"id": str(import_record.id)})
-
-            result = db.session.get(Result, result_id)
-            assert result is not None
-            assert result.data["component"] == "backend"
-
-    def test_run_archive_import_with_null_run_metadata(self, make_import, make_run, flask_app):
-        """Archive where run.json has metadata: null must not raise AttributeError."""
-        client, _ = flask_app
-
-        with client.application.app_context():
-            run_id = str(uuid4())
-            result_id = str(uuid4())
-
-            run_data = {"id": run_id, "metadata": None, "summary": {"tests": 1}}
-            result_data = {
-                "id": result_id,
-                "test_id": "test.null_run_meta",
-                "result": "passed",
-                "start_time": datetime.now(UTC).isoformat(),
-                "metadata": {"component": "backend"},
-            }
-
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                for name, payload in [
-                    (f"{run_id}/run.json", run_data),
-                    (f"{run_id}/{result_id}/result.json", result_data),
-                ]:
-                    data = json.dumps(payload).encode()
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(data)
-                    tar.addfile(info, BytesIO(data))
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
-
-            import_record = make_import(
-                filename="null_run_meta.tar.gz", format="ibutsu", status="pending"
-            )
-            import_file = ImportFile(
-                id=str(uuid4()), import_id=import_record.id, content=tar_content
-            )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -1661,8 +1791,9 @@ class TestRunArchiveImport:
                 run_archive_import({"id": str(import_record.id)})
 
             run = db.session.get(Run, run_id)
+            result = db.session.get(Result, result_id)
             assert run is not None
-            assert run.data == {}
+            assert result is not None
 
     def test_run_archive_import_preserves_existing_env_and_component(
         self, make_import, make_run, make_result, flask_app
@@ -1674,7 +1805,6 @@ class TestRunArchiveImport:
             run_id = str(uuid4())
             result_id = str(uuid4())
 
-            # Pre-existing run and result with env and component set on the database record
             make_run(id=run_id, metadata={"build": "1"})
             make_result(
                 id=result_id,
@@ -1685,7 +1815,6 @@ class TestRunArchiveImport:
                 component="backend",
             )
 
-            # Archive whose result.json does not specify env or component
             run_data = {"id": run_id, "metadata": {}, "summary": {"tests": 1}}
             result_data = {
                 "id": result_id,
@@ -1695,18 +1824,12 @@ class TestRunArchiveImport:
                 "metadata": {},
             }
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                for name, payload in [
-                    (f"{run_id}/run.json", run_data),
-                    (f"{run_id}/{result_id}/result.json", result_data),
-                ]:
-                    data = json.dumps(payload).encode()
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(data)
-                    tar.addfile(info, BytesIO(data))
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                }
+            )
 
             import_record = make_import(
                 filename="preserve.tar.gz", format="ibutsu", status="pending"
@@ -1714,8 +1837,8 @@ class TestRunArchiveImport:
             import_file = ImportFile(
                 id=str(uuid4()), import_id=import_record.id, content=tar_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -1746,21 +1869,18 @@ class TestRunArchiveImport:
                 "metadata": {"env": "prod"},
             }
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                data = json.dumps(result_data).encode()
-                info = tarfile.TarInfo(name=f"{run_id}/{result_id}/result.json")
-                info.size = len(data)
-                tar.addfile(info, BytesIO(data))
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/{result_id}/result.json": result_data,
+                }
+            )
 
             import_record = make_import(filename="no_run.tar.gz", format="ibutsu", status="pending")
             import_file = ImportFile(
                 id=str(uuid4()), import_id=import_record.id, content=tar_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -1779,8 +1899,8 @@ class TestRunArchiveImport:
             import_file_2 = ImportFile(
                 id=str(uuid4()), import_id=import_record_2.id, content=tar_content
             )
-            session.add(import_file_2)
-            session.commit()
+            db.session.add(import_file_2)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -1803,7 +1923,6 @@ class TestRunArchiveImport:
             result_id = str(uuid4())
 
             run_data = {"id": run_id, "summary": {"tests": 1}}
-            # Omit or provide non-UUID 'id' from result.json payload
             result_data = {
                 "test_id": "test.missing_id_key",
                 "result": "passed",
@@ -1813,23 +1932,13 @@ class TestRunArchiveImport:
             if id_in_json:
                 result_data["id"] = id_in_json
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                for name, payload in [
-                    (f"{run_id}/run.json", run_data),
-                    (f"{run_id}/{result_id}/result.json", result_data),
-                ]:
-                    data = json.dumps(payload).encode()
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(data)
-                    tar.addfile(info, BytesIO(data))
-                # Add an artifact for this result
-                artifact_data = b"artifact log"
-                art_info = tarfile.TarInfo(name=f"{run_id}/{result_id}/log.txt")
-                art_info.size = len(artifact_data)
-                tar.addfile(art_info, BytesIO(artifact_data))
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                    f"{run_id}/{result_id}/log.txt": b"artifact log",
+                }
+            )
 
             import_record = make_import(
                 filename="missing_res_id.tar.gz", format="ibutsu", status="pending"
@@ -1837,8 +1946,8 @@ class TestRunArchiveImport:
             import_file = ImportFile(
                 id=str(uuid4()), import_id=import_record.id, content=tar_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -1877,25 +1986,13 @@ class TestRunArchiveImport:
                 "start_time": datetime.now(UTC).isoformat(),
             }
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                for name, payload in [
-                    (f"{run_id}/run.json", run_data),
-                    (f"{run_id}/{result_id}/result.json", result_data),
-                ]:
-                    data = json.dumps(payload).encode()
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(data)
-                    tar.addfile(info, BytesIO(data))
-
-                # Add a run-level artifact
-                run_art_content = b"run-level log content"
-                run_art_info = tarfile.TarInfo(name=f"{run_id}/console.log")
-                run_art_info.size = len(run_art_content)
-                tar.addfile(run_art_info, BytesIO(run_art_content))
-
-            tar_buffer.seek(0)
-            tar_content = tar_buffer.read()
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                    f"{run_id}/console.log": b"run-level log content",
+                }
+            )
 
             import_record = make_import(
                 filename="run_art.tar.gz", format="ibutsu", status="pending"
@@ -1903,8 +2000,8 @@ class TestRunArchiveImport:
             import_file = ImportFile(
                 id=str(uuid4()), import_id=import_record.id, content=tar_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -1912,7 +2009,6 @@ class TestRunArchiveImport:
             ):
                 run_archive_import({"id": str(import_record.id)})
 
-            # Check that run-level artifact was stored
             art = db.session.execute(
                 db.select(Artifact).where(
                     Artifact.run_id == run_id, Artifact.filename == "console.log"
@@ -1929,8 +2025,8 @@ class TestRunArchiveImport:
             import_file2 = ImportFile(
                 id=str(uuid4()), import_id=import_record2.id, content=tar_content
             )
-            session.add(import_file2)
-            session.commit()
+            db.session.add(import_file2)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -1957,7 +2053,6 @@ class TestRunArchiveImport:
             run_id = str(uuid4())
             result_id = str(uuid4())
 
-            # run.json without 'id' field
             run_data = {"summary": {"tests": 1}}
             result_data = {
                 "id": result_id,
@@ -1966,26 +2061,21 @@ class TestRunArchiveImport:
                 "start_time": datetime.now(UTC).isoformat(),
             }
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                for name, payload in [
-                    (f"{run_id}/run.json", run_data),
-                    (f"{run_id}/{result_id}/result.json", result_data),
-                ]:
-                    data = json.dumps(payload).encode()
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(data)
-                    tar.addfile(info, BytesIO(data))
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                }
+            )
 
-            tar_buffer.seek(0)
             import_record = make_import(
                 filename="no_run_id_field.tar.gz", format="ibutsu", status="pending"
             )
             import_file = ImportFile(
-                id=str(uuid4()), import_id=import_record.id, content=tar_buffer.read()
+                id=str(uuid4()), import_id=import_record.id, content=tar_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -2018,18 +2108,13 @@ class TestRunArchiveImport:
                 },
             }
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                for name, payload in [
-                    (f"{run_id}/run.json", run_data),
-                    (f"{run_id}/{result_id}/result.json", result_data),
-                ]:
-                    data = json.dumps(payload).encode()
-                    info = tarfile.TarInfo(name=name)
-                    info.size = len(data)
-                    tar.addfile(info, BytesIO(data))
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{result_id}/result.json": result_data,
+                }
+            )
 
-            tar_buffer.seek(0)
             import_record = make_import(
                 filename="user_props.tar.gz", format="ibutsu", status="pending"
             )
@@ -2037,12 +2122,12 @@ class TestRunArchiveImport:
                 "metadata": {"imported_by": "automation"},
                 "project_id": proj.id,
             }
-            session.add(import_record)
+            db.session.add(import_record)
             import_file = ImportFile(
-                id=str(uuid4()), import_id=import_record.id, content=tar_buffer.read()
+                id=str(uuid4()), import_id=import_record.id, content=tar_content
             )
-            session.add(import_file)
-            session.commit()
+            db.session.add(import_file)
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -2065,29 +2150,23 @@ class TestRunArchiveImport:
             run_id = str(uuid4())
             result_id = str(uuid4())
 
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                dir_info = tarfile.TarInfo(name=f"{run_id}/")
-                dir_info.type = tarfile.DIRTYPE
-                tar.addfile(dir_info)
-
-                sub_dir_info = tarfile.TarInfo(name=f"{run_id}/{result_id}/")
-                sub_dir_info.type = tarfile.DIRTYPE
-                tar.addfile(sub_dir_info)
-
-                result_data = json.dumps(
-                    {"id": result_id, "test_id": "test.dir", "result": "passed"}
-                ).encode()
-                info = tarfile.TarInfo(name=f"{run_id}/{result_id}/result.json")
-                info.size = len(result_data)
-                tar.addfile(info, BytesIO(result_data))
-
-            tar_buffer.seek(0)
-            import_record = make_import(filename="dir.tar.gz", format="ibutsu", status="pending")
-            session.add(
-                ImportFile(id=str(uuid4()), import_id=import_record.id, content=tar_buffer.read())
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/": "dir",
+                    f"{run_id}/{result_id}/": "dir",
+                    f"{run_id}/{result_id}/result.json": {
+                        "id": result_id,
+                        "test_id": "test.dir",
+                        "result": "passed",
+                    },
+                }
             )
-            session.commit()
+
+            import_record = make_import(filename="dir.tar.gz", format="ibutsu", status="pending")
+            db.session.add(
+                ImportFile(id=str(uuid4()), import_id=import_record.id, content=tar_content)
+            )
+            db.session.commit()
 
             with (
                 patch("ibutsu_server.tasks.importers.update_run"),
@@ -2113,23 +2192,57 @@ class TestRunArchiveImport:
         """Archive import raises ValueError and marks import as error on bad UUIDs."""
         client, _ = flask_app
         with client.application.app_context():
-            tar_buffer = BytesIO()
-            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-                payload = b"{}"
-                info = tarfile.TarInfo(name=bad_member_name)
-                info.size = len(payload)
-                tar.addfile(info, BytesIO(payload))
+            tar_content = make_archive_bytes({bad_member_name: b"{}"})
 
-            tar_buffer.seek(0)
             import_record = make_import(
                 filename="bad_uuid.tar.gz", format="ibutsu", status="pending"
             )
-            session.add(
-                ImportFile(id=str(uuid4()), import_id=import_record.id, content=tar_buffer.read())
+            db.session.add(
+                ImportFile(id=str(uuid4()), import_id=import_record.id, content=tar_content)
             )
-            session.commit()
+            db.session.commit()
 
             with pytest.raises(ValueError, match=error_match):
                 run_archive_import({"id": str(import_record.id)})
 
             assert db.session.get(Import, import_record.id).status == "error"
+
+
+class TestExtractRunId:
+    """Tests for _extract_run_id helper function"""
+
+    def test_extract_run_id_from_data_list(self):
+        rec = Import(data={"run_id": ["550e8400-e29b-41d4-a716-446655440000"]})
+        assert _extract_run_id(rec) == "550e8400-e29b-41d4-a716-446655440000"
+
+    def test_extract_run_id_from_data_str(self):
+        rec = Import(data={"run_id": "550e8400-e29b-41d4-a716-446655440000"})
+        assert _extract_run_id(rec) == "550e8400-e29b-41d4-a716-446655440000"
+
+    def test_extract_run_id_from_filename(self):
+        rec = Import(filename="junit-550e8400-e29b-41d4-a716-446655440000.xml")
+        assert _extract_run_id(rec) == "550e8400-e29b-41d4-a716-446655440000"
+
+    def test_extract_run_id_none(self):
+        rec = Import(filename="plain.xml")
+        assert _extract_run_id(rec) is None
+
+
+class TestUpdateRunSummary:
+    """Tests for _update_run_summary helper function"""
+
+    def test_update_run_summary_populates_empty(self):
+        run = Run(duration=0, summary={"errors": 0, "failures": 0})
+        run_data = {
+            "duration": 12.5,
+            "errors": 1,
+            "failures": 2,
+            "skips": 0,
+            "xfailures": 0,
+            "xpasses": 0,
+            "tests": 3,
+        }
+        _update_run_summary(run, run_data)
+        assert run.duration == 12.5
+        assert run.summary["errors"] == 1
+        assert run.summary["failures"] == 2
