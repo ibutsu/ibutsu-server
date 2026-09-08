@@ -81,7 +81,6 @@ package-lock.json
 
 # Frontend
 frontend/public/version.json
-frontend/cypress/screenshots/*
 frontend/.cache_hs66v4
 frontend/build/*
 frontend/coverage/*
