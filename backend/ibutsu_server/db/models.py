@@ -1,3 +1,4 @@
+import copy
 from datetime import datetime
 from uuid import uuid4
 
@@ -55,12 +56,8 @@ class ModelMixin:
         return record_dict
 
     @classmethod
-    def from_dict(cls, **record_dict):
-        # because metadata is a reserved attr name, translate it to data
-        if "metadata" in record_dict:
-            record_dict["data"] = record_dict.pop("metadata") or {}
-
-        # Parse datetime strings to datetime objects
+    def _parse_datetime_fields(cls, record_dict):
+        """Parse datetime string fields to datetime objects in-place"""
         mapper = inspect(cls)
         for column in mapper.columns:
             if isinstance(column.type, DateTime) and column.key in record_dict:
@@ -69,6 +66,15 @@ class ModelMixin:
                     # Parse ISO format datetime strings
                     record_dict[column.key] = datetime.fromisoformat(value.replace("Z", "+00:00"))
 
+    @classmethod
+    def from_dict(cls, **record_dict):
+        # because metadata is a reserved attr name, translate it to data
+        if "metadata" in record_dict:
+            record_dict["data"] = record_dict.pop("metadata") or {}
+
+        # Parse datetime strings to datetime objects
+        cls._parse_datetime_fields(record_dict)
+
         # remove empty keys
         for key in list(record_dict.keys()):
             if not key:
@@ -76,13 +82,31 @@ class ModelMixin:
         return cls(**record_dict)
 
     def update(self, record_dict):
+        record_dict = record_dict.copy()
         if "id" in record_dict:
             record_dict.pop("id")
+        # Normalize data to metadata so callers using either key are handled
+        if "data" in record_dict and "metadata" not in record_dict:
+            record_dict["metadata"] = record_dict.pop("data")
+        elif "data" in record_dict and "metadata" in record_dict:
+            record_dict.pop("data")
+        # Parse datetime strings to datetime objects
+        self.__class__._parse_datetime_fields(record_dict)
         values_dict = self.to_dict()
-        # Deep merge metadata to preserve existing fields not in the update
-        if "metadata" in values_dict and "metadata" in record_dict:
-            merge_dicts(values_dict["metadata"], record_dict["metadata"])
-            values_dict["metadata"] = record_dict.pop("metadata")
+        # Deep merge metadata so keys already stored on the record survive an
+        # update that doesn't mention them (e.g. an archive re-import that lacks
+        # metadata a user set later). merge_dicts(old, new) mutates new by adding
+        # missing keys from old, so incoming values win while existing-only keys
+        # are preserved.
+        # Example: existing={a:1, b:2}, incoming={b:3, c:4} → result={a:1, b:3, c:4}
+        if "metadata" in record_dict:
+            incoming_meta = copy.deepcopy(record_dict.pop("metadata"))
+            existing_meta = values_dict.get("metadata")
+            if isinstance(existing_meta, dict) and isinstance(incoming_meta, dict):
+                merge_dicts(existing_meta, incoming_meta)
+                values_dict["metadata"] = incoming_meta
+            elif incoming_meta is not None:
+                values_dict["metadata"] = incoming_meta
         values_dict.update(record_dict)
         if "metadata" in values_dict:
             values_dict["data"] = values_dict.pop("metadata")

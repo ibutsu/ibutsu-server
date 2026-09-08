@@ -11,8 +11,10 @@ UUID_VARIANT_1 = 0b1000000000000000
 
 def is_uuid(candidate):
     """Determine if this is a uuid"""
+    if not candidate:
+        return False
     try:
-        UUID(candidate)
+        UUID(str(candidate))
         return True
     except ValueError:
         return False
