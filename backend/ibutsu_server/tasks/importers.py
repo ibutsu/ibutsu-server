@@ -1,6 +1,7 @@
 import json
 import re
 import tarfile
+from collections import defaultdict
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from io import BytesIO
@@ -88,8 +89,12 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
     result["metadata"] = result_metadata
 
     # Support both top-level and metadata for component and env
-    result["env"] = result.get("env") or result_metadata.get("env")
-    result["component"] = result.get("component") or result_metadata.get("component")
+    env = result.get("env") or result_metadata.get("env")
+    if env:
+        result["env"] = env
+    component = result.get("component") or result_metadata.get("component")
+    if component:
+        result["component"] = component
     result["run_id"] = run_id
     if project_id:
         result["project_id"] = project_id
@@ -226,14 +231,15 @@ def _populate_created_times(run_dict, start_time):
 def _populate_metadata(run_dict, import_record):
     """To reduce cognitive complexity"""
     import_data = import_record.data or {}
+    run_metadata = run_dict.get("metadata") or {}
     if import_data.get("project_id"):
         run_dict["project_id"] = import_data["project_id"]
-    elif run_dict.get("metadata", {}).get("project"):
-        run_dict["project_id"] = get_project_id(run_dict["metadata"]["project"])
-    if run_dict.get("metadata", {}).get("component"):
-        run_dict["component"] = run_dict["metadata"]["component"]
-    if run_dict.get("metadata", {}).get("env"):
-        run_dict["env"] = run_dict["metadata"]["env"]
+    elif run_metadata.get("project"):
+        run_dict["project_id"] = get_project_id(run_metadata["project"])
+    if run_metadata.get("component"):
+        run_dict["component"] = run_metadata["component"]
+    if run_metadata.get("env"):
+        run_dict["env"] = run_metadata["env"]
     if import_data.get("source"):
         run_dict["source"] = import_data["source"]
 
@@ -315,7 +321,7 @@ def run_junit_import(import_):  # noqa: PLR0912
 
         if existing_run_id and is_uuid(str(existing_run_id)):
             run_dict["id"] = str(existing_run_id)
-        elif match := uuid_pattern.search(import_record.filename):
+        elif import_record.filename and (match := uuid_pattern.search(import_record.filename)):
             run_dict["id"] = match.group(1)
 
         # Get metadata from the XML file
@@ -346,6 +352,7 @@ def run_junit_import(import_):  # noqa: PLR0912
         # commit) so the run gets an ID while staying in the same transaction as
         # its results/artifacts -- a later failure then rolls the run back too.
         run = db.session.get(Run, run_dict["id"]) if is_uuid(run_dict.get("id")) else None
+        is_existing_run = run is not None
         if run:
             run.update(run_dict)
         else:
@@ -370,6 +377,17 @@ def run_junit_import(import_):  # noqa: PLR0912
         # Handle structures where testsuite is/isn't the top level tag
         testsuites = _get_ts_element(tree)
         matched_result_ids = set()
+        existing_results_by_test_id = defaultdict(list)
+        if is_existing_run:
+            existing_results = (
+                db.session.execute(
+                    db.select(Result).where(Result.run_id == run.id).order_by(Result.id)
+                )
+                .scalars()
+                .all()
+            )
+            for r in existing_results:
+                existing_results_by_test_id[r.test_id].append(r)
 
         # Run through the test suites and import all the test results
         for ts in testsuites:
@@ -414,18 +432,9 @@ def run_junit_import(import_):  # noqa: PLR0912
                 _populate_result_metadata(run_dict, result_dict, result_properties)
                 result_dict, traceback = _process_result(result_dict, testcase)
 
-                existing_results = (
-                    db.session.execute(
-                        db.select(Result).where(
-                            Result.run_id == run.id,
-                            Result.test_id == test_name,
-                        )
-                    )
-                    .scalars()
-                    .all()
-                )
+                existing_candidates = existing_results_by_test_id.get(test_name, [])
                 existing_result = next(
-                    (r for r in existing_results if r.id not in matched_result_ids),
+                    (r for r in existing_candidates if r.id not in matched_result_ids),
                     None,
                 )
                 if existing_result:
@@ -547,7 +556,7 @@ def run_archive_import(import_):  # noqa: PLR0912
         if not run_dict.get("id") and is_uuid(run_id):
             run_dict["id"] = run_id
         # patch things up a bit, if necessary
-        run_dict["metadata"] = run_dict.get("metadata", {})
+        run_dict["metadata"] = run_dict.get("metadata") or {}
         run_dict["metadata"].update(metadata)
         _populate_metadata(run_dict, import_record)
         _populate_created_times(run_dict, start_time)

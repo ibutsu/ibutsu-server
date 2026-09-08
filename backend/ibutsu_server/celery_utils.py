@@ -256,7 +256,7 @@ def retry_task_on_exception(*_args, **kwargs):
         return
     request = getattr(task, "request", None)
     retries = getattr(request, "retries", 0) if request else 0
-    if max_retries is not None and retries >= max_retries:
+    if max_retries is not None and max_retries >= 0 and retries >= max_retries:
         return
     # Incremental backoff, starts at a minute and maxes out at 1 hour.
     backoff = min(2**retries, 3600)

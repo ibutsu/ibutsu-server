@@ -293,6 +293,9 @@ class TestTaskFailureSignalHandler:
             ("mock_task", 3, 5, False, None),
             ("mock_task", None, 5, True, 32),
             ("mock_task", None, 20, True, 3600),
+            ("mock_task", -1, 0, True, 1),
+            ("mock_task", -1, 5, True, 32),
+            ("mock_task", -1, 20, True, 3600),
         ],
     )
     def test_task_failure_retry_behavior(

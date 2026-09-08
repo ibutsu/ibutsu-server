@@ -25,6 +25,8 @@ from ibutsu_server.tasks.importers import (
     _populate_result_metadata,
     _process_result,
     _update_import_status,
+    _upsert_result_artifact,
+    _upsert_run_artifact,
     run_archive_import,
     run_junit_import,
 )
@@ -571,6 +573,153 @@ class TestAddArtifacts:
             assert filenames == {"traceback.log", "system-out.log", "system-err.log"}
 
 
+class TestUpsertArtifact:
+    """Tests for _upsert_artifact, _upsert_result_artifact, and _upsert_run_artifact"""
+
+    def test_upsert_result_artifact_insert_and_update(self, make_result, flask_app):
+        """Test inserting a new result artifact and updating it in-place."""
+        client, _ = flask_app
+        with client.application.app_context():
+            result = make_result()
+            _upsert_result_artifact(result.id, "log.txt", b"initial content")
+            db.session.flush()
+
+            art = db.session.execute(
+                db.select(Artifact).where(
+                    Artifact.result_id == result.id, Artifact.filename == "log.txt"
+                )
+            ).scalar_one()
+            assert art.content == b"initial content"
+            assert art.data["resultId"] == result.id
+            assert art.data["contentType"] == "text/plain"
+
+            _upsert_result_artifact(result.id, "log.txt", b"updated content")
+            db.session.flush()
+
+            artifacts = (
+                db.session.execute(
+                    db.select(Artifact).where(
+                        Artifact.result_id == result.id, Artifact.filename == "log.txt"
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            assert len(artifacts) == 1
+            assert artifacts[0].id == art.id
+            assert artifacts[0].content == b"updated content"
+
+    def test_upsert_run_artifact_insert_and_update(self, make_run, flask_app):
+        """Test inserting a new run artifact and updating it in-place."""
+        client, _ = flask_app
+        with client.application.app_context():
+            run = make_run()
+            _upsert_run_artifact(run.id, "console.log", b"console output")
+            db.session.flush()
+
+            art = db.session.execute(
+                db.select(Artifact).where(
+                    Artifact.run_id == run.id, Artifact.filename == "console.log"
+                )
+            ).scalar_one()
+            assert art.content == b"console output"
+            assert art.data["runId"] == run.id
+
+            _upsert_run_artifact(run.id, "console.log", b"new console output")
+            db.session.flush()
+
+            artifacts = (
+                db.session.execute(
+                    db.select(Artifact).where(
+                        Artifact.run_id == run.id, Artifact.filename == "console.log"
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            assert len(artifacts) == 1
+            assert artifacts[0].id == art.id
+            assert artifacts[0].content == b"new console output"
+
+    @pytest.mark.parametrize("target_type", ["result", "run"])
+    def test_upsert_artifact_deduplicates_legacy_rows(
+        self, make_run, make_result, flask_app, target_type
+    ):
+        """Test that _upsert_artifact removes multiple legacy duplicate rows."""
+        client, _ = flask_app
+        with client.application.app_context():
+            d1 = datetime(2026, 1, 1, tzinfo=UTC)
+            d2 = datetime(2026, 1, 2, tzinfo=UTC)
+            d3 = datetime(2026, 1, 3, tzinfo=UTC)
+            if target_type == "result":
+                res = make_result()
+                target_id = res.id
+                kwargs1 = {
+                    "result_id": target_id,
+                    "filename": "dup.txt",
+                    "content": b"v1",
+                    "upload_date": d1,
+                }
+                kwargs2 = {
+                    "result_id": target_id,
+                    "filename": "dup.txt",
+                    "content": b"v2",
+                    "upload_date": d2,
+                }
+                kwargs3 = {
+                    "result_id": target_id,
+                    "filename": "dup.txt",
+                    "content": b"v3",
+                    "upload_date": d3,
+                }
+                query = db.select(Artifact).where(
+                    Artifact.result_id == target_id, Artifact.filename == "dup.txt"
+                )
+            else:
+                run = make_run()
+                target_id = run.id
+                kwargs1 = {
+                    "run_id": target_id,
+                    "filename": "dup.txt",
+                    "content": b"v1",
+                    "upload_date": d1,
+                }
+                kwargs2 = {
+                    "run_id": target_id,
+                    "filename": "dup.txt",
+                    "content": b"v2",
+                    "upload_date": d2,
+                }
+                kwargs3 = {
+                    "run_id": target_id,
+                    "filename": "dup.txt",
+                    "content": b"v3",
+                    "upload_date": d3,
+                }
+                query = db.select(Artifact).where(
+                    Artifact.run_id == target_id, Artifact.filename == "dup.txt"
+                )
+
+            art1 = Artifact(**kwargs1)
+            art2 = Artifact(**kwargs2)
+            art3 = Artifact(**kwargs3)
+            db.session.add_all([art1, art2, art3])
+            db.session.commit()
+
+            assert len(db.session.execute(query).scalars().all()) == 3
+
+            if target_type == "result":
+                _upsert_result_artifact(target_id, "dup.txt", b"deduped content")
+            else:
+                _upsert_run_artifact(target_id, "dup.txt", b"deduped content")
+            db.session.commit()
+
+            remaining = db.session.execute(query).scalars().all()
+            assert len(remaining) == 1
+            assert remaining[0].id == art1.id
+            assert remaining[0].content == b"deduped content"
+
+
 class TestRunJunitImport:
     """Integration tests for run_junit_import task"""
 
@@ -744,7 +893,10 @@ class TestRunJunitImport:
             </testsuite>
             """
 
-            import_record = make_import(filename="rollback.xml", format="junit", status="pending")
+            run_uuid = str(uuid4())
+            import_record = make_import(
+                filename=f"rollback-{run_uuid}.xml", format="junit", status="pending"
+            )
             import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
             session.add(import_file)
             session.commit()
@@ -759,11 +911,42 @@ class TestRunJunitImport:
             ):
                 run_junit_import({"id": str(import_record.id)})
 
+            # The run and results must not have been committed
+            assert db.session.get(Run, run_uuid) is None
+            assert (
+                db.session.execute(db.select(Result).where(Result.run_id == run_uuid))
+                .scalars()
+                .all()
+                == []
+            )
             # The import must be marked error, not left stuck in "running"
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "error"
             # Cleanup must not run on a failed import
             clear_mock.delay.assert_not_called()
+
+    def test_run_junit_import_with_none_filename(self, make_import, flask_app):
+        """JUnit import succeeds even when import_record.filename is None"""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            junit_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+            <testsuite name="suite" tests="1">
+                <testcase name="test_one" classname="tests.mod" time="0.5" />
+            </testsuite>
+            """
+            import_record = make_import(filename=None, format="junit", status="pending")
+            db.session.add(import_record)
+            import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
+            db.session.add(import_file)
+            db.session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            updated = db.session.get(Import, import_record.id)
+            assert updated.status == "done"
+            assert "run_id" in updated.data
 
     def test_run_junit_import_with_none_data(self, make_import, flask_app):
         """JUnit import succeeds even when import_record.data is None"""
@@ -788,6 +971,214 @@ class TestRunJunitImport:
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "done"
             assert "run_id" in updated.data
+
+    def test_run_junit_import_missing_record_returns_none(self, flask_app):
+        """JUnit import returns early when the import record is not found."""
+        client, _ = flask_app
+        with client.application.app_context():
+            assert run_junit_import({"id": str(uuid4())}) is None
+
+    def test_run_junit_import_with_string_run_id_in_data(self, make_import, flask_app):
+        """JUnit import handles string run_id in import_record.data."""
+        client, _ = flask_app
+        with client.application.app_context():
+            run_uuid = str(uuid4())
+            junit_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+            <testsuite name="suite" tests="1">
+                <testcase name="test_str_run_id" classname="tests.mod" time="0.5" />
+            </testsuite>
+            """
+            import_record = make_import(filename="str_run_id.xml", format="junit", status="pending")
+            import_record.data = {"run_id": run_uuid}
+            db.session.add(import_record)
+            import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
+            db.session.add(import_file)
+            db.session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            run = db.session.get(Run, run_uuid)
+            assert run is not None
+            updated = db.session.get(Import, import_record.id)
+            assert updated.status == "done"
+            assert updated.data["run_id"] == [run_uuid]
+
+    def test_run_junit_import_with_metadata_project_and_source(
+        self, make_import, make_project, flask_app
+    ):
+        """JUnit import correctly applies metadata, project, and source."""
+        client, _ = flask_app
+        with client.application.app_context():
+            proj = make_project(name="junit-test-project")
+            junit_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+            <testsuite name="suite-with-props" tests="1" errors="1" failures="1"
+                       skipped="1" xfailures="1" xpasses="1">
+                <properties>
+                    <property key="project" value="{proj.name}" />
+                    <property key="env" value="staging" />
+                    <property key="component" value="api" />
+                </properties>
+                <testcase name="test_with_source" classname="tests.prop" time="0.3">
+                    <error message="err">err msg</error>
+                </testcase>
+            </testsuite>
+            """.encode()
+
+            import_record = make_import(filename="props.xml", format="junit", status="pending")
+            import_record.data = {
+                "metadata": {"extra_tag": "v1"},
+                "source": "custom_ci",
+            }
+            db.session.add(import_record)
+            import_file = ImportFile(id=str(uuid4()), import_id=import_record.id, content=junit_xml)
+            db.session.add(import_file)
+            db.session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            run_id = import_record.data["run_id"][0]
+            run = db.session.get(Run, run_id)
+            assert run is not None
+            assert run.project_id == proj.id
+            assert run.source == "custom_ci"
+            assert run.data.get("extra_tag") == "v1"
+
+            result = db.session.execute(
+                db.select(Result).where(Result.run_id == run_id)
+            ).scalar_one()
+            assert result.source == "custom_ci"
+
+    @pytest.mark.parametrize("has_uuid_in_filename", [True, False])
+    def test_run_junit_import_idempotent_retry(self, make_import, flask_app, has_uuid_in_filename):
+        """Retrying JUnit import updates existing run/results without creating duplicates."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_uuid = str(uuid4())
+            junit_content = b"""<testsuites time="1.5">
+                <testsuite name="my-suite" time="1.5" tests="1" errors="0" failures="0" skipped="0">
+                    <testcase classname="pkg.TestFoo" name="test_bar" time="1.5" />
+                </testsuite>
+            </testsuites>"""
+
+            filename = f"results-{run_uuid}.xml" if has_uuid_in_filename else "results.xml"
+            import_record = make_import(filename=filename, format="junit", status="pending")
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=junit_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            if has_uuid_in_filename:
+                run = db.session.get(Run, run_uuid)
+            else:
+                run = db.session.get(Run, import_record.data["run_id"][0])
+            assert run is not None
+            run_count = db.session.execute(db.select(func.count(Run.id))).scalar()
+            result_count = db.session.execute(db.select(func.count(Result.id))).scalar()
+
+            # Re-run the import (simulating a retry)
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            new_run_count = db.session.execute(db.select(func.count(Run.id))).scalar()
+            new_result_count = db.session.execute(db.select(func.count(Result.id))).scalar()
+            assert new_run_count == run_count
+            assert new_result_count == result_count
+
+    @pytest.mark.parametrize("n_testcases", [1, 3, 5])
+    def test_run_junit_import_n_distinct_testcases_produces_n_results(
+        self, make_import, flask_app, n_testcases
+    ):
+        """Assert that N distinct testcases in a JUnit XML file create exactly N Result records."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            testcases_xml = "\n".join(
+                f'<testcase classname="pkg.TestClass{i}" name="test_method_{i}" time="0.1"/>'
+                for i in range(n_testcases)
+            )
+            junit_content = (
+                f'<testsuites time="1.0">\n'
+                f'  <testsuite name="suite" time="1.0" tests="{n_testcases}" '
+                f'errors="0" failures="0" skipped="0">\n'
+                f"    {testcases_xml}\n"
+                f"  </testsuite>\n"
+                f"</testsuites>"
+            ).encode()
+
+            import_record = make_import(
+                filename="junit-multi.xml", format="junit", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=junit_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            run_id = import_record.data["run_id"][0]
+            results = (
+                db.session.execute(db.select(Result).where(Result.run_id == run_id)).scalars().all()
+            )
+            assert len(results) == n_testcases
+            test_ids = {r.test_id for r in results}
+            expected_test_ids = {f"TestClass{i}.test_method_{i}" for i in range(n_testcases)}
+            assert test_ids == expected_test_ids
+
+    def test_run_junit_import_duplicate_test_ids_in_same_file_not_collapsed(
+        self, make_import, flask_app
+    ):
+        """Two testcases with same test_id in one file don't collapse; retry is idempotent."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_uuid = str(uuid4())
+            # Two testcases with the same classname and name
+            junit_content = b"""<testsuites time="2.0">
+                <testsuite name="suite" time="2.0" tests="2" errors="0" failures="0" skipped="0">
+                    <testcase classname="pkg.TestDup" name="test_case" time="1.0"/>
+                    <testcase classname="pkg.TestDup" name="test_case" time="1.0"/>
+                </testsuite>
+            </testsuites>"""
+
+            import_record = make_import(
+                filename=f"results-{run_uuid}.xml", format="junit", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=junit_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            run = db.session.get(Run, run_uuid)
+            assert run is not None
+            results = (
+                db.session.execute(db.select(Result).where(Result.run_id == run.id)).scalars().all()
+            )
+            # Assert that the two testcases in the same file did NOT collapse into one result
+            assert len(results) == 2
+            assert all(r.test_id == "TestDup.test_case" for r in results)
+
+            # Re-run the import (simulating a retry): must remain 2 results, updated in place
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            retry_results = (
+                db.session.execute(db.select(Result).where(Result.run_id == run.id)).scalars().all()
+            )
+            assert len(retry_results) == 2
+            assert {r.id for r in results} == {r.id for r in retry_results}
 
 
 class TestRunArchiveImport:
@@ -1224,6 +1615,119 @@ class TestRunArchiveImport:
             assert result is not None
             assert result.data["component"] == "backend"
 
+    def test_run_archive_import_with_null_run_metadata(self, make_import, make_run, flask_app):
+        """Archive where run.json has metadata: null must not raise AttributeError."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = str(uuid4())
+            result_id = str(uuid4())
+
+            run_data = {"id": run_id, "metadata": None, "summary": {"tests": 1}}
+            result_data = {
+                "id": result_id,
+                "test_id": "test.null_run_meta",
+                "result": "passed",
+                "start_time": datetime.now(UTC).isoformat(),
+                "metadata": {"component": "backend"},
+            }
+
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                for name, payload in [
+                    (f"{run_id}/run.json", run_data),
+                    (f"{run_id}/{result_id}/result.json", result_data),
+                ]:
+                    data = json.dumps(payload).encode()
+                    info = tarfile.TarInfo(name=name)
+                    info.size = len(data)
+                    tar.addfile(info, BytesIO(data))
+            tar_buffer.seek(0)
+            tar_content = tar_buffer.read()
+
+            import_record = make_import(
+                filename="null_run_meta.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=tar_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            run = db.session.get(Run, run_id)
+            assert run is not None
+            assert run.data == {}
+
+    def test_run_archive_import_preserves_existing_env_and_component(
+        self, make_import, make_run, make_result, flask_app
+    ):
+        """Re-importing must not wipe out existing env and component when omitted in archive."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = str(uuid4())
+            result_id = str(uuid4())
+
+            # Pre-existing run and result with env and component set on the database record
+            make_run(id=run_id, metadata={"build": "1"})
+            make_result(
+                id=result_id,
+                run_id=run_id,
+                test_id="test.preserve_env_comp",
+                result="passed",
+                env="staging",
+                component="backend",
+            )
+
+            # Archive whose result.json does not specify env or component
+            run_data = {"id": run_id, "metadata": {}, "summary": {"tests": 1}}
+            result_data = {
+                "id": result_id,
+                "test_id": "test.preserve_env_comp",
+                "result": "passed",
+                "start_time": datetime.now(UTC).isoformat(),
+                "metadata": {},
+            }
+
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                for name, payload in [
+                    (f"{run_id}/run.json", run_data),
+                    (f"{run_id}/{result_id}/result.json", result_data),
+                ]:
+                    data = json.dumps(payload).encode()
+                    info = tarfile.TarInfo(name=name)
+                    info.size = len(data)
+                    tar.addfile(info, BytesIO(data))
+            tar_buffer.seek(0)
+            tar_content = tar_buffer.read()
+
+            import_record = make_import(
+                filename="preserve.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=tar_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            result = db.session.get(Result, result_id)
+            assert result is not None
+            assert result.env == "staging"
+            assert result.component == "backend"
+
     def test_run_archive_import_without_run_json_is_idempotent(self, make_import, flask_app):
         """Archive without run.json should use the directory run_id
         and be idempotent on re-import.
@@ -1352,126 +1856,280 @@ class TestRunArchiveImport:
             ).scalar_one_or_none()
             assert artifact is not None
 
-    @pytest.mark.parametrize("has_uuid_in_filename", [True, False])
-    def test_run_junit_import_idempotent_retry(self, make_import, flask_app, has_uuid_in_filename):
-        """Retrying JUnit import updates existing run/results without creating duplicates."""
+    def test_run_archive_import_missing_record_returns_none(self, flask_app):
+        """Archive import returns early when the import record is not found."""
         client, _ = flask_app
-
         with client.application.app_context():
-            run_uuid = str(uuid4())
-            junit_content = b"""<testsuites time="1.5">
-                <testsuite name="my-suite" time="1.5" tests="1" errors="0" failures="0" skipped="0">
-                    <testcase classname="pkg.TestFoo" name="test_bar" time="1.5" />
-                </testsuite>
-            </testsuites>"""
+            assert run_archive_import({"id": str(uuid4())}) is None
 
-            filename = f"results-{run_uuid}.xml" if has_uuid_in_filename else "results.xml"
-            import_record = make_import(filename=filename, format="junit", status="pending")
-            import_file = ImportFile(
-                id=str(uuid4()), import_id=import_record.id, content=junit_content
-            )
-            session.add(import_file)
-            session.commit()
-
-            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
-                run_junit_import({"id": str(import_record.id)})
-
-            if has_uuid_in_filename:
-                run = db.session.get(Run, run_uuid)
-            else:
-                run = db.session.get(Run, import_record.data["run_id"][0])
-            assert run is not None
-            run_count = db.session.execute(db.select(func.count(Run.id))).scalar()
-            result_count = db.session.execute(db.select(func.count(Result.id))).scalar()
-
-            # Re-run the import (simulating a retry)
-            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
-                run_junit_import({"id": str(import_record.id)})
-
-            new_run_count = db.session.execute(db.select(func.count(Run.id))).scalar()
-            new_result_count = db.session.execute(db.select(func.count(Result.id))).scalar()
-            assert new_run_count == run_count
-            assert new_result_count == result_count
-
-    @pytest.mark.parametrize("n_testcases", [1, 3, 5])
-    def test_run_junit_import_n_distinct_testcases_produces_n_results(
-        self, make_import, flask_app, n_testcases
-    ):
-        """Assert that N distinct testcases in a JUnit XML file create exactly N Result records."""
+    def test_run_archive_import_with_run_level_artifact(self, make_import, flask_app):
+        """Archive import upserts run-level artifacts without duplication."""
         client, _ = flask_app
-
         with client.application.app_context():
-            testcases_xml = "\n".join(
-                f'<testcase classname="pkg.TestClass{i}" name="test_method_{i}" time="0.1"/>'
-                for i in range(n_testcases)
-            )
-            junit_content = (
-                f'<testsuites time="1.0">\n'
-                f'  <testsuite name="suite" time="1.0" tests="{n_testcases}" '
-                f'errors="0" failures="0" skipped="0">\n'
-                f"    {testcases_xml}\n"
-                f"  </testsuite>\n"
-                f"</testsuites>"
-            ).encode()
+            run_id = str(uuid4())
+            result_id = str(uuid4())
+
+            run_data = {"id": run_id, "summary": {"tests": 1}}
+            result_data = {
+                "id": result_id,
+                "test_id": "test.with_run_art",
+                "result": "passed",
+                "start_time": datetime.now(UTC).isoformat(),
+            }
+
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                for name, payload in [
+                    (f"{run_id}/run.json", run_data),
+                    (f"{run_id}/{result_id}/result.json", result_data),
+                ]:
+                    data = json.dumps(payload).encode()
+                    info = tarfile.TarInfo(name=name)
+                    info.size = len(data)
+                    tar.addfile(info, BytesIO(data))
+
+                # Add a run-level artifact
+                run_art_content = b"run-level log content"
+                run_art_info = tarfile.TarInfo(name=f"{run_id}/console.log")
+                run_art_info.size = len(run_art_content)
+                tar.addfile(run_art_info, BytesIO(run_art_content))
+
+            tar_buffer.seek(0)
+            tar_content = tar_buffer.read()
 
             import_record = make_import(
-                filename="junit-multi.xml", format="junit", status="pending"
+                filename="run_art.tar.gz", format="ibutsu", status="pending"
             )
             import_file = ImportFile(
-                id=str(uuid4()), import_id=import_record.id, content=junit_content
+                id=str(uuid4()), import_id=import_record.id, content=tar_content
             )
             session.add(import_file)
             session.commit()
 
-            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
-                run_junit_import({"id": str(import_record.id)})
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
 
-            run_id = import_record.data["run_id"][0]
-            results = Result.query.filter_by(run_id=run_id).all()
-            assert len(results) == n_testcases
-            test_ids = {r.test_id for r in results}
-            expected_test_ids = {f"TestClass{i}.test_method_{i}" for i in range(n_testcases)}
-            assert test_ids == expected_test_ids
+            # Check that run-level artifact was stored
+            art = db.session.execute(
+                db.select(Artifact).where(
+                    Artifact.run_id == run_id, Artifact.filename == "console.log"
+                )
+            ).scalar_one_or_none()
+            assert art is not None
+            assert art.content == b"run-level log content"
+            assert art.data["runId"] == run_id
 
-    def test_run_junit_import_duplicate_test_ids_in_same_file_not_collapsed(
-        self, make_import, flask_app
-    ):
-        """Two testcases with same test_id in one file don't collapse; retry is idempotent."""
+            # Re-import should update the run artifact in-place without duplicating
+            import_record2 = make_import(
+                filename="run_art.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file2 = ImportFile(
+                id=str(uuid4()), import_id=import_record2.id, content=tar_content
+            )
+            session.add(import_file2)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record2.id)})
+
+            run_arts = (
+                db.session.execute(
+                    db.select(Artifact).where(
+                        Artifact.run_id == run_id, Artifact.filename == "console.log"
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            assert len(run_arts) == 1
+            assert run_arts[0].id == art.id
+
+    def test_run_archive_import_run_json_without_id_field(self, make_import, flask_app):
+        """Archive where run.json omits the 'id' field sets run_id from directory."""
         client, _ = flask_app
-
         with client.application.app_context():
-            run_uuid = str(uuid4())
-            # Two testcases with the same classname and name
-            junit_content = b"""<testsuites time="2.0">
-                <testsuite name="suite" time="2.0" tests="2" errors="0" failures="0" skipped="0">
-                    <testcase classname="pkg.TestDup" name="test_case" time="1.0"/>
-                    <testcase classname="pkg.TestDup" name="test_case" time="1.0"/>
-                </testsuite>
-            </testsuites>"""
+            run_id = str(uuid4())
+            result_id = str(uuid4())
 
+            # run.json without 'id' field
+            run_data = {"summary": {"tests": 1}}
+            result_data = {
+                "id": result_id,
+                "test_id": "test.run_without_id",
+                "result": "passed",
+                "start_time": datetime.now(UTC).isoformat(),
+            }
+
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                for name, payload in [
+                    (f"{run_id}/run.json", run_data),
+                    (f"{run_id}/{result_id}/result.json", result_data),
+                ]:
+                    data = json.dumps(payload).encode()
+                    info = tarfile.TarInfo(name=name)
+                    info.size = len(data)
+                    tar.addfile(info, BytesIO(data))
+
+            tar_buffer.seek(0)
             import_record = make_import(
-                filename=f"results-{run_uuid}.xml", format="junit", status="pending"
+                filename="no_run_id_field.tar.gz", format="ibutsu", status="pending"
             )
             import_file = ImportFile(
-                id=str(uuid4()), import_id=import_record.id, content=junit_content
+                id=str(uuid4()), import_id=import_record.id, content=tar_buffer.read()
             )
             session.add(import_file)
             session.commit()
 
-            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
-                run_junit_import({"id": str(import_record.id)})
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
 
-            run = db.session.get(Run, run_uuid)
+            run = db.session.get(Run, run_id)
             assert run is not None
-            results = Result.query.filter_by(run_id=run.id).all()
-            # Assert that the two testcases in the same file did NOT collapse into one result
-            assert len(results) == 2
-            assert all(r.test_id == "TestDup.test_case" for r in results)
+            assert run.id == run_id
 
-            # Re-run the import (simulating a retry): must remain 2 results, updated in place
-            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
-                run_junit_import({"id": str(import_record.id)})
+    def test_run_archive_import_with_user_properties_and_importer_metadata(
+        self, make_import, make_project, flask_app
+    ):
+        """Archive import promotes user_properties and merges importer metadata and project."""
+        client, _ = flask_app
+        with client.application.app_context():
+            proj = make_project(name="archive-user-props-project")
+            run_id = str(uuid4())
+            result_id = str(uuid4())
 
-            retry_results = Result.query.filter_by(run_id=run.id).all()
-            assert len(retry_results) == 2
-            assert {r.id for r in results} == {r.id for r in retry_results}
+            run_data = {"id": run_id, "summary": {"tests": 1}}
+            result_data = {
+                "id": result_id,
+                "test_id": "test.user_properties",
+                "result": "passed",
+                "start_time": datetime.now(UTC).isoformat(),
+                "metadata": {
+                    "user_properties": {"team": "qe", "tier": "smoke"},
+                },
+            }
+
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                for name, payload in [
+                    (f"{run_id}/run.json", run_data),
+                    (f"{run_id}/{result_id}/result.json", result_data),
+                ]:
+                    data = json.dumps(payload).encode()
+                    info = tarfile.TarInfo(name=name)
+                    info.size = len(data)
+                    tar.addfile(info, BytesIO(data))
+
+            tar_buffer.seek(0)
+            import_record = make_import(
+                filename="user_props.tar.gz", format="ibutsu", status="pending"
+            )
+            import_record.data = {
+                "metadata": {"imported_by": "automation"},
+                "project_id": proj.id,
+            }
+            session.add(import_record)
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=tar_buffer.read()
+            )
+            session.add(import_file)
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            result = db.session.get(Result, result_id)
+            assert result is not None
+            assert result.project_id == proj.id
+            assert result.data.get("team") == "qe"
+            assert result.data.get("tier") == "smoke"
+            assert result.data.get("imported_by") == "automation"
+            assert "user_properties" not in result.data
+
+    def test_run_archive_import_skips_directories(self, make_import, flask_app):
+        """Archive import gracefully skips directory members in the tarball."""
+        client, _ = flask_app
+        with client.application.app_context():
+            run_id = str(uuid4())
+            result_id = str(uuid4())
+
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                dir_info = tarfile.TarInfo(name=f"{run_id}/")
+                dir_info.type = tarfile.DIRTYPE
+                tar.addfile(dir_info)
+
+                sub_dir_info = tarfile.TarInfo(name=f"{run_id}/{result_id}/")
+                sub_dir_info.type = tarfile.DIRTYPE
+                tar.addfile(sub_dir_info)
+
+                result_data = json.dumps(
+                    {"id": result_id, "test_id": "test.dir", "result": "passed"}
+                ).encode()
+                info = tarfile.TarInfo(name=f"{run_id}/{result_id}/result.json")
+                info.size = len(result_data)
+                tar.addfile(info, BytesIO(result_data))
+
+            tar_buffer.seek(0)
+            import_record = make_import(filename="dir.tar.gz", format="ibutsu", status="pending")
+            session.add(
+                ImportFile(id=str(uuid4()), import_id=import_record.id, content=tar_buffer.read())
+            )
+            session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.update_run"),
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            assert db.session.get(Import, import_record.id).status == "done"
+
+    @pytest.mark.parametrize(
+        ("bad_member_name", "error_match"),
+        [
+            ("not-a-uuid/run.json", "Invalid run ID not-a-uuid"),
+            (
+                "00000000-0000-4000-8000-000000000001/not-a-uuid/result.json",
+                "Invalid result ID not-a-uuid",
+            ),
+        ],
+    )
+    def test_run_archive_import_invalid_uuids_raise_value_error(
+        self, make_import, flask_app, bad_member_name, error_match
+    ):
+        """Archive import raises ValueError and marks import as error on bad UUIDs."""
+        client, _ = flask_app
+        with client.application.app_context():
+            tar_buffer = BytesIO()
+            with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
+                payload = b"{}"
+                info = tarfile.TarInfo(name=bad_member_name)
+                info.size = len(payload)
+                tar.addfile(info, BytesIO(payload))
+
+            tar_buffer.seek(0)
+            import_record = make_import(
+                filename="bad_uuid.tar.gz", format="ibutsu", status="pending"
+            )
+            session.add(
+                ImportFile(id=str(uuid4()), import_id=import_record.id, content=tar_buffer.read())
+            )
+            session.commit()
+
+            with pytest.raises(ValueError, match=error_match):
+                run_archive_import({"id": str(import_record.id)})
+
+            assert db.session.get(Import, import_record.id).status == "error"
