@@ -4,27 +4,32 @@ from datetime import UTC, datetime
 
 import pytest
 
-from ibutsu_server.db.models import Artifact
+from ibutsu_server.db.models import Artifact, Result
 
 
 class TestModelMixinUpdate:
     """Tests for ModelMixin.update method."""
 
     def test_update_does_not_mutate_caller_payload(self, make_run, flask_app):
-        """Test that update does not mutate the caller's payload dictionary."""
+        """Test update doesn't mutate caller's payload, including nested metadata."""
         client, _ = flask_app
         with client.application.app_context():
-            run = make_run()
+            run = make_run(metadata={"existing_key": "survives"})
             payload = {
                 "id": "11111111-1111-1111-1111-111111111111",
                 "component": "backend",
                 "data": {"key": "value"},
             }
-            payload_copy = payload.copy()
+            payload_copy = {
+                "id": payload["id"],
+                "component": payload["component"],
+                "data": payload["data"].copy(),
+            }
             run.update(payload)
             assert "id" in payload
             assert "data" in payload
             assert payload == payload_copy
+            assert "existing_key" not in payload["data"]
 
     def test_update_parses_datetime_strings(self, make_run, flask_app):
         """Test that update parses ISO datetime strings to datetime objects."""
@@ -93,8 +98,18 @@ class TestModelMixinUpdate:
 class TestArtifactModel:
     """Tests for Artifact model definition."""
 
-    def test_artifact_composite_indexes_declared(self):
-        """Verify Artifact model declares composite indexes for idempotency lookups."""
-        index_names = {idx.name for idx in Artifact.__table_args__}
-        assert "ix_artifacts_result_id_filename" in index_names
-        assert "ix_artifacts_run_id_filename" in index_names
+    def test_artifact_composite_indexes_documented(self):
+        """Verify Artifact model docstring documents composite indexes per repo convention."""
+        assert Artifact.__doc__ is not None
+        assert "ix_artifacts_result_id_filename" in Artifact.__doc__
+        assert "ix_artifacts_run_id_filename" in Artifact.__doc__
+
+
+class TestResultModel:
+    """Tests for Result model definition."""
+
+    def test_result_composite_indexes_documented(self):
+        """Verify Result model docstring documents composite indexes per repo convention."""
+        assert Result.__doc__ is not None
+        assert "ix_results_run_id_project_id" in Result.__doc__
+        assert "ix_results_run_id_test_id" in Result.__doc__

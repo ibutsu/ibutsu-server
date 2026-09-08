@@ -1392,3 +1392,86 @@ class TestRunArchiveImport:
             new_result_count = db.session.execute(db.select(func.count(Result.id))).scalar()
             assert new_run_count == run_count
             assert new_result_count == result_count
+
+    @pytest.mark.parametrize("n_testcases", [1, 3, 5])
+    def test_run_junit_import_n_distinct_testcases_produces_n_results(
+        self, make_import, flask_app, n_testcases
+    ):
+        """Assert that N distinct testcases in a JUnit XML file create exactly N Result records."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            testcases_xml = "\n".join(
+                f'<testcase classname="pkg.TestClass{i}" name="test_method_{i}" time="0.1"/>'
+                for i in range(n_testcases)
+            )
+            junit_content = (
+                f'<testsuites time="1.0">\n'
+                f'  <testsuite name="suite" time="1.0" tests="{n_testcases}" '
+                f'errors="0" failures="0" skipped="0">\n'
+                f"    {testcases_xml}\n"
+                f"  </testsuite>\n"
+                f"</testsuites>"
+            ).encode()
+
+            import_record = make_import(
+                filename="junit-multi.xml", format="junit", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=junit_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            run_id = import_record.data["run_id"][0]
+            results = Result.query.filter_by(run_id=run_id).all()
+            assert len(results) == n_testcases
+            test_ids = {r.test_id for r in results}
+            expected_test_ids = {f"TestClass{i}.test_method_{i}" for i in range(n_testcases)}
+            assert test_ids == expected_test_ids
+
+    def test_run_junit_import_duplicate_test_ids_in_same_file_not_collapsed(
+        self, make_import, flask_app
+    ):
+        """Two testcases with same test_id in one file don't collapse; retry is idempotent."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_uuid = str(uuid4())
+            # Two testcases with the same classname and name
+            junit_content = b"""<testsuites time="2.0">
+                <testsuite name="suite" time="2.0" tests="2" errors="0" failures="0" skipped="0">
+                    <testcase classname="pkg.TestDup" name="test_case" time="1.0"/>
+                    <testcase classname="pkg.TestDup" name="test_case" time="1.0"/>
+                </testsuite>
+            </testsuites>"""
+
+            import_record = make_import(
+                filename=f"results-{run_uuid}.xml", format="junit", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()), import_id=import_record.id, content=junit_content
+            )
+            session.add(import_file)
+            session.commit()
+
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            run = db.session.get(Run, run_uuid)
+            assert run is not None
+            results = Result.query.filter_by(run_id=run.id).all()
+            # Assert that the two testcases in the same file did NOT collapse into one result
+            assert len(results) == 2
+            assert all(r.test_id == "TestDup.test_case" for r in results)
+
+            # Re-run the import (simulating a retry): must remain 2 results, updated in place
+            with patch("ibutsu_server.tasks.importers.clear_import_file_content"):
+                run_junit_import({"id": str(import_record.id)})
+
+            retry_results = Result.query.filter_by(run_id=run.id).all()
+            assert len(retry_results) == 2
+            assert {r.id for r in results} == {r.id for r in retry_results}

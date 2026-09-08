@@ -1,9 +1,9 @@
+import copy
 from datetime import datetime
 from uuid import uuid4
 
 # SQLAlchemy 2.0+ imports
 from sqlalchemy import (
-    Index,
     Text as sa_text,  # noqa: N813
     cast as sa_cast,
     delete as sqlalchemy_delete,
@@ -100,7 +100,7 @@ class ModelMixin:
         # are preserved.
         # Example: existing={a:1, b:2}, incoming={b:3, c:4} → result={a:1, b:3, c:4}
         if "metadata" in record_dict:
-            incoming_meta = record_dict.pop("metadata")
+            incoming_meta = copy.deepcopy(record_dict.pop("metadata"))
             existing_meta = values_dict.get("metadata")
             if isinstance(existing_meta, dict) and isinstance(incoming_meta, dict):
                 merge_dicts(existing_meta, incoming_meta)
@@ -126,11 +126,15 @@ class FileMixin(ModelMixin):
 
 
 class Artifact(Model, FileMixin):
+    """
+    Artifact model representing files associated with runs or results.
+
+    Composite indexes managed via Alembic migrations (c4d5e6f7a8b9):
+    - ix_artifacts_result_id_filename: Composite index on (result_id, filename)
+    - ix_artifacts_run_id_filename: Composite index on (run_id, filename)
+    """
+
     __tablename__ = "artifacts"
-    __table_args__ = (
-        Index("ix_artifacts_result_id_filename", "result_id", "filename"),
-        Index("ix_artifacts_run_id_filename", "run_id", "filename"),
-    )
     result_id = Column(PortableUUID(), ForeignKey("results.id"), index=True)
     run_id = Column(PortableUUID(), ForeignKey("runs.id"), index=True)
     filename = Column(Text, index=True)
@@ -247,6 +251,7 @@ class Result(Model, ModelMixin):
     - ix_results_tags: GIN index on data->'tags'
     Cross-dialect:
     - ix_results_run_id_project_id: Composite index on (run_id, project_id)
+    - ix_results_run_id_test_id: Composite index on (run_id, test_id)
     """
 
     __tablename__ = "results"

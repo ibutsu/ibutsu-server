@@ -369,6 +369,7 @@ def run_junit_import(import_):  # noqa: PLR0912
 
         # Handle structures where testsuite is/isn't the top level tag
         testsuites = _get_ts_element(tree)
+        matched_result_ids = set()
 
         # Run through the test suites and import all the test results
         for ts in testsuites:
@@ -413,7 +414,7 @@ def run_junit_import(import_):  # noqa: PLR0912
                 _populate_result_metadata(run_dict, result_dict, result_properties)
                 result_dict, traceback = _process_result(result_dict, testcase)
 
-                existing_result = (
+                existing_results = (
                     db.session.execute(
                         db.select(Result).where(
                             Result.run_id == run.id,
@@ -421,7 +422,11 @@ def run_junit_import(import_):  # noqa: PLR0912
                         )
                     )
                     .scalars()
-                    .first()
+                    .all()
+                )
+                existing_result = next(
+                    (r for r in existing_results if r.id not in matched_result_ids),
+                    None,
                 )
                 if existing_result:
                     existing_result.update(result_dict)
@@ -430,6 +435,7 @@ def run_junit_import(import_):  # noqa: PLR0912
                     result = Result.from_dict(**result_dict)
                     db.session.add(result)
                 db.session.flush()
+                matched_result_ids.add(result.id)
                 # _add_artifacts stages the traceback, system-out and system-err
                 # artifacts for this result -- don't duplicate that work here.
                 _add_artifacts(result, testcase, traceback)

@@ -1,13 +1,11 @@
 """add_composite_indexes_artifacts_idempotency
 
-Add composite indexes backing the archive-import idempotency lookups, which
-fetch a single existing artifact by (result_id, filename) or (run_id, filename)
-before deciding whether to update its content or insert a new row. The existing
-single-column indexes on result_id/run_id/filename force the planner to scan and
-filter; the composite indexes let the lookup resolve directly.
+Add composite indexes backing importer idempotency lookups:
+- on artifacts: (result_id, filename) and (run_id, filename) for archive imports
+- on results: (run_id, test_id) for JUnit importer per-testcase lookups
 
 Revision ID: c4d5e6f7a8b9
-Revises: d18de2b3253f
+Revises: efdaeff6dc95
 Create Date: 2026-08-27 00:00:00.000000
 
 """
@@ -51,7 +49,7 @@ def _drop_index_if_exists(index_name: str, table_name: str) -> None:
 
 
 def upgrade() -> None:
-    """Create composite indexes on artifacts for import idempotency lookups."""
+    """Create composite indexes on artifacts and results for import idempotency lookups."""
     logger.info("Creating composite index ix_artifacts_result_id_filename on artifacts")
     _create_index_if_not_exists(
         "ix_artifacts_result_id_filename",
@@ -66,10 +64,19 @@ def upgrade() -> None:
         ["run_id", "filename"],
         unique=False,
     )
+    logger.info("Creating composite index ix_results_run_id_test_id on results")
+    _create_index_if_not_exists(
+        "ix_results_run_id_test_id",
+        "results",
+        ["run_id", "test_id"],
+        unique=False,
+    )
 
 
 def downgrade() -> None:
-    """Drop composite indexes on artifacts."""
+    """Drop composite indexes on artifacts and results."""
+    logger.info("Dropping composite index ix_results_run_id_test_id from results")
+    _drop_index_if_exists("ix_results_run_id_test_id", "results")
     logger.info("Dropping composite index ix_artifacts_run_id_filename from artifacts")
     _drop_index_if_exists("ix_artifacts_run_id_filename", "artifacts")
     logger.info("Dropping composite index ix_artifacts_result_id_filename from artifacts")
