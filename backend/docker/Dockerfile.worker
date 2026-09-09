@@ -1,4 +1,4 @@
-# hadolint global ignore=DL3013,DL3041,DL3059
+# hadolint global ignore=DL3041,DL3059
 FROM registry.access.redhat.com/ubi9/python-314:1-1787618080 AS builder
 
 ARG UV_VERSION=0.12.10
@@ -9,12 +9,7 @@ USER 0
 
 WORKDIR /app
 
-RUN curl -sSfL "https://releases.astral.sh/github/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-gnu.tar.gz" \
-        -o /tmp/uv.tar.gz && \
-    tar -xzf /tmp/uv.tar.gz -C /tmp && \
-    install -m 0755 -t /bin \
-        /tmp/uv-x86_64-unknown-linux-gnu/uv /tmp/uv-x86_64-unknown-linux-gnu/uvx && \
-    rm -rf /tmp/uv.tar.gz /tmp/uv-x86_64-unknown-linux-gnu
+RUN pip install --no-cache-dir "uv==${UV_VERSION}"
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-default-groups --group server --group worker --no-install-project
