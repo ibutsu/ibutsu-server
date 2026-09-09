@@ -270,7 +270,9 @@ def retry_task_on_exception(*_args, **kwargs):
 def __getattr__(name: str):
     """Lazy initialization of module-level app instances."""
     if name == "flower_app":
-        return create_broker_celery_app()
+        app = create_broker_celery_app()
+        globals()[name] = app
+        return app
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
