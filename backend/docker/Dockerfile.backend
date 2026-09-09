@@ -1,19 +1,38 @@
-# hadolint global ignore=DL3013,DL3041,DL3059
-FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1788215168
+# hadolint global ignore=DL3041,DL3059
+FROM registry.access.redhat.com/ubi9/python-314:1-1787618080 AS builder
+
+ARG UV_VERSION=0.12.10
+
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PATH="/app/.venv/bin:$PATH"
 
 USER 0
-COPY . /app
-COPY licenses/ /licenses/
-RUN /usr/bin/fix-permissions /app
 
 WORKDIR /app
+
+RUN pip install --no-cache-dir "uv==${UV_VERSION}"
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-default-groups --group server --no-install-project
+
+COPY . /app
+RUN uv sync --frozen --no-dev --no-default-groups --group server
+
+USER 1001
+
+FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1788215168
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+USER 0
+
+WORKDIR /app
+
 RUN microdnf install --nodocs -y file-libs && \
     microdnf clean all
 
-RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
-    pip install --no-cache-dir -U -r requirements-pinned.txt .
-
-RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
+COPY --from=builder /app /app
+COPY licenses/ /licenses/
+RUN /usr/bin/fix-permissions /app
 
 USER 1001
 

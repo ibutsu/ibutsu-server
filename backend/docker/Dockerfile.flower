@@ -1,26 +1,44 @@
-# hadolint global ignore=DL3013,DL3041,DL3025
+# hadolint global ignore=DL3041,DL3025,DL3059
+FROM registry.access.redhat.com/ubi9/python-314:1-1787618080 AS builder
+
+ARG UV_VERSION=0.12.10
+
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PATH="/app/.venv/bin:$PATH"
+
+USER 0
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir "uv==${UV_VERSION}"
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-default-groups --only-group flower --no-install-project
+
+COPY . /app
+RUN uv sync --frozen --no-dev --no-default-groups --only-group flower
+
+USER 1001
+
 FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1788215168
 
-# add application sources with correct perms for OCP
+ENV PATH="/app/.venv/bin:$PATH"
+
 USER 0
+
+WORKDIR /app
+
 RUN microdnf install --nodocs -y file-libs && \
     microdnf clean all
 
-COPY . /app
+COPY --from=builder /app /app
 COPY licenses/ /licenses/
 RUN /usr/bin/fix-permissions /app
 
 USER 1001
 
-# Install dependencies
-WORKDIR /app
-RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
-    pip install --no-cache-dir -r requirements-pinned.txt . && \
-    pip install --no-cache-dir 'flower>=2.0.0'
-
 # Expose Flower default port
 EXPOSE 5555
 
 # Use flower_app - minimal broker-only app (no database required)
-# flower_app is exposed via __getattr__ in ibutsu_server/__init__.py
-CMD ["celery", "--app=ibutsu_server:flower_app", "flower", "--port=5555", "--enable_events=True"]
+# flower_app is exposed via __getattr__ in ibutsu_server/celery_utils.py
+CMD ["celery", "--app=ibutsu_server.celery_utils:flower_app", "flower", "--port=5555", "--enable_events=True"]

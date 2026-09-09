@@ -1,11 +1,12 @@
 """Tests for ibutsu_server.celery_utils module."""
 
+from operator import attrgetter
 from unittest.mock import MagicMock
 
 import pytest
 from celery import Celery, signals
 
-from ibutsu_server import _AppRegistry
+from ibutsu_server import _AppRegistry, celery_utils
 from ibutsu_server.celery_utils import create_broker_celery_app, create_flask_celery_app
 from ibutsu_server.constants import SOCKET_CONNECT_TIMEOUT, SOCKET_TIMEOUT
 from ibutsu_server.util.celery_task import IbutsuTask
@@ -16,6 +17,7 @@ def setup_celery_env(monkeypatch):
     """Set up required Celery environment variables for all tests in this module."""
     # Reset the registry to ensure clean state for each test
     _AppRegistry.reset()
+    monkeypatch.delitem(celery_utils.__dict__, "flower_app", raising=False)
 
     # Set up environment variables
     monkeypatch.setenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
@@ -25,6 +27,33 @@ def setup_celery_env(monkeypatch):
 
     # Clean up after test
     _AppRegistry.reset()
+
+
+class TestLazyFlowerApp:
+    """Tests for the lazy module-level Flower app."""
+
+    def test_flower_app_is_initialized_and_cached(self):
+        """Accessing flower_app creates one configured Celery app."""
+        app = celery_utils.flower_app
+
+        assert isinstance(app, Celery)
+        assert app.main == "ibutsu_server_flower"
+        assert celery_utils.flower_app is app
+
+    def test_flower_app_requires_broker_url(self, monkeypatch):
+        """Accessing flower_app requires CELERY_BROKER_URL."""
+        monkeypatch.delenv("CELERY_BROKER_URL", raising=False)
+
+        with pytest.raises(ValueError, match="CELERY_BROKER_URL environment variable must be set"):
+            assert attrgetter("flower_app")(celery_utils) is not None
+
+    def test_unknown_attribute_raises_attribute_error(self):
+        """Unknown module attributes are rejected with a useful error."""
+        with pytest.raises(
+            AttributeError,
+            match=r"module 'ibutsu_server\.celery_utils' has no attribute 'unknown_app'",
+        ):
+            assert attrgetter("unknown_app")(celery_utils) is not None
 
 
 class TestCreateBrokerCeleryApp:

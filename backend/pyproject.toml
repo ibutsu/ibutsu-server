@@ -27,57 +27,69 @@ classifiers = [
 
 dependencies = [
     "alembic",
+    "bcrypt>=5.0.0",
     "celery",
+    "Flask",
+    "flask_mail",
+    "Flask-SQLAlchemy",
+    "kombu",
+    "psycopg2-binary",
+    "pyjwt",
+    "python_dateutil",
+    "PyYAML",
+    "redis<8",
+    "sqlalchemy",
+    "sqlalchemy-json",
+    "vine",
+    "werkzeug",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit",
+]
+test = [
+    "coverage[toml]",
+    "Flask-Testing",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-xdist",
+    "randomize",
+]
+server = [
     "connexion[swagger-ui]",
     "connexion[flask]",
-    "bcrypt>=5.0.0",
-    "flask_mail",
-    "Flask",
-    "Flask-SQLAlchemy",
-    "starlette",
-    "uvicorn[standard]",
-
-    "gevent>=24.0.0",
     "google-api-python-client",
     "google-auth",
     "google-auth-httplib2",
     "google-auth-oauthlib",
     "gunicorn",
+    "httpx2>=2.0.0",
     "kombu",
     "lxml",
     "psycopg2-binary",
     "pyjwt",
     "python-magic",
-    "python_dateutil",
-    "PyYAML",
-    "redis<8",
-    "setuptools",
-    "sqlalchemy-json",
-    "sqlalchemy",
+    "starlette",
     "swagger-ui-bundle",
-    "vine",
-    "werkzeug",
+    "uvicorn[standard]",
 ]
+worker = [
+    "gevent>=24.0.0",
+    "lxml",
+]
+flower = [
+    "flower>=2.0.0",
+    "celery",
+    "redis<8",
+]
+
+[tool.uv]
+default-groups = ["server", "worker", "test", "dev"]
 
 [project.urls]
 Source = "https://github.com/ibutsu/ibutsu-server"
-
-
-[project.optional-dependencies]
-test = [
-  "hatch",
-  "pre-commit",
-  "pytest",
-  "pytest-xdist",
-  "Flask-Testing",
-  "coverage",
-  "pluggy",
-  "py",
-  "pytest-mock",
-  "randomize",
-  "uv",
-]
-
 
 [project.scripts]
 ibutsu_server = "ibutsu_server.__main__:main"
@@ -87,10 +99,6 @@ requires = [
     "hatchling",
 ]
 build-backend = "hatchling.build"
-
-[tool.hatch.setuptools]
-raw-options.include_package_data = true
-raw-options.package_data = {"" = ["openapi/openapi.yaml"]}
 
 # move to src layout
 # don't package tests, so they can be run without editable install
@@ -120,37 +128,6 @@ exclude = [
     ".coverage",
     ".coverage.*",
 ]
-
-
-[tool.hatch.envs.default]
-python = "3.14"
-dependencies = [
-  "psycopg2-binary",  # Use binary version to avoid compilation issues
-  "pytest",
-  "pytest-xdist",
-  "pytest-cov",
-  "pytest-mock",
-  "Flask-Testing",
-  "coverage[toml]",
-  "pre-commit",
-]
-
-[tool.hatch.envs.default.scripts]
-test = "pytest {args}"
-test-cov = "pytest --cov=ibutsu_server --cov-report=xml --cov-report=term --cov-report=html {args}"
-cov-report = "coverage report"
-cov-xml = "coverage xml"
-cov-html = "coverage html"
-cov = "pytest --cov=ibutsu_server --cov-report=xml --cov-report=term --cov-report=html"
-lint = "pre-commit run --all-files"
-lint-check = "pre-commit run --all-files --show-diff-on-failure"
-
-# CI environment for testing multiple Python versions
-[tool.hatch.envs.test-matrix]
-template = "default"
-
-[[tool.hatch.envs.test-matrix.matrix]]
-python = ["3.14"]
 
 
 [tool.ruff]
