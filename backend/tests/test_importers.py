@@ -33,6 +33,7 @@ from ibutsu_server.tasks.importers import (
     run_junit_import,
 )
 from ibutsu_server.tasks.runs import update_run
+from ibutsu_server.util.uuid import is_uuid
 
 
 def make_archive_bytes(members: dict) -> bytes:
@@ -2620,12 +2621,32 @@ class TestRunArchiveImport:
                 "00000000-0000-4000-8000-000000000001/not-a-uuid/result.json",
                 "Invalid result ID not-a-uuid",
             ),
+            (
+                "507f1f77bcf86cd799439011/run.json",
+                "Invalid run ID 507f1f77bcf86cd799439011",
+            ),
+            (
+                "00000000-0000-4000-8000-000000000001/507f1f77bcf86cd799439011/result.json",
+                "Invalid result ID 507f1f77bcf86cd799439011",
+            ),
+            (
+                "507f1f77bcf86cd799439011/507f191e810c19729de860ea/result.json",
+                "Invalid run ID 507f1f77bcf86cd799439011",
+            ),
+            (
+                "507f1f77bcf86cd799439011/artifact.log",
+                "Invalid run ID 507f1f77bcf86cd799439011",
+            ),
+            (
+                "00000000-0000-4000-8000-000000000001/507f1f77bcf86cd799439011/traceback.log",
+                "Invalid result ID 507f1f77bcf86cd799439011",
+            ),
         ],
     )
     def test_run_archive_import_invalid_uuids_raise_value_error(
         self, make_import, flask_app, bad_member_name, error_match
     ):
-        """Archive import raises ValueError and marks import as error on bad UUIDs."""
+        """Archive import raises ValueError and marks import as error on bad UUIDs/ObjectIds."""
         client, _ = flask_app
         with client.application.app_context():
             tar_content = make_archive_bytes({bad_member_name: b"{}"})
@@ -2642,6 +2663,55 @@ class TestRunArchiveImport:
                 run_archive_import({"id": str(import_record.id)})
 
             assert db.session.get(Import, import_record.id).status == "error"
+
+    @pytest.mark.parametrize(
+        ("run_dir", "result_dir", "error_match"),
+        [
+            (
+                "507f1f77bcf86cd799439011",
+                "00000000-0000-4000-8000-000000000002",
+                "Invalid run ID 507f1f77bcf86cd799439011",
+            ),
+            (
+                "00000000-0000-4000-8000-000000000001",
+                "507f1f77bcf86cd799439011",
+                "Invalid result ID 507f1f77bcf86cd799439011",
+            ),
+        ],
+    )
+    def test_run_archive_import_objectid_rolls_back_and_marks_error(
+        self, make_import, flask_app, run_dir, result_dir, error_match
+    ):
+        """Archive with legacy ObjectId fails cleanly, rolls back, and marks import error."""
+        client, _ = flask_app
+        with client.application.app_context():
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_dir}/run.json": {"id": run_dir},
+                    f"{run_dir}/{result_dir}/result.json": {
+                        "id": result_dir,
+                        "test_id": "test.legacy",
+                        "result": "passed",
+                    },
+                }
+            )
+
+            import_record = make_import(
+                filename="legacy_oid.tar.gz", format="ibutsu", status="pending"
+            )
+            db.session.add(
+                ImportFile(id=str(uuid4()), import_id=import_record.id, content=tar_content)
+            )
+            db.session.commit()
+
+            with pytest.raises(ValueError, match=error_match):
+                run_archive_import({"id": str(import_record.id)})
+
+            assert db.session.get(Import, import_record.id).status == "error"
+            if is_uuid(run_dir):
+                assert db.session.get(Run, run_dir) is None
+            if is_uuid(result_dir):
+                assert db.session.get(Result, result_dir) is None
 
 
 class TestExtractRunId:
