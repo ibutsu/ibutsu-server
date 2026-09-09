@@ -65,6 +65,7 @@ server = [
     "google-auth-httplib2",
     "google-auth-oauthlib",
     "gunicorn",
+    "httpx2>=2.0.0",
     "kombu",
     "lxml",
     "psycopg2-binary",
