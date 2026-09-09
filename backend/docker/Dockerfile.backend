@@ -1,5 +1,5 @@
 # hadolint global ignore=DL3013,DL3041,DL3059
-FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1788215168
+FROM registry.access.redhat.com/ubi9/python-314:1-1787618080 AS builder
 
 ARG UV_VERSION=0.12.10
 
@@ -8,8 +8,6 @@ ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PATH="/app/.venv/bin:$PATH"
 USER 0
 
 WORKDIR /app
-RUN microdnf install --nodocs -y file-libs && \
-    microdnf clean all
 
 RUN curl -sSfL "https://releases.astral.sh/github/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-gnu.tar.gz" \
         -o /tmp/uv.tar.gz && \
@@ -22,12 +20,24 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-default-groups --group server --no-install-project
 
 COPY . /app
-COPY licenses/ /licenses/
-RUN /usr/bin/fix-permissions /app
-
 RUN uv sync --frozen --no-dev --no-default-groups --group server
 
-RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
+USER 1001
+
+FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1788215168
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+USER 0
+
+WORKDIR /app
+
+RUN microdnf install --nodocs -y file-libs && \
+    microdnf clean all
+
+COPY --from=builder /app /app
+COPY licenses/ /licenses/
+RUN /usr/bin/fix-permissions /app
 
 USER 1001
 

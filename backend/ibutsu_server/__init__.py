@@ -13,7 +13,6 @@ from yaml import full_load as yaml_load
 from ibutsu_server.db.base import db
 from ibutsu_server.db.models import User
 from ibutsu_server.db.util import add_superadmin
-from ibutsu_server.encoder import IbutsuJSONProvider
 from ibutsu_server.util.jwt import decode_token
 
 FRONTEND_PATH = Path("/app/frontend")
@@ -64,6 +63,8 @@ def get_app(**extra_config):
     """Create the WSGI application for ASGI wrapper"""
     import connexion  # noqa: PLC0415
     from starlette.middleware.cors import CORSMiddleware  # noqa: PLC0415
+
+    from ibutsu_server.encoder import IbutsuJSONProvider  # noqa: PLC0415
 
     connexion_app = connexion.FlaskApp(
         __name__, specification_dir="./openapi/", jsonifier=IbutsuJSONProvider()
