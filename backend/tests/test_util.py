@@ -2,13 +2,11 @@
 
 import contextlib
 import datetime
-import uuid
 from collections import OrderedDict
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
 import pytest
-from bson import ObjectId
 from werkzeug.exceptions import BadRequest, Forbidden, InternalServerError, NotFound, Unauthorized
 
 from ibutsu_server.db import db
@@ -40,7 +38,6 @@ from ibutsu_server.util import (
     json_response,
     merge_dicts,
     safe_string,
-    serialize,
     serialize_error,
 )
 from ibutsu_server.util.admin import validate_admin
@@ -55,7 +52,7 @@ from ibutsu_server.util.projects import (
 from ibutsu_server.util.query import query_as_task
 from ibutsu_server.util.redis_lock import get_redis_client, is_locked
 from ibutsu_server.util.urls import build_url
-from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
+from ibutsu_server.util.uuid import is_uuid, validate_uuid
 from ibutsu_server.util.widget import (
     create_basic_summary_columns,
     create_jenkins_columns,
@@ -382,27 +379,6 @@ def test_merge_dicts_with_none_values():
     new_dict = {"a": None, "c": 3}
     merge_dicts(old_dict, new_dict)
     assert new_dict == {"a": 1, "b": 2, "c": 3}
-
-
-@pytest.mark.parametrize(
-    ("input_data", "expected_output", "check_id"),
-    [
-        (
-            {"_id": ObjectId("507f1f77bcf86cd799439011"), "name": "test"},
-            {"id": "507f1f77bcf86cd799439011", "name": "test"},
-            True,
-        ),
-        ({"name": "test", "value": 123}, {"name": "test", "value": 123}, False),
-        (None, None, False),
-    ],
-)
-def test_serialize(input_data, expected_output, check_id):
-    """Test serialize with various input types."""
-    result = serialize(input_data)
-    if check_id:
-        assert "_id" not in result
-        assert "id" in result
-    assert result == expected_output
 
 
 def test_json_response_default():
@@ -827,49 +803,6 @@ class TestRedisLock:
 
 
 # Tests for util/uuid.py
-
-
-class TestConvertObjectIdToUuid:
-    """Tests for convert_objectid_to_uuid function."""
-
-    def test_convert_objectid_to_uuid_string(self):
-        """Test convert_objectid_to_uuid with ObjectId string."""
-        # Valid ObjectId string
-        object_id_str = "507f1f77bcf86cd799439011"
-        result = convert_objectid_to_uuid(object_id_str)
-
-        # Should return a valid UUID string - verify by parsing with uuid.UUID
-        assert result is not None
-        parsed_uuid = uuid.UUID(result)  # Raises ValueError if not a valid UUID
-        assert str(parsed_uuid) == result, "Result should be a properly formatted UUID string"
-
-    def test_convert_objectid_to_uuid_object(self):
-        """Test convert_objectid_to_uuid with ObjectId object."""
-        object_id = ObjectId("507f1f77bcf86cd799439011")
-        result = convert_objectid_to_uuid(object_id)
-
-        # Should return a valid UUID string - verify by parsing with uuid.UUID
-        assert result is not None
-        parsed_uuid = uuid.UUID(result)  # Raises ValueError if not a valid UUID
-        assert str(parsed_uuid) == result, "Result should be a properly formatted UUID string"
-
-    def test_convert_objectid_to_uuid_with_uuid_string(self):
-        """Test convert_objectid_to_uuid with UUID string (no conversion)."""
-        uuid_str = "507f1f77-bcf8-6cd7-9943-901100000000"
-        result = convert_objectid_to_uuid(uuid_str)
-
-        # Should return original UUID string unchanged
-        assert result == uuid_str
-        # Verify it's still a valid UUID
-        parsed_uuid = uuid.UUID(result)
-        assert str(parsed_uuid) == result
-
-    def test_convert_objectid_to_uuid_with_invalid_input(self):
-        """Test convert_objectid_to_uuid with non-ObjectId input."""
-
-        # Should return input unchanged if not ObjectId
-        result = convert_objectid_to_uuid(12345)
-        assert result == 12345
 
 
 class TestIsUuid:

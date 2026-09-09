@@ -9,7 +9,7 @@ from ibutsu_server.db.models import Group, Project, User
 from ibutsu_server.filters import convert_filter
 from ibutsu_server.util.admin import validate_admin
 from ibutsu_server.util.query import get_offset
-from ibutsu_server.util.uuid import convert_objectid_to_uuid, is_uuid, validate_uuid
+from ibutsu_server.util.uuid import validate_uuid
 
 
 @validate_admin
@@ -117,6 +117,7 @@ def admin_get_project_list(
     }
 
 
+@validate_uuid
 @validate_admin
 def admin_update_project(id_, project=None, body=None, token_info=None, user=None):
     """Update a project
@@ -130,8 +131,6 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
     """
     if not request.is_json:
         return RESPONSE_JSON_REQ
-    if not is_uuid(id_):
-        id_ = convert_objectid_to_uuid(id_)
     project = db.session.get(Project, id_)
 
     if not project:
@@ -170,9 +169,6 @@ def admin_update_project(id_, project=None, body=None, token_info=None, user=Non
 @validate_admin
 def admin_delete_project(id_, token_info=None, user=None):
     """Delete a single project"""
-    # UUID validation (from incoming branch)
-    if not is_uuid(id_):
-        return f"Project ID {id_} is not in UUID format", HTTPStatus.BAD_REQUEST
     project = db.session.get(Project, id_)
     if not project:
         abort(HTTPStatus.NOT_FOUND)

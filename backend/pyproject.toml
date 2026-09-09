@@ -47,7 +47,6 @@ dependencies = [
     "lxml",
     "psycopg2-binary",
     "pyjwt",
-    "pymongo",
     "python-magic",
     "python_dateutil",
     "PyYAML",
