@@ -4,7 +4,13 @@
 SCRIPTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 BASE_DIR="$( dirname "$SCRIPTS_DIR" )"
 NEW_VERSION=
-VERSIONED_FILES=( "$BASE_DIR/backend/pyproject.toml" "$BASE_DIR/backend/ibutsu_server/openapi/openapi.yaml" "$BASE_DIR/frontend/package.json" )
+
+# Ensure uv is in PATH if available in backend/.venv/bin
+if ! command -v uv >/dev/null 2>&1; then
+    if [[ -x "$BASE_DIR/backend/.venv/bin/uv" ]]; then
+        export PATH="$BASE_DIR/backend/.venv/bin:$PATH"
+    fi
+fi
 
 function print_usage() {
     echo "Usage: make-release.sh [-h|--help] [VERSION]"
@@ -17,9 +23,9 @@ function print_usage() {
     echo ""
 }
 
-# Function to extract current version from pyproject.toml
+# Function to extract current version using uv
 function get_current_version() {
-    grep -m1 '^version = ' "$BASE_DIR/backend/pyproject.toml" | sed 's/version = "\(.*\)"/\1/'
+    uv version --short --project "$BASE_DIR/backend"
 }
 
 # Function to increment semantic version
@@ -61,7 +67,7 @@ done
 CURRENT_VERSION=$(get_current_version)
 
 if [[ -z "$CURRENT_VERSION" ]]; then
-    echo "Error: Could not determine current version from pyproject.toml" >&2
+    echo "Error: Could not determine current version using uv" >&2
     exit 1
 fi
 
@@ -79,28 +85,49 @@ echo ""
 echo "Updating files from $CURRENT_VERSION to $NEW_VERSION"
 echo ""
 
-# Escape all relevant regex special characters in current version for sed
-SED_VERSION=${CURRENT_VERSION//./\\.}
+# Update backend pyproject.toml and uv.lock using uv
+echo "  Updating backend version with uv"
+uv version "$NEW_VERSION" --project "$BASE_DIR/backend"
 
-# Update each file
-for FNAME in "${VERSIONED_FILES[@]}"; do
-    if [[ -f "$FNAME" ]]; then
-        echo "  Updating: ${FNAME/$BASE_DIR\//}"
-        sed -i "s/$SED_VERSION/$NEW_VERSION/g" "$FNAME"
-        if ! sed -i "s/$SED_VERSION/$NEW_VERSION/g" "$FNAME"; then
-            echo "  Error: Failed to update ${FNAME/$BASE_DIR\//}" >&2
-            exit 1
-        fi
-    else
-        echo "  Warning: File not found: ${FNAME/$BASE_DIR\//}"
-    fi
-done
+# Update openapi.yaml
+OPENAPI_FILE="$BASE_DIR/backend/ibutsu_server/openapi/openapi.yaml"
+if [[ -f "$OPENAPI_FILE" ]]; then
+    echo "  Updating: backend/ibutsu_server/openapi/openapi.yaml"
+    sed -i "s/^  version: .*/  version: $NEW_VERSION/" "$OPENAPI_FILE"
+fi
+
+# Update frontend/package.json
+PACKAGE_JSON="$BASE_DIR/frontend/package.json"
+if [[ -f "$PACKAGE_JSON" ]]; then
+    echo "  Updating: frontend/package.json"
+    sed -i "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" "$PACKAGE_JSON"
+fi
+
+# If node is present, call frontend/bin/write-version-file.cjs
+if command -v node >/dev/null 2>&1 && [[ -f "$BASE_DIR/frontend/bin/write-version-file.cjs" ]]; then
+    echo "  Generating frontend/public/version.json"
+    (cd "$BASE_DIR/frontend" && node bin/write-version-file.cjs)
+fi
+
+# Stage modified files
+STAGED_FILES=(
+    "$BASE_DIR/backend/pyproject.toml"
+    "$BASE_DIR/backend/uv.lock"
+    "$BASE_DIR/backend/ibutsu_server/openapi/openapi.yaml"
+    "$BASE_DIR/frontend/package.json"
+)
+
+if [[ -f "$BASE_DIR/frontend/public/version.json" ]]; then
+    STAGED_FILES+=("$BASE_DIR/frontend/public/version.json")
+fi
+
+git -C "$BASE_DIR" add "${STAGED_FILES[@]}"
 
 echo ""
 echo "Version update complete!"
 echo ""
-echo "Files updated:"
-for FNAME in "${VERSIONED_FILES[@]}"; do
+echo "Files staged for commit:"
+for FNAME in "${STAGED_FILES[@]}"; do
     if [[ -f "$FNAME" ]]; then
         echo "  - ${FNAME/$BASE_DIR\//}"
     fi

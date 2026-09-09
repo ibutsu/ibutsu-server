@@ -4,12 +4,10 @@ from importlib import import_module
 from pathlib import Path
 from typing import Any
 
-import connexion
 import flask
 from flask_mail import Mail
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL as SQLA_URL
-from starlette.middleware.cors import CORSMiddleware
 from yaml import full_load as yaml_load
 
 from ibutsu_server.db.base import db
@@ -64,6 +62,8 @@ def check_envvar(config: flask.Config, *, envvar: str) -> str:
 
 def get_app(**extra_config):
     """Create the WSGI application for ASGI wrapper"""
+    import connexion  # noqa: PLC0415
+    from starlette.middleware.cors import CORSMiddleware  # noqa: PLC0415
 
     connexion_app = connexion.FlaskApp(
         __name__, specification_dir="./openapi/", jsonifier=IbutsuJSONProvider()

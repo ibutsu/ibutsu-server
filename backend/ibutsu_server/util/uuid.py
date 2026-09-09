@@ -1,6 +1,6 @@
 from http import HTTPStatus
+from typing import Any
 from uuid import UUID
-
 
 def is_uuid(candidate):
     """Determine if this is a uuid"""
