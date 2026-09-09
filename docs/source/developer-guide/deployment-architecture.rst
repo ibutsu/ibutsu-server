@@ -498,7 +498,7 @@ Related Internal Documentation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Backend setup and development - See getting-started
-* Build and test with Hatch - See hatch-usage
+* Build and test with UV - See uv-usage
 * OpenShift deployment templates - ``ocp-templates/README.md``
 * Celery configuration - ``CELERY_ENV_VAR_CONSISTENCY_SUMMARY.md``
 

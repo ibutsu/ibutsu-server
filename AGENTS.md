@@ -282,8 +282,8 @@ podman build -t ibutsu-flower:<branch-name> -f docker/Dockerfile.flower .
 
 ## Database Migrations
 - **Always use Alembic** for database schema changes
-- Run `hatch run alembic revision -m "description"` to create new migrations
-- Test migrations with `hatch run alembic upgrade head` and `hatch run alembic downgrade -1`
+- Run `uv run alembic revision -m "description"` to create new migrations
+- Test migrations with `uv run alembic upgrade head` and `uv run alembic downgrade -1`
 - Never modify the database schema directly in production
 - All schema changes must have both upgrade() and downgrade() functions
 - Document any PostgreSQL-specific features in migration comments
@@ -315,8 +315,8 @@ podman build -t ibutsu-flower:<branch-name> -f docker/Dockerfile.flower .
 
 # Backend Testing Instructions
 - Find the CI plan in the .github/workflows folder.
-- Use `hatch run test` to execute tests and `hatch run test-cov` to include coverage from the backend directory as the working directory
-- Pass arguments to pytest through `hatch run test -- <-arg>`
+- Use `uv run pytest` to execute tests and `uv run pytest --cov=ibutsu_server --cov-report=xml --cov-report=term --cov-report=html` to include coverage from the backend directory as the working directory
+- Pass arguments to pytest through `uv run pytest <-arg>`
 - Add or update tests for the code you change, even if nobody asked.
 - Do not make changes to cause tests to pass when a bug is identified by the test. Always first investigate for bugs in the tested application component.
 - Use full UUID strings for all `id` fields including `run_id` and `result_id` when mocking unless an invalid UUID is specifically being tested
@@ -330,7 +330,7 @@ podman build -t ibutsu-flower:<branch-name> -f docker/Dockerfile.flower .
 
 ## Coverage Requirements
 - **Target**: 80% line coverage for all modules
-- **Run**: `hatch run test-cov` to verify coverage
+- **Run**: `uv run pytest --cov=ibutsu_server --cov-report=xml --cov-report=term --cov-report=html` to verify coverage
 - Coverage reports generated in `htmlcov/` and `coverage.xml`
 
 ## Available Test Fixtures

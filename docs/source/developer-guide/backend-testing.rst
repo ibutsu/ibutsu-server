@@ -49,22 +49,22 @@ Commands
 
    # Run all tests
    cd backend
-   hatch run test
+   uv run pytest
 
    # Run with coverage
-   hatch run test-cov
+   uv run pytest --cov=ibutsu_server --cov-report=xml --cov-report=term
 
    # Run specific test file
-   hatch run test tests/widgets/test_importance_component.py
+   uv run pytest tests/widgets/test_importance_component.py
 
    # Run specific test
-   hatch run test tests/widgets/test_importance_component.py::test_get_importance_component_with_valid_project
+   uv run pytest tests/widgets/test_importance_component.py::test_get_importance_component_with_valid_project
 
-   # Run tests in parallel (default)
-   hatch run test -n auto
+   # Run tests in parallel (default configured in pyproject.toml)
+   uv run pytest -n auto
 
    # Run tests verbosely
-   hatch run test -v
+   uv run pytest -v
 
 Running Tests by Marker
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -72,16 +72,16 @@ Running Tests by Marker
 .. code-block:: bash
 
    # Run only integration tests
-   hatch run test -m integration
+   uv run pytest -m integration
 
    # Run only validation tests
-   hatch run test -m validation
+   uv run pytest -m validation
 
    # Run all except slow tests
-   hatch run test -m "not slow"
+   uv run pytest -m "not slow"
 
    # Run integration and validation tests
-   hatch run test -m "integration or validation"
+   uv run pytest -m "integration or validation"
 
 Test File Organization
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -664,13 +664,13 @@ Coverage Requirements
 ---------------------
 
 * **Target:** 80% line coverage for all modules
-* **Run:** ``hatch run test-cov`` to verify coverage
+* **Run:** ``uv run pytest --cov=ibutsu_server --cov-report=xml --cov-report=term`` to verify coverage
 * **Report:** Coverage reports generated in ``htmlcov/`` and ``coverage.xml``
 
 .. code-block:: bash
 
    # Run with coverage for specific module
-   hatch run test-cov -- --cov-report=term-missing --cov=ibutsu_server.widgets.importance_component
+   uv run pytest --cov-report=term-missing --cov=ibutsu_server.widgets.importance_component
 
 When to Use Each Pattern
 ------------------------
@@ -755,7 +755,7 @@ Tests are slow
 **Solution:**
 
 1. Use builder fixtures instead of API calls for setup
-2. Run tests in parallel: ``hatch run test -n auto``
+2. Run tests in parallel: ``uv run pytest -n auto``
 3. Create minimal test data - only what's needed
 
 References

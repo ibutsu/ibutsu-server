@@ -1,19 +1,29 @@
-# hadolint global ignore=DL3013,DL3041
+# hadolint global ignore=DL3013,DL3041,DL3059
 FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1788215168
 
-ENV UPGRADE_PIP_TO_LATEST=1
+ARG UV_VERSION=0.12.10
+
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PATH="/app/.venv/bin:$PATH"
 
 USER 0
 
-RUN microdnf install --nodocs -y file-libs && \
-    microdnf clean all
+WORKDIR /app
+
+RUN curl -sSfL "https://releases.astral.sh/github/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-gnu.tar.gz" \
+        -o /tmp/uv.tar.gz && \
+    tar -xzf /tmp/uv.tar.gz -C /tmp && \
+    install -m 0755 -t /bin \
+        /tmp/uv-x86_64-unknown-linux-gnu/uv /tmp/uv-x86_64-unknown-linux-gnu/uvx && \
+    rm -rf /tmp/uv.tar.gz /tmp/uv-x86_64-unknown-linux-gnu
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-default-groups --group worker --no-install-project
 
 COPY . /app
 COPY licenses/ /licenses/
+RUN /usr/bin/fix-permissions /app
 
-WORKDIR /app
-RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
-    pip install --no-cache-dir -r requirements-pinned.txt .
+RUN uv sync --frozen --no-dev --no-default-groups --group worker
 
 RUN chgrp -R 0 ibutsu_server && chmod -R g+rwX ibutsu_server
 

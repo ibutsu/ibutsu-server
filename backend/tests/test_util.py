@@ -9,6 +9,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 from werkzeug.exceptions import BadRequest, Forbidden, InternalServerError, NotFound, Unauthorized
 
+try:
+    from bson import ObjectId
+except ImportError:
+    from ibutsu_server.util.uuid import ObjectId
+
 from ibutsu_server.db import db
 from ibutsu_server.db.models import (
     Artifact,

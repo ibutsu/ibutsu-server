@@ -8,7 +8,6 @@ from io import BytesIO
 
 from celery.utils.log import get_task_logger
 from dateutil import parser
-from lxml import objectify
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
@@ -238,8 +237,10 @@ def _add_artifacts(result, testcase, traceback):
         _upsert_result_artifact(result.id, "system-err.log", system_err)
 
 
-def _get_properties(xml_element: objectify.Element) -> dict:
+def _get_properties(xml_element) -> dict:
     """Get the properties from an XML element"""
+    from lxml import objectify  # noqa: F401, PLC0415
+
     if not hasattr(xml_element, "properties"):
         return {}
     properties = {}
@@ -402,6 +403,8 @@ def run_junit_import(import_):
     # through rolls back cleanly and marks the import as errored.
     with _import_failure_handling(import_record):
         # Parse the XML and create a run object(s)
+        from lxml import objectify  # noqa: PLC0415
+
         tree = objectify.fromstring(import_file.content)
         existing_run_id = _extract_run_id(import_record)
         import_record.data["run_id"] = []

@@ -122,22 +122,21 @@ This is required for ``celery``.
 Handle Dependencies
 ~~~~~~~~~~~~~~~~~~~~
 
-You'll want to set up a virtual environment for the backend, and install the dependencies:
+The backend uses ``uv`` to manage virtual environments, dependencies, and locking.
+
+To set up the virtual environment and install all dependencies:
 
 .. code:: shell
 
     cd ibutsu-server/backend
-    python3.9 -m venv .ibutsu-env
-    source .ibtusu-env/bin/activate/
-    pip install -U pip wheel
-    pip install -U -r requirements-pinned.txt .
+    uv sync
 
 
-In order to update/maintain dependencies, the tool `uv` should be used.
+In order to lock dependencies and update ``uv.lock``:
 
-Dependencies are defined in pyproject.toml, and are pinned to specific versions in requirements-pinned.txt.
+.. code:: shell
 
-In order to update pinned dependency versions, modify the hardcoded pin in pyproject.toml if applicable, and run `uv pip compile pyproject.toml -o requirements-pinned.txt` from the backend directory.
+    uv lock
 
 
 Run Celery Worker
