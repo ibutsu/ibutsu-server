@@ -330,11 +330,16 @@ class TestAdminDeleteLastSuperadmin:
         if not hasattr(ibutsu_server.tasks, "task") or ibutsu_server.tasks.task is None:
             ibutsu_server.tasks.task = _mock_task
 
-        # Use Connexion 3 test client
-        with connexion_app.test_client() as client:
-            # Add Flask app reference for compatibility
-            client.application = flask_app
-            yield client, jwt_token, second_user_id
+        try:
+            # Use Connexion 3 test client
+            with connexion_app.test_client() as client:
+                # Add Flask app reference for compatibility
+                client.application = flask_app
+                yield client, jwt_token, second_user_id
+        finally:
+            with flask_app.app_context():
+                session.remove()
+                db.engine.dispose()
 
     def test_admin_delete_user_cannot_delete_last_superadmin(
         self, two_superadmin_flask_app, auth_headers
