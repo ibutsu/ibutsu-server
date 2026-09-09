@@ -32,6 +32,7 @@ from ibutsu_server.tasks.importers import (
     run_archive_import,
     run_junit_import,
 )
+from ibutsu_server.tasks.runs import update_run
 
 
 def make_archive_bytes(members: dict) -> bytes:
@@ -1518,6 +1519,441 @@ class TestRunArchiveImport:
                 .all()
             )
             assert len(all_artifacts_after) == 1
+
+    def test_run_archive_import_existing_run_different_result_id_no_duplicate(
+        self, make_import, flask_app
+    ):
+        """Test that importing an archive into an existing run with different result IDs
+        updates existing results by test_id and avoids creating duplicate results.
+
+        Replicates staging bug where an archive imported twice (or into a run whose
+        existing results have different IDs) resulted in duplicate result rows and
+        doubled run summary counts (e.g. 20,490 passes for 10,312 collected tests).
+        """
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = str(uuid4())
+            existing_result_id = "4ba7c6ed-4dae-41a6-9034-fc6658842061"
+            archive_result_id = "e4e5fcc9-0e27-4b87-8a72-72886f267755"
+            test_id = "test_api_all_data_retention_saas_date_query_limits"
+
+            # Pre-existing run and result in the database (e.g. from an earlier import or API run)
+            run = Run(
+                id=run_id,
+                duration=10.0,
+                summary={
+                    "tests": 1,
+                    "passes": 1,
+                    "failures": 0,
+                    "errors": 0,
+                    "skips": 0,
+                    "collected": 1,
+                },
+            )
+            existing_result = Result(
+                id=existing_result_id,
+                run_id=run_id,
+                test_id=test_id,
+                result="passed",
+                duration=10.0,
+                start_time=datetime.now(UTC),
+            )
+            db.session.add(run)
+            db.session.add(existing_result)
+            db.session.commit()
+
+            # Archive has the same run_id and test_id, but with archive_result_id
+            run_data = {
+                "id": run_id,
+                "summary": {"tests": 1, "collected": 1, "skips": 0, "failures": 0, "errors": 0},
+            }
+            result_data = {
+                "id": archive_result_id,
+                "test_id": test_id,
+                "result": "passed",
+                "duration": 16.6,
+                "start_time": datetime.now(UTC).isoformat(),
+            }
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{archive_result_id}/result.json": result_data,
+                }
+            )
+
+            import_record = make_import(
+                filename="archive.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()),
+                import_id=import_record.id,
+                content=tar_content,
+            )
+            db.session.add(import_file)
+            db.session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+                patch("ibutsu_server.tasks.importers.update_run"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            all_results = (
+                db.session.execute(db.select(Result).where(Result.run_id == run_id)).scalars().all()
+            )
+            assert len(all_results) == 1, (
+                f"Expected 1 result for run {run_id}, but found {len(all_results)}"
+            )
+            assert all_results[0].id == existing_result_id
+            assert all_results[0].test_id == test_id
+            assert all_results[0].duration == 16.6
+
+            # Verify update_run computes accurate summary without duplicate counts
+            with (
+                patch("ibutsu_server.tasks.runs.lock"),
+                patch("ibutsu_server.tasks.runs.is_locked", return_value=False),
+            ):
+                update_run(run_id)
+
+            updated_run = db.session.get(Run, run_id)
+            assert updated_run.summary["tests"] == 1
+            assert updated_run.summary["passes"] == 1
+            assert updated_run.summary["skips"] == 0
+            assert updated_run.summary["collected"] == 1
+
+    def test_run_archive_import_multi_result_with_artifacts_existing_run_no_duplicate(
+        self, make_import, flask_app
+    ):
+        """Test that importing an archive with multiple results and artifacts into an existing run
+        does not create duplicate results.
+        """
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = "d599fb77-53a3-4492-a176-d2de0761cfec"
+
+            # Pre-populate DB with the run and 3 results with different IDs (matching archive tests)
+            test_ids = [
+                "test_access_valid_token",
+                "test_access_banned_token",
+                "test_plugin_accessible",
+            ]
+            run = Run(
+                id=run_id,
+                duration=1.22,
+                summary={
+                    "tests": 3,
+                    "passes": 3,
+                    "skips": 0,
+                    "failures": 0,
+                    "errors": 0,
+                    "collected": 3,
+                },
+            )
+            db.session.add(run)
+            existing_result_ids = []
+            for tid in test_ids:
+                res_id = str(uuid4())
+                existing_result_ids.append(res_id)
+                db.session.add(
+                    Result(
+                        id=res_id,
+                        run_id=run_id,
+                        test_id=tid,
+                        result="passed",
+                        duration=0.1,
+                        start_time=datetime.now(UTC),
+                    )
+                )
+            db.session.commit()
+
+            archive_res_ids = [str(uuid4()) for _ in test_ids]
+            run_data = {
+                "id": run_id,
+                "duration": 1.22,
+                "summary": {
+                    "tests": 3,
+                    "passes": 3,
+                    "skips": 0,
+                    "failures": 0,
+                    "errors": 0,
+                    "collected": 3,
+                },
+            }
+            tar_members = {
+                f"{run_id}/run.json": run_data,
+                f"{run_id}/requirements_report.md": "# Requirements Report\nAll passed",
+            }
+            for i, (tid, aid) in enumerate(zip(test_ids, archive_res_ids, strict=False)):
+                tar_members[f"{run_id}/{aid}/result.json"] = {
+                    "id": aid,
+                    "test_id": tid,
+                    "result": "passed",
+                    "duration": 0.5 + i,
+                    "start_time": datetime.now(UTC).isoformat(),
+                }
+                tar_members[f"{run_id}/{aid}/test.log"] = f"Log output for {tid}"
+
+            tar_bytes = make_archive_bytes(tar_members)
+
+            import_record = make_import(
+                filename="d599fb77.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()),
+                import_id=import_record.id,
+                content=tar_bytes,
+            )
+            db.session.add(import_file)
+            db.session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+                patch("ibutsu_server.tasks.importers.update_run"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            all_results = (
+                db.session.execute(db.select(Result).where(Result.run_id == run_id)).scalars().all()
+            )
+            assert len(all_results) == 3, (
+                f"Expected 3 results for run {run_id}, but found {len(all_results)}"
+            )
+
+            # Verify existing IDs are retained and durations updated
+            result_map = {r.test_id: r for r in all_results}
+            for i, tid in enumerate(test_ids):
+                assert tid in result_map
+                assert result_map[tid].id in existing_result_ids
+                assert result_map[tid].duration == 0.5 + i
+
+            # Verify artifacts were uploaded without duplication
+            run_artifacts = (
+                db.session.execute(db.select(Artifact).where(Artifact.run_id == run_id))
+                .scalars()
+                .all()
+            )
+            assert len(run_artifacts) == 1
+            assert run_artifacts[0].filename == "requirements_report.md"
+
+            # Verify update_run computes accurate summary without duplicate counts
+            with (
+                patch("ibutsu_server.tasks.runs.lock"),
+                patch("ibutsu_server.tasks.runs.is_locked", return_value=False),
+            ):
+                update_run(run_id)
+
+            updated_run = db.session.get(Run, run_id)
+            assert updated_run.summary["tests"] == 3
+            assert updated_run.summary["passes"] == 3
+            assert updated_run.summary["skips"] == 0
+            assert updated_run.summary["collected"] == 3
+
+    def test_run_archive_import_multiple_same_test_id_no_duplicate(self, make_import, flask_app):
+        """Test that multiple results with same test_id (e.g. retries) match 1:1 without dupes."""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = str(uuid4())
+            existing_res_id1 = str(uuid4())
+            existing_res_id2 = str(uuid4())
+            archive_res_id1 = str(uuid4())
+            archive_res_id2 = str(uuid4())
+            test_id = "test.flaky_retry"
+
+            t1 = datetime(2025, 6, 25, 12, 0, 0, tzinfo=UTC)
+            t2 = datetime(2025, 6, 25, 12, 5, 0, tzinfo=UTC)
+
+            # Pre-existing run with 2 results for the same test_id (retry scenario)
+            run = Run(
+                id=run_id,
+                duration=15.0,
+                summary={
+                    "tests": 2,
+                    "passes": 1,
+                    "failures": 1,
+                    "errors": 0,
+                    "skips": 0,
+                    "collected": 2,
+                },
+            )
+            r1 = Result(
+                id=existing_res_id1,
+                run_id=run_id,
+                test_id=test_id,
+                result="failed",
+                duration=5.0,
+                start_time=t1,
+            )
+            r2 = Result(
+                id=existing_res_id2,
+                run_id=run_id,
+                test_id=test_id,
+                result="passed",
+                duration=10.0,
+                start_time=t2,
+            )
+            db.session.add(run)
+            db.session.add(r1)
+            db.session.add(r2)
+            db.session.commit()
+
+            # Archive has 2 results for that test_id with new archive IDs
+            run_data = {
+                "id": run_id,
+                "summary": {"tests": 2, "collected": 2, "skips": 0, "failures": 1, "errors": 0},
+            }
+            res_data1 = {
+                "id": archive_res_id1,
+                "test_id": test_id,
+                "result": "failed",
+                "duration": 5.2,
+                "start_time": t1.isoformat(),
+            }
+            res_data2 = {
+                "id": archive_res_id2,
+                "test_id": test_id,
+                "result": "passed",
+                "duration": 9.8,
+                "start_time": t2.isoformat(),
+            }
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{archive_res_id1}/result.json": res_data1,
+                    f"{run_id}/{archive_res_id2}/result.json": res_data2,
+                }
+            )
+
+            import_record = make_import(
+                filename="retry_archive.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()),
+                import_id=import_record.id,
+                content=tar_content,
+            )
+            db.session.add(import_file)
+            db.session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+                patch("ibutsu_server.tasks.importers.update_run"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            all_results = (
+                db.session.execute(db.select(Result).where(Result.run_id == run_id)).scalars().all()
+            )
+            assert len(all_results) == 2, (
+                f"Expected 2 results for run {run_id}, but found {len(all_results)}"
+            )
+
+            # Verify chronological 1:1 match preserved: attempt 1 updated r1, attempt 2 updated r2
+            res_1 = db.session.get(Result, existing_res_id1)
+            res_2 = db.session.get(Result, existing_res_id2)
+            assert res_1.result == "failed"
+            assert res_1.duration == 5.2
+            assert res_2.result == "passed"
+            assert res_2.duration == 9.8
+
+            with (
+                patch("ibutsu_server.tasks.runs.lock"),
+                patch("ibutsu_server.tasks.runs.is_locked", return_value=False),
+            ):
+                update_run(run_id)
+
+            updated_run = db.session.get(Run, run_id)
+            assert updated_run.summary["tests"] == 2
+            assert updated_run.summary["passes"] == 1
+            assert updated_run.summary["failures"] == 1
+
+    def test_run_archive_import_duplicate_result_id_in_archive_updates_without_error(
+        self, make_import, flask_app
+    ):
+        """Test that importing an archive containing duplicate result IDs updates existing records
+        without raising an IntegrityError.
+        """
+        client, _ = flask_app
+
+        with client.application.app_context():
+            run_id = str(uuid4())
+            res_id = str(uuid4())
+            test_id = "test_duplicate_id"
+
+            run_data = {
+                "id": run_id,
+                "summary": {"tests": 1, "collected": 1, "skips": 0, "failures": 0, "errors": 0},
+            }
+            res_data1 = {
+                "id": res_id,
+                "test_id": test_id,
+                "result": "passed",
+                "duration": 5.0,
+                "start_time": datetime.now(UTC).isoformat(),
+            }
+            res_data2 = {
+                "id": res_id,
+                "test_id": test_id,
+                "result": "passed",
+                "duration": 6.5,
+                "start_time": datetime.now(UTC).isoformat(),
+            }
+            tar_content = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{res_id}/result.json": res_data1,
+                }
+            )
+
+            import_record = make_import(
+                filename="archive1.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file = ImportFile(
+                id=str(uuid4()),
+                import_id=import_record.id,
+                content=tar_content,
+            )
+            db.session.add(import_file)
+            db.session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+                patch("ibutsu_server.tasks.importers.update_run"),
+            ):
+                run_archive_import({"id": str(import_record.id)})
+
+            # Second import with the same result_id but updated duration
+            tar_content2 = make_archive_bytes(
+                {
+                    f"{run_id}/run.json": run_data,
+                    f"{run_id}/{res_id}/result.json": res_data2,
+                }
+            )
+            import_record2 = make_import(
+                filename="archive2.tar.gz", format="ibutsu", status="pending"
+            )
+            import_file2 = ImportFile(
+                id=str(uuid4()),
+                import_id=import_record2.id,
+                content=tar_content2,
+            )
+            db.session.add(import_file2)
+            db.session.commit()
+
+            with (
+                patch("ibutsu_server.tasks.importers.clear_import_file_content"),
+                patch("ibutsu_server.tasks.importers.update_run"),
+            ):
+                run_archive_import({"id": str(import_record2.id)})
+
+            all_results = (
+                db.session.execute(db.select(Result).where(Result.run_id == run_id)).scalars().all()
+            )
+            assert len(all_results) == 1
+            assert all_results[0].id == res_id
+            assert all_results[0].duration == 6.5
 
     def test_run_archive_import_missing_file(self, make_import, flask_app):
         """Test archive import with missing file"""
