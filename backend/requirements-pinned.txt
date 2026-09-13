@@ -150,7 +150,7 @@ protobuf==7.36.1
     #   google-api-core
     #   googleapis-common-protos
     #   proto-plus
-psycopg2-binary==2.9.12
+psycopg2-binary==2.9.13
     # via ibutsu-server (pyproject.toml)
 pyasn1==0.6.4
     # via pyasn1-modules
