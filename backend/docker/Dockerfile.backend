@@ -2,20 +2,33 @@
 FROM registry.access.redhat.com/ubi9/python-314:1-1787618080 AS builder
 
 ARG UV_VERSION=0.12.10
+ARG UV_GROUPS="server,migrations"
+ARG EXTRA_GROUPS=""
 
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PATH="/app/.venv/bin:$PATH"
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PYTHON=/usr/bin/python3.14 \
+    PATH="/app/.venv/bin:$PATH"
 
 USER 0
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir "uv==${UV_VERSION}"
+RUN python3.14 -m pip install --no-cache-dir "uv==${UV_VERSION}"
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-default-groups --group server --no-install-project
+RUN GROUP_ARGS=() && \
+    for g in $(echo "${UV_GROUPS} ${EXTRA_GROUPS}" | tr ',' ' '); do \
+        GROUP_ARGS+=(--group "$g"); \
+    done && \
+    uv sync --frozen --no-dev --no-default-groups "${GROUP_ARGS[@]}" --no-install-project
 
 COPY . /app
-RUN uv sync --frozen --no-dev --no-default-groups --group server
+RUN uv build && \
+    uv pip install --python /app/.venv/bin/python --no-deps dist/*.whl
 
 USER 1001
 
@@ -32,16 +45,20 @@ RUN microdnf install --nodocs -y file-libs && \
 
 COPY --from=builder /app /app
 COPY licenses/ /licenses/
+COPY --chmod=755 ./docker/entrypoint.sh /app/entrypoint.sh
 RUN /usr/bin/fix-permissions /app
 
 USER 1001
 
-# - alembic and DB migrations are not part of this image, they are run in the init_db.py script before this container starts
+# Default execution environment parameters
+# Set RUN_MIGRATIONS=true or INIT_DB=true to run alembic migrations on startup
+ENV RUN_MIGRATIONS=false
+
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 # ASGI entrypoint with Gunicorn process manager + Uvicorn ASGI workers
 # - Gunicorn manages worker processes (scaling, graceful restarts, health monitoring)
 # - UvicornWorker provides ASGI support with uvloop and httptools for performance
-# dev? CMD ["uvicorn", "ibutsu_server:connexion_app", "--host", "0.0.0.0", "--port", "8080"]
 CMD ["gunicorn", \
      "-k", "uvicorn.workers.UvicornWorker", \
      "-c", "config.py", \

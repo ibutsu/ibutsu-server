@@ -38,6 +38,7 @@ The project defines several dependency groups in ``pyproject.toml`` for containe
 * ``server``: API server dependencies (Connexion, Uvicorn, Gunicorn, Starlette, etc.)
 * ``worker``: Celery worker dependencies (Gevent, lxml)
 * ``flower``: Flower monitoring dependencies
+* ``migrations``: Database migration dependencies (Alembic)
 * ``test``: Testing dependencies (pytest, pytest-cov, pytest-xdist, etc.)
 * ``dev``: Development dependencies (pre-commit)
 
@@ -45,11 +46,14 @@ To sync only specific groups (e.g. for container builds):
 
 .. code-block:: bash
 
-   # Server only (with core dependencies)
+   # Server with migrations (standard backend image)
+   uv sync --frozen --no-dev --no-default-groups --group server --group migrations
+
+   # Server only (minimal runtime without migrations)
    uv sync --frozen --no-dev --no-default-groups --group server
 
    # Worker only (with core dependencies)
-   uv sync --frozen --no-dev --no-default-groups --group worker
+   uv sync --frozen --no-dev --no-default-groups --group server --group worker
 
    # Flower only
    uv sync --frozen --no-dev --no-default-groups --only-group flower

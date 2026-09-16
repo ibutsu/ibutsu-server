@@ -15,7 +15,9 @@ and committed to version control.
 """
 
 import logging
+import os
 import sys
+import time
 from pathlib import Path
 
 from alembic.config import Config
@@ -40,16 +42,30 @@ def initialize_flask_app(logger):
         sys.exit(1)
 
 
-def check_database_connection(logger):
-    """Verify database connectivity."""
-    try:
-        with db.engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        logger.info("[OK] Database connection successful")
-    except Exception as e:
-        logger.error(f"[FAIL] Database connection failed: {e}")
-        logger.exception("Full traceback:")
-        sys.exit(1)
+def check_database_connection(logger, max_retries=None, retry_interval=None):
+    """Verify database connectivity with retry support for container startup."""
+    if max_retries is None:
+        max_retries = int(os.environ.get("DB_CONNECT_RETRIES", "30"))
+    if retry_interval is None:
+        retry_interval = int(os.environ.get("DB_CONNECT_RETRY_INTERVAL", "2"))
+
+    for attempt in range(1, max_retries + 1):
+        try:
+            with db.engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            logger.info("[OK] Database connection successful")
+            return
+        except Exception as e:
+            if attempt < max_retries:
+                logger.warning(
+                    f"Database connection attempt {attempt}/{max_retries} failed: {e}. "
+                    f"Retrying in {retry_interval}s..."
+                )
+                time.sleep(retry_interval)
+            else:
+                logger.error(f"[FAIL] Database connection failed after {max_retries} attempts: {e}")
+                logger.exception("Full traceback:")
+                sys.exit(1)
 
 
 def load_alembic_config(logger):

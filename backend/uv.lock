@@ -928,7 +928,6 @@ name = "ibutsu-server"
 version = "3.1.2"
 source = { editable = "." }
 dependencies = [
-    { name = "alembic" },
     { name = "bcrypt" },
     { name = "celery" },
     { name = "flask" },
@@ -955,6 +954,9 @@ flower = [
     { name = "flower" },
     { name = "redis" },
 ]
+migrations = [
+    { name = "alembic" },
+]
 server = [
     { name = "connexion", extra = ["flask", "swagger-ui"] },
     { name = "google-api-python-client" },
@@ -973,6 +975,7 @@ server = [
     { name = "uvicorn", extra = ["standard"] },
 ]
 test = [
+    { name = "alembic" },
     { name = "coverage" },
     { name = "flask-testing" },
     { name = "pytest" },
@@ -988,7 +991,6 @@ worker = [
 
 [package.metadata]
 requires-dist = [
-    { name = "alembic" },
     { name = "bcrypt", specifier = ">=5.0.0" },
     { name = "celery" },
     { name = "flask" },
@@ -1013,6 +1015,7 @@ flower = [
     { name = "flower", specifier = ">=2.0.0" },
     { name = "redis", specifier = "<8" },
 ]
+migrations = [{ name = "alembic" }]
 server = [
     { name = "connexion", extras = ["flask"] },
     { name = "connexion", extras = ["swagger-ui"] },
@@ -1032,6 +1035,7 @@ server = [
     { name = "uvicorn", extras = ["standard"] },
 ]
 test = [
+    { name = "alembic" },
     { name = "coverage", extras = ["toml"] },
     { name = "flask-testing" },
     { name = "pytest" },
