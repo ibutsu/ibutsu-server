@@ -1,5 +1,6 @@
 """Tests for ibutsu_server.celery_utils module."""
 
+import sys
 from operator import attrgetter
 from unittest.mock import MagicMock
 
@@ -54,6 +55,24 @@ class TestLazyFlowerApp:
             match=r"module 'ibutsu_server\.celery_utils' has no attribute 'unknown_app'",
         ):
             assert attrgetter("unknown_app")(celery_utils) is not None
+
+    def test_flower_app_works_without_flask(self, monkeypatch):
+        """Flower app should load without flask or sqlalchemy installed."""
+        monkeypatch.setitem(sys.modules, "flask", None)
+        monkeypatch.setitem(sys.modules, "sqlalchemy", None)
+        monkeypatch.setitem(sys.modules, "flask_mail", None)
+        monkeypatch.setitem(sys.modules, "yaml", None)
+        monkeypatch.setitem(sys.modules, "flask_sqlalchemy", None)
+
+        from celery.app.utils import find_app  # noqa: PLC0415
+
+        app = find_app("ibutsu_server.celery_utils:flower_app")
+        assert isinstance(app, Celery)
+        assert app.main == "ibutsu_server_flower"
+
+        app_root = find_app("ibutsu_server:flower_app")
+        assert isinstance(app_root, Celery)
+        assert app_root.main == "ibutsu_server_flower"
 
 
 class TestCreateBrokerCeleryApp:

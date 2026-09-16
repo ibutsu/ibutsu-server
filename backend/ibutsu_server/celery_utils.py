@@ -64,7 +64,6 @@ from celery import Celery, signals
 from celery.schedules import crontab
 
 from ibutsu_server.constants import SOCKET_CONNECT_TIMEOUT, SOCKET_TIMEOUT
-from ibutsu_server.util.celery_task import IbutsuTask, set_flask_app
 
 if TYPE_CHECKING:
     flower_app: Celery
@@ -170,6 +169,8 @@ def create_flask_celery_app(app=None, name="ibutsu_server"):
     if app is None:
         msg = "Flask app instance is required for Flask-integrated Celery app"
         raise ValueError(msg)
+
+    from ibutsu_server.util.celery_task import IbutsuTask, set_flask_app  # noqa: PLC0415
 
     # Store the Flask app globally so it's available to our custom IbutsuTask class
     set_flask_app(app)

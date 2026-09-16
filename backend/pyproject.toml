@@ -26,7 +26,6 @@ classifiers = [
 ]
 
 dependencies = [
-    "alembic",
     "bcrypt>=5.0.0",
     "celery",
     "Flask",
@@ -48,7 +47,11 @@ dependencies = [
 dev = [
     "pre-commit",
 ]
+migrations = [
+    "alembic",
+]
 test = [
+    { include-group = "migrations" },
     "coverage[toml]",
     "Flask-Testing",
     "pytest",
@@ -86,7 +89,7 @@ flower = [
 ]
 
 [tool.uv]
-default-groups = ["server", "worker", "test", "dev"]
+default-groups = ["server", "worker", "test", "dev", "migrations"]
 
 [project.urls]
 Source = "https://github.com/ibutsu/ibutsu-server"

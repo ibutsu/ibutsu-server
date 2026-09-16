@@ -1,21 +1,29 @@
+from __future__ import annotations
+
+import importlib
 import os
+import sys
 from http import HTTPStatus
-from importlib import import_module
+from importlib import import_module  # noqa: F401
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import flask
-from flask_mail import Mail
-from sqlalchemy import create_engine
-from sqlalchemy.engine.url import URL as SQLA_URL
-from yaml import full_load as yaml_load
+_real_import_module = importlib.import_module
 
-from ibutsu_server.db.base import db
-from ibutsu_server.db.models import User
-from ibutsu_server.db.util import add_superadmin
-from ibutsu_server.util.jwt import decode_token
+if TYPE_CHECKING:
+    import flask
+    from sqlalchemy.engine.url import URL as SQLA_URL
 
 FRONTEND_PATH = Path("/app/frontend")
+
+_LAZY_MODULE_ATTRIBUTES = {
+    "add_superadmin": ("ibutsu_server.db.util", "add_superadmin"),
+    "create_engine": ("sqlalchemy", "create_engine"),
+    "decode_token": ("ibutsu_server.util.jwt", "decode_token"),
+    "Mail": ("flask_mail", "Mail"),
+    "SQLA_URL": ("sqlalchemy.engine.url", "URL"),
+    "db": ("ibutsu_server.db.base", "db"),
+}
 
 
 def maybe_sql_url(conf: dict[str, Any]) -> SQLA_URL | None:
@@ -27,7 +35,8 @@ def maybe_sql_url(conf: dict[str, Any]) -> SQLA_URL | None:
         if sslmode := conf.get("sslmode"):
             query_params["sslmode"] = sslmode
 
-        return SQLA_URL.create(
+        sqla_url_cls = sys.modules[__name__].SQLA_URL
+        return sqla_url_cls.create(
             drivername="postgresql",
             host=host,
             database=database,
@@ -62,7 +71,9 @@ def check_envvar(config: flask.Config, *, envvar: str) -> str:
 def get_app(**extra_config):
     """Create the WSGI application for ASGI wrapper"""
     import connexion  # noqa: PLC0415
+    import flask  # noqa: PLC0415
     from starlette.middleware.cors import CORSMiddleware  # noqa: PLC0415
+    from yaml import full_load as yaml_load  # noqa: PLC0415
 
     from ibutsu_server.encoder import IbutsuJSONProvider  # noqa: PLC0415
 
@@ -91,7 +102,8 @@ def get_app(**extra_config):
 
     # If you have environment variables, like when running on OpenShift, create the db url
     if "SQLALCHEMY_DATABASE_URI" not in extra_config and "SQLALCHEMY_DATABASE_URI" not in config:
-        maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
+        maybe_sql_url_fn = sys.modules[__name__].maybe_sql_url
+        maybe_db_uri = maybe_sql_url_fn(config.get_namespace("POSTGRESQL_")) or maybe_sql_url_fn(
             config.get_namespace("POSTGRES_")
         )
 
@@ -105,7 +117,7 @@ def get_app(**extra_config):
             # wait for db to appear in case of pod usage
             config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
 
-            engine = create_engine(maybe_db_uri)
+            engine = sys.modules[__name__].create_engine(maybe_db_uri)
             for _ in range(10):
                 try:
                     c = engine.connect()
@@ -121,9 +133,10 @@ def get_app(**extra_config):
 
     if "SQLALCHEMY_ENGINE_OPTIONS" not in config or not config["SQLALCHEMY_ENGINE_OPTIONS"]:
         db_uri = config.get("SQLALCHEMY_DATABASE_URI", "")
+        sqla_url_cls = sys.modules[__name__].SQLA_URL
         is_sqlite = False
         if (isinstance(db_uri, str) and db_uri.startswith("sqlite")) or (
-            isinstance(db_uri, SQLA_URL) and db_uri.drivername.startswith("sqlite")
+            isinstance(db_uri, sqla_url_cls) and db_uri.drivername.startswith("sqlite")
         ):
             is_sqlite = True
 
@@ -183,13 +196,13 @@ def get_app(**extra_config):
 
     # Initialize Flask extensions on the underlying Flask app
     db.init_app(flask_app)
-    Mail(flask_app)
+    sys.modules[__name__].Mail(flask_app)
 
     with flask_app.app_context():
         # Database schema is managed by Alembic migrations
         # add a superadmin user
         if superadmin_data := config.get_namespace("IBUTSU_SUPERADMIN_"):
-            add_superadmin(**superadmin_data)
+            sys.modules[__name__].add_superadmin(**superadmin_data)
 
     @flask_app.route("/")
     def index():
@@ -210,11 +223,13 @@ def get_app(**extra_config):
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
         # Decode token - Flask routes already have app_context
-        user_id = decode_token(token).get("sub")
+        user_id = sys.modules[__name__].decode_token(token).get("sub")
         if not user_id:
             return HTTPStatus.UNAUTHORIZED.phrase, HTTPStatus.UNAUTHORIZED
 
         # Validate user permissions
+        from ibutsu_server.db.models import User  # noqa: PLC0415
+
         user = db.session.get(User, user_id)
         if not user or not user.is_superadmin:
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
@@ -227,7 +242,8 @@ def get_app(**extra_config):
         task_module, task_name = task_path.split(".", 2)
 
         try:
-            mod = import_module(f"ibutsu_server.tasks.{task_module}")
+            import_mod_fn = sys.modules[__name__].import_module
+            mod = import_mod_fn(f"ibutsu_server.tasks.{task_module}")
             if not hasattr(mod, task_name):
                 return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
             task = getattr(mod, task_name)
@@ -366,6 +382,11 @@ class _AppRegistry:
             Flask: Lightweight Flask app for Alembic
         """
         if cls.alembic_flask_app is None:
+            import flask  # noqa: PLC0415
+            from yaml import full_load as yaml_load  # noqa: PLC0415
+
+            from ibutsu_server.db.base import db  # noqa: PLC0415
+
             # Create minimal Flask app for Alembic
             flask_app = flask.Flask(__name__)
             config = flask_app.config
@@ -377,9 +398,10 @@ class _AppRegistry:
 
             # Configure database connection
             if "SQLALCHEMY_DATABASE_URI" not in config:
-                maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
-                    config.get_namespace("POSTGRES_")
-                )
+                maybe_sql_url_fn = sys.modules[__name__].maybe_sql_url
+                maybe_db_uri = maybe_sql_url_fn(
+                    config.get_namespace("POSTGRESQL_")
+                ) or maybe_sql_url_fn(config.get_namespace("POSTGRES_"))
                 if maybe_db_uri:
                     config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
                 else:
@@ -396,7 +418,7 @@ class _AppRegistry:
 
 def __getattr__(name):
     """
-    Lazy initialization of module-level app instances.
+    Lazy initialization of module-level app instances and optional dependencies.
 
     This allows code to import connexion_app, flask_app, celery_app,
     or container-specific apps (flower_app, worker_app, scheduler_app, alembic_flask_app)
@@ -415,6 +437,14 @@ def __getattr__(name):
 
     if name in _app_getters:
         return _app_getters[name]()
+
+    if name in _LAZY_MODULE_ATTRIBUTES:
+        mod_name, attr_name = _LAZY_MODULE_ATTRIBUTES[name]
+        mod = _real_import_module(mod_name)
+        val = getattr(mod, attr_name)
+        globals()[name] = val
+        return val
+
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 

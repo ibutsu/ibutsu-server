@@ -3,19 +3,24 @@ FROM registry.access.redhat.com/ubi9/python-314:1-1787618080 AS builder
 
 ARG UV_VERSION=0.12.10
 
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PATH="/app/.venv/bin:$PATH"
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PYTHON=/usr/bin/python3.14 \
+    PATH="/app/.venv/bin:$PATH"
 
 USER 0
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir "uv==${UV_VERSION}"
+RUN python3.14 -m pip install --no-cache-dir "uv==${UV_VERSION}"
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-default-groups --group server --group worker --no-install-project
 
 COPY . /app
-RUN uv sync --frozen --no-dev --no-default-groups --group server --group worker
+RUN uv build && \
+    uv pip install --python /app/.venv/bin/python --no-deps dist/*.whl
 
 USER 1001
 
