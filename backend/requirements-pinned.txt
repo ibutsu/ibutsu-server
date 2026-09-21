@@ -21,7 +21,7 @@ attrs==26.1.0
     #   referencing
 bcrypt==5.0.0
     # via ibutsu-server (pyproject.toml)
-billiard==4.2.4
+billiard==4.3.0
     # via celery
 blinker==1.9.0
     # via
