@@ -4,7 +4,7 @@ a2wsgi==1.10.10
     # via connexion
 alembic==1.19.2
     # via ibutsu-server (pyproject.toml)
-amqp==5.3.1
+amqp==5.4.0
     # via kombu
 anyio==4.15.1
     # via
