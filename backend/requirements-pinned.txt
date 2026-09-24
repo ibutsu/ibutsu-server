@@ -160,7 +160,7 @@ pycparser==3.0
     # via cffi
 pyjwt==2.13.0
     # via ibutsu-server (pyproject.toml)
-pyparsing==3.3.2
+pyparsing==3.3.3
     # via httplib2
 python-dateutil==2.9.0.post0
     # via
