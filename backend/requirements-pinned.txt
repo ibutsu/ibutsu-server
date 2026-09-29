@@ -219,7 +219,7 @@ typing-extensions==4.16.0
     #   alembic
     #   connexion
     #   sqlalchemy
-tzdata==2026.3
+tzdata==2026.4
     # via kombu
 tzlocal==5.4.4
     # via celery
