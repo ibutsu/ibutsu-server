@@ -1,5 +1,6 @@
 """Tests for the filters module."""
 
+import re
 from unittest.mock import MagicMock
 
 import pytest
@@ -521,13 +522,21 @@ class TestConvertFilterNumericFieldSemantics:
         """Verify summary.tests compiles to CAST(... AS FLOAT) in PostgreSQL dialect."""
         clause = convert_filter("summary.tests>5000", Run)
         compiled = str(clause.compile(dialect=postgresql.dialect()))
-        assert "CAST((runs.summary ->> %(summary_1)s) AS FLOAT) > %(param_1)s" in compiled
+        assert re.search(
+            r"CAST\(\(runs\.summary ->> %\(summary_1\)s(?:::TEXT)?\) AS FLOAT\) > "
+            r"%\(param_1\)s(?:::INTEGER)?",
+            compiled,
+        ), compiled
 
     def test_summary_pass_percent_postgresql_compilation(self, app_ctx):
         """Verify summary.pass_percent compiles to CAST(... AS INTEGER) in PostgreSQL dialect."""
         clause = convert_filter("summary.pass_percent>80", Run)
         compiled = str(clause.compile(dialect=postgresql.dialect()))
-        assert "CAST((runs.summary ->> %(summary_1)s) AS INTEGER) > %(param_1)s" in compiled
+        assert re.search(
+            r"CAST\(\(runs\.summary ->> %\(summary_1\)s(?:::TEXT)?\) AS INTEGER\) > "
+            r"%\(param_1\)s(?:::INTEGER)?",
+            compiled,
+        ), compiled
 
     def test_summary_tests_with_float_filter_value(self, app_ctx):
         """Verify summary.tests supports float filter values without error."""
