@@ -503,9 +503,11 @@ def run_junit_import(import_):
 
         _update_run_summary(run, run_data)
         db.session.add(run)
-        import_record.status = "done"
-        db.session.add(import_record)
+        # Commit all the run/result/artifact data first
         db.session.commit()
+
+    # Update status in a separate quick transaction after data is committed
+    _update_import_status(import_record, "done")
 
     # Clear the import file content to save database space
     # The import record is kept for audit/history, but the large binary content is removed
@@ -653,9 +655,11 @@ def run_archive_import(import_):  # noqa: PLR0912
                 metadata=metadata,
                 candidates=candidates,
             )
-        import_record.status = "done"
-        db.session.add(import_record)
+        # Commit all the run/result/artifact data first
         db.session.commit()
+
+    # Update status in a separate quick transaction after data is committed
+    _update_import_status(import_record, "done")
 
     if run:
         update_run.delay(run.id)

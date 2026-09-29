@@ -39,6 +39,53 @@ def test_get_import_success(flask_app, make_project, auth_headers):
     assert response_data["format"] == "junit"
 
 
+@pytest.mark.parametrize(
+    ("status", "expected_status_code"),
+    [
+        ("pending", 202),
+        ("running", 202),
+        ("done", 200),
+        ("error", 200),
+    ],
+)
+def test_get_import_status_codes(
+    flask_app, make_project, auth_headers, status, expected_status_code
+):
+    """Test case for get_import - verify HTTP status codes per OpenAPI spec
+
+    Returns 202 for pending/running imports, 200 for completed/errored imports
+    """
+    client, jwt_token = flask_app
+
+    # Create project and import
+    project = make_project(name="test-project")
+
+    with client.application.app_context():
+        import_obj = Import(
+            filename="test_results.xml",
+            format="junit",
+            status=status,
+            data={"project_id": str(project.id), "metadata": {"key": "value"}},
+        )
+        session.add(import_obj)
+        session.commit()
+        session.refresh(import_obj)
+        import_id = import_obj.id
+
+    headers = auth_headers(jwt_token)
+    response = client.get(
+        f"/api/import/{import_id}",
+        headers=headers,
+    )
+    assert response.status_code == expected_status_code, (
+        f"Expected {expected_status_code} for status '{status}', got {response.status_code}. "
+        f"Response body: {response.text}"
+    )
+
+    response_data = response.json()
+    assert response_data["status"] == status
+
+
 def test_get_import_not_found(flask_app, auth_headers):
     """Test case for get_import - import not found"""
     client, jwt_token = flask_app
