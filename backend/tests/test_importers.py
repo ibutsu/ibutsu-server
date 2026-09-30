@@ -10,7 +10,7 @@ from uuid import uuid4
 import pytest
 from lxml import etree, objectify
 from sqlalchemy import func
-from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.exc import DataError, IntegrityError, OperationalError
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
@@ -576,6 +576,29 @@ class TestUpdateImportStatus:
             with (
                 patch.object(db.session, "commit", side_effect=always_fail),
                 pytest.raises(IntegrityError),
+            ):
+                _update_import_status(import_record, "done", max_retries=3)
+
+            # Should fail immediately after first attempt (permanent errors don't retry)
+            assert call_count == 1
+
+    def test_update_import_status_fails_fast_on_data_error(self, make_import, flask_app):
+        """Test that DataError is treated as permanent and doesn't retry"""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            import_record = make_import(status="running")
+
+            call_count = 0
+
+            def always_fail():
+                nonlocal call_count
+                call_count += 1
+                raise DataError("invalid data type", None, None)
+
+            with (
+                patch.object(db.session, "commit", side_effect=always_fail),
+                pytest.raises(DataError),
             ):
                 _update_import_status(import_record, "done", max_retries=3)
 
