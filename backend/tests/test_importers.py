@@ -10,6 +10,7 @@ from uuid import uuid4
 import pytest
 from lxml import etree, objectify
 from sqlalchemy import func
+from sqlalchemy.exc import DataError, IntegrityError, OperationalError
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
@@ -515,6 +516,94 @@ class TestUpdateImportStatus:
 
             updated = db.session.get(Import, import_record.id)
             assert updated.status == "error"
+
+    def test_update_import_status_retries_on_transient_error(self, make_import, flask_app):
+        """Test that transient database errors are retried"""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            import_record = make_import(status="running")
+
+            call_count = 0
+
+            original_commit = db.session.commit
+
+            def failing_commit():
+                nonlocal call_count
+                call_count += 1
+                if call_count < 3:
+                    raise OperationalError("connection timeout", None, None)
+                return original_commit()
+
+            with patch.object(db.session, "commit", side_effect=failing_commit):
+                _update_import_status(import_record, "done", max_retries=3)
+
+            assert call_count == 3
+            updated = db.session.get(Import, import_record.id)
+            assert updated.status == "done"
+
+    def test_update_import_status_fails_after_max_retries(self, make_import, flask_app):
+        """Test that import status update fails after exhausting retries"""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            import_record = make_import(status="running")
+
+            with (
+                patch.object(
+                    db.session,
+                    "commit",
+                    side_effect=OperationalError("connection timeout", None, None),
+                ),
+                pytest.raises(OperationalError),
+            ):
+                _update_import_status(import_record, "done", max_retries=2)
+
+    def test_update_import_status_fails_fast_on_permanent_error(self, make_import, flask_app):
+        """Test that permanent errors don't retry"""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            import_record = make_import(status="running")
+
+            call_count = 0
+
+            def always_fail():
+                nonlocal call_count
+                call_count += 1
+                raise IntegrityError("constraint violation", None, None)
+
+            with (
+                patch.object(db.session, "commit", side_effect=always_fail),
+                pytest.raises(IntegrityError),
+            ):
+                _update_import_status(import_record, "done", max_retries=3)
+
+            # Should fail immediately after first attempt (permanent errors don't retry)
+            assert call_count == 1
+
+    def test_update_import_status_fails_fast_on_data_error(self, make_import, flask_app):
+        """Test that DataError is treated as permanent and doesn't retry"""
+        client, _ = flask_app
+
+        with client.application.app_context():
+            import_record = make_import(status="running")
+
+            call_count = 0
+
+            def always_fail():
+                nonlocal call_count
+                call_count += 1
+                raise DataError("invalid data type", None, None)
+
+            with (
+                patch.object(db.session, "commit", side_effect=always_fail),
+                pytest.raises(DataError),
+            ):
+                _update_import_status(import_record, "done", max_retries=3)
+
+            # Should fail immediately after first attempt (permanent errors don't retry)
+            assert call_count == 1
 
 
 class TestAddArtifacts:

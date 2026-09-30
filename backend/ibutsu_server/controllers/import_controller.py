@@ -31,6 +31,11 @@ def get_import(id_, token_info=None, user=None):
             return HTTPStatus.FORBIDDEN.phrase, HTTPStatus.FORBIDDEN
     if not import_:
         return HTTPStatus.NOT_FOUND.phrase, HTTPStatus.NOT_FOUND
+
+    # Return HTTP 202 for pending/running imports per OpenAPI spec
+    if import_.status in ("pending", "running"):
+        return import_.to_dict(), HTTPStatus.ACCEPTED
+
     return import_.to_dict()
 
 

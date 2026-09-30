@@ -1,6 +1,7 @@
 import json
 import re
 import tarfile
+import time
 from collections import defaultdict
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -9,6 +10,13 @@ from io import BytesIO
 from celery.utils.log import get_task_logger
 from dateutil import parser
 from lxml import objectify
+from sqlalchemy.exc import (
+    DataError,
+    IntegrityError,
+    InternalError,
+    OperationalError,
+    SQLAlchemyError,
+)
 
 from ibutsu_server.db import db
 from ibutsu_server.db.models import Artifact, Import, ImportFile, Result, Run
@@ -154,17 +162,63 @@ def _create_result(tar, run_id, result, artifacts, project_id=None, metadata=Non
         _upsert_result_artifact(result_record.id, filename, content)
 
 
-def _update_import_status(import_record, status):
-    """Update the status of the import"""
-    # Make sure we have the latest data
-    import_obj = db.session.get(Import, import_record.id)
-    log.info(f"Updating import {import_record.id} status to {status}")
-    if import_obj:
-        import_obj.status = status
-        db.session.add(import_obj)
-        db.session.commit()
-    else:
-        log.error(f"Could not find import with ID {import_record.id} to update status to {status}")
+def _update_import_status(import_record, status, max_retries=3):
+    """Update the status of the import with retry logic for transient failures.
+
+    Retries on transient database errors (connection failures, timeouts) but fails
+    fast on permanent errors (record not found, integrity constraint violations).
+
+    Transient errors (retried):
+    - OperationalError: connection pool exhaustion, timeouts, deadlocks
+    - InternalError: some database-specific recoverable errors
+
+    Permanent errors (fail fast):
+    - IntegrityError: constraint violations, foreign key errors
+    - DataError: invalid data type, value out of range
+    """
+
+    for attempt in range(max_retries):
+        try:
+            import_obj = db.session.get(Import, import_record.id)
+            log.info(f"Updating import {import_record.id} status to {status}")
+            if import_obj:
+                import_obj.status = status
+                db.session.add(import_obj)
+                db.session.commit()
+                return
+            log.error(
+                f"Could not find import with ID {import_record.id} to update status to {status}"
+            )
+            return
+        except SQLAlchemyError as e:
+            # Classify errors by type rather than string matching
+            # OperationalError: connection issues, timeouts, deadlocks (transient)
+            # InternalError: some database-specific recoverable issues (transient)
+            # IntegrityError: constraint violations (permanent)
+            # DataError: invalid data type, out of range (permanent)
+            is_transient = isinstance(e, (OperationalError, InternalError)) and not isinstance(
+                e, (IntegrityError, DataError)
+            )
+
+            if not is_transient or attempt == max_retries - 1:
+                log.exception(
+                    f"Failed to update import {import_record.id} status to {status} "
+                    f"(attempt {attempt + 1}/{max_retries}), "
+                    f"{'will retry' if is_transient and attempt < max_retries - 1 else 'aborting'}"
+                )
+                raise
+            log.warning(
+                f"Transient error updating import {import_record.id} status "
+                f"(attempt {attempt + 1}/{max_retries}), retrying in {2**attempt}s: {e}"
+            )
+            db.session.rollback()
+            time.sleep(2**attempt)
+        except Exception:
+            log.exception(
+                f"Unexpected error updating import {import_record.id} "
+                f"status to {status}, not retrying"
+            )
+            raise
 
 
 @contextmanager
@@ -503,9 +557,11 @@ def run_junit_import(import_):
 
         _update_run_summary(run, run_data)
         db.session.add(run)
-        import_record.status = "done"
-        db.session.add(import_record)
+        # Commit all the run/result/artifact data first
         db.session.commit()
+
+    # Update status in a separate quick transaction after data is committed
+    _update_import_status(import_record, "done")
 
     # Clear the import file content to save database space
     # The import record is kept for audit/history, but the large binary content is removed
@@ -653,9 +709,11 @@ def run_archive_import(import_):  # noqa: PLR0912
                 metadata=metadata,
                 candidates=candidates,
             )
-        import_record.status = "done"
-        db.session.add(import_record)
+        # Commit all the run/result/artifact data first
         db.session.commit()
+
+    # Update status in a separate quick transaction after data is committed
+    _update_import_status(import_record, "done")
 
     if run:
         update_run.delay(run.id)
