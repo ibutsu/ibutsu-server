@@ -135,7 +135,7 @@ markupsafe==3.0.3
     #   jinja2
     #   mako
     #   werkzeug
-oauthlib==3.3.1
+oauthlib==4.0.0
     # via requests-oauthlib
 packaging==26.3
     # via
