@@ -14,7 +14,7 @@
     "@patternfly/react-icons": "^6.6.1",
     "@patternfly/react-log-viewer": "^6.5.0",
     "@patternfly/react-styles": "^6.6.1",
-    "@patternfly/react-table": "6.6.1",
+    "@patternfly/react-table": "6.6.2",
     "@react-oauth/google": "^0.13.5",
     "@types/react": "^19.3.0",
     "apexcharts": "^7.6.1",
