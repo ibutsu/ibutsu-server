@@ -7,7 +7,7 @@
     "@greatsumini/react-facebook-login": "^3.4.0",
     "@patternfly/patternfly": "^6.6.1",
     "@patternfly/react-charts": "^8.6.1",
-    "@patternfly/react-code-editor": "6.6.1",
+    "@patternfly/react-code-editor": "6.6.2",
     "@patternfly/react-component-groups": "^6.7.0",
     "@patternfly/react-core": "6.6.1",
     "@patternfly/react-drag-drop": "^6.6.2",
