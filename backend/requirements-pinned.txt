@@ -162,7 +162,7 @@ pyjwt==2.15.0
     # via ibutsu-server (pyproject.toml)
 pyparsing==3.3.3
     # via httplib2
-python-dateutil==2.9.0.post0
+python-dateutil==3.0.0
     # via
     #   ibutsu-server (pyproject.toml)
     #   celery
