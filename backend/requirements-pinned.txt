@@ -221,7 +221,7 @@ typing-extensions==4.16.0
     #   sqlalchemy
 tzdata==2026.4
     # via kombu
-tzlocal==5.4.4
+tzlocal==5.4.5
     # via celery
 uritemplate==4.2.0
     # via google-api-python-client
