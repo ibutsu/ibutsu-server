@@ -11,7 +11,7 @@ anyio==4.15.1
     #   httpx
     #   starlette
     #   watchfiles
-asgiref==3.12.1
+asgiref==3.13.0
     # via
     #   connexion
     #   flask
