@@ -121,7 +121,7 @@ jsonschema==4.26.0
     # via connexion
 jsonschema-specifications==2025.9.1
     # via jsonschema
-kombu==5.6.2
+kombu==5.7.0
     # via
     #   ibutsu-server (pyproject.toml)
     #   celery
