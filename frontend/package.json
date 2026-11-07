@@ -33,7 +33,7 @@
     "react-simple-oauth2-login": "^0.5.4",
     "react-toastify": "^11.1.0",
     "serve": "^14.2.6",
-    "victory": "^37.3.6"
+    "victory": "^38.0.0"
   },
   "devDependencies": {
     "@eslint-react/eslint-plugin": "^5.20.8",
