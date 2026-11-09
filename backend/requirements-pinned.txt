@@ -27,7 +27,7 @@ blinker==1.9.0
     # via
     #   flask
     #   flask-mail
-celery==5.6.3
+celery==5.7.0
     # via ibutsu-server (pyproject.toml)
 certifi==2026.7.22
     # via
