@@ -8,7 +8,14 @@ import pytest
 from flask import Flask, json
 from sqlalchemy.engine.url import URL as SQLA_URL
 
-from ibutsu_server import _AppRegistry, check_envvar, get_app, maybe_sql_url
+from ibutsu_server import (
+    _AppRegistry,
+    check_envvar,
+    get_app,
+    maybe_sql_url,
+    pin_config_driver,
+    pin_postgres_driver,
+)
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
@@ -27,13 +34,57 @@ def test_maybe_sql_url_with_all_params():
     result = maybe_sql_url(config)
 
     assert isinstance(result, SQLA_URL)
-    assert result.drivername == "postgresql"
+    assert result.drivername == "postgresql+psycopg2"
     assert result.host == "localhost"
     assert result.database == "testdb"
     assert result.port == 5432
     assert result.username == "testuser"
     assert result.password == "testpass"
     assert result.query["sslmode"] == "require"
+
+
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        (
+            "postgresql://u:p@h:5432/db?sslmode=require",
+            "postgresql+psycopg2://u:p@h:5432/db?sslmode=require",
+        ),
+        ("postgresql+psycopg://u:p@h/db", "postgresql+psycopg://u:p@h/db"),
+        ("postgresql+asyncpg://u:p@h/db", "postgresql+asyncpg://u:p@h/db"),
+        ("sqlite:///:memory:", "sqlite:///:memory:"),
+    ],
+)
+def test_pin_postgres_driver_str(uri, expected):
+    """Bare postgresql:// URIs are pinned to psycopg2; explicit drivers are untouched"""
+    assert pin_postgres_driver(uri) == expected
+
+
+def test_pin_postgres_driver_url_object():
+    url = SQLA_URL.create("postgresql", host="h", database="db")
+    assert pin_postgres_driver(url).drivername == "postgresql+psycopg2"
+    explicit = SQLA_URL.create("postgresql+psycopg", host="h", database="db")
+    assert pin_postgres_driver(explicit) is explicit
+
+
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        ("postgresql://u:p@h/db", "postgresql+psycopg2://u:p@h/db"),
+        ("sqlite:///:memory:", "sqlite:///:memory:"),
+    ],
+)
+def test_pin_config_driver(uri, expected):
+    config = Flask(__name__).config
+    config["SQLALCHEMY_DATABASE_URI"] = uri
+    pin_config_driver(config)
+    assert config["SQLALCHEMY_DATABASE_URI"] == expected
+
+
+def test_pin_config_driver_without_uri():
+    config = Flask(__name__).config
+    pin_config_driver(config)
+    assert "SQLALCHEMY_DATABASE_URI" not in config
 
 
 def test_maybe_sql_url_with_hostname_and_db():
