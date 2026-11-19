@@ -229,7 +229,7 @@ urllib3==2.8.0
     # via requests
 uvicorn==0.54.0
     # via ibutsu-server (pyproject.toml)
-uvloop==0.22.1
+uvloop==0.23.0
     # via uvicorn
 vine==5.1.0
     # via
