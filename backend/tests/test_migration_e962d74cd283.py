@@ -74,11 +74,7 @@ def test_sqlite_upgrade_and_downgrade(migration_module, monkeypatch):
             )
         )
         conn.execute(
-            sa.text(
-                "CREATE TABLE results ("
-                "id TEXT PRIMARY KEY, test_id TEXT, start_time TEXT"
-                ")"
-            )
+            sa.text("CREATE TABLE results (id TEXT PRIMARY KEY, test_id TEXT, start_time TEXT)")
         )
 
     with engine.connect() as conn:
@@ -140,10 +136,10 @@ def test_models_documentation():
     )
 
     assert Run.__doc__ is not None
+    assert "- ix_runs_project_id_start_time: Composite (project_id, start_time DESC)" in Run.__doc__
     assert (
-        "- ix_runs_project_id_start_time: Composite (project_id, start_time DESC)" in Run.__doc__
+        "- ix_runs_source_trgm: GIN trigram index on source (pg_trgm, gin_trgm_ops)" in Run.__doc__
     )
-    assert "- ix_runs_source_trgm: GIN trigram index on source (pg_trgm, gin_trgm_ops)" in Run.__doc__
     assert (
         "- ix_runs_component_trgm: GIN trigram index on component (pg_trgm, gin_trgm_ops)"
         in Run.__doc__
