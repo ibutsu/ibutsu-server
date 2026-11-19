@@ -26,9 +26,17 @@ def migration_module():
     return module
 
 
-def test_sqlite_upgrade_and_downgrade(migration_module, monkeypatch):
-    """Test upgrade and downgrade operations on a SQLite database."""
+@pytest.fixture
+def sqlite_engine():
+    """Create a SQLite engine and dispose its pooled connection after the test."""
     engine = sa.create_engine("sqlite:///:memory:")
+    yield engine
+    engine.dispose()
+
+
+def test_sqlite_upgrade_and_downgrade(migration_module, monkeypatch, sqlite_engine):
+    """Test upgrade and downgrade operations on a SQLite database."""
+    engine = sqlite_engine
     with engine.begin() as conn:
         conn.execute(
             sa.text("CREATE TABLE results (id TEXT PRIMARY KEY, run_id TEXT, project_id TEXT)")

@@ -58,12 +58,15 @@ Flask-integrated app for scheduler::
 
 import logging
 import os
+from typing import TYPE_CHECKING
 
 from celery import Celery, signals
 from celery.schedules import crontab
 
 from ibutsu_server.constants import SOCKET_CONNECT_TIMEOUT, SOCKET_TIMEOUT
-from ibutsu_server.util.celery_task import IbutsuTask, set_flask_app
+
+if TYPE_CHECKING:
+    flower_app: Celery
 
 
 def create_broker_celery_app(name="ibutsu_server_flower"):
@@ -167,6 +170,9 @@ def create_flask_celery_app(app=None, name="ibutsu_server"):
         msg = "Flask app instance is required for Flask-integrated Celery app"
         raise ValueError(msg)
 
+    # Deferred: celery_task imports Flask/SQLAlchemy, which flower_app must not require
+    from ibutsu_server.util.celery_task import IbutsuTask, set_flask_app  # noqa: PLC0415
+
     # Store the Flask app globally so it's available to our custom IbutsuTask class
     set_flask_app(app)
 
@@ -263,4 +269,18 @@ def retry_task_on_exception(*_args, **kwargs):
     task.retry(countdown=backoff)
 
 
-__all__ = ["create_broker_celery_app", "create_flask_celery_app", "retry_task_on_exception"]
+def __getattr__(name: str):
+    """Lazy initialization of module-level app instances."""
+    if name == "flower_app":
+        app = create_broker_celery_app()
+        globals()[name] = app
+        return app
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+__all__ = [
+    "create_broker_celery_app",
+    "create_flask_celery_app",
+    "flower_app",
+    "retry_task_on_exception",
+]

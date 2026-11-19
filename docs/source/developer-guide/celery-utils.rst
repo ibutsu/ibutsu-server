@@ -158,19 +158,13 @@ Creates a Flask-integrated Celery app with full application context.
 Integration with _AppRegistry
 ------------------------------
 
-The ``_AppRegistry`` class in ``ibutsu_server/__init__.py`` delegates to these factory functions:
+The ``_AppRegistry`` class in ``ibutsu_server/app.py`` delegates to the worker and scheduler factory functions.
+The broker-only ``flower_app`` is created lazily by ``ibutsu_server.celery_utils`` itself, so the Flower image
+does not need the web stack installed:
 
 .. code-block:: python
 
    class _AppRegistry:
-       @classmethod
-       def get_flower_app(cls):
-           if cls.flower_app is None:
-               cls.flower_app = create_broker_celery_app(
-                   name="ibutsu_server_flower"
-               )
-           return cls.flower_app
-
        @classmethod
        def get_worker_app(cls):
            if cls.worker_app is None:

@@ -22,7 +22,7 @@ Welcome to Ibutsu's documentation!
    developer-guide/celery-utils
    developer-guide/celery-worker-scaling
    developer-guide/database-maintenance
-   developer-guide/hatch-usage
+   developer-guide/uv-usage
    developer-guide/backend-testing
    developer-guide/frontend-testing
    developer-guide/alembic-migration

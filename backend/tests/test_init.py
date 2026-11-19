@@ -152,7 +152,7 @@ def test_get_app_user_login_enabled_boolean():
     assert app.app.config["USER_LOGIN_ENABLED"] is True
 
 
-@patch("ibutsu_server.add_superadmin")
+@patch("ibutsu_server.app.add_superadmin")
 def test_get_app_superadmin_creation(mock_add_superadmin):
     """Test superadmin user creation"""
     superadmin_config = {
@@ -254,7 +254,7 @@ def test_run_task_route_no_task(flask_app):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-@patch("ibutsu_server.import_module")
+@patch("ibutsu_server.app.import_module")
 def test_run_task_route_module_not_found(mock_import_module, flask_app):
     """Test run-task route with non-existent module"""
     client, jwt_token = flask_app
@@ -269,7 +269,7 @@ def test_run_task_route_module_not_found(mock_import_module, flask_app):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-@patch("ibutsu_server.import_module")
+@patch("ibutsu_server.app.import_module")
 def test_run_task_route_task_not_found(mock_import_module, flask_app):
     """Test run-task route with non-existent task in module"""
     client, jwt_token = flask_app
@@ -286,7 +286,7 @@ def test_run_task_route_task_not_found(mock_import_module, flask_app):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-@patch("ibutsu_server.import_module")
+@patch("ibutsu_server.app.import_module")
 def test_run_task_route_success(mock_import_module, flask_app):
     """Test successful task execution"""
     client, jwt_token = flask_app
@@ -308,7 +308,7 @@ def test_run_task_route_success(mock_import_module, flask_app):
     mock_task.delay.assert_called_once_with(param1="value1")
 
 
-@patch("ibutsu_server.import_module")
+@patch("ibutsu_server.app.import_module")
 def test_run_task_route_success_no_params(mock_import_module, flask_app):
     """Test successful task execution without parameters"""
     client, jwt_token = flask_app
@@ -338,7 +338,7 @@ def test_run_task_route_invalid_json(flask_app):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-@patch("ibutsu_server.decode_token")
+@patch("ibutsu_server.app.decode_token")
 def test_run_task_route_user_not_found(mock_decode_token, flask_app):
     """Test run-task route when user is not found"""
     client, _ = flask_app
@@ -354,7 +354,7 @@ def test_run_task_route_user_not_found(mock_decode_token, flask_app):
     assert response.status_code == HTTPStatus.FORBIDDEN
 
 
-@patch("ibutsu_server.decode_token")
+@patch("ibutsu_server.app.decode_token")
 def test_run_task_route_token_decode_no_sub(mock_decode_token, flask_app):
     """Test run-task route when token has no sub field"""
     client, _ = flask_app
@@ -444,75 +444,11 @@ def test_app_registry_reset(reset_app_registry):
     assert _AppRegistry.connexion_app is None
     assert _AppRegistry.flask_app is None
     assert _AppRegistry.celery_app is None
-    assert _AppRegistry.flower_app is None
     assert _AppRegistry.worker_app is None
     assert _AppRegistry.scheduler_app is None
 
 
 @patch.dict("os.environ", {"CELERY_BROKER_URL": "redis://localhost:6379/0"})
-def test_app_registry_get_flower_app(reset_app_registry):
-    """Test _AppRegistry.get_flower_app"""
-    app = _AppRegistry.get_flower_app()
-
-    assert app is not None
-    assert _AppRegistry.flower_app is not None
-    assert app.main == "ibutsu_server_flower"
-
-
-def test_app_registry_get_flower_app_missing_broker_url(reset_app_registry):
-    """Test _AppRegistry.get_flower_app raises error when CELERY_BROKER_URL not set"""
-
-    with (
-        patch.dict("os.environ", {}, clear=True),
-        pytest.raises(ValueError, match="CELERY_BROKER_URL environment variable must be set"),
-    ):
-        _AppRegistry.get_flower_app()
-
-
-def test_app_registry_get_flower_app_with_result_backend(reset_app_registry):
-    """Test _AppRegistry.get_flower_app properly reads CELERY_RESULT_BACKEND"""
-    broker = "redis://localhost:6379/0"
-    result_backend = "redis://localhost:6379/1"
-
-    with patch.dict(
-        "os.environ", {"CELERY_BROKER_URL": broker, "CELERY_RESULT_BACKEND": result_backend}
-    ):
-        app = _AppRegistry.get_flower_app()
-
-        assert app.conf.broker_url == broker
-        assert app.conf.result_backend == result_backend
-        assert app.conf.redis_socket_timeout is not None
-        assert app.conf.broker_transport_options is not None
-
-
-def test_app_registry_get_flower_app_with_result_backend_url(reset_app_registry):
-    """Test _AppRegistry.get_flower_app properly reads CELERY_RESULT_BACKEND_URL as fallback"""
-    broker = "redis://localhost:6379/0"
-    result_backend = "redis://localhost:6379/2"
-
-    # Clear environment to prevent pytest_configure defaults from interfering
-    with patch.dict(
-        "os.environ",
-        {"CELERY_BROKER_URL": broker, "CELERY_RESULT_BACKEND_URL": result_backend},
-        clear=True,
-    ):
-        app = _AppRegistry.get_flower_app()
-
-        assert app.conf.broker_url == broker
-        assert app.conf.result_backend == result_backend
-
-
-def test_app_registry_get_flower_app_defaults_result_backend(reset_app_registry):
-    """Test _AppRegistry.get_flower_app uses broker as result_backend when not specified"""
-    broker = "redis://localhost:6379/0"
-
-    with patch.dict("os.environ", {"CELERY_BROKER_URL": broker}, clear=True):
-        app = _AppRegistry.get_flower_app()
-
-        assert app.conf.broker_url == broker
-        assert app.conf.result_backend == broker  # Should default to broker
-
-
 def test_app_registry_get_worker_app(reset_app_registry):
     """Test _AppRegistry.get_worker_app"""
     # Initialize apps first with config, then get worker app
@@ -648,7 +584,7 @@ def test_get_app_postgresql_engine_options():
     # it just needs to verify the config is set correctly
     with (
         patch("ibutsu_server.db.db.init_app"),
-        patch("ibutsu_server.add_superadmin"),
+        patch("ibutsu_server.app.add_superadmin"),
     ):
         app = get_app(
             TESTING=True,
@@ -678,7 +614,7 @@ def test_get_app_celery_config():
     assert app.app.config["CELERY"]["broker_connection_retry"] is True
 
 
-@patch("ibutsu_server.maybe_sql_url")
+@patch("ibutsu_server.app.maybe_sql_url")
 @patch.dict(
     "os.environ",
     {
@@ -717,9 +653,9 @@ def test_get_app_with_postgresql_connection_retry():
     env_without_db_uri = {k: v for k, v in os.environ.items() if k != "SQLALCHEMY_DATABASE_URI"}
     with (
         patch.dict("os.environ", env_without_db_uri, clear=True),
-        patch("ibutsu_server.create_engine") as mock_create_engine,
+        patch("ibutsu_server.app.create_engine") as mock_create_engine,
         patch("ibutsu_server.db.db.init_app"),
-        patch("ibutsu_server.add_superadmin"),
+        patch("ibutsu_server.app.add_superadmin"),
     ):
         mock_engine = MagicMock()
         mock_connection = MagicMock()
@@ -764,7 +700,7 @@ def test_app_registry_get_alembic_flask_app(reset_app_registry):
 
 def test_app_registry_get_alembic_flask_app_skips_mail(reset_app_registry):
     """Test alembic Flask app doesn't initialize Mail"""
-    with patch("ibutsu_server.Mail") as mock_mail:
+    with patch("ibutsu_server.app.Mail") as mock_mail:
         app = _AppRegistry.get_alembic_flask_app()
 
         assert app is not None
@@ -779,7 +715,7 @@ def test_app_registry_get_alembic_flask_app_skips_superadmin(reset_app_registry,
     monkeypatch.setenv("IBUTSU_SUPERADMIN_NAME", "Admin")
     monkeypatch.setenv("IBUTSU_SUPERADMIN_PASSWORD", "password")
 
-    with patch("ibutsu_server.add_superadmin") as mock_add_superadmin:
+    with patch("ibutsu_server.app.add_superadmin") as mock_add_superadmin:
         app = _AppRegistry.get_alembic_flask_app()
 
         assert app is not None
