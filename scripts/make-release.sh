@@ -87,7 +87,7 @@ echo ""
 
 # Update backend pyproject.toml and uv.lock using uv
 echo "  Updating backend version with uv"
-uv version "$NEW_VERSION" --project "$BASE_DIR/backend"
+uv version "$NEW_VERSION" --no-sync --project "$BASE_DIR/backend"
 
 # Update openapi.yaml
 OPENAPI_FILE="$BASE_DIR/backend/ibutsu_server/openapi/openapi.yaml"

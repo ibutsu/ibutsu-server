@@ -28,7 +28,7 @@ In CI or production environments where the lockfile must not be modified:
 
 .. code-block:: bash
 
-   uv sync --frozen
+   uv sync --locked
 
 Targeted Dependency Groups
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -47,16 +47,16 @@ To sync only specific groups (e.g. for container builds):
 .. code-block:: bash
 
    # Server with migrations (standard backend image)
-   uv sync --frozen --no-dev --no-default-groups --group server --group migrations
+   uv sync --locked --no-dev --no-default-groups --group server --group migrations
 
    # Server only (minimal runtime without migrations)
-   uv sync --frozen --no-dev --no-default-groups --group server
+   uv sync --locked --no-dev --no-default-groups --group server
 
    # Worker only (with core dependencies)
-   uv sync --frozen --no-dev --no-default-groups --group server --group worker
+   uv sync --locked --no-dev --no-default-groups --group server --group worker
 
    # Flower only
-   uv sync --frozen --no-dev --no-default-groups --only-group flower
+   uv sync --locked --no-dev --no-default-groups --only-group flower
 
 Updating Dependencies
 ~~~~~~~~~~~~~~~~~~~~~

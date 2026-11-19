@@ -48,7 +48,7 @@ jobs:
           enable-cache: true
       - name: Install backend dependencies
         working-directory: ./backend
-        run: uv sync --frozen
+        run: uv sync --locked
       - name: Run backend tests with coverage
         working-directory: ./backend
         run: uv run pytest --cov=ibutsu_server --cov-report=xml --cov-report=term

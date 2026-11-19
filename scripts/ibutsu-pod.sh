@@ -24,6 +24,14 @@ REDIS_EXTRA_ARGS=()
 BACKEND_EXTRA_ARGS=()
 PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-314:latest
 
+# Dev-mount containers build their environment from backend/uv.lock. UV_PROJECT_ENVIRONMENT keeps the
+# venv out of the mounted ./backend so it cannot clash with a host .venv.
+function dev_uv_sync() {
+    echo "python -m pip install --quiet --no-cache-dir uv &&
+        export UV_PROJECT_ENVIRONMENT=/tmp/venv UV_LINK_MODE=copy PATH=/tmp/venv/bin:\$PATH &&
+        uv sync --locked --no-dev --no-default-groups $*"
+}
+
 # Shared environment variable arrays to reduce duplication in podman run commands
 # These are populated after LOCAL_* variables are set
 function init_shared_env_arrays() {
@@ -456,13 +464,12 @@ else
         "${BACKEND_EXTRA_ARGS[@]}" \
         "${DEV_MOUNT_BACKEND_ARGS[@]}" \
         $PYTHON_IMAGE \
-        /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
-                      pip install . &&
+        /bin/bash -c "$(dev_uv_sync --group server --group migrations) &&
                       ls -lh /mnt &&
-                      echo "Initializing database schema..." &&
+                      echo 'Initializing database schema...' &&
                       python scripts/init_db.py &&
-                      echo "Starting backend server..." &&
-                      uvicorn ibutsu_server:connexion_app --host 0.0.0.0 --port 8080 --reload --workers 1'
+                      echo 'Starting backend server...' &&
+                      uvicorn ibutsu_server:connexion_app --host 0.0.0.0 --port 8080 --reload --workers 1"
 fi
 
 start_debug_logs ibutsu-backend
@@ -514,9 +521,8 @@ else
         "${CELERY_ENV_ARGS[@]}" \
         "${DEV_MOUNT_BACKEND_ARGS[@]}" \
         $PYTHON_IMAGE \
-        /bin/bash -c 'pip install -U pip wheel &&
-                        pip install . &&
-                        celery --app ibutsu_server:worker_app --no-color worker --events'
+        /bin/bash -c "$(dev_uv_sync --group server --group worker) &&
+                        celery --app ibutsu_server:worker_app --no-color worker --events"
 fi
 
 start_debug_logs ibutsu-worker
@@ -567,9 +573,8 @@ else
         "${CELERY_ENV_ARGS[@]}" \
         "${DEV_MOUNT_BACKEND_ARGS[@]}" \
         $PYTHON_IMAGE \
-        /bin/bash -c 'pip install -U pip wheel &&
-                        pip install . &&
-                        celery --app ibutsu_server:scheduler_app beat --loglevel=info'
+        /bin/bash -c "$(dev_uv_sync --group server) &&
+                        celery --app ibutsu_server:scheduler_app beat --loglevel=info"
 fi
 
 start_debug_logs ibutsu-scheduler
@@ -604,9 +609,7 @@ else
         -e FLOWER_BASIC_AUTH="${FLOWER_BASIC_AUTH}" \
         "${DEV_MOUNT_BACKEND_ARGS[@]}" \
         $PYTHON_IMAGE \
-        /bin/bash -c "pip install -U pip wheel &&
-                        pip install . &&
-                        pip install 'flower>=2.0.0' &&
+        /bin/bash -c "$(dev_uv_sync --group flower) &&
                         celery --app=ibutsu_server.celery_utils:flower_app flower --port=5555 --enable_events=True"
 fi
 

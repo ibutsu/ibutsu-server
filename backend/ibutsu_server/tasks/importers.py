@@ -293,8 +293,6 @@ def _add_artifacts(result, testcase, traceback):
 
 def _get_properties(xml_element) -> dict:
     """Get the properties from an XML element"""
-    from lxml import objectify  # noqa: F401, PLC0415
-
     if not hasattr(xml_element, "properties"):
         return {}
     properties = {}

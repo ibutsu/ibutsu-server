@@ -1,6 +1,7 @@
-# hadolint global ignore=DL3041,DL3059
+# hadolint global ignore=DL3002,DL3041,DL3059
 FROM registry.access.redhat.com/ubi9/python-314:1-1787618080 AS builder
 
+# renovate: datasource=pypi depName=uv
 ARG UV_VERSION=0.12.10
 
 ENV UV_COMPILE_BYTECODE=1 \
@@ -16,15 +17,15 @@ WORKDIR /app
 RUN python3.14 -m pip install --no-cache-dir "uv==${UV_VERSION}"
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-default-groups --group server --no-install-project
+RUN uv sync --locked --no-dev --no-default-groups --group server --no-install-project
 
 COPY . /app
 RUN uv build && \
-    uv pip install --python /app/.venv/bin/python --no-deps dist/*.whl
+    uv pip install --python /app/.venv/bin/python --no-deps dist/*.whl && \
+    chgrp -R 0 /app && \
+    chmod -R g=u /app
 
-USER 1001
-
-FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1788215168
+FROM registry.access.redhat.com/ubi9/python-314-minimal:9.9-1794495578
 
 ENV PATH="/app/.venv/bin:$PATH"
 
@@ -33,11 +34,12 @@ USER 0
 WORKDIR /app
 
 RUN microdnf install --nodocs -y file-libs && \
-    microdnf clean all
+    microdnf clean all && \
+    chgrp 0 /app && \
+    chmod g=u /app
 
-COPY --from=builder /app /app
+COPY --from=builder --chown=1001:0 /app /app
 COPY licenses/ /licenses/
-RUN /usr/bin/fix-permissions /app
 
 USER 1001
 
