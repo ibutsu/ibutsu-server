@@ -31,6 +31,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
+      - name: Check uv.lock is up to date
+        working-directory: ./backend
+        run: uv lock --check
       - name: Run pre-commit
         run: uvx pre-commit run --all-files --verbose
 

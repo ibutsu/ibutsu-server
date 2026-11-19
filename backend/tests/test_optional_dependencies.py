@@ -1,42 +1,51 @@
-"""Tests for dependencies that are intentionally loaded only when needed."""
+"""Light entry points must not import the web stack.
+
+The Flower image installs only the ``flower`` dependency group. Importing
+``ibutsu_server`` or ``ibutsu_server.celery_utils`` and building ``flower_app`` therefore
+must not import Flask, Connexion, SQLAlchemy or Starlette.
+Each check runs in a fresh interpreter so modules imported by other tests do not hide a regression.
+"""
 
 import subprocess
 import sys
 from pathlib import Path
 
 BACKEND_ROOT = Path(__file__).parent.parent
+HEAVY_MODULES = ("connexion", "flask", "flask_mail", "sqlalchemy", "starlette")
 
 
-def _run_import_without(module_name, import_statement):
-    """Run an import while making one optional dependency unavailable."""
+def _heavy_modules_loaded_after(statement):
     script = f"""
-import builtins
-
-original_import = builtins.__import__
-
-def blocking_import(name, *args, **kwargs):
-    if name == {module_name!r} or name.startswith({module_name + "."!r}):
-        raise ImportError({module_name!r})
-    return original_import(name, *args, **kwargs)
-
-builtins.__import__ = blocking_import
-{import_statement}
+import json, os, sys
+os.environ["CELERY_BROKER_URL"] = "redis://localhost:6379/0"
+{statement}
+print(json.dumps([m for m in {HEAVY_MODULES!r} if m in sys.modules]))
 """
-    subprocess.run(  # noqa: S603 - the test intentionally launches the current interpreter
+    result = subprocess.run(  # noqa: S603 - intentionally launches the current interpreter
         [sys.executable, "-c", script],
         cwd=BACKEND_ROOT,
         check=True,
         capture_output=True,
         text=True,
     )
+    return result.stdout.strip()
 
 
-def test_package_import_defers_server_dependencies():
-    """Importing the package does not require Connexion or Starlette."""
-    _run_import_without("connexion", "import ibutsu_server")
-    _run_import_without("starlette", "import ibutsu_server")
+def test_package_import_is_light():
+    assert _heavy_modules_loaded_after("import ibutsu_server") == "[]"
 
 
-def test_importers_import_defers_lxml():
-    """Importing importer tasks does not require lxml until parsing starts."""
-    _run_import_without("lxml", "import ibutsu_server.tasks.importers")
+def test_celery_utils_import_is_light():
+    assert _heavy_modules_loaded_after("import ibutsu_server.celery_utils") == "[]"
+
+
+def test_flower_app_is_built_without_web_stack():
+    statement = (
+        "from ibutsu_server import flower_app\nassert flower_app.main == 'ibutsu_server_flower'"
+    )
+    assert _heavy_modules_loaded_after(statement) == "[]"
+    statement = (
+        "from ibutsu_server.celery_utils import flower_app\n"
+        "assert flower_app.main == 'ibutsu_server_flower'"
+    )
+    assert _heavy_modules_loaded_after(statement) == "[]"

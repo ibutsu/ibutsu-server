@@ -170,6 +170,7 @@ def create_flask_celery_app(app=None, name="ibutsu_server"):
         msg = "Flask app instance is required for Flask-integrated Celery app"
         raise ValueError(msg)
 
+    # Deferred: celery_task imports Flask/SQLAlchemy, which flower_app must not require
     from ibutsu_server.util.celery_task import IbutsuTask, set_flask_app  # noqa: PLC0415
 
     # Store the Flask app globally so it's available to our custom IbutsuTask class

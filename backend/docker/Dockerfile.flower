@@ -43,9 +43,13 @@ COPY licenses/ /licenses/
 
 USER 1001
 
+# Fail the build if the flower dependency group stops covering what flower_app imports
+RUN CELERY_BROKER_URL=redis://build-check:6379 \
+    python -c "import flower; from ibutsu_server.celery_utils import flower_app"
+
 # Expose Flower default port
 EXPOSE 5555
 
 # Use flower_app - minimal broker-only app (no database required)
-# flower_app is exposed via __getattr__ in ibutsu_server/celery_utils.py
+# flower_app is created lazily by __getattr__ in ibutsu_server/celery_utils.py
 CMD ["celery", "--app=ibutsu_server.celery_utils:flower_app", "flower", "--port=5555", "--enable_events=True"]

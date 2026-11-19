@@ -30,14 +30,18 @@ In CI or production environments where the lockfile must not be modified:
 
    uv sync --locked
 
+CI also runs ``uv lock --check`` (from ``backend/``), which fails when ``pyproject.toml`` and ``uv.lock`` have drifted.
+Run ``uv lock`` and commit the result after changing dependencies or the project version.
+
 Targeted Dependency Groups
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The project defines several dependency groups in ``pyproject.toml`` for container images and targeted installations:
 
 * ``server``: API server dependencies (Connexion, Uvicorn, Gunicorn, Starlette, etc.)
-* ``worker``: Celery worker dependencies (Gevent, lxml)
-* ``flower``: Flower monitoring dependencies
+* ``worker``: Celery worker dependencies on top of ``server`` (Gevent)
+* ``flower``: Flower monitoring dependencies. The Flower image installs only this group, which is why
+  ``ibutsu_server/__init__.py`` stays free of web-stack imports (see ``tests/test_optional_dependencies.py``)
 * ``migrations``: Database migration dependencies (Alembic)
 * ``test``: Testing dependencies (pytest, pytest-cov, pytest-xdist, etc.)
 * ``dev``: Development dependencies (pre-commit)

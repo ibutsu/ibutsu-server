@@ -999,7 +999,6 @@ test = [
 ]
 worker = [
     { name = "gevent" },
-    { name = "lxml" },
 ]
 
 [package.metadata]
@@ -1055,10 +1054,7 @@ test = [
     { name = "pytest-xdist" },
     { name = "randomize" },
 ]
-worker = [
-    { name = "gevent", specifier = ">=24.0.0" },
-    { name = "lxml" },
-]
+worker = [{ name = "gevent", specifier = ">=24.0.0" }]
 
 [[package]]
 name = "identify"

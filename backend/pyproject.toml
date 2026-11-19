@@ -78,7 +78,6 @@ server = [
 ]
 worker = [
     "gevent>=24.0.0",
-    "lxml",
 ]
 flower = [
     "flower>=2.0.0",
