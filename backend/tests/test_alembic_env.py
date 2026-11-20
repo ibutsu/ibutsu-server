@@ -71,22 +71,62 @@ def test_flask_app_integration(reset_app_registry):
         assert "results" in table_names
 
 
-def test_database_url_configuration(reset_app_registry):
+@pytest.mark.parametrize(
+    ("env", "driver", "expected_host", "expected_database"),
+    [
+        pytest.param(
+            {"SQLALCHEMY_DATABASE_URI": "sqlite:///test_alembic.db"},
+            "sqlite",
+            None,
+            "test_alembic.db",
+            id="sqlite",
+        ),
+        pytest.param(
+            {"SQLALCHEMY_DATABASE_URI": "postgresql://u:p@db.example.com:5432/ibutsu"},
+            "postgresql+psycopg2",
+            "db.example.com",
+            "ibutsu",
+            id="postgres-bare-uri",
+        ),
+        pytest.param(
+            {
+                "POSTGRESQL_HOST": "db.example.com",
+                "POSTGRESQL_DATABASE": "ibutsu",
+                "POSTGRESQL_USER": "u",
+                "POSTGRESQL_PASSWORD": "p",
+            },
+            "postgresql+psycopg2",
+            "db.example.com",
+            "ibutsu",
+            id="postgresql-env",
+        ),
+    ],
+)
+def test_database_url_configuration(
+    reset_app_registry, env, driver, expected_host, expected_database
+):
     """
     Test that the database URL is correctly set from Flask config.
 
-    This verifies that the Alembic environment properly extracts
-    the database URL from the Flask app configuration.
+    This verifies that the Alembic environment properly extracts the database URL from the
+    Flask app configuration, and that PostgreSQL URLs never rely on SQLAlchemy's default
+    driver (psycopg3 in 2.1+).
     """
-    # Create a Flask app with a specific database URL
-    with patch.dict(os.environ, {"SQLALCHEMY_DATABASE_URI": "sqlite:///test_alembic.db"}):
-        _AppRegistry.reset()  # Force re-creation with new env var
+    with patch.dict(os.environ, env):
+        if "SQLALCHEMY_DATABASE_URI" not in env:
+            del os.environ["SQLALCHEMY_DATABASE_URI"]
+        _AppRegistry.reset()  # Force re-creation with new env
         flask_app = _AppRegistry.get_alembic_flask_app()
 
         with flask_app.app_context():
-            # The URL should be set correctly
-            db_url = str(db.engine.url)
-            assert "test_alembic.db" in db_url or ":memory:" in db_url
+            url = db.engine.url
+            assert url.drivername == driver
+            if expected_host is not None:
+                assert url.host == expected_host
+                assert url.database == expected_database
+            else:
+                # sqlite URLs are resolved relative to the Flask instance path
+                assert Path(url.database).name == expected_database
 
 
 def test_metadata_loaded_from_models(reset_app_registry):

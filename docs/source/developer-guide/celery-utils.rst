@@ -123,7 +123,7 @@ Creates a Flask-integrated Celery app with full application context.
        'broker_url': 'redis://localhost:6379/0',
        'result_backend': 'redis://localhost:6379/0',
    }
-   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://...'
+   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://...'
 
    # Create worker app
    worker_app = create_flask_celery_app(flask_app, name="ibutsu_server_worker")
@@ -149,7 +149,14 @@ Creates a Flask-integrated Celery app with full application context.
            'ibutsu_server.tasks.runs',
        ],
    }
-   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://...'
+   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://...'
+
+.. note::
+
+   Name the driver explicitly (``postgresql+psycopg2://``). SQLAlchemy 2.1 maps a bare
+   ``postgresql://`` to psycopg3, which the Ibutsu images do not install. Only apps built
+   by ``get_app`` and the Alembic app normalize bare URIs; a Flask app you configure
+   yourself is passed to SQLAlchemy as-is.
 
 **Raises:**
 
@@ -401,7 +408,7 @@ Worker Can't Access Database
 
 .. code-block:: python
 
-   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://...'
+   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://...'
 
 Tasks Not Discovered
 ~~~~~~~~~~~~~~~~~~~~

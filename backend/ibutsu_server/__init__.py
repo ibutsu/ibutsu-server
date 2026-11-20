@@ -21,6 +21,8 @@ _EXPORTS = {
     "flask_app": "ibutsu_server.app",
     "get_app": "ibutsu_server.app",
     "maybe_sql_url": "ibutsu_server.app",
+    "pin_config_driver": "ibutsu_server.app",
+    "pin_postgres_driver": "ibutsu_server.app",
     "scheduler_app": "ibutsu_server.app",
     "worker_app": "ibutsu_server.app",
     "flower_app": "ibutsu_server.celery_utils",
