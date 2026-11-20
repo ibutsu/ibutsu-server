@@ -249,6 +249,8 @@ class Result(Model, ModelMixin):
     - ix_results_result_satver_project_id_run_id_snapver: Composite with JSON fields
     - ix_results_requirements: GIN index on data->'requirements'
     - ix_results_tags: GIN index on data->'tags'
+    - ix_results_test_id_start_time: Composite (test_id, start_time DESC)
+    - ix_results_test_id_trgm: GIN trigram index on test_id (pg_trgm, gin_trgm_ops)
     Cross-dialect:
     - ix_results_run_id_project_id: Composite index on (run_id, project_id)
     - ix_results_run_id_test_id: Composite index on (run_id, test_id)
@@ -291,6 +293,9 @@ class Run(Model, ModelMixin):
     - ix_runs_summary: GIN index on summary JSONB field
     - ix_runs_tags: GIN index on data->'tags'
     - ix_runs_pass_percent: Expression index on ((summary->>'pass_percent')::int)
+    - ix_runs_project_id_start_time: Composite (project_id, start_time DESC)
+    - ix_runs_source_trgm: GIN trigram index on source (pg_trgm, gin_trgm_ops)
+    - ix_runs_component_trgm: GIN trigram index on component (pg_trgm, gin_trgm_ops)
     """
 
     __tablename__ = "runs"

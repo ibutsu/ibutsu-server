@@ -44,7 +44,7 @@ def test_alembic_heads_single_head():
     script_dir = ScriptDirectory.from_config(alembic_cfg)
     heads = script_dir.get_heads()
     assert len(heads) == 1
-    assert heads[0] == "c4d5e6f7a8b9"
+    assert heads[0] == "e962d74cd283"
 
 
 def test_sqlite_upgrade_and_downgrade(migration_module, monkeypatch, sqlite_engine):
