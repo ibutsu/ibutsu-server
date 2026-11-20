@@ -48,7 +48,7 @@ def migration_module():
         Path(__file__).parent.parent
         / "alembic"
         / "versions"
-        / "e962d74cd283_add_composite_and_trigram_indexes_for_.py"
+        / "e962d74cd283_add_composite_and_trigram_indexes.py"
     )
     spec = importlib.util.spec_from_file_location("migration_e962d74cd283", migration_path)
     module = importlib.util.module_from_spec(spec)
