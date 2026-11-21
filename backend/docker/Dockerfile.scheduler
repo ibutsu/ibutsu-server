@@ -1,5 +1,5 @@
 # hadolint global ignore=DL3002,DL3041,DL3059
-FROM registry.access.redhat.com/ubi9/python-314:1-1787618080 AS builder
+FROM registry.access.redhat.com/ubi9/python-314:1-1795042154 AS builder
 
 # renovate: datasource=pypi depName=uv
 ARG UV_VERSION=0.12.10
