@@ -114,7 +114,7 @@ def test_database_url_configuration(
     """
     with patch.dict(os.environ, env):
         if "SQLALCHEMY_DATABASE_URI" not in env:
-            del os.environ["SQLALCHEMY_DATABASE_URI"]
+            os.environ.pop("SQLALCHEMY_DATABASE_URI", None)
         _AppRegistry.reset()  # Force re-creation with new env
         flask_app = _AppRegistry.get_alembic_flask_app()
 
