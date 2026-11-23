@@ -32,6 +32,7 @@ dependencies = [
     "flask_mail",
     "Flask-SQLAlchemy",
     "kombu",
+    "packaging",
     "psycopg2-binary",
     "pyjwt",
     "python_dateutil",
@@ -39,6 +40,7 @@ dependencies = [
     "redis<8",
     "sqlalchemy",
     "sqlalchemy-json",
+    "tzdata",
     "vine",
     "werkzeug",
 ]
@@ -82,7 +84,9 @@ worker = [
 flower = [
     "flower>=2.0.0",
     "celery",
+    "packaging",
     "redis<8",
+    "tzdata",
 ]
 
 [tool.uv]

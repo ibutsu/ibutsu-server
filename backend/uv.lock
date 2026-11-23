@@ -995,6 +995,7 @@ dependencies = [
     { name = "flask-mail" },
     { name = "flask-sqlalchemy" },
     { name = "kombu" },
+    { name = "packaging" },
     { name = "psycopg2-binary" },
     { name = "pyjwt" },
     { name = "python-dateutil" },
@@ -1002,6 +1003,7 @@ dependencies = [
     { name = "redis" },
     { name = "sqlalchemy" },
     { name = "sqlalchemy-json" },
+    { name = "tzdata" },
     { name = "vine" },
     { name = "werkzeug" },
 ]
@@ -1013,7 +1015,9 @@ dev = [
 flower = [
     { name = "celery" },
     { name = "flower" },
+    { name = "packaging" },
     { name = "redis" },
+    { name = "tzdata" },
 ]
 migrations = [
     { name = "alembic" },
@@ -1055,6 +1059,7 @@ requires-dist = [
     { name = "flask-mail" },
     { name = "flask-sqlalchemy" },
     { name = "kombu" },
+    { name = "packaging" },
     { name = "psycopg2-binary" },
     { name = "pyjwt" },
     { name = "python-dateutil" },
@@ -1062,6 +1067,7 @@ requires-dist = [
     { name = "redis", specifier = "<8" },
     { name = "sqlalchemy" },
     { name = "sqlalchemy-json" },
+    { name = "tzdata" },
     { name = "vine" },
     { name = "werkzeug" },
 ]
@@ -1071,7 +1077,9 @@ dev = [{ name = "pre-commit" }]
 flower = [
     { name = "celery" },
     { name = "flower", specifier = ">=2.0.0" },
+    { name = "packaging" },
     { name = "redis", specifier = "<8" },
+    { name = "tzdata" },
 ]
 migrations = [{ name = "alembic" }]
 server = [
