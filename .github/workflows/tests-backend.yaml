@@ -31,6 +31,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
+          prune-cache: true
       - name: Check uv.lock is up to date
         working-directory: ./backend
         run: uv lock --check
@@ -49,6 +50,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
+          prune-cache: true
       - name: Install backend dependencies
         working-directory: ./backend
         run: uv sync --locked
