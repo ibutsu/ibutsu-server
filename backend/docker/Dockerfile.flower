@@ -2,7 +2,7 @@
 FROM registry.access.redhat.com/ubi9/python-314:1-1795320644 AS builder
 
 # renovate: datasource=pypi depName=uv
-ARG UV_VERSION=0.12.10
+ARG UV_VERSION=0.13.4
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
