@@ -30,6 +30,22 @@ FRONTEND_PATH = Path("/app/frontend")
 PACKAGE_NAME = "ibutsu_server"
 
 
+POSTGRES_DRIVER = "postgresql+psycopg2"
+
+
+def pin_postgres_driver(uri: str | SQLA_URL) -> str | SQLA_URL:
+    """Make bare ``postgresql`` URIs use psycopg2, the driver we install.
+
+    SQLAlchemy 2.1 defaults bare ``postgresql://`` to psycopg3, which is not installed.
+    URIs naming an explicit driver (``postgresql+asyncpg://`` etc.) are left alone.
+    """
+    if isinstance(uri, SQLA_URL):
+        return uri.set(drivername=POSTGRES_DRIVER) if uri.drivername == "postgresql" else uri
+    if uri.startswith("postgresql://"):
+        return POSTGRES_DRIVER + uri[len("postgresql") :]
+    return uri
+
+
 def maybe_sql_url(conf: dict[str, Any]) -> SQLA_URL | None:
     host = conf.get("host") or conf.get("hostname")
     database = conf.get("db") or conf.get("database")
@@ -40,7 +56,7 @@ def maybe_sql_url(conf: dict[str, Any]) -> SQLA_URL | None:
             query_params["sslmode"] = sslmode
 
         return SQLA_URL.create(
-            drivername="postgresql",
+            drivername=POSTGRES_DRIVER,
             host=host,
             database=database,
             port=conf.get("port"),
@@ -49,6 +65,23 @@ def maybe_sql_url(conf: dict[str, Any]) -> SQLA_URL | None:
             query=query_params if query_params else None,
         )
     return None
+
+
+def env_sql_url(config: flask.Config) -> SQLA_URL | None:
+    """Build the database URL from ``POSTGRESQL_*`` (preferred) or ``POSTGRES_*`` settings."""
+    return maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
+        config.get_namespace("POSTGRES_")
+    )
+
+
+def pin_config_driver(config: flask.Config) -> None:
+    """Apply :func:`pin_postgres_driver` to ``SQLALCHEMY_DATABASE_URI`` in place, if set.
+
+    Call this once all config sources (files, environment, overrides) have been merged, so
+    no source can reintroduce a bare ``postgresql://`` URI.
+    """
+    if db_uri := config.get("SQLALCHEMY_DATABASE_URI"):
+        config["SQLALCHEMY_DATABASE_URI"] = pin_postgres_driver(db_uri)
 
 
 def check_envvar(config: flask.Config, *, envvar: str) -> str:
@@ -99,9 +132,7 @@ def get_app(**extra_config):
 
     # If you have environment variables, like when running on OpenShift, create the db url
     if "SQLALCHEMY_DATABASE_URI" not in extra_config and "SQLALCHEMY_DATABASE_URI" not in config:
-        maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
-            config.get_namespace("POSTGRES_")
-        )
+        maybe_db_uri = env_sql_url(config)
 
         if maybe_db_uri is None:
             # Flask-SQLAlchemy 3.0+ requires explicit database URI
@@ -159,6 +190,8 @@ def get_app(**extra_config):
         }
     )
     flask_app.config.from_prefixed_env()
+    # Last: FLASK_-prefixed env vars may also set the database URI
+    pin_config_driver(config)
 
     # Configure CORS middleware for Connexion 3 - MUST be before routes are added
     from connexion.middleware import MiddlewarePosition  # noqa: PLC0415
@@ -364,15 +397,15 @@ class _AppRegistry:
 
             # Configure database connection
             if "SQLALCHEMY_DATABASE_URI" not in config:
-                maybe_db_uri = maybe_sql_url(config.get_namespace("POSTGRESQL_")) or maybe_sql_url(
-                    config.get_namespace("POSTGRES_")
-                )
+                maybe_db_uri = env_sql_url(config)
                 if maybe_db_uri:
                     config.update(SQLALCHEMY_DATABASE_URI=maybe_db_uri)
                 else:
                     # Use default for development
                     default_db_uri = config.get("SQLALCHEMY_DATABASE_URI", "sqlite:///ibutsu.db")
                     config.update(SQLALCHEMY_DATABASE_URI=default_db_uri)
+
+            pin_config_driver(config)
 
             # Initialize only SQLAlchemy (no Mail, no Celery, no superadmin)
             db.init_app(flask_app)

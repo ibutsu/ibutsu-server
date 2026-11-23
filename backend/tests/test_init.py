@@ -8,7 +8,15 @@ import pytest
 from flask import Flask, json
 from sqlalchemy.engine.url import URL as SQLA_URL
 
-from ibutsu_server import _AppRegistry, check_envvar, get_app, maybe_sql_url
+from ibutsu_server import (
+    _AppRegistry,
+    check_envvar,
+    get_app,
+    maybe_sql_url,
+    pin_config_driver,
+    pin_postgres_driver,
+)
+from ibutsu_server.app import env_sql_url
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
@@ -27,13 +35,118 @@ def test_maybe_sql_url_with_all_params():
     result = maybe_sql_url(config)
 
     assert isinstance(result, SQLA_URL)
-    assert result.drivername == "postgresql"
+    assert result.drivername == "postgresql+psycopg2"
     assert result.host == "localhost"
     assert result.database == "testdb"
     assert result.port == 5432
     assert result.username == "testuser"
     assert result.password == "testpass"
     assert result.query["sslmode"] == "require"
+
+
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        (
+            "postgresql://u:p@h:5432/db?sslmode=require",
+            "postgresql+psycopg2://u:p@h:5432/db?sslmode=require",
+        ),
+        ("postgresql+psycopg://u:p@h/db", "postgresql+psycopg://u:p@h/db"),
+        ("postgresql+asyncpg://u:p@h/db", "postgresql+asyncpg://u:p@h/db"),
+        ("sqlite:///:memory:", "sqlite:///:memory:"),
+    ],
+)
+def test_pin_postgres_driver_str(uri, expected):
+    """Bare postgresql:// URIs are pinned to psycopg2; explicit drivers are untouched"""
+    assert pin_postgres_driver(uri) == expected
+
+
+def test_pin_postgres_driver_url_object():
+    url = SQLA_URL.create(
+        "postgresql",
+        username="u",
+        password="p",
+        host="h",
+        port=5432,
+        database="db",
+        query={"sslmode": "require"},
+    )
+    pinned = pin_postgres_driver(url)
+    assert pinned.drivername == "postgresql+psycopg2"
+    # Everything but the driver is preserved, including the (unmasked) password
+    assert pinned.set(drivername="postgresql") == url
+    explicit = SQLA_URL.create("postgresql+psycopg", host="h", database="db")
+    assert pin_postgres_driver(explicit) is explicit
+
+
+@pytest.mark.parametrize(
+    ("uri", "expected_driver"),
+    [
+        ("postgresql://u:p@h/db", "postgresql+psycopg2"),
+        (SQLA_URL.create("postgresql", host="h", database="db"), "postgresql+psycopg2"),
+        (SQLA_URL.create("postgresql+psycopg", host="h", database="db"), "postgresql+psycopg"),
+        ("sqlite:///:memory:", "sqlite"),
+    ],
+    ids=["str", "url-object", "url-object-explicit", "sqlite"],
+)
+def test_pin_config_driver(uri, expected_driver):
+    config = Flask(__name__).config
+    config["SQLALCHEMY_DATABASE_URI"] = uri
+    pin_config_driver(config)
+    result = config["SQLALCHEMY_DATABASE_URI"]
+    result_driver = result.drivername if isinstance(result, SQLA_URL) else result.split(":")[0]
+    assert result_driver == expected_driver
+
+
+@pytest.mark.parametrize(
+    ("settings", "expected_host"),
+    [
+        ({"POSTGRESQL_HOST": "primary", "POSTGRESQL_DATABASE": "db"}, "primary"),
+        ({"POSTGRES_HOST": "fallback", "POSTGRES_DATABASE": "db"}, "fallback"),
+        (
+            {
+                "POSTGRESQL_HOST": "primary",
+                "POSTGRESQL_DATABASE": "db",
+                "POSTGRES_HOST": "fallback",
+                "POSTGRES_DATABASE": "db",
+            },
+            "primary",
+        ),
+        ({}, None),
+    ],
+    ids=["postgresql-prefix", "postgres-prefix-fallback", "postgresql-wins", "none"],
+)
+def test_env_sql_url(settings, expected_host):
+    config = Flask(__name__).config
+    config.update(settings)
+    url = env_sql_url(config)
+    if expected_host is None:
+        assert url is None
+    else:
+        assert url.drivername == "postgresql+psycopg2"
+        assert url.host == expected_host
+
+
+@pytest.mark.parametrize("source", ["extra_config", "flask_prefixed_env"])
+def test_get_app_pins_bare_postgres_uri(source, monkeypatch):
+    """A bare postgresql:// URI from any config source ends up on psycopg2"""
+    uri = "postgresql://u:p@db.example.com:5432/ibutsu"
+    kwargs = {"TESTING": True}
+    if source == "extra_config":
+        kwargs["SQLALCHEMY_DATABASE_URI"] = uri
+    else:
+        monkeypatch.setenv("FLASK_SQLALCHEMY_DATABASE_URI", uri)
+        # Avoid get_app building (and probing) a URL from POSTGRESQL_* settings
+        kwargs["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+    app = get_app(**kwargs)
+    result = app.app.config["SQLALCHEMY_DATABASE_URI"]
+    assert result == "postgresql+psycopg2://u:p@db.example.com:5432/ibutsu"
+
+
+def test_pin_config_driver_without_uri():
+    config = Flask(__name__).config
+    pin_config_driver(config)
+    assert "SQLALCHEMY_DATABASE_URI" not in config
 
 
 def test_maybe_sql_url_with_hostname_and_db():
