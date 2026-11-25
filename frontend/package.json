@@ -17,7 +17,7 @@
     "@patternfly/react-table": "6.7.0",
     "@react-oauth/google": "^0.13.5",
     "@types/react": "^19.3.0",
-    "apexcharts": "^7.9.1",
+    "apexcharts": "^8.9.1",
     "keycloak-js": "^26.2.5",
     "linkify-react": "^4.4.0",
     "linkifyjs": "^4.4.0",

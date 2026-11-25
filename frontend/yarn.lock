@@ -1940,19 +1940,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"apex-commons@npm:^0.8.0":
-  version: 0.8.1
-  resolution: "apex-commons@npm:0.8.1"
-  checksum: 10c0/9d0817892f57b355b440226676d06f2aee44a443527f10500e1be0a6aeb00a172616f2701c76a10fdf031984dddc49aacddbc4bb5638b1da82f8b07b9b572683
+"apex-commons@npm:^0.11.0":
+  version: 0.11.0
+  resolution: "apex-commons@npm:0.11.0"
+  checksum: 10c0/69e2810fbf79c790c64c4937f27dfde353ef0bd249c5d75f459deb44f4a2b185622134a5c20ee731d4e1f3453b5fc19837011c896ecb02a1a782cbd2017d0e50
   languageName: node
   linkType: hard
 
-"apexcharts@npm:^7.9.1":
-  version: 7.9.1
-  resolution: "apexcharts@npm:7.9.1"
+"apexcharts@npm:^8.9.1":
+  version: 8.9.1
+  resolution: "apexcharts@npm:8.9.1"
   dependencies:
-    apex-commons: "npm:^0.8.0"
-  checksum: 10c0/87501bebf5b52bdd69f3f4c0a7bf4453eb2e2fcd77c4cee551b8187679e71a1886051fd8fa57df923aae857db15dac3b9cfc7fdcc046641b72621404ae9c1d40
+    apex-commons: "npm:^0.11.0"
+  checksum: 10c0/45c4d5ed46a2c1d41c4a8bcb8491f3d4b18cc79ff7fbc9c2f982a7c7d8a4b69a74e05b5cb30010ef444eec29a285b0e20f8fb06353f2d185b5b69a2d1c45fcae
   languageName: node
   linkType: hard
 
@@ -3224,7 +3224,7 @@ __metadata:
     "@typescript/native": "npm:typescript@^7.0.2"
     "@vitejs/plugin-react": "npm:^6.3.0"
     "@vitest/coverage-v8": "npm:^5.1.1"
-    apexcharts: "npm:^7.9.1"
+    apexcharts: "npm:^8.9.1"
     eslint: "npm:^10.15.0"
     eslint-config-prettier: "npm:^10.1.8"
     eslint-plugin-jsx-a11y-x: "npm:^0.2.0"
