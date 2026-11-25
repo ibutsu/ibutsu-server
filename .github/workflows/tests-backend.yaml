@@ -30,8 +30,10 @@ jobs:
       - uses: astral-sh/setup-uv@v10.4.0
         with:
           python-version: ${{ matrix.python-version }}
+          version: "0.13.9"
           enable-cache: true
           prune-cache: true
+          require-checksums: true
       - name: Check uv.lock is up to date
         working-directory: ./backend
         run: uv lock --check
@@ -49,8 +51,10 @@ jobs:
       - uses: astral-sh/setup-uv@v10.4.0
         with:
           python-version: ${{ matrix.python-version }}
+          version: "0.13.9"
           enable-cache: true
           prune-cache: true
+          require-checksums: true
       - name: Install backend dependencies
         working-directory: ./backend
         run: uv sync --locked
