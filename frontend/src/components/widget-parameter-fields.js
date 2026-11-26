@@ -43,7 +43,7 @@ const WidgetParameterFields = ({
               isRequired={param.required}
             >
               <TextInput
-                value={params[param.name] || ''}
+                value={params[param.name] ?? param.default ?? ''}
                 type={
                   param.type === 'integer' || param.type === 'float'
                     ? 'number'
@@ -81,7 +81,7 @@ const WidgetParameterFields = ({
               hasNoPaddingTop
             >
               <Checkbox
-                isChecked={params[param.name] || false}
+                isChecked={params[param.name] ?? param.default ?? false}
                 onChange={(event, value) =>
                   onChange({ target: { name: param.name } }, value)
                 }
@@ -99,7 +99,7 @@ const WidgetParameterFields = ({
                 id={param.name}
                 name={param.name}
                 isRequired={param.required}
-                value={params[param.name] || ''}
+                value={params[param.name] ?? param.default ?? ''}
                 onChange={(event, value) =>
                   onChange({ target: { name: param.name } }, value)
                 }

@@ -33,7 +33,7 @@ def _calculate_slope(x_data):
     return slope
 
 
-def _get_heatmap(additional_filters, builds, group_field, project=None):
+def _get_heatmap(additional_filters, builds, group_field, project=None, count_skips=False):
     """Get Filtered Heatmap Data."""
     filters = additional_filters.split(",")
     if project and is_uuid(project):
@@ -84,9 +84,12 @@ def _get_heatmap(additional_filters, builds, group_field, project=None):
     subquery = query.subquery()
 
     # create the main query (this allows us to do math on the SQL side)
-    passes = subquery.c.total - (
+    excluded_results = (
         subquery.c.errors + subquery.c.failures + subquery.c.xpasses + subquery.c.xfailures
     )
+    if count_skips:
+        excluded_results += subquery.c.skips
+    passes = subquery.c.total - excluded_results
 
     # Create a fresh select that only uses the subquery, to avoid cartesian product
     query = db.select(
@@ -118,7 +121,16 @@ def _get_heatmap(additional_filters, builds, group_field, project=None):
     return data_with_slope
 
 
-def get_filter_heatmap(additional_filters, builds, group_field, project=None):
+def get_filter_heatmap(
+    additional_filters,
+    builds,
+    group_field,
+    project=None,
+    count_skips=False,
+    skipped_threshold=50,
+    passed_threshold=85,
+):
     """Generate JSON data for a filtered heatmap of runs"""
-    heatmap = _get_heatmap(additional_filters, builds, group_field, project)
+    del skipped_threshold, passed_threshold
+    heatmap = _get_heatmap(additional_filters, builds, group_field, project, count_skips)
     return {"heatmap": heatmap}
