@@ -56,7 +56,7 @@ def flask_app():
     import ibutsu_server
     import ibutsu_server.tasks
     from ibutsu_server import _AppRegistry, get_app
-    from ibutsu_server.db.base import session
+    from ibutsu_server.db.base import db, session
     from ibutsu_server.db.models import Token, User
     from ibutsu_server.util.jwt import generate_token
 
@@ -113,16 +113,19 @@ def flask_app():
     if not hasattr(ibutsu_server.tasks, "task") or ibutsu_server.tasks.task is None:
         ibutsu_server.tasks.task = mock_task
 
-    # Use Connexion 3 test client (httpx-based)
-    # In Connexion 3, routes are handled by middleware, not Flask's url_map
-    # Note: Connexion 3 returns httpx.Response objects, not Flask Response objects
-    with connexion_app.test_client() as client:
-        # Add Flask app reference for compatibility with fixtures that need app_context
-        client.application = flask_app
-        yield client, jwt_token
-
-    # Clean up after test
-    _AppRegistry.reset()
+    try:
+        # Use Connexion 3 test client (httpx-based)
+        # In Connexion 3, routes are handled by middleware, not Flask's url_map
+        # Note: Connexion 3 returns httpx.Response objects, not Flask Response objects
+        with connexion_app.test_client() as client:
+            # Add Flask app reference for compatibility with fixtures that need app_context
+            client.application = flask_app
+            yield client, jwt_token
+    finally:
+        with flask_app.app_context():
+            session.remove()
+            db.engine.dispose()
+        _AppRegistry.reset()
 
 
 def mock_task(*args, **kwargs):

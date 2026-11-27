@@ -95,23 +95,8 @@ def test_create_celery_app_default_name(flask_app):
 
 
 def test_app_registry_delegates_to_celery_utils(flask_app):
-    """Test that _AppRegistry methods delegate to celery_utils factories."""
+    """Test that _AppRegistry worker/scheduler getters delegate to celery_utils factories."""
     # Reset to ensure clean state
-    _AppRegistry.reset()
-
-    # Test that get_flower_app delegates to create_broker_celery_app
-    with patch("ibutsu_server._AppRegistry.get_flower_app") as mock_get_flower:
-        mock_celery_app = Celery("test_flower")
-        mock_get_flower.return_value = mock_celery_app
-
-        # Call the method
-        result = _AppRegistry.get_flower_app()
-
-        # Verify it was called
-        mock_get_flower.assert_called_once()
-        assert result is mock_celery_app
-
-    # Reset for next test
     _AppRegistry.reset()
 
     # Test that get_worker_app delegates to create_flask_celery_app
@@ -126,7 +111,7 @@ def test_app_registry_delegates_to_celery_utils(flask_app):
         mock_create.return_value = mock_celery_app
 
         # Call the method
-        result = _AppRegistry.get_worker_app()
+        _AppRegistry.get_worker_app()
 
         # Verify create_flask_celery_app was called with correct args
         mock_create.assert_called_once()
@@ -148,7 +133,7 @@ def test_app_registry_delegates_to_celery_utils(flask_app):
         mock_create.return_value = mock_celery_app
 
         # Call the method
-        result = _AppRegistry.get_scheduler_app()
+        _AppRegistry.get_scheduler_app()
 
         # Verify create_flask_celery_app was called with correct args
         mock_create.assert_called_once()

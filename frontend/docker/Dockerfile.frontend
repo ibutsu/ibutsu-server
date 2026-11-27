@@ -1,7 +1,7 @@
 # hadolint global ignore=DL3041,DL4006,SC2046,DL3033
 # Build the image first using the official UBI Node.js 24 builder image
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-24/67f6255dbaa28af763e21805
-FROM registry.access.redhat.com/ubi9/nodejs-24:9.8-1790751326 AS builder
+FROM registry.access.redhat.com/ubi9/nodejs-24:9.9-1795496864 AS builder
 
 # The nodejs-24 image sets workdir to /opt/app-root/src by default
 # but we'll explicitly set it for clarity
@@ -16,7 +16,7 @@ ENV NODE_EXTRA_CA_CERTS=${EXTRA_CA_CERTS}
 # Pinned to avoid unexpected behaviour from new corepack releases.
 # NOTE: corepack 0.35.0 requires Node.js ^24.15.0 (satisfied by this image).
 # renovate: datasource=npm depName=corepack
-ARG COREPACK_VERSION="0.35.0"
+ARG COREPACK_VERSION="0.36.0"
 RUN if [ -n "${NPM_REGISTRY}" ]; then npm config set registry "${NPM_REGISTRY}"; fi && \
     npm install -g "corepack@${COREPACK_VERSION}" && \
     corepack enable
@@ -92,7 +92,7 @@ RUN yarn build
 # builder — the runtime does not need the full dependency tree.
 #
 # See: https://catalog.redhat.com/en/software/containers/ubi9/nodejs-24-minimal/67f62622a7637197c48f87ab
-FROM registry.access.redhat.com/ubi9/nodejs-24-minimal:9.8-1790647840
+FROM registry.access.redhat.com/ubi9/nodejs-24-minimal:9.9-1795226960
 
 WORKDIR /opt/app-root/src
 

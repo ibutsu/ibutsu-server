@@ -16,11 +16,21 @@ CREATE_PROJECT=false
 IMPORT_FOLDER="./.archives"
 IMPORT_FILES=true
 USE_IMAGES=false
+DEBUG=false
+DEBUG_LOG_PID=""
 # Array initialization for bash arrays (needed for += operations)
 POSTGRES_EXTRA_ARGS=()
 REDIS_EXTRA_ARGS=()
 BACKEND_EXTRA_ARGS=()
 PYTHON_IMAGE=registry.access.redhat.com/ubi9/python-314:latest
+
+# Dev-mount containers build their environment from backend/uv.lock. UV_PROJECT_ENVIRONMENT keeps the
+# venv out of the mounted ./backend so it cannot clash with a host .venv.
+function dev_uv_sync() {
+    echo "python -m pip install --quiet --no-cache-dir uv &&
+        export UV_PROJECT_ENVIRONMENT=/tmp/venv UV_LINK_MODE=copy PATH=/tmp/venv/bin:\$PATH &&
+        uv sync --locked --no-dev --no-default-groups $*"
+}
 
 # Shared environment variable arrays to reduce duplication in podman run commands
 # These are populated after LOCAL_* variables are set
@@ -52,7 +62,7 @@ ADMIN_PASSWORD="${ADMIN_PASSWORD:-"admin12345"}"
 FLOWER_BASIC_AUTH="${ADMIN_EMAIL}:${ADMIN_PASSWORD}"
 
 function print_usage() {
-    echo "Usage: ibutsu-pod.sh [-h|--help] [-d|--data-persistent] [-v|--data-volumes] [-a|--create-admin] [-p|--create-project] [-s|--skip-import] [-f|--import-folder FOLDER] [-i|--images] [POD_NAME]"
+    echo "Usage: ibutsu-pod.sh [-h|--help] [-d|--data-persistent] [-v|--data-volumes] [-a|--create-admin] [-p|--create-project] [-s|--skip-import] [-f|--import-folder FOLDER] [-i|--images] [--debug] [POD_NAME]"
     echo ""
     echo "optional arguments:"
     echo "  -h, --help                 show this help message"
@@ -63,6 +73,7 @@ function print_usage() {
     echo "  -s, --skip-import          skip importing files from the import folder"
     echo "  -f, --import-folder        folder containing files to import (./.archives/ by default)"
     echo "  -i, --images               build and use local container images instead of runtime dev mounts"
+    echo "  --debug                   show container logs while waiting for containers to start"
     echo "  POD_NAME                   the name of the pod, 'ibutsu' if omitted"
     echo ""
     echo "environment variables:"
@@ -70,6 +81,27 @@ function print_usage() {
     echo "  ADMIN_PASSWORD           Administrator password (optional)"
     echo ""
 }
+
+# Stream container logs while its startup status is being checked.
+function start_debug_logs() {
+    local name="$1"
+
+    if [[ $DEBUG = true ]]; then
+        echo "----- ${name} startup logs -----"
+        podman logs --follow "$name" &
+        DEBUG_LOG_PID=$!
+    fi
+}
+
+function stop_debug_logs() {
+    if [[ -n "$DEBUG_LOG_PID" ]]; then
+        kill "$DEBUG_LOG_PID" 2>/dev/null || true
+        wait "$DEBUG_LOG_PID" 2>/dev/null || true
+        DEBUG_LOG_PID=""
+    fi
+}
+
+trap stop_debug_logs EXIT
 
 # Fail immediately if a container has exited (or been removed via --rm).
 # Call from wait loops so we do not spin until timeout after a crash.
@@ -201,6 +233,9 @@ while [[ $i -le $# ]]; do
         -i|--images)
             USE_IMAGES=true
             ;;
+        --debug)
+            DEBUG=true
+            ;;
         -f|--import-folder)
             ((i++))
             if [[ $i -le $# ]]; then
@@ -287,6 +322,12 @@ if [[ $DATA_PERSISTENT = true ]]; then
     fi
 fi
 
+# Mount custom PostgreSQL logging configuration (logs to stderr instead of collector files)
+POSTGRES_CFG_PATH="${PWD}/scripts/configs/postgres-cfg"
+if [[ -d "$POSTGRES_CFG_PATH" ]]; then
+    POSTGRES_EXTRA_ARGS+=(-v "${POSTGRES_CFG_PATH}:/opt/app-root/src/postgresql-cfg:Z")
+fi
+
 # Create the administrator
 if [[ $CREATE_ADMIN = true ]]; then
     BACKEND_EXTRA_ARGS+=(-e "IBUTSU_SUPERADMIN_EMAIL=${ADMIN_EMAIL}" -e "IBUTSU_SUPERADMIN_PASSWORD=${ADMIN_PASSWORD}" -e IBUTSU_SUPERADMIN_NAME=Administrator)
@@ -315,6 +356,9 @@ fi
 if [[ $IMPORT_FILES = true ]]; then
     echo "  Files will be imported from ${IMPORT_FOLDER}"
 fi
+if [[ -d "$POSTGRES_CFG_PATH" ]]; then
+    echo "  Custom PostgreSQL logging configuration enabled (stderr logging)"
+fi
 echo "Stop the pod by running: 'podman pod rm -f ${POD_NAME}'"
 echo ""
 
@@ -335,6 +379,27 @@ podman run -dt \
     --name ibutsu-postgres \
     registry.redhat.io/rhel8/postgresql-15
 
+start_debug_logs ibutsu-postgres
+echo -n "Waiting for postgres to respond: "
+POSTGRES_WAIT=0
+POSTGRES_TIMEOUT=120
+until podman exec ibutsu-postgres pg_isready -h "$LOCAL_HOST" -p "$LOCAL_PORT_POSTGRES" -U ibutsu &>/dev/null; do
+    ensure_container_running ibutsu-postgres "PostgreSQL"
+    echo -n ' .'
+    sleep 1
+    POSTGRES_WAIT=$((POSTGRES_WAIT + 1))
+    if [ $POSTGRES_WAIT -ge $POSTGRES_TIMEOUT ]; then
+        echo ""
+        echo "ERROR: PostgreSQL failed to start within ${POSTGRES_TIMEOUT}s. Container logs:"
+        echo "----- ibutsu-postgres logs -----"
+        podman logs ibutsu-postgres 2>/dev/null || echo "(unable to read logs)"
+        echo "----- end logs -----"
+        exit 1
+    fi
+done
+stop_debug_logs
+echo " postgres up."
+
 echo "================================="
 echo -n "Adding redis to the pod:    "
 podman run -dt \
@@ -345,11 +410,32 @@ podman run -dt \
     --name ibutsu-redis \
     quay.io/fedora/redis-7
 
+start_debug_logs ibutsu-redis
+echo -n "Waiting for redis to respond: "
+REDIS_WAIT=0
+REDIS_TIMEOUT=60
+until podman exec ibutsu-redis redis-cli ping 2>/dev/null | grep -q PONG; do
+    ensure_container_running ibutsu-redis "Redis"
+    echo -n ' .'
+    sleep 1
+    REDIS_WAIT=$((REDIS_WAIT + 1))
+    if [ $REDIS_WAIT -ge $REDIS_TIMEOUT ]; then
+        echo ""
+        echo "ERROR: Redis failed to start within ${REDIS_TIMEOUT}s. Container logs:"
+        echo "----- ibutsu-redis logs -----"
+        podman logs ibutsu-redis 2>/dev/null || echo "(unable to read logs)"
+        echo "----- end logs -----"
+        exit 1
+    fi
+done
+stop_debug_logs
+echo " redis up."
+
 echo "================================="
 echo -n "Adding backend to the pod:    "
 # https://docs.sqlalchemy.org/en/20/changelog/migration_20.html#migration-to-2-0-step-two-turn-on-removedin20warnings
 if [[ $USE_IMAGES = true ]]; then
-    # Use pre-built image - run init_db.py first, then start gunicorn
+    # Use pre-built image with entrypoint handling migrations when RUN_MIGRATIONS=true
     podman run -d \
         --rm \
         --replace \
@@ -360,12 +446,9 @@ if [[ $USE_IMAGES = true ]]; then
         "${POSTGRES_ENV_ARGS[@]}" \
         "${CELERY_ENV_ARGS[@]}" \
         -e SQLALCHEMY_WARN_20=1 \
+        -e RUN_MIGRATIONS=true \
         "${BACKEND_EXTRA_ARGS[@]}" \
-        "ibutsu-backend:${IMAGE_TAG}" \
-        /bin/bash -c 'echo "Initializing database schema..." &&
-                      python scripts/init_db.py &&
-                      echo "Starting backend server..." &&
-                      gunicorn -k uvicorn.workers.UvicornWorker -c config.py --bind 0.0.0.0:8080 --access-logfile - --error-logfile - ibutsu_server:connexion_app'
+        "ibutsu-backend:${IMAGE_TAG}"
 else
     # Use runtime dev mount with pip install
     podman run -d \
@@ -381,14 +464,15 @@ else
         "${BACKEND_EXTRA_ARGS[@]}" \
         "${DEV_MOUNT_BACKEND_ARGS[@]}" \
         $PYTHON_IMAGE \
-        /bin/bash -c 'python -m pip install -U pip wheel setuptools &&
-                      pip install . &&
+        /bin/bash -c "$(dev_uv_sync --group server --group migrations) &&
                       ls -lh /mnt &&
-                      echo "Initializing database schema..." &&
+                      echo 'Initializing database schema...' &&
                       python scripts/init_db.py &&
-                      echo "Starting backend server..." &&
-                      uvicorn ibutsu_server:connexion_app --host 0.0.0.0 --port 8080 --reload --workers 1'
+                      echo 'Starting backend server...' &&
+                      uvicorn ibutsu_server:connexion_app --host 0.0.0.0 --port 8080 --reload --workers 1"
 fi
+
+start_debug_logs ibutsu-backend
 echo -n "Waiting for backend to respond: "
 sleep 5
 BACKEND_WAIT=0
@@ -407,6 +491,7 @@ until curl --output /dev/null --silent --head --fail http://$LOCAL_HOST:$LOCAL_P
     exit 1
   fi
 done
+stop_debug_logs
 echo " backend up."
 
 
@@ -436,15 +521,16 @@ else
         "${CELERY_ENV_ARGS[@]}" \
         "${DEV_MOUNT_BACKEND_ARGS[@]}" \
         $PYTHON_IMAGE \
-        /bin/bash -c 'pip install -U pip wheel &&
-                        pip install . &&
-                        celery --app ibutsu_server:worker_app --no-color worker --events'
+        /bin/bash -c "$(dev_uv_sync --group server --group worker) &&
+                        celery --app ibutsu_server:worker_app --no-color worker --events"
 fi
+
+start_debug_logs ibutsu-worker
 echo -n "Waiting for celery to respond: "
 sleep 5
 CELERY_WAIT=0
 CELERY_TIMEOUT=600
-until podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null | grep -q pong; do
+until podman exec ibutsu-worker celery inspect ping 2>/dev/null | grep -q pong; do
     ensure_container_running ibutsu-worker "Celery worker"
     echo -n ' .'
     sleep 2
@@ -458,6 +544,7 @@ until podman exec ibutsu-worker celery inspect ping -d celery@ibutsu 2>/dev/null
         exit 1
     fi
 done
+stop_debug_logs
 echo " celery worker up."
 
 
@@ -486,9 +573,15 @@ else
         "${CELERY_ENV_ARGS[@]}" \
         "${DEV_MOUNT_BACKEND_ARGS[@]}" \
         $PYTHON_IMAGE \
-        /bin/bash -c 'pip install -U pip wheel &&
-                        pip install . &&
-                        celery --app ibutsu_server:scheduler_app beat --loglevel=info'
+        /bin/bash -c "$(dev_uv_sync --group server) &&
+                        celery --app ibutsu_server:scheduler_app beat --loglevel=info"
+fi
+
+start_debug_logs ibutsu-scheduler
+if [[ $DEBUG = true ]]; then
+    sleep 5
+    ensure_container_running ibutsu-scheduler "Celery scheduler"
+    stop_debug_logs
 fi
 echo "done."
 
@@ -516,12 +609,35 @@ else
         -e FLOWER_BASIC_AUTH="${FLOWER_BASIC_AUTH}" \
         "${DEV_MOUNT_BACKEND_ARGS[@]}" \
         $PYTHON_IMAGE \
-        /bin/bash -c "pip install -U pip wheel &&
-                        pip install . &&
-                        pip install 'flower>=2.0.0' &&
-                        celery --app ibutsu_server:flower_app flower --port=5555"
+        /bin/bash -c "$(dev_uv_sync --group flower) &&
+                        celery --app=ibutsu_server.celery_utils:flower_app flower --port=5555 --enable_events=True"
 fi
-echo "done."
+
+start_debug_logs ibutsu-flower
+if [[ $DEBUG = true ]]; then
+    echo -n "Waiting for flower to respond: "
+    FLOWER_WAIT=0
+    FLOWER_TIMEOUT=120
+    until curl --connect-timeout 2 --max-time 5 --output /dev/null --silent --fail \
+        --user "$FLOWER_BASIC_AUTH" "http://$LOCAL_HOST:$LOCAL_PORT_FLOWER"; do
+        ensure_container_running ibutsu-flower "Flower"
+        echo -n ' .'
+        sleep 1
+        FLOWER_WAIT=$((FLOWER_WAIT + 1))
+        if [ $FLOWER_WAIT -ge $FLOWER_TIMEOUT ]; then
+            echo ""
+            echo "ERROR: Flower failed to start within ${FLOWER_TIMEOUT}s. Container logs:"
+            echo "----- ibutsu-flower logs -----"
+            podman logs ibutsu-flower 2>/dev/null || echo "(unable to read logs — container may have been removed)"
+            echo "----- end logs -----"
+            exit 1
+        fi
+    done
+    stop_debug_logs
+    echo " flower up."
+else
+    echo "done."
+fi
 
 
 if [[ $CREATE_PROJECT = true ]]; then
@@ -958,8 +1074,8 @@ else
             yarn install &&
             CI=1 yarn devserver"
 fi
-echo "done."
 
+start_debug_logs ibutsu-frontend
 echo -n "Waiting for frontend to respond: "
 FRONTEND_WAIT=0
 FRONTEND_TIMEOUT=600
@@ -977,6 +1093,7 @@ until curl --output /dev/null --silent --head --fail http://$LOCAL_HOST:$LOCAL_P
     exit 1
   fi
 done
+stop_debug_logs
 echo " frontend available."
 
 echo "Ibutsu has been deployed into the pod: ${POD_NAME}."

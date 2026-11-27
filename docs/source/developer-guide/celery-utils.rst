@@ -123,7 +123,7 @@ Creates a Flask-integrated Celery app with full application context.
        'broker_url': 'redis://localhost:6379/0',
        'result_backend': 'redis://localhost:6379/0',
    }
-   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://...'
+   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://...'
 
    # Create worker app
    worker_app = create_flask_celery_app(flask_app, name="ibutsu_server_worker")
@@ -149,7 +149,14 @@ Creates a Flask-integrated Celery app with full application context.
            'ibutsu_server.tasks.runs',
        ],
    }
-   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://...'
+   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://...'
+
+.. note::
+
+   Name the driver explicitly (``postgresql+psycopg2://``). SQLAlchemy 2.1 maps a bare
+   ``postgresql://`` to psycopg3, which the Ibutsu images do not install. Only apps built
+   by ``get_app`` and the Alembic app normalize bare URIs; a Flask app you configure
+   yourself is passed to SQLAlchemy as-is.
 
 **Raises:**
 
@@ -158,19 +165,13 @@ Creates a Flask-integrated Celery app with full application context.
 Integration with _AppRegistry
 ------------------------------
 
-The ``_AppRegistry`` class in ``ibutsu_server/__init__.py`` delegates to these factory functions:
+The ``_AppRegistry`` class in ``ibutsu_server/app.py`` delegates to the worker and scheduler factory functions.
+The broker-only ``flower_app`` is created lazily by ``ibutsu_server.celery_utils`` itself, so the Flower image
+does not need the web stack installed:
 
 .. code-block:: python
 
    class _AppRegistry:
-       @classmethod
-       def get_flower_app(cls):
-           if cls.flower_app is None:
-               cls.flower_app = create_broker_celery_app(
-                   name="ibutsu_server_flower"
-               )
-           return cls.flower_app
-
        @classmethod
        def get_worker_app(cls):
            if cls.worker_app is None:
@@ -407,7 +408,7 @@ Worker Can't Access Database
 
 .. code-block:: python
 
-   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://...'
+   flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://...'
 
 Tasks Not Discovered
 ~~~~~~~~~~~~~~~~~~~~

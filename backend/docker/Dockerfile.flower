@@ -1,26 +1,55 @@
-# hadolint global ignore=DL3013,DL3041,DL3025
-FROM registry.access.redhat.com/ubi9/python-314-minimal:9.8-1790662483
+# hadolint global ignore=DL3002,DL3041,DL3025,DL3059
+FROM registry.access.redhat.com/ubi9/python-314:9.9-1795523033 AS builder
 
-# add application sources with correct perms for OCP
+# renovate: datasource=pypi depName=uv
+ARG UV_VERSION=0.13.9
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PYTHON=/usr/bin/python3.14 \
+    PATH="/app/.venv/bin:$PATH"
+
 USER 0
-RUN microdnf install --nodocs -y file-libs && \
-    microdnf clean all
+
+WORKDIR /app
+
+RUN python3.14 -m pip install --no-cache-dir "uv==${UV_VERSION}"
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev --no-default-groups --only-group flower --no-install-project
 
 COPY . /app
+RUN uv build && \
+    uv pip install --python /app/.venv/bin/python --no-deps dist/*.whl && \
+    chgrp -R 0 /app && \
+    chmod -R g=u /app
+
+FROM registry.access.redhat.com/ubi9/python-314-minimal:9.9-1795233991
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+USER 0
+
+WORKDIR /app
+
+RUN microdnf install --nodocs -y file-libs && \
+    microdnf clean all && \
+    chgrp 0 /app && \
+    chmod g=u /app
+
+COPY --from=builder --chown=1001:0 /app /app
 COPY licenses/ /licenses/
-RUN /usr/bin/fix-permissions /app
 
 USER 1001
 
-# Install dependencies
-WORKDIR /app
-RUN python -m pip install --no-cache-dir -U pip wheel setuptools && \
-    pip install --no-cache-dir -r requirements-pinned.txt . && \
-    pip install --no-cache-dir 'flower>=2.0.0'
+# Fail the build if the flower dependency group stops covering what flower_app imports
+RUN CELERY_BROKER_URL=redis://build-check:6379 \
+    python -c "import flower; from ibutsu_server.celery_utils import flower_app"
 
 # Expose Flower default port
 EXPOSE 5555
 
 # Use flower_app - minimal broker-only app (no database required)
-# flower_app is exposed via __getattr__ in ibutsu_server/__init__.py
-CMD ["celery", "--app=ibutsu_server:flower_app", "flower", "--port=5555", "--enable_events=True"]
+# flower_app is created lazily by __getattr__ in ibutsu_server/celery_utils.py
+CMD ["celery", "--app=ibutsu_server.celery_utils:flower_app", "flower", "--port=5555", "--enable_events=True"]

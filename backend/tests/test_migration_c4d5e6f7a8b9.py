@@ -28,6 +28,14 @@ def migration_module():
     return module
 
 
+@pytest.fixture
+def sqlite_engine():
+    """Create a SQLite engine and dispose its pooled connection after the test."""
+    engine = sa.create_engine("sqlite:///:memory:")
+    yield engine
+    engine.dispose()
+
+
 def test_alembic_heads_single_head():
     """Verify that Alembic has exactly one head revision in the migration graph."""
     alembic_ini = Path(__file__).parent.parent / "alembic.ini"
@@ -39,9 +47,9 @@ def test_alembic_heads_single_head():
     assert heads[0] == "c4d5e6f7a8b9"
 
 
-def test_sqlite_upgrade_and_downgrade(migration_module, monkeypatch):
+def test_sqlite_upgrade_and_downgrade(migration_module, monkeypatch, sqlite_engine):
     """Test upgrade and downgrade operations on a SQLite database with column verification."""
-    engine = sa.create_engine("sqlite:///:memory:")
+    engine = sqlite_engine
     with engine.begin() as conn:
         conn.execute(
             sa.text(

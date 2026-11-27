@@ -8,7 +8,15 @@ import pytest
 from flask import Flask, json
 from sqlalchemy.engine.url import URL as SQLA_URL
 
-from ibutsu_server import _AppRegistry, check_envvar, get_app, maybe_sql_url
+from ibutsu_server import (
+    _AppRegistry,
+    check_envvar,
+    get_app,
+    maybe_sql_url,
+    pin_config_driver,
+    pin_postgres_driver,
+)
+from ibutsu_server.app import env_sql_url
 from ibutsu_server.db.base import session
 from ibutsu_server.db.models import Token, User
 from ibutsu_server.util.jwt import generate_token
@@ -27,13 +35,118 @@ def test_maybe_sql_url_with_all_params():
     result = maybe_sql_url(config)
 
     assert isinstance(result, SQLA_URL)
-    assert result.drivername == "postgresql"
+    assert result.drivername == "postgresql+psycopg2"
     assert result.host == "localhost"
     assert result.database == "testdb"
     assert result.port == 5432
     assert result.username == "testuser"
     assert result.password == "testpass"
     assert result.query["sslmode"] == "require"
+
+
+@pytest.mark.parametrize(
+    ("uri", "expected"),
+    [
+        (
+            "postgresql://u:p@h:5432/db?sslmode=require",
+            "postgresql+psycopg2://u:p@h:5432/db?sslmode=require",
+        ),
+        ("postgresql+psycopg://u:p@h/db", "postgresql+psycopg://u:p@h/db"),
+        ("postgresql+asyncpg://u:p@h/db", "postgresql+asyncpg://u:p@h/db"),
+        ("sqlite:///:memory:", "sqlite:///:memory:"),
+    ],
+)
+def test_pin_postgres_driver_str(uri, expected):
+    """Bare postgresql:// URIs are pinned to psycopg2; explicit drivers are untouched"""
+    assert pin_postgres_driver(uri) == expected
+
+
+def test_pin_postgres_driver_url_object():
+    url = SQLA_URL.create(
+        "postgresql",
+        username="u",
+        password="p",
+        host="h",
+        port=5432,
+        database="db",
+        query={"sslmode": "require"},
+    )
+    pinned = pin_postgres_driver(url)
+    assert pinned.drivername == "postgresql+psycopg2"
+    # Everything but the driver is preserved, including the (unmasked) password
+    assert pinned.set(drivername="postgresql") == url
+    explicit = SQLA_URL.create("postgresql+psycopg", host="h", database="db")
+    assert pin_postgres_driver(explicit) is explicit
+
+
+@pytest.mark.parametrize(
+    ("uri", "expected_driver"),
+    [
+        ("postgresql://u:p@h/db", "postgresql+psycopg2"),
+        (SQLA_URL.create("postgresql", host="h", database="db"), "postgresql+psycopg2"),
+        (SQLA_URL.create("postgresql+psycopg", host="h", database="db"), "postgresql+psycopg"),
+        ("sqlite:///:memory:", "sqlite"),
+    ],
+    ids=["str", "url-object", "url-object-explicit", "sqlite"],
+)
+def test_pin_config_driver(uri, expected_driver):
+    config = Flask(__name__).config
+    config["SQLALCHEMY_DATABASE_URI"] = uri
+    pin_config_driver(config)
+    result = config["SQLALCHEMY_DATABASE_URI"]
+    result_driver = result.drivername if isinstance(result, SQLA_URL) else result.split(":")[0]
+    assert result_driver == expected_driver
+
+
+@pytest.mark.parametrize(
+    ("settings", "expected_host"),
+    [
+        ({"POSTGRESQL_HOST": "primary", "POSTGRESQL_DATABASE": "db"}, "primary"),
+        ({"POSTGRES_HOST": "fallback", "POSTGRES_DATABASE": "db"}, "fallback"),
+        (
+            {
+                "POSTGRESQL_HOST": "primary",
+                "POSTGRESQL_DATABASE": "db",
+                "POSTGRES_HOST": "fallback",
+                "POSTGRES_DATABASE": "db",
+            },
+            "primary",
+        ),
+        ({}, None),
+    ],
+    ids=["postgresql-prefix", "postgres-prefix-fallback", "postgresql-wins", "none"],
+)
+def test_env_sql_url(settings, expected_host):
+    config = Flask(__name__).config
+    config.update(settings)
+    url = env_sql_url(config)
+    if expected_host is None:
+        assert url is None
+    else:
+        assert url.drivername == "postgresql+psycopg2"
+        assert url.host == expected_host
+
+
+@pytest.mark.parametrize("source", ["extra_config", "flask_prefixed_env"])
+def test_get_app_pins_bare_postgres_uri(source, monkeypatch):
+    """A bare postgresql:// URI from any config source ends up on psycopg2"""
+    uri = "postgresql://u:p@db.example.com:5432/ibutsu"
+    kwargs = {"TESTING": True}
+    if source == "extra_config":
+        kwargs["SQLALCHEMY_DATABASE_URI"] = uri
+    else:
+        monkeypatch.setenv("FLASK_SQLALCHEMY_DATABASE_URI", uri)
+        # Avoid get_app building (and probing) a URL from POSTGRESQL_* settings
+        kwargs["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+    app = get_app(**kwargs)
+    result = app.app.config["SQLALCHEMY_DATABASE_URI"]
+    assert result == "postgresql+psycopg2://u:p@db.example.com:5432/ibutsu"
+
+
+def test_pin_config_driver_without_uri():
+    config = Flask(__name__).config
+    pin_config_driver(config)
+    assert "SQLALCHEMY_DATABASE_URI" not in config
 
 
 def test_maybe_sql_url_with_hostname_and_db():
@@ -152,7 +265,7 @@ def test_get_app_user_login_enabled_boolean():
     assert app.app.config["USER_LOGIN_ENABLED"] is True
 
 
-@patch("ibutsu_server.add_superadmin")
+@patch("ibutsu_server.app.add_superadmin")
 def test_get_app_superadmin_creation(mock_add_superadmin):
     """Test superadmin user creation"""
     superadmin_config = {
@@ -254,7 +367,7 @@ def test_run_task_route_no_task(flask_app):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-@patch("ibutsu_server.import_module")
+@patch("ibutsu_server.app.import_module")
 def test_run_task_route_module_not_found(mock_import_module, flask_app):
     """Test run-task route with non-existent module"""
     client, jwt_token = flask_app
@@ -269,7 +382,7 @@ def test_run_task_route_module_not_found(mock_import_module, flask_app):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-@patch("ibutsu_server.import_module")
+@patch("ibutsu_server.app.import_module")
 def test_run_task_route_task_not_found(mock_import_module, flask_app):
     """Test run-task route with non-existent task in module"""
     client, jwt_token = flask_app
@@ -286,7 +399,7 @@ def test_run_task_route_task_not_found(mock_import_module, flask_app):
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-@patch("ibutsu_server.import_module")
+@patch("ibutsu_server.app.import_module")
 def test_run_task_route_success(mock_import_module, flask_app):
     """Test successful task execution"""
     client, jwt_token = flask_app
@@ -308,7 +421,7 @@ def test_run_task_route_success(mock_import_module, flask_app):
     mock_task.delay.assert_called_once_with(param1="value1")
 
 
-@patch("ibutsu_server.import_module")
+@patch("ibutsu_server.app.import_module")
 def test_run_task_route_success_no_params(mock_import_module, flask_app):
     """Test successful task execution without parameters"""
     client, jwt_token = flask_app
@@ -338,7 +451,7 @@ def test_run_task_route_invalid_json(flask_app):
     assert response.status_code == HTTPStatus.BAD_REQUEST
 
 
-@patch("ibutsu_server.decode_token")
+@patch("ibutsu_server.app.decode_token")
 def test_run_task_route_user_not_found(mock_decode_token, flask_app):
     """Test run-task route when user is not found"""
     client, _ = flask_app
@@ -354,7 +467,7 @@ def test_run_task_route_user_not_found(mock_decode_token, flask_app):
     assert response.status_code == HTTPStatus.FORBIDDEN
 
 
-@patch("ibutsu_server.decode_token")
+@patch("ibutsu_server.app.decode_token")
 def test_run_task_route_token_decode_no_sub(mock_decode_token, flask_app):
     """Test run-task route when token has no sub field"""
     client, _ = flask_app
@@ -444,75 +557,11 @@ def test_app_registry_reset(reset_app_registry):
     assert _AppRegistry.connexion_app is None
     assert _AppRegistry.flask_app is None
     assert _AppRegistry.celery_app is None
-    assert _AppRegistry.flower_app is None
     assert _AppRegistry.worker_app is None
     assert _AppRegistry.scheduler_app is None
 
 
 @patch.dict("os.environ", {"CELERY_BROKER_URL": "redis://localhost:6379/0"})
-def test_app_registry_get_flower_app(reset_app_registry):
-    """Test _AppRegistry.get_flower_app"""
-    app = _AppRegistry.get_flower_app()
-
-    assert app is not None
-    assert _AppRegistry.flower_app is not None
-    assert app.main == "ibutsu_server_flower"
-
-
-def test_app_registry_get_flower_app_missing_broker_url(reset_app_registry):
-    """Test _AppRegistry.get_flower_app raises error when CELERY_BROKER_URL not set"""
-
-    with (
-        patch.dict("os.environ", {}, clear=True),
-        pytest.raises(ValueError, match="CELERY_BROKER_URL environment variable must be set"),
-    ):
-        _AppRegistry.get_flower_app()
-
-
-def test_app_registry_get_flower_app_with_result_backend(reset_app_registry):
-    """Test _AppRegistry.get_flower_app properly reads CELERY_RESULT_BACKEND"""
-    broker = "redis://localhost:6379/0"
-    result_backend = "redis://localhost:6379/1"
-
-    with patch.dict(
-        "os.environ", {"CELERY_BROKER_URL": broker, "CELERY_RESULT_BACKEND": result_backend}
-    ):
-        app = _AppRegistry.get_flower_app()
-
-        assert app.conf.broker_url == broker
-        assert app.conf.result_backend == result_backend
-        assert app.conf.redis_socket_timeout is not None
-        assert app.conf.broker_transport_options is not None
-
-
-def test_app_registry_get_flower_app_with_result_backend_url(reset_app_registry):
-    """Test _AppRegistry.get_flower_app properly reads CELERY_RESULT_BACKEND_URL as fallback"""
-    broker = "redis://localhost:6379/0"
-    result_backend = "redis://localhost:6379/2"
-
-    # Clear environment to prevent pytest_configure defaults from interfering
-    with patch.dict(
-        "os.environ",
-        {"CELERY_BROKER_URL": broker, "CELERY_RESULT_BACKEND_URL": result_backend},
-        clear=True,
-    ):
-        app = _AppRegistry.get_flower_app()
-
-        assert app.conf.broker_url == broker
-        assert app.conf.result_backend == result_backend
-
-
-def test_app_registry_get_flower_app_defaults_result_backend(reset_app_registry):
-    """Test _AppRegistry.get_flower_app uses broker as result_backend when not specified"""
-    broker = "redis://localhost:6379/0"
-
-    with patch.dict("os.environ", {"CELERY_BROKER_URL": broker}, clear=True):
-        app = _AppRegistry.get_flower_app()
-
-        assert app.conf.broker_url == broker
-        assert app.conf.result_backend == broker  # Should default to broker
-
-
 def test_app_registry_get_worker_app(reset_app_registry):
     """Test _AppRegistry.get_worker_app"""
     # Initialize apps first with config, then get worker app
@@ -648,7 +697,7 @@ def test_get_app_postgresql_engine_options():
     # it just needs to verify the config is set correctly
     with (
         patch("ibutsu_server.db.db.init_app"),
-        patch("ibutsu_server.add_superadmin"),
+        patch("ibutsu_server.app.add_superadmin"),
     ):
         app = get_app(
             TESTING=True,
@@ -678,7 +727,7 @@ def test_get_app_celery_config():
     assert app.app.config["CELERY"]["broker_connection_retry"] is True
 
 
-@patch("ibutsu_server.maybe_sql_url")
+@patch("ibutsu_server.app.maybe_sql_url")
 @patch.dict(
     "os.environ",
     {
@@ -717,9 +766,9 @@ def test_get_app_with_postgresql_connection_retry():
     env_without_db_uri = {k: v for k, v in os.environ.items() if k != "SQLALCHEMY_DATABASE_URI"}
     with (
         patch.dict("os.environ", env_without_db_uri, clear=True),
-        patch("ibutsu_server.create_engine") as mock_create_engine,
+        patch("ibutsu_server.app.create_engine") as mock_create_engine,
         patch("ibutsu_server.db.db.init_app"),
-        patch("ibutsu_server.add_superadmin"),
+        patch("ibutsu_server.app.add_superadmin"),
     ):
         mock_engine = MagicMock()
         mock_connection = MagicMock()
@@ -764,7 +813,7 @@ def test_app_registry_get_alembic_flask_app(reset_app_registry):
 
 def test_app_registry_get_alembic_flask_app_skips_mail(reset_app_registry):
     """Test alembic Flask app doesn't initialize Mail"""
-    with patch("ibutsu_server.Mail") as mock_mail:
+    with patch("ibutsu_server.app.Mail") as mock_mail:
         app = _AppRegistry.get_alembic_flask_app()
 
         assert app is not None
@@ -779,7 +828,7 @@ def test_app_registry_get_alembic_flask_app_skips_superadmin(reset_app_registry,
     monkeypatch.setenv("IBUTSU_SUPERADMIN_NAME", "Admin")
     monkeypatch.setenv("IBUTSU_SUPERADMIN_PASSWORD", "password")
 
-    with patch("ibutsu_server.add_superadmin") as mock_add_superadmin:
+    with patch("ibutsu_server.app.add_superadmin") as mock_add_superadmin:
         app = _AppRegistry.get_alembic_flask_app()
 
         assert app is not None
