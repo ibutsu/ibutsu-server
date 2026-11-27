@@ -245,6 +245,43 @@ def test_get_filter_heatmap_limits_builds(make_project, bulk_run_creator, fixed_
     assert len(result["heatmap"]["test-component"]) <= MOCK_BUILDS + 1
 
 
+def test_get_filter_heatmap_count_skips(make_project, make_run, fixed_time):
+    """Test that skips can be counted against or ignored in pass rate."""
+    project = make_project(name="test-project")
+
+    make_run(
+        project_id=project.id,
+        start_time=fixed_time,
+        component="test-component",
+        summary={
+            "tests": 4,
+            "failures": 0,
+            "errors": 0,
+            "skips": 1,
+            "xfailures": 0,
+            "xpasses": 0,
+        },
+    )
+
+    count_skips_result = get_filter_heatmap(
+        "component=test-component",
+        MOCK_BUILDS,
+        MOCK_GROUP_FIELD,
+        str(project.id),
+        count_skips=True,
+    )
+    ignore_skips_result = get_filter_heatmap(
+        "component=test-component",
+        MOCK_BUILDS,
+        MOCK_GROUP_FIELD,
+        str(project.id),
+        count_skips=False,
+    )
+
+    assert count_skips_result["heatmap"]["test-component"][1][0] == 75
+    assert ignore_skips_result["heatmap"]["test-component"][1][0] == 100
+
+
 def test_get_filter_heatmap_with_zero_build_limit(make_project, bulk_run_creator, fixed_time):
     """Test get_filter_heatmap with builds=0."""
     project = make_project(name="test-project")

@@ -150,6 +150,8 @@ const FilterHeatmapWidget = ({
   }, [countSkips, builds, params, params.count_skips, type]);
 
   const getCellStyle = (background, value, min, max, data, x) => {
+    const skippedThreshold = Number(params?.skipped_threshold ?? 50);
+    const passedThreshold = Number(params?.passed_threshold ?? 85);
     let style = { paddingTop: '-8.10811px' };
     if (x === 0 && !!value) {
       if (value[0] < 0) {
@@ -162,14 +164,14 @@ const FilterHeatmapWidget = ({
         style.background = CHART_COLOR_MAP.default;
       }
     } else if (value) {
-      if (value[0] < 50) {
-        style.background = CHART_COLOR_MAP.failed;
-      } else if (value[0] <= 85 && value[0] >= 50) {
-        style.background = CHART_COLOR_MAP.skipped;
-      } else if (value[0] > 85) {
-        style.background = CHART_COLOR_MAP.passed;
-      } else if (isNaN(value[0])) {
+      if (isNaN(value[0])) {
         style.background = CHART_COLOR_MAP.default;
+      } else if (value[0] < skippedThreshold) {
+        style.background = CHART_COLOR_MAP.failed;
+      } else if (value[0] < passedThreshold) {
+        style.background = CHART_COLOR_MAP.skipped;
+      } else {
+        style.background = CHART_COLOR_MAP.passed;
       }
       // handle annotations, add a border for cells with annotations
       if (value[2]) {

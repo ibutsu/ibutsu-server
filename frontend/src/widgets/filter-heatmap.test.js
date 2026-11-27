@@ -44,7 +44,17 @@ vi.mock('../components/param-dropdown', () => {
 // Mock HeatMapWrapper component
 vi.mock('../components/heat-map-wrapper', () => {
   return {
-    default: function HeatMapWrapper({ xLabels, yLabels, data }) {
+    default: function HeatMapWrapper({ xLabels, yLabels, data, cellStyle }) {
+      const cellBackgrounds = data
+        ?.flatMap((row) =>
+          row.map(
+            (value, x) =>
+              cellStyle?.(null, value, null, null, data, x)?.background,
+          ),
+        )
+        .filter(Boolean)
+        .join(',');
+
       return (
         <div data-ouia-component-id="heatmap">
           <div data-ouia-component-id="heatmap-xlabels">
@@ -54,6 +64,9 @@ vi.mock('../components/heat-map-wrapper', () => {
             {yLabels?.length || 0}
           </div>
           <div data-ouia-component-id="heatmap-data">{data?.length || 0}</div>
+          <div data-ouia-component-id="heatmap-cell-backgrounds">
+            {cellBackgrounds}
+          </div>
         </div>
       );
     },
@@ -742,6 +755,48 @@ describe('FilterHeatmapWidget', () => {
 
       await waitFor(() => {
         expect(screen.getByTestId('heatmap-data')).toHaveTextContent('1');
+      });
+    });
+
+    it('should use configured heatmap color thresholds', async () => {
+      const thresholdData = {
+        heatmap: {
+          'threshold-job': [
+            [0, 0],
+            [99, 'run-fail-threshold', null, '801'],
+            [100, 'run-pass-threshold', null, '802'],
+          ],
+        },
+      };
+
+      HttpClient.get.mockResolvedValue({
+        ok: true,
+        json: async () => thresholdData,
+      });
+
+      render(
+        <MemoryRouter>
+          <IbutsuContext value={mockContextValue}>
+            <FilterHeatmapWidget
+              {...defaultProps}
+              params={{
+                ...defaultProps.params,
+                skipped_threshold: 100,
+                passed_threshold: 100,
+              }}
+            />
+          </IbutsuContext>
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        const backgrounds = screen.getByTestId('heatmap-cell-backgrounds');
+        expect(backgrounds).toHaveTextContent(
+          'var(--pf-t--chart--color--red-orange--300)',
+        );
+        expect(backgrounds).toHaveTextContent(
+          'var(--pf-t--chart--color--green--100)',
+        );
       });
     });
 

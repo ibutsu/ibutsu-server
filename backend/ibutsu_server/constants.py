@@ -162,6 +162,28 @@ WIDGET_TYPES = {
                 "default": "component",
             },
             {
+                "name": "count_skips",
+                "description": "Count skips against the pass rate.",
+                "type": "boolean",
+                "required": False,
+                "default": False,
+            },
+            {
+                "name": "skipped_threshold",
+                "description": "Minimum pass percentage for a skipped/yellow heatmap cell. "
+                "Values below this are failed/red.",
+                "type": "float",
+                "required": False,
+                "default": 50,
+            },
+            {
+                "name": "passed_threshold",
+                "description": "Minimum pass percentage for a passed/green heatmap cell.",
+                "type": "float",
+                "required": False,
+                "default": 85,
+            },
+            {
                 "name": "project",
                 "description": "Filter results by a specific project ID",
                 "type": "string",
