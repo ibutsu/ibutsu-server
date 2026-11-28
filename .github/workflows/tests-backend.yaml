@@ -30,7 +30,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.4.0
         with:
           python-version: ${{ matrix.python-version }}
-          version: "0.13.9"
+          version: "0.13.10"
           enable-cache: true
           prune-cache: true
           require-checksums: true
@@ -51,7 +51,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.4.0
         with:
           python-version: ${{ matrix.python-version }}
-          version: "0.13.9"
+          version: "0.13.10"
           enable-cache: true
           prune-cache: true
           require-checksums: true
