@@ -2,7 +2,7 @@
 FROM registry.access.redhat.com/ubi9/python-314:9.9-1795523033 AS builder
 
 # renovate: datasource=pypi depName=uv
-ARG UV_VERSION=0.13.9
+ARG UV_VERSION=0.13.10
 ARG UV_GROUPS="server,migrations"
 ARG EXTRA_GROUPS=""
 
